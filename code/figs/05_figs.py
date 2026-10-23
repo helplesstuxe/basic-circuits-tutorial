@@ -227,7 +227,8 @@ class Breadboard:
         return len({self.net(h) for h in hs}) == 1
 
     # ---- 画导线、元件、外部接线端 ----
-    def wire(self, h1, h2, kind="sig", bend=0.0):
+    def wire(self, h1, h2, kind="sig", bend=0.0, via=(), hops=(), hop_r=0.3):
+        """via：中间拐点（走在两列孔之间，避免压孔）；hops：竖直线段跨过电源轨线的 y 值，画成半圆「跨线弯」，表示从上面跨过、不接轨。"""
         self._use(h1, f"导线{h1}-{h2}")
         self._use(h2, f"导线{h1}-{h2}")
         self._union(self.strip(h1), self.strip(h2))
@@ -238,7 +239,15 @@ class Breadboard:
             xs = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * xm + t ** 2 * x2
             ys = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * ym + t ** 2 * y2
         else:
-            xs, ys = [x1, x2], [y1, y2]
+            pts = [(x1, y1)] + list(via) + [(x2, y2)]
+            xs, ys = [pts[0][0]], [pts[0][1]]
+            for (xa, ya), (xb, yb) in zip(pts[:-1], pts[1:]):
+                if xa == xb:                                   # 竖直段：在跨轨处插半圆
+                    sgn = 1 if yb > ya else -1
+                    for yh in sorted([h for h in hops if min(ya, yb) + hop_r < h < max(ya, yb) - hop_r], key=lambda h: sgn * h):
+                        th = np.linspace(-np.pi / 2, np.pi / 2, 15)
+                        xs += list(xa - hop_r * np.cos(th)); ys += list(yh + sgn * hop_r * np.sin(th))
+                xs.append(xb); ys.append(yb)
         self.ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
         for x, y in ((x1, y1), (x2, y2)):
             self.ax.plot(x, y, "o", ms=3.2, color=BB_WIRE[kind], zorder=4)
@@ -353,7 +362,11 @@ def bb05(improved):
     bb.wire("j15", "bn15", "neg")                        # 4 脚 → −9 V
     # 输入分压：RA 8.2 kΩ 一端接电源轨，RB 100 Ω 到地，分压点在第 9 列下半区
     bb.two("RA", "g5", "g9", "R", "RA 8.2k")
-    bb.wire("h5", "bn5" if improved else "tp5", "neg" if improved else "pos")
+    # RA 的电源端：从 h5 先往左挪半格，沿第 4、5 列之间的空隙走，跨过中间的 0 V 轨线时画跨线弯，不压第 5 列的孔
+    if improved:
+        bb.wire("h5", "bn5", "neg", via=[(4.5, 1.0), (4.5, -3.0)], hops=[BB_RAIL_Y["bp"] + 0.32])
+    else:
+        bb.wire("h5", "tp5", "pos", via=[(4.5, 1.0), (4.5, 11.0)], hops=[BB_RAIL_Y["tn"] - 0.32])
     bb.two("RB", "j9", "bp9", "R", "RB 100")
     # 2 脚（第 13 列下半区）用跳线引到第 8 列上半区
     bb.wire("g13", "e8", "sig")

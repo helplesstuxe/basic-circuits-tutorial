@@ -424,7 +424,7 @@ def _rng_diff(v1, v2, tol=0.05):
 
 
 def _rng_mis(vcm, tol=0.05, extra=10e3):
-    """第 12 步：R4 下面串 10k 以后，输出比串之前多出多少（两次都接同一个共模电压），5% 电阻的范围。"""
+    """第 13、14 步：R4 下面串 10k 以后，输出比串之前多出多少（两次都接同一个共模电压），5% 电阻的范围。"""
     vals = []
     for k1 in (1 - tol, 1 + tol):
         for k2 in (1 - tol, 1 + tol):
@@ -518,7 +518,7 @@ def p4_1_breadboard():
     bb_res(ax, "g16", "g20", "R3 10k")
     bb_res(ax, "i16", "i19", "R4 100k", dy=-0.55)
     bb_wire(ax, "j19", "B2-19", "gnd")
-    _bb_label(ax, 23.2, -2.15, "j19→M 第 12 步换成 10k")
+    _bb_label(ax, 23.2, -2.15, "j19→M 第 13、14 步换成 10k")
     # 1.5 V 电池盒画在板子外
     ax.add_patch(_BbRect((0.8, -5.0), 3.4, 0.75, fc="#ffe082", ec="0.3", lw=0.8, zorder=5))
     ax.text(2.5, -4.62, "1.5 V 电池盒", ha="center", va="center", fontsize=7.5, zorder=6)
@@ -539,7 +539,7 @@ def p4_1_breadboard():
     bb_legend(ax, [("sig", "蓝：输入"), ("fb", "蓝绿：反馈"), ("out", "橙：1.5 V")], x=5.4, y=-5.4)
     print("[图 04-p4-1] LM358 1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚→V+，4 脚→V−；另一半 7、6 脚短接、5 脚→M；"
           "电位器 A g3/g4/g5（j3 接电池 +，j5→M），滑动端 i4→i9；R1 h9–h12；j12→j15 接 2 脚；R2 i12–i14；"
-          "电位器 B c3/c4/c5（e3→f3 取 1.5 V，a5→M），滑动端 d4→d20、e20→f20；R3 g16–g20；R4 i16–i19；j19→M（第 12 步换 10k）；"
+          "电位器 B c3/c4/c5（e3→f3 取 1.5 V，a5→M），滑动端 d4→d20、e20→f20；R3 g16–g20；R4 i16–i19；j19→M（第 13、14 步换 10k）；"
           "单电源灰框同 01；测点① 第 9 列、② 第 20 列、③ 第 14 列、④ 第 16 列（3 脚）")
     fs.save(fig, N, "04_p4_1_breadboard.png")
 

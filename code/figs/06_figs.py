@@ -271,7 +271,8 @@ class Breadboard:
         return len({self.net(h) for h in hs}) == 1
 
     # ---- 画导线、元件、外部接线端 ----
-    def wire(self, h1, h2, kind="sig", bend=0.0):
+    def wire(self, h1, h2, kind="sig", bend=0.0, via=(), hops=(), hop_r=0.3):
+        """via：中间拐点（走在两列孔之间，避免压孔）；hops：竖直线段跨过电源轨线的 y 值，画成半圆「跨线弯」，表示从上面跨过、不接轨。"""
         self._use(h1, f"导线{h1}-{h2}")
         self._use(h2, f"导线{h1}-{h2}")
         self._union(self.strip(h1), self.strip(h2))
@@ -282,7 +283,15 @@ class Breadboard:
             xs = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * xm + t ** 2 * x2
             ys = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * ym + t ** 2 * y2
         else:
-            xs, ys = [x1, x2], [y1, y2]
+            pts = [(x1, y1)] + list(via) + [(x2, y2)]
+            xs, ys = [pts[0][0]], [pts[0][1]]
+            for (xa, ya), (xb, yb) in zip(pts[:-1], pts[1:]):
+                if xa == xb:                                   # 竖直段：在跨轨处插半圆
+                    sgn = 1 if yb > ya else -1
+                    for yh in sorted([h for h in hops if min(ya, yb) + hop_r < h < max(ya, yb) - hop_r], key=lambda h: sgn * h):
+                        th = np.linspace(-np.pi / 2, np.pi / 2, 15)
+                        xs += list(xa - hop_r * np.cos(th)); ys += list(yh + sgn * hop_r * np.sin(th))
+                xs.append(xb); ys.append(yb)
         self.ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
         for x, y in ((x1, y1), (x2, y2)):
             self.ax.plot(x, y, "o", ms=3.2, color=BB_WIRE[kind], zorder=4)
@@ -376,9 +385,9 @@ class Breadboard:
     def note(self, x, y, text, **kw):
         self.ax.text(x, y, text, fontsize=8, **kw)
 
-    def legend(self, kinds=("pos", "gnd", "neg", "sig")):
+    def legend(self, kinds=("pos", "gnd", "neg", "sig"), names=None):
         from matplotlib.lines import Line2D
-        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
+        names = names or dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
         hs = [Line2D([], [], color=BB_WIRE[k], lw=2.4, label=names[k]) for k in kinds]
         self.ax.legend(handles=hs, loc="upper center", bbox_to_anchor=(0.5, 0.035), ncol=len(hs), fontsize=8,
                        frameon=False)
@@ -391,8 +400,10 @@ def bb06():
     bb = Breadboard(ncol=30, rails=dict(tp=("直流 +", "pos"), tn=("直流 −", "gnd"), bp=("（不用）", "gnd"), bn=("（不用）", "gnd")))
     ac1 = bb.ext((12, 12.15), "交流输入 ~1（适配器一根线 / 发生器红夹）", "sig", dx=0.45, ha="left")
     ac2 = bb.ext((12, -5.0), "交流输入 ~2（适配器另一根线 / 发生器黑夹）", "sig", dx=0.45, ha="left")
-    bb.wire(ac1, "a12", "sig")
-    bb.wire(ac2, "j12", "sig")
+    # 交流输入线从板外竖着进来：跨过两条电源轨线的地方画成半圆跨线弯，表示只是从上面经过、不接轨（第 12 列本来也没有轨孔）
+    _rl = {k: v + 0.32 * (1 if k in ("tp", "bp") else -1) for k, v in BB_RAIL_Y.items()}
+    bb.wire(ac1, "a12", "sig", hops=[_rl["tp"], _rl["tn"]])
+    bb.wire(ac2, "j12", "sig", hops=[_rl["bp"], _rl["bn"]])
     bb.two("D3", "c8", "c12", "D", "D3", lpos=(0, 0.62))
     bb.two("D1", "d12", "d16", "D", "D1", lpos=(0, -0.62))
     bb.two("D4", "g8", "g12", "D", "D4", lpos=(0, 0.62))
@@ -417,7 +428,7 @@ def bb06():
     bb.probe("e26", "V−", dx=0.3, dy=-0.85)
     bb.note(18.0, 1.9, "第 8 列 = 桥的 − 端", color="0.3", va="center")
     bb.note(18.0, 0.9, "第 16 列 = 桥的 + 端", color="0.3", va="center")
-    bb.legend(("pos", "gnd", "sig"))
+    bb.legend(("pos", "gnd", "sig"), names=dict(pos="直流 + 线（橙）", gnd="直流 − 线（黑，不是地）", sig="交流输入线（绿）"))
     print(f"06 p4 面包板：连接检查通过，占用 {len(bb.used)} 个孔")
     return bb
 

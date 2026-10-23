@@ -463,7 +463,10 @@ def p4_1_breadboard():
     bb_res(ax, "c10", "c12", "Rd2 10k（47k/100k/拔掉）", dy=-0.55)
     bb_wire(ax, "a12", "T2-12", "gnd")
     bb_wire(ax, "e10", "f10", "sig")                        # 跨过中间槽
-    bb_wire(ax, "g10", "g16", "sig")                        # 分压点 → 3 脚
+    # 分压点 → 3 脚：g10→g16 画成拱形跳线，从 g11～g15 上方跨过，不接触中间各列
+    _arc_x = np.linspace(10, 16, 25)
+    _arc = [(x, 2.0 + 0.62 * (1 - ((x - 13.0) / 3.0) ** 2) ** 0.5) for x in _arc_x[1:-1]]
+    bb_wire(ax, "g10", "g16", "sig", via=_arc)
     # LM358：1～4 脚 f14～f17，8～5 脚 e14～e17
     bb_dip8(ax, 14)
     bb_wire(ax, "a14", "T1-14", "pos")                      # 8 脚 V+

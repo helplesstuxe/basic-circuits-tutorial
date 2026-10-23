@@ -393,7 +393,7 @@ class Breadboard:
             ax.text(col + k, 3.55, str(1 + k), color="white", fontsize=6, ha="center", va="center", zorder=8)
             ax.text(col + k, 4.45, str(8 - k), color="white", fontsize=6, ha="center", va="center", zorder=8)
 
-    def multi(self, name, hs, label, w=None, h=1.0, fc="#555555", at=None):
+    def multi(self, name, hs, label, w=None, h=1.0, fc="#555555", at=None, pinlab_below=False):
         """多脚元件（三极管、电位器、模块……）：hs = {脚名: 孔}；画一个方块并从方块拉线到各脚，脚名标在孔旁。"""
         self._pins(name, hs)
         pts = [self.xy(v) for v in hs.values()]
@@ -407,8 +407,11 @@ class Breadboard:
         ax.text(cx, cy, label, color="white", fontsize=7.5, ha="center", va="center", zorder=7)
         for k, (x, y) in zip(hs.keys(), pts):
             ax.plot([x, x], [y, cy - h / 2 if y < cy else cy + h / 2], color="0.3", lw=1.4, zorder=5)
-            ax.text(x + 0.18, y + 0.32 * (1 if y < cy else -1), k, fontsize=6.5, ha="left",
-                    va="bottom" if y < cy else "top", color="k", zorder=8)
+            if pinlab_below:       # 方块压得很扁时，脚名写在孔的右下方，不压方块
+                ax.text(x + 0.18, y - 0.18, k, fontsize=6.5, ha="left", va="top", color="k", zorder=8)
+            else:
+                ax.text(x + 0.18, y + 0.32 * (1 if y < cy else -1), k, fontsize=6.5, ha="left",
+                        va="bottom" if y < cy else "top", color="k", zorder=8)
 
     def probe(self, h, text, dx=0.35, dy=0.35, ha="left"):
         """测量点：在孔上画红紫色空心圈并写上名字。"""
@@ -420,9 +423,9 @@ class Breadboard:
     def note(self, x, y, text, **kw):
         self.ax.text(x, y, text, fontsize=8, **kw)
 
-    def legend(self, kinds=("pos", "gnd", "neg", "sig")):
+    def legend(self, kinds=("pos", "gnd", "neg", "sig"), names=None):
         from matplotlib.lines import Line2D
-        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
+        names = names or dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
         hs = [Line2D([], [], color=BB_WIRE[k], lw=2.4, label=names[k]) for k in kinds]
         self.ax.legend(handles=hs, loc="upper center", bbox_to_anchor=(0.5, 0.035), ncol=len(hs), fontsize=8,
                        frameon=False)
@@ -435,12 +438,12 @@ def bb07(mode):
     bb.wire(bb.ext((-2.0, 11.4), "9 V 电池 正极", "pos"), "tp1", "pos")
     bb.wire(bb.ext((-2.0, 10.0), "9 V 电池 负极（0 V）", "gnd"), "tn2", "gnd")
     # 电位器 RP：三只脚插 e3（端 1）、e4（滑片 W）、e5（端 3）
-    bb.multi("RP", {"1": "e3", "W": "e4", "3": "e5"}, "RP 1k", w=3.0)
+    bb.multi("RP", {"1": "e3", "W": "e4", "3": "e5"}, "RP 1k", w=2.6, h=0.5, at=(4.0, 5.5), pinlab_below=True)   # 扁方块只占 d、e 两行之间
     bb.wire("a3", "tp3", "pos")                 # 端 1 → +9 V
     bb.wire("a5", "tn5", "gnd")                 # 端 3 → 0 V
     if mode == "follower":
         # 2N3904 平面朝自己：E、B、C 从左到右插 e13、e14、e15
-        bb.multi("Q1", {"E": "e13", "B": "e14", "C": "e15"}, "2N3904", w=3.0)
+        bb.multi("Q1", {"E": "e13", "B": "e14", "C": "e15"}, "2N3904", w=2.6, h=0.5, at=(14.0, 5.5), pinlab_below=True)
         bb.wire("c4", "c14", "sig")             # 滑片 → 基极
         bb.wire("a15", "tp15", "pos")           # 集电极 → +9 V
         bb.two("RL", "a13", "tn13", "R", "RL", lpos=(0.35, 0.0))
@@ -454,7 +457,7 @@ def bb07(mode):
         assert bb.connected("RP.W", "RX.1") and bb.connected("RX.2", "tn1")
         bb.probe("c4", "滑片", dx=0.3, dy=0.3)
     assert bb.connected("RP.1", "tp1") and bb.connected("RP.3", "tn1") and not bb.connected("tp1", "tn1")
-    bb.legend(("pos", "gnd", "sig"))
+    bb.legend(("pos", "gnd", "sig"), names=dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", sig="信号线（绿）"))
     print(f"07 p4 面包板（{mode}）：连接检查通过，占用 {len(bb.used)} 个孔")
     return bb
 
