@@ -23,7 +23,7 @@
    - h_FE ≥ 25（V_CE 4 V、I_C 1 A），10–50（3 A）；V_BE(on) ≤ 1.8 V（3 A）。
 6. Semelab 2N3904 数据手册（Farnell 托管）<https://www.farnell.com/datasheets/1686115.pdf>
    - I_C 200 mA；P_D 350 mW（T_A 25 °C）；h_FE 100–300（V_CE 1 V、I_C 10 mA）。
-   - 注意：不同厂家的 2N3904 功耗额定不同（P2 引用的 onsemi 版本是 625 mW），本节点按更保守的 350 mW 举例。
+   - 注意：不同厂家的 2N3904 功耗额定不同。全书统一采用 onsemi 2N3903/2N3904 手册：TO-92、环境 25 °C 时 625 mW（每升高 1 °C 减 5 mW），θ_JA 200 °C/W；h_FE 最小值 10 mA 时 100、50 mA 时 60、100 mA 时 30（https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf）。本节点页面按 onsemi 625 mW 举例，Semelab 的 350 mW 只作对比记录。
 
 ## 推导 / 教程
 
@@ -45,6 +45,6 @@
 ## 常见错误（汇总）
 
 - 忘记 V_BE：想要 5 V，实际只有约 4.3 V（ADI 例题、Electronics Tutorials）。解决：把运放反馈取自发射极（AN-272）。
-- 管子功耗过大：P = V_CE × I_C；小管子 2N3904 只有 350 mW（Semelab），要换 TIP31 这类功率管并估算温升（θ_JA）。
+- 管子功耗过大：P = V_CE × I_C；小管子 2N3904 只有 625 mW（onsemi，环境 25 °C；Semelab 版只有 350 mW），要换 TIP31 这类功率管并估算温升（θ_JA）。
 - 单电源下输入低于约 0.7 V 时管子截止，输出削到 0（Wikipedia：输出只能从 V_BE 跟到 V+）。
 - 跟随器接长线 / 容性负载振荡（AN-4），加磁珠或基极串小电阻。基极电阻阻值已核实：AN-4（SNOA650B）第 6 页图 8 High Current Output Buffer 中 LM101 输出经 R1 = 470 Ω 接 2N2222/2N2905 互补管基极，正文 "R1 is included to eliminate parasitic oscillations from the output transistors"；同段建议集电极各串 50 Ω 限流。正文 page3 按此取 470 Ω，压降数字由 code/figs/07_figs.py 的 rout_rin_rb() 打印。
