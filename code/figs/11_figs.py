@@ -170,6 +170,21 @@ a2.set_title("(b) 电机启动：τ 太小会误跳闸", fontsize=10); a2.legend
 assert peaks[10e-3] > V_H and peaks[47e-3] < V_H and peaks[100e-3] < V_H
 fs.save(fig, N, "11_p3_2_inverse_time.png")
 
+# ---------- page3 练习 2 / 练习 4 的数字（不画图，只打印并核对） ----------
+t2 = np.arange(0, 0.5, dt)
+x50 = sim.I_NORM + (sim.I_STALL - sim.I_NORM) * np.exp(-t2 / 0.05)   # 启动冲击改为 50 ms 衰减
+ex2 = {}
+for tau in (47e-3, 100e-3):
+    y = sim.lowpass(x50 * sim.RS, dt, tau, 0.0)
+    ex2[tau] = (y.max(), t2[y.argmax()])
+    print(f"[数值] 练习 2：冲击衰减 50 ms，τ = {tau*1e3:.0f} ms 时峰值 {y.max()*1e3:.0f} mV（启动后 {t2[y.argmax()]*1e3:.0f} ms）")
+assert ex2[47e-3][0] > V_H and ex2[100e-3][0] < V_H
+assert abs(ex2[47e-3][0] - 0.220) < 0.005 and abs(ex2[100e-3][0] - 0.156) < 0.005
+x20 = sim.I_NORM + (sim.I_STALL - sim.I_NORM) * np.exp(-t2 / 0.02)
+i2t_extra = np.sum(x20**2 - sim.I_NORM**2) * dt
+print(f"[数值] 练习 4：启动冲击比稳定 1 A 多出的 I²t = {i2t_extra:.3f} A²s（公式 16 × 20 ms = 0.32 A²s）")
+assert abs(i2t_extra - 0.32) < 0.005
+
 # ---------- page3 参数表的数字：采样电阻怎么选 ----------
 print("[表] Rs/Ω | 门限 mV | 1 A 功耗 W | 跳闸电流时功耗 W | LM393 失调 5 mV 占门限 | 1 A 时电机少得 V")
 for rs in [0.01, 0.05, 0.1, 0.5]:
