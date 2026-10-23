@@ -1,6 +1,6 @@
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 # 15 有源滤波最小仿真：截止频率都约 1 kHz 的一阶有源低通和二阶 Sallen-Key 低通，比较幅频特性（输出幅度 / 输入幅度）。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数

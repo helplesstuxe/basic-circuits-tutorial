@@ -10,7 +10,7 @@
 
 ## 常见错误
 - 截止频率漏 2π：自己推导，R 会算大 2π 倍，fc 低到 159 Hz（图 15-p3-2）。
-- 运放带宽不足：闭环带宽约 GBW/增益（02 节已核实 LM358 GBW 1.2 MHz）。
+- 运放带宽不足：闭环带宽约 GBW/增益（02 节已核实 LM358B GBW 1.2 MHz）。
   - （本轮解决）经验法则出处改为 Microchip ADN003 https://ww1.microchip.com/downloads/en/DeviceDoc/adn003.pdf （已下载打开）：闭环带宽应至少为截止频率的 100 倍；Sallen-Key 增益 1：GBWP ≥ 100·fC；增益 > 1：GBWP ≥ 100·G·fC；MFB：GBWP ≥ 100·(−G + 1)·fC。
   - TI SBOA588 https://www.ti.com/lit/pdf/sboa588 （已打开）：许多滤波设计工具推荐 GBWP 100 倍；修正无源元件可降低余量；其例子 GBWP 仅为滤波带宽 2.5 倍时误差约 17%。
   - 15_figs.py 打印并断言 100 × 1 × 1 kHz = 100 kHz ≤ 1.2 MHz，100 × 10 × 100 kHz = 100 MHz。

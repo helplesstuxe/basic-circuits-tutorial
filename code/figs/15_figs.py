@@ -126,10 +126,10 @@ ax.set_ylim(-60, 8); ax.legend(loc="lower left", fontsize=8)
 fs.save(fig, N, "15_p3_2_missing_2pi.png")
 
 # ---------- 参数与调试篇引用的经验数字（无图，只打印并断言） ----------
-GBW_LM358 = 1.2e6                                       # LM358 增益带宽积
+GBW_LM358 = 1.2e6                                       # LM358B 增益带宽积
 need = lambda gain, fc: 100 * gain * fc                 # Microchip ADN003：Sallen-Key 要 GBW ≥ 100 × 倍数 × fc
 n1, n2 = need(1, 1e3), need(10, 100e3)
-print(f"GBW 经验要求：1 kHz 跟随型 {n1/1e3:.0f} kHz（LM358 {GBW_LM358/1e6:.1f} MHz 够用）；100 kHz × 10 倍 {n2/1e6:.0f} MHz（是 LM358 的 {n2/GBW_LM358:.0f} 倍）")
+print(f"GBW 经验要求：1 kHz 跟随型 {n1/1e3:.0f} kHz（LM358B {GBW_LM358/1e6:.1f} MHz 够用）；100 kHz × 10 倍 {n2/1e6:.0f} MHz（是 LM358B 的 {n2/GBW_LM358:.0f} 倍）")
 assert n1 == 100e3 and n1 <= GBW_LM358 and n2 == 100e6 and round(n2 / GBW_LM358) == 83
 drift = 30e-6 * 100                                     # C0G：±30 ppm/°C，温度变 100 °C
 print(f"C0G 温度变 100 °C：容量最多变 {drift*100:.1f}%")
