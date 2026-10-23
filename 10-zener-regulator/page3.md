@@ -1,6 +1,6 @@
 # 10 稳压管稳压 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：13 微分电路 · 直觉篇](../13-differentiator/page1.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md) · 后续：[08 线性稳压 · 直觉篇](../08-linear-regulator/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [动手实验篇](page4.md) · [下一页：动手实验篇](page4.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md) · 后续：[08 线性稳压 · 直觉篇](../08-linear-regulator/page1.md)
 
 > [!NOTE]
 > 本页的实验全部用可调直流电源（不超过 15 V）完成，不要直接接 06 那样由市电变压器供电的整流电源去做「故障实验」。如果实际电路的输入来自市电变压器，[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md) 开头的安全提示全部适用。
