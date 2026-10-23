@@ -1,7 +1,7 @@
 # 23 光耦隔离最小仿真：A 部分看 CTR 和 LED 电流 I_F 能不能把输出拉低；B 部分看上拉电阻 R_L 对上升沿的影响。
 # 电路：输入侧 12 V 信号 → 限流电阻 R_in → 光耦 LED → GND1；输出侧 +5 V → 上拉 R_L → 光敏三极管集电极（= 输出）→ 发射极 → GND2。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
@@ -51,7 +51,7 @@ ax.legend(loc="upper right", fontsize=7.5, ncol=2)
 fs.save(fig, "23", "23_p2_2_ctr.png")
 
 # ---------------- B 部分：上拉电阻越大，上升沿越慢 ----------------
-C_EFF = 1e-9                                       # 示意值：把光敏三极管结电容（含米勒效应）和导线电容合成 1 nF
+C_EFF = 1e-9                                       # 示意值：把光敏三极管自身的结电容和导线电容合成 1 nF
 TAU_FALL = 2e-6                                    # 示意值：LED 一亮，输出约 2 μs 内被拉低（下降沿快）
 f_sig, n_per = 5e3, 2                              # 5 kHz 方波，看两个周期
 t = np.linspace(0, n_per / f_sig, 4001)
