@@ -435,3 +435,165 @@ def fig_p4_2():
 
 if __name__ == "__main__":
     fig_p4_1(); fig_p4_2()
+# ======================= 第 8 轮补电路图（page1–page3：凡正文讲具体电路连接处，附近都要有电路图） =======================
+from schem import C as _C
+EMPH = _C["third"]      # 强调色（红紫）：新加的东西、要特别注意的元件或电流路径
+BAD = _C["bad"]         # 朱红：错误、超限
+
+
+def fig_p1_3():
+    """图 21-p1-3：N 沟道管放在高边（负载接地）——源极跟着负载升高，5 V 单片机开不到底。"""
+    with drawing() as d:
+        d += elm.Vdd().at((0, 6.4)).label("+12 V")
+        q = elm.NFet().theta(0).reverse().anchor("drain").at((0, 6.4)).label("Q1\nN 沟道", loc="right", ofst=(0.3, 0))
+        d += q
+        pin_labels(d, q)
+        d += elm.Dot().at(q.source)
+        d += elm.Lamp().endpoints(q.source, (0, q.source[1] - 2.4)).label("负载\n（一端固定接地）", loc="bottom")
+        d += elm.Ground().at((0, q.source[1] - 2.4))
+        g = q.gate
+        d += elm.Resistor().endpoints(g, (g[0] - 3.0, g[1])).label("$R_G$\n100 Ω", loc="top")
+        d += elm.SourceSquare().endpoints((g[0] - 3.0, g[1]), (g[0] - 3.0, g[1] - 2.4)).label("单片机引脚\n0 / 5 V", loc="bottom")
+        d += elm.Ground().at((g[0] - 3.0, g[1] - 2.4))
+        d += elm.Line().endpoints((q.source[0] + 0.15, q.source[1]), (q.source[0] + 2.0, q.source[1])).linestyle(":").color(BAD)
+        d += elm.Label().at((q.source[0] + 2.1, q.source[1] + 0.2)).label(
+            "源极 S 跟着负载往上升：\n要开到底，栅极须比 S 高几伏，\n即比 12 V 还高几伏",
+            fontsize=10, color=BAD, halign="left")
+    save_schem(d, "21", "21_p1_3_nmos_high_side.png")
+
+
+def fig_p2_4():
+    """图 21-p2-4：栅极充电的等效电路——R_G 给 C_GS 充电，C_GD 跨在栅极和漏极之间（米勒电容）。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Vdd().at((0, 8.4)).label("$V_{DD}$ +12 V")
+        d += elm.Resistor().endpoints((0, 8.4), (0, 5.8)).label("负载\n12 V / 3 A", loc="bottom")
+        d += elm.Line().endpoints((0, 5.8), (0, 4.6))
+        q = elm.NFet().theta(0).reverse().anchor("drain").at((0, 4.6)).label("Q1\nIRLZ44N", loc="right", ofst=(0.3, 0))
+        d += q
+        d += elm.Ground().at(q.source)
+        pin_labels(d, q)
+        g = q.gate
+        gx = g[0] - 1.2
+        d += elm.Line().endpoints(g, (gx, g[1]))
+        d += elm.Dot().at((gx, g[1]))
+        # 管内寄生电容（虚线、强调色）：C_GS 从栅极到源极（地），C_GD 从栅极到漏极
+        d += elm.Capacitor().endpoints((gx, g[1]), (gx, g[1] - 2.2)).color(EMPH).linestyle("--").label("$C_{GS}$", loc="bottom", color=EMPH)
+        d += elm.Ground().at((gx, g[1] - 2.2))
+        d += elm.Line().endpoints((gx, g[1]), (gx, 5.2)).color(EMPH).linestyle("--")
+        d += elm.Capacitor().endpoints((gx, 5.2), (-0.0, 5.2)).color(EMPH).linestyle("--").label("$C_{GD}$（米勒电容）", loc="top", color=EMPH)
+        d += elm.Dot().at((0, 5.2))
+        d += elm.Resistor().endpoints((gx - 3.0, g[1]), (gx - 5.5, g[1])).label("$R_G$ 100 Ω", loc="top")
+        d += (w := elm.Line().endpoints((gx - 3.0, g[1]), (gx, g[1])))
+        d += elm.CurrentLabelInline(direction="in", ofst=0.3).at(w).label("$I_G$", loc="top")
+        d += elm.SourceSquare().endpoints((gx - 5.5, g[1]), (gx - 5.5, g[1] - 2.2)).label("$V_{drv}$\n0 / 5 V", loc="bottom")
+        d += elm.Ground().at((gx - 5.5, g[1] - 2.2))
+        d += elm.Label().at((gx - 2.0, g[1] - 3.3)).label("虚线电容 = 管子内部的寄生电容（不是外接元件）", fontsize=9.5, color=EMPH)
+    save_schem(d, "21", "21_p2_4_gate_equiv.png")
+
+
+def _motor_off(d, x0, diode, title):
+    """关断瞬间的电机低边开关：Q1 画成断开的开关；diode=True 时线圈电流经 D1 续流。"""
+    top, mid = 6.0, 3.4
+    d += elm.Vdd().at((x0, top + 0.4)).label("+12 V")
+    d += elm.Line().endpoints((x0, top + 0.4), (x0, top))
+    d += elm.Dot().at((x0, top))
+    mot = elm.Motor().endpoints((x0, top), (x0, mid))
+    d += mot
+    d += elm.Label().at((x0 - 0.9, (top + mid) / 2)).label("电机 M\n（线圈）", fontsize=10.5, halign="right")
+    d += elm.Dot().at((x0, mid))
+    d += elm.Switch().endpoints((x0, mid), (x0, mid - 2.2))
+    d += elm.Label().at((x0 - 0.9, mid - 1.1)).label("Q1 刚关断\n（相当于断开）", fontsize=10.5, halign="right")
+    d += elm.Ground().at((x0, mid - 2.2))
+    if diode:
+        d += elm.Line().endpoints((x0, top), (x0 + 2.4, top))
+        dd = elm.Diode().endpoints((x0 + 2.4, mid), (x0 + 2.4, top)).color(EMPH).label("D1", loc="bottom", color=EMPH)
+        d += dd
+        d += elm.Line().endpoints((x0 + 2.4, mid), (x0, mid))
+        d += elm.LoopCurrent([elm.Line().at((x0, top)).to((x0 + 2.4, top)), dd,
+                              elm.Line().at((x0 + 2.4, mid)).to((x0, mid)), mot], direction="cw", pad=0.35).color(EMPH)
+        d += elm.Label().at((x0 + 0.9, mid - 1.3)).label("线圈电流绕小圈经 D1\n回到上端，漏极 ≈ 12.7 V", fontsize=10, color=EMPH, halign="left")
+    else:
+        d += elm.Label().at((x0 + 0.5, mid - 1.1)).label("漏极：线圈电流无路可走，\n电压冲到几千伏（理论值）\n→ 击穿 Q1", fontsize=10, color=BAD, halign="left")
+        d += elm.Line().endpoints((x0 + 0.1, mid), (x0 + 0.45, mid - 0.6)).linestyle(":").color(BAD)
+    d += elm.Label().at((x0, mid - 3.6)).label(title, fontsize=11)
+
+
+def fig_p2_5():
+    """图 21-p2-5：关断瞬间对比——不加续流二极管 / 加续流二极管 D1。"""
+    with drawing() as d:
+        _motor_off(d, 0.0, False, "(a) 不加续流二极管")
+        _motor_off(d, 9.0, True, "(b) 线圈两端反并 D1")
+    save_schem(d, "21", "21_p2_5_flyback_compare.png")
+
+
+def _gate_divider(d, x0, rgs, vgs, title, emph=False):
+    col = EMPH if emph else "black"
+    d += elm.Battery().up().at((x0, 0)).length(2.4)
+    d += elm.Label().at((x0 - 1.1, 1.2)).label("驱动\n5 V")
+    d += elm.Line().endpoints((x0, 2.4), (x0, 3.0))
+    d += elm.Resistor().endpoints((x0, 3.0), (x0 + 3.0, 3.0)).label("$R_G$ 100 Ω", loc="top")
+    d += elm.Dot().at((x0 + 3.0, 3.0))
+    d += elm.Resistor().endpoints((x0 + 3.0, 3.0), (x0 + 3.0, 0)).color(col).label(f"$R_{{GS}}$\n{rgs}", loc="bottom", color=col)
+    d += elm.Line().endpoints((x0 + 3.0, 0), (x0, 0))
+    d += elm.Ground().at((x0 + 1.5, 0))
+    d += elm.Line().endpoints((x0 + 3.0, 3.0), (x0 + 4.2, 3.0))
+    d += elm.Dot(open=True).at((x0 + 4.2, 3.0)).label(f"G：$V_{{GS}}$ ≈ {vgs}", "right", fontsize=10)
+    d += elm.Label().at((x0 + 2.2, -1.4)).label(title, fontsize=10.5)
+
+
+def fig_p3_4():
+    """图 21-p3-4：稳态时栅极不取电流，R_G 和 R_GS 构成分压器。"""
+    v1 = 5 * 10e3 / 10.1e3; v2 = 5 * 1e3 / 1.1e3
+    print(f"[数值] R_GS = 10 kΩ：V_GS = {v1:.2f} V；R_GS = 1 kΩ：V_GS = {v2:.2f} V")
+    assert abs(v1 - 4.95) < 0.01 and abs(v2 - 4.55) < 0.01
+    with drawing(fontsize=11) as d:
+        _gate_divider(d, 0.0, "10 kΩ", "4.95 V", "(a) 本教程取值：只损失 1%")
+        _gate_divider(d, 9.0, "1 kΩ", "4.55 V", "(b) 下拉换成 1 kΩ：损失约 9%", emph=True)
+    save_schem(d, "21", "21_p3_4_gate_divider.png")
+
+
+def _high_side_24(d, x0, fix):
+    """24 V 高边开关（练习 5）。fix=True 时在 Q2 漏极和 Q1 栅极之间串 10 kΩ（强调色）。"""
+    q1 = elm.PFet().theta(0).reverse().anchor("source").at((x0, 6)).label("Q1\nP 沟道", loc="right", ofst=(0.3, 0))
+    d += q1
+    d += elm.Label().at((x0 + 0.35, q1.drain[1] + 0.05)).label("栅源极限 ±20 V", fontsize=10, halign="left")
+    d += elm.Vdd().at((x0, 6)).label("+24 V")
+    d += elm.Lamp().endpoints(q1.drain, (q1.drain[0], q1.drain[1] - 2.4)).label("负载", loc="bottom")
+    d += elm.Ground().at((q1.drain[0], q1.drain[1] - 2.4))
+    g = q1.gate
+    gx = g[0] - 1.0
+    d += elm.Line().endpoints(g, (gx, g[1]))
+    d += elm.Dot().at((gx, g[1]))
+    d += elm.Resistor().endpoints((gx, g[1]), (gx, 6)).label("上拉\n10 kΩ", loc="top")
+    d += elm.Line().endpoints((gx, 6), (x0, 6))
+    d += elm.Dot().at((x0, 6))
+    yq = g[1] - 0.9
+    if fix:
+        d += elm.Resistor().endpoints((gx, g[1]), (gx, g[1] - 2.4)).color(EMPH).label("新加\n10 kΩ", loc="top", color=EMPH)
+        yq = g[1] - 2.4
+    else:
+        d += elm.Line().endpoints((gx, g[1]), (gx, yq))
+    q2 = elm.NFet().theta(0).reverse().anchor("drain").at((gx, yq)).label("Q2", loc="right", ofst=(0.2, 0))
+    d += q2
+    d += elm.Ground().at(q2.source)
+    gate_drive(d, q2, r_label="1 kΩ", src_label="单片机引脚\n0 / 3.3 V")
+    txt = "Q2 导通时：Q1 栅极 ≈ 12 V\n$V_{GS}$ ≈ −12 V，不超限" if fix else "Q2 导通时：Q1 栅极 ≈ 0 V\n$V_{GS}$ ≈ −24 V，超过 ±20 V"
+    d += elm.Label().at((x0 - 2.5, g[1] - 5.6 if fix else g[1] - 4.4)).label(txt, fontsize=10, color=EMPH if fix else BAD)
+
+
+def fig_p3_5():
+    """图 21-p3-5：练习 5——高边开关改到 24 V（其余与直觉篇高边开关相同）。"""
+    with drawing() as d:
+        _high_side_24(d, 0.0, False)
+    save_schem(d, "21", "21_p3_5_high_side_24v.png")
+
+
+def fig_p3_6():
+    """图 21-p3-6：练习 5 改法一——Q2 漏极与 Q1 栅极之间串 10 kΩ，与上拉分压。"""
+    with drawing() as d:
+        _high_side_24(d, 0.0, True)
+    save_schem(d, "21", "21_p3_6_high_side_fix.png")
+
+
+if __name__ == "__main__":
+    fig_p1_3(); fig_p2_4(); fig_p2_5(); fig_p3_4(); fig_p3_5(); fig_p3_6()
