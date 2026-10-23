@@ -45,6 +45,9 @@ for x, want, why in [(2.0, True, "松开启动按钮后仍吸合（自锁）"), 
     print(f"t = {x:.1f} s：KM {'吸合' if km_at(x) else '释放'} —— {why}")
     assert km_at(x) == want                        # 每条结论都断言一遍，参数改错会直接报错
 assert abs(t_on - 1.020) < 0.002                   # 吸合比按下晚 20 ms
+press = 0.4                                        # 图 17-p1-4 里按住启动按钮 0.4 s（1.0～1.4 s）
+print(f"[直觉篇] 按住 {press:.1f} s，是吸合时间 {T_PICK * 1e3:.0f} ms 的 {press / T_PICK:.0f} 倍")
+assert round(press / T_PICK) == 20
 
 fig, axs = plt.subplots(3, 1, figsize=(8, 5.2), sharex=True)
 axs[0].plot(t, supply * 100, **fs.LS["vin"], label="电源电压")
@@ -62,3 +65,12 @@ for x, s in [(1.0, "①"), (3.0, "②"), (4.0, "③"), (5.0, "④"), (6.0, "⑤"
     axs[2].text(x, 1.2, s, ha="center", fontsize=10)  # 七个事件的编号，正文逐一讲解
 fs.axlabels(axs[2], "时间", "s")
 fs.save(fig, "17", "17_p2_2_sim.png")
+
+# ---- 回差的来历（欧姆龙技术指南：F = μ0·S/2 ·(N·I/g)²）：吸力相同时，所需电流与气隙 g 成正比 ----
+def current_for_same_force(g_ratio):               # g_ratio = 新气隙 / 原气隙
+    return g_ratio                                  # (N·I/g)² 不变 ⇒ I ∝ g
+print(f"[回差] 气隙缩小到 1/2：维持同样吸力的电流（电压）只要原来的 {current_for_same_force(0.5):.1f} 倍")
+assert current_for_same_force(0.5) == 0.5
+print(f"[回差] 欧姆龙 MY4：吸合 ≤ 80%，释放 ≥ 10%；本仿真 {PICK:.0%} / {DROP:.0%}，在 TeSys D 范围（吸合 ≥ 85%，释放 30%～60%）内")
+assert PICK >= 0.85 and 0.30 <= DROP <= 0.60
+

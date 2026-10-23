@@ -28,3 +28,7 @@
 9. IEC 60028 摘录（cabledatasheet.com）https://www.cabledatasheet.com/general-cable-information/notes-from-iec-60028/
    - 20°C 标准退火铜体积电阻率 1/58 = 0.017241 Ω·mm²/m。用于 page3 控制线长度估算。
    - 线圈启动（吸合）与保持功率：TeSys D LC1D09–D25 50/60 Hz 线圈吸合 70 VA、保持 7 VA（见第 5 条同一页）。
+10. 欧姆龙《Technical Guide for General-purpose Relays》CSM_GeneralRelay_TG_E_9_1 https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf （本轮下载打开）
+   - 电磁铁吸力 F = φ²/(2μ0S)，φ = NI/Re；气隙磁阻占主导时 Re ≈ g/(μ0S) ⇒ F = (μ0S/2)·(NI/g)²，g 为铁芯与衔铁的气隙。→ 吸合后 g 变小，同样吸力所需电流 ∝ g，解释吸合门限高于释放门限（page2 原核实标记 已据此改写并删除标记）。
+   - MY4 DC 型：80% 额定电压以下即吸合、10% 以上才释放 → 目录写作"must-operate 80% max、must-release 10% min"。
+   - 17_sim.py 末尾打印并断言"气隙减半 ⇒ 电流减半"和 85%/45% 落在 TeSys D 范围内。

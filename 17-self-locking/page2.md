@@ -148,7 +148,7 @@ t = 9.5 s：KM 释放 —— 启动、停止一起按：停止优先
 - ⑥ 8 s 按启动，重新运行。
 - ⑦ 9 s 两个按钮一起按：停止优先，KM 释放。
 
-第 ④ 条和第 ⑤ 条放在一起看，就能明白为什么吸合门限比释放门限高：衔铁吸上以后磁路的气隙变小，维持它需要的电压比吸上它需要的低很多 [待核实]。这种"上去和下来的门限不一样"叫**回差**，参数篇会单独画出来。
+第 ④ 条和第 ⑤ 条放在一起看，就能明白为什么吸合门限比释放门限高：欧姆龙《[通用继电器技术指南](https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf)》给出电磁铁吸力的近似式 $F = \frac{\mu_0 S}{2}\left(\frac{NI}{g}\right)^2$ ，其中 $N$ 是线圈匝数， $I$ 是线圈电流， $S$ 是吸合面的面积， $g$ 是铁芯和衔铁之间的空气缝（气隙）。吸力和气隙的平方成反比：衔铁还没吸上时 $g$ 大，要很大的电流才拉得动；吸上以后 $g$ 变得很小，同样的吸力只需要小得多的电流。比如气隙缩小到原来的一半，维持同样吸力所需的电流也只要一半，线圈电压也就只要一半。所以维持吸合需要的电压比吸上它需要的低很多。同一份指南以 MY4 继电器为例：电压到额定值的 80% 以下就能吸合，降到 10% 以上就会释放，两个门限差得很远。本节仿真用的 85% 和 45% 落在 TeSys D 手册给的范围里（吸合 0.85 Uc 以上、释放 0.3～0.6 Uc），参数篇有出处。这种"上去和下来的门限不一样"叫**回差**，参数篇会单独画出来。
 
 ## 四、两种典型接错
 
@@ -204,4 +204,5 @@ HL1 和线圈并联，线圈有电它就亮： $HL_1 = K$ 。HL2 串的是 KM �
 - 自锁触点在手指离开按钮前已经闭合、失压保护：<https://opentextbc.ca/basicmotorcontrol/chapter/manual-circuit/>
 - 欠压释放、失压（零压）保护：<https://www.dgjs123.com/jcq/12029.htm>
 - 停止按钮用常闭、串联的原因（导线断了也会让电机停，属于故障安全设计）：<https://workforce.libretexts.org/Bookshelves/Electronics_Technology/Electric_Circuits_IV_-_Digital_Circuitry_(Kuphaldt)/06%3A_Ladder_Logic/6.05%3A_Fail-safe_Design>
+- 电磁铁吸力与气隙的关系、MY4 吸合 80% / 释放 10%（欧姆龙《通用继电器技术指南》）：<https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf>
 - 接触器吸合 / 释放电压和吸合时间（施耐德 TeSys D 手册）：<https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf>
