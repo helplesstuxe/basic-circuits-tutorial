@@ -489,3 +489,228 @@ axes[1].legend(loc="upper left", fontsize=8)
 axes[1].set_title("(b) 万用表直流挡读到的：平均值", fontsize=9)
 fs.save(fig, N, "25_p4_2_pwm_average.png")
 print(f"[数值] PWM {F_PWM:.0f} Hz，一个周期 {1e3 / F_PWM:.2f} ms")
+
+
+# ======================= 第 8 轮补电路图（page1–page3：凡正文讲具体电路连接处，附近都要有电路图） =======================
+from schem import C as _C
+EMPH = _C["third"]      # 强调色（红紫）：新加的元件、PWM 开关
+
+
+def _hb(d, x0, sw, title, path, color=ON, motor_label="M", names=("S1", "S2", "S3", "S4"), diodes=(), vtxt="+12 V"):
+    """H 桥（同 bridge()，但每个开关可单独写状态）。sw：名字 → "on" / "off" / "pwm"；diodes：画出体二极管并涂色的开关。"""
+    xl, xr = x0, x0 + 4.0
+    col = lambda k: color if k in path else "black"
+    d += elm.Line().endpoints((x0 + 2, 6.0), (xl, 6.0)).color(col("topL"))
+    d += elm.Line().endpoints((x0 + 2, 6.0), (xr, 6.0)).color(col("topR"))
+    d += elm.Vdd().at((x0 + 2, 6.0)).label(vtxt)
+    d += elm.Line().endpoints((xl, 0.0), (x0 + 2, 0.0)).color(col("botL"))
+    d += elm.Line().endpoints((xr, 0.0), (x0 + 2, 0.0)).color(col("botR"))
+    d += elm.Ground().at((x0 + 2, 0.0))
+    txt = {"on": "导通", "off": "断开", "pwm": "PWM\n20 kHz"}
+    for name, x, y1, y0, side in [(names[0], xl, 6.0, 3.0, "left"), (names[2], xl, 3.0, 0.0, "left"),
+                                  (names[1], xr, 6.0, 3.0, "right"), (names[3], xr, 3.0, 0.0, "right")]:
+        st = sw.get(name, "off")
+        c = col(name)
+        d += elm.Line().endpoints((x, y1), (x, y1 - 0.5)).color(c)
+        if st == "on":
+            d += elm.Line().endpoints((x, y1 - 0.5), (x, y0 + 0.5)).color(c)
+            d += elm.Dot(radius=0.08).at((x, y1 - 0.5)).color(c)
+            d += elm.Dot(radius=0.08).at((x, y0 + 0.5)).color(c)
+        elif st == "pwm":
+            d += elm.Switch().endpoints((x, y1 - 0.5), (x, y0 + 0.5)).color(EMPH)
+        else:
+            d += elm.Switch().endpoints((x, y1 - 0.5), (x, y0 + 0.5)).color(OFF)
+        d += elm.Line().endpoints((x, y0 + 0.5), (x, y0)).color(c)
+        dx = -0.45 if side == "left" else 0.45
+        if name in diodes:
+            xd = x + (-1.0 if side == "left" else 1.0)
+            d += elm.Line().endpoints((x, y1 - 0.25), (xd, y1 - 0.25)).color(color)
+            d += elm.Diode().endpoints((xd, y0 + 0.25), (xd, y1 - 0.25)).color(color)
+            d += elm.Line().endpoints((xd, y0 + 0.25), (x, y0 + 0.25)).color(color)
+            dx = -1.4 if side == "left" else 1.4
+        tc = EMPH if st == "pwm" else (c if st == "on" else OFF)
+        lab = f"{name}\n{txt[st]}" if name not in diodes else f"{name} 断开\n体二极管导通"
+        d += elm.Label().at((x + dx, (y1 + y0) / 2)).label(lab, halign="right" if side == "left" else "left",
+                                                          color=color if name in diodes else tc, fontsize=10)
+    d += elm.Dot().at((xl, 3.0)).label("A", loc="left", ofst=0.1)
+    d += elm.Dot().at((xr, 3.0)).label("B", loc="right", ofst=0.1)
+    d += elm.Motor().endpoints((xl, 3.0), (xr, 3.0)).color(col("motor")).label(motor_label, loc="top")
+    d += elm.Label().at((x0 + 2, -1.3)).label(title)
+
+
+def fig_p1_4():
+    """图 25-p1-4：调速：S1 以 20 kHz 开合（PWM），S4 一直闭合，S2、S3 断开。"""
+    with drawing(fontsize=11) as d:
+        _hb(d, 0, {"S1": "pwm", "S4": "on"}, "S1 做 PWM（每秒开合两万次），S4 一直闭合\n电机感受到的是平均电压",
+            {"topL", "motor", "S4", "botR"}, motor_label="M　电流 →")
+    save_schem(d, N, "25_p1_4_pwm.png")
+
+
+def _drv(d, x0=0.0, ilim=None, in1="IN1", in2="IN2"):
+    """DRV8871 接法：IN1、IN2 接单片机；VM 接 +12 V 并 0.1 µF 与储能电容 C_B；OUT1、OUT2 接电机；ILIM 经 R_ILIM 接地。"""
+    ic = elm.Ic(pins=[elm.IcPin(name="IN2", side="left"), elm.IcPin(name="IN1", side="left"),
+                      elm.IcPin(name="OUT2", side="right"), elm.IcPin(name="OUT1", side="right"),
+                      elm.IcPin(name="VM", side="top"),
+                      elm.IcPin(name="GND", side="bottom"), elm.IcPin(name="ILIM", side="bottom")],
+                pinspacing=1.2, edgepadW=1.0, size=(4.2, 3.4)).label("DRV8871", "center", fontsize=12, ofst=(0, -0.6)).right().at((x0, 0))
+    d += ic
+    A = ic.absanchors
+    xr = A["OUT1"][0] + 1.6
+    d += elm.Line().endpoints(A["OUT1"], (xr, A["OUT1"][1]))
+    d += elm.Line().endpoints(A["OUT2"], (xr, A["OUT2"][1]))
+    d += elm.Motor().endpoints((xr, A["OUT1"][1]), (xr, A["OUT2"][1])).label("M", "right")
+    yt = A["VM"][1] + 1.2
+    yb = A["GND"][1] - 2.6
+    xc1, xc2 = xr + 2.0, xr + 3.8
+    d += elm.Line().endpoints(A["VM"], (A["VM"][0], yt))
+    d += elm.Line().endpoints((A["VM"][0], yt), (xc2, yt))
+    d += elm.Vdd().at((A["VM"][0], yt)).label("+12 V（VM）")
+    d += elm.Dot().at((xc1, yt)); d += elm.Dot().at((xc1, yb))
+    d += elm.Capacitor().endpoints((xc1, yt), (xc1, yb))
+    d += elm.Label().at((xc1 - 0.55, (yt + yb) / 2)).label("0.1 µF", halign="right", fontsize=10)
+    d += elm.Capacitor(polar=True).endpoints((xc2, yt), (xc2, yb))
+    d += elm.Label().at((xc2 + 0.45, (yt + yb) / 2)).label("$C_B$\n储能", halign="left", fontsize=10)
+    d += elm.Line().endpoints(A["GND"], (A["GND"][0], yb))
+    d += elm.Line().endpoints((A["GND"][0], yb), (xc2, yb))
+    d += elm.Ground().at((A["GND"][0], yb))
+    ri = ilim or ("$R_{ILIM}$", "black")
+    d += elm.Resistor().endpoints(A["ILIM"], (A["ILIM"][0], yb)).color(ri[1])
+    d += elm.Dot().at((A["ILIM"][0], yb))
+    d += elm.Label().at((A["ILIM"][0] + 0.4, (A["ILIM"][1] + yb) / 2)).label(ri[0], halign="left", color=ri[1], fontsize=10)
+    xl = A["IN1"][0] - 1.8
+    for k, t in (("IN1", in1), ("IN2", in2)):
+        d += elm.Line().endpoints((xl, A[k][1]), A[k])
+        d += elm.Dot(open=True).at((xl, A[k][1])).label(t, "left")
+    d += elm.Label().at((xl - 0.3, A["IN1"][1] + 0.8)).label("来自单片机", halign="right", fontsize=10)
+    return A
+
+
+def fig_p2_4():
+    """图 25-p2-4：DRV8871 的接法。"""
+    with drawing(fontsize=11) as d:
+        _drv(d)
+    save_schem(d, N, "25_p2_4_drv8871.png")
+
+
+def fig_p2_5():
+    """图 25-p2-5：驱动、刹车、滑行三种状态的电流路径（Q 记号同图 25-p2-1）。"""
+    q = ("Q1", "Q2", "Q3", "Q4")
+    with drawing(fontsize=11) as d:
+        _hb(d, 0, {"Q1": "on", "Q4": "on"}, "(a) 驱动：Q1、Q4 导通\n电机两端为 $V_M$",
+            {"topL", "Q1", "motor", "Q4", "botR"}, names=q, motor_label="M　电流 →")
+        _hb(d, 8.5, {"Q3": "on", "Q4": "on"}, "(b) 刹车：Q3、Q4 导通\n电机两端被短接（慢衰减）",
+            {"Q3", "Q4", "motor", "botL", "botR"}, names=q, motor_label="M　电流 →")
+        _hb(d, 18.0, {}, "(c) 滑行：四管全关\n电流经 Q3、Q2 体二极管回灌电源（快衰减）",
+            {"topR", "motor", "botL"}, names=q, diodes=("Q2", "Q3"), motor_label="M　电流 →")
+    save_schem(d, N, "25_p2_5_drive_brake_coast.png")
+
+
+def fig_p3_3():
+    """图 25-p3-3：DRV8871 的 ILIM 引脚经 R_ILIM（32 kΩ，典型 2 A）接地。"""
+    print(f"[数值] R_ILIM = 32 kΩ → I_TRIP 典型 {64/32:.2f} A")
+    with drawing(fontsize=11) as d:
+        _drv(d, ilim=("$R_{ILIM}$\n32 kΩ\n（约 2 A）", EMPH))
+    save_schem(d, N, "25_p3_3_ilim.png")
+
+
+def fig_p3_4():
+    """图 25-p3-4：死区扫描的示意模型：同一侧上下两只管子 + 走线电感 20 nH，直通电流的路径。"""
+    with drawing(fontsize=11) as d:
+        x = 0.0
+        d += elm.Vdd().at((x, 9.0)).label(f"{sim.VM:.0f} V")
+        d += elm.Inductor2().endpoints((x, 9.0), (x, 7.4)).color(BAD)
+        d += elm.Label().at((x - 0.5, 8.2)).label(f"走线电感\n{sim.L_S*1e9:.0f} nH", halign="right", fontsize=10)
+        d += elm.Resistor().endpoints((x, 7.4), (x, 5.8)).color(BAD)
+        d += elm.Label().at((x - 0.5, 6.6)).label(f"走线与电源内阻\n{sim.R_S*1e3:.0f} mΩ", halign="right", fontsize=10)
+        d += elm.Switch().endpoints((x, 5.8), (x, 3.6)).color(BAD)
+        d += elm.Label().at((x - 0.5, 4.7)).label("上管（IRLZ44N，25 mΩ）\nt = 0 开始关断", halign="right", fontsize=10)
+        d += elm.Dot().at((x, 3.6))
+        d += elm.Line().endpoints((x, 3.6), (x + 2.4, 3.6)).linestyle("--").color(OFF)
+        d += elm.Label().at((x + 2.6, 3.6)).label("接电机（模型里不算）", halign="left", color=OFF, fontsize=10)
+        d += elm.Switch().endpoints((x, 3.6), (x, 1.4)).color(BAD)
+        d += elm.Label().at((x - 0.5, 2.5)).label("下管（IRLZ44N，25 mΩ）\n等一个死区再开始导通", halign="right", fontsize=10)
+        d += elm.Line().endpoints((x, 1.4), (x, 0.8)).color(BAD)
+        d += elm.Ground().at((x, 0.8))
+        d += elm.Label().at((x + 0.5, 6.6)).label("直通电流 ↓", halign="left", color=BAD, fontsize=11)
+        d += elm.Label().at((x, -0.6)).label(f"每只管子开 / 关过渡 {sim.T_SW*1e9:.0f} ns；两只管子同时半通时电流从电源直接流到地", fontsize=10)
+    save_schem(d, N, "25_p3_4_shoot_model.png")
+
+
+def fig_p3_5():
+    """图 25-p3-5：防反接二极管串在电源入口，回灌电流无处可去；补救：加大 C_B、在 V_M 上并 TVS 管。"""
+    with drawing(fontsize=11) as d:
+        d += elm.SourceV().endpoints((0, 0), (0, 3.0))
+        d += elm.Label().at((-0.7, 1.5)).label("电源", halign="right")
+        d += elm.Diode().endpoints((0, 3.0), (3.0, 3.0)).label("防反接二极管", "top")
+        d += elm.Line().endpoints((3.0, 3.0), (9.6, 3.0))
+        d += elm.Dot().at((4.6, 3.0)).label("$V_M$", "top")
+        for xx, e_, lab in ((4.6, elm.Capacitor(polar=True), "$C_B$\n加大、耐压留余量"), (8.0, elm.Zener(), "TVS 管")):
+            d += elm.Dot().at((xx, 0))
+            if xx == 8.0:
+                d += elm.Dot().at((xx, 3.0))
+                d += e_.endpoints((xx, 0), (xx, 3.0)).color(EMPH)
+            else:
+                d += e_.endpoints((xx, 3.0), (xx, 0)).color(EMPH)
+            d += elm.Label().at((xx + 0.85, 1.5)).label(lab, halign="left", color=EMPH, fontsize=10)
+        d += (hb := module("H 桥 + 电机", ("VM", "GND"), (), w=2.6).right().anchor("VM").at((11.2, 3.0)))
+        d += elm.Line().endpoints((9.6, 3.0), hb.absanchors["VM"])
+        g = hb.absanchors["GND"]
+        d += elm.Line().endpoints(g, (10.2, g[1])); d += elm.Line().endpoints((10.2, g[1]), (10.2, 0))
+        d += elm.Line().endpoints((0, 0), (10.2, 0))
+        d += elm.Ground().at((2.0, 0))
+        d += elm.Label().at((7.0, 4.3)).label("← 滑行时的回灌电流", color=BAD, fontsize=10)
+        d += elm.Label().at((1.5, 4.3)).label("二极管挡住，回不到电源", color=BAD, fontsize=10)
+    save_schem(d, N, "25_p3_5_backfeed.png")
+
+
+def fig_p3_6():
+    """图 25-p3-6：练习 4：24 V、8 A 电机用分立 H 桥时要自己补的部分（框图）。"""
+    with drawing(fontsize=11) as d:
+        d += (u := module("半桥驱动芯片\n（带自举）×2", ("PWM", "关断"), ("AH", "AL", "BH", "BL"), w=3.0).right().at((0, 0)))
+        U = u.absanchors
+        hb = elm.Ic(pins=[elm.IcPin(name=n, side="left") for n in ("BL", "BH", "AL", "AH")]
+                    + [elm.IcPin(name="B", side="right"), elm.IcPin(name="A", side="right"),
+                       elm.IcPin(name="VM", side="top"), elm.IcPin(name="低边", side="bottom")],
+                    pinspacing=1.0, edgepadW=1.2, size=(3.6, 5.0)).label("分立 H 桥\nQ1–Q4", "center", fontsize=11).right().anchor("AH").at((U["AH"][0] + 2.0, U["AH"][1]))
+        d += hb
+        H = hb.absanchors
+        for k in ("AH", "AL", "BH", "BL"):
+            d += elm.Line().endpoints(U[k], H[k])
+        d += elm.Line().endpoints(H["A"], (H["A"][0] + 1.2, H["A"][1]))
+        d += elm.Line().endpoints(H["B"], (H["B"][0] + 1.2, H["B"][1]))
+        d += elm.Motor().endpoints((H["A"][0] + 1.2, H["A"][1]), (H["A"][0] + 1.2, H["B"][1])).label("M\n8 A", "right")
+        yt = H["VM"][1] + 1.0
+        d += elm.Line().endpoints(H["VM"], (H["VM"][0], yt))
+        d += elm.Vdd().at((H["VM"][0], yt)).label("24 V")
+        xc = H["A"][0] + 4.0
+        d += elm.Line().endpoints((H["VM"][0], yt), (xc, yt))
+        ys = H["低边"][1] - 1.0
+        yg = ys - 2.6
+        d += elm.Line().endpoints(H["低边"], (H["低边"][0], ys))
+        d += elm.Dot().at((H["低边"][0], ys))
+        d += elm.Resistor().endpoints((H["低边"][0], ys), (H["低边"][0], yg)).color(EMPH)
+        d += elm.Label().at((H["低边"][0] + 0.4, ys - 1.0)).label("采样电阻", halign="left", color=EMPH, fontsize=10)
+        d += elm.Ground().at((H["低边"][0], yg))
+        d += elm.Capacitor(polar=True).endpoints((xc, yt), (xc, yg)).color(EMPH)
+        d += elm.Line().endpoints((H["低边"][0], yg), (xc, yg))
+        d += elm.Label().at((xc + 0.45, (yt + yg) / 2)).label("储能电容\n（更大、更靠近桥）", halign="left", color=EMPH, fontsize=10)
+        xs = H["低边"][0]
+        d += (op := elm.Opamp(leads=True).left().anchor("in2").at((xs - 1.2, ys)).color(EMPH))
+        d += elm.Line().endpoints((xs, ys), op.in2).color(EMPH)
+        d += elm.Line().endpoints(op.in1, (op.in1[0] + 0.4, op.in1[1])).color(EMPH)
+        d += elm.Line().endpoints((op.in1[0] + 0.4, op.in1[1]), (op.in1[0] + 0.4, op.in1[1] - 1.0)).color(EMPH)
+        d += elm.Dot(open=True).at((op.in1[0] + 0.4, op.in1[1] - 1.0)).color(EMPH)
+        d += elm.Label().at((op.in1[0] + 0.4, op.in1[1] - 1.45)).label("门限电压", color=EMPH, fontsize=10)
+        xk = U["关断"][0] - 0.7
+        d += elm.Line().endpoints(op.out, (xk, op.out[1])).color(EMPH)
+        d += elm.Line().endpoints((xk, op.out[1]), (xk, U["关断"][1])).color(EMPH)
+        d += elm.Line().endpoints((xk, U["关断"][1]), U["关断"]).color(EMPH)
+        d += elm.Label().at((op.center[0], op.center[1] - 1.5)).label("比较器：超限就关断", color=EMPH, fontsize=10)
+        d += elm.Line().endpoints((U["PWM"][0] - 2.0, U["PWM"][1]), U["PWM"])
+        d += elm.Dot(open=True).at((U["PWM"][0] - 2.0, U["PWM"][1])).label("单片机 PWM", "left")
+        d += elm.Label().at((U["AH"][0] + 1.0, U["AH"][1] + 0.4)).label("栅极（含死区）", fontsize=9)
+    save_schem(d, N, "25_p3_6_ex4_discrete.png")
+
+
+if __name__ == "__main__":
+    fig_p1_4(); fig_p2_4(); fig_p2_5(); fig_p3_3(); fig_p3_4(); fig_p3_5(); fig_p3_6()
