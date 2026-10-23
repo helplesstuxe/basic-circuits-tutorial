@@ -412,3 +412,183 @@ def fig_p4_1():
 
 if __name__ == "__main__":
     fig_p4_1()
+
+
+# ======================= 第 8 轮补电路图（page1–page3：凡正文讲具体电路连接处，附近都要有电路图） =======================
+from schem import C as _C
+EMPH = _C["third"]      # 强调色（红紫）：新加的元件、要特别注意的电流路径
+BAD = _C["bad"]         # 朱红：错误接法、超限
+
+
+def _relay_drv(d, x0, vcc="+5 V", pin="单片机引脚", rb="$R_B$ 680 Ω", q="Q1\n2N3904",
+               coil="继电器线圈\n70 Ω", diode="ok", dlab="D1", dcol=None, pulldown=None, ic=None):
+    """低边 NPN 继电器驱动的通用画法；返回关键点坐标。
+    diode: "ok" 正确（负极朝电源）/ "rev" 接反 / "zener" 串稳压管 / None 不加。
+    pulldown: None 或 (标注, 颜色)，画基极到地的下拉电阻。ic: 电源线上标的电流文字。"""
+    d += elm.Dot(open=True).at((x0, 0)).label(pin, "left")
+    d += elm.Resistor().endpoints((x0, 0), (x0 + 2.4, 0)).label(rb)
+    bx = x0 + 3.4
+    d += elm.Line().endpoints((x0 + 2.4, 0), (bx, 0))
+    d += (qq := elm.BjtNpn().anchor("base").at((bx, 0)).label(q, "right", ofst=(0.1, -0.2)))
+    cx = qq.collector[0]
+    d += elm.Line().endpoints(qq.emitter, (cx, -1.3))
+    d += elm.Ground().at((cx, -1.3))
+    if pulldown:
+        px = x0 + 2.9
+        d += elm.Dot().at((px, 0))
+        d += elm.Resistor().endpoints((px, 0), (px, -1.9)).color(pulldown[1]).label(pulldown[0], "bottom", color=pulldown[1])
+        d += elm.Ground().at((px, -1.9))
+    d += elm.Line().endpoints(qq.collector, (cx, 1.2))
+    d += elm.Dot().at((cx, 1.2))
+    d += Coil(label="").endpoints((cx, 1.2), (cx, 3.7))
+    d += elm.Label().at((cx - 0.5, 2.45)).label(coil, halign="right")
+    d += elm.Dot().at((cx, 3.7))
+    top = elm.Line().endpoints((cx, 3.7), (cx, 4.9))
+    d += top
+    if ic:
+        d += elm.CurrentLabelInline(direction="in", ofst=0.25).at(top).label(ic, "right")
+    d += elm.Vdd().at((cx, 4.9)).label(vcc)
+    dx = cx + 1.6
+    if diode in ("ok", "rev"):
+        col = dcol or "black"
+        d += elm.Line().endpoints((cx, 1.2), (dx, 1.2)).color(col)
+        dd = elm.Diode().endpoints((dx, 1.2), (dx, 3.7)).color(col)
+        if diode == "rev":
+            dd.reverse()
+        d += dd
+        d += elm.Label().at((dx + 0.45, 2.45)).label(dlab, halign="left", color=col)
+        d += elm.Line().endpoints((dx, 3.7), (cx, 3.7)).color(col)
+    elif diode == "zener":
+        col = dcol or "black"
+        d += elm.Line().endpoints((cx, 1.2), (dx, 1.2)).color(col)
+        d += elm.Diode().endpoints((dx, 1.2), (dx, 2.45)).color(col)
+        d += elm.Zener().endpoints((dx, 2.45), (dx, 3.7)).reverse().color(col)
+        d += elm.Label().at((dx + 0.35, 1.8)).label("D1", halign="left", color=col)
+        d += elm.Label().at((dx + 0.35, 3.1)).label(dlab, halign="left", color=col)
+        d += elm.Line().endpoints((dx, 3.7), (cx, 3.7)).color(col)
+    return dict(cx=cx, dx=dx, bx=bx, q=qq)
+
+
+def fig_p1_4():
+    """图 22-p1-4（错误示范）：单片机引脚直接接继电器线圈。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 3.0)).label("单片机引脚\n输出 5 V", "left")
+        d += elm.Line().endpoints((0, 3.0), (2.0, 3.0))
+        d += Coil(label="").endpoints((2.0, 3.0), (2.0, 0.5))
+        d += elm.Label().at((1.6, 1.75)).label("继电器线圈\n5 V / 70 Ω", halign="right")
+        d += elm.Ground().at((2.0, 0.5))
+        w = elm.Line().endpoints((2.0, 3.0), (2.0, 3.0))
+        d += elm.Label().at((2.5, 2.3)).label("线圈要 71.4 mA\n引脚绝对最大只有 40 mA", halign="left", color=BAD)
+        d += elm.Label().at((2.5, 1.0)).label("断开瞬间线圈挤出的高压尖峰\n直接打回引脚", halign="left", color=BAD)
+    print("[图 22-p1-4] 错误示范：引脚直接推 70 Ω 线圈，要 71.4 mA > 40 mA")
+    save_schem(d, P, "22_p1_4_pin_direct.png")
+
+
+def fig_p2_5():
+    """图 22-p2-5：推导一用到的电路与数值（R_B 680 Ω → I_B 6.32 mA；I_C(max) 68.6 mA；V_CE 0.2 V）。"""
+    ib = (5.0 - V_BE) / 680
+    assert abs(ib * 1e3 - 6.32) < 0.01 and abs(I_MAX * 1e3 - 68.6) < 0.05
+    with drawing(fontsize=11) as d:
+        r = _relay_drv(d, 0, pin="单片机引脚\n$V_{pin}$ = 5 V", ic=f"$I_C$ = {I_MAX*1e3:.1f} mA",
+                       coil="线圈 $R_{coil}$\n70 Ω")
+        d += elm.Label().at((1.2, -0.6)).label(f"→ $I_B$ = {ib*1e3:.2f} mA", fontsize=10, color=EMPH)
+        d += elm.Label().at((2.6, -0.9)).label("$V_{BE}$ = 0.7 V", fontsize=10, halign="right")
+        d += elm.Label().at((r["cx"] + 0.3, -0.85)).label("$V_{CE}$ = 0.2 V（饱和）", fontsize=10, halign="left")
+    print(f"[图 22-p2-5] I_B = {ib*1e3:.2f} mA，I_C(max) = {I_MAX*1e3:.1f} mA")
+    save_schem(d, P, "22_p2_5_rb_calc.png")
+
+
+def fig_p2_6():
+    """图 22-p2-6：关断瞬间 (a) 无二极管，线圈电流只能给杂散电容充电；(b) 有 D1，电流经 D1 绕回线圈。"""
+    with drawing(fontsize=11) as d:
+        r = _relay_drv(d, 0, pin="引脚\n5 V→0 V", rb="$R_B$", q="Q1\n关断", coil="线圈\n0.1 H", diode=None)
+        cx = r["cx"]
+        d += elm.Line().endpoints((cx, 1.2), (cx + 1.6, 1.2)).color(BAD)
+        d += elm.Capacitor().endpoints((cx + 1.6, 1.2), (cx + 1.6, -0.6)).color(BAD).linestyle("--")
+        d += elm.Label().at((cx + 1.95, 0.3)).label("杂散电容\n$C$ ≈ 100 pF", halign="left", color=BAD, fontsize=10)
+        d += elm.Ground().at((cx + 1.6, -0.6))
+        d += elm.Label().at((cx + 0.3, 6.5)).label("(a) 不加续流二极管：集电极冲到约 2173 V", halign="center", fontsize=11)
+        x1 = 10.0
+        r2 = _relay_drv(d, x1, pin="引脚\n5 V→0 V", rb="$R_B$", q="Q1\n关断", coil="线圈\n0.1 H", diode="ok",
+                        dlab="D1", dcol=EMPH)
+        c2, d2 = r2["cx"], r2["dx"]
+        d += elm.LoopCurrent([elm.Line().at((c2, 3.7)).to((d2, 3.7)), elm.Line().at((d2, 3.7)).to((d2, 1.2)),
+                              elm.Line().at((d2, 1.2)).to((c2, 1.2)), elm.Line().at((c2, 1.2)).to((c2, 3.7))],
+                             direction="ccw", pad=0.55).color(EMPH)
+        d += elm.Label().at((d2 + 0.35, 0.6)).label("线圈电流经 D1\n绕回线圈上端\n集电极钳在 5.7 V", halign="left", color=EMPH, fontsize=10)
+        d += elm.Label().at((c2 + 0.3, 6.5)).label("(b) 线圈两端反并 D1", halign="center", fontsize=11)
+    print(f"[图 22-p2-6] 无二极管尖峰估算 {VCC + I_MAX*np.sqrt(0.1/100e-12):.0f} V；有 D1 钳在 {VCC+0.7:.1f} V")
+    save_schem(d, P, "22_p2_6_off_compare.png")
+
+
+def fig_p2_7():
+    """图 22-p2-7：第六节低压实验电路——跳线代替单片机，触点只接 5 V + 1 kΩ + LED，万用表测 V_CE。"""
+    with drawing(fontsize=11) as d:
+        r = _relay_drv(d, 0, pin="跳线：接 5 V\n或接地", rb="$R_B$ 680 Ω\n（步骤 3 换 10 kΩ）",
+                       coil="SRD-05VDC\n线圈", dlab="1N4148")
+        cx, dx = r["cx"], r["dx"]
+        mx = dx + 1.9
+        d += elm.Line().endpoints((dx, 1.2), (mx, 1.2)).color(EMPH)
+        d += elm.MeterV().endpoints((mx, 1.2), (mx, -1.3)).color(EMPH).label("万用表\n测 $V_{CE}$", "right", color=EMPH)
+        d += elm.Line().endpoints((mx, -1.3), (cx, -1.3)).color(EMPH)
+        x2 = mx + 3.2
+        d += elm.Vdd().at((x2, 4.9)).label("+5 V")
+        d += ContactNO().endpoints((x2, 4.9), (x2, 3.1))
+        d += elm.Label().at((x2 + 0.6, 4.0)).label("K1 常开触点", halign="left")
+        d += elm.Resistor().endpoints((x2, 3.1), (x2, 1.1))
+        d += elm.Label().at((x2 + 0.6, 2.1)).label("1 kΩ", halign="left")
+        d += elm.LED().endpoints((x2, 1.1), (x2, -0.9))
+        d += elm.Label().at((x2 + 0.9, 0.1)).label("LED", halign="left")
+        d += elm.Ground().at((x2, -0.9))
+        d += elm.Label().at((x2 - 0.5, -2.0)).label("触点侧也只接 5 V 低压负载", halign="center", fontsize=10)
+    print("[图 22-p2-7] 实验：680 Ω、2N3904、1N4148、触点接 5 V + 1 kΩ + LED")
+    save_schem(d, P, "22_p2_7_lab.png")
+
+
+def fig_p3_3():
+    """图 22-p3-3：续流二极管 (a) 正确（负极接 +5 V）与 (b) 接反（导通即短路）。"""
+    with drawing(fontsize=11) as d:
+        _relay_drv(d, 0, pin="引脚", rb="$R_B$", q="Q1", coil="线圈", dlab="D1\n负极朝 +5 V")
+        d += elm.Label().at((3.9, 6.5)).label("(a) 正确：平时 D1 反向截止", halign="center")
+        x1 = 10.0
+        r = _relay_drv(d, x1, pin="引脚", rb="$R_B$", q="Q1\n导通", coil="线圈", diode="rev", dlab="D1 接反",
+                       dcol=BAD)
+        cx, dx = r["cx"], r["dx"]
+        d += elm.Arrow().endpoints((dx - 0.45, 3.4), (dx - 0.45, 1.5)).color(BAD)   # 短路电流：+5 V → D1 → 集电极
+        d += elm.Label().at((dx + 0.35, 0.4)).label("+5 V 经 D1 直接灌进\n集电极 → Q1 → 地：\n几乎短路", halign="left", color=BAD, fontsize=10)
+        d += elm.Label().at((x1 + 3.9, 6.5)).label("(b) 接反：Q1 一导通就短路", halign="center", color=BAD)
+    save_schem(d, P, "22_p3_3_diode_dir.png")
+
+
+def fig_p3_4():
+    """图 22-p3-4：基极到地加 10 kΩ 下拉，单片机复位（引脚悬空）时 Q1 保持截止。"""
+    with drawing(fontsize=11) as d:
+        _relay_drv(d, 0, pin="单片机引脚\n（复位时悬空）", pulldown=("新加下拉\n10 kΩ", EMPH))
+    print("[图 22-p3-4] 基极下拉 10 kΩ")
+    save_schem(d, P, "22_p3_4_pulldown.png")
+
+
+def fig_p3_5():
+    """图 22-p3-5：练习 2——3.3 V 单片机驱动 12 V / 400 Ω 继电器，两边共地。"""
+    ic = (12 - V_SAT) / 400
+    ib = (3.3 - V_BE) / 1500
+    assert abs(ic * 1e3 - 29.5) < 0.05 and abs(ib * 1e3 - 1.73) < 0.01
+    with drawing(fontsize=11) as d:
+        r = _relay_drv(d, 0, vcc="+12 V", pin="3.3 V 单片机引脚", rb="$R_B$ 1.5 kΩ",
+                       coil="SRD-12VDC\n线圈 400 Ω", ic=f"$I_C$ ≈ {ic*1e3:.1f} mA")
+        d += elm.Label().at((r["cx"], -2.6)).label("单片机的地和 12 V 电源的地接在一起（共地）", halign="center", fontsize=10)
+    print(f"[图 22-p3-5] 练习 2：I_C = {ic*1e3:.1f} mA，I_B = {ib*1e3:.2f} mA")
+    save_schem(d, P, "22_p3_5_ex2_12v.png")
+
+
+def fig_p3_6():
+    """图 22-p3-6：练习 4——12 V 继电器，续流二极管串稳压管 V_Z。"""
+    with drawing(fontsize=11) as d:
+        r = _relay_drv(d, 0, vcc="+12 V", pin="单片机引脚", rb="$R_B$", q="Q1\n2N3904\n$V_{CEO}$ = 40 V",
+                       coil="12 V 继电器\n线圈", diode="zener", dlab="Z1 稳压 $V_Z$ = ?")
+        d += elm.Label().at((r["dx"] + 0.35, 0.3)).label("关断时集电极\n钳在 12 + 0.7 + $V_Z$", halign="left", fontsize=10, color=EMPH)
+    save_schem(d, P, "22_p3_6_ex4_zener12.png")
+
+
+if __name__ == "__main__":
+    fig_p1_4(); fig_p2_5(); fig_p2_6(); fig_p2_7(); fig_p3_3(); fig_p3_4(); fig_p3_5(); fig_p3_6()
