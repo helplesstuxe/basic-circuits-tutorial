@@ -542,8 +542,11 @@ def p4_1_breadboard():
     bb_res(ax, "f24", "f29", "RL（后插）", dy=0.55)
     bb_wire(ax, "j29", "B2-29", "gnd")
     bb_probe(ax, "g24", "⑤", dx=-1.0, dy=0.0)
-    for x, text in ((6.5, "A 区：二极管"), (12.5, "B 区：三极管开关"), (23.5, "C 区：稳压管（9 V）")):
+    for x, text in ((6.5, "A 区：二极管"), (12.5, "B 区：三极管开关")):
         ax.text(x, 4.3, text, ha="center", va="center", fontsize=8, color="0.3")
+    # C 区在下半块：标签放在下半块 g 行第 18～22 列的空位上（同字号同颜色，底色同板子，盖住空孔，不压槽、不压元件）
+    ax.text(20.2, 2.0, "C 区：稳压管（9 V）", ha="center", va="center", fontsize=8, color="0.3", zorder=2,
+            bbox=dict(boxstyle="square,pad=0.15", fc="#f4f1ea", ec="none"))
     bb_legend(ax, [("pos", "红线：接电源正极"), ("gnd", "黑线：接地"), ("sig", "蓝线：控制信号")])
     print("[图 P2-p4-1] A：1k b3–b7，1N4148 阳极 c7、阴极 c10，测点① 第 7 列；"
           "B：控制线 a13→+5 V，RB b13–b17，2N3904 E d16 / B d17 / C d18，RC c18–c22，LED 阳极 b25、阴极 b22，"

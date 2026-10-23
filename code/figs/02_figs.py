@@ -428,7 +428,10 @@ def p4_1_breadboard():
     bb_wire(ax, "c15", "c16", "fb")                         # 另一半：7 脚接 6 脚
     bb_wire(ax, "a17", "T2-17", "gnd")                      # 另一半：5 脚接 M
     bb_wire(ax, "j17", "B1-17", "neg")                      # 4 脚 V−
-    bb_wire(ax, "g9", "g16", "sig")                        # 输入 → 3 脚
+    # 输入 → 3 脚：g9→g16 画成拱形跳线，从 g10～g15（含测点② 的 g12）上方跨过，不接触中间各列
+    _arc_x = np.linspace(9, 16, 29)
+    _arc = [(x, 2.0 + 0.62 * (1 - ((x - 12.5) / 3.5) ** 2) ** 0.5) for x in _arc_x[1:-1]]
+    bb_wire(ax, "g9", "g16", "sig", via=_arc)
     # 反相 ×10
     bb_block(ax, ["g3", "g4", "g5"], "", pins=["端", "滑", "端"], fc="#d7ccc8")
     _bb_label(ax, 4, 3.05, "电位器 10k")
@@ -452,8 +455,8 @@ def p4_1_breadboard():
     ax.text(0.2, 12.85, "一节 9 V：+ 接 V+ 轨，− 接 V− 轨（此时 V− 就是 0 V）；M 轨只接灰框里分压出来的中点，不接电池",
             ha="left", va="center", fontsize=8)
     bb_probe(ax, "h9", "①", dx=-0.6, dy=0.9)
-    bb_probe(ax, "g12", "②", dx=0.0, dy=1.25)
-    bb_probe(ax, "h14", "③", dx=-0.75, dy=0.6)
+    bb_probe(ax, "g12", "②", dx=0.55, dy=-0.5)     # 放在孔下方，引线不与上方拱形跳线交叉
+    bb_probe(ax, "h14", "③", dx=0.75, dy=0.55)
     bb_legend(ax, [("pos", "红：V+"), ("neg", "红紫：V−"), ("gnd", "黑：M"), ("sig", "蓝：输入"), ("fb", "蓝绿：反馈/短接")],
               x=5.4, y=-5.0)
     print("[图 02-p4-1] LM358 同相放大：1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚→V+，4 脚→V−；另一半 7、6 脚短接、5 脚→M；"

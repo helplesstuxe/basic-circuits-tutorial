@@ -663,7 +663,7 @@ def p4_1_breadboard():
         ax.text(x, 4.3, text, ha="center", va="center", fontsize=8, color="0.3")
     bb_legend(ax, [("pos", "红线：接 +5 V"), ("gnd", "黑线：接地")])
     print("[图 P1-p4-1] A：R1 b3–b7，R2 c7–c11，RL e7–e11，测点① 第 7 列；"
-          "B：SW c13/c14/c15，R d14–d18，C b18(+)–b19，测点② 第 18 列；"
+          "B：SW c13/c14/c15，R e14–e18，C b18(+)–b19，测点② 第 18 列；"
           "C：SB i18–i21，KA 线圈 g21/g24、COM g26、NO g28，1N4007 阴极 f21、阳极 f24，LED i28→i30，1 kΩ j30→地，测点③ 第 21 列")
     fs.save(fig, P, "P1_p4_1_breadboard.png")
 
