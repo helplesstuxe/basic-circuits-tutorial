@@ -478,3 +478,165 @@ def p4_2_transfer(dual, sing):
 if __name__ == "__main__":
     _res, _dual, _sing = p4_numbers()
     p4_1_breadboard(); p4_2_transfer(_dual, _sing)
+
+
+# ======================================================================================
+# 第 8 轮补电路图（page1–page3）：正文/例题/练习里描述了具体接法、但附近没有电路图的地方
+# ======================================================================================
+EMPH = C["third"]      # 新出现、需要强调的连线/元件
+BAD = C["bad"]         # 错误或不能用虚短的接法
+
+
+def _op(d, x, y, flip=False, sup=None):
+    """在 (x, y) 放一个运放（y 是两输入端的中线）；flip=True 时同相端在上。
+    返回 (op, 上输入脚, 下输入脚)。sup=(上电源文字, 下电源文字) 时画出电源引线。"""
+    op = elm.Opamp(leads=True)
+    if flip:
+        op = op.flip()
+    op = op.anchor("center").at((x, y))
+    d += op
+    pins = sorted([op.in1, op.in2], key=lambda p: -p[1])
+    if sup:
+        top_txt, bot_txt = sup
+        pt, pb = sorted([op.vd, op.vs], key=lambda p: -p[1])     # flip 以后电源脚上下也会对调
+        d += elm.Line().at(pt).up().length(0.45)
+        d += elm.Label().at((pt[0] + 0.25, pt[1] + 0.45)).label(top_txt, halign="left", fontsize=10)
+        d += elm.Line().at(pb).down().length(0.45)
+        if bot_txt == "GND":
+            d += elm.Ground().at((pb[0], pb[1] - 0.45))
+            d += elm.Label().at((pb[0] + 0.35, pb[1] - 0.3)).label("$V_{EE}$ 接地", halign="left", fontsize=10)
+        else:
+            d += elm.Label().at((pb[0] + 0.25, pb[1] - 0.45)).label(bot_txt, halign="left", fontsize=10)
+    return op, pins[0], pins[1]
+
+
+def _in(d, pin, text, r_txt=None, color="black", length=3.0):
+    """从输入脚向左引出：可选串一只电阻，末端是开路圆点 + 文字。返回输入脚旁的节点坐标。"""
+    node = (pin[0] - 0.5, pin[1])
+    d += elm.Line().endpoints(pin, node).color(color)
+    if r_txt:
+        d += elm.Resistor().endpoints((node[0] - length, node[1]), node).color(color).label(r_txt, color=color)
+        end = (node[0] - length, node[1])
+    else:
+        end = (node[0] - 1.5, node[1])
+        d += elm.Line().endpoints(end, node).color(color)
+    d += elm.Dot(open=True).at(end).label(text, "left")
+    return node
+
+
+def _gnd_pin(d, pin):
+    """把（下面那只）输入脚接地。"""
+    p = (pin[0] - 0.6, pin[1])
+    d += elm.Line().endpoints(pin, p)
+    d += elm.Ground().at(p)
+
+
+def _fb(d, node, op, side, r_txt, color="black", dy=1.6, ext=0.6):
+    """从输入节点经反馈电阻绕到输出端；side='top' 从上面绕，'bot' 从下面绕。"""
+    y = node[1] + (dy if side == "top" else -dy)
+    xo = op.out[0] + ext
+    d += elm.Dot().at(node)
+    d += elm.Line().endpoints(node, (node[0], y)).color(color)
+    d += elm.Resistor().endpoints((node[0], y), (xo, y)).color(color).label(r_txt, "top" if side == "top" else "bottom", color=color)
+    d += elm.Line().endpoints((xo, y), (xo, op.out[1])).color(color)
+    d += elm.Dot().at((xo, op.out[1]))
+
+
+def _out(d, op, text="$V_o$", length=1.4):
+    d += elm.Line().endpoints(op.out, (op.out[0] + length, op.out[1]))
+    d += elm.Dot(open=True).at((op.out[0] + length, op.out[1])).label(text, "right")
+
+
+def _r_to_gnd(d, node, r_txt, color="black"):
+    """分压电阻：从节点向左接一只电阻，再接地。"""
+    p = (node[0] - 2.6, node[1])
+    d += elm.Resistor().endpoints(node, p).color(color).label(r_txt, "bottom", color=color)
+    d += elm.Ground().at(p)
+
+
+# ---------- 图 P3-p1-4 负反馈与正反馈的实际接法 ----------
+print("[图 P3-p1-4] (a) V_i 接同相端、输出经 R_f / R_1 分压送回反相端；(b) 分压送回同相端（正反馈）")
+with drawing(fontsize=11) as d:
+    op, top, bot = _op(d, 4.0, 0.0, flip=True)
+    _in(d, top, "$V_i$")
+    _fb(d, (bot[0] - 0.5, bot[1]), op, "bot", "$R_f$", color=C["fb"])
+    d += elm.Line().endpoints(bot, (bot[0] - 0.5, bot[1]))
+    _r_to_gnd(d, (bot[0] - 0.5, bot[1]), "$R_1$", color=C["fb"])
+    _out(d, op)
+    d += elm.Label().at((3.0, -3.4)).label("(a) 负反馈：分压送回反相端（−）\n虚短成立")
+    op, top, bot = _op(d, 14.0, 0.0, flip=False)
+    _in(d, top, "$V_i$")
+    _fb(d, (bot[0] - 0.5, bot[1]), op, "bot", "$R_f$", color=BAD)
+    d += elm.Line().endpoints(bot, (bot[0] - 0.5, bot[1]))
+    _r_to_gnd(d, (bot[0] - 0.5, bot[1]), "$R_1$", color=BAD)
+    _out(d, op)
+    d += elm.Label().at((13.0, -3.4)).label("(b) 正反馈：同样的分压送回同相端（+）\n输出被推到电源，虚短不成立", color=BAD)
+save_schem(d, N, "P3_p1_4_feedback_circuits.png")
+
+# ---------- 图 P3-p2-4 有反馈（反相放大）与开环的接法 ----------
+print("[图 P3-p2-4] (a) 图 P3-p2-1 的反相放大；(b) 拿掉 R_f，V_i 直接接同相端、反相端接地")
+with drawing(fontsize=11) as d:
+    op, top, bot = _op(d, 5.0, 0.0, sup=("+15 V", "−15 V"))
+    n = _in(d, top, "$V_i$", "$R_1$ 10 kΩ")
+    _fb(d, n, op, "top", "$R_f$ 100 kΩ", dy=2.4)
+    _gnd_pin(d, bot)
+    _out(d, op)
+    d += elm.Label().at((4.0, -3.4)).label("(a) 有负反馈：反相放大 −10 倍")
+    op, top, bot = _op(d, 15.0, 0.0, flip=True, sup=("+15 V", "−15 V"))
+    _in(d, top, "$V_i$", color=BAD)
+    _gnd_pin(d, bot)
+    _out(d, op)
+    d += elm.Label().at((14.0, -3.4)).label("(b) 开环：$R_f$ 拿掉，$V_i$ 接同相端，反相端接地", color=BAD)
+save_schem(d, N, "P3_p2_4_open_vs_closed_circuit.png")
+
+# ---------- 图 P3-p2-5 例 3：反相放大接 5 V 单电源 ----------
+print("[图 P3-p2-5] 例 3：R_1 = 10 kΩ、R_f = 100 kΩ，V_CC = 5 V、V_EE 接地，V_i = +0.5 V")
+with drawing(fontsize=11) as d:
+    op, top, bot = _op(d, 5.0, 0.0, sup=("$V_{CC}$ = 5 V", "GND"))
+    n = _in(d, top, "$V_i$ = +0.5 V", "$R_1$ 10 kΩ")
+    _fb(d, n, op, "top", "$R_f$ 100 kΩ", dy=2.4)
+    _gnd_pin(d, bot)
+    _out(d, op)
+save_schem(d, N, "P3_p2_5_single_supply.png")
+
+# ---------- 图 P3-p3-3 第二节：−10 倍反相放大接三种电源 ----------
+print("[图 P3-p3-3] −10 倍反相放大（R_f = 10 R_1），电源分别取 ±15 V、±5 V、5 V 单电源")
+with drawing(fontsize=11) as d:
+    op, top, bot = _op(d, 5.0, 0.0, sup=("$V_{CC}$：+15 V / +5 V / +5 V", "$V_{EE}$：−15 V / −5 V / 0 V（接地）"))
+    n = _in(d, top, "$V_i$\n峰值 0.8 V", "$R_1$")
+    _fb(d, n, op, "top", "$R_f = 10\\,R_1$", dy=2.4, ext=3.6)
+    _gnd_pin(d, bot)
+    _out(d, op, length=4.4)
+save_schem(d, N, "P3_p3_3_supply_circuit.png")
+
+# ---------- 图 P3-p3-4 练习 2 的三种接法 ----------
+print("[图 P3-p3-4] 练习 2：(a) 开环；(b) 负反馈反相放大；(c) 100 kΩ 接回同相端（正反馈）")
+with drawing(fontsize=11) as d:
+    op, top, bot = _op(d, 5.0, 0.0, flip=True)
+    _in(d, top, "$V_i$", "10 kΩ")
+    _gnd_pin(d, bot)
+    _out(d, op)
+    d += elm.Label().at((4.0, -3.6)).label("(a)")
+    op, top, bot = _op(d, 16.0, 0.0)
+    n = _in(d, top, "$V_i$", "10 kΩ")
+    _fb(d, n, op, "top", "100 kΩ")
+    _gnd_pin(d, bot)
+    _out(d, op)
+    d += elm.Label().at((15.0, -3.6)).label("(b)")
+    op, top, bot = _op(d, 27.0, 0.0, flip=True)
+    n = _in(d, top, "$V_i$", "10 kΩ")
+    _fb(d, n, op, "top", "100 kΩ")
+    _gnd_pin(d, bot)
+    _out(d, op)
+    d += elm.Label().at((26.0, -3.6)).label("(c)")
+save_schem(d, N, "P3_p3_4_three_configs.png")
+
+# ---------- 图 P3-p3-5 练习 4：单电源反相放大，同相端接中点电压 ----------
+print("[图 P3-p3-5] 练习 4：5 V 单电源 ×10 反相放大，同相端接中点电压 V_M")
+with drawing(fontsize=11) as d:
+    op, top, bot = _op(d, 5.0, 0.0, sup=("$V_{CC}$ = 5 V", "GND"))
+    n = _in(d, top, "$V_i$（以 $V_M$ 为中心）", "$R_1$")
+    _fb(d, n, op, "top", "$R_f = 10\\,R_1$", dy=2.4)
+    _in(d, bot, "中点电压 $V_M$", color=EMPH)
+    _out(d, op)
+save_schem(d, N, "P3_p3_5_midpoint_bias.png")
