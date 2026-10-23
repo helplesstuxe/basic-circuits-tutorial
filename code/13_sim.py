@@ -83,10 +83,10 @@ ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
 LM358_LIB = os.path.abspath(os.path.join(ROOT, "spice", "models", "LMx58B_LM2904B.lib"))  # TI 官方 LM358B 模型（只读）
 
 
-def lm358(src, r1=None, cf=None, tstop=6e-3, tstep=0.5e-6):
+def lm358(src, r1=None, cf=None, tstop=6e-3, tstep=0.5e-6, vs=15):
     """用 ngspice + TI LM358B 官方模型（SLOM472C）跑一次 ±15 V 反相微分器的瞬态仿真。
     src：输入源的 SPICE 写法，如 "PULSE(-0.5 0.5 0 1m 1m 1n 2m)"（±0.5 V、500 Hz 三角波）；
-    r1 / cf 为 None 表示不加（理想微分器：只有 C 和 R_f）。返回 (t, v_out)。
+    r1 / cf 为 None 表示不加（理想微分器：只有 C 和 R_f）；vs 为正负电源电压（默认 ±15 V，page4 用 ±9 V）。返回 (t, v_out)。
     网表写在临时目录里，跑完即删，不在仓库里留文件。"""
     import shutil, subprocess, tempfile
     ng = shutil.which("ngspice") or "/usr/bin/ngspice"
@@ -94,8 +94,8 @@ def lm358(src, r1=None, cf=None, tstop=6e-3, tstep=0.5e-6):
     cf_txt = f"{cf:g}" if cf else "1e-18"         # 1e-18 F ≈ 不加 C_f
     cir = f"""* 13 微分器 + LM358B
 .include {LM358_LIB}
-VP vp 0 15
-VN vn 0 -15
+VP vp 0 {vs:g}
+VN vn 0 {-vs:g}
 VI in 0 {src}
 R1 in a {r1_txt}
 C1 a m {C:g}

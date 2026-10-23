@@ -1,6 +1,6 @@
 # 13 微分电路 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：07 射极跟随器 · 直觉篇](../07-emitter-follower/page1.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [12 积分电路 · 直觉篇](../12-integrator/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：13 微分电路 · 动手实验篇](page4.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [12 积分电路 · 直觉篇](../12-integrator/page1.md)
 
 ## 参数表：每个元件管什么
 
