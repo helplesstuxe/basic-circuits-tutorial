@@ -1,6 +1,6 @@
 # 05 精密整流 · 原理与实现篇
 
-[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P2 半导体入门](../P2-semiconductor-basics/page1.md)、[01 反相放大](../01-inverting-amp/page1.md)
+[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)
 
 ## 本页要解决的问题
 
