@@ -408,3 +408,238 @@ def fig_p4_2():
 
 
 fig_p4_1(); fig_p4_2()
+
+
+# ======================= 第 8 轮补电路图（page1–page3：凡正文讲具体电路连接处，附近都要有电路图） =======================
+from schem import *
+from schem import C as _C
+EMPH = _C["third"]      # 强调色（红紫）：新加的元件、测量点
+BAD = _C["bad"]         # 朱红：带市电 / 错误
+
+
+def _xf_bridge(d, title, v2, out, cap="滤波电容", ldo=None):
+    """工频变压器 + 桥式整流 + 电容滤波（可选再接 LDO）。初级画成朱红色（带市电，只画不做）。返回输出端 x。"""
+    d += (t := elm.Transformer(t1=4, t2=4).anchor("p2").at((0, 0)))
+    p1, p2, s1, s2 = (t.absanchors[k] for k in ("p1", "p2", "s1", "s2"))
+    xs = p1[0] - 3.6
+    d += elm.SourceSin().endpoints((xs, p2[1]), (xs, p1[1])).color(BAD)
+    d += elm.Label().at((xs - 0.7, 0.8)).label("220 V\n市电", halign="right", color=BAD)
+    d += elm.FuseIEC().endpoints((xs, p1[1]), (p1[0] - 0.4, p1[1])).color(BAD).label("保险丝", "top", color=BAD)
+    d += elm.Line().endpoints((p1[0] - 0.4, p1[1]), p1).color(BAD)
+    d += elm.Line().endpoints((xs, p2[1]), p2).color(BAD)
+    d += elm.Label().at((xs + 1.6, -0.9)).label("初级带市电：只画不做", color=BAD, fontsize=10)
+    barrier(d, 0.5, -2.9, 3.6, "隔离带（绕组之间）")
+    d += elm.Label().at((0.5, 4.6)).label(title, fontsize=11)
+    d += elm.Label().at((s1[0] + 0.25, 2.25)).label(v2, halign="left", fontsize=10)
+    xw = 4.4
+    d += (r := elm.Rectifier().theta(-90).anchor("W").at((xw, 3.0)))
+    A = r.absanchors
+    d += elm.Line().endpoints(s1, (s1[0], A["W"][1]))
+    d += elm.Line().endpoints((s1[0], A["W"][1]), A["W"])
+    d += elm.Line().endpoints(s2, (s2[0], A["E"][1]))
+    d += elm.Line().endpoints((s2[0], A["E"][1]), A["E"])
+    gy = -2.4
+    d += elm.Line().endpoints(A["S"], (A["S"][0], gy))
+    d += elm.Label().at((A["S"][0] - 0.3, A["S"][1] + 0.3)).label("−", fontsize=12)
+    d += elm.Label().at((A["N"][0] + 0.3, A["N"][1] + 0.35)).label("+", fontsize=12)
+    xc = A["N"][0] + 1.2
+    y = A["N"][1]
+    d += elm.Line().endpoints(A["N"], (xc, y))
+    d += elm.Dot().at((xc, y)); d += elm.Dot().at((xc, gy))
+    d += elm.Capacitor(polar=True).endpoints((xc, y), (xc, gy))
+    d += elm.Label().at((xc + 0.45, (y + gy) / 2)).label(cap, halign="left", fontsize=10)
+    xo = xc + 2.4
+    if ldo:
+        d += (u := module(ldo, ("IN", "GND"), ("OUT",), w=2.4).right().anchor("IN").at((xc + 2.6, y)))
+        d += elm.Line().endpoints((xc, y), u.absanchors["IN"])
+        g = u.absanchors["GND"]
+        d += elm.Line().endpoints(g, (xc + 1.6, g[1])); d += elm.Line().endpoints((xc + 1.6, g[1]), (xc + 1.6, gy))
+        d += elm.Dot().at((xc + 1.6, gy))
+        d += elm.Label().at((xc + 0.6, y + 0.45)).label(out, fontsize=10)
+        o = u.absanchors["OUT"]
+        xo = o[0] + 1.4
+        d += elm.Line().endpoints(o, (xo, o[1]))
+        d += elm.Dot(open=True).at((xo, o[1])).label("5 V", "right")
+    else:
+        d += elm.Line().endpoints((xc, y), (xo, y))
+        d += elm.Dot(open=True).at((xo, y)).label(out, "right")
+    d += elm.Line().endpoints((A["S"][0], gy), (xo, gy))
+    d += elm.Dot(open=True).at((xo, gy)).label("GND2", "right")
+    return xo
+
+
+def _nme(d, name="NME0505SC", vin="+5 V", src=True):
+    """隔离 DC-DC 模块：左 VIN/GND1，右 VOUT/GND2；左侧画 5 V 电源。返回四个引脚坐标。"""
+    d += (m := module(f"隔离 DC-DC 模块\n{name}", ("VIN", "GND1"), ("VOUT", "GND2"), w=3.4).right().at((0, 0)))
+    a = {k: m.absanchors[k] for k in ("VIN", "GND1", "VOUT", "GND2")}
+    xl = a["VIN"][0] - 2.4
+    d += elm.Line().endpoints((xl, a["VIN"][1]), a["VIN"])
+    d += elm.Line().endpoints((xl, a["GND1"][1]), a["GND1"])
+    if src:
+        d += elm.SourceV().endpoints((xl, a["GND1"][1]), (xl, a["VIN"][1]))
+        d += elm.Label().at((xl - 0.7, (a["VIN"][1] + a["GND1"][1]) / 2)).label(vin, halign="right")
+    xm = (a["VIN"][0] + a["VOUT"][0]) / 2
+    barrier(d, xm, a["GND2"][1] - 1.6, a["VIN"][1] + 2.3)
+    return a
+
+
+def fig_p1_3():
+    """图 24-p1-3：交流侧方案：220 V → 保险丝 → 变压器 → 桥式整流 → 电容滤波，约 15.57 V。"""
+    with drawing(fontsize=11) as d:
+        _xf_bridge(d, "变压器 220 V → 12 V", "12 V", f"约 {V_DC:.2f} V 直流")
+    print(f"[图 24-p1-3] 220 V → 12 V，整流滤波后约 {V_DC:.2f} V")
+    save_schem(d, P, "24_p1_3_xfmr_bridge.png")
+
+
+def fig_p1_4():
+    """图 24-p1-4：断电后万用表电阻挡测 GND1 与 GND2，应为开路。"""
+    with drawing(fontsize=11) as d:
+        a = _nme(d, vin="+5 V\n（断开）")
+        xr = a["VOUT"][0] + 2.0
+        d += elm.Line().endpoints(a["VOUT"], (xr, a["VOUT"][1]))
+        d += elm.Line().endpoints(a["GND2"], (xr, a["GND2"][1]))
+        d += elm.Resistor().endpoints((xr, a["VOUT"][1]), (xr, a["GND2"][1]))
+        d += elm.Label().at((xr + 0.45, a["VOUT"][1] - 0.5)).label("现场侧\n电路", halign="left")
+        xl = a["VIN"][0] - 2.4
+        y = a["GND2"][1] - 1.4
+        d += elm.Dot().at((xl, a["GND1"][1])); d += elm.Dot().at((xr, a["GND2"][1]))
+        d += elm.Line().endpoints((xl, a["GND1"][1]), (xl, y)).color(EMPH)
+        d += elm.Line().endpoints((xl, y), (-0.2, y)).color(EMPH)
+        d += elm.MeterOhm().endpoints((-0.2, y), (3.6, y)).color(EMPH)
+        d += elm.Line().endpoints((3.6, y), (xr, y)).color(EMPH)
+        d += elm.Line().endpoints((xr, y), (xr, a["GND2"][1])).color(EMPH)
+        d += elm.Label().at((1.7, y - 1.0)).label("万用表电阻挡：GND1 ↔ GND2，应开路", color=EMPH, fontsize=10)
+    save_schem(d, P, "24_p1_4_gnd_check.png")
+
+
+def fig_p2_5():
+    """图 24-p2-5：隔离 DC-DC 模块内部示意：开关切成约 110 kHz 方波 → 环形变压器 → 整流、电容滤波。"""
+    with drawing(fontsize=11) as d:
+        d += elm.SourceV().endpoints((-4.0, 0), (-4.0, 1.6))
+        d += elm.Label().at((-4.7, 0.8)).label("5 V", halign="right")
+        d += (sw := module("", ("+", "−"), ("A", "B"), w=3.0).right().anchor("+").at((-2.6, 1.6)))
+        S = sw.absanchors
+        d += elm.Label().at(((S["+"][0] + S["A"][0]) / 2, (S["+"][1] + S["−"][1]) / 2)).label("开关\n约 110 kHz", fontsize=10)
+        d += elm.Line().endpoints((-4.0, 1.6), S["+"])
+        d += elm.Line().endpoints((-4.0, 0), (-3.2, 0)); d += elm.Line().endpoints((-3.2, 0), (-3.2, S["−"][1])); d += elm.Line().endpoints((-3.2, S["−"][1]), S["−"])
+        d += (t := elm.Transformer(t1=4, t2=4).anchor("p1").at((S["A"][0] + 1.4, S["A"][1])))
+        T = t.absanchors
+        d += elm.Line().endpoints(S["A"], T["p1"])
+        d += elm.Line().endpoints(S["B"], (S["B"][0] + 0.7, S["B"][1])); d += elm.Line().endpoints((S["B"][0] + 0.7, S["B"][1]), (S["B"][0] + 0.7, T["p2"][1])); d += elm.Line().endpoints((S["B"][0] + 0.7, T["p2"][1]), T["p2"])
+        d += elm.Label().at(((T["p1"][0] + T["s1"][0]) / 2, T["p1"][1] + 0.8)).label("环形变压器", fontsize=10)
+        xd = T["s1"][0] + 2.2
+        d += elm.Diode().endpoints(T["s1"], (xd, T["s1"][1])).label("整流", "top")
+        d += elm.Dot().at((xd, T["s1"][1])); d += elm.Dot().at((xd, T["s2"][1]))
+        d += elm.Capacitor().endpoints((xd, T["s1"][1]), (xd, T["s2"][1]))
+        d += elm.Label().at((xd + 0.4, (T["s1"][1] + T["s2"][1]) / 2)).label("滤波", halign="left", fontsize=10)
+        d += elm.Line().endpoints(T["s2"], (xd + 2.0, T["s2"][1]))
+        d += elm.Line().endpoints((xd, T["s1"][1]), (xd + 2.0, T["s1"][1]))
+        d += elm.Dot(open=True).at((xd + 2.0, T["s1"][1])).label("VOUT 5 V", "right")
+        d += elm.Dot(open=True).at((xd + 2.0, T["s2"][1])).label("GND2", "right")
+        xm = (T["p1"][0] + T["s1"][0]) / 2
+        barrier(d, xm, T["p2"][1] - 1.6, T["p1"][1] + 1.4, "")
+        x0, x1, y0, y1 = -3.4, xd + 1.2, T["p2"][1] - 1.2, T["p1"][1] + 1.6
+        for p, q in (((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))):
+            d += elm.Line().endpoints(p, q).linestyle(":").color("#808080")
+        d += elm.Label().at(((x0 + x1) / 2, y1 + 0.4)).label("NME0505SC 内部（示意，整流只画一只二极管）", fontsize=10)
+    save_schem(d, P, "24_p2_5_module_inside.png")
+
+
+def fig_p2_6():
+    """图 24-p2-6：例 1：约 7.4 V 有效值的变压器（N1/N2 ≈ 29.9），整流滤波后约 9 V。"""
+    n = math.sqrt(2) * 220 / (9 + 1.4)
+    assert abs(n - 29.9) < 0.05
+    print(f"[图 24-p2-6] N1/N2 = {n:.1f}，次级 {220/n:.1f} V 有效值")
+    with drawing(fontsize=11) as d:
+        _xf_bridge(d, f"变压器 N1/N2 ≈ {n:.1f}", f"约 {220/n:.1f} V", "约 9 V 直流")
+    save_schem(d, P, "24_p2_6_ex1_9v.png")
+
+
+def fig_p2_7():
+    """图 24-p2-7：例 2：NME0512SC 输出 12 V，并 1.5 kΩ 假负载，再接现场侧 12 V 设备。"""
+    with drawing(fontsize=11) as d:
+        a = _nme(d, name="NME0512SC")
+        xr = a["VOUT"][0] + 2.0
+        for x, lab, c in ((xr, "假负载\n1.5 kΩ", EMPH), (xr + 2.9, "现场侧\n12 V 设备", "black")):
+            d += elm.Dot().at((x, a["VOUT"][1])); d += elm.Dot().at((x, a["GND2"][1]))
+            d += elm.Resistor().endpoints((x, a["VOUT"][1]), (x, a["GND2"][1])).color(c)
+            d += elm.Label().at((x + 0.65, (a["VOUT"][1] + a["GND2"][1]) / 2)).label(lab, halign="left", color=c, fontsize=10)
+        d += elm.Line().endpoints(a["VOUT"], (xr + 2.9, a["VOUT"][1]))
+        d += elm.Line().endpoints(a["GND2"], (xr + 2.9, a["GND2"][1]))
+        d += elm.Label().at((xr + 1.3, a["VOUT"][1] + 0.4)).label("12 V，最大 83 mA", fontsize=10)
+    save_schem(d, P, "24_p2_7_ex2_dummy.png")
+
+
+def fig_p2_8():
+    """图 24-p2-8：第七部分实验接线：5 V → 模块；输出端负载（270 Ω / 25 Ω 2 W），万用表测 VOUT 对 GND2。"""
+    with drawing(fontsize=11) as d:
+        a = _nme(d, vin="5 V 直流\n电源")
+        xr = a["VOUT"][0] + 2.0
+        xv = xr + 3.6
+        d += elm.Line().endpoints(a["VOUT"], (xv, a["VOUT"][1]))
+        d += elm.Line().endpoints(a["GND2"], (xv, a["GND2"][1]))
+        d += elm.Dot().at((xr, a["VOUT"][1])); d += elm.Dot().at((xr, a["GND2"][1]))
+        d += elm.Resistor().endpoints((xr, a["VOUT"][1]), (xr, a["GND2"][1])).color(EMPH)
+        d += elm.Label().at((xr + 0.65, (a["VOUT"][1] + a["GND2"][1]) / 2)).label("步骤 2：不接\n步骤 3：270 Ω\n步骤 4：25 Ω 2 W", halign="left", color=EMPH, fontsize=10)
+        d += elm.MeterV().endpoints((xv, a["VOUT"][1]), (xv, a["GND2"][1])).color(EMPH)
+        d += elm.Label().at((xv + 0.9, (a["VOUT"][1] + a["GND2"][1]) / 2)).label("测 VOUT\n对 GND2", halign="left", color=EMPH, fontsize=10)
+        # 步骤 5：电压挡测 VOUT 对 GND1（跨隔离带，读数无确定意义），虚线
+        xl = a["VIN"][0] - 2.4
+        yl = a["GND2"][1] - 1.8
+        xx = xv + 4.0
+        d += elm.Dot().at((xl, a["GND1"][1])); d += elm.Dot().at((xv, a["VOUT"][1]))
+        for p_, q_ in (((xl, a["GND1"][1]), (xl, yl)), ((xl, yl), (xx, yl)), ((xx, yl), (xx, yl + 0.4)), ((xx, a["VOUT"][1] + 0.6), (xx, a["VOUT"][1] + 1.0)), ((xx, a["VOUT"][1] + 1.0), (xv, a["VOUT"][1] + 1.0)), ((xv, a["VOUT"][1] + 1.0), (xv, a["VOUT"][1]))):
+            d += elm.Line().endpoints(p_, q_).linestyle("--").color("#808080")
+        d += elm.MeterV().endpoints((xx, yl + 0.4), (xx, a["VOUT"][1] + 0.6)).linestyle("--").color("#808080")
+        d += elm.Label().at((1.7, yl - 0.9)).label("步骤 5：电压挡测 VOUT 对 GND1（读数无确定意义）", fontsize=10, color="#4d4d4d")
+        d += elm.Label().at((1.7, yl - 1.7)).label("每次换电阻前先断电；实验期间输出端不接任何芯片", fontsize=10)
+    save_schem(d, P, "24_p2_8_lab.png")
+
+
+def fig_p3_3():
+    """图 24-p3-3：两种补救：(a) 输出端并 270 Ω 假负载；(b) 5.1 V 稳压管串 36 Ω 跨在输出上。"""
+    with drawing(fontsize=11) as d:
+        for k, x0 in enumerate((0.0, 13.0)):
+            d += (m := module("NME0505SC", ("VIN", "GND1"), ("VOUT", "GND2"), w=3.4).right().at((x0, 0)))
+            a = {q: m.absanchors[q] for q in ("VIN", "GND1", "VOUT", "GND2")}
+            for q in ("VIN", "GND1"):
+                d += elm.Line().endpoints((a[q][0] - 1.0, a[q][1]), a[q])
+                d += elm.Dot(open=True).at((a[q][0] - 1.0, a[q][1])).label("+5 V" if q == "VIN" else "GND1", "left")
+            xm = (a["VIN"][0] + a["VOUT"][0]) / 2
+            barrier(d, xm, a["GND2"][1] - 2.4, a["VIN"][1] + 1.9)
+            xr = a["VOUT"][0] + 1.6
+            xu = xr + 3.2
+            yt, yb = a["VOUT"][1], a["GND2"][1] - 1.6
+            d += elm.Line().endpoints(a["VOUT"], (xu, yt))
+            d += elm.Line().endpoints(a["GND2"], (a["GND2"][0] + 0.6, a["GND2"][1]))
+            d += elm.Line().endpoints((a["GND2"][0] + 0.6, a["GND2"][1]), (a["GND2"][0] + 0.6, yb))
+            d += elm.Line().endpoints((a["GND2"][0] + 0.6, yb), (xu, yb))
+            d += elm.Dot().at((xr, yt)); d += elm.Dot().at((xr, yb))
+            if k == 0:
+                d += elm.Resistor().endpoints((xr, yt), (xr, yb)).color(EMPH)
+                d += elm.Label().at((xr + 0.6, (yt + yb) / 2)).label("假负载\n270 Ω", halign="left", color=EMPH, fontsize=10)
+                d += elm.Label().at((x0 + 2.5, yt + 3.5)).label("(a) 假负载", fontsize=11)
+            else:
+                ym = (yt + yb) / 2
+                d += elm.Resistor().endpoints((xr, yt), (xr, ym)).color(EMPH)
+                d += elm.Zener().endpoints((xr, yb), (xr, ym)).color(EMPH)
+                d += elm.Label().at((xr + 0.6, (yt + ym) / 2)).label("36 Ω", halign="left", color=EMPH, fontsize=10)
+                d += elm.Label().at((xr + 0.6, (ym + yb) / 2)).label("5.1 V\n稳压管", halign="left", color=EMPH, fontsize=10)
+                d += elm.Label().at((x0 + 2.5, yt + 3.5)).label("(b) 稳压管钳位（1N4733A 类）", fontsize=11)
+            d += elm.Dot().at((xu, yt)); d += elm.Dot().at((xu, yb))
+            d += elm.Resistor().endpoints((xu, yt), (xu, yb))
+            d += elm.Label().at((xu + 0.6, (yt + yb) / 2)).label("现场侧电路\n4.7 mA", halign="left", fontsize=10)
+    save_schem(d, P, "24_p3_3_fixes.png")
+
+
+def fig_p3_4():
+    """图 24-p3-4：练习 4：220 V → 9 V 变压器 → 桥式整流 → 大电容 → 5 V LDO。"""
+    v = 9 * math.sqrt(2) - 1.4
+    print(f"[图 24-p3-4] 9 V 变压器整流后约 {v:.2f} V")
+    with drawing(fontsize=11) as d:
+        _xf_bridge(d, "变压器 220 V → 9 V", "9 V", "LDO 输入", cap="大电容", ldo="5 V LDO")
+    save_schem(d, P, "24_p3_4_ex4_ldo.png")
+
+
+if __name__ == "__main__":
+    fig_p1_3(); fig_p1_4(); fig_p2_5(); fig_p2_6(); fig_p2_7(); fig_p2_8(); fig_p3_3(); fig_p3_4()
