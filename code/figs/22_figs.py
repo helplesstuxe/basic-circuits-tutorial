@@ -152,5 +152,30 @@ def uln_schem():
     save_schem(d, P, "22_p3_2_uln2003.png")
 
 
+def zener_schem():
+    """图 22-p2-4：续流二极管串稳压管。两只管子"负极对负极"串联后反并在线圈两端。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 0)).label("单片机引脚", "left")
+        d += elm.Resistor().right().label("$R_B$")
+        d += (q := elm.BjtNpn().anchor("base").label("Q1", "right", ofst=(0.1, -0.2)))
+        d += elm.Line().down().at(q.emitter).length(0.6)
+        d += elm.Ground()
+        d += elm.Line().up().at(q.collector).length(0.5)
+        d += (jc := elm.Dot())
+        d += (kc := Coil(label="").up().length(3.0))
+        d += elm.Label().at((kc.center[0] - 1.3, kc.center[1])).label("继电器\n线圈")
+        d += (jt := elm.Dot())
+        d += elm.Line().up().length(0.6)
+        d += elm.Vdd().label("+5 V")
+        d += elm.Line().right().at(jc.center).length(1.8)
+        d += (dd := elm.Diode().up().length(1.5))
+        d += (zz := elm.Zener().up().length(1.5).reverse())
+        d += elm.Label().at((dd.center[0] + 1.5, dd.center[1])).label("D1 普通二极管\n（负极朝上）")
+        d += elm.Label().at((zz.center[0] + 1.5, zz.center[1])).label("Z1 稳压管 24 V\n（负极朝下）")
+        d += elm.Line().left().tox(jt.center)
+    print("[图 22-p2-4] 集电极 → D1（正极→负极）→ Z1（负极→正极）→ +5 V；钳位 5 + 0.7 + 24 = 29.7 V")
+    save_schem(d, P, "22_p2_4_zener.png")
+
+
 if __name__ == "__main__":
-    driver_schem(); current_bars(); two_states(); ic_ib(); rb_sweep(); uln_schem()
+    driver_schem(); current_bars(); two_states(); ic_ib(); rb_sweep(); uln_schem(); zener_schem()

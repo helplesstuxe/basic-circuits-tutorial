@@ -1,7 +1,7 @@
 # 22 三极管驱动继电器的最小仿真：A 部分扫基极电阻看三极管是否饱和；B 部分看线圈断电瞬间的电压尖峰。
 # 电路：+5V → 继电器线圈（70 Ω）→ 三极管集电极；发射极接地；单片机引脚 → 基极电阻 R_B → 基极；线圈两端反并续流二极管。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))  # 把 code/figs 加进搜索路径
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
@@ -45,6 +45,10 @@ ib, ic, vce, sat = drive(5.0, 680, BETA_MIN)       # 对照：正确取值时三
 print(f"[A] 对照 R_B = 680 Ω：三极管 {vce*ic*1e3:.1f} mW，线圈 {(VCC-vce)/VCC*100:.0f}% 额定")  # 打印对照结果
 print(f"[A] 半开（β = 100）的功耗是开到底的 {85.6/13.7:.1f} 倍")  # 两种状态的发热之比（数值取自上面两行）
 print(f"[A] 放大区最坏功耗（V_CE = V_CC/2 时）= {VCC**2/(4*R_COIL)*1e3:.0f} mW")  # 放大区里三极管功耗最大的情况
+v_scan = np.linspace(0, VCC, 501)                  # 验算：把 V_CE 从 0 扫到 V_CC，功耗 P = V_CE·(V_CC − V_CE)/R
+p_scan = v_scan * (VCC - v_scan) / R_COIL          # 这是一条开口向下的抛物线
+print(f"[A] 扫描验算：功耗最大在 V_CE = {v_scan[p_scan.argmax()]:.2f} V，为 {p_scan.max()*1e3:.0f} mW")  # 最高点在 V_CC/2
+assert abs(v_scan[p_scan.argmax()] - VCC / 2) < 0.02 and abs(p_scan.max() - VCC**2 / (4 * R_COIL)) < 1e-4
 
 # ---------------- B 部分：t = 0 时三极管关断，看集电极电压 ----------------
 L = 0.1                                            # 线圈电感 0.1 H（示意值，SRD 数据手册没有给）
@@ -84,6 +88,11 @@ t_z = t_b[np.argmax(i_z < I_REL)]                  # 加稳压管：电流掉到
 print(f"[B] 只有二极管：集电极钳在 {VCC+V_F:.1f} V，电流降到 {I_REL*1e3:.2f} mA 用 {t_d*1e3:.2f} ms")  # 打印二极管方案
 print(f"[B] 二极管 + 24 V 稳压管：集电极钳在 {VCC+V_F+V_Z:.1f} V，用 {t_z*1e3:.2f} ms（快 {t_d/t_z:.1f} 倍）")  # 打印稳压管方案
 assert VCC + V_F + V_Z < 40 and t_d / t_z > 5      # 关键结论：稳压管方案仍低于 40 V 耐压，而且释放快 5 倍以上
+tau = L / R_COIL                                   # 时间常数
+t_pure = tau * np.log(I0 / I_REL)                  # 若不计二极管压降：纯 RL 指数衰减的时间
+t_form = tau * np.log((I0 + V_F / R_COIL) / (I_REL + V_F / R_COIL))  # 计入 V_F：i = (I0 + V_F/R)·e^(−t/τ) − V_F/R
+print(f"[B] 公式验算：不计 V_F 要 {t_pure*1e3:.2f} ms；计入 V_F 为 {t_form*1e3:.2f} ms，和仿真的 {t_d*1e3:.2f} ms 一致")  # 二极管压降让电流掉得更快
+assert abs(t_form - t_d) < 2e-5 and t_pure > t_d
 
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])  # 图 22-p2-2：无二极管时的尖峰
 ax.plot(t_a * 1e6, vc_a, **{**fs.LS["bad"], "markevery": 1000}, label="集电极电压（无二极管）")  # 朱红色×：无二极管的集电极电压
@@ -120,18 +129,23 @@ print(f"[例 3] 55 Ω 线圈：I_C = {ic3*1e3:.1f} mA，I_C/30 = {ic3/30*1e3:.2f
 assert 2 <= ib3 / (ic3 / 30) <= 5                  # 裕量在 2 到 5 倍之间
 print(f"[例 2] 3.3 V 引脚若仍用 680 Ω：I_B = {(3.3-V_BE)/680*1e3:.2f} mA")  # 例 2 答案里的对照
 print(f"[例 3] 55 Ω 线圈仍用 680 Ω：裕量只有 {(5.0-V_BE)/680/(ic3/30):.1f} 倍")  # 例 3：旧电阻够不够
+print(f"[参数表] 手册：55 Ω、89.3 mA；5 V ÷ 55 Ω = {5/55*1e3:.1f} mA，5 V ÷ 89.3 mA = {5/0.0893:.1f} Ω（手册取整差异）")  # 参数表的注
 
-ic_e1 = (12.0 - V_SAT) / 400                       # 练习 1：SRD-12VDC 高灵敏型 400 Ω，3.3 V 单片机，β 最小按 60
+ic_e1 = (12.0 - V_SAT) / 400                       # 练习 2：SRD-12VDC 高灵敏型 400 Ω，3.3 V 单片机，β 最小按 60
 ib_e1 = (3.3 - V_BE) / 1500                        # 选 1.5 kΩ
-print(f"[练习 1] 12 V / 400 Ω：I_C = {ic_e1*1e3:.1f} mA，I_C/60 = {ic_e1/60*1e3:.2f} mA，1.5 kΩ 给 {ib_e1*1e3:.2f} mA（{ib_e1/(ic_e1/60):.1f} 倍）")  # 打印练习 1
+print(f"[练习 2] 12 V / 400 Ω：I_C = {ic_e1*1e3:.1f} mA，I_C/60 = {ic_e1/60*1e3:.2f} mA，1.5 kΩ 给 {ib_e1*1e3:.2f} mA（{ib_e1/(ic_e1/60):.1f} 倍）")  # 打印练习 2
 assert 2 <= ib_e1 / (ic_e1 / 60) <= 5              # 裕量在 2 到 5 倍之间
 
-vce_m = 1.99                                       # 练习 2：实测 V_CE = 1.99 V，R_B = 10 kΩ
+vce_m = 1.99                                       # 练习 3：实测 V_CE = 1.99 V，R_B = 10 kΩ
 ic_m = (VCC - vce_m) / R_COIL                      # 由线圈压降反推集电极电流
 ib_m = (5.0 - V_BE) / 10e3                         # 基极电流
-print(f"[练习 2] I_C = {ic_m*1e3:.1f} mA，I_B = {ib_m*1e3:.2f} mA，β ≈ {ic_m/ib_m:.0f}，线圈 {(VCC-vce_m)/VCC*100:.0f}%")  # 打印练习 2
-print(f"[练习 2] 线圈压降 {VCC-vce_m:.2f} V")  # 线圈两端的电压
+print(f"[练习 3] I_C = {ic_m*1e3:.1f} mA，I_B = {ib_m*1e3:.2f} mA，β ≈ {ic_m/ib_m:.0f}，线圈 {(VCC-vce_m)/VCC*100:.0f}%")  # 打印练习 3
+print(f"[练习 3] 线圈压降 {VCC-vce_m:.2f} V")  # 线圈两端的电压
 
-for vs, vsat in [(5.0, 0.9), (5.0, 1.1), (12.0, 1.1)]:  # 练习 4：ULN2003 的 V_CE(sat) 典型 0.9 V、最大 1.1 V（100 mA 时）
-    print(f"[练习 4] {vs:.0f} V 继电器、V_CE(sat) = {vsat} V：线圈拿到 {vs-vsat:.1f} V = {(vs-vsat)/vs*100:.0f}% 额定")  # 打印练习 4
-print(f"[练习 4] ULN2003 比单只三极管多压降 {0.9-V_SAT:.1f} V（典型）到 {1.1-V_SAT:.1f} V（最大）")  # 和 0.2 V 的饱和压降比
+for vs, vsat in [(5.0, 0.9), (5.0, 1.1), (12.0, 1.1)]:  # 练习 5：ULN2003 的 V_CE(sat) 典型 0.9 V、最大 1.1 V（100 mA 时）
+    print(f"[练习 5] {vs:.0f} V 继电器、V_CE(sat) = {vsat} V：线圈拿到 {vs-vsat:.1f} V = {(vs-vsat)/vs*100:.0f}% 额定")  # 打印练习 5
+print(f"[练习 5] ULN2003 比单只三极管多压降 {0.9-V_SAT:.1f} V（典型）到 {1.1-V_SAT:.1f} V（最大）")  # 和 0.2 V 的饱和压降比
+
+vz_max = 40.0 - 12.0 - V_F                         # 练习 4：12 V 线圈 + 2N3904（40 V），钳位 12 + V_F + V_Z 必须低于 40 V
+print(f"[练习 4] 12 V 继电器：V_Z < 40 − 12 − {V_F} = {vz_max:.1f} V；取 24 V 时钳在 {12+V_F+24:.1f} V，留 {40-(12+V_F+24):.1f} V 余量")  # 打印练习 4
+assert vz_max > 24 and 12 + V_F + 24 < 40
