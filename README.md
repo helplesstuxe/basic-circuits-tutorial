@@ -22,29 +22,29 @@ P1 → P3 → P2 → 17 → 01 → 21 → 22 → 02 → 05 → 14 → 18 → 03 
 
 | 编号 | 知识点 | 文件夹 | 市电安全 | 作者 | 状态 |
 |---|---|---|---|---|---|
-| P1 | 元件速成 | [P1-components-basics](P1-components-basics/) |  | 作者 D | 待写 |
-| P2 | 半导体入门 | [P2-semiconductor-basics](P2-semiconductor-basics/) |  | 作者 B | 待写 |
-| P3 | 运放入门 | [P3-opamp-basics](P3-opamp-basics/) |  | 作者 A | 待写 |
-| 01 | 反相放大 | [01-inverting-amp](01-inverting-amp/) |  | 作者 A | 待写 |
-| 02 | 同相放大 | [02-noninverting-amp](02-noninverting-amp/) |  | 作者 A | 待写 |
-| 03 | 电压跟随器 | [03-voltage-follower](03-voltage-follower/) |  | 作者 A | 待写 |
-| 04 | 差分放大 | [04-differential-amp](04-differential-amp/) |  | 作者 A | 待写 |
-| 05 | 精密整流 | [05-precision-rectifier](05-precision-rectifier/) |  | 作者 B | 待写 |
-| 06 | 桥式整流（二极管桥 + 运放全波） | [06-bridge-rectifier](06-bridge-rectifier/) | ⚠ | 作者 B | 待写 |
-| 07 | 射极跟随器 | [07-emitter-follower](07-emitter-follower/) |  | 作者 D | 待写 |
-| 08 | 线性稳压 | [08-linear-regulator](08-linear-regulator/) |  | 作者 B | 待写 |
-| 09 | 开关电源（两种拓扑） | [09-switching-power-supply](09-switching-power-supply/) | ⚠ | 作者 B | 待写 |
-| 10 | 稳压管稳压 | [10-zener-regulator](10-zener-regulator/) |  | 作者 B | 待写 |
-| 11 | 过载保护 | [11-overload-protection](11-overload-protection/) |  | 作者 C | 待写 |
-| 12 | 积分电路 | [12-integrator](12-integrator/) |  | 作者 C | 待写 |
-| 13 | 微分电路（理想 + 实用） | [13-differentiator](13-differentiator/) |  | 作者 C | 待写 |
-| 14 | 电压比较器 | [14-voltage-comparator](14-voltage-comparator/) |  | 作者 C | 待写 |
-| 15 | 有源滤波 | [15-active-filter](15-active-filter/) |  | 作者 A | 待写 |
-| 16 | 振荡器（文氏桥 + 方波） | [16-oscillator](16-oscillator/) |  | 作者 A | 待写 |
-| 17 | 自锁 | [17-self-locking](17-self-locking/) | ⚠ | 作者 D | 待写 |
-| 18 | 互锁 | [18-interlock](18-interlock/) | ⚠ | 作者 D | 待写 |
-| 19 | 星三角降压启动 | [19-star-delta-start](19-star-delta-start/) | ⚠ | 作者 D | 待写 |
-| 20 | 双控开关 | [20-two-way-switch](20-two-way-switch/) | ⚠ | 作者 D | 待写 |
+| P1 | 元件速成 | [P1-components-basics](P1-components-basics/) |  | 作者 D | 已完成 |
+| P2 | 半导体入门 | [P2-semiconductor-basics](P2-semiconductor-basics/) |  | 作者 B | 已完成 |
+| P3 | 运放入门 | [P3-opamp-basics](P3-opamp-basics/) |  | 作者 A | 已完成 |
+| 01 | 反相放大 | [01-inverting-amp](01-inverting-amp/) |  | 作者 A | 已完成 |
+| 02 | 同相放大 | [02-noninverting-amp](02-noninverting-amp/) |  | 作者 A | 已完成 |
+| 03 | 电压跟随器 | [03-voltage-follower](03-voltage-follower/) |  | 作者 A | 已完成 |
+| 04 | 差分放大 | [04-differential-amp](04-differential-amp/) |  | 作者 A | 已完成 |
+| 05 | 精密整流 | [05-precision-rectifier](05-precision-rectifier/) |  | 作者 B | 已完成 |
+| 06 | 桥式整流 | [06-bridge-rectifier](06-bridge-rectifier/) | ⚠ | 作者 B | 已完成 |
+| 07 | 射极跟随器 | [07-emitter-follower](07-emitter-follower/) |  | 作者 D | 已完成 |
+| 08 | 线性稳压 | [08-linear-regulator](08-linear-regulator/) |  | 作者 B | 已完成 |
+| 09 | 开关电源 | [09-switching-power-supply](09-switching-power-supply/) | ⚠ | 作者 B | 已完成 |
+| 10 | 稳压管稳压 | [10-zener-regulator](10-zener-regulator/) |  | 作者 B | 已完成 |
+| 11 | 过载保护 | [11-overload-protection](11-overload-protection/) |  | 作者 C | 已完成 |
+| 12 | 积分电路 | [12-integrator](12-integrator/) |  | 作者 C | 已完成 |
+| 13 | 微分电路 | [13-differentiator](13-differentiator/) |  | 作者 C | 已完成 |
+| 14 | 电压比较器 | [14-voltage-comparator](14-voltage-comparator/) |  | 作者 C | 已完成 |
+| 15 | 有源滤波 | [15-active-filter](15-active-filter/) |  | 作者 A | 已完成 |
+| 16 | 振荡器 | [16-oscillator](16-oscillator/) |  | 作者 A | 已完成 |
+| 17 | 自锁 | [17-self-locking](17-self-locking/) | ⚠ | 作者 D | 已完成 |
+| 18 | 互锁 | [18-interlock](18-interlock/) | ⚠ | 作者 D | 已完成 |
+| 19 | 星三角降压启动 | [19-star-delta-start](19-star-delta-start/) | ⚠ | 作者 D | 已完成 |
+| 20 | 双控开关 | [20-two-way-switch](20-two-way-switch/) | ⚠ | 作者 D | 已完成 |
 
 ### 扩展篇
 
@@ -52,12 +52,12 @@ P1 → P3 → P2 → 17 → 01 → 21 → 22 → 02 → 05 → 14 → 18 → 03 
 
 | 编号 | 知识点 | 文件夹 | 市电安全 | 作者 | 状态 |
 |---|---|---|---|---|---|
-| 21 | MOS 管开关 | [21-mosfet-switch](21-mosfet-switch/) |  | 作者 C | 待写 |
-| 22 | 三极管开关与继电器驱动 | [22-bjt-relay-driver](22-bjt-relay-driver/) | ⚠ | 作者 D | 待写 |
-| 23 | 光耦隔离 | [23-optocoupler](23-optocoupler/) | ⚠ | 作者 D | 待写 |
-| 24 | 隔离电源与数字隔离器 | [24-isolated-power](24-isolated-power/) | ⚠ | 作者 B | 待写 |
-| 25 | H 桥电机驱动 | [25-h-bridge](25-h-bridge/) |  | 作者 C | 待写 |
-| 26 | 上拉/下拉电阻与电平转换 | [26-pullup-level-shift](26-pullup-level-shift/) |  | 作者 C | 待写 |
+| 21 | MOS 管开关 | [21-mosfet-switch](21-mosfet-switch/) |  | 作者 C | 已完成 |
+| 22 | 三极管开关与继电器驱动 | [22-bjt-relay-driver](22-bjt-relay-driver/) | ⚠ | 作者 D | 已完成 |
+| 23 | 光耦隔离 | [23-optocoupler](23-optocoupler/) | ⚠ | 作者 D | 已完成 |
+| 24 | 隔离电源与数字隔离器 | [24-isolated-power](24-isolated-power/) | ⚠ | 作者 B | 已完成 |
+| 25 | H 桥电机驱动 | [25-h-bridge](25-h-bridge/) |  | 作者 C | 已完成 |
+| 26 | 上拉/下拉电阻与电平转换 | [26-pullup-level-shift](26-pullup-level-shift/) |  | 作者 C | 已完成 |
 
 ## 怎么运行代码
 
