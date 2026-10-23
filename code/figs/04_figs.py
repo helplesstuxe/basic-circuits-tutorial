@@ -170,3 +170,15 @@ fs.axlabels(ax, "信号源内阻 $R_s$", "Ω", "共模抑制比 CMRR", "dB")
 ax.set_ylim(20, 110); ax.legend(loc="upper right", fontsize=8)
 ax.set_xticks([1, 10, 100, 1e3, 1e4]); ax.set_xticklabels(["1", "10", "100", "1 k", "10 k"])
 fs.save(fig, N, "04_p3_2_source_resistance.png")
+
+# ---------- 正文里的其余数字（只打印 + 断言） ----------
+for k in (10, 1):                                         # 倍数 10（本节）和倍数 1（TI 手册的例子）
+    for e in (0.01, 0.001):
+        g = gains(10e3 * (1 + e), k * 10e3 * (1 - e), 10e3 * (1 - e), k * 10e3 * (1 + e))
+        c = 20 * np.log10(abs(g[0] / g[1])); c_est = 20 * np.log10((1 + k) / (4 * e))
+        print(f"倍数 {k}、误差 {e*100:g}%：四只最坏 CMRR {c:.1f} dB，估算 (1+k)/(4ε) 给 {c_est:.1f} dB")
+        assert abs(c - c_est) < 0.5
+assert round(20 * np.log10(2 / 0.04)) == 34 and round(20 * np.log10(2 / 0.004)) == 54
+g = gains(10.2e3, 100e3, 10e3, 100e3)                     # 练习 3：V1 一侧 200 Ω 内阻
+print(f"200 Ω 内阻：V2 路 {g[0]+g[1]/2:.2f}、V1 路 {g[0]-g[1]/2:.2f}，差分倍数（平均）{g[0]:.2f}，共模倍数（差）{g[1]:.3f}")
+assert abs(g[0] - 9.81) < 0.01 and abs(g[1] - 0.018) < 0.001
