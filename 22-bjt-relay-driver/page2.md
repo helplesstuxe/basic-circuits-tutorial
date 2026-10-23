@@ -45,7 +45,7 @@ $$V_{peak} \approx V_{CC} + I_0\sqrt{\frac{L}{C}}$$
 
 有二极管时，集电极被钳在 $V_{CC} + V_F$ ，线圈两端是 $-V_F$ ，电流按时间常数 $\tau = L/R$ 衰减。如果在二极管上再串一只稳压值 $V_Z$ 的稳压管，钳位电压变成 $V_{CC} + V_F + V_Z$ ，线圈两端的反向电压大得多， $di/dt$ 也就大得多，电流衰减更快。
 
-**最后代数**：数据手册没有给线圈电感，我们用 $L = 0.1\ \text{H}$ 、杂散电容 $C = 100\ \text{pF}$ 作示意值（[待核实]：不同继电器差别很大，但尖峰随 $\sqrt{L/C}$ 变，量级不会差太多）。 $I_0 = 68.6\ \text{mA}$ ，储能 0.235 mJ，估算尖峰 2173 V。2N3904 的 $V_{CEO}$ 只有 40 V——实际上三极管远在 2000 V 之前就被击穿了，尖峰的能量全打在它身上。
+**最后代数**：松乐 SRD 的数据手册没有给线圈电感。同样是 5 V 小继电器，欧姆龙 [G5V-1 数据手册](https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf) 的线圈参数表给的参考值是 0.15 H（衔铁未吸合）到 0.29 H（衔铁吸合），所以我们取同一量级的 $L = 0.1\ \text{H}$ 作示意值；杂散电容 $C = 100\ \text{pF}$ 也是示意值。不同继电器、不同电路板差别很大，但尖峰随 $\sqrt{L/C}$ 变，量级不会差太多。 $I_0 = 68.6\ \text{mA}$ ，储能 0.235 mJ，估算尖峰 2173 V。2N3904 的 $V_{CEO}$ 只有 40 V——实际上三极管远在 2000 V 之前就被击穿了，尖峰的能量全打在它身上。
 
 ## 四、仿真
 
@@ -290,4 +290,5 @@ $I_B = 2.6/470 = 5.53\ \text{mA}$ ，裕量 2.4 倍，在 2 到 5 倍之间，�
 
 - onsemi，2N3904 数据手册（ $h_{FE}$ 、 $V_{CE(sat)}$ 、 $V_{BE(sat)}$ 、40 V 耐压）：https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf
 - 松乐 SRD 系列继电器数据手册（线圈电阻、吸合 / 释放电压、释放时间）：https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html
+- 欧姆龙 G5V-1 数据手册（同类 5 V 小继电器的线圈电感参考值 0.15～0.29 H）：https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf
 - TE Connectivity，线圈抑制与继电器寿命（无抑制时数百上千伏、二极管让释放变慢、二极管串稳压管）：https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html

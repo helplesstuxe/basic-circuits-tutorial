@@ -36,7 +36,7 @@
 
 ## 二、220 V 侧的布线距离
 
-继电器触点切换 220 V 时，220 V 的走线和 5 V 的走线之间要有足够的**电气间隙**（空气中的直线距离）和**爬电距离**（沿板子表面的距离）。继电器本体做到了这一点：比如 Finder 62 系列功率继电器的手册写明，线圈和触点之间按 EN 60335-1 做加强绝缘，有 6 mm 电气间隙和 8 mm 爬电距离。可如果你在自己画的 PCB 上，把 220 V 的触点走线和单片机的走线挤在一起，继电器本体的绝缘就白做了。自制板子具体要留多少毫米，要按 IEC 60664-1 等安全标准，根据工作电压、污染等级来定 [待核实：本页不给具体数值]；常见做法是在两侧之间开槽、在丝印上画出隔离带、220 V 走线加宽并远离板边。
+继电器触点切换 220 V 时，220 V 的走线和 5 V 的走线之间要有足够的**电气间隙**（空气中的直线距离）和**爬电距离**（沿板子表面的距离）。继电器本体做到了这一点：比如 Finder 62 系列功率继电器的手册写明，线圈和触点之间按 EN 60335-1 做加强绝缘，有 6 mm 电气间隙和 8 mm 爬电距离。可如果你在自己画的 PCB 上，把 220 V 的触点走线和单片机的走线挤在一起，继电器本体的绝缘就白做了。自制板子具体要留多少毫米，要按 IEC 60664-1 等安全标准来定：TI 的应用文档《[按 IEC 60664 设计电路板绝缘](https://www.ti.com/lit/wp/sluaar5/sluaar5.pdf)》解释，电气间隙按包括瞬态过电压在内的最高峰值电压（过电压类别）来定，爬电距离按有效值电压、污染等级和板材的耐漏电起痕指数（CTI）来定。条件太多，本页不给具体毫米数；常见做法是在两侧之间开槽、在丝印上画出隔离带、220 V 走线加宽并远离板边。
 
 ## 三、故障排查表
 
@@ -103,3 +103,4 @@ $I_{C(max)} = (12 - 0.2)/400 = 29.5\ \text{mA}$ ，最低基极电流 $29.5/60 =
 - TE Connectivity，线圈抑制与继电器寿命：https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html
 - Microchip，ATmega48A/88A/168A/328/328P 数据手册：https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf
 - Finder，62 系列功率继电器样本：https://cdn.findernet.com/app/uploads/S62EN.pdf
+- TI，按 IEC 60664 设计电机驱动电路板绝缘（SLUAAR5）：https://www.ti.com/lit/wp/sluaar5/sluaar5.pdf
