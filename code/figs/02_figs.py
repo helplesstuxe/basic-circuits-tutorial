@@ -486,3 +486,107 @@ def p4_2_transfer(fam):
 if __name__ == "__main__":
     _r, _fam = p4_numbers()
     p4_1_breadboard(); p4_2_transfer(_fam)
+
+
+# ====================== 第 8 轮补电路图（page1–3） ======================
+EMPH = fs.C["third"]          # 新出现的元件用强调色
+BAD = fs.C["bad"]
+
+
+def _vres(d, p, q, text, side="right", color="black"):
+    """竖直电阻，标签放在电阻中部的左侧或右侧。"""
+    d += elm.Resistor().endpoints(p, q).color(color)
+    x = p[0] + (0.45 if side == "right" else -0.45)
+    d += elm.Label().at((x, (p[1] + q[1]) / 2)).label(text, halign="left" if side == "right" else "right", fontsize=11, color=color)
+
+
+def _non_core(d, r1="$R_1$", rf="$R_f$", r1_bottom=None):
+    """同相放大主体（+ 在上、− 在下）。R1 从反馈节点竖直向下；r1_bottom=None 时接地。
+    返回 (op, 同相端引线左端坐标, R1 下端坐标)。"""
+    op = elm.Opamp(leads=True).flip().at((0, 0)).anchor("in2")
+    d += op
+    j = (op.in1[0] - 0.5, op.in1[1])
+    m = (j[0], j[1] - 1.3)
+    xo = op.out[0] + 0.5
+    d += elm.Line().endpoints(op.in1, j)
+    d += elm.Line().endpoints(j, m)
+    d += elm.Dot().at(m)
+    d += elm.Resistor().endpoints(m, (xo, m[1])).label(rf, "bottom")
+    d += elm.Line().endpoints((xo, m[1]), (xo, op.out[1]))
+    d += elm.Dot().at((xo, op.out[1]))
+    yb = m[1] - 2.0 if r1_bottom is None else r1_bottom
+    _vres(d, m, (m[0], yb), r1, "right")
+    if r1_bottom is None:
+        d += elm.Ground().at((m[0], yb))
+    d += elm.Line().endpoints(op.out, (op.out[0] + 1.25, op.out[1]))
+    d += elm.Dot(open=True).at((op.out[0] + 1.25, op.out[1])).label("$V_o$", "right")
+    return op, op.in2, (m[0], yb)
+
+
+# ---------- 图 02-p2-4 例 3：同相加法器 ----------
+with drawing() as d:
+    op, p_in, _ = _non_core(d, "$R_1$ 10 kΩ", "$R_f$ 10 kΩ")
+    P = (p_in[0] - 1.0, p_in[1])
+    d += elm.Line().endpoints(P, p_in)
+    d += elm.Dot().at(P)
+    d += elm.Label().at((P[0] + 0.15, P[1] + 0.45)).label("同相端 = $(V_1+V_2)/2$", halign="center", fontsize=10)
+    d += elm.Resistor().endpoints((P[0] - 3.0, P[1]), P).label("10 kΩ", "bottom").color(EMPH)
+    d += elm.Dot(open=True).at((P[0] - 3.0, P[1])).label("$V_1$", "left")
+    d += elm.Line().endpoints(P, (P[0], P[1] - 2.0)).color(EMPH)
+    d += elm.Resistor().endpoints((P[0] - 3.0, P[1] - 2.0), (P[0], P[1] - 2.0)).label("10 kΩ", "bottom").color(EMPH)
+    d += elm.Dot(open=True).at((P[0] - 3.0, P[1] - 2.0)).label("$V_2$", "left")
+save_schem(d, N, "02_p2_4_noninv_summer.png")
+
+# ---------- 图 02-p3-3 交流耦合：同相端要有直流通路 ----------
+with drawing() as d:
+    for k, x0 in enumerate([0.0, 13.0]):
+        with d.hold():
+            d.move(x0, 0)
+            op = elm.Opamp(leads=True).flip().at((x0, 0)).anchor("in2")
+            d += op
+            j = (op.in1[0] - 0.5, op.in1[1]); m = (j[0], j[1] - 1.3); xo = op.out[0] + 0.5
+            d += elm.Line().endpoints(op.in1, j); d += elm.Line().endpoints(j, m); d += elm.Dot().at(m)
+            d += elm.Resistor().endpoints(m, (xo, m[1])).label("$R_f$", "bottom")
+            d += elm.Line().endpoints((xo, m[1]), (xo, op.out[1])); d += elm.Dot().at((xo, op.out[1]))
+            _vres(d, m, (m[0], m[1] - 2.0), "$R_1$", "right")
+            d += elm.Ground().at((m[0], m[1] - 2.0))
+            d += elm.Line().endpoints(op.out, (op.out[0] + 1.0, op.out[1]))
+            d += elm.Dot(open=True).at((op.out[0] + 1.0, op.out[1])).label("$V_o$", "right")
+            P = (op.in2[0] - 1.4, op.in2[1])
+            d += elm.Line().endpoints(P, op.in2)
+            d += elm.Capacitor().endpoints((P[0] - 2.4, P[1]), P).label("隔直电容")
+            d += elm.Dot(open=True).at((P[0] - 2.4, P[1])).label("$V_i$", "left")
+            if k == 0:
+                d += elm.Dot().at(P).color(BAD)
+                d += elm.Label().at((P[0] - 1.4, P[1] - 1.6)).label("同相端没有直流通路：\n电压慢慢漂，输出贴轨", fontsize=10, color=BAD)
+                d += elm.Label().at((x0 + 1.0, m[1] - 3.4)).label("(a) 只串电容", fontsize=11, color=BAD)
+            else:
+                d += elm.Dot().at(P)
+                _vres(d, P, (P[0], P[1] - 3.0), "100 kΩ", "left", EMPH)
+                d += elm.Ground().at((P[0], P[1] - 3.0)).color(EMPH)
+                d += elm.Label().at((x0 + 1.0, m[1] - 3.4)).label("(b) 加 100 kΩ 接地，给出直流通路", fontsize=11)
+save_schem(d, N, "02_p3_3_ac_coupling.png")
+
+# ---------- 图 02-p3-4 练习 4：单电源 2.5 V 偏置的同相放大 ----------
+with drawing() as d:
+    yB = -5.0                                            # 2.5 V 偏置点所在的横线
+    op, p_in, r1b = _non_core(d, "$R_1$", "$R_f$", r1_bottom=yB)
+    P = (p_in[0] - 1.4, p_in[1])
+    d += elm.Line().endpoints(P, p_in)
+    d += elm.Dot().at(P)
+    d += elm.Capacitor().endpoints((P[0] - 2.6, P[1]), P).label("$C$")
+    d += elm.Dot(open=True).at((P[0] - 2.6, P[1])).label("$V_i$", "left")
+    _vres(d, P, (P[0], yB), "100 kΩ", "left")
+    xd = P[0] - 4.2                                      # 两个相等电阻从 5 V 分出 2.5 V
+    d += elm.Line().endpoints((xd, yB), r1b).color(EMPH)
+    d += elm.Dot().at((P[0], yB)); d += elm.Dot().at((xd, yB))
+    _vres(d, (xd, yB + 2.4), (xd, yB), "$R$", "left", EMPH)
+    d += elm.Label().at((xd, yB + 2.75)).label("+5 V", fontsize=10)
+    _vres(d, (xd, yB), (xd, yB - 2.2), "$R$", "left", EMPH)
+    d += elm.Ground().at((xd, yB - 2.2))
+    d += elm.Dot().at((xd + 1.4, yB))
+    d += elm.Capacitor().endpoints((xd + 1.4, yB), (xd + 1.4, yB - 1.6)).color(EMPH)
+    d += elm.Label().at((xd + 1.85, yB - 0.8)).label("稳压电容", halign="left", fontsize=10, color=EMPH)
+    d += elm.Ground().at((xd + 1.4, yB - 1.6))
+    d += elm.Label().at(((P[0] + r1b[0]) / 2, yB - 0.45)).label("2.5 V 偏置点", fontsize=10, color=EMPH)
+save_schem(d, N, "02_p3_4_bias_exercise.png")
