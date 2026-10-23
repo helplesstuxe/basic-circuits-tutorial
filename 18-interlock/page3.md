@@ -15,9 +15,11 @@
 | 释放电压 | 额定电压的 0.3～0.6 倍（TeSys D） | 沿用 17 | 低于它衔铁释放，常闭触点复位 |
 | 闭合（吸合）时间 | 12～22 ms（TeSys D） | 20 ms | 决定新方向的接触器多久接通 |
 | 断开（释放）时间 | 4～19 ms（TeSys D） | 10 ms | 决定旧方向的接触器多久断开 |
-| 触点断开后电弧持续时间 | [待核实] | 未建模 | 电弧熄灭前电流其实还在流，实际空档比算出来的更小 |
+| 触点断开后电弧持续时间（燃弧时间） | 10～20 ms（西门子 3RT2037 例子，见表下说明） | 未建模 | 电弧熄灭前电流其实还在流，实际空档比算出来的更小 |
 
 表里最要紧的是后面两行：**换向时，一只接触器要断开、另一只要接通，二者谁快谁慢决定了会不会有一段"两只都闭合"的重叠**。
+
+燃弧时间这一行要多说两句。TeSys D 手册没有给燃弧时间，所以借用另一款接触器的数：西门子 [3RT2037-1AR60 数据表](https://support.industry.siemens.com/teddatasheet/?caller=SIOS&format=pdf&language=en&mlfbs=3RT2037-1AR60)（65 A、AC 400 V 线圈）写着断开延时 10～18 ms、燃弧时间 10～20 ms。为什么电弧能"烧"这么久？ABB 的《[技术应用文集第 26 册](https://library.e.abb.com/public/619009ca06434972a40b3479a1ed3c69/AP_Apparecchi-manovra-MT(EN)C_1VCP000735.pdf)》解释，触点分开后电弧让电流继续流，交流电的电弧要等到电流自然过零才熄灭。50 Hz 交流电每 $\frac{1}{2 \times 50}$ s = 10 ms 过零一次，所以燃弧时间通常是半个周期上下。本节仿真里双重互锁的空档是 20 ms，扣掉最长 20 ms 的燃弧，最坏只剩 0 ms。这就是为什么只靠"时间差"不够，还要机械互锁兜底。注意：3RT2037 和 TeSys D 不是同一个型号，这里只用来说明量级。
 
 ### 1. 只做按钮互锁时的换向空档
 
@@ -102,6 +104,8 @@ KM1 线圈回路里串的互锁常闭触点接成了 KM1 **自己的**常闭辅�
 
 ## 参考资料
 
+- 西门子 3RT2037-1AR60 数据表（断开延时 10～18 ms、燃弧时间 10～20 ms）：<https://support.industry.siemens.com/teddatasheet/?caller=SIOS&format=pdf&language=en&mlfbs=3RT2037-1AR60>
+- ABB 技术应用文集第 26 册（交流电弧在电流自然过零时熄灭）：<https://library.e.abb.com/public/619009ca06434972a40b3479a1ed3c69/AP_Apparecchi-manovra-MT(EN)C_1VCP000735.pdf>
 - TeSys D 接触器闭合时间、断开时间、释放电压：<https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf>
 - 只做按钮互锁时主触点熔焊造成相间短路；万用表检查控制回路的方法：<https://www.guifan.net/zhishi/2022/64180.html>
 - "叭哒"一声又掉下（自己锁自己）、手松就停（自锁接错）、调试时先断开电动机：<https://www.dgjs123.com/diandongji/1573.html>

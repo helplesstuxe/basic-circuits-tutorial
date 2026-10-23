@@ -24,4 +24,9 @@
 6. 沿用 17 的资料：Schneider TeSys D 目录（闭合时间 12–22 ms，断开时间 4–19 ms；释放电压 0.3–0.6 Uc）https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf
 
 仿真用的示意参数：吸合 20 ms（12–22 ms 之内）、释放 10 ms（4–19 ms 之内）。
-[待核实]：触点分开后电弧持续多久（会进一步缩短"空档"）——没有找到可引用的具体数值，页面里只定性提一句并标注。
+7. （本轮补）西门子 3RT2037-1AR60 数据表 https://support.industry.siemens.com/teddatasheet/?caller=SIOS&format=pdf&language=en&mlfbs=3RT2037-1AR60 （已打开）
+   - closing delay at AC 10…80 ms；opening delay at AC 10…18 ms；arcing time 10…20 ms；带 IEC 60947-4-1 镜像触点。
+   - 与 TeSys D 不是同一型号，page3 只借用量级并注明。
+8. （本轮补）ABB Technical Application Papers No. 26 https://library.e.abb.com/public/619009ca06434972a40b3479a1ed3c69/AP_Apparecchi-manovra-MT(EN)C_1VCP000735.pdf （已下载打开）
+   - 触点分开后电弧使电流继续流一段时间；断路器在交流电流自然过零时熄弧；交流电流每周期过零两次。→ 50 Hz 半周期 10 ms，与燃弧 10～20 ms 一致。
+原核实标记（电弧持续时间）已据第 7、8 条解决并删除；18_sim.py 打印并断言 10 ms 半周期和"20 ms 空档 − 20 ms 燃弧 = 0 ms"。

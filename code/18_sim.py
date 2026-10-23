@@ -68,6 +68,11 @@ sw = np.argmax(d2[2000:]) + 2000                   # 双重互锁：2 s 按 SB3 
 off = np.argmin(d1[2000:]) + 2000                  # 双重互锁：KM1 释放的下标
 print(f"[双重互锁] 2.000 s 按 SB3：KM1 在 {t[off]:.3f} s 释放，KM2 在 {t[sw]:.3f} s 吸合，中间空档 {(t[sw] - t[off]) * 1e3:.0f} ms")  # 打印换向空档
 assert t[sw] > t[off]                              # 先断后通
+gap_ms = (t[sw] - t[off]) * 1e3                    # 双重互锁的换向空档（ms）
+half = 1 / (2 * 50) * 1e3                          # 50 Hz 交流电相邻两次过零的间隔（ms）
+ARC_MIN, ARC_MAX = 10, 20                          # 西门子 3RT2037-1AR60 数据表：燃弧时间 10～20 ms
+print(f"[燃弧] 50 Hz 每 {half:.0f} ms 过零一次；空档 {gap_ms:.0f} ms 扣掉燃弧 {ARC_MIN}～{ARC_MAX} ms，剩 {gap_ms - ARC_MAX:.0f}～{gap_ms - ARC_MIN:.0f} ms")
+assert round(half) == 10 and round(gap_ms) == 20 and round(gap_ms - ARC_MAX) == 0
 
 fig, axs = plt.subplots(4, 1, figsize=(9.5, 5.6), sharex=True)  # 四行：按钮、不互锁、接触器互锁、双重互锁
 axs[0].plot(t, sb2 * 0.8 + 2.0, **fs.LS["fb"], label="SB2 正转")       # 正转按钮
