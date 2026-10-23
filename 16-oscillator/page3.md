@@ -1,6 +1,6 @@
 # 16 振荡器 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：09 开关电源 · 直觉篇](../09-switching-power-supply/page1.md) · 前置节点：[14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)、[15 有源滤波 · 直觉篇](../15-active-filter/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：16 振荡器 · 动手实验篇](page4.md) · 前置节点：[14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)、[15 有源滤波 · 直觉篇](../15-active-filter/page1.md)
 
 ## 痛点：电路"不振"或者"振得很难看"
 
