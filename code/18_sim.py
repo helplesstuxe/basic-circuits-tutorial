@@ -1,7 +1,7 @@
 # 18 正反转互锁的最小仿真：沿用 17 的写法，时间切成 1 ms 一小段，两只接触器 KM1（正转）、KM2（反转）各算各的。
 # KM1 回路：SB1 停止（常闭）→ [SB2 正转（常开） 并联 KM1 自锁触点] →（按钮互锁时串 SB3 常闭）→（接触器互锁时串 KM2 常闭辅助触点）→ KM1 线圈
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))  # 共享模块所在的文件夹
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
@@ -77,7 +77,7 @@ assert round(half) == 10 and round(gap_ms) == 20 and round(gap_ms - ARC_MAX) == 
 fig, axs = plt.subplots(4, 1, figsize=(9.5, 5.6), sharex=True)  # 四行：按钮、不互锁、接触器互锁、双重互锁
 axs[0].plot(t, sb2 * 0.8 + 2.0, **fs.LS["fb"], label="SB2 正转")       # 正转按钮
 axs[0].plot(t, sb3 * 0.8 + 1.0, **fs.LS["third"], label="SB3 反转")    # 反转按钮
-axs[0].plot(t, sb1 * 0.8 + 0.0, color="0.3", lw=1.0, label="SB1 停止")  # 停止按钮（深灰色细实线）
+axs[0].plot(t, sb1 * 0.8 + 0.0, color="0.3", lw=1.0, label="SB1 停止")  # 停止按钮（灰色细实线）
 axs[0].set_yticks([0.4, 1.4, 2.4]); axs[0].set_yticklabels(["SB1", "SB3", "SB2"]); axs[0].set_ylim(-0.2, 3.0)  # 纵轴标注
 axs[0].legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)  # 图例放到图外右侧
 for ax, m, name in [(axs[1], "none", "不互锁"), (axs[2], "elec", "接触器互锁"), (axs[3], "double", "双重互锁")]:
@@ -86,7 +86,7 @@ for ax, m, name in [(axs[1], "none", "不互锁"), (axs[2], "elec", "接触器�
     ax.plot(t, b * 0.8 + 0.0, **fs.LS["vin"], label="KM2 反转")        # KM2 画在下面
     s = a & b                                      # 同时吸合的时段
     if s.any():                                    # 有短路就用朱红色 × 标出来
-        ax.fill_between(t, -0.2, 2.5, where=s, color=fs.C["bad"], alpha=0.15, lw=0)  # 短路时段涂浅朱红色
+        ax.fill_between(t, -0.2, 2.5, where=s, color=fs.C["bad"], alpha=0.15, lw=0)  # 短路时段衬一层淡底色
         ax.plot(t[s][::200], np.full(s.sum(), 2.1)[::200], color=fs.C["bad"], ls="none", marker="x", label="同时吸合 = 相间短路")  # 朱红色 ×
     ax.set_yticks([0.4, 1.4]); ax.set_yticklabels(["KM2", "KM1"]); ax.set_ylim(-0.2, 2.5)  # 纵轴标注
     ax.set_title(name, fontsize=9, loc="left")     # 子图标题

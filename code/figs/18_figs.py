@@ -32,6 +32,8 @@ def main_circuit():
             d += elm.Line().at((x2, -4.4)).down().toy(y)
             d += elm.Line().left().tox(xt)
             d += elm.Dot()
+        for x2, tname in [(X2[0], "去 T3"), (X2[1], "去 T2"), (X2[2], "去 T1")]:   # 给 KM2 下口每根线标去向
+            d += elm.Label().at((x2 + 0.45, -4.55)).label(tname, fontsize=9)
         for i, x in enumerate(X1):
             d += ThermalHeater().at((x, -5.8)).down().length(1.4)
             d += elm.Line().down(0.3)
