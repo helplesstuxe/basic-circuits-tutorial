@@ -219,7 +219,7 @@ def bb_board(cols=30, rails=None, figsize=(10, 5.6)):
 
 
 def bb_wire(ax, a, b, kind="sig", via=()):
-    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/红紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
+    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
     pts = [bb_xy(a)] + list(via) + [bb_xy(b)]
     xs, ys = zip(*pts)
     ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
@@ -490,7 +490,7 @@ def p4_1_breadboard():
             ha="left", va="center", fontsize=8)
     bb_probe(ax, "h10", "①", dx=-0.6, dy=0.9)
     bb_probe(ax, "i14", "③", dx=-0.75, dy=0.6)
-    bb_legend(ax, [("pos", "红：V+"), ("neg", "红紫：V−"), ("gnd", "黑：M"), ("sig", "蓝：信号/负载线"), ("fb", "蓝绿：反馈/短接")],
+    bb_legend(ax, [("pos", "红：V+"), ("neg", "紫：V−"), ("gnd", "黑：M"), ("sig", "蓝：信号/负载线"), ("fb", "绿：反馈/短接")],
               x=0.6, y=-5.0)
     print("[图 03-p4-1] LM358 跟随器：1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚→V+，4 脚→V−；另一半 7、6 脚短接、5 脚→M；"
           "a6 接 V+，Rd1 b6–b10，Rd2 c10–c12、a12 接 M；e10→f10、g10→g16 把分压点送到 3 脚；h14→h15 输出接反相端；"

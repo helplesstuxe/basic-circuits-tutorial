@@ -320,7 +320,7 @@ class Breadboard:
                     va="bottom" if y < cy else "top", color="k", zorder=8)
 
     def probe(self, h, text, dx=0.35, dy=0.35, ha="left"):
-        """测量点：在孔上画红紫色空心圈并写上名字。"""
+        """测量点：在孔上画紫色空心圈并写上名字。"""
         x, y = self.xy(h)
         self.ax.plot(x, y, "o", ms=9, mfc="none", mec=C["third"], mew=1.6, zorder=9)
         self.ax.text(x + dx, y + dy, text, fontsize=7.5, color=C["third"], ha=ha, va="bottom", zorder=9,

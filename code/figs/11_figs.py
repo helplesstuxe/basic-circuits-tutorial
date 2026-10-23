@@ -203,7 +203,7 @@ from figstyle import C
 # page4 动手实验篇：面包板俯视图（本节点自带一份小工具，只在本文件内使用）
 # 面包板：列号 1..ncol；上半区 a–e 行、下半区 f–j 行，同一列的 a–e 五个孔连通，f–j 五个孔连通；
 # 上下各两条电源轨（tp/tn 在上，bp/bn 在下），每条轨整条连通（有的面包板轨道在中间断开，正文会提醒）。
-# 导线颜色：正电源 = 橙色，0 V（地）= 黑色，负电源 = 蓝色，信号 = 蓝绿色。
+# 导线颜色：正电源 = 橙色，0 V（地）= 黑色，负电源 = 蓝色，信号 = 绿色。
 # 每条导线、每个元件引脚都登记到「网络」里（并查集），最后用 assert 检查想要的连接都接上了、不该通的没通。
 # ======================================================================
 import matplotlib.patches as mpatches
@@ -387,7 +387,7 @@ class Breadboard:
                     va="bottom" if y < cy else "top", color="k", zorder=8)
 
     def probe(self, h, text, dx=0.35, dy=0.35, ha="left"):
-        """测量点：在孔上画红紫色空心圈并写上名字。"""
+        """测量点：在孔上画紫色空心圈并写上名字。"""
         x, y = self.xy(h)
         self.ax.plot(x, y, "o", ms=9, mfc="none", mec=C["third"], mew=1.6, zorder=9)
         self.ax.text(x + dx, y + dy, text, fontsize=7.5, color=C["third"], ha=ha, va="bottom", zorder=9,
@@ -398,7 +398,7 @@ class Breadboard:
 
     def legend(self, kinds=("pos", "gnd", "neg", "sig")):
         from matplotlib.lines import Line2D
-        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
+        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（绿）")
         hs = [Line2D([], [], color=BB_WIRE[k], lw=2.4, label=names[k]) for k in kinds]
         self.ax.legend(handles=hs, loc="upper center", bbox_to_anchor=(0.5, 0.035), ncol=len(hs), fontsize=8,
                        frameon=False)

@@ -401,7 +401,11 @@ class Breadboard:
 
     def legend(self, loc="lower center"):
         from matplotlib.lines import Line2D
-        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=WIRE[k][1]) for k in WIRE if k in self.used]
+        cname = {fs.C["bad"]: "红", "#000000": "黑", fs.C["third"]: "紫", fs.C["vin"]: "蓝",
+                 fs.C["vout"]: "橙", fs.C["fb"]: "绿", fs.C["cur"]: "天蓝"}
+        def lab(c, t):                                # 图例写成「用途（色名）」；用途里已有括号时并进同一对括号
+            return t[:-1] + f"，{cname[c]}）" if t.endswith("）") else f"{t}（{cname[c]}）"
+        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=lab(*WIRE[k])) for k in WIRE if k in self.used]
         self.ax.legend(handles=hs, loc=loc, ncol=len(hs), fontsize=8.5, frameon=False,
                        bbox_to_anchor=(0.5, -0.01))
 
@@ -431,7 +435,7 @@ bat = bb.module(-3.2, 9.4, 4.0, 1.4, "9 V 电池 ×2 串联\n中点 = GND")
 bb.wire((1.4, 9.9), "T+1", "pos")
 bb.wire((0.8, 9.6), "T-3", "gnd")
 bb.wire((-3.2, 10.1), "B+1", "neg", via=[(-3.3, 10.1), (-3.3, -8.6), (1.0, -8.6)])
-bb.note(25.2, -2.6, "测输出：\n红表笔 g25\n黑表笔 GND", va="center")
+bb.note(25.2, -2.6, "测输出：\n红表笔 h24\n黑表笔 GND", va="center")
 bb.note(5.0, -9.6, "慢速实验：C 换 100 µF 电解（+ 脚插 i8 朝输入），Rf 换 100 kΩ，信号源换电位器", ha="left")
 bb.note(5.0, -10.4, "对比振铃：拔掉 R1（改用导线连 h4–h8）、拔掉 Cf", ha="left")
 bb.legend()

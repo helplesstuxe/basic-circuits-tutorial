@@ -235,7 +235,7 @@ def bb_board(cols=30, rails=None, figsize=(10, 5.6)):
 
 
 def bb_wire(ax, a, b, kind="sig", via=()):
-    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/红紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
+    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
     pts = [bb_xy(a)] + list(via) + [bb_xy(b)]
     xs, ys = zip(*pts)
     ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
@@ -535,8 +535,8 @@ def p4_1_breadboard():
     bb_probe(ax, "i20", "②", dx=0.75, dy=0.6)
     bb_probe(ax, "h14", "③", dx=-0.75, dy=0.6)
     bb_probe(ax, "h16", "④", dx=0.0, dy=0.95)
-    bb_legend(ax, [("pos", "红：V+"), ("neg", "红紫：V−"), ("gnd", "黑：M")], x=5.4, y=-4.7)
-    bb_legend(ax, [("sig", "蓝：输入"), ("fb", "蓝绿：反馈"), ("out", "橙：1.5 V")], x=5.4, y=-5.4)
+    bb_legend(ax, [("pos", "红：V+"), ("neg", "紫：V−"), ("gnd", "黑：M")], x=5.4, y=-4.7)
+    bb_legend(ax, [("sig", "蓝：输入"), ("fb", "绿：反馈"), ("out", "橙：1.5 V")], x=5.4, y=-5.4)
     print("[图 04-p4-1] LM358 1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚→V+，4 脚→V−；另一半 7、6 脚短接、5 脚→M；"
           "电位器 A g3/g4/g5（j3 接电池 +，j5→M），滑动端 i4→i9；R1 h9–h12；j12→j15 接 2 脚；R2 i12–i14；"
           "电位器 B c3/c4/c5（e3→f3 取 1.5 V，a5→M），滑动端 d4→d20、e20→f20；R3 g16–g20；R4 i16–i19；j19→M（第 13、14 步换 10k）；"

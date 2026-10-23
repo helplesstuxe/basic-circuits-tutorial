@@ -471,7 +471,7 @@ def bb_board(cols=30, rails=None, figsize=(10, 5.6)):
 
 
 def bb_wire(ax, a, b, kind="sig", via=()):
-    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/红紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
+    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
     pts = [bb_xy(a)] + list(via) + [bb_xy(b)]
     xs, ys = zip(*pts)
     ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)

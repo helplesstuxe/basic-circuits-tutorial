@@ -277,7 +277,7 @@ class Breadboard:
             ax.text(x0 + i, yb + h * 0.2, nm, color=tc, ha="center", va="center", fontsize=6.5, zorder=8)
 
     def probe(self, h, text, dx=0.0, dy=0.0):
-        """测量点：红紫色圆圈 + 标签。"""
+        """测量点：紫色圆圈 + 标签。"""
         x, y = self.xy(h)
         self.ax.add_patch(Circle((x, y), 0.36, fc="none", ec=fs.C["third"], lw=1.6, zorder=9))
         self.ax.text(x + dx, y + dy, text, color=fs.C["third"], fontsize=8, ha="center", va="center",
@@ -295,7 +295,11 @@ class Breadboard:
 
     def legend(self, loc="lower center"):
         from matplotlib.lines import Line2D
-        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=WIRE[k][1]) for k in WIRE if k in self.used]
+        cname = {fs.C["bad"]: "红", "#000000": "黑", fs.C["third"]: "紫", fs.C["vin"]: "蓝",
+                 fs.C["vout"]: "橙", fs.C["fb"]: "绿", fs.C["cur"]: "天蓝"}
+        def lab(c, t):                                # 图例写成「用途（色名）」；用途里已有括号时并进同一对括号
+            return t[:-1] + f"，{cname[c]}）" if t.endswith("）") else f"{t}（{cname[c]}）"
+        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=lab(*WIRE[k])) for k in WIRE if k in self.used]
         self.ax.legend(handles=hs, loc=loc, ncol=len(hs), fontsize=8.5, frameon=False,
                        bbox_to_anchor=(0.5, -0.01))
 
@@ -364,7 +368,7 @@ def fig_p4_1():
     bb.note(31.9, 7.2, "A = GND（1 脚）\nB = +5 V（2 脚）", va="center")
     bb.note(31.9, -7.2, "C = 0V（3 脚）\nD = +Vo（4 脚）", va="center")
     bb.note(31.9, 0.0, "上下两组轨之间\n没有任何导线：\n能量只经模块里的\n变压器过去", va="center")
-    bb.note(1.0, -12.4, "红紫色圈 = 下表笔的位置；断电时用电阻挡量 A、B 对 C、D，通电后用电压挡量 B–A、D–C", ha="left")
+    bb.note(1.0, -12.4, "紫色圈 = 下表笔的位置；断电时用电阻挡量 A、B 对 C、D，通电后用电压挡量 B–A、D–C", ha="left")
     bb.legend()
     bb.save("24", "24_p4_1_breadboard.png")
     print("[接线] B0505S 1 脚 GND c8、2 脚 Vin c9、3 脚 0V c10、4 脚 +Vo c11；a8→GND 轨，a9→+5 V 轨；"
