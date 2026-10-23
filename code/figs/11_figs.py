@@ -476,3 +476,125 @@ def p4_breadboards():
 
 if __name__ == "__main__":
     p4_breadboards()
+
+
+# ===== 第 8 轮补图（page1–3）=====
+from schem import *
+HL = C["bad"]
+
+
+def _l(d, xy, text, color=None):
+    e = elm.Label().at(xy).label(text, loc="center")
+    if color: e = e.color(color)
+    d += e
+
+
+def p1_3_sense():
+    """直觉版：电机 → 开关 → 采样电阻 → 地，采样电压送比较器。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 6))
+        _l(d, (0, 6.5), "+12 V")
+        d += elm.Motor().endpoints((0, 6), (0, 4))
+        _l(d, (-1.2, 5), "电机 M")
+        d += elm.Switch().endpoints((0, 4), (0, 2.3))
+        _l(d, (-1.5, 3.15), "开关\n（MOS 管）")
+        d += elm.Dot().at((0, 2.3))
+        d += elm.Resistor().endpoints((0, 2.3), (0, 0)).color(HL)
+        _l(d, (-1.4, 1.15), "采样电阻 $R_S$\n0.1 Ω", HL)
+        d += elm.Ground().at((0, 0))
+        d += elm.Line().endpoints((0, 2.3), (2.5, 2.3))
+        d += elm.Arrow().at((2.5, 2.3)).to((4.0, 2.3))
+        _l(d, (5.6, 2.3), "$V = I \\cdot R_S$\n（1 A → 0.1 V）\n去比较器判断")
+        d += elm.Arrow().at((1.0, 5.6)).to((1.0, 3.0)).color(C["cur"])
+        _l(d, (1.4, 4.3), "$I$", C["cur"])
+    save_schem(d, "11", "11_p1_3_sense.png")
+
+
+def p2_3_thresholds():
+    """推导一：基准分压的戴维南等效 + 回差电阻，输出高 / 输出低两种情况。"""
+    top = 3.0
+    with drawing(fontsize=11) as d:
+        for ox, high in ((0, True), (12.0, False)):
+            d += elm.SourceV().endpoints((ox, 0), (ox, top))
+            _l(d, (ox - 1.0, top / 2), "$V_T$\n0.147 V")
+            d += elm.Resistor().endpoints((ox, top), (ox + 2.6, top))
+            _l(d, (ox + 1.3, top + 0.55), "$R_T$ 0.971 kΩ")
+            d += elm.Dot().at((ox + 2.6, top))
+            _l(d, (ox + 2.6, top - 0.5), "同相端 +")
+            d += elm.Resistor().endpoints((ox + 2.6, top), (ox + 5.4, top)).color(C["fb"])
+            _l(d, (ox + 4.0, top + 0.55), "$R_H$ 100 kΩ", C["fb"])
+            if high:
+                d += elm.Resistor().endpoints((ox + 5.4, top), (ox + 8.0, top))
+                _l(d, (ox + 6.7, top + 0.55), "$R_{PU}$ 2.2 kΩ")
+                d += elm.SourceV().endpoints((ox + 8.0, 0), (ox + 8.0, top))
+                _l(d, (ox + 9.0, top / 2), "$V_{CC}$\n5 V")
+                d += elm.Line().endpoints((ox, 0), (ox + 8.0, 0))
+                _l(d, (ox + 4.0, -0.9), "(a) 输出为高（MOS 管导通）：$V_H$ ≈ 0.193 V")
+            else:
+                d += elm.Line().endpoints((ox + 5.4, top), (ox + 5.4, 0)).color(HL)
+                _l(d, (ox + 6.6, top / 2), "输出 ≈ 0 V\n（拉到地）", HL)
+                d += elm.Line().endpoints((ox, 0), (ox + 5.4, 0))
+                _l(d, (ox + 2.8, -0.9), "(b) 跳闸后输出为低：$V_L$ ≈ 0.146 V")
+    save_schem(d, "11", "11_p2_3_thresholds.png")
+
+
+def _kelvin(d, ox, good):
+    top = 5.0
+    d += elm.Line().endpoints((ox, top + 0.6), (ox, top))
+    _l(d, (ox + 1.8, top + 0.95), "来自 MOS 管源极（电机电流 I）")
+    d += elm.Dot().at((ox, top))
+    d += elm.Resistor().endpoints((ox, top), (ox, 2.5))
+    _l(d, (ox - 1.0, 3.75), "$R_S$\n0.1 Ω")
+    d += elm.Dot().at((ox, 2.5))
+    d += elm.Resistor().endpoints((ox, 2.5), (ox, 0)).color(HL if not good else "black")
+    _l(d, (ox - 1.3, 1.25), "大电流地线\n（有压降）", HL if not good else None)
+    d += elm.Dot().at((ox, 0))
+    d += elm.Ground().at((ox, 0))
+    bx = ox + 4.0
+    for a, b in (((bx, 1.5), (bx + 2.2, 1.5)), ((bx + 2.2, 1.5), (bx + 2.2, 4.5)),
+                 ((bx + 2.2, 4.5), (bx, 4.5)), ((bx, 4.5), (bx, 1.5))):
+        d += elm.Line().endpoints(a, b)
+    _l(d, (bx + 1.1, 3.0), "比较器\n入口")
+    d += elm.Line().endpoints((ox, top), (ox + 2.0, top))
+    d += elm.Line().endpoints((ox + 2.0, top), (ox + 2.0, 3.8))
+    d += elm.Line().endpoints((ox + 2.0, 3.8), (bx, 3.8))
+    _l(d, (bx - 0.35, 4.1), "+")
+    col = C["fb"] if good else HL
+    y_from = 2.5 if good else 0
+    d += elm.Line().endpoints((ox, y_from), (ox + 2.0, y_from)).color(col)
+    if not good:
+        d += elm.Line().endpoints((ox + 2.0, y_from), (ox + 2.0, 2.5)).color(col)
+    d += elm.Line().endpoints((ox + 2.0, 2.5), (bx, 2.5)).color(col)
+    _l(d, (bx - 0.35, 2.8), "−")
+    _l(d, (ox + 2.5, -1.0), "(b) 对：两根线直接从 $R_S$ 两端单独引出" if good
+       else "(a) 错：采样地接在大电流地线远端，压降叠进采样电压")
+
+
+def p3_3_kelvin():
+    with drawing(fontsize=11) as d:
+        _kelvin(d, 0, False)
+        _kelvin(d, 11.0, True)
+    save_schem(d, "11", "11_p3_3_kelvin.png")
+
+
+def p3_4_fuse():
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 6))
+        _l(d, (0, 6.5), "+12 V")
+        d += elm.Fuse().endpoints((0, 6), (0, 4)).color(HL)
+        _l(d, (-2.0, 5), "保险丝（慢断型）\n额定 ≥ 1.33 A\n熔化 $I^2t$ ≥ 1.6 A²s", HL)
+        d += elm.Motor().endpoints((0, 4), (0, 2))
+        _l(d, (-1.4, 3), "电机 M\n正常 1 A")
+        d += elm.Switch().endpoints((0, 2), (0, 0))
+        _l(d, (-1.0, 1), "开关")
+        d += elm.Ground().at((0, 0))
+    save_schem(d, "11", "11_p3_4_fuse.png")
+
+
+def round8():
+    p1_3_sense(); p2_3_thresholds(); p3_3_kelvin(); p3_4_fuse()
+    print("11_figs 第 8 轮补图 OK")
+
+
+if __name__ == "__main__":
+    round8()
