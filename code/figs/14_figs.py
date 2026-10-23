@@ -127,6 +127,8 @@ ax.annotate(f"σ = 40 mV：回差 {hy40[k]:.2f} V 起\n只翻 2 次（一升一�
 print(f"[标注] σ = 40 mV 时回差 ≥ {hy40[k]:.2f} V 就只翻转 2 次")
 fs.ref_h(ax, 2)
 ax.set_yscale("log")
+ax.set_yticks([2, 5, 10, 20, 50, 100, 200]); ax.set_yticklabels(["2", "5", "10", "20", "50", "100", "200"])  # 2 次那条参考线要有刻度
+ax.minorticks_off()
 fs.axlabels(ax, "回差 $V_H - V_L$", "V", "20 s 内输出翻转次数", None)
 ax.legend(loc="upper right", fontsize=8)
 fs.save(fig, N, "14_p3_1_sweep.png")

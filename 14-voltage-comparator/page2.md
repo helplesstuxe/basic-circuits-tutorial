@@ -58,7 +58,7 @@ $$V_{ref} = \frac{V_L R_2 + V_{CC} R_1}{R_1 + R_2} \quad\Rightarrow\quad V_L = \
 
 $$\Delta V = V_H - V_L = V_{CC} \cdot \frac{R_1}{R_2}$$
 
-中文意思：回差只由 $R_1/R_2$ 和输出摆幅决定， $R_2$ 越大，正反馈越弱，回差越小。TI 的设计笔记 [SBOA313A《Non-Inverting Comparator with Hysteresis Circuit》](https://www.ti.com/lit/an/sboa313a/sboa313a.pdf)正是用这两步「输出低时求上门限、输出高时用叠加法求下门限」来设计电阻的，它的例子用 3 V 电源、 $R_1$ = 273 kΩ、 $R_2$ = 2 MΩ 得到约 400 mV 回差，代进上式 3 × 273 / 2000 ≈ 0.41 V，对得上。
+中文意思：回差只由 $R_1/R_2$ 和输出摆幅决定， $R_2$ 越大，正反馈越弱，回差越小。TI 的设计笔记 [SBOA313A《Non-Inverting Comparator with Hysteresis Circuit》](https://www.ti.com/lit/an/sboa313a/sboa313a.pdf)正是用这两步「输出低时求上门限；输出高时把 $V_o$ 当作 $V_{CC}$ ，同样列方程求下门限」来设计电阻的，它的例子用 3 V 电源、 $R_1$ = 273 kΩ、 $R_2$ = 2 MΩ 得到约 400 mV 回差，代进上式 3 × 273 / 2000 ≈ 0.41 V，对得上。
 
 ### 代数：把数字代进去
 
@@ -88,10 +88,12 @@ $$\Delta V = V_H - V_L = V_{CC} \cdot \frac{R_1}{R_2}$$
 
 ## 4. 仿真：同一段噪声，两种比较器
 
-下面的程序生成一段 20 秒的传感器电压：从 2.0 V 线性升到 3.0 V 再降回 2.0 V（模拟升温再降温），每 10 ms 一个点，叠加标准差 40 mV 的随机噪声（固定随机种子，每次结果相同）。同一段电压分别送进普通比较器和施密特比较器，数输出翻转次数。
+下面的程序请在仓库根目录运行（开头两行让 Python 找到 `code/figs/figstyle.py`，它负责全书统一的配色和中文字体）。程序生成一段 20 秒的传感器电压：从 2.0 V 线性升到 3.0 V 再降回 2.0 V（模拟升温再降温），每 10 ms 一个点，叠加标准差 40 mV 的随机噪声（固定随机种子，每次结果相同）。同一段电压分别送进普通比较器和施密特比较器，数输出翻转次数。
 
 ```python
 # 14 电压比较器：普通比较器与施密特比较器的抗噪声对比
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                      # 数值计算
 import matplotlib                       # 画图库
 matplotlib.use("Agg")                   # 不弹窗口，直接存图
