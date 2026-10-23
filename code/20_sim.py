@@ -1,7 +1,7 @@
 # 20 双控开关的最小仿真：把开关和导线看成"谁和谁连通"，算出每种开关位置下灯亮不亮。
 # A：正确接法的真值表；B：四种状态的状态图；C：三种常见接错；D：三地控制（加一只中途开关）。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))  # 把 code/figs 加进搜索路径
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import itertools                                   # 列出所有开关组合
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、保存函数
