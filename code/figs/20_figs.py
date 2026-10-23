@@ -447,3 +447,218 @@ for s in tab3:                                     # 任拨一只，灯都翻转
         t = list(s); t[k] ^= 1
         assert tab3[s] != tab3[tuple(t)]
 print("[数值] 三地控制 8 种组合亮 4 种，任拨一只都翻转；全 0 时", "亮" if tab3[(0, 0, 0)] else "灭")
+
+
+# ======================= page1–3 补充原理图（schem.py 国标元件） =======================
+from schem import *
+ACC = fs.C["bad"]
+TY = 0.6                     # 两个触点 / 两根跨线离中线的高度
+
+
+def spdt_at(d, com, side, up, color="black", label=None, lab_up=True):
+    """单刀双掷开关：公共端 com，触点在 side 方向（+1 右、-1 左）1.2 处，上下各一；up=True 刀搭上触点。"""
+    cx, cy = com
+    tx = cx + 1.2 * side
+    d += elm.Dot().at(com).color(color)
+    d += elm.Dot(open=True).at((tx, cy + TY)).color(color)
+    d += elm.Dot(open=True).at((tx, cy - TY)).color(color)
+    ty = cy + (TY if up else -TY)
+    d += elm.Line().at(com).to((tx - 0.12 * side, ty)).color(color)
+    if label:
+        d += elm.Label().at((cx + 0.6 * side, cy + (1.25 if lab_up else -1.25))).label(label, color=color)
+    return (tx, cy + TY), (tx, cy - TY)
+
+
+def two_way_sch(d, ox, oy, s1_up=True, s2_up=False, mode="ok", title=None):
+    """双控电路原理图。mode："ok"；"swap" 跨线在 S2 端对调；"com" S2 公共端与下触点接反；
+    "neutral" 开关在零线一侧；"broken" 跨线 A 断了。"""
+    if title:
+        d += elm.Label().at((ox - 0.8, oy + 2.1)).label(title, halign="left", fontsize=11)
+    xL, x1, x2, xN = ox, ox + 1.2, ox + 7.2, ox + 11.4
+    d += elm.Dot(open=True).at((xL, oy)).label("L", "left")
+    if mode == "neutral":
+        d += elm.Line().at((xL, oy)).right(0.3)
+        d += LampX().right(2.0).label("灯", ofst=0.3)
+        x1 = d.here[0] + 0.3
+        x2 = x1 + 6.0
+        d += elm.Line().right().tox(x1)
+    else:
+        d += elm.Line().at((xL, oy)).to((x1, oy))
+    a1, b1 = spdt_at(d, (x1, oy), +1, s1_up, label="S1")
+    cs = ACC if mode == "com" else "black"
+    a2, b2 = spdt_at(d, (x2, oy), -1, s2_up, label="S2", color=cs)
+    # 跨线
+    if mode == "swap":
+        xm = (a1[0] + a2[0]) / 2
+        d += elm.Line().at(a1).to((xm - 0.4, a1[1]))
+        d += elm.Line().to((xm + 0.4, b2[1])).color(ACC)
+        d += elm.Line().to(b2).color(ACC)
+        d += elm.Line().at(b1).to((xm - 0.4, b1[1]))
+        d += elm.Line().to((xm + 0.4, a2[1])).color(ACC)
+        d += elm.Line().to(a2).color(ACC)
+        d += elm.Label().at((xm - 1.4, a1[1] + 0.35)).label("跨线 A", fontsize=9)
+        d += elm.Label().at((xm - 1.4, b1[1] - 0.35)).label("跨线 B", fontsize=9)
+        d += elm.Label().at((xm + 0.4, oy + 1.25)).label("在 S2 端对调", color=ACC, fontsize=9)
+    elif mode == "com":
+        d += elm.Line().at(a1).to(a2)
+        d += elm.Label().at(((a1[0] + a2[0]) / 2, a1[1] + 0.35)).label("跨线 A", fontsize=9)
+        xm = (b1[0] + b2[0]) / 2
+        d += elm.Line().at(b1).to((xm, b1[1]))
+        d += elm.Label().at((xm - 1.0, b1[1] - 0.35)).label("跨线 B", fontsize=9)
+        d += elm.Line().at((xm, b1[1])).to((xm, oy - 1.5)).color(ACC)
+        d += elm.Line().to((x2 + 0.5, oy - 1.5)).color(ACC)
+        d += elm.Line().to((x2 + 0.5, oy)).color(ACC)
+        d += elm.Line().to((x2, oy)).color(ACC)
+        d += elm.Line().at(b2).to((b2[0], oy - 2.1)).color(ACC)
+        d += elm.Line().to((x2 + 1.1, oy - 2.1)).color(ACC)
+        d += elm.Line().to((x2 + 1.1, oy)).color(ACC)
+        d += elm.Label().at((x2 + 1.2, oy - 2.5)).label("灯线接到了触点上，跨线 B 接到了公共端", color=ACC, fontsize=9)
+    elif mode == "broken":
+        xm = (a1[0] + a2[0]) / 2
+        d += elm.Line().at(a1).to((xm - 0.25, a1[1]))
+        d += elm.Line().at((xm + 0.25, a2[1])).to(a2)
+        d += elm.Label().at((xm, a1[1])).label("×", color=ACC, fontsize=14)
+        d += elm.Label().at((xm, a1[1] + 0.45)).label("跨线 A 断了", color=ACC, fontsize=9)
+        d += elm.Line().at(b1).to(b2)
+        d += elm.Label().at((xm, b1[1] - 0.35)).label("跨线 B", fontsize=9)
+    else:
+        d += elm.Line().at(a1).to(a2)
+        d += elm.Line().at(b1).to(b2)
+        d += elm.Label().at(((a1[0] + a2[0]) / 2, a1[1] + 0.35)).label("跨线 A", fontsize=9)
+        d += elm.Label().at(((b1[0] + b2[0]) / 2, b1[1] - 0.35)).label("跨线 B", fontsize=9)
+    # 右端
+    xr = x2 + (1.1 if mode == "com" else 0.0)
+    if mode == "neutral":
+        d += elm.Line().at((x2, oy)).right().tox(x2 + 0.8)
+        d += elm.Dot(open=True).label("N", "right")
+        d += elm.Label().at((x2 + 1.0, oy - 0.9)).label("开关断的是零线", color=ACC, fontsize=9)
+    else:
+        d += elm.Line().at((xr, oy)).right(0.4)
+        d += LampX().right(2.0).label("灯", ofst=0.3)
+        d += elm.Line().right(0.4)
+        d += elm.Dot(open=True).label("N", "right")
+
+
+def two_switches():
+    """图 20-p1-4：两个普通开关（a）串联（b）并联控制一盏灯。"""
+    with drawing(fontsize=10) as d:
+        d += elm.Label().at((-0.6, 1.8)).label("（a）串联：两个都合上灯才亮", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((0, 0)).label("L", "left")
+        d += elm.Line().right(0.4)
+        d += elm.Switch().right().label("楼下开关", ofst=0.3)
+        d += elm.Line().right(0.6)
+        d += elm.Switch().right().label("楼上开关", ofst=0.3)
+        d += elm.Line().right(0.6)
+        d += LampX().right(2.0).label("灯", ofst=0.3)
+        d += elm.Line().right(0.4)
+        d += elm.Dot(open=True).label("N", "right")
+        oy = -4.0
+        d += elm.Label().at((-0.6, oy + 1.8)).label("（b）并联：只要一个合着灯就亮", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((0, oy)).label("L", "left")
+        d += elm.Line().right(0.6)
+        a = d.here
+        d += elm.Dot()
+        d += elm.Switch().right().label("楼下开关", ofst=0.3)
+        b = d.here
+        d += elm.Dot()
+        d += elm.Line().at(a).down(1.4)
+        d += elm.Switch().right().label("楼上开关", "bottom", ofst=0.3)
+        d += elm.Line().up(1.4)
+        d += elm.Line().at(b).right(0.6)
+        d += LampX().right(2.0).label("灯", ofst=0.3)
+        d += elm.Line().right(0.4)
+        d += elm.Dot(open=True).label("N", "right")
+    print("[图 20-p1-4] 两个普通开关串联 / 并联")
+    save_schem(d, P, "20_p1_4_two_switches.png")
+
+
+def mistakes_sch():
+    """图 20-p2-4：三种接错的原理图（开关都在出厂位置：S1 搭跨线 A，S2 搭跨线 B）。"""
+    with drawing(fontsize=10) as d:
+        two_way_sch(d, 0, 0, mode="swap", title="（a）跨线一端对调")
+        two_way_sch(d, 0, -5.0, mode="com", title="（b）公共端接错：S2 的公共端和一个触点接反")
+        two_way_sch(d, 0, -10.6, mode="neutral", title="（c）开关接在零线：灯在火线一侧")
+    print("[图 20-p2-4] 三种接错：跨线对调、公共端接错、开关接在零线")
+    save_schem(d, P, "20_p2_4_mistakes.png")
+
+
+def lab_sch():
+    """图 20-p2-5：低压实验。（a）第 2 步正确接法；（b）第 6 步模拟开关接在零线。标出红表笔测量点。"""
+    def sw_pair(d, x1, oy, up1, up2):
+        a1, b1 = spdt_at(d, (x1, oy), +1, up1, label="S1")
+        a2, b2 = spdt_at(d, (x1 + 5.0, oy), -1, up2, label="S2")
+        d += elm.Line().at(a1).to(a2); d += elm.Line().at(b1).to(b2)
+        d += elm.Label().at(((a1[0] + a2[0]) / 2, a1[1] + 0.35)).label("跨线", fontsize=9)
+        d += elm.Label().at(((b1[0] + b2[0]) / 2, b1[1] - 0.35)).label("跨线", fontsize=9)
+        return x1 + 5.0
+    with drawing(fontsize=10) as d:
+        d += elm.Label().at((-1.2, 2.1)).label("（a）第 2 步：正确接法（开关在正极一侧）", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((0, 0)).label("9 V 正极", "left")
+        x2 = sw_pair(d, 0, 0, True, False)
+        d += elm.Line().at((x2, 0)).right(0.4)
+        d += elm.Resistor().right(1.8).label("1 kΩ", ofst=0.2)
+        p = d.here
+        d += elm.LED().right(1.8).label("LED", ofst=0.2)
+        d += elm.Line().right(0.4)
+        d += elm.Dot(open=True).label("9 V 负极", "right")
+        d += elm.Dot().at(p).color(ACC)
+        d += elm.Label().at((p[0], p[1] - 1.15)).label("测量点：LED 灭时接近 0 V", color=ACC, fontsize=9)
+        oy = -4.6
+        d += elm.Label().at((-1.2, oy + 2.1)).label("（b）第 6 步：模拟开关接在零线（开关在负极一侧）", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((0, oy)).label("9 V 正极", "left")
+        d += elm.Line().right(0.4)
+        d += elm.Resistor().right(1.8).label("1 kΩ", ofst=0.2)
+        p = d.here
+        d += elm.LED().right(1.8).label("LED", ofst=0.2)
+        d += elm.Line().right(0.4)
+        x1 = d.here[0]
+        x2 = sw_pair(d, x1, oy, True, False)
+        d += elm.Line().at((x2, oy)).right(0.6)
+        d += elm.Dot(open=True).label("9 V 负极", "right")
+        d += elm.Dot().at(p).color(ACC)
+        d += elm.Label().at((p[0], p[1] - 1.15)).label("测量点：LED 灭时接近 9 V", color=ACC, fontsize=9)
+    print("[图 20-p2-5] 实验第 2 步与第 6 步；测量点 LED 灭时接近 0 V / 约 9 V（模型估算）")
+    save_schem(d, P, "20_p2_5_lab.png")
+
+
+def broken_sch():
+    """图 20-p3-3：跨线 A 断了。只有两把刀都搭在跨线 B 上时灯才亮。"""
+    with drawing(fontsize=10) as d:
+        two_way_sch(d, 0, 0, s1_up=False, s2_up=False, mode="broken")
+    print("[图 20-p3-3] 跨线 A 断：只有两把刀都在 B 上才亮")
+    save_schem(d, P, "20_p3_3_broken.png")
+
+
+def five_way_sch():
+    """图 20-p3-4：练习 3 五地控制：两只双控开关在两头，中间三只中途开关（画在直通位置）。"""
+    with drawing(fontsize=10) as d:
+        d += elm.Dot(open=True).at((0, 0)).label("L", "left")
+        d += elm.Line().right(0.8)
+        a, b = spdt_at(d, (0.8, 0), +1, True, label="S1 双控")
+        x = a[0]
+        for k in range(3):
+            d += elm.Line().at((x, TY)).right(0.8); d += elm.Line().at((x, -TY)).right(0.8)
+            xa = x + 0.8; xb = xa + 1.4
+            for yy in (TY, -TY):
+                d += elm.Dot(open=True).at((xa, yy)).color(ACC); d += elm.Dot(open=True).at((xb, yy)).color(ACC)
+                d += elm.Line().at((xa, yy)).to((xb, yy)).color(ACC)
+            d += elm.Line().at((xa, TY)).to((xb, -TY)).color(ACC).linestyle(":")
+            d += elm.Line().at((xa, -TY)).to((xb, TY)).color(ACC).linestyle(":")
+            d += elm.Label().at(((xa + xb) / 2, 1.25)).label(f"S{k + 2} 中途", color=ACC)
+            x = xb
+        d += elm.Line().at((x, TY)).right(0.8); d += elm.Line().at((x, -TY)).right(0.8)
+        a2, b2 = spdt_at(d, (x + 2.0, 0), -1, False, label="S5 双控")
+        d += elm.Line().at((x + 2.0, 0)).right(0.4)
+        d += LampX().right(2.0).label("灯", ofst=0.3)
+        d += elm.Line().right(0.4)
+        d += elm.Dot(open=True).label("N", "right")
+        d += elm.Label().at((6.0, -1.5)).label("中途开关：实线 = 直通，点线 = 拨一下后的交叉", color=ACC, fontsize=9)
+    print("[图 20-p3-4] 五地控制：2 只双控 + 3 只中途开关")
+    save_schem(d, P, "20_p3_4_five_way.png")
+
+
+two_switches()
+mistakes_sch()
+lab_sch()
+broken_sch()
+five_way_sch()
