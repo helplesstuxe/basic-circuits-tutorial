@@ -31,12 +31,31 @@ def fig_p1_1():
     with drawing() as d:
         d += elm.Vdd().at((0, 6)).label("+12 V")
         d += elm.Lamp().endpoints((0, 6), (0, 3.6)).label("负载\n12 V / 3 A", loc="bottom")
-        d += elm.Dot().at((0, 3.6)).label("D", loc="right")
+        d += elm.Dot().at((0, 3.6))
         q = elm.NFet().theta(0).reverse().anchor("drain").at((0, 3.6)).label("Q1\nN 沟道", loc="right", ofst=(0.3, 0))
         d += q
         d += elm.Ground().at(q.source)
+        pin_labels(d, q)
+        # 体二极管：MOS 管内部天生自带，阳极在源极 S、阴极在漏极 D（schemdraw 的 NFet 不画它，这里补上）
+        bx = q.drain[0] + 2.4
+        d += elm.Line().endpoints(q.drain, (bx, q.drain[1]))
+        d += elm.Diode().endpoints((bx, q.source[1]), (bx, q.drain[1])).label("体二极管\n（管内自带）", loc="bottom", ofst=0.15)
+        d += elm.Line().endpoints((bx, q.source[1]), q.source)
+        d += elm.Dot().at(q.source)
         gate_drive(d, q)
     save_schem(d, "21", "21_p1_1_low_side.png")
+
+
+def pin_labels(d, q, gdx=0.25, right=False):
+    """在 MOS 管三个引脚旁标出 G、D、S（right=True 时 D、S 标在引脚右边，避开左边的导线）。"""
+    g, dr, so = q.gate, q.drain, q.source
+    d += elm.Label().at((g[0] + gdx, g[1] + 0.3)).label("G", fontsize=10)
+    if right:
+        d += elm.Label().at((dr[0] + 0.3, dr[1] - 0.3)).label("D", fontsize=10)
+        d += elm.Label().at((so[0] + 0.3, so[1] - 0.15)).label("S", fontsize=10)
+    else:
+        d += elm.Label().at((dr[0] - 0.3, dr[1] - 0.15)).label("D", fontsize=10)
+        d += elm.Label().at((so[0] - 0.3, so[1] + 0.15)).label("S", fontsize=10)
 
 
 def fig_p1_2():
@@ -58,6 +77,7 @@ def fig_p1_2():
         d += elm.Line().endpoints((gx, g[1]), (gx, g[1] - 0.9))
         d += q2
         d += elm.Ground().at(q2.source)
+        pin_labels(d, q1, gdx=-0.3, right=True); pin_labels(d, q2)
         gate_drive(d, q2, r_label="1 kΩ", src_label="单片机引脚\n0 / 3.3 V")
     save_schem(d, "21", "21_p1_2_high_side.png")
 
@@ -103,6 +123,24 @@ def fig_p2_3():
         d += elm.Ground().at(q.source)
         gate_drive(d, q)
     save_schem(d, "21", "21_p2_3_motor_flyback.png")
+
+
+def fig_p3_3():
+    """练习题用：续流二极管接反（阳极接 +12 V、阴极接漏极）的电机低边开关。"""
+    with drawing() as d:
+        d += elm.Vdd().at((0, 6.4)).label("+12 V")
+        d += elm.Line().endpoints((0, 6.4), (0, 6.0))
+        d += elm.Dot().at((0, 6.0))
+        d += elm.Motor().endpoints((0, 6.0), (0, 3.6)).label("直流电机 M", loc="top")
+        d += elm.Line().endpoints((0, 6.0), (2.4, 6.0))
+        d += elm.Diode().endpoints((2.4, 6.0), (2.4, 3.6)).label("D1\n（方向接反）", loc="bottom")
+        d += elm.Line().endpoints((2.4, 3.6), (0, 3.6))
+        d += elm.Dot().at((0, 3.6))
+        q = elm.NFet().theta(0).reverse().anchor("drain").at((0, 3.6)).label("Q1", loc="right", ofst=(0.3, 0))
+        d += q
+        d += elm.Ground().at(q.source)
+        gate_drive(d, q)
+    save_schem(d, "21", "21_p3_3_flyback_reversed.png")
 
 
 def fig_p3_1():
@@ -166,4 +204,4 @@ def fig_p3_2():
 
 
 if __name__ == "__main__":
-    fig_p1_1(); fig_p1_2(); fig_p2_2(); fig_p2_3(); fig_p3_1(); fig_p3_2()
+    fig_p1_1(); fig_p1_2(); fig_p2_2(); fig_p2_3(); fig_p3_1(); fig_p3_2(); fig_p3_3()
