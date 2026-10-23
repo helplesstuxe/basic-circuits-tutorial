@@ -29,10 +29,20 @@ def diode_v(i, Is=1e-14, n=1.0):
 LED_IS, LED_N = 1e-18, 2.0   # 红色 LED 的示意参数：10 mA 时压降约 1.9 V
 
 
-def zener_i(v, vz=5.1, rz=7.0):
-    """稳压管（以阳极→阴极为正方向）：正向像普通二极管；反向超过 V_Z 后电流按 1/rz 急剧增大。"""
+IZT = 49e-3           # 1N4733A 的测试电流 I_ZT：手册的 V_Z = 5.1 V 就是在这个电流下测的
+
+
+def zener_v(iz, vz=5.1, rz=7.0, izt=IZT):
+    """击穿区模型 V = V_Z + r_Z·(I_Z − I_ZT)：I_Z = I_ZT 时正好等于手册的 V_Z。"""
+    return vz + rz * (iz - izt)
+
+
+def zener_i(v, vz=5.1, rz=7.0, izt=IZT):
+    """稳压管（以阳极→阴极为正方向）：正向像普通二极管；反向电压超过 V_Z − r_Z·I_ZT 后，
+    电流按 1/rz 急剧增大（击穿区是一条直线，I_Z = I_ZT 时两端电压正好是 V_Z）。"""
     fwd = diode_i(v)
-    rev = np.where(v < -vz, (v + vz) / rz, 0.0)          # 击穿后的近似直线，斜率 1/rz
+    v0 = vz - rz * izt                                    # 直线外推到电流为 0 的电压，约 4.757 V
+    rev = np.where(v < -v0, (v + v0) / rz, 0.0)          # 击穿后的近似直线，斜率 1/rz
     return fwd + rev
 
 
@@ -134,7 +144,7 @@ def p2_1():
     i_led = diode_i(v, LED_IS, LED_N) * 1e3
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
     ax.plot(v, i_si, **fs.LS["vin"], label="硅二极管（如 1N4148）")
-    ax.plot(v, i_led, **fs.LS["third"], label="红色 LED")
+    ax.plot(v, i_led, **fs.LS["third"], label="红光 LED")
     v1 = float(diode_v(1e-3)); v10 = float(diode_v(10e-3))
     vl10 = float(diode_v(10e-3, LED_IS, LED_N))
     fs.ref_h(ax, 10)
@@ -159,9 +169,9 @@ def p2_2():
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
     ax.plot(v, i, **fs.LS["third"], label="稳压管 5.1 V（如 1N4733A）")
     fs.ref_h(ax, 0)
-    fs.ref_v(ax, -5.1, "$-V_Z$ = −5.1 V")
-    # 反向电流 5 mA 和 49 mA 时的电压
-    v5 = -(5.1 + 5e-3 * 7.0); v49 = -(5.1 + 49e-3 * 7.0)
+    fs.ref_v(ax, -5.1, "$-V_Z$ = −5.1 V（测试电流 49 mA 处）")
+    # 反向电流 5 mA 和 49 mA（测试电流 I_ZT）时的电压，模型 V = V_Z + r_Z·(I_Z − I_ZT)
+    v5 = -zener_v(5e-3); v49 = -zener_v(49e-3)
     fs.mark(ax, v5, -5, fmt="{:.0f}", unit=" mA", dx=6, dy=-2)
     fs.mark(ax, v49, -49, fmt="{:.0f}", unit=" mA", dx=6, dy=-2)
     print(f"[数值] 反向 5 mA 时 V = {v5:.3f} V，反向 49 mA 时 V = {v49:.3f} V，相差 {v5 - v49:.3f} V")
@@ -171,6 +181,8 @@ def p2_2():
     fs.axlabels(ax, "两端电压（阳极减阴极）", "V", "电流", "mA")
     ax.legend(loc="lower right")
     assert abs(v5 - v49) < 0.35, "5→49 mA 电压变化应小于 0.35 V"
+    assert abs(v49 + 5.1) < 1e-9, "测试电流 49 mA 时必须正好等于手册 V_Z = 5.1 V"
+    assert abs(float(zener_i(v49)) * 1e3 + 49) < 1e-6, "曲线与公式一致：−5.1 V 处电流 −49 mA"
     fs.save(fig, P, "P2_p2_2_zener_iv.png")
     return v5, v49
 
