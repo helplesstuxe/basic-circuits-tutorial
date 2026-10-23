@@ -1,6 +1,6 @@
 # 02 同相放大 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：05 精密整流](../05-precision-rectifier/page1.md) · 前置节点：[01 反相放大](../01-inverting-amp/page1.md) · 后续：[03 电压跟随器](../03-voltage-follower/page1.md)、[04 差分放大](../04-differential-amp/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：05 精密整流 · 直觉篇](../05-precision-rectifier/page1.md) · 前置节点：[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md) · 后续：[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md)、[04 差分放大 · 直觉篇](../04-differential-amp/page1.md)
 
 ## 痛点：单电源一接，输出就"顶不上去"
 
