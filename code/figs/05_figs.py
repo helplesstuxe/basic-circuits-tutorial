@@ -93,9 +93,9 @@ fs.axlabels(a1, "输入 $V_i$", "V", "输出 $V_o$", "V")
 a1.legend(loc="upper left", fontsize=8)
 vo01, voa01 = (float(x) for x in precision(0.1))
 err_uV = (0.1 - vo01) * 1e6
-print(f"[数值] V_i = 0.1 V：精密整流 V_o = {vo01*1e3:.4f} mV，误差 {err_uV:.1f} µV（= 运放输出脚电压 ÷ A = {voa01/A*1e6:.1f} µV）")
+print(f"[数值] V_i = 0.1 V：精密整流 V_o = {vo01*1e3:.4f} mV，误差 {err_uV:.1f} µV（= 运放输出脚电压 ÷ A = {voa01/A*1e6:.1f} µV，只算开环增益；真实 741 的失调约 1 mV，SPICE 误差约 1.0 mV）")
 print(f"[数值] V_i = 0.1 V：运放输出脚 {voa01:.3f} V；普通二极管输出 {float(passive(0.1)):.1f} V")
-assert abs(err_uV - voa01 / A * 1e6) < 0.1 and err_uV < 10, "误差 = 运放输出脚电压 ÷ 开环增益，只有几微伏"
+assert abs(err_uV - voa01 / A * 1e6) < 0.1 and err_uV < 10, "只算开环增益时，误差 = 运放输出脚电压 ÷ 开环增益，只有几微伏"
 a2.plot(v, voa, **fs.LS["third"], label="运放输出脚电压")
 a2.plot(v, vo, **fs.LS["vout"], label="电路输出 $V_o$")
 fs.ref_h(a2, -RAIL, f"负饱和 −{RAIL} V", x=0.98)
