@@ -158,3 +158,62 @@ fs.axlabels(a1, "时间", "ms", "输出", "V"); a1.legend(loc="lower right", fon
 a1.set_title("(b) $R_1$ 越大，方波边沿越慢", fontsize=10)
 fig.tight_layout()
 fs.save(fig, N, "13_p3_2_r1_sweep.png")
+
+
+# ---------- 图 13-p1-4 附图第二格：输入、反馈都是电容 ----------
+def cap_cap(d):
+    """附图第二格的画法：输入串电容 C，反馈支路也只有一只电容 C_f（没有电阻）。"""
+    d += (op := elm.Opamp(leads=True))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Capacitor().left().label("$C$ 100 nF")
+    d += elm.Dot(open=True).label("$V_i$ 输入", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    d += elm.Capacitor().right().label("$C_f$ 50 nF（反馈也是电容）").tox(op.out.x + 0.5)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    d += elm.Line().left().at(op.in2).length(0.5)
+    d += elm.Line().down().length(0.5)
+    d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(1.25)
+    d += elm.Dot(open=True).label("$V_o$ 输出", "right")
+
+
+with drawing() as d:
+    cap_cap(d)
+save_schem(d, N, "13_p1_4_cap_cap.png")
+
+# ---------- 图 13-p1-5 同一个方波，三种接法的输出 ----------
+CF2 = 50e-9                                   # 附图第二格的反馈电容
+R_INT = 10e3                                  # 对照用积分器的输入电阻：R·C = 1 ms
+t = np.arange(0, 4e-3, 1e-6)
+dt = t[1] - t[0]
+ph = (t * 500) % 1                            # 500 Hz
+edge = 0.1                                    # 每个边沿占周期的 1/10 = 0.2 ms
+vin = np.interp(ph, [0, edge, 0.5, 0.5 + edge, 1.0], [-0.5, 0.5, 0.5, -0.5, -0.5])
+vo_int = -np.cumsum(vin) * dt / (R_INT * sim.C)          # 积分器：−面积 ÷ RC
+vo_dif = sim.ideal(t, vin)                               # 微分器：−斜率 × R_f·C
+vo_cc = -(sim.C / CF2) * (vin - vin[0])                  # 电容–电容：−(C/C_f)·（输入的变化量）
+k_flat = (t > 0.5e-3) & (t < 0.9e-3)
+pk_dif = float(np.abs(vo_dif).max())
+cc_flat = float(vo_cc[k_flat].mean())
+int_pp = float(np.ptp(vo_int[t > 1e-3]))
+print(f"[数值] 方波 ±0.5 V、500 Hz，边沿 0.2 ms：积分器（RC 1 ms）三角波峰峰 {int_pp:.2f} V；"
+      f"微分器（R_f·C 1 ms）边沿脉冲 {pk_dif:.1f} V、平顶 0 V；电容–电容（C/C_f = {sim.C/CF2:.0f}）平顶 {cc_flat:.1f} V")
+assert abs(pk_dif - 5.0) < 0.05 and abs(cc_flat + 2.0) < 1e-6 and abs(vo_dif[k_flat]).max() < 1e-6
+IB = 20e-9                                    # 示意的运放输入偏置电流 20 nA
+drift = IB / CF2
+print(f"[数值] 电容–电容接法：偏置电流 {IB*1e9:.0f} nA 只能流进 C_f，输出漂移 {drift:.2f} V/s，"
+      f"约 {13.5 / drift:.0f} s 撞到 13.5 V")
+fig, axs = plt.subplots(4, 1, figsize=(7, 6.2), sharex=True)
+tm = t * 1e3
+axs[0].plot(tm, vin, **fs.LS["vin"], label="输入：±0.5 V 方波（边沿 0.2 ms）")
+axs[1].plot(tm, vo_int, **fs.LS["vout"], label=f"积分器（输入 R、反馈 C）：三角波，峰峰 {int_pp:.2f} V")
+axs[2].plot(tm, vo_dif, **fs.LS["third"], label=f"微分器（输入 C、反馈 R）：只在边沿出 ±{pk_dif:.0f} V 脉冲")
+axs[3].plot(tm, vo_cc, **fs.LS["fb"], label=f"附图第二格（输入 C、反馈 C）：反相 {sim.C/CF2:.0f} 倍的方波")
+for a, lim in zip(axs, [(-0.9, 1.1), (-0.8, 0.5), (-6.5, 7.5), (-2.8, 1.6)]):
+    fs.ref_h(a, 0)
+    a.set_ylim(*lim); a.set_ylabel(fs.qlabel("电压", "V"), fontsize=8)
+    a.legend(loc="upper right", fontsize=7.5)
+axs[3].set_xlabel(fs.qlabel("时间", "ms"))
+fs.save(fig, N, "13_p1_5_three_circuits.png")
