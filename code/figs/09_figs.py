@@ -169,7 +169,7 @@ from figstyle import C
 # page4 动手实验篇：面包板俯视图（本节点自带一份小工具，只在本文件内使用）
 # 面包板：列号 1..ncol；上半区 a–e 行、下半区 f–j 行，同一列的 a–e 五个孔连通，f–j 五个孔连通；
 # 上下各两条电源轨（tp/tn 在上，bp/bn 在下），每条轨整条连通（有的面包板轨道在中间断开，正文会提醒）。
-# 导线颜色：正电源 = 橙色，0 V（地）= 黑色，负电源 = 蓝色，信号 = 蓝绿色。
+# 导线颜色：正电源 = 橙色，0 V（地）= 黑色，负电源 = 蓝色，信号 = 绿色。
 # 每条导线、每个元件引脚都登记到「网络」里（并查集），最后用 assert 检查想要的连接都接上了、不该通的没通。
 # ======================================================================
 import matplotlib.patches as mpatches
@@ -257,7 +257,8 @@ class Breadboard:
         return len({self.net(h) for h in hs}) == 1
 
     # ---- 画导线、元件、外部接线端 ----
-    def wire(self, h1, h2, kind="sig", bend=0.0):
+    def wire(self, h1, h2, kind="sig", bend=0.0, via=(), hops=(), hop_r=0.3):
+        """via：中间拐点（走在两列孔之间，避免压孔）；hops：竖直线段跨过电源轨线的 y 值，画成半圆「跨线弯」，表示从上面跨过、不接轨。"""
         self._use(h1, f"导线{h1}-{h2}")
         self._use(h2, f"导线{h1}-{h2}")
         self._union(self.strip(h1), self.strip(h2))
@@ -268,7 +269,15 @@ class Breadboard:
             xs = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * xm + t ** 2 * x2
             ys = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * ym + t ** 2 * y2
         else:
-            xs, ys = [x1, x2], [y1, y2]
+            pts = [(x1, y1)] + list(via) + [(x2, y2)]
+            xs, ys = [pts[0][0]], [pts[0][1]]
+            for (xa, ya), (xb, yb) in zip(pts[:-1], pts[1:]):
+                if xa == xb:                                   # 竖直段：在跨轨处插半圆
+                    sgn = 1 if yb > ya else -1
+                    for yh in sorted([h for h in hops if min(ya, yb) + hop_r < h < max(ya, yb) - hop_r], key=lambda h: sgn * h):
+                        th = np.linspace(-np.pi / 2, np.pi / 2, 15)
+                        xs += list(xa - hop_r * np.cos(th)); ys += list(yh + sgn * hop_r * np.sin(th))
+                xs.append(xb); ys.append(yb)
         self.ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
         for x, y in ((x1, y1), (x2, y2)):
             self.ax.plot(x, y, "o", ms=3.2, color=BB_WIRE[kind], zorder=4)
@@ -364,7 +373,7 @@ class Breadboard:
 
     def legend(self, kinds=("pos", "gnd", "neg", "sig")):
         from matplotlib.lines import Line2D
-        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
+        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（绿）")
         hs = [Line2D([], [], color=BB_WIRE[k], lw=2.4, label=names[k]) for k in kinds]
         self.ax.legend(handles=hs, loc="upper center", bbox_to_anchor=(0.5, 0.035), ncol=len(hs), fontsize=8,
                        frameon=False)
@@ -383,7 +392,10 @@ def bb09():
     bb.wire("a4", "tp4", "pos")                         # IN+ → +12 V（测输入电流时把这根线换成电流表）
     bb.wire("j4", "bp4", "gnd")                         # IN− → 0 V
     bb.wire("j20", "bp20", "gnd")                       # OUT− → 0 V
-    bb.wire("a20", bb.ext((20.0, 12.9), "接负载 RL 一端", "sig", dx=0.45, ha="left"), "sig")
+    # a20 引出线：先横移半格走到第 20、21 列孔之间，再竖直向上，在两条上方电源轨线处画「跨线弯」，表示从轨上方跨过、不接轨
+    bb.ax.set_ylim(-6.0, 13.5)                          # 留出板外接线端（y = 12.9）的位置，否则端点圆圈被裁掉
+    bb.wire("a20", bb.ext((20.5, 12.9), "接负载 RL 一端", "sig", dx=0.45, ha="left"), "sig",
+            via=[(20.5, 9.0)], hops=[BB_RAIL_Y["tn"] - 0.32, BB_RAIL_Y["tp"] + 0.32])
     bb.wire(bb.ext((16.0, -5.0), "RL 另一端", "gnd", dx=-0.45, ha="right"), "bp16", "gnd")
     assert bb.connected("M1.IN+", "tp1") and bb.connected("M1.IN−", "tn1") and bb.connected("M1.OUT−", "tn1")
     assert not bb.connected("M1.IN+", "M1.OUT+") and not bb.connected("tp1", "tn1")

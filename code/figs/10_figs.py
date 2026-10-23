@@ -295,6 +295,11 @@ def bb10():
     assert bb.connected("DZ.1", "tn1") and bb.connected("RL.2", "tn1") and bb.connected("R.1", "tp1")
     assert not bb.connected("tp1", "tn1") and not bb.connected("R.1", "R.2")
     bb.probe("b3", "V_in", dx=-0.35, dy=0.3, ha="right")
+    # page4 接线第 6 步「先不插 RL」：图画的是插好 RL 的完整状态，这里给 RL 加一个提醒
+    bb.ax.annotate("接线第 6 步先不插 RL 和 a13 黑线（空载）\n测量表第 5 步（RL = 1 kΩ）再插",
+                   xy=(9.55, 5.95), xytext=(8.5, 2.0), ha="center", va="center", fontsize=8, color="0.15",
+                   bbox=dict(boxstyle="round,pad=0.3", fc="#fff6d5", ec="0.45", lw=0.8),
+                   arrowprops=dict(arrowstyle="->", color="0.35", lw=1.0, shrinkA=2, shrinkB=6), zorder=6)
     bb.probe("e7", "V_o", dx=0.35, dy=-0.3)
     bb.note(9.0, -4.75, "测 I_Z：断电，拔掉 a10 的黑线，电流表红笔插 c10、黑笔接 0 V 轨", va="center", ha="center")
     bb.note(9.0, -5.35, "测 I_L：同样拔掉 a13 的黑线，电流表红笔插 c13、黑笔接 0 V 轨", va="center", ha="center")
