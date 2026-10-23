@@ -38,6 +38,9 @@ with drawing() as d:
     d += (j := elm.Dot())
     d += elm.Resistor().down().length(3.4).label("$R_L$", "bottom")
     d += elm.Line().left().tox(n[0])
+    # 这根竖线要穿过交流源到 b 的水平线（y = b[1]），两线不相连：画一个跨线小弧
+    d += elm.Line().up().toy(b[1] - 0.3)
+    d += elm.Arc2(k=0.9).to((n[0], b[1] + 0.3))
     d += elm.Line().up().toy(n[1])
     d += elm.Line().at(j.center).right().length(1.0)
     d += elm.Dot(open=True).label("$V_o$ +", "right")
