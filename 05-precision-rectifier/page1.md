@@ -1,6 +1,6 @@
 # 05 精密整流 · 直觉篇
 
-[上一页：02 参数与调试篇](../02-noninverting-amp/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P2 半导体入门](../P2-semiconductor-basics/page1.md)、[01 反相放大](../01-inverting-amp/page1.md)
+[上一页：02 同相放大 · 参数与调试篇](../02-noninverting-amp/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P2 半导体入门](../P2-semiconductor-basics/page1.md)、[01 反相放大](../01-inverting-amp/page1.md)
 
 ## 为什么需要精密整流
 
