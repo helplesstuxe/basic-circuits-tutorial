@@ -20,6 +20,7 @@
 
 - 第一行是一级标题，格式为「NN 电路名 · 直觉篇」（或「原理与实现篇」「参数与调试篇」）。
 - 标题下面一行写导航：上一页、本节点其余两页、下一页，以及前置节点的链接。
+- 跨节点链接一律写全名加篇名，格式 `[NN 名称 · 篇名](../NN-slug/pageN.md)`，例如 `[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)`、`[下一页：17 自锁 · 直觉篇](../17-self-locking/page1.md)`。名称照抄 00-design §5.1（写「17 自锁」，不写「17 自锁电路」「自锁控制」），链接指向具体的 pageN.md，不指向文件夹。
 - **page1 直觉篇**：痛点引入（读者在什么场景下会需要这个电路）→ 生活类比 → 示意图或电路图 → 用一句话说出这个电路「做了什么」。
 - **page2 原理与实现篇**：先补最小必要知识（或链接到前置节点）→ 推导，每一步都先用中文说意思再写公式，并代一组数算一遍 → 一段逐行注释的最小可运行 Python 仿真 → 仿真输出图和讲解 → 渐隐式例题（完整示例 → 关键步骤留空 → 变体迁移）。
 - **page3 参数与调试篇**：每个元件参数的物理含义、常用取值范围，改变它以后波形或效果怎么变（最好配一张参数扫描图）→ 故障排查表 → 练习题。
@@ -58,6 +59,7 @@
 - 参考线（0V、 $V_{CC}$ 、门限、t = τ 等）用 `figstyle.ref_h` / `ref_v`，统一为灰色点线。
 - **图上的每一个数字都必须由脚本打印到终端**（`figstyle.mark` 会自动打印），正文引用的数值要与打印结果一致，不许凭估计写。
 - **关键结论要用 `assert` 断言**，例如 `assert abs(gain - (-10)) < 0.05`，这样参数被改错时脚本会直接报错。
+- 正文只提本页的图号。`tools/check_figs.py` 会把「图 NN-pY-k」这种指向别的页的图号判为错误；要引用别页的图，写成链接加文字描述，例如「见 [01 反相放大 · 原理与实现篇](../01-inverting-amp/page2.md) 的波形图」。
 - **答案图放在揭晓之后**：练习题的答案图只能出现在 `<details>` 里面，或者出现在正文揭晓答案的那句话之后。
 - 用法示例：
 
@@ -84,6 +86,15 @@ schem.save_schem(d, "01", "01_p1_1_circuit.png")
 
 - schemdraw 自带元件可以直接用：运放、二极管、稳压管、LED、整流桥、NPN/PNP 三极管、N/P 沟道 MOS 管、电阻、电容、电感、电位器、变压器、光耦、肖特基二极管、熔断器、开关、单刀双掷开关、按钮、继电器、正弦/方波/直流源、电池、灯、直流电机、地。继电-接触器控制图要用国标画法，请用 `schem.py` 里的自定义元件：`Coil`（线圈方框）、`ContactNO` / `ContactNC`（常开/常闭触点）、`PushNO` / `PushNC`（按钮）、`TimerNO` / `TimerNC`（时间继电器延时触点）、`ThermalHeater` / `ThermalNC`（热继电器）、`Motor3`（三相电机）、`LampX`（指示灯）。隔离电路用 `schem.barrier`（隔离带虚线）和 `schem.module`（带引脚名的模块方框）。运行 `python code/figs/schem.py --demo` 可以看到全部元件。
 
+### schemdraw 0.23 注意事项
+
+- 施密特反相器是 `schemdraw.logic.SchmittNot`（在 `logic` 模块里，`schemdraw.elements` 里没有）。
+- `elm.NFet` / `elm.PFet` 不画体二极管，需要时自己加一个 `elm.Diode`；而且一定要显式写方向 `.theta(…)`，否则它会沿用上一个元件的方向，画歪。
+- 横着串在电源线上的 MOS 管（比如 LDO 调整管、高边开关）用 `elm.NFet().theta(-90).reverse()`：源极在左、漏极在右、栅极朝上。
+- `schem.module(...)` 画方框模块时要接 `.theta(0)`，否则会沿用前一个元件的方向。
+- 读元件引脚坐标用 `.absanchors['gate']` 这类绝对坐标，不要用 `.anchors`（那是元件自身坐标系，旋转后就不对了）。
+- `elm.Opamp` 也会继承上一个元件的方向；放运放前先 `.theta(0)` 或者在 `d.add` 之前把方向调回来。
+
 ## 3. 代码规则
 
 - 一律 Python 3 + NumPy + matplotlib，必要时加 SciPy；用教程虚拟环境 `/workspace/circuits-venv` 运行。
@@ -104,12 +115,17 @@ schem.save_schem(d, "01", "01_p1_1_circuit.png")
 - 每个公式：先说中文意思 → 写公式 → 代一组数算一遍。
 - 页面之间多用相对链接，例如 `[虚短](../P3-opamp-basics/page2.md)`。
 
+### 加粗的标点规则
+
+- 句末标点（。，、；：！？）和全角括号放在 `**` 外面：写 `**例 1：给 LED 选限流电阻**。`、`**练习 1**：`，不写 `**……。**`、`**练习 1：**`。原因：闭合的 `**` 前面是标点、后面紧跟汉字时，GitHub 不认它是闭合符，页面上会露出 `**`（`**朱红色带×**的` 这种以符号结尾的也一样，要改写成以文字结尾）。
+- 闭合 `**` 前面不能有空格，开头 `**` 后面也不能有空格：写 `**重点**`，不写 `**重点 **`、`** 重点**`。
+
 ## 5. GitHub 公式规则
 
 md 要能直接在 github.com 上正常显示公式：
 
 - 行内公式用 `$…$`，块公式用 `$$…$$`。
-- 开头的 `$` 紧跟中文、全角标点、字母或 `-` 时 GitHub 不渲染，前面要补一个空格（紧跟 `(` 或 `**` 时不用补）。写完运行 `tools/fix_inline_math_spacing.py` 自动补。
+- 开头的 `$` 紧跟中文、全角标点、字母或 `-` 时 GitHub 不渲染，前面要补一个空格（紧跟 `(` 或 `**` 时不用补）。**全角标点后面也要补**：写 `电压， $V_o$`，不写 `电压，$V_o$`。写完运行 `tools/fix_inline_math_spacing.py 文件…`（不带 `--check` 就是修复模式，直接改文件），再用 `--check` 确认没有遗漏。
 - GitHub 会吃掉 Markdown 转义，要改成 KaTeX 和 MathJax 都认识的写法：
   - `\,` `\!` `\;` `\:` 改成 `\thinspace` `\negthinspace` `\thickspace` `\medspace`；
   - `\{` `\}` 改成 `\lbrace` `\rbrace`，`\|` 改成 `\Vert`，矩阵里的 `\\` 改成 `\cr`；
@@ -118,7 +134,9 @@ md 要能直接在 github.com 上正常显示公式：
 - 含 `\begin…` 的整行 `$$…$$` 要单独成段，前后各留一个空行。
 - 用 `tools/check_github_math.py` 检查：它会调用 GitHub 的渲染接口，统计源文件里的公式数和渲染出来的公式数，两者相等才算通过。加 `--fix` 会做上面那些等价替换。
 - 行内公式里的 `<` `>` 一律写成 `\lt` `\gt`，例如 `$R_f \lt 2R_g$`、`$V_i \gt 0$`（直接写 `<` 会被当成 HTML 标签吞掉）。
-- 图注里不写公式等式，公式放正文：图注只写「图 NN-pX-k　这张图是什么」，要讲的关系式写在图前引导句或图后讲解里。
+- `tools/check_github_math.py` 会直接判失败的写法：公式里的 `\%`、`\!`、`\,`（分别改成公式外的 `%`、`\negthinspace`、`\thinspace`），以及开头 `$` 前缺空格（包括紧跟全角标点的情况）。
+- `<details>` 答案里不写 `$$…$$` 块公式（GitHub 在折叠块里渲染不稳定），改用行内 `$…$`，或者把式子拆成几行行内公式。
+- 图注里不写任何公式（`$…$` 都不要），公式放正文：图注只写「图 NN-pX-k　这张图是什么」，要讲的关系式写在图前引导句或图后讲解里。
 - GitHub 手机 App 不渲染公式，这是平台限制，不用处理。
 
 ## 6. 安全提醒
@@ -147,11 +165,16 @@ PY=/workspace/circuits-venv/bin/python
 $PY code/figs/NN_figs.py                              # 重新生成本节点全部图片，检查 assert 和打印的数值
 $PY tools/count_cjk.py NN-slug/page*.md --min 500     # 每页正文汉字数 ≥ 500
 $PY tools/run_blocks.py NN-slug/page*.md              # 页面里的代码块逐块运行
-$PY tools/run_blocks.py --scripts code/NN_*.py code/figs/NN_figs.py  # 本节点脚本逐个运行
+$PY tools/run_blocks.py --scripts code/NN_sim.py code/figs/NN_figs.py  # 本节点脚本逐个运行
 $PY tools/check_figs.py NN-slug/page*.md              # 图片存在、PNG、< 200 KB，图号连续且被引用
-$PY tools/fix_inline_math_spacing.py NN-slug/page*.md # 补公式前的空格
-$PY tools/check_github_math.py NN-slug/page*.md       # GitHub 渲染公式数与源文件一致
+$PY tools/fix_inline_math_spacing.py NN-slug/page*.md # 修复模式：直接补公式前的空格
+$PY tools/fix_inline_math_spacing.py --check NN-slug/page*.md  # 确认没有遗漏
+$PY tools/check_github_math.py NN-slug/page*.md notes/NN-research.md  # GitHub 渲染公式数与源文件一致
 ```
+
+- 画图脚本的路径是 `code/figs/NN_figs.py`（不是 `code/NN_figs.py`），仿真脚本是 `code/NN_sim.py`；P1–P3 的 NN 就写 `P1` `P2` `P3`。
+- 给工具传**文件**，不要传文件夹：写 `NN-slug/page*.md`，不写 `NN-slug/`。有的工具收到文件夹会去扫整个子目录甚至全仓库，有的直接不认。
+- 上面几个工具不检查加粗标点和跨节点链接格式，这两条（§4「加粗的标点规则」、§1 链接格式）交稿前自己搜一遍 `**` 和 `](../`。
 
 ## 9. 提交规则
 
