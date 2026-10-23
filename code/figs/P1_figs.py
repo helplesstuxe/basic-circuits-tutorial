@@ -418,3 +418,274 @@ if __name__ == "__main__":
     p2_1_loading(); p2_3_square(); p2_4_flyback(); p2_5_timer(); p2_6_timer_symbols(); p2_7_thevenin()
     p3_1_tau_scan(); p3_2_divider_tradeoff(); p3_3_rl_answer()
     p3_datasheet_numbers(); p3_new_exercises()
+
+
+# ======================================================================================
+# 动手实验篇（page4）用的面包板俯视图小工具。
+# 各节点 figs 脚本里各带一份同样的代码（共享模块只由总纲修改）；以后可以挪进 code/figs/ 的共享模块。
+# 坐标：列号 1～30 从左到右；a～e 行在上半块，f～j 行在下半块，中间是隔离槽；
+# 上下各有两条电源轨，名字用 "T1"（最上）、"T2"、"B1"、"B2"（最下）加列号，例如 "T1-5"。
+# 同一列的 a～e 五个孔是连通的，f～j 五个孔是连通的；同一条电源轨整条连通。
+# ======================================================================================
+import matplotlib.pyplot as _bb_plt
+from matplotlib.patches import Rectangle as _BbRect, Polygon as _BbPoly, Wedge as _BbWedge
+
+BB_ROWY = {r: y for r, y in zip("abcdefghij", [9, 8, 7, 6, 5, 3, 2, 1, 0, -1])}
+BB_RAILY = {"T1": 11.6, "T2": 10.8, "B1": -2.8, "B2": -3.6}
+BB_WIRE = dict(pos="#CC0000", gnd="#000000", neg=fs.C["third"], sig=fs.C["vin"], out=fs.C["vout"])
+
+
+def bb_xy(h):
+    """孔名 → 坐标：'a5' → (5, 9)；'T1-5' → (5, 11.6)。"""
+    if h[:2] in BB_RAILY:
+        return float(h.split("-")[1]), BB_RAILY[h[:2]]
+    return float(h[1:]), float(BB_ROWY[h[0]])
+
+
+def bb_board(cols=30, rails=None, figsize=(10, 5.6)):
+    """画空白面包板。rails = {"T1": ("+9 V", 颜色), ...}，只画给出的电源轨。返回 (fig, ax)。"""
+    rails = rails or {}
+    fig, ax = _bb_plt.subplots(figsize=figsize)
+    ax.set_xlim(-1.6, cols + 4.2); ax.set_ylim(-5.5, 12.7)
+    ax.set_aspect("equal"); ax.axis("off")
+    ax.add_patch(_BbRect((0.2, -4.2), cols + 0.6, 16.4, fc="#f4f1ea", ec="0.6", lw=0.8, zorder=0))
+    ax.add_patch(_BbRect((0.2, 3.65), cols + 0.6, 0.7, fc="#e4e0d6", ec="none", zorder=0))   # 中间隔离槽
+    for c in range(1, cols + 1):
+        for r, y in BB_ROWY.items():
+            ax.plot(c, y, "s", ms=2.6, color="0.55", zorder=1)
+        if c == 1 or c % 5 == 0:
+            ax.text(c, 9.65, str(c), ha="center", va="bottom", fontsize=7, color="0.3")
+            ax.text(c, -1.75, str(c), ha="center", va="top", fontsize=7, color="0.3")
+    for r, y in BB_ROWY.items():
+        ax.text(0.45, y, r, ha="center", va="center", fontsize=7, color="0.3")
+        ax.text(cols + 0.55, y, r, ha="center", va="center", fontsize=7, color="0.3")
+    for name, y in BB_RAILY.items():
+        if name not in rails:
+            continue
+        text, col = rails[name]
+        ax.plot([0.7, cols + 0.3], [y + 0.32, y + 0.32], color=col, lw=0.9, zorder=1)
+        for c in range(1, cols + 1):
+            ax.plot(c, y, "s", ms=2.6, color="0.55", zorder=1)
+        ax.text(cols + 1.0, y, text, ha="left", va="center", fontsize=8, color=col)
+    return fig, ax
+
+
+def bb_wire(ax, a, b, kind="sig", via=()):
+    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/红紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
+    pts = [bb_xy(a)] + list(via) + [bb_xy(b)]
+    xs, ys = zip(*pts)
+    ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
+    ax.plot([xs[0], xs[-1]], [ys[0], ys[-1]], "o", ms=4, color=BB_WIRE[kind], zorder=4)
+
+
+def _bb_label(ax, x, y, text, fs_=7.5):
+    ax.text(x, y, text, ha="center", va="center", fontsize=fs_, zorder=6,
+            bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85))
+
+
+def bb_res(ax, a, b, text, dy=0.55):
+    """电阻：两条引脚 + 中间米色小方块，标签写在方块旁边。"""
+    (x0, y0), (x1, y1) = bb_xy(a), bb_xy(b)
+    ax.plot([x0, x1], [y0, y1], color="0.25", lw=1.2, zorder=4)
+    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+    horiz = abs(x1 - x0) >= abs(y1 - y0)
+    w, h = (0.9, 0.36) if horiz else (0.36, 0.9)
+    ax.add_patch(_BbRect((xm - w / 2, ym - h / 2), w, h, fc="#e8cf9c", ec="0.25", lw=0.8, zorder=5))
+    if horiz:
+        _bb_label(ax, xm, ym + dy, text)
+    else:
+        _bb_label(ax, xm + (0.85 if dy > 0 else -0.85), ym, text)
+    for x, y in ((x0, y0), (x1, y1)):
+        ax.plot(x, y, "o", ms=3, color="0.25", zorder=5)
+
+
+def bb_part2(ax, a, b, text, kind="diode", dy=0.55, fc="white"):
+    """两脚元件：kind = diode（a 脚是阳极，b 脚是阴极，画竖杠）、led（同上，填色）、cap（电解电容，a 脚是正极）、box。"""
+    (x0, y0), (x1, y1) = bb_xy(a), bb_xy(b)
+    ax.plot([x0, x1], [y0, y1], color="0.25", lw=1.2, zorder=4)
+    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+    L = max(((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5, 1e-9)
+    ux, uy = (x1 - x0) / L, (y1 - y0) / L          # 从 a 指向 b 的单位向量
+    nx, ny = -uy, ux
+    s = 0.32
+    if kind in ("diode", "led"):
+        tri = [(xm - ux * s + nx * s, ym - uy * s + ny * s), (xm - ux * s - nx * s, ym - uy * s - ny * s),
+               (xm + ux * s, ym + uy * s)]
+        ax.add_patch(_BbPoly(tri, closed=True, fc=(fc if kind == "led" else "0.25"), ec="0.2", lw=0.8, zorder=5))
+        ax.plot([xm + ux * s + nx * s, xm + ux * s - nx * s], [ym + uy * s + ny * s, ym + uy * s - ny * s],
+                color="0.1", lw=1.6, zorder=5)
+    elif kind == "cap":
+        ax.add_patch(_BbRect((xm - 0.32, ym - 0.32), 0.64, 0.64, fc="#3b5b92", ec="0.2", lw=0.8, zorder=5))
+        _bb_label(ax, x0 + ux * 0.35 + nx * 0.35, y0 + uy * 0.35 + ny * 0.35, "+", fs_=8)
+    else:
+        ax.add_patch(_BbRect((xm - 0.4, ym - 0.3), 0.8, 0.6, fc=fc, ec="0.2", lw=0.8, zorder=5))
+    if abs(x1 - x0) >= abs(y1 - y0):
+        _bb_label(ax, xm, ym + dy, text)
+    else:
+        _bb_label(ax, xm + (0.85 if dy > 0 else -0.85), ym, text)
+    for x, y in ((x0, y0), (x1, y1)):
+        ax.plot(x, y, "o", ms=3, color="0.25", zorder=5)
+
+
+def bb_block(ax, holes, text, pins=None, fc="white", pad=0.38, fs_=7.5, tdy=0.0):
+    """多脚元件（三极管、继电器、电位器、按钮、电池盒等）：画一个盖住这些孔的方块，pins 给每只脚的小字。
+    tdy ≠ 0 时把元件名挪到方块上方（tdy > 0）或下方（tdy < 0），免得压住引脚。"""
+    pts = [bb_xy(h) for h in holes]
+    xs, ys = zip(*pts)
+    x0, x1, y0, y1 = min(xs) - pad, max(xs) + pad, min(ys) - pad, max(ys) + pad
+    ax.add_patch(_BbRect((x0, y0), x1 - x0, y1 - y0, fc=fc, ec="0.2", lw=0.9, alpha=0.92, zorder=5))
+    if tdy:
+        _bb_label(ax, (x0 + x1) / 2, (y1 + tdy) if tdy > 0 else (y0 + tdy), text, fs_=fs_)
+    else:
+        ax.text((x0 + x1) / 2, (y0 + y1) / 2, text, ha="center", va="center", fontsize=fs_, zorder=6)
+    for i, (x, y) in enumerate(pts):
+        ax.plot(x, y, "o", ms=3, color="0.2", zorder=6)
+        if pins:
+            ax.text(x, y - 0.42, pins[i], ha="center", va="top", fontsize=6, color="0.15", zorder=6)
+
+
+def bb_dip8(ax, col, text="LM358"):
+    """8 脚芯片跨在隔离槽上：1～4 脚在 f 行第 col～col+3 列，8～5 脚在 e 行第 col～col+3 列，缺口朝左。"""
+    ax.add_patch(_BbRect((col - 0.45, 3.25), 3.9, 2.15, fc="0.18", ec="0.1", zorder=5))
+    ax.add_patch(_BbWedge((col - 0.45, 4.3), 0.3, -90, 90, fc="#f4f1ea", ec="none", zorder=6))
+    ax.text(col + 1.5, 4.3, text, ha="center", va="center", fontsize=8, color="white", zorder=6)
+    for k in range(4):
+        ax.text(col + k, 3.55, str(k + 1), ha="center", va="center", fontsize=6.5, color="white", zorder=6)
+        ax.text(col + k, 5.05, str(8 - k), ha="center", va="center", fontsize=6.5, color="white", zorder=6)
+
+
+def bb_probe(ax, h, text, dx=0.0, dy=0.9):
+    """测量点：朱红色以外的黑框圆圈 + 编号，指向某个孔。"""
+    x, y = bb_xy(h)
+    ax.annotate(text, (x, y), (x + dx, y + dy), ha="center", va="center", fontsize=7.5, zorder=7,
+                bbox=dict(boxstyle="circle,pad=0.15", fc=fs.C["hi"], ec="0.2", lw=0.7),
+                arrowprops=dict(arrowstyle="-", color="0.2", lw=0.7))
+
+
+def bb_legend(ax, items, x=1.0, y=-5.0):
+    """底部图例：items = [(kind, 文字), ...]。"""
+    for i, (kind, text) in enumerate(items):
+        xx = x + i * 6.2
+        ax.plot([xx, xx + 1.0], [y, y], color=BB_WIRE[kind], lw=2.4)
+        ax.text(xx + 1.25, y, text, ha="left", va="center", fontsize=7.5)
+
+
+# ---------------- 动手实验篇：数值（每个数都打印并断言） ----------------
+def p4_numbers():
+    tol = 0.05                                   # 5% 电阻
+    vs = 5.0                                     # USB / 面包板电源模块的 5 V
+    lo_r, hi_r = 10e3 * (1 - tol), 10e3 * (1 + tol)
+    par = lambda a, b: a * b / (a + b)
+    # ① 10 kΩ/10 kΩ 分压，不接负载 / 接 10 kΩ / 接 100 kΩ：最坏组合 = R1 最大配 R2 最小，反之亦然
+    def rng(rl=None):
+        vals = []
+        for r1 in (lo_r, hi_r):
+            for r2 in (lo_r, hi_r):
+                for k in ((1 - tol, 1 + tol) if rl else (1,)):
+                    low = par(r2, rl * k) if rl else r2
+                    vals.append(vs * low / (r1 + low))
+        return min(vals), max(vals)
+    d0, d10, d100 = rng(), rng(10e3), rng(100e3)
+    nom = lambda rl=None: vs * (par(10e3, rl) if rl else 10e3) / (10e3 + (par(10e3, rl) if rl else 10e3))
+    print(f"[P1 page4] 5 V 分压：空载 {nom():.2f} V（{d0[0]:.2f}～{d0[1]:.2f}），接 10 kΩ {nom(10e3):.2f} V（{d10[0]:.2f}～{d10[1]:.2f}），"
+          f"接 100 kΩ {nom(100e3):.2f} V（{d100[0]:.2f}～{d100[1]:.2f}）")
+    assert abs(nom() - 2.5) < 1e-9 and abs(nom(10e3) - 5 / 3) < 1e-9 and abs(nom(100e3) - 2.381) < 0.001
+    assert (round(d0[0], 2), round(d0[1], 2)) == (2.38, 2.62)
+    assert (round(d10[0], 2), round(d10[1], 2)) == (1.56, 1.78)
+    assert (round(d100[0], 2), round(d100[1], 2)) == (2.26, 2.51)
+    # ② RC：5 V、10 kΩ、100 μF，每秒读一次；电容 ±20%、电阻 ±5% → τ 0.76～1.26 s
+    t = np.arange(0, 11)
+    tmin, tmax = 10e3 * 0.95 * 100e-6 * 0.8, 10e3 * 1.05 * 100e-6 * 1.2
+    v_nom = vs * (1 - np.exp(-t / 1.0))
+    v_lo, v_hi = vs * (1 - np.exp(-t / tmax)), vs * (1 - np.exp(-t / tmin))
+    print(f"[P1 page4] τ 范围 {tmin:.2f}～{tmax:.2f} s；1 s：{v_nom[1]:.2f} V（{v_lo[1]:.2f}～{v_hi[1]:.2f}），"
+          f"2 s：{v_nom[2]:.2f} V（{v_lo[2]:.2f}～{v_hi[2]:.2f}），5 s：{v_nom[5]:.2f} V，10 s：{v_nom[10]:.3f} V")
+    assert abs(tmin - 0.76) < 1e-9 and abs(tmax - 1.26) < 1e-9
+    assert abs(v_nom[1] - 3.16) < 0.005 and abs(v_lo[1] - 2.74) < 0.005 and abs(v_hi[1] - 3.66) < 0.005
+    assert abs(v_nom[5] - 4.97) < 0.005 and v_lo[10] > 4.99
+    # 放大 10 倍：100 kΩ + 100 μF，τ = 10 s，万用表 10 MΩ 输入电阻只让终值低约 1%
+    print(f"[P1 page4] 100 kΩ×100 μF：τ = {100e3 * 100e-6:.0f} s，10 s 时 {vs * (1 - np.exp(-1)):.2f} V；"
+          f"10 MΩ 表笔并上后终值 {vs * 10e6 / (10e6 + 100e3):.2f} V")
+    assert abs(vs * 10e6 / (10e6 + 100e3) - 4.95) < 0.001
+    # ③ 继电器 Omron G5V-1-DC5：线圈 167 Ω ±10%，额定 30 mA，电感 0.15 H（释放）/ 0.29 H（吸合）
+    rc, l_on = 167, 0.29
+    print(f"[P1 page4] 线圈电阻 {rc * 0.9:.0f}～{rc * 1.1:.0f} Ω，5 V 时电流 {vs / rc * 1e3:.0f} mA，τ = L/R = {l_on / rc * 1e3:.2f} ms")
+    assert round(rc * 0.9) == 150 and round(rc * 1.1) == 184 and round(vs / rc * 1e3) == 30
+    # 松手后续流：线圈 + 二极管（压降 vd）回路，i = (I0 + vd/R)·e^(−t/τ) − vd/R，降到 0 的时间
+    i0, tau = vs / rc, l_on / rc
+    for name, vd in (("1N4007（0.7 V）", 0.7), ("LED + 1N4148（2.7 V）", 2.0 + 0.7)):
+        t0 = tau * np.log((i0 + vd / rc) / (vd / rc))
+        print(f"[P1 page4] 续流支路 {name}：电流从 {i0 * 1e3:.0f} mA 降到 0 用 {t0 * 1e3:.1f} ms；"
+              f"开关（按钮）两端最高 {vs + vd:.1f} V")
+    assert abs(tau * np.log((i0 + 2.7 / rc) / (2.7 / rc)) * 1e3 - 1.8) < 0.05
+    assert abs(tau * np.log((i0 + 0.7 / rc) / (0.7 / rc)) * 1e3 - 3.6) < 0.05
+    # 触点一侧：5 V → COM → NO → 红色 LED（约 2 V）→ 1 kΩ → 地
+    print(f"[P1 page4] 触点侧 LED 电流约 {(vs - 2) / 1e3 * 1e3:.1f} mA，1 kΩ 上约 {vs - 2:.1f} V")
+    return t, v_nom, v_lo, v_hi
+
+
+# ---------------- 图 P1-p4-1：面包板接线图 ----------------
+def p4_1_breadboard():
+    rails = {"T1": ("+5 V", BB_WIRE["pos"]), "T2": ("GND", BB_WIRE["gnd"]),
+             "B1": ("+5 V", BB_WIRE["pos"]), "B2": ("GND", BB_WIRE["gnd"])}
+    fig, ax = bb_board(30, rails, figsize=(10, 6.2))
+    # 上下电源轨在左端连起来
+    bb_wire(ax, "T1-1", "B1-1", "pos", via=[(-0.4, 11.6), (-0.4, -2.8)])
+    bb_wire(ax, "T2-2", "B2-2", "gnd", via=[(-1.0, 10.8), (-1.0, -3.6)])
+    # A 区：分压器（第 3～11 列）
+    bb_wire(ax, "T1-3", "a3", "pos")
+    bb_res(ax, "b3", "b7", "R1 10k")
+    bb_res(ax, "c7", "c11", "R2 10k")
+    bb_wire(ax, "a11", "T2-11", "gnd")
+    bb_res(ax, "e7", "e11", "RL", dy=-0.55)
+    bb_probe(ax, "d7", "①", dx=-0.9, dy=0.0)
+    # B 区：RC 充放电（第 13～19 列）
+    bb_wire(ax, "T1-13", "a13", "pos")
+    bb_block(ax, ["c13", "c14", "c15"], "", pins=["充", "公共", "放"], fc="#cfd8dc")
+    _bb_label(ax, 14, 7.75, "SW 拨动开关")
+    bb_wire(ax, "a15", "T2-15", "gnd")
+    bb_res(ax, "e14", "e18", "R 10k", dy=0.55)
+    bb_part2(ax, "b18", "b19", "C 100μF", kind="cap", dy=0.5)
+    bb_wire(ax, "a19", "T2-19", "gnd")
+    bb_probe(ax, "d18", "②", dx=0.9, dy=0.0)
+    # C 区：继电器（下半块，第 18～30 列）
+    bb_wire(ax, "B1-18", "j18", "pos")
+    bb_block(ax, ["i18", "i21"], "SB 按钮", fc="#cfd8dc")
+    bb_block(ax, ["g21", "g24", "g26", "g28"], "继电器 KA（G5V-1-DC5）",
+             pins=["线圈+", "线圈−", "COM", "NO"], fc="#dbe8f5", fs_=7, tdy=-1.0)
+    bb_part2(ax, "f24", "f21", "1N4007", kind="diode", dy=0.55)
+    bb_wire(ax, "j24", "B2-24", "gnd")
+    bb_wire(ax, "B1-26", "j26", "pos")
+    bb_part2(ax, "i28", "i30", "LED", kind="led", fc="#ff6666", dy=0.55)
+    bb_res(ax, "j30", "B2-30", "1k", dy=0.55)
+    bb_probe(ax, "j21", "③", dx=0.0, dy=-0.9)
+    for x, text in ((7, "A 区：分压"), (16, "B 区：RC 充放电"), (27.5, "C 区：继电器")):
+        ax.text(x, 4.3, text, ha="center", va="center", fontsize=8, color="0.3")
+    bb_legend(ax, [("pos", "红线：接 +5 V"), ("gnd", "黑线：接地")])
+    print("[图 P1-p4-1] A：R1 b3–b7，R2 c7–c11，RL e7–e11，测点① 第 7 列；"
+          "B：SW c13/c14/c15，R d14–d18，C b18(+)–b19，测点② 第 18 列；"
+          "C：SB i18–i21，KA 线圈 g21/g24、COM g26、NO g28，1N4007 阴极 f21、阳极 f24，LED i28→i30，1 kΩ j30→地，测点③ 第 21 列")
+    fs.save(fig, P, "P1_p4_1_breadboard.png")
+
+
+# ---------------- 图 P1-p4-2：没有示波器时，每秒读一次万用表 ----------------
+def p4_2_stopwatch(t, v_nom, v_lo, v_hi):
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    tt = np.linspace(0, 10, 400)
+    ax.fill_between(tt, 5 * (1 - np.exp(-tt / 1.26)), 5 * (1 - np.exp(-tt / 0.76)), color=fs.C["fill"],
+                    label="元件公差范围（τ 0.76～1.26 s）")
+    ax.plot(tt, 5 * (1 - np.exp(-tt)), **fs.LS["good"], label="标称值（τ = 1 s）")
+    ax.plot(t, v_nom, "o", color=fs.C["third"], ms=5, label="每秒读一次的读数")
+    fs.ref_h(ax, 5.0, "5 V")
+    fs.mark(ax, 1, v_nom[1], unit=" V", dx=0.25, dy=-0.35)
+    fs.mark(ax, 2, v_nom[2], unit=" V", dx=0.25, dy=-0.35)
+    fs.mark(ax, 5, v_nom[5], unit=" V", dx=0.0, dy=-0.45)
+    ax.set_xlim(-0.2, 10.4); ax.set_ylim(0, 5.6)
+    fs.axlabels(ax, "开关拨到「充」以后的时间", "s", "电容电压", "V")
+    ax.legend(loc="lower right")
+    fs.save(fig, P, "P1_p4_2_stopwatch.png")
+
+
+if __name__ == "__main__":
+    _t, _vn, _vl, _vh = p4_numbers()
+    p4_1_breadboard(); p4_2_stopwatch(_t, _vn, _vl, _vh)
