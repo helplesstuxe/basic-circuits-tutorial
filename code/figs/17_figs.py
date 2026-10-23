@@ -81,6 +81,10 @@ def main_circuit():
         for y, lab in [(-0.8, "熔断器\nFU1"), (-2.4, "KM\n主触点"), (-4.0, "热继电器\n发热元件 FR")]:
             d += elm.Label().at((-1.3, y)).label(lab, fontsize=10)
     print("[图 17-p1-3] 主电路：三相 L1/L2/L3（线电压 380 V）")
+    U_phase = 220.0                                   # 相电压：相线对零线
+    U_line = U_phase * np.sqrt(3)                     # 线电压：两根相线之间 = 相电压 × √3（结论，推导见 19）
+    print(f"[三相] 相电压 {U_phase:.0f} V × √3 = {U_line:.0f} V ≈ 380 V（线电压）；比值 {380 / 220:.2f}")
+    assert abs(U_line - 380) < 2
     save_schem(d, P, "17_p1_3_main.png")
 
 
@@ -151,14 +155,16 @@ def wrong_wiring():
     ax.plot(t, sb2 * 0.8 + 6, **fs.LS["fb"], label="SB2 启动按钮（按下 = 高）")
     ax.plot(t, sb1 * 0.8 + 4, **fs.LS["third"], label="SB1 停止按钮（按下 = 高）")
     ax.plot(t, ok * 0.8 + 2, **fs.LS["good"], label="正确接法的 KM")
-    ax.plot(t, wp * 0.8 + 0, **{**fs.LS["bad"], "markevery": 400}, label="错误①：自锁触点并到了 SB1 外面")
-    ax.plot(t, sn * 0.8 - 2, **{**fs.LS["bad"], "markevery": 400}, label="错误②：停止按钮用了常开")
+    ax.plot(t, wp * 0.8 + 0, **{**fs.LS["bad"], "markevery": 400})   # 两条错误线同色同标记，直接在行旁写字区分
+    ax.plot(t, sn * 0.8 - 2, **{**fs.LS["bad"], "markevery": 400})
+    ax.text(4.2, 1.15, "错误①：自锁触点并到了 SB1 外面 → 按停止也停不下来", fontsize=8.5, color=fs.LS["bad"]["color"])
+    ax.text(4.2, -0.85, "错误②：停止按钮用了常开 → 永远启动不了", fontsize=8.5, color=fs.LS["bad"]["color"])
     fs.ref_v(ax, 3.5, "按停止", y=0.80)
     assert ok[np.searchsorted(t, 4.5)] == 0 and wp[np.searchsorted(t, 4.5)] == 1 and not sn.any()
     print("[图 17-p2-3] 1 s、5.5 s 按启动，3.5 s 按停止；错误①停不下来，错误②永远启动不了")
     ax.set_yticks([-1.6, 0.4, 2.4, 4.4, 6.4]); ax.set_yticklabels(["错误②", "错误①", "正确", "SB1", "SB2"])
     ax.set_ylim(-2.4, 9.8); fs.axlabels(ax, "时间", "s")
-    ax.legend(loc="upper center", fontsize=8, ncol=2)
+    ax.legend(loc="upper center", fontsize=8, ncol=3)
     fs.save(fig, P, "17_p2_3_wrong.png")
 
 

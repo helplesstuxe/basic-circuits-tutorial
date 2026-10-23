@@ -1,7 +1,7 @@
 # 17 自锁电路的最小仿真：把时间切成 1 ms 一小段，每一段都按"控制回路通不通 → 线圈电压够不够 → 衔铁吸没吸"推一步。
 # 控制回路：电源 → SB1 停止按钮（常闭）→ [SB2 启动按钮（常开） 并联 KM 自锁触点（常开）] → KM 线圈 → 电源另一端
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
