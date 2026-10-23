@@ -150,3 +150,19 @@ fs.mark(ax, V_HI, V_HI, fmt="{:.1f}", unit=" V", dx=6, dy=-14)
 assert vout.max() == 3.5 and vout.min() == 0.1
 fs.axlabels(ax, "输入 $V_i$", "V", "输出 $V_o$", "V"); ax.legend(loc="lower right", fontsize=8)
 fs.save(fig, N, "03_p3_2_single_supply.png")
+
+# ---------- 正文与练习里的其余数字（只打印 + 断言） ----------
+# 压摆率：不用求导，直接数值算正弦相邻两点的斜率，找最大值，和 2πfVp 对比
+f, Vp = 1e3, 1.0
+tt = np.linspace(0, 1 / f, 100001)
+vv = Vp * np.sin(2 * np.pi * f * tt)
+slope = np.max(np.abs(np.diff(vv) / np.diff(tt)))
+print(f"1 kHz、峰值 1 V 正弦：数值最大斜率 {slope:.1f} V/s，2πfVp = {2*np.pi*f*Vp:.1f} V/s，平均斜率 4fVp = {4*f*Vp:.0f} V/s")
+assert abs(slope / (2 * np.pi * f * Vp) - 1) < 1e-3
+print(f"最大斜率 / 平均斜率 = {slope/(4*f*Vp):.3f}（π/2 = {np.pi/2:.3f}）")
+# 分压器内阻：两只 10 kΩ 并联 5 kΩ，接 1 kΩ 负载
+print(f"5 V × 1/(5+1) = {5*1/(5+1):.2f} V")
+assert abs(5 / 6 - 0.83) < 0.01
+# 诊断练习：隔离电阻 33 Ω、负载 0.5 mA 的压降
+print(f"33 Ω × 0.5 mA = {33*0.5e-3*1e3:.1f} mV")
+assert abs(33 * 0.5e-3 - 0.0165) < 1e-9
