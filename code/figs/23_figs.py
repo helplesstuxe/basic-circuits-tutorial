@@ -8,12 +8,36 @@ from schem import *
 import figstyle as fs
 
 P = "23"
-V_F, VCC, VCE_SAT, C_EFF, TAU_FALL = 1.2, 5.0, 0.2, 1e-9, 2e-6   # 与 23_sim.py 相同（C_EFF、TAU_FALL 是示意值）
+V_F, VCC, VCE_SAT = 1.2, 5.0, 0.2                 # 与 23_sim.py 相同
+TAU_B, C_EQ = 8e-6, 3.3e-9                         # 与 23_sim.py B 部分相同：按 PC817 SPICE 结果标定的基区电荷时间常数、输出端等效电容
+CTR_B, I_F_B = 0.5, (12 - V_F) / 2.2e3             # 速度计算的条件：CTR 50%、12 V 配 2.2 kΩ（与 SPICE 核对时相同）
+SPICE_TR = {2.2e3: 25.8, 4.7e3: 46.9, 10e3: 83.5}  # PC817 SPICE 模型的 10%→90% 上升时间 / μs（review/spice/23.md；2.2 kΩ 为第 7 轮用 spice/23/rise.cir 补跑）
 
 
 def v_out(i_f, ctr, r_l, vcc=VCC):
     """与 23_sim.py 相同：输出 = max(V_CE(sat), VCC − CTR·I_F·R_L)。"""
     return np.maximum(VCE_SAT, vcc - ctr * i_f * r_l)
+
+
+def edge_rise(r_l, t_on=150e-6, t_off=2e-3, dt=0.1e-6):
+    """标定模型（与 23_sim.py B 部分相同）：LED 先亮 t_on 让电路稳定，再熄灭；r_l 可以是数组，一次算多个上拉电阻。
+    返回 (亮时的低电平, 熄灭后升到 3.0 V 的时间, 10%→90% 上升时间)，单位 V、s、s。"""
+    r_l = np.atleast_1d(np.asarray(r_l, dtype=float))
+    v, i_c, a = np.full_like(r_l, VCC), np.zeros_like(r_l), np.exp(-dt / TAU_B)
+    n_on, n_off = int(round(t_on / dt)), int(round(t_off / dt))
+    for k in range(n_on):                                   # LED 亮：电流慢慢升到 CTR·I_F，输出被拉低
+        i_c = CTR_B * I_F_B + (i_c - CTR_B * I_F_B) * a
+        v = np.clip(v + ((VCC - v) / r_l - i_c) / C_EQ * dt, VCE_SAT, VCC)
+    v_low = v.copy()
+    lv10, lv90 = v_low + 0.1 * (VCC - v_low), v_low + 0.9 * (VCC - v_low)
+    t3, t10, t90 = (np.full_like(r_l, np.nan) for _ in range(3))
+    for k in range(1, n_off + 1):                           # LED 灭：电流慢慢减到 0，上拉经 R_L 给 C_EQ 充电
+        i_c = i_c * a
+        v = np.clip(v + ((VCC - v) / r_l - i_c) / C_EQ * dt, VCE_SAT, VCC)
+        for arr, lv in ((t3, 3.0), (t10, lv10), (t90, lv90)):
+            hit = np.isnan(arr) & (v >= lv)
+            arr[hit] = k * dt
+    return v_low, t3, t90 - t10
 
 
 def problem():
@@ -96,29 +120,37 @@ def timing():
 
 
 def tradeoff():
-    """图 23-p3-1：上拉电阻 R_L 的取舍——越大越省电流，但上升沿越慢。"""
-    rl = np.logspace(np.log10(470), np.log10(47e3), 200)
-    t_r = 2.2 * rl * C_EFF * 1e6
+    """图 23-p3-1：上拉电阻 R_L 的取舍——越大越省电流，但上升沿越慢（上升时间用 SPICE 标定的模型）。"""
+    rl = np.logspace(np.log10(1e3), np.log10(47e3), 60)
+    _, _, tr = edge_rise(rl)
+    t_r = tr * 1e6
     i_f = (VCC - VCE_SAT) / rl / 0.25 * 1e3          # 按老化后 CTR 25% 要饱和所需的 I_F
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-    ax.loglog(rl / 1e3, t_r, **fs.LS["vout"], label="上升时间（左轴）")
+    ax.loglog(rl / 1e3, t_r, **fs.LS["vout"], label="上升时间：标定模型（左轴）")
+    ax.loglog([r / 1e3 for r in SPICE_TR], list(SPICE_TR.values()), ls="none", marker="s", ms=5, mfc="none",
+              color=fs.C["vout"], label="上升时间：PC817 SPICE（左轴）")
     ax2 = ax.twinx()
     ax2.loglog(rl / 1e3, i_f, **fs.LS["vin"], label="所需 $I_F$，CTR 按 25%（右轴）")
-    for r in (1.0, 4.7, 47.0):
-        dxr = -52 if r > 10 else 8
-        fs.mark(ax, r, 2.2 * r * 1e3 * C_EFF * 1e6, "{:.1f}", " μs", dx=dxr, dy=-16)
-        fs.mark(ax2, r, 4.8 / r / 0.25, "{:.2f}", " mA", dx=dxr, dy=8)
+    v_low, _, tr_m = edge_rise([2.2e3, 4.7e3, 10e3, 47e3])
+    for r, trm, (dxr, dyr) in zip((2.2, 4.7, 10.0, 47.0), tr_m, ((-40, 6), (-40, 6), (8, -14), (-52, 6))):
+        fs.mark(ax, r, trm * 1e6, "{:.1f}", " μs", dx=dxr, dy=dyr)
+    for r, (dxr, dyr) in zip((1.0, 4.7, 47.0), ((8, 4), (8, 4), (-52, -14))):
+        fs.mark(ax2, r, 4.8 / r / 0.25, "{:.2f}", " mA", dx=dxr, dy=dyr)
+    for r, ts in SPICE_TR.items():
+        print(f"[图 23-p3-1] R_L = {r/1e3:g} kΩ：模型上升时间 {float(edge_rise(r)[2][0])*1e6:.1f} μs，SPICE {ts} μs")
     fs.axlabels(ax, "上拉电阻 $R_L$", "kΩ", "上升时间", "μs")
     ax2.set_ylabel("所需 $I_F$ / mA")
     h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, loc="upper center", fontsize=8)
-    ax.set_ylim(0.5, 1000); ax2.set_ylim(0.05, 100)
+    ax.legend(h1 + h2, l1 + l2, loc="upper center", fontsize=7.5)
+    ax.set_ylim(5, 20000); ax2.set_ylim(0.05, 300)
     from matplotlib.ticker import FuncFormatter
     fmt = FuncFormatter(lambda v, _: f"{v:g}")
     for a in (ax, ax2):
         a.yaxis.set_major_formatter(fmt)
     ax.xaxis.set_major_formatter(fmt)
-    assert 2.2 * 47e3 * C_EFF > 1e-4 and 4.8 / 1.0 / 0.25 > 15
+    for r, ts in SPICE_TR.items():                    # 标定模型与 SPICE 的上升时间相差在 15% 以内
+        assert abs(float(edge_rise(r)[2][0]) * 1e6 / ts - 1) < 0.15
+    assert tr_m[-1] > 1e-4 and 4.8 / 1.0 / 0.25 > 15
     fs.save(fig, P, "23_p3_1_tradeoff.png")
 
 
@@ -176,8 +208,11 @@ def examples():
     # 练习 1：I_F 5 mA、CTR 设计值 25% → 最小 R_L
     print(f"[练习 1] I_C = {5*0.25:.2f} mA → R_L ≥ {(5-VCE_SAT)/1.25e-3/1e3:.2f} kΩ")
     # 练习 2：10 kΩ 上拉的上升时间与串口位宽
+    tr10 = float(edge_rise(10e3)[2][0])                # 标定模型；SPICE 是 83.5 μs
     for baud in (9600, 115200):
-        print(f"[练习 2] {baud} 波特：每位 {1e6/baud:.1f} μs；10 kΩ 上升时间 {2.2*10e3*C_EFF*1e6:.0f} μs，占一位的 {2.2*10e3*C_EFF*baud*100:.0f}%")
+        print(f"[练习 2] {baud} 波特：每位 {1e6/baud:.1f} μs；10 kΩ 上升时间 模型 {tr10*1e6:.0f} μs、SPICE {SPICE_TR[10e3]:.1f} μs，"
+              f"分别占一位的 {tr10*baud*100:.0f}%、{SPICE_TR[10e3]*1e-6*baud*100:.0f}%")
+    assert 0.7 < SPICE_TR[10e3] * 1e-6 * 9600 < 0.9    # 9600 波特下上升时间占一位的八成左右
     # 练习 3：LED 电流太大
     print(f"[练习 3] 12 V 配 470 Ω：I_F = {(12-V_F)/470*1e3:.1f} mA，电阻功耗 {((12-V_F)/470)**2*470*1e3:.0f} mW")
     # 动手实验：9 V 电池当"外部信号"，5 V 当输出侧

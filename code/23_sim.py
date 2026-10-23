@@ -32,7 +32,7 @@ for name, r in designs.items():
     vs = "、".join(f"{v:.2f} V" for v in res[name][1])
     print(f"[A] {name}：I_F = {i*1e3:.2f} mA；三种 CTR 下输出低电平 = {vs}")
 bad, good = res["R_in = 22 kΩ"][1], res["R_in = 2.2 kΩ"][1]
-assert bad[0] < V_IL and bad[1] > V_IH             # 结论 1：省电流的设计，桌上那只 CTR 高的能用，换一只最小 CTR 的就读成高电平
+assert bad[0] < V_IL and bad[1] > V_IH             # 结论 1：省电流的设计，按恒定 CTR 算，CTR 高的那只能用，换一只最小 CTR 的就读成高电平
 assert max(good) < 0.25                            # 结论 2：按老化后 25% 留余量的设计，三种 CTR 都稳稳饱和
 i_min_aged = I_need / 0.25
 assert 3.5e-3 < i_min_aged < res["R_in = 2.2 kΩ"][0]   # 结论 3：2.2 kΩ 给的 I_F 超过"老化后仍饱和"所需的电流
@@ -50,39 +50,54 @@ fs.axlabels(ax, "LED 电流 $I_F$", "mA", "输出电压", "V"); ax.set_ylim(0, 7
 ax.legend(loc="upper right", fontsize=7.5, ncol=2)
 fs.save(fig, "23", "23_p2_2_ctr.png")
 
-# ---------------- B 部分：上拉电阻越大，上升沿越慢 ----------------
-C_EFF = 1e-9                                       # 示意值：把光敏三极管自身的结电容和导线电容合成 1 nF
-TAU_FALL = 2e-6                                    # 示意值：LED 一亮，输出约 2 μs 内被拉低（下降沿快）
+# ---------------- B 部分：上拉电阻越大，上升沿越慢（模型按 PC817 的 SPICE 结果标定） ----------------
+# 光耦里的光敏三极管本身就慢，原因有两个：
+#   ① LED 灭了以后，三极管基区里存着的电荷要慢慢放掉，集电极电流 i_C 不会立刻变 0，而是按时间常数 TAU_B 慢慢减小（LED 亮时也是慢慢增大）；
+#   ② 集电极和基极之间的结电容只有十几 pF，但三极管会把它"放大"（米勒效应），在输出端看起来像一个几 nF 的电容 C_EQ。
+TAU_B = 8e-6                                       # 标定值：基区电荷的时间常数 8 μs
+C_EQ = 3.3e-9                                      # 标定值：输出端等效电容 3.3 nF（旧版示意值 1 nF 太小，上升时间少算 3～5 倍）
+CTR_B, I_F_ON = 0.5, (V_IN - V_F) / 2.2e3          # B 部分用手册最小 CTR 50%、R_in = 2.2 kΩ（与 SPICE 核对时的条件相同）
+SPICE_T3, SPICE_V47 = {4.7e3: 27.0, 10e3: 48.6}, 2.01   # PC817 SPICE 结果（review/spice/23.md）：升到 3.0 V 的时间 / μs；47 kΩ 熄灭 100 μs 后的电压 / V
 f_sig, n_per = 5e3, 2                              # 5 kHz 方波，看两个周期
-t = np.linspace(0, n_per / f_sig, 4001)
+t = np.linspace(0, n_per / f_sig, 4001)            # 时间步长 0.1 μs
 led_on = (t % (1 / f_sig)) < (0.5 / f_sig)         # 每个周期前一半 LED 亮
 dt = t[1] - t[0]
 
-def edge_wave(r_l):                                # 逐点积分：LED 亮时向 V_CE(sat) 放电，灭时经 R_L 向 VCC 充电
-    v = np.empty_like(t); v[0] = VCC
+def edge_wave(r_l):                                # 逐点计算：先算三极管电流，再算输出端电容的充放电
+    v = np.empty_like(t); v[0] = VCC               # 开始时 LED 没亮过，输出在 5 V
+    i_c, a = 0.0, np.exp(-dt / TAU_B)              # i_c：三极管此刻能导通的电流
     for k in range(1, len(t)):
-        target, tau = (VCE_SAT, TAU_FALL) if led_on[k] else (VCC, r_l * C_EFF)
-        v[k] = target + (v[k - 1] - target) * np.exp(-dt / tau)
+        i_goal = CTR_B * I_F_ON if led_on[k] else 0.0   # LED 亮时"目标"是 CTR·I_F，灭时是 0
+        i_c = i_goal + (i_c - i_goal) * a          # 但 i_c 只能按 TAU_B 慢慢追过去
+        i_cap = (VCC - v[k - 1]) / r_l - i_c       # 上拉电阻送来的电流减去三极管拿走的，剩下的给电容充电
+        v[k] = min(VCC, max(VCE_SAT, v[k - 1] + i_cap / C_EQ * dt))   # 输出夹在 0.2 V 和 5 V 之间
     return v
 
 RLS = [1e3, 4.7e3, 10e3, 47e3]
 waves = {r: edge_wave(r) for r in RLS}
+off = (t >= 1 / f_sig / 2) & (t < 1 / f_sig)       # 第一次熄灭的那半个周期（100 μs 到 200 μs）
+t_off, res_b = t[off] - t[off][0], {}
 for r in RLS:
-    tau = r * C_EFF
-    t_ih = tau * np.log((VCC - VCE_SAT) / (VCC - V_IH))   # 从 0.2 V 充到 3.0 V 所需时间
-    t_r = 2.2 * tau                                # 10%→90% 上升时间 ≈ 2.2τ
-    print(f"[B] R_L = {r/1e3:>4.1f} kΩ：τ = {tau*1e6:.1f} μs，升到 3.0 V 要 {t_ih*1e6:.1f} μs，10%→90% 上升时间 {t_r*1e6:.1f} μs，要饱和需 I_C ≥ {(VCC-VCE_SAT)/r*1e3:.2f} mA")
-v47_end = waves[47e3][np.argmax(t >= 1 / f_sig) - 1]   # 第一个周期结束（LED 再次点亮）前一刻的电压
-print(f"[B] 47 kΩ（相当于单片机内部上拉）：LED 熄灭 100 μs 后输出只升到 {v47_end:.2f} V")
-assert waves[1e3][np.argmax(t >= 0.6 / f_sig)] > 0.98 * VCC    # 结论 4：1 kΩ 在熄灭 20 μs 后已基本到 5 V
-assert 3.0 < v47_end < 0.95 * VCC                  # 结论 5：47 kΩ 在半个周期内都没升满
+    v = waves[r][off]
+    t3 = t_off[np.argmax(v >= V_IH)] if v.max() >= V_IH else float("nan")   # 熄灭后升到 3.0 V 的时间
+    res_b[r] = (v[0], t3, v[-1])
+    t3s = f"{t3*1e6:.1f} μs" if t3 == t3 else "半个周期内没升到"
+    print(f"[B] R_L = {r/1e3:>4.1f} kΩ：LED 亮时输出 {v[0]:.2f} V；熄灭后升到 3.0 V 要 {t3s}；熄灭 100 μs 后 {v[-1]:.2f} V")
+on2 = (t >= 1 / f_sig) & (t < 1.5 / f_sig)         # 第二次点亮：看下降沿
+for r in (4.7e3, 10e3):
+    print(f"[B] R_L = {r/1e3:>4.1f} kΩ：LED 点亮后降到 1.5 V 要 {t[on2][np.argmax(waves[r][on2] <= V_IL)]*1e6 - 200:.1f} μs")
+assert 2.0 < res_b[1e3][0] < 3.0                   # 结论 4：1 kΩ 配 4.91 mA、CTR 50%，三极管给的电流不够，低电平只到 2.5 V 左右
+for r, s3 in SPICE_T3.items():                     # 结论 5：标定模型和 SPICE 的差别在 15% 以内
+    assert abs(res_b[r][1] * 1e6 / s3 - 1) < 0.15
+assert abs(res_b[47e3][2] / SPICE_V47 - 1) < 0.15
+assert res_b[47e3][2] < V_IH                       # 结论 6：47 kΩ 在半个周期内连 3.0 V 都升不到
 
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
 ax.fill_between(t * 1e6, 0, 5.5, where=led_on, color=fs.C["ref"], alpha=0.12, lw=0, label="LED 亮")
 for r, st in zip(RLS, ["vin", "vout", "fb", "bad"]):
     ax.plot(t * 1e6, waves[r], **fs.LS[st], label=f"$R_L$ = {r/1e3:g} kΩ")
 fs.ref_h(ax, V_IH, "3.0 V", x=0.99, ha="right")
-fs.mark(ax, 199.9, v47_end, "{:.2f}", " V", dx=6, dy=-24)
+fs.mark(ax, 199.9, res_b[47e3][2], "{:.2f}", " V", dx=-44, dy=6)
 fs.axlabels(ax, "时间", "μs", "输出电压", "V"); ax.set_ylim(0, 6.2)
 ax.legend(loc="upper center", fontsize=7.5, ncol=5)
 fs.save(fig, "23", "23_p2_3_rise.png")
