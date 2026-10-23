@@ -47,4 +47,4 @@
 - 忘记 V_BE：想要 5 V，实际只有约 4.3 V（ADI 例题、Electronics Tutorials）。解决：把运放反馈取自发射极（AN-272）。
 - 管子功耗过大：P = V_CE × I_C；小管子 2N3904 只有 350 mW（Semelab），要换 TIP31 这类功率管并估算温升（θ_JA）。
 - 单电源下输入低于约 0.7 V 时管子截止，输出削到 0（Wikipedia：输出只能从 V_BE 跟到 V+）。
-- 跟随器接长线 / 容性负载振荡（AN-4），加磁珠或基极串小电阻。[待核实]：基极串电阻的具体阻值经验值本节点未找到厂家出处，正文不给具体数。
+- 跟随器接长线 / 容性负载振荡（AN-4），加磁珠或基极串小电阻。基极电阻阻值已核实：AN-4（SNOA650B）第 6 页图 8 High Current Output Buffer 中 LM101 输出经 R1 = 470 Ω 接 2N2222/2N2905 互补管基极，正文 "R1 is included to eliminate parasitic oscillations from the output transistors"；同段建议集电极各串 50 Ω 限流。正文 page3 按此取 470 Ω，压降数字由 code/figs/07_figs.py 的 rout_rin_rb() 打印。

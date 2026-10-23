@@ -200,5 +200,23 @@ def examples():
         print(f"[实验] R_L = {rl:.0f} Ω：跟随器 V_E ≈ {vo:.2f} V（V_B ≈ {5.0 - ib * rth:.2f} V），管耗 {(9.0 - vo) * ie * 100 / 101:.2f} W；滑片直接接负载只剩 {vdir:.2f} V")
 
 
+def rout_rin_rb():
+    """page2「从两头看」与 page3「基极电阻怎么选」用的数（模型同上，V_OH = 10.5 V 同 07_sim.py）。"""
+    v1k, _, i1k = follower(5.0, 1000.0)
+    v20, _, i20 = follower(5.0, 20.0)
+    r_out = (v1k - v20) / (i20 - i1k)
+    print(f"[R_out] 1 kΩ → 20 Ω：I_E {i1k*1e3:.1f} → {i20*1e3:.0f} mA（多 {(i20-i1k)*1e3:.0f} mA），输出降 {(v1k-v20)*1e3:.0f} mV，"
+          f"R_out ≈ {r_out:.2f} Ω；V_T·ln({i20/i1k:.0f}) = {VT*np.log(i20/i1k):.3f} V")
+    print(f"[R_in] (β + 1)·R_L = {BETA + 1:.0f} × 50 Ω = {(BETA + 1) * 50:.0f} Ω")
+    assert 0.3 < r_out < 1.0
+    RB, V_OH = 470.0, 10.5                        # TI AN-4 图 8 的基极电阻 R1 = 470 Ω
+    for b in (50, 25):
+        vo, vbe, ie = follower(5.0, 50.0, beta=b)
+        ib = ie / (b + 1); drop = ib * RB
+        print(f"[基极电阻] β = {b}：I_B {ib*1e3:.2f} mA × 470 Ω = {drop:.2f} V；反馈不含 R_B 时输出约 {vo:.2f} − {drop:.2f} = {vo - drop:.2f} V；"
+              f"反馈取自发射极时运放输出 5 + {vbe:.2f} + {drop:.2f} = {5 + vbe + drop:.2f} V（上限 {V_OH} V）")
+        assert 5 + vbe + drop < V_OH
+
+
 if __name__ == "__main__":
-    compare_schem(); current_bars(); analogy(); analysis_schem(); loop_schem(); power_curve(); pushpull(); beta_table(); examples()
+    compare_schem(); current_bars(); analogy(); analysis_schem(); loop_schem(); power_curve(); pushpull(); beta_table(); rout_rin_rb(); examples()
