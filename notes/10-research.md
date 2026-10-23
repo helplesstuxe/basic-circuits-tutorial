@@ -35,5 +35,5 @@
 ## 与前置节点的衔接
 
 - P2 page2：稳压管模型 V = V_Z + r_Z·I_Z，1N4733A 取 V_Z = 5.1 V、r_Z = 7 Ω；I_ZK 1 mA、I_ZM 178 mA、P_Z 1.3 W，「实际功耗 V_Z·I_Z 留一半余量」；三极管 V_BE ≈ 0.7 V、I_C = β·I_B。
-- P2 page3：2N3904 在 50 mA 时 β 最小 60（本节变体按 β = 60 估算）。
+- P2 page3：2N3904 在 50 mA 时 β 最小 60；onsemi 2N3904 手册（https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf，2026-10-23 核对）：I_C = 100 mA、V_CE = 1 V 时 h_FE 最小 30，额定功耗 625 mW。本节变体（100 mA）按 β = 30 估算。
 - 06 page2：桥式整流滤波输出带 100 Hz 纹波，纹波 ΔV ≈ I/(2fC)。

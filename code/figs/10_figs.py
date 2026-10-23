@@ -21,7 +21,7 @@ def p1_1():
         d += elm.Dot().at((6.5, 3))
         d += elm.Resistor().endpoints((6.5, 3), (6.5, 0)).label("$R_L$\n负载", loc="bottom")
         d += elm.Line().endpoints((6.5, 3), (8.5, 3))
-        d += elm.Dot(open=True).at((8.5, 3)).label("$V_o$ ≈ 5.1 V", loc="right")
+        d += elm.Dot(open=True).at((8.5, 3)).label("$V_o$ ≈ 5 V", loc="right")
         d += elm.Line().endpoints((0, 0), (8.5, 0))
         d += elm.Dot().at((3.5, 0))
         d += elm.Dot().at((6.5, 0))
