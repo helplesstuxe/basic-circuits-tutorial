@@ -1,6 +1,6 @@
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 # 01 反相放大最小仿真：V_o = −(R_f/R_1)·V_i，再加上「输出不能超出电源」这条限制，看正常放大和削顶。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数

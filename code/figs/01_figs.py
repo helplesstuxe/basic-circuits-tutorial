@@ -159,3 +159,24 @@ for G, key in ((1, "vout"), (10, "third"), (100, "fb")):
 assert abs(GBW / 11 - 109.1e3) < 100
 fs.axlabels(ax, "频率", "Hz", "放大倍数 $|A_v|$", None); ax.legend(loc="lower left", fontsize=8)
 fs.save(fig, N, "01_p3_2_bandwidth.png")
+
+# ---------- page3 正文与练习里的其余数字（只打印 + 断言，不画图） ----------
+k = 1 / np.sqrt(2)
+print(f"0.707 的来历：1/√2 = {k:.4f}；倍数降到 1/√2 时输出功率 ∝ 电压² 降到 {k**2:.2f} 倍（一半）")
+assert abs(k - 0.7071) < 1e-4 and abs(k**2 - 0.5) < 1e-12
+print(f"放大 1000 倍拆两级：每级 √1000 = {np.sqrt(1000):.1f} 倍，32 × 32 = {32*32}")
+assert abs(np.sqrt(1000) - 31.6) < 0.1
+SR, Vp = 0.5e6, 10.0                                  # 压摆率 0.5 V/μs = 0.5e6 V/s；输出峰值 10 V
+f_sr = SR / (2 * np.pi * Vp)                          # 正弦最大斜率 2πf·Vp ≤ SR
+print(f"压摆率限制：峰值 {Vp:g} V 的正弦，频率不超过 {f_sr:.0f} Hz（约 8 kHz）")
+assert 7900 < f_sr < 8000
+Rs = 500
+g_ideal, g_1M, g_1M_rs = 20, 1e6 / 51e3, 1e6 / (51e3 + Rs)
+print(f"练习 2(1)：1 MΩ/51 kΩ = {g_1M:.2f}（取整误差 {100*(1-g_1M/20):.1f}%），计入 500 Ω 内阻后 {g_1M_rs:.2f}（总误差 {100*(1-g_1M_rs/20):.1f}%）")
+assert abs(g_1M_rs - 19.42) < 0.01 and 2.8 < 100 * (1 - g_1M_rs / 20) < 3.0
+print(f"练习 2(2)：最大输入峰值 10.5/20 = {10.5/20:.3f} V；(3) 带宽 1.2 MHz/21 = {GBW/21/1e3:.1f} kHz")
+assert abs(10.5 / 20 - 0.525) < 1e-12 and abs(GBW / 21 - 57.1e3) < 100
+Vi_pk, Vo_sat = 2.0, -14.9                            # 练习 3：输入峰值 2 V，−10 倍，输出卡在 −14.9 V
+Vm = (Vi_pk * 100e3 + Vo_sat * 10e3) / 110e3          # 反相端电压 = 两端电压按 R1、Rf 分压
+print(f"练习 3：输入 +{Vi_pk:g} V、输出卡在 {Vo_sat} V 时，反相端电压 {Vm:.3f} V；R1 电流 {(Vi_pk-Vm)/10:.3f} mA，Rf 电流 {(Vm-Vo_sat)/100:.3f} mA")
+assert abs(Vm - 0.464) < 0.001
