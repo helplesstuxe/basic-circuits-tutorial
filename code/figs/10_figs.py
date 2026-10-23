@@ -312,3 +312,169 @@ def p4_breadboards():
 
 if __name__ == "__main__":
     p4_breadboards()
+
+
+# ===== 第 8 轮补图（page1–3）=====
+from schem import *
+HL = C["bad"]
+
+
+def _lab(d, xy, text, color=None):
+    e = elm.Label().at(xy).label(text, loc="center")
+    if color: e = e.color(color)
+    d += e
+
+
+def shunt(d, ox, vin, rlab, zlab=None, load="r", llab="$R_L$", vo="$V_o$", top=3.0,
+          rcol=None, zcol=None, lcol=None, zrev=False, no_r=False, title=None):
+    """通用并联稳压小图：电源在 ox，R 在上方，稳压管在 ox+3，负载在 ox+5.5，输出端在 ox+7。"""
+    xz, xl, xo = ox + 3.0, ox + 5.5, ox + 7.0
+    d += elm.SourceV().endpoints((ox, 0), (ox, top))
+    _lab(d, (ox - 1.0, top / 2), vin)
+    if no_r:
+        e = elm.Line().endpoints((ox, top), (xz, top))
+        if rcol: e = e.color(rcol)
+        d += e
+        _lab(d, ((ox + xz) / 2, top + 0.45), rlab, rcol)
+    else:
+        e = elm.Resistor().endpoints((ox, top), (xz, top))
+        if rcol: e = e.color(rcol)
+        d += e
+        _lab(d, ((ox + xz) / 2, top + 0.55), rlab, rcol)
+    d += elm.Dot().at((xz, top))
+    if zlab is not None:
+        e = elm.Zener().endpoints((xz, top), (xz, 0)) if zrev else elm.Zener().endpoints((xz, 0), (xz, top))
+        if zcol: e = e.color(zcol)
+        d += e
+        _lab(d, (xz - 0.95, top / 2), zlab, zcol)
+        d += elm.Dot().at((xz, 0))
+    if load:
+        d += elm.Line().endpoints((xz, top), (xl, top))
+        d += elm.Dot().at((xl, top))
+        if load == "r":
+            e = elm.Resistor().endpoints((xl, top), (xl, 0))
+        else:
+            e = elm.SourceI().endpoints((xl, top), (xl, 0))
+        if lcol: e = e.color(lcol)
+        d += e
+        _lab(d, (xl + 1.05 if load == "i" else xl - 0.95, top / 2), llab, lcol)
+        d += elm.Dot().at((xl, 0))
+        d += elm.Line().endpoints((xl, top), (xo, top))
+    else:
+        d += elm.Line().endpoints((xz, top), (xo, top))
+    d += elm.Dot(open=True).at((xo, top))
+    _lab(d, (xo, top + 0.5), vo)
+    d += elm.Line().endpoints((ox, 0), (xo, 0))
+    d += elm.Dot(open=True).at((xo, 0))
+    _lab(d, (xo + 0.5, 0), "0 V")
+    if title:
+        _lab(d, (ox + 3.3, -0.9), title)
+
+
+def p1_4_compare():
+    with drawing(fontsize=11) as d:
+        shunt(d, 0, "$V_i$\n0–15 V", "R  180 Ω", None, llab="负载\n255 Ω", vo="$V_o$ 跟着输入涨",
+              title="(a) 只用电阻分压")
+        shunt(d, 11.0, "$V_i$\n0–15 V", "R  180 Ω", "1N4733A", llab="负载\n255 Ω", vo="$V_o$ ≈ 5 V",
+              zcol=HL, title="(b) 接上稳压管")
+    save_schem(d, "10", "10_p1_4_compare.png")
+
+
+def p2_4_model():
+    top = 3.0
+    with drawing(fontsize=11) as d:
+        for ox, delta in ((0, False), (11.0, True)):
+            xz, xl = ox + 3.0, ox + 5.5
+            d += elm.SourceV().endpoints((ox, 0), (ox, top))
+            _lab(d, (ox - 0.9, top / 2), "$\\Delta V_i$" if delta else "$V_i$")
+            d += elm.Resistor().endpoints((ox, top), (xz, top))
+            _lab(d, ((ox + xz) / 2, top + 0.55), "R  180 Ω")
+            d += elm.Dot().at((xz, top))
+            d += elm.Resistor().endpoints((xz, top), (xz, top / 2)).scale(0.6)
+            _lab(d, (xz - 0.85, top * 0.75), "$r_Z$\n7 Ω")
+            if delta:
+                d += elm.Line().endpoints((xz, top / 2), (xz, 0)).color(HL)
+                _lab(d, (xz - 1.0, top * 0.25), "电池\n换成导线", HL)
+            else:
+                d += elm.Battery().endpoints((xz, 0), (xz, top / 2)).scale(0.6)
+                _lab(d, (xz - 0.95, top * 0.25), "$V_{Z0}$\n4.757 V")
+            d += elm.Dot().at((xz, 0))
+            d += elm.Line().endpoints((xz, top), (xl, top))
+            d += elm.Resistor().endpoints((xl, top), (xl, 0))
+            _lab(d, (xl + 0.9, top / 2), "$R_L$\n255 Ω")
+            d += elm.Line().endpoints((ox, 0), (xl, 0))
+            _lab(d, (xz + 0.75, top + 0.4), "$\\Delta V_o$" if delta else "$V_o$")
+            _lab(d, (ox + 2.8, -0.9), "(b) 只看变化量：分压 $r_Z \\parallel R_L$ 与 R" if delta
+                 else "(a) 击穿后的稳压管模型")
+    save_schem(d, "10", "10_p2_4_model.png")
+
+
+def p2_5_load_scan():
+    with drawing(fontsize=11) as d:
+        shunt(d, 0, "$V_i$\n10 V", "R  180 Ω", "1N4733A", load="i", llab="$I_L$\n0→40 mA",
+              vo="$V_o$", lcol=HL)
+    save_schem(d, "10", "10_p2_5_load_scan.png")
+
+
+def p2_6_examples():
+    with drawing(fontsize=11) as d:
+        shunt(d, 0, "$V_i$\n10–14 V", "R = ?", "1N4733A", llab="负载\n0–20 mA", vo="$V_o$ ≈ 5 V",
+              rcol=HL, title="(a) 例 1")
+        shunt(d, 11.0, "$V_i$\n18–24 V", "R = ?", "1N4742A", llab="负载\n0–10 mA", vo="$V_o$ ≈ 12 V",
+              rcol=HL, title="(b) 例 2")
+    save_schem(d, "10", "10_p2_6_examples.png")
+
+
+def p3_3_lab():
+    top = 4.0
+    with drawing(fontsize=11) as d:
+        d += elm.SourceV().endpoints((0, 0), (0, top))
+        _lab(d, (-1.3, top / 2), "可调直流电源\n8–14 V\n限流 100 mA")
+        d += elm.Resistor().endpoints((0, top), (3.0, top))
+        _lab(d, (1.5, top + 0.6), "R  180 Ω 1 W\n（第 3 步换 270 Ω）")
+        d += elm.Dot().at((3.0, top))
+        d += elm.Zener().endpoints((3.0, top / 2), (3.0, top))
+        _lab(d, (2.0, top * 0.75), "1N4733A")
+        d += elm.MeterA().endpoints((3.0, top / 2), (3.0, 0)).color(HL)
+        _lab(d, (1.85, top * 0.25), "测 $I_Z$", HL)
+        d += elm.Dot().at((3.0, 0))
+        d += elm.Line().endpoints((3.0, top), (5.5, top))
+        d += elm.Dot().at((5.5, top))
+        d += elm.MeterV().endpoints((5.5, top), (5.5, 0))
+        _lab(d, (4.35, top / 2), "测 $V_o$")
+        d += elm.Dot().at((5.5, 0))
+        d += elm.Line().endpoints((5.5, top), (8.0, top))
+        d += elm.Switch().endpoints((8.0, top), (8.0, top - 1.4))
+        _lab(d, (9.1, top - 0.7), "第 1 步\n先不接负载")
+        d += elm.Resistor().endpoints((8.0, top - 1.4), (8.0, 0)).scale(0.8)
+        _lab(d, (9.3, 1.3), "负载 $R_L$\n1 kΩ / 510 Ω /\n255 Ω")
+        d += elm.Line().endpoints((0, 0), (8.0, 0))
+    save_schem(d, "10", "10_p3_3_lab.png")
+
+
+def p3_4_mistakes():
+    with drawing(fontsize=11) as d:
+        shunt(d, 0, "$V_i$\n12 V", "R  180 Ω", "接反", llab="$R_L$", vo="$V_o$ ≈ 0.7 V",
+              zcol=HL, zrev=True, title="(a) 稳压管接反：正向导通")
+        shunt(d, 11.0, "$V_i$\n12 V", "没有 R", "1N4733A\n电流约 1 A", load=None, vo="$V_o$",
+              rcol=HL, no_r=True, title="(b) 没串限流电阻：稳压管烧坏")
+    save_schem(d, "10", "10_p3_4_mistakes.png")
+
+
+def p3_5_exercises():
+    with drawing(fontsize=11) as d:
+        shunt(d, 0, "$V_i$\n14 V", "R  47 Ω", "1N4733A", load=None, vo="$V_o$（空载）",
+              rcol=HL, title="(a) 练习 2：47 Ω、不接负载")
+        shunt(d, 11.0, "$V_i$", "R  390 Ω", "1N4742A\n$r_Z$ 9 Ω", llab="$R_L$\n1.2 kΩ",
+              vo="$V_o$ ≈ 12 V", title="(b) 练习 4：12 V 稳压，输入带 1 V 纹波")
+    save_schem(d, "10", "10_p3_5_exercises.png")
+
+
+def round8():
+    p1_4_compare(); p2_4_model(); p2_5_load_scan(); p2_6_examples()
+    p3_3_lab(); p3_4_mistakes(); p3_5_exercises()
+    print("10_figs 第 8 轮补图 OK")
+
+
+if __name__ == "__main__":
+    round8()
