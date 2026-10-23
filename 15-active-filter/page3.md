@@ -1,6 +1,6 @@
 # 15 有源滤波 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：08 线性稳压 · 直觉篇](../08-linear-regulator/page1.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md) · 后续：[16 振荡器 · 直觉篇](../16-oscillator/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：15 有源滤波 · 动手实验篇](page4.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md) · 后续：[16 振荡器 · 直觉篇](../16-oscillator/page1.md)
 
 ## 这一页解决什么问题
 
