@@ -321,3 +321,238 @@ if __name__ == "__main__":
     delay_sweep()
     gap_sweep()
     exercises()
+
+
+# ======================= page4 动手实验篇：面包板接线图 =======================
+# 面包板俯视图小工具（各节点脚本各带一份，互不依赖）。
+# 坐标：列号 1…ncol 从左到右；上半区 a–e、下半区 f–j（同一列的 a–e 五个孔互相连通，f–j 也连通）；
+# 上下各有两条电源轨：靠外的一条标「+」，靠里的一条标「−」，整条横向连通。
+from matplotlib.patches import Rectangle, FancyBboxPatch, Circle
+
+BB_Y = {r: 5.6 - i for i, r in enumerate("abcde")}
+BB_Y.update({r: -1.4 - i for i, r in enumerate("fghij")})
+BB_Y.update({"T+": 8.6, "T-": 7.7, "B-": -6.7, "B+": -7.6})
+WIRE = dict(pos=(fs.C["bad"], "正电源"), gnd=("#000000", "地（0 V）"), neg=(fs.C["third"], "负电源"),
+            sig=(fs.C["vin"], "输入信号"), out=(fs.C["vout"], "输出"), fb=(fs.C["fb"], "反馈 / 其他连线"))
+
+
+class Breadboard:
+    def __init__(self, ncol=30, title=None, size=(10, 6.4), rails=("+", "−", "−", "+")):
+        self.ncol, self.used = ncol, set()
+        self.fig, self.ax = plt.subplots(figsize=size)
+        ax = self.ax
+        ax.add_patch(FancyBboxPatch((0.2, -8.3), ncol + 0.6, 17.6, boxstyle="round,pad=0.1",
+                                    fc="#f7f5ef", ec="0.55", lw=1.0))
+        ax.add_patch(Rectangle((0.4, -0.55), ncol + 0.2, 0.7, fc="#e4e0d6", ec="none"))   # 中间凹槽
+        for key, lab in zip(("T+", "T-", "B-", "B+"), rails):
+            y = BB_Y[key]
+            col = fs.C["bad"] if lab.startswith("+") else ("#000000" if lab in ("−", "GND", "0 V") else fs.C["third"])
+            ax.plot([0.6, ncol + 0.4], [y + 0.42, y + 0.42], color=col, lw=1.0)
+            ax.text(0.0, y, lab, ha="right", va="center", fontsize=10, color=col, fontweight="bold")
+            for c in range(1, ncol + 1):
+                if c % 6:
+                    ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
+        for r in "abcdefghij":
+            y = BB_Y[r]
+            ax.text(0.15, y, r, ha="right", va="center", fontsize=8, color="0.35")
+            ax.text(ncol + 0.85, y, r, ha="left", va="center", fontsize=8, color="0.35")
+            for c in range(1, ncol + 1):
+                ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
+        for c in range(1, ncol + 1):
+            if c == 1 or c % 5 == 0:
+                ax.text(c, 6.35, str(c), ha="center", va="bottom", fontsize=7.5, color="0.35")
+                ax.text(c, -6.15, str(c), ha="center", va="top", fontsize=7.5, color="0.35")
+        ax.set_xlim(-3.4, ncol + 4.8)
+        ax.set_ylim(-11.2, 11.6)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        if title:
+            ax.set_title(title, fontsize=11)
+
+    def xy(self, h):
+        """'e10' → 第 10 列 e 排；'T+3' / 'B-7' → 上（T）/ 下（B）电源轨第 3 / 7 列。"""
+        if h[0] in "TB" and h[1] in "+-":
+            return float(h[2:]), BB_Y[h[:2]]
+        return float(h[1:]), BB_Y[h[0]]
+
+    def _hole(self, p):
+        x, y = self.xy(p) if isinstance(p, str) else p
+        if isinstance(p, str):
+            self.ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=4))
+        return x, y
+
+    def wire(self, a, b, kind="fb", via=None):
+        """导线：a、b 为孔名或 (x, y)；via 为中间拐点列表。颜色按 kind 取（见 WIRE）。"""
+        self.used.add(kind)
+        pts = [self._hole(a)] + list(via or []) + [self._hole(b)]
+        xs, ys = zip(*pts)
+        self.ax.plot(xs, ys, color=WIRE[kind][0], lw=2.4, solid_capstyle="round", zorder=5)
+
+    def part(self, a, b, label, kind="R", lab_side=1):
+        """两脚元件：R 电阻、C 电容、E 电解电容（+ 脚在 a）、D 二极管（a 阳 b 阴）、L LED（a 阳）、
+        S 按钮、P 小灯泡。画成方框简化符号，标签写在旁边。"""
+        (x1, y1), (x2, y2) = self._hole(a), self._hole(b)
+        ax = self.ax
+        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+        ax.plot([x1, x2], [y1, y2], color="0.35", lw=1.2, zorder=5)
+        fc = dict(R="#d9c7a3", C="#f2d27a", E="#6d8fb5", D="#555555", L="#ffffff", S="#bbbbbb",
+                  P="#fff7c2")[kind]
+        horiz = abs(x2 - x1) >= abs(y2 - y1)
+        w, h = (0.9, 0.5) if horiz else (0.5, 0.9)
+        if kind in "LP":
+            ax.add_patch(Circle((mx, my), 0.42, fc=fc, ec="0.2", lw=1.0, zorder=6))
+        else:
+            ax.add_patch(FancyBboxPatch((mx - w / 2, my - h / 2), w, h, boxstyle="round,pad=0.05",
+                                        fc=fc, ec="0.2", lw=1.0, zorder=6))
+        if kind in "EDL":
+            ax.text(x1 + (0.25 if horiz else 0.25), y1 + (0.3 if horiz else 0), "+", fontsize=8,
+                    ha="center", va="center", zorder=7, color=fs.C["bad"])
+        if lab_side == "r":
+            ax.text(max(x1, x2) + 0.3, my, label, ha="left", va="center", fontsize=8.5, zorder=7)
+        elif horiz:
+            ax.text(mx, my + 0.55 * lab_side, label, ha="center", va="bottom" if lab_side > 0 else "top",
+                    fontsize=8.5, zorder=7)
+        else:
+            ax.text(mx + 0.45 * lab_side, my, label, ha="left" if lab_side > 0 else "right",
+                    va="center", fontsize=8.5, zorder=7)
+
+    def chip(self, col, label, npin=8, names=None):
+        """DIP 芯片跨在中间凹槽上：第 1 脚在 f 排第 col 列（左下，缺口朝左），逆时针数，
+        第 npin 脚在 e 排第 col 列。脚号和脚名写在芯片体上。"""
+        half = npin // 2
+        ax = self.ax
+        y0, y1 = BB_Y["f"] + 0.22, BB_Y["e"] - 0.22
+        ax.add_patch(Rectangle((col - 0.5, y0), half, y1 - y0, fc="#2b2b2b", ec="k", zorder=6))
+        ax.add_patch(Circle((col - 0.5, (y0 + y1) / 2), 0.28, fc="#f7f5ef", ec="none", zorder=7))
+        ax.text(col + (half - 1) / 2, (y0 + y1) / 2, label, color="w", ha="center",
+                va="center", fontsize=9, zorder=8)
+        for i in range(half):
+            for p, row in ((i + 1, "f"), (npin - i, "e")):
+                x, y = col + i, BB_Y[row]
+                ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=7))
+                txt = str(p) + ("\n" + names[p] if names and p in names else "")
+                ax.text(x, y0 + 0.08 if row == "f" else y1 - 0.08, txt, ha="center",
+                        va="bottom" if row == "f" else "top", fontsize=6, color="w", zorder=8,
+                        linespacing=0.9)
+
+    def module(self, x, y, w, h, label, fc="#e6f0f8"):
+        """面包板外的模块（电池、信号源、继电器模块等），返回方框中心。"""
+        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.08", fc=fc, ec="0.3",
+                                         lw=1.0, zorder=6))
+        self.ax.text(x + w / 2, y + h / 2, label, ha="center", va="center", fontsize=8.5, zorder=7)
+        return x + w / 2, y + h / 2
+
+    def note(self, x, y, text, **kw):
+        self.ax.text(x, y, text, fontsize=8, zorder=8, **kw)
+
+    def legend(self, loc="lower center"):
+        from matplotlib.lines import Line2D
+        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=WIRE[k][1]) for k in WIRE if k in self.used]
+        self.ax.legend(handles=hs, loc=loc, ncol=len(hs), fontsize=8.5, frameon=False,
+                       bbox_to_anchor=(0.5, -0.01))
+
+    def save(self, prefix, name):
+        return fs.save(self.fig, prefix, name)
+
+# ---------- 图 19-p4-1：12 V 低压星三角控制回路的面包板接线 ----------
+WIRE["neg"] = (fs.C["third"], "公共点 C（KM 自锁之后）")
+WIRE["sig"] = (fs.C["vin"], "KM△ 支路")
+WIRE["out"] = (fs.C["vout"], "KT、KMY 支路")
+WIRE["fb"] = (fs.C["fb"], "按钮引线")
+bb = Breadboard(40, "星三角低压版面包板俯视图（12 V 直流，三只 12 V 继电器 + 延时模块）",
+                size=(12, 6.8), rails=("公共点 C", "0 V", "0 V", "+12 V 经SB1"))
+pins = {1: "COM1", 2: "NO1", 3: "线圈+", 4: "NC1", 8: "线圈−", 7: "COM2", 6: "NO2", 5: "NC2"}
+bb.chip(8, "KM", npin=8, names=pins)
+bb.chip(18, "KM△", npin=8, names=pins)
+bb.chip(32, "KMY", npin=8, names=pins)
+for c in (8, 18, 32):
+    bb.wire(f"a{c}", f"T-{c}", "gnd")                  # 三只线圈负端 → 0 V
+# KM：COM1 接「+12 V 经 SB1」，NO1 = 线圈+ = 公共点 C（自锁）
+bb.wire("j8", "B+8", "pos")
+bb.wire("g9", "g10", "neg")
+bb.wire("i10", "i13", "neg"); bb.wire("f13", "d13", "neg"); bb.wire("a13", "T+13", "neg")
+bb.part("B-10", "j10", "VD1", "D", lab_side="r")
+bb.part("h10", "h5", "HL1", "P", lab_side=1); bb.wire("j5", "B-5", "gnd")
+# KM△：COM1、COM2 接公共点；NO1 = Y；线圈+ = Z；NC2 = X
+bb.wire("h18", "h15", "neg"); bb.wire("f15", "d15", "neg"); bb.wire("a15", "T+15", "neg")
+bb.wire("a19", "T+19", "neg")
+bb.part("B-20", "j20", "VD2", "D", lab_side="r")
+bb.part("i20", "i25", "HL3", "P", lab_side=1); bb.wire("j25", "B-25", "gnd")
+# Y：KT 常开 / KM△ NO1 → KMY COM1；Z：KMY NC1 → KM△ 线圈+
+bb.wire("g19", "g28", "sig"); bb.wire("f28", "d28", "sig"); bb.wire("i28", "i32", "sig")
+bb.wire("h20", "h35", "sig")
+# X：KM△ NC2 → KT 模块 V+、COM；W：KT 常闭 → KMY 线圈+
+bb.wire("b21", "b22", "out")
+bb.wire("d36", "f36", "out"); bb.wire("i36", "i34", "out")
+bb.part("B-34", "j34", "VD3", "D", lab_side="r")
+bb.part("g34", "g39", "HL2", "P", lab_side=1); bb.wire("j39", "B-39", "gnd")
+bb.wire("T-40", "B-40", "gnd")
+# KT 延时模块（面包板外），五根引线垂直落到上半区
+bb.module(20.3, 9.65, 16.4, 1.45, "", fc="#fdf1dc")
+bb.ax.text(28.5, 10.75, "KT 通电延时模块（12 V，设成通电延时）", ha="center", va="center", fontsize=8.5, zorder=8)
+for x, name, kind, dst in [(21, "V+", "out", "a21"), (22, "COM", "out", "a22"), (25, "V−", "gnd", "T-25"),
+                           (28, "NO", "sig", "a28"), (36, "NC", "out", "a36")]:
+    bb.ax.text(x, 9.95, name, ha="center", va="center", fontsize=6.5, zorder=8)
+    bb.wire((x, 9.65), dst, kind)
+# 电源、按钮
+bb.module(11.2, -10.0, 3.0, 1.3, "12 V 电源")
+bb.wire((12.2, -8.7), "B-12", "gnd")
+bb.module(15.2, -10.0, 3.6, 1.3, "SB1 停止（常闭）", fc="#f6dede")
+bb.wire((14.2, -9.35), (15.2, -9.35), "pos")
+bb.wire((17.0, -8.7), "B+17", "pos")
+bb.module(6.6, -10.0, 3.6, 1.3, "SB2 启动（常开）", fc="#def0de")
+bb.wire((8.0, -8.7), "i8", "fb"); bb.wire((9.0, -8.7), "i9", "fb")
+bb.note(0.8, 10.3, "继电器、模块引脚以手册为准（本图为示意）", va="center")
+bb.legend()
+bb.save(P, "19_p4_1_breadboard.png")
+
+
+# ---------- 图 19-p4-2：按 0.01 s 一步推演指示灯的先后 ----------
+def star_delta_lamps(t_set=5.0, t_sb2=(1.0, 1.3), t_sb1=(11.0, 11.3), t_end=13.0, dt=0.01):
+    """不计继电器动作时间的理想逻辑（接线同 图 19-p4-1）：
+    KM' = 非SB1·(SB2+KM)；X = KM'·非KM△（KT 线圈）；KMY' = X·非T；
+    KM△' = KM'·(X·T + KM△)·非KMY。T 是 KT 已计满整定时间。"""
+    km = kmy = kmd = 0; tk = 0.0
+    tt, rec = np.arange(0, t_end, dt), []
+    for t in tt:
+        sb2 = t_sb2[0] <= t < t_sb2[1]; sb1 = t_sb1[0] <= t < t_sb1[1]
+        km = int((not sb1) and (sb2 or km))
+        x = int(km and not kmd)
+        tk = tk + dt if x else 0.0
+        T = tk >= t_set - 1e-9
+        kmd_new = int(km and ((x and T) or kmd) and not kmy)
+        kmy = int(x and not T)
+        kmd = kmd_new
+        rec.append((km, kmy, kmd, x))
+    return tt, np.array(rec)
+
+
+tt, rec = star_delta_lamps()
+def first_on(k): return tt[np.argmax(rec[:, k] == 1)]
+def last_on(k): return tt[np.nonzero(rec[:, k])[0][-1]] + 0.01
+t_y_off, t_d_on = last_on(1), first_on(2)
+print(f"[数值] 1.00 s 按 SB2：KM {first_on(0):.1f} s 亮，KMY {first_on(1):.1f} s 亮、{t_y_off:.1f} s 灭；"
+      f"KM△ {t_d_on:.1f} s 亮；KT 线圈 {last_on(3):.1f} s 断电；11.00 s 按 SB1 全灭")
+assert abs(t_y_off - 6.0) < 0.02 and abs(t_d_on - 6.0) < 0.03 and abs(last_on(3) - 6.0) < 0.03
+assert not (rec[:, 1] & rec[:, 2]).any() and rec[-1].sum() == 0
+fig, ax = plt.subplots(figsize=(8.8, 3.4))
+names = ["HL1 / KM", "HL2 / KMY（星形）", "HL3 / KM△（三角形）", "KT 线圈"]
+cols = [fs.C["vout"], fs.C["vin"], fs.C["fb"], "0.45"]
+for r, (nm, c) in enumerate(zip(names, cols)):
+    y0 = 3 - r
+    ax.fill_between(tt, y0, y0 + 0.7 * rec[:, r], step="post", color=c, alpha=0.85, lw=0)
+    ax.text(-0.2, y0 + 0.35, nm, ha="right", va="center", fontsize=9)
+for t0, lab in [(1.0, "按 SB2"), (6.0, "KT 到时（整定 5 s）"), (11.0, "按 SB1")]:
+    ax.axvline(t0, color="0.3", ls=":", lw=1.0)
+    ax.text(t0 + 0.08, 4.05, lab, fontsize=8.5, va="bottom")
+ax.set_xlim(0, 13); ax.set_ylim(-0.2, 4.6)
+ax.set_yticks([]); [ax.spines[s].set_visible(False) for s in ("left", "top", "right")]
+fs.axlabels(ax, "时间", "s")
+fs.save(fig, P, "19_p4_2_sequence.png")
+
+# ---------- 测量表里的计算值 ----------
+V, RC, P_LAMP = 12.0, 400.0, 1.0
+i_coil, i_lamp = V / RC * 1000, P_LAMP / V * 1000
+print(f"[数值] 每只线圈 {i_coil:.0f} mA；三角形稳态（KM + KM△）线圈合计 {2 * i_coil:.0f} mA，"
+      f"加两只 1 W 灯泡共约 {2 * (i_coil + i_lamp):.0f} mA")
+assert round(2 * i_coil) == 60 and round(2 * (i_coil + i_lamp)) == 227
