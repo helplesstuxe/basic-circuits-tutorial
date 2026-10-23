@@ -248,3 +248,244 @@ def fig_p3_2():
 if __name__ == "__main__":
     fig_p1_1(); fig_p1_2(); fig_p1_3(); fig_p2_1(); fig_p2_3(); fig_p3_1(); fig_p3_2()
     print("[数值] DRV8871 限流 I_TRIP = 64 kV / R_ILIM：" + "，".join(f"{r} kΩ → {64/r:.2f} A" for r in (15, 20, 24, 32, 43, 64)))
+
+
+# ======================= page4 动手实验篇：面包板接线图 =======================
+# 面包板俯视图小工具（各节点脚本各带一份，互不依赖）。
+# 坐标：列号 1…ncol 从左到右；上半区 a–e、下半区 f–j（同一列的 a–e 五个孔互相连通，f–j 也连通）；
+# 上下各有两条电源轨：靠外的一条标「+」，靠里的一条标「−」，整条横向连通。
+from matplotlib.patches import Rectangle, FancyBboxPatch, Circle
+
+BB_Y = {r: 5.6 - i for i, r in enumerate("abcde")}
+BB_Y.update({r: -1.4 - i for i, r in enumerate("fghij")})
+BB_Y.update({"T+": 8.6, "T-": 7.7, "B-": -6.7, "B+": -7.6})
+WIRE = dict(pos=(fs.C["bad"], "正电源"), gnd=("#000000", "地（0 V）"), neg=(fs.C["third"], "负电源"),
+            sig=(fs.C["vin"], "输入信号"), out=(fs.C["vout"], "输出"), fb=(fs.C["fb"], "反馈 / 其他连线"))
+
+
+class Breadboard:
+    def __init__(self, ncol=30, title=None, size=(10, 6.4), rails=("+", "−", "−", "+")):
+        self.ncol, self.used = ncol, set()
+        self.fig, self.ax = plt.subplots(figsize=size)
+        ax = self.ax
+        ax.add_patch(FancyBboxPatch((0.2, -8.3), ncol + 0.6, 17.6, boxstyle="round,pad=0.1",
+                                    fc="#f7f5ef", ec="0.55", lw=1.0))
+        ax.add_patch(Rectangle((0.4, -0.55), ncol + 0.2, 0.7, fc="#e4e0d6", ec="none"))   # 中间凹槽
+        for key, lab in zip(("T+", "T-", "B-", "B+"), rails):
+            y = BB_Y[key]
+            col = fs.C["bad"] if lab.startswith("+") else ("#000000" if lab in ("−", "GND", "0 V") else fs.C["third"])
+            ax.plot([0.6, ncol + 0.4], [y + 0.42, y + 0.42], color=col, lw=1.0)
+            ax.text(0.0, y, lab, ha="right", va="center", fontsize=10, color=col, fontweight="bold")
+            for c in range(1, ncol + 1):
+                if c % 6:
+                    ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
+        for r in "abcdefghij":
+            y = BB_Y[r]
+            ax.text(0.15, y, r, ha="right", va="center", fontsize=8, color="0.35")
+            ax.text(ncol + 0.85, y, r, ha="left", va="center", fontsize=8, color="0.35")
+            for c in range(1, ncol + 1):
+                ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
+        for c in range(1, ncol + 1):
+            if c == 1 or c % 5 == 0:
+                ax.text(c, 6.35, str(c), ha="center", va="bottom", fontsize=7.5, color="0.35")
+                ax.text(c, -6.15, str(c), ha="center", va="top", fontsize=7.5, color="0.35")
+        ax.set_xlim(-3.4, ncol + 4.8)
+        ax.set_ylim(-11.2, 11.6)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        if title:
+            ax.set_title(title, fontsize=11)
+
+    def xy(self, h):
+        """'e10' → 第 10 列 e 排；'T+3' / 'B-7' → 上（T）/ 下（B）电源轨第 3 / 7 列。"""
+        if h[0] in "TB" and h[1] in "+-":
+            return float(h[2:]), BB_Y[h[:2]]
+        return float(h[1:]), BB_Y[h[0]]
+
+    def _hole(self, p):
+        x, y = self.xy(p) if isinstance(p, str) else p
+        if isinstance(p, str):
+            self.ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=4))
+        return x, y
+
+    def wire(self, a, b, kind="fb", via=None):
+        """导线：a、b 为孔名或 (x, y)；via 为中间拐点列表。颜色按 kind 取（见 WIRE）。"""
+        self.used.add(kind)
+        pts = [self._hole(a)] + list(via or []) + [self._hole(b)]
+        xs, ys = zip(*pts)
+        self.ax.plot(xs, ys, color=WIRE[kind][0], lw=2.4, solid_capstyle="round", zorder=5)
+
+    def part(self, a, b, label, kind="R", lab_side=1):
+        """两脚元件：R 电阻、C 电容、E 电解电容（+ 脚在 a）、D 二极管（a 阳 b 阴）、L LED（a 阳）、
+        S 按钮、P 小灯泡。画成方框简化符号，标签写在旁边。"""
+        (x1, y1), (x2, y2) = self._hole(a), self._hole(b)
+        ax = self.ax
+        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+        ax.plot([x1, x2], [y1, y2], color="0.35", lw=1.2, zorder=5)
+        fc = dict(R="#d9c7a3", C="#f2d27a", E="#6d8fb5", D="#555555", L="#ffffff", S="#bbbbbb",
+                  P="#fff7c2")[kind]
+        horiz = abs(x2 - x1) >= abs(y2 - y1)
+        w, h = (0.9, 0.5) if horiz else (0.5, 0.9)
+        if kind in "LP":
+            ax.add_patch(Circle((mx, my), 0.42, fc=fc, ec="0.2", lw=1.0, zorder=6))
+        else:
+            ax.add_patch(FancyBboxPatch((mx - w / 2, my - h / 2), w, h, boxstyle="round,pad=0.05",
+                                        fc=fc, ec="0.2", lw=1.0, zorder=6))
+        if kind in "EDL":
+            ax.text(x1 + (0.25 if horiz else 0.25), y1 + (0.3 if horiz else 0), "+", fontsize=8,
+                    ha="center", va="center", zorder=7, color=fs.C["bad"])
+        if lab_side == "r":
+            ax.text(max(x1, x2) + 0.3, my, label, ha="left", va="center", fontsize=8.5, zorder=7)
+        elif horiz:
+            ax.text(mx, my + 0.55 * lab_side, label, ha="center", va="bottom" if lab_side > 0 else "top",
+                    fontsize=8.5, zorder=7)
+        else:
+            ax.text(mx + 0.45 * lab_side, my, label, ha="left" if lab_side > 0 else "right",
+                    va="center", fontsize=8.5, zorder=7)
+
+    def chip(self, col, label, npin=8, names=None):
+        """DIP 芯片跨在中间凹槽上：第 1 脚在 f 排第 col 列（左下，缺口朝左），逆时针数，
+        第 npin 脚在 e 排第 col 列。脚号和脚名写在芯片体上。"""
+        half = npin // 2
+        ax = self.ax
+        y0, y1 = BB_Y["f"] + 0.22, BB_Y["e"] - 0.22
+        ax.add_patch(Rectangle((col - 0.5, y0), half, y1 - y0, fc="#2b2b2b", ec="k", zorder=6))
+        ax.add_patch(Circle((col - 0.5, (y0 + y1) / 2), 0.28, fc="#f7f5ef", ec="none", zorder=7))
+        ax.text(col + (half - 1) / 2, (y0 + y1) / 2, label, color="w", ha="center",
+                va="center", fontsize=9, zorder=8)
+        for i in range(half):
+            for p, row in ((i + 1, "f"), (npin - i, "e")):
+                x, y = col + i, BB_Y[row]
+                ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=7))
+                txt = str(p) + ("\n" + names[p] if names and p in names else "")
+                ax.text(x, y0 + 0.08 if row == "f" else y1 - 0.08, txt, ha="center",
+                        va="bottom" if row == "f" else "top", fontsize=6, color="w", zorder=8,
+                        linespacing=0.9)
+
+    def module(self, x, y, w, h, label, fc="#e6f0f8"):
+        """面包板外的模块（电池、信号源、继电器模块等），返回方框中心。"""
+        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.08", fc=fc, ec="0.3",
+                                         lw=1.0, zorder=6))
+        self.ax.text(x + w / 2, y + h / 2, label, ha="center", va="center", fontsize=8.5, zorder=7)
+        return x + w / 2, y + h / 2
+
+    def note(self, x, y, text, **kw):
+        self.ax.text(x, y, text, fontsize=8, zorder=8, **kw)
+
+    def legend(self, loc="lower center"):
+        from matplotlib.lines import Line2D
+        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=WIRE[k][1]) for k in WIRE if k in self.used]
+        self.ax.legend(handles=hs, loc=loc, ncol=len(hs), fontsize=8.5, frameon=False,
+                       bbox_to_anchor=(0.5, -0.01))
+
+    def save(self, prefix, name):
+        return fs.save(self.fig, prefix, name)
+
+# ---------- page4 动手实验篇：6 V 小电机 + L298N 模块 ----------
+from matplotlib.patches import Circle as _Circ
+
+V_S = 6.0                                           # 电机电源（4 节 AA 电池或 6 V 直流电源）
+VSAT_H = (0.95, 1.35, 1.7)                          # L298 手册：IL = 1 A 时上管（source）饱和压降 min/typ/max，V
+VSAT_L = (0.85, 1.2, 1.6)                           # 下管（sink）饱和压降，V
+VTOT = (1.80, 3.2)                                  # 总压降 min/max，V
+VSS_MIN, REG_HEADROOM, DRV_VM_MIN = 4.5, 2.0, 6.5   # L298 逻辑电源下限；78M05 约需 2 V 余量；DRV8871 VM 下限
+OUT1_F = (V_S - VSAT_H[2], V_S - VSAT_H[0])
+OUT2_F = (VSAT_L[0], VSAT_L[2])
+VMOT_F = (V_S - VTOT[1], V_S - VTOT[0])
+print(f"[数值] 6 V、1 A 手册值：正转 OUT1 对地 {OUT1_F[0]:.2f}–{OUT1_F[1]:.2f} V，OUT2 对地 {OUT2_F[0]:.2f}–{OUT2_F[1]:.2f} V，"
+      f"电机两端 {VMOT_F[0]:.2f}–{VMOT_F[1]:.2f} V")
+assert abs(OUT1_F[0] - 4.30) < 1e-9 and abs(OUT1_F[1] - 5.05) < 1e-9 and abs(VMOT_F[0] - 2.8) < 1e-9 and abs(VMOT_F[1] - 4.2) < 1e-9
+print(f"[数值] 板载 78M05 在 6 V 下只能给约 {V_S - REG_HEADROOM:.1f} V（< L298 逻辑下限 {VSS_MIN} V）；"
+      f"DRV8871 下限 {DRV_VM_MIN} V > {V_S:.0f} V")
+assert V_S - REG_HEADROOM < VSS_MIN and V_S < DRV_VM_MIN
+DUTY = [v / 255 for v in (64, 128, 192)]            # Arduino analogWrite 的三个值
+print("[数值] analogWrite 64/128/192 → 占空比 " + "、".join(f"{d:.1%}" for d in DUTY))
+assert [round(d * 1000) for d in DUTY] == [251, 502, 753]
+
+
+def _truth(en, in1, in2):
+    """L298 手册真值表：EN=H 时 C=H,D=L 正转；C=L,D=H 反转；C=D 快速停车；EN=L 自由滑行。"""
+    if not en:
+        return "滑行"
+    return {(1, 0): "正转", (0, 1): "反转"}.get((in1, in2), "刹车")
+assert [_truth(*s) for s in ((1, 1, 0), (1, 0, 1), (1, 0, 0), (1, 1, 1), (0, 1, 0))] == ["正转", "反转", "刹车", "刹车", "滑行"]
+
+# ---------- 图 25-p4-1：面包板 + L298N 模块接线 ----------
+WIRE["pos"] = (fs.C["bad"], "+5 V（逻辑）/ +6 V（电机电源）")
+WIRE["gnd"] = ("#000000", "GND（公共地）")
+WIRE["sig"] = (fs.C["vin"], "控制信号 ENA / IN1 / IN2")
+WIRE["out"] = (fs.C["vout"], "电机线 OUT1 / OUT2")
+bb = Breadboard(26, "H 桥实验接线俯视图（6 V 电池 + L298N 模块 + 小直流电机；图中为正转：ENA=1、IN1=1、IN2=0）",
+                size=(10, 8.6), rails=("（未用）", "（未用）", "GND", "+5 V"))
+for t in bb.ax.texts:
+    if t.get_text() == "（未用）":
+        t.set_color("0.6"); t.set_fontweight("normal"); t.set_fontsize(8.5)
+for ln in bb.ax.lines:
+    ys = ln.get_ydata()
+    if len(ys) == 2 and ys[0] == ys[1] and ys[0] in (BB_Y["T+"] + 0.42, BB_Y["T-"] + 0.42):
+        ln.set_color("0.75")
+bb.ax.set_ylim(-19.5, 11.6)
+COLS = dict(ENA=6, IN1=12, IN2=18)
+STATE = dict(ENA=1, IN1=1, IN2=0)                   # 正转
+for name, c in COLS.items():
+    bb.wire(f"i{c}", f"B+{c + 1}" if STATE[name] else f"B-{c + 1}", "pos" if STATE[name] else "gnd")
+    bb.wire(f"f{c}", (c, -11.0), "sig", via=[(c - 0.5, -1.9), (c - 0.5, -9.0), (c, -9.6)])
+    bb.ax.text(c + 0.3, -3.0, name, ha="left", va="center", fontsize=9, color=fs.C["vin"], fontweight="bold", zorder=9)
+assert _truth(STATE["ENA"], STATE["IN1"], STATE["IN2"]) == "正转"
+mx0, my0 = 3.0, -15.6
+bb.module(mx0, my0, 20.0, 4.6, "", fc="#e8eef5")
+bb.ax.text(13.0, -13.3, "L298N 模块\n（5V-EN 跳线帽拔掉；ENA 跳线帽拔掉，改由第 6 列控制）", ha="center", va="center", fontsize=8.5, zorder=8)
+for name, c in COLS.items():
+    bb.ax.add_patch(_Circ((c, -11.0), 0.22, fc="0.15", ec="none", zorder=8))
+    bb.ax.text(c, -11.45, name, ha="center", va="top", fontsize=7.5, zorder=8)
+TERM = {"OUT1": (3.0, -12.4), "OUT2": (3.0, -14.4), "+12V": (9.0, -15.6), "GND": (13.0, -15.6), "+5V": (17.0, -15.6)}
+for k, (x, y) in TERM.items():
+    bb.ax.add_patch(Rectangle((x - 0.35, y - 0.35), 0.7, 0.7, fc="#3a7d44", ec="k", zorder=8))
+    if k.startswith("OUT"):
+        bb.ax.text(x + 0.55, y, k, ha="left", va="center", fontsize=7.5, zorder=8)
+    else:
+        bb.ax.text(x, y + 0.55, k if k != "+12V" else "+12V（接 6 V）", ha="center", va="bottom", fontsize=7.5, zorder=8)
+bb.ax.add_patch(_Circ((-1.4, -13.4), 1.1, fc="#f3e3c3", ec="0.2", lw=1.2, zorder=7))
+bb.ax.text(-1.4, -13.4, "M", ha="center", va="center", fontsize=11, fontweight="bold", zorder=8)
+bb.wire((-0.6, -12.6), TERM["OUT1"], "out")
+bb.wire((-0.6, -14.2), TERM["OUT2"], "out")
+bb.module(4.0, -19.0, 5.6, 1.5, "6 V 电池盒（4 节 AA）", fc="#e6f0f8")
+bb.wire((8.6, -17.5), TERM["+12V"], "pos", via=[(8.6, -16.6), (9.0, -16.6)])
+bb.wire((5.2, -17.5), TERM["GND"], "gnd", via=[(5.2, -16.9), (13.0, -16.9)])
+bb.module(19.5, -19.0, 9.0, 1.5, "Arduino UNO（只用 5V、GND、D9）", fc="#efe6f3")
+bb.wire((21.0, -17.5), TERM["+5V"], "pos", via=[(21.0, -16.6), (17.0, -16.6)])
+bb.wire((23.0, -17.5), TERM["GND"], "gnd", via=[(23.0, -16.9), (13.0, -16.9)])
+bb.wire((27.5, -17.5), "B+26", "pos", via=[(27.5, -7.6)])
+bb.wire((28.5, -17.5), "B-25", "gnd", via=[(28.5, -6.0), (25.0, -6.0)])
+bb.note(1.0, 3.6, "上半区不用。每个控制列在 i 排插一根跳线：\n斜向接 +5 V 轨 = 1，接 GND 轨 = 0（图中 ENA=1、IN1=1、IN2=0）", va="center",
+        bbox=dict(fc="#f7f5ef", ec="none", pad=1.5))
+bb.legend()
+_lg = bb.ax.get_legend(); _lg.set_loc("upper center"); _lg.set_bbox_to_anchor((0.5, 0.995)); _lg.set_ncols(2)
+bb.save(N, "25_p4_1_breadboard.png")
+
+# ---------- 图 25-p4-2：PWM 下电机两端的真实波形与万用表读数 ----------
+F_PWM = 490.0                                       # Arduino UNO D9 的 analogWrite 频率
+fig, axes = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
+t = np.linspace(0, 3 / F_PWM, 3000, endpoint=False)
+keys = ("third", "vin", "vout")
+for d, k, off in zip(DUTY, keys, (0.0, 1.25, 2.5)):
+    v = (((t * F_PWM) % 1.0) < d).astype(float)
+    assert abs(v.mean() - d) < 2e-3
+    axes[0].plot(t * 1e3, v + off, color=fs.C[k], lw=1.4)
+    axes[0].plot([0, t[-1] * 1e3], [d + off] * 2, color=fs.C[k], ls="--", lw=1.0)
+    axes[0].text(t[-1] * 1e3 + 0.1, d + off, f"平均 {d:.1%}", va="center", fontsize=8, color=fs.C[k])
+axes[0].set_xlim(0, 7.4)
+axes[0].set_yticks([0, 1, 1.25, 2.25, 2.5, 3.5]); axes[0].set_yticklabels(["0", "V_F", "0", "V_F", "0", "V_F"])
+axes[0].set_xlabel("时间 / ms"); axes[0].set_ylabel("电机两端电压")
+axes[0].set_title("(a) 示波器看到的：490 Hz 方波（实线），虚线是平均值", fontsize=9)
+dd = np.linspace(0, 1, 11)
+axes[1].plot(dd * 100, dd, **fs.LS["ref"], label="平均值 = 占空比 × V_F")
+for d, k in zip(DUTY, keys):
+    axes[1].plot(d * 100, d, "o", color=fs.C[k], ms=7)
+    axes[1].annotate(f"{d:.1%}", (d * 100, d), xytext=(8, -12), textcoords="offset points", fontsize=8, color=fs.C[k])
+axes[1].set_xlabel("占空比 / %"); axes[1].set_ylabel("万用表直流挡读数 / V_F")
+axes[1].set_xlim(0, 100); axes[1].set_ylim(0, 1.05)
+axes[1].legend(loc="upper left", fontsize=8)
+axes[1].set_title("(b) 万用表直流挡读到的：平均值", fontsize=9)
+fs.save(fig, N, "25_p4_2_pwm_average.png")
+print(f"[数值] PWM {F_PWM:.0f} Hz，一个周期 {1e3 / F_PWM:.2f} ms")

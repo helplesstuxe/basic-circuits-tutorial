@@ -1,6 +1,6 @@
 # 25 H 桥电机驱动 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：20 双控开关 · 直觉篇](../20-two-way-switch/page1.md) · 前置节点：[21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md) · [22 三极管开关与继电器驱动 · 直觉篇](../22-bjt-relay-driver/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：25 H 桥电机驱动 · 动手实验篇](page4.md) · 前置节点：[21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md) · [22 三极管开关与继电器驱动 · 直觉篇](../22-bjt-relay-driver/page1.md)
 
 ## 本页要解决的问题
 
