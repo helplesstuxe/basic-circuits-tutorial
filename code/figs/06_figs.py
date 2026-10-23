@@ -425,3 +425,197 @@ def bb06():
 bb = bb06()
 fs.save(bb.fig, N, "06_p4_1_bb_bridge.png")
 print("06_figs p4 OK")
+
+# ======================================================================
+# 第 8 轮补图：page1–page3 正文讲到的电路连接（不动上面的图号）
+# ======================================================================
+HL = C["bad"]          # 强调色：接错、故障、新加的元件
+CUR = C["cur"]         # 天蓝：电流路径
+OFF = "#999999"           # 灰：这个半周不导通的二极管
+
+
+def bridge_ckt(d, x0=0.0, s=2.0, src="交流输入\n（低压）", on=(), cap=None, rl="$R_L$", rs=None,
+               bleed=None, path=False, rev=(), cap_hl=False, rs_hl=True, dcol=None, src_loc="left"):
+    """以 (x0, 0) 为桥中心画「交流源 → 二极管桥 → (电容) → 负载」。
+    on：本半周导通的二极管编号（其余画灰色）；cap / bleed：电容、泄放电阻的标签（None 不画）；
+    rs：交流源内阻标签；rev：哪几只反向耐压要标出。返回顶点 a、+、b、− 坐标和右侧节点。"""
+    a, p, b, n = (x0, s), (x0 + s, 0), (x0, -s), (x0 - s, 0)
+    spec = {1: (a, p, "top"), 2: (b, p, "bottom"), 3: (n, a, "top"), 4: (n, b, "bottom")}
+    for k, (u, v, loc) in spec.items():
+        col = CUR if k in on else (OFF if on else "black")
+        if dcol and k in dcol:
+            col = dcol[k]
+        lab = f"$D_{k}$" + ("\n导通" if k in on else ("\n截止" if on else ""))
+        d += elm.Diode().at(u).to(v).color(col).label(lab, loc, color=col, fontsize=11)
+    for q in (a, p, b, n):
+        d += elm.Dot().at(q)
+    d += elm.Label().at((a[0] + 0.35, a[1] + 0.3)).label("a", fontsize=11)
+    d += elm.Label().at((b[0] + 0.35, b[1] - 0.3)).label("b", fontsize=11)
+    d += elm.Label().at((n[0] - 0.45, n[1])).label("−", fontsize=13)
+    d += elm.Label().at((p[0] + 0.35, p[1] + 0.35)).label("+", fontsize=13)
+    # 交流源：上端接 a，下端接 b
+    d += elm.Line().at(a).left().length(2.6)
+    if rs:
+        d += elm.Resistor().left().length(2.0).label(rs, "top").color(HL if rs_hl else "black")
+    else:
+        d += elm.Line().left().length(1.2)
+    d += (sv := elm.SourceSin().down().toy(b[1]).label(src, src_loc))
+    d += elm.Line().right().tox(b[0])
+    # 右侧：+ 端 → (电容) → 负载；回线接到 − 端（跨过 b 的水平线用小弧）
+    d += elm.Line().at(p).right().length(1.4)
+    xs = []
+    d += (j0 := elm.Dot())
+    xr = j0.center.x
+    parts = []
+    if cap:
+        parts.append(("C", cap))
+    if bleed:
+        parts.append(("RB", bleed))
+    parts.append(("RL", rl))
+    for i, (kind, lab) in enumerate(parts):
+        if i > 0:
+            d += elm.Line().right().at((xr, 0)).length(2.2)
+            d += elm.Dot()
+            xr += 2.2
+        if kind == "C":
+            d += elm.Capacitor(polar=True).down().at((xr, 0)).length(s + 1.4).label(lab, "bottom").color(HL if cap_hl else "black")
+        elif kind == "RB":
+            d += elm.Resistor().down().at((xr, 0)).length(s + 1.4).label(lab, "bottom").color(HL)
+        else:
+            d += elm.Resistor().down().at((xr, 0)).length(s + 1.4).label(lab, "bottom")
+        xs.append(xr)
+    yb = -s - 1.4
+    d += elm.Line().at((xs[-1], yb)).left().tox(n[0])
+    d += elm.Line().up().toy(b[1] - 0.3)
+    d += elm.Arc2(k=0.9).to((n[0], b[1] + 0.3))
+    d += elm.Line().up().toy(n[1])
+    d += elm.Line().at((xs[-1], 0)).right().length(1.0)
+    d += elm.Dot(open=True).label("$V_o$ +", "right")
+    return a, p, b, n, sv, xs, yb
+
+
+# ---------- 图 06-p1-4 正、负半周的两条电流路径 ----------
+with drawing() as d:
+    bridge_ckt(d, 0, on=(1, 4))
+    d += elm.Label().at((0.8, -4.6)).label("(a) 正半周（a 比 b 高）：a → $D_1$ → + → $R_L$ → − → $D_4$ → b", fontsize=11)
+    d += elm.Arrow().down().at((2.85, -0.6)).length(1.6).color(CUR)
+    bridge_ckt(d, 13.5, on=(2, 3))
+    d += elm.Label().at((14.3, -4.6)).label("(b) 负半周（b 比 a 高）：b → $D_2$ → + → $R_L$ → − → $D_3$ → a", fontsize=11)
+    d += elm.Arrow().down().at((16.35, -0.6)).length(1.6).color(CUR)
+save_schem(d, N, "06_p1_4_paths.png")
+
+# ---------- 图 06-p1-5 直觉篇的实验电路：12 V 交流、桥、2200 µF、75 Ω ----------
+with drawing() as d:
+    a, p, b, n, sv, xs, yb = bridge_ckt(d, 0, src="12 V 交流\n（变压器次级，\n峰值约 17 V）", cap="$C$\n2200 µF", rl="$R_L$\n75 Ω", cap_hl=True)
+    d += elm.Label().at((xs[0] + 0.1, 1.0)).label("第三节新加的电容\n（第二节先不接）", fontsize=10, color=HL)
+save_schem(d, N, "06_p1_5_test_circuit.png")
+
+# ---------- 图 06-p2-5 正半周时截止的 D2、D3 承受多大的反向电压 ----------
+with drawing() as d:
+    a, p, b, n, sv, xs, yb = bridge_ckt(d, 0, src="峰值 $V_p$", on=(1, 4), cap="$C$", rl="$R_L$")
+    d += elm.Label().at((1.8, -4.3)).label("$D_2$：一端接 b，一端接 +，反向电压约 $V_p$", fontsize=10, color=HL)
+    d += elm.Label().at((-2.6, 2.5)).label("$D_3$：同样约 $V_p$", fontsize=10, color=HL)
+save_schem(d, N, "06_p2_5_reverse_voltage.png")
+
+# ---------- 图 06-p2-6 第 5 节仿真用的模型：正弦电压 + 1 Ω 内阻 ----------
+with drawing() as d:
+    bridge_ckt(d, 0, src="e：12 V 有效值\n50 Hz\n（峰值 VP）", rs="RS 1 Ω\n（绕组内阻）", cap="C\n2200 µF", rl="RL\n75 Ω")
+save_schem(d, N, "06_p2_6_sim_model.png")
+
+# ---------- 图 06-p2-7 例 3：一只二极管的半波整流 + 同样的电容 ----------
+with drawing() as d:
+    d += (sv := elm.SourceSin().up().label("12 V 交流", "left"))
+    d += elm.Line().up().length(0.6)
+    d += elm.Diode().right().length(3.0).label("D（只用一只）", "top").color(HL)
+    d += (j := elm.Dot())
+    d += elm.Capacitor(polar=True).down().toy(sv.start).label("$C$\n2200 µF", "bottom")
+    d += elm.Line().left().tox(sv.start.x)
+    d += elm.Line().at(j.center).right().length(2.4)
+    d += (j2 := elm.Dot())
+    d += elm.Resistor().down().toy(sv.start).label("负载\n0.2 A", "bottom")
+    d += elm.Line().left().tox(j.center.x)
+    d += elm.Line().at(j2.center).right().length(1.0)
+    d += elm.Dot(open=True).label("$V_o$ +", "right")
+save_schem(d, N, "06_p2_7_halfwave_cap.png")
+
+# ---------- 图 06-p3-3 示波器地夹：接错（短路 D4）与正确接法 ----------
+with drawing() as d:
+    kw = dict(src="", rs="50 Ω\n（发生器内阻）", rs_hl=False, cap="100 µF", rl="1 kΩ")
+    a, p, b, n, sv, xs, yb = bridge_ckt(d, 0, dcol={4: HL}, **kw)
+    d += elm.Label().at((-0.5, -2.8)).label("被短路", fontsize=10, color=HL)
+    gx = sv.end.x
+    d += elm.Ground().at(sv.end)
+    d += elm.Label().at((gx + 0.55, 0.6)).label("信号发生器\n50 Hz\n峰值 5 V", fontsize=10, halign="left")
+    d += elm.Label().at((gx - 0.3, -2.4)).label("发生器地\n（黑夹子）", fontsize=10, halign="right")
+    d += elm.Line().at((1.0, yb)).down().length(0.5).color(HL)
+    d += elm.Ground().color(HL)
+    d += elm.Label().at((1.4, yb - 0.75)).label("示波器地夹\n（夹在输出负端）", fontsize=10, color=HL, halign="left")
+    d += elm.Line().at((gx, -2.75)).to((gx, -5.0)).linestyle("--").color(HL)
+    d += elm.Line().at((gx, -5.0)).to((1.0, -5.0)).linestyle("--").color(HL)
+    d += elm.Line().at((1.0, -5.0)).to((1.0, yb - 1.25)).linestyle("--").color(HL)
+    d += elm.Label().at(((gx + 1.0) / 2, -5.35)).label("插座地线：一根看不见的导线", fontsize=10, color=HL)
+    d += elm.Label().at((0.6, -6.1)).label("(a) 接错：b → 发生器地 → 插座地线 → 示波器地 → 输出负端，$D_4$ 被短路", fontsize=11, color=HL)
+
+    X = 15.0
+    a, p, b, n, sv, xs, yb = bridge_ckt(d, X, **kw)
+    gx = sv.end.x
+    d += elm.Ground().at(sv.end)
+    d += elm.Label().at((gx + 0.55, 0.6)).label("信号发生器\n50 Hz\n峰值 5 V", fontsize=10, halign="left")
+    d += elm.Label().at((gx - 0.3, -2.4)).label("发生器地：\n两个地夹\n都夹这里", fontsize=10, color=C["fb"], halign="right")
+    d += elm.Arrow().at((p[0] + 0.6, 1.4)).to((p[0] + 0.15, 0.15)).color(C["vout"])
+    d += elm.Label().at((p[0] + 0.8, 1.7)).label("CH1 探头", fontsize=10, color=C["vout"])
+    d += elm.Arrow().at((n[0] - 0.7, -1.4)).to((n[0] - 0.1, -0.12)).color(C["vin"])
+    d += elm.Label().at((n[0] - 0.9, -1.7)).label("CH2 探头", fontsize=10, color=C["vin"])
+    d += elm.Label().at((X + 0.6, -6.1)).label("(b) 正确：示波器显示 CH1 − CH2，就是输出电压", fontsize=11, color=C["fb"])
+save_schem(d, N, "06_p3_3_scope_ground.png")
+
+# ---------- 图 06-p3-4 第 2 节扫描用的电路：只换滤波电容 ----------
+with drawing() as d:
+    bridge_ckt(d, 0, src="12 V 交流", cap="$C$\n470～\n10000 µF\n（逐个换）", rl="$R_L$\n75 Ω", cap_hl=True)
+save_schem(d, N, "06_p3_4_sweep_circuit.png")
+
+# ---------- 图 06-p3-5 练习 3：在电容两端并一只泄放电阻 ----------
+with drawing() as d:
+    bridge_ckt(d, 0, src="12 V 交流", cap="$C$\n2200 µF", bleed="泄放电阻\nR = ？", rl="负载\n0.2 A")
+save_schem(d, N, "06_p3_5_bleeder.png")
+
+# ---------- 图 06-p3-6 练习 4：运放全波整流里 R/2 那只电阻错装成 R ----------
+with drawing() as d:
+    d += (op := elm.Opamp(leads=True).label("A1", "center", fontsize=10))
+    d += elm.Line().left().at(op.in1).length(0.6)
+    d += (j := elm.Dot())
+    d += elm.Resistor().left().label("R")
+    d += (vin := elm.Dot(open=True).label("$V_i$", "left"))
+    d += elm.Line().left().at(op.in2).length(0.6)
+    d += elm.Line().down().length(0.4)
+    d += elm.Ground()
+    d += elm.Line().up().at(j.center).length(1.4)
+    d += (k := elm.Dot())
+    d += elm.Diode().right().tox(op.out.x).reverse().label("$D_2$", "top")
+    d += elm.Line().down().toy(op.out)
+    d += elm.Diode().right().at(op.out).length(2.2).reverse().label("$D_1$", "bottom")
+    d += (o := elm.Dot().label("$V_h$", "bottom", ofst=0.15))
+    d += elm.Line().up().at(k.center).length(1.4)
+    d += elm.Resistor().right().tox(o.center.x).label("R")
+    d += elm.Line().down().toy(o.center)
+    d += elm.Resistor().right().at(o.center).label("应为 R/2\n错装成 R", "top").color(HL)
+    d += (s := elm.Dot())
+    d += elm.Line().right().length(1.4)
+    d += (op2 := elm.Opamp(leads=True, anchor="in1").right().label("A2", "center", fontsize=10))
+    d += elm.Line().left().at(op2.in2).length(0.3)
+    d += elm.Line().down().length(0.3)
+    d += elm.Ground()
+    d += elm.Line().up().at(s.center).length(2.8)
+    d += elm.Resistor().right().tox(op2.out.x + 0.3).label("R")
+    d += elm.Line().down().toy(op2.out)
+    d += elm.Line().left().tox(op2.out.x)
+    d += elm.Line().right().at(op2.out).length(1.2)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    d += elm.Line().down().at(vin.center).length(3.2)
+    d += elm.Line().right().tox(s.center.x - 2.0)
+    d += elm.Resistor().right().tox(s.center.x).label("R", "bottom")
+    d += elm.Line().up().toy(s.center)
+    d += elm.Label().at((vin.center.x + 0.3, vin.center.y - 3.8)).label("输入：峰值 0.3 V 的正弦", fontsize=10, color=C["vin"], halign="left")
+save_schem(d, N, "06_p3_6_wrong_weight.png")
+
+print("06_figs 第 8 轮补图 OK")
