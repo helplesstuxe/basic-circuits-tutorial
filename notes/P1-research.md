@@ -28,4 +28,7 @@
 5. 电感（继电器线圈）断电不加续流二极管（TE 白皮书）。
 
 ## 未能核实
-- 铝电解电容常见容差 ±20%：未打开具体数据手册，正文标 [待核实]。
+- （本轮已解决）铝电解电容容差 ±20%：Nichicon UVR 系列手册 https://www.nichicon.co.jp/english/series_items/catalog_pdf/e-uvr.pdf （已下载打开）"Capacitance Tolerance ±20% at 120Hz, 20˚C"；额定电压挡 6.3/10/16/25/35/50… V。
+- （本轮已解决）耐压 1.5 倍：没有厂家把 1.5 倍写成规定，正文改为"经验余量"并给出理由。CDE 铝电解电容应用指南 https://www.cde.com/resources/catalogs/AEappGuide.pdf （已打开）：Rated DC Voltage 是"包括纹波在内可长期施加的最高峰值电压"；寿命电压乘数 Mv = 4.3 − 3.3·VA/VR（降额 10% 时 Mv = 1.33）。按 1.5 倍选时 VA/VR = 2/3，Mv ≈ 2.1。
+- （本轮已解决）继电器线圈电感：Omron G5V-1 数据手册 https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf （已打开，备用 https://app.mectronic.com/dsheet/G5V12DC12_Omron.pdf ）线圈电感参考值：3 V 0.05/0.11 H，12 V 0.85/1.63 H（960 Ω），24 V 3.48/6.61 H（衔铁 OFF/ON）。12 V 款 τ = 0.89～1.70 ms。
+- 以上数字均由 code/figs/P1_figs.py 的 p3_datasheet_numbers() 打印并断言。

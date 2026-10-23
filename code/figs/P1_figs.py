@@ -283,7 +283,32 @@ def p3_3_rl_answer():
     fs.save(fig, P, "P1_p3_3_rl_answer.png")
 
 
+# ---------------- 参数与调试篇引用的手册数字（无图，只打印并断言） ----------------
+def p3_datasheet_numbers():
+    # Omron G5V-1 线圈参数表（参考值）：额定电压 → (线圈电阻 Ω, 衔铁释放时 L, 衔铁吸合时 L)
+    g5v1 = {3: (60, 0.05, 0.11), 12: (960, 0.85, 1.63), 24: (3840, 3.48, 6.61)}
+    for v, (r, l_off, l_on) in g5v1.items():
+        print(f"[P1 page3] G5V-1 {v} V 款：R = {r} Ω，L = {l_off}～{l_on} H，吸合后电感约 {l_on / l_off:.1f} 倍")
+        assert 1.8 < l_on / l_off < 2.3                 # 衔铁吸上后电感约变成一倍多
+    r12, lo, hi = g5v1[12]
+    print(f"[P1 page3] 12 V 款 τ = L/R = {lo / r12 * 1e3:.2f}～{hi / r12 * 1e3:.2f} ms；示意线圈 0.1 H/100 Ω 的 τ = {0.1 / 100 * 1e3:.0f} ms")
+    assert abs(lo / r12 * 1e3 - 0.89) < 0.01 and abs(hi / r12 * 1e3 - 1.70) < 0.01
+    # Nichicon UVR：容量误差 ±20% → τ = 10 kΩ × 100 μF = 1 s 的实际范围
+    tau = 10e3 * 100e-6
+    print(f"[P1 page3] ±20% 电容：τ 标称 {tau:.1f} s，实际 {tau * 0.8:.1f}～{tau * 1.2:.1f} s")
+    assert abs(tau - 1.0) < 1e-9
+    # CDE 应用指南：寿命乘数 Mv = 4.3 − 3.3·VA/VR
+    mv = lambda ratio: 4.3 - 3.3 * ratio
+    print(f"[P1 page3] Mv(90%) = {mv(0.9):.2f}，Mv(2/3) = {mv(2 / 3):.2f}，比值 {mv(2 / 3) / mv(0.9):.1f}")
+    assert abs(mv(0.9) - 1.33) < 0.005 and abs(mv(2 / 3) - 2.1) < 0.005 and abs(mv(2 / 3) / mv(0.9) - 1.6) < 0.05
+    need = 12 * 1.5
+    pick = min(v for v in (6.3, 10, 16, 25, 35, 50) if v >= need)   # UVR 系列的标称电压挡
+    print(f"[P1 page3] 12 V 电源 × 1.5 = {need:.0f} V，标称挡选 {pick:g} V")
+    assert need == 18 and pick == 25
+
+
 if __name__ == "__main__":
     p1_1_divider(); p1_2_rc(); p1_3_symbols(); p1_4_relay_loops()
     p2_1_loading(); p2_3_square(); p2_4_flyback(); p2_5_timer()
     p3_1_tau_scan(); p3_2_divider_tradeoff(); p3_3_rl_answer()
+    p3_datasheet_numbers()
