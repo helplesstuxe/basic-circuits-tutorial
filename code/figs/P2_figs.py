@@ -574,3 +574,195 @@ def p4_2_iv(vd, idd):
 if __name__ == "__main__":
     _vd, _id = p4_numbers()
     p4_1_breadboard(); p4_2_iv(_vd, _id)
+
+
+# ======================================================================================
+# 第 8 轮补电路图（page1–page3）：正文/例题/练习里描述了具体接法、但附近没有电路图的地方
+# ======================================================================================
+EMPH = schem.C["third"]      # 新出现、需要强调的元件
+BAD = schem.C["bad"]         # 错误接法的标注
+
+
+def _vsrc(d, x, y0, y1, text):
+    """竖放电池：负极在 y0（下）、正极在 y1（上），左侧标注。"""
+    ym = (y0 + y1) / 2
+    d += elm.Line().endpoints((x, y0), (x, ym - 0.9))
+    d += elm.Battery().endpoints((x, ym - 0.9), (x, ym + 0.9))
+    d += elm.Line().endpoints((x, ym + 0.9), (x, y1))
+    d += elm.Label().at((x - 0.9, ym)).label(text)
+
+
+def _diode_loop(d, x0, vtxt, rtxt, parts, itxt):
+    """电池 → 电阻 → 若干只二极管（竖着向下）→ 回到电池负极。parts: [(元件类, 标注, 颜色)]。"""
+    top, bot = 4.0, -2.0 - 1.6 * (len(parts) - 1)
+    xr = x0 + 2.6
+    _vsrc(d, x0, bot, top, vtxt)
+    d += elm.Line().endpoints((x0, top), (xr - 0.2, top))
+    d += elm.Resistor().endpoints((xr - 0.2, top), (xr + 2.4, top)).label(rtxt)
+    xd = xr + 2.4
+    y = top
+    for k, (E, txt, col) in enumerate(parts):
+        y_next = y - (3.0 if k == 0 else 1.6)
+        d += E().endpoints((xd, y if k else y), (xd, y_next)).color(col)
+        d += elm.Label().at((xd + 0.75, (y + y_next) / 2)).label(txt, halign="left", color=col)
+        y = y_next
+    d += elm.Line().endpoints((xd, y), (xd, bot))
+    d += elm.Line().endpoints((xd, bot), (x0, bot))
+    d += elm.Label().at((x0 + 1.3, top + 0.45)).label(itxt, color=schem.C["cur"])
+
+
+def p2_6_diode_circuits():
+    print("[图 P2-p2-6] (a) 5 V 串 1 kΩ 串硅二极管，I≈4.3 mA；(b) 例 1：5 V 串 330 Ω 串红色 LED")
+    i_a = (5 - 0.7) / 1000 * 1e3
+    i_b = (5 - 2) / 330 * 1e3
+    print(f"[数值] 估算电流 (a) {i_a:.1f} mA，(b) {i_b:.1f} mA")
+    assert abs(i_a - 4.3) < 0.05 and abs(i_b - 9.1) < 0.05
+    with schem.drawing(fontsize=11) as d:
+        _diode_loop(d, 0.0, "$V_{CC}$\n5 V", "$R$  1 kΩ", [(elm.Diode, "硅二极管\n$V_D$ ≈ 0.7 V", "black")], "→ $I$ ≈ 4.3 mA")
+        d += elm.Label().at((2.6, -3.2)).label("(a) 第 1 节：电源串电阻串二极管")
+        _diode_loop(d, 9.0, "$V_{CC}$\n5 V", "$R$  330 Ω", [(elm.LED, "红色 LED\n$V_D$ ≈ 2 V", EMPH)], "→ $I$ ≈ 9.1 mA")
+        d += elm.Label().at((11.6, -3.2)).label("(b) 例 1：LED 串限流电阻")
+    schem.save_schem(d, P, "P2_p2_6_diode_circuits.png")
+
+
+def _npn_switch(d, x0, vin_txt, rb_txt, vcc_txt, rc_txt, rb_color="black", rc_color="black", rc_load=False):
+    """低边 NPN 开关：输入 → R_B → 基极；V_CC → R_C（或负载）→ 集电极；发射极接地。返回三极管。"""
+    xq = x0 + 4.0
+    q = elm.BjtNpn().anchor("base").at((xq, 0.0))
+    d += q
+    xc = q.collector[0]
+    d += elm.Line().endpoints(q.collector, (xc, 1.2))
+    d += elm.Resistor().endpoints((xc, 4.0), (xc, 1.2)).color(rc_color)
+    d += elm.Label().at((xc + 0.4, 2.6)).label(rc_txt, halign="left", color=rc_color)
+    d += elm.Dot(open=True).at((xc, 4.0)).label(vcc_txt, "top")
+    d += elm.Resistor().endpoints((x0 + 0.6, 0.0), (xq, 0.0)).color(rb_color).label(rb_txt, color=rb_color)
+    d += elm.Dot(open=True).at((x0 + 0.6, 0.0)).label(vin_txt, "left")
+    d += elm.Line().endpoints(q.emitter, (xc, -1.4))
+    d += elm.Ground().at((xc, -1.4))
+    d += elm.Label().at((xc + 0.35, 0.95)).label("C", fontsize=9, halign="left")
+    d += elm.Label().at((xq - 0.1, 0.35)).label("B", fontsize=9)
+    d += elm.Label().at((xc + 0.35, -0.95)).label("E", fontsize=9, halign="left")
+    return q
+
+
+def p2_7_bjt_switch():
+    print("[图 P2-p2-7] NPN 开关：V_i 经 R_B 进基极，5 V 经 R_C=1 kΩ 进集电极，发射极接地")
+    with schem.drawing(fontsize=11) as d:
+        q = _npn_switch(d, 0.0, "$V_i$", "$R_B$  47 kΩ（第 3 节）\n10 kΩ（第 5 节）", "$V_{CC}$ = 5 V", "$R_C$\n1 kΩ")
+        xc = q.collector[0]
+        d += elm.Label().at((xc - 0.55, 1.75)).label("↓ $I_C$", color=schem.C["cur"], halign="right")
+        d += elm.Label().at((2.3, -0.75)).label("→ $I_B$", color=schem.C["cur"])
+        d += elm.Label().at((xc + 1.3, 0.0)).label("$V_{CE}$\n（C 对地）", color=EMPH)
+        d += elm.Label().at((3.0, -2.6)).label("$V_{BE}$ ≈ 0.7 V，$V_{CE} = V_{CC} - I_C R_C$")
+    schem.save_schem(d, P, "P2_p2_7_bjt_switch.png")
+
+
+def p2_8_pmos_highside():
+    print("[图 P2-p2-8] P 沟道高边开关：源极接 12 V，漏极经负载接地，栅极上拉到 12 V，开关 K 把栅极拉到地")
+    with schem.drawing(fontsize=11) as d:
+        xs = 6.0
+        m = elm.PFet().reverse().anchor("source").at((xs, 4.0))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints((1.5, 5.0), (xs, 5.0))
+        d += elm.Line().endpoints((xs, 5.0), m.source)
+        d += elm.Dot(open=True).at((1.5, 5.0)).label("+12 V", "left")
+        d += elm.Dot().at((g[0] - 1.6, 5.0))
+        d += elm.Resistor().endpoints((g[0] - 1.6, 5.0), (g[0] - 1.6, g[1])).color(EMPH)
+        d += elm.Label().at((g[0] - 2.0, (5.0 + g[1]) / 2)).label("上拉电阻", color=EMPH, halign="right")
+        d += elm.Line().endpoints((g[0] - 1.6, g[1]), g)
+        d += elm.Dot().at((g[0] - 1.6, g[1]))
+        d += elm.Label().at((g[0] - 0.8, g[1] + 0.3)).label("G", fontsize=9)
+        d += elm.Switch().endpoints((g[0] - 1.6, g[1]), (g[0] - 1.6, g[1] - 2.4))
+        d += elm.Label().at((g[0] - 2.0, g[1] - 1.2)).label("开关 K", halign="right")
+        d += elm.Ground().at((g[0] - 1.6, g[1] - 2.4))
+        d += elm.Resistor().endpoints(m.drain, (xs, m.drain[1] - 2.4)).label("负载", "bottom")
+        d += elm.Ground().at((xs, m.drain[1] - 2.4))
+        d += elm.Label().at((xs + 0.35, m.source[1] + 0.2)).label("S（源极）", fontsize=9, halign="left")
+        d += elm.Label().at((xs + 0.35, m.drain[1] - 0.2)).label("D（漏极）", fontsize=9, halign="left")
+        d += elm.Label().at((4.0, -1.4)).label("K 断开：栅极被拉到 12 V，$V_{GS}$ = 0 V → 关断\nK 闭合：栅极 = 0 V，$V_{GS}$ = −12 V → 导通")
+    schem.save_schem(d, P, "P2_p2_8_pmos_highside.png")
+
+
+def p3_3_rb_sweep_circuit():
+    print("[图 P2-p3-3] 扫描一的电路：3.3 V 驱动经 R_B（0.5–15 kΩ）进基极，5 V 经 100 Ω 负载进集电极")
+    with schem.drawing(fontsize=11) as d:
+        q = _npn_switch(d, 0.0, "单片机\n3.3 V", "$R_B$  0.5–15 kΩ 扫描", "5 V", "负载\n100 Ω", rb_color=EMPH)
+        d += elm.Label().at((q.collector[0] + 1.1, 0.0)).label("测 $V_{CE}$", color=schem.C["cur"])
+    schem.save_schem(d, P, "P2_p3_3_rb_sweep_circuit.png")
+
+
+def p3_4_two_diodes():
+    print("[图 P2-p3-4] 练习 1：12 V 串 1 kΩ 串两只同方向硅二极管")
+    with schem.drawing(fontsize=11) as d:
+        _diode_loop(d, 0.0, "12 V", "1 kΩ", [(elm.Diode, "$D_1$", "black"), (elm.Diode, "$D_2$", "black")], "→ $I$ = ?")
+    schem.save_schem(d, P, "P2_p3_4_two_diodes.png")
+
+
+def p3_5_nmos_floating():
+    print("[图 P2-p3-5] 练习 4：3.3 V 引脚直接接 2N7000 栅极，5 V 经 100 Ω 进漏极，栅极到地什么都没接")
+    with schem.drawing(fontsize=11) as d:
+        xd = 5.0
+        m = elm.NFet().reverse().anchor("drain").at((xd, 1.5))
+        d += m
+        g = m.gate
+        d += elm.Resistor().endpoints((xd, 4.4), m.drain)
+        d += elm.Label().at((xd + 0.4, 3.0)).label("负载\n100 Ω", halign="left")
+        d += elm.Dot(open=True).at((xd, 4.4)).label("5 V", "top")
+        d += elm.Line().endpoints((0.5, g[1]), g)
+        d += elm.Dot(open=True).at((0.5, g[1])).label("单片机引脚\n0 / 3.3 V", "left")
+        d += elm.Label().at((xd + 0.4, m.drain[1] - 0.75)).label("2N7000", halign="left", fontsize=10)
+        d += elm.Line().endpoints(m.source, (xd, m.source[1] - 0.6))
+        d += elm.Ground().at((xd, m.source[1] - 0.6))
+        d += elm.Label().at((2.0, g[1] - 1.3)).label("栅极和地之间\n什么都没接", color=BAD)
+    schem.save_schem(d, P, "P2_p3_5_nmos_floating.png")
+
+
+def p3_6_pmos_direct():
+    print("[图 P2-p3-6] 练习 5：P 沟道管源极接 12 V，栅极直接接 5 V 单片机引脚，漏极经负载接地")
+    with schem.drawing(fontsize=11) as d:
+        xs = 5.0
+        m = elm.PFet().reverse().anchor("source").at((xs, 3.5))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints(m.source, (xs, 4.4))
+        d += elm.Dot(open=True).at((xs, 4.4)).label("+12 V", "top")
+        d += elm.Line().endpoints((0.5, g[1]), g)
+        d += elm.Dot(open=True).at((0.5, g[1])).label("单片机引脚\n0 / 5 V", "left")
+        d += elm.Resistor().endpoints(m.drain, (xs, m.drain[1] - 2.4))
+        d += elm.Label().at((xs + 0.4, m.drain[1] - 1.2)).label("负载", halign="left")
+        d += elm.Ground().at((xs, m.drain[1] - 2.4))
+    schem.save_schem(d, P, "P2_p3_6_pmos_direct.png")
+
+
+def p3_7_pmos_fixed():
+    print("[图 P2-p3-7] 练习 5 答案：栅极上拉到 12 V，NPN 把栅极拉到地，单片机经 R_B 控制 NPN")
+    with schem.drawing(fontsize=11) as d:
+        xs = 8.0
+        m = elm.PFet().reverse().anchor("source").at((xs, 4.0))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints((g[0] - 1.6, 5.0), (xs, 5.0))
+        d += elm.Line().endpoints((xs, 5.0), m.source)
+        d += elm.Dot(open=True).at((xs, 5.0)).label("+12 V", "top")
+        xg = g[0] - 1.6
+        d += elm.Resistor().endpoints((xg, 5.0), (xg, g[1])).color(EMPH)
+        d += elm.Label().at((xg - 0.4, (5.0 + g[1]) / 2)).label("上拉电阻", color=EMPH, halign="right")
+        d += elm.Line().endpoints((xg, g[1]), g)
+        d += elm.Dot().at((xg, g[1]))
+        q = elm.BjtNpn().anchor("collector").at((xg, g[1] - 1.0)).color(EMPH)
+        d += q
+        d += elm.Line().endpoints((xg, g[1]), q.collector).color(EMPH)
+        d += elm.Ground().at(q.emitter)
+        d += elm.Resistor().endpoints((q.base[0] - 3.0, q.base[1]), q.base).color(EMPH).label("$R_B$", color=EMPH)
+        d += elm.Dot(open=True).at((q.base[0] - 3.0, q.base[1])).label("单片机引脚\n0 / 5 V", "left")
+        d += elm.Resistor().endpoints(m.drain, (xs, m.drain[1] - 2.4))
+        d += elm.Label().at((xs + 0.4, m.drain[1] - 1.2)).label("负载", halign="left")
+        d += elm.Ground().at((xs, m.drain[1] - 2.4))
+        d += elm.Label().at((4.5, -1.6)).label("引脚高 → NPN 导通 → 栅极 ≈ 0 V → P 沟道管导通\n引脚低 → NPN 截止 → 栅极被拉回 12 V → 关断")
+    schem.save_schem(d, P, "P2_p3_7_pmos_fixed.png")
+
+
+if __name__ == "__main__":
+    p2_6_diode_circuits(); p2_7_bjt_switch(); p2_8_pmos_highside()
+    p3_3_rb_sweep_circuit(); p3_4_two_diodes(); p3_5_nmos_floating(); p3_6_pmos_direct(); p3_7_pmos_fixed()
