@@ -579,3 +579,43 @@ def p4_2_common(cm):
 if __name__ == "__main__":
     _r, _cm = p4_numbers()
     p4_1_breadboard(); p4_2_common(_cm)
+
+
+# ====================== 第 8 轮补电路图（page1–3） ======================
+EMPH = fs.C["third"]          # 新出现的元件用强调色
+
+# ---------- 图 04-p3-3 V1 一侧的信号源内阻 R_s 与 R1 串联 ----------
+with drawing() as d:
+    op, p1, p2 = diffamp(d, v1=None, v2="$V_2$")
+    d += elm.Resistor().left().at(p1).label("$R_s$ 信号源内阻", "top").color(EMPH)
+    d += elm.Dot(open=True).label("$V_1$", "left")
+save_schem(d, N, "04_p3_3_rs_circuit.png")
+
+# ---------- 图 04-p3-4 练习 4：0.1 Ω 采样电阻测电机电流 ----------
+with drawing() as d:
+    op, p1, p2 = diffamp(d, labs=("$R_1$", "$R_2$", "$R_3$", "$R_4$"), v1=None, v2=None, vo="$V_o$ 去单片机")
+    xa = p1[0] - 0.8
+    xs = xa - 1.8
+    yT, yB = p1[1] + 1.0, p2[1] - 1.5
+    d += elm.Line().endpoints(p1, (xa, p1[1]))
+    d += elm.Line().endpoints((xa, p1[1]), (xa, yT))
+    d += elm.Line().endpoints((xa, yT), (xs, yT))
+    d += elm.Line().endpoints(p2, (xa, p2[1]))
+    d += elm.Line().endpoints((xa, p2[1]), (xa, yB))
+    d += elm.Line().endpoints((xa, yB), (xs, yB))
+    d += elm.Dot().at((xs, yT)); d += elm.Dot().at((xs, yB))
+    d += elm.Resistor().endpoints((xs, yB), (xs, yT)).color(EMPH)
+    d += elm.Label().at((xs + 0.55, (yT + yB) / 2)).label("采样电阻\n0.1 Ω", halign="left", fontsize=11, color=EMPH)
+    yg = yB - 3.0
+    xb = xs - 1.6                                       # 12 V 电源：+ 端接采样电阻下端
+    d += elm.Line().endpoints((xs, yB), (xb, yB))
+    d += elm.SourceV().endpoints((xb, yg), (xb, yB))
+    d += elm.Label().at((xb - 0.6, (yg + yB) / 2)).label("12 V", halign="right", fontsize=11)
+    d += elm.Ground().at((xb, yg))
+    xm = xs - 3.6                                       # 电机：接采样电阻上端
+    d += elm.Line().endpoints((xs, yT), (xm, yT))
+    d += elm.Motor().endpoints((xm, yT), (xm, yg))
+    d += elm.Label().at((xm - 0.7, (yT + yg) / 2)).label("电机", halign="right", fontsize=11)
+    d += elm.Ground().at((xm, yg))
+save_schem(d, N, "04_p3_4_shunt_exercise.png")
+print("练习 4：2 A × 0.1 Ω = 0.2 V，两端对地约 12 V")
