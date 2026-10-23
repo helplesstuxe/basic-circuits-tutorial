@@ -404,3 +404,165 @@ def p4_breadboards():
 
 
 p4_breadboards()
+
+
+# ===== 第 8 轮补图（page1–3）=====
+from schem import *
+HL = C["bad"]
+
+
+def _box(d, x0, y0, x1, y1, **kw):
+    for a, b in (((x0, y0), (x1, y0)), ((x1, y0), (x1, y1)), ((x1, y1), (x0, y1)), ((x0, y1), (x0, y0))):
+        e = elm.Line().endpoints(a, b)
+        if "color" in kw: e = e.color(kw["color"])
+        if "ls" in kw: e = e.linestyle(kw["ls"])
+        d += e
+
+
+def _half(d, ox, closed):
+    """直觉版降压，ox 为横向偏移；closed=True 画开关闭合时的电流路径。"""
+    top = 4.0
+    cu = C["cur"]
+    d += elm.Dot(open=True).at((ox, top)).label("$V_{in}$\n12 V", "left")
+    if closed:
+        d += elm.Line().endpoints((ox, top), (ox + 3.0, top)).color(cu)
+        d += elm.Label().at((ox + 1.5, top + 0.45)).label("开关闭合", loc="center")
+        d += elm.Schottky().endpoints((ox + 3.0, 0), (ox + 3.0, top)).label("二极管\n反偏，不通", "bottom")
+    else:
+        d += elm.Switch().endpoints((ox, top), (ox + 3.0, top)).label("开关断开", "top")
+        d += elm.Schottky().endpoints((ox + 3.0, 0), (ox + 3.0, top)).color(cu).label("二极管导通\n节点 ≈ −0.4 V", "bottom")
+    d += elm.Dot().at((ox + 3.0, top))
+    d += elm.Inductor2().endpoints((ox + 3.0, top), (ox + 6.0, top)).color(cu).label(
+        "左 12 V、右 5 V\n电流慢慢增大" if closed else "电感推着电流\n慢慢减小", "top")
+    d += elm.Dot().at((ox + 6.0, top))
+    d += elm.Capacitor().endpoints((ox + 6.0, top), (ox + 6.0, 0)).label("C", "bottom")
+    d += elm.Line().endpoints((ox + 6.0, top), (ox + 8.0, top)).color(cu)
+    d += elm.Resistor().endpoints((ox + 8.0, top), (ox + 8.0, 0)).color(cu).label("负载\n5 V", "bottom")
+    d += elm.Line().endpoints((ox + 8.0, 0), (ox + 6.0, 0)).color(cu)
+    d += elm.Dot().at((ox + 6.0, 0))
+    g = elm.Line().endpoints((ox + 6.0, 0), (ox + 3.0, 0)).color(cu)
+    d += g
+    d += elm.Dot().at((ox + 3.0, 0))
+    e = elm.Line().endpoints((ox + 3.0, 0), (ox, 0))
+    if closed: e = e.color(cu)
+    d += e
+    d += elm.Dot(open=True).at((ox, 0)).label("0 V", "left")
+    # 方向箭头
+    if closed:
+        d += elm.Arrow().at((ox + 0.6, top - 0.35)).to((ox + 2.4, top - 0.35)).color(cu)
+    else:
+        d += elm.Arrow().at((ox + 2.55, 0.8)).to((ox + 2.55, 3.2)).color(cu)
+    d += elm.Arrow().at((ox + 6.4, top - 0.35)).to((ox + 7.6, top - 0.35)).color(cu)
+    d += elm.Label().at((ox + 4.0, -1.0)).label("(a) 开关闭合：电源 → 电感 → 负载" if closed
+                                               else "(b) 开关断开：地 → 二极管 → 电感 → 负载", loc="center")
+
+
+def p1_4_paths():
+    with drawing(fontsize=11) as d:
+        _half(d, 0, True)
+        _half(d, 11.0, False)
+    save_schem(d, "09", "09_p1_4_paths.png")
+
+
+def p2_6_phases():
+    """伏秒平衡推导用的两个等效电路。"""
+    top = 3.5
+    with drawing(fontsize=11) as d:
+        for ox, on in ((0, True), (11.5, False)):
+            if on:
+                d += elm.SourceV().endpoints((ox, 0), (ox, top))
+                d += elm.Label().at((ox - 0.9, top / 2)).label("$V_{in}$", loc="center")
+                d += elm.Line().endpoints((ox, top), (ox + 1.5, top)).label("上管导通", "top")
+            else:
+                d += elm.Line().endpoints((ox, 0), (ox, top))
+                d += elm.Label().at((ox - 1.3, top / 2)).label("二极管导通\n（压降当 0）\n左端接地", loc="center")
+                d += elm.Line().endpoints((ox, top), (ox + 1.5, top))
+            d += elm.Dot().at((ox + 1.5, top)).label("$V_{in}$" if on else "0 V", "bottom")
+            d += elm.Inductor2().endpoints((ox + 1.5, top), (ox + 4.5, top)).color(HL).label(
+                "$L$：两端 $V_{in}-V_o$" if on else "$L$：两端 $-V_o$", "top")
+            d += elm.Dot().at((ox + 4.5, top)).label("$V_o$", "bottom")
+            d += elm.Capacitor().endpoints((ox + 4.5, top), (ox + 4.5, 0)).label("$C_o$", "bottom")
+            d += elm.Line().endpoints((ox + 4.5, top), (ox + 6.3, top))
+            d += elm.Resistor().endpoints((ox + 6.3, top), (ox + 6.3, 0)).label("负载", "bottom")
+            d += elm.Line().endpoints((ox, 0), (ox + 6.3, 0))
+            d += elm.Dot().at((ox + 4.5, 0))
+            d += elm.Label().at((ox + 3.2, -1.4)).label(
+                "(a) 导通 $DT$：电流上升" if on else "(b) 断开 $(1-D)T$：电流下降", loc="center")
+    save_schem(d, "09", "09_p2_6_phases.png")
+
+
+def p3_3_loops():
+    """PCB 回路：回路 1、回路 2 与热点回路。"""
+    top = 4.0
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((-1.2, top)).label("$V_{in}$", "left")
+        d += elm.Line().endpoints((-1.2, top), (0.6, top))
+        d += elm.Dot().at((0, top))
+        d += elm.Capacitor().endpoints((0, top), (0, 0))
+        d += elm.Label().at((-0.6, 2.0)).label("$C_{in}$", loc="center")
+        q, sx = high_side(d, 0.6, top, "上管")
+        nx = sx + 1.0
+        d += elm.Line().endpoints((sx, top), (nx, top))
+        d += elm.Dot().at((nx, top))
+        d += elm.Label().at((nx + 0.2, top + 0.45)).label("开关节点", loc="center")
+        d += elm.Schottky().endpoints((nx, 0), (nx, top))
+        d += elm.Label().at((nx, -0.55)).label("续流二极管", loc="center")
+        d += elm.Inductor2().endpoints((nx, top), (nx + 3.0, top)).label("$L$", "top")
+        x2 = nx + 3.0
+        d += elm.Dot().at((x2, top))
+        d += elm.Capacitor().endpoints((x2, top), (x2, 0)).label("$C_o$", "bottom")
+        d += elm.Line().endpoints((x2, top), (x2 + 2.0, top))
+        d += elm.Resistor().endpoints((x2 + 2.0, top), (x2 + 2.0, 0)).label("负载", "bottom")
+        d += elm.Line().endpoints((-1.2, 0), (x2 + 2.0, 0))
+        d += elm.Dot(open=True).at((-1.2, 0)).label("0 V", "left")
+        for x in (0, nx, x2): d += elm.Dot().at((x, 0))
+        _box(d, 0.3, 0.3, x2 - 0.3, top - 0.3, color=C["fb"], ls="--")
+        _box(d, nx + 0.3, 0.55, x2 - 0.55, top - 0.55, color=C["cur"], ls=":")
+        _box(d, 0.5, 0.55, nx - 0.3, top - 0.55, color=HL, ls="-")
+        d += elm.Label().at(((0.5 + nx - 0.3) / 2, 1.9)).label("热点回路", loc="center").color(HL)
+        d += elm.Label().at(((nx + x2) / 2, 1.9)).label("回路 2\n（上管断开）", loc="center").color(C["cur"])
+        d += elm.Label().at((x2 / 2, -1.2)).label("绿色虚线：回路 1（上管导通）", loc="center").color(C["fb"])
+    save_schem(d, "09", "09_p3_3_loops.png")
+
+
+def p3_4_lab():
+    """效率与纹波实验的接法。"""
+    with drawing(fontsize=11) as d:
+        top = 4.0
+        _box(d, -3.2, -0.3, -0.6, top + 0.3)
+        d += elm.Label().at((-1.9, 2.0)).label("实验室\n直流电源\n12 V\n限流 1.5 A", loc="center")
+        d += elm.Line().endpoints((-0.6, top), (0, top))
+        d += elm.MeterA().endpoints((0, top), (2.0, top)).color(HL).label("$I_{in}$", "top")
+        d += elm.Line().endpoints((2.0, top), (3.0, top))
+        d += elm.Line().endpoints((-0.6, 0), (3.0, 0))
+        _box(d, 3.0, -0.3, 6.0, top + 0.3)
+        d += elm.Label().at((4.5, 2.0)).label("降压模块", loc="center")
+        d += elm.Label().at((3.45, top - 0.35)).label("IN+", loc="center")
+        d += elm.Label().at((3.45, 0.35)).label("IN−", loc="center")
+        d += elm.Label().at((5.45, top - 0.35)).label("OUT+", loc="center")
+        d += elm.Label().at((5.45, 0.35)).label("OUT−", loc="center")
+        d += elm.Line().endpoints((6.0, top), (10.0, top))
+        d += elm.Line().endpoints((6.0, 0), (10.0, 0))
+        d += elm.Dot().at((7.0, top)); d += elm.Dot().at((7.0, 0))
+        d += elm.Capacitor().endpoints((7.0, top), (7.0, 0))
+        d += elm.Label().at((7.6, 1.2)).label("输出\n电容", loc="center")
+        d += elm.Dot().at((8.5, top)); d += elm.Dot().at((8.5, 0))
+        d += elm.MeterV().endpoints((8.5, top), (8.5, 0))
+        d += elm.Label().at((9.2, 1.2)).label("测 $V_o$", loc="center")
+        d += elm.Resistor().endpoints((10.0, top), (10.0, 0))
+        d += elm.Label().at((10.9, 2.0)).label("负载\n5 Ω\n10 W", loc="center")
+        # 示波器探头：接地弹簧顶在输出电容两端
+        d += elm.Line().endpoints((7.0, top), (7.0, top + 1.0)).color(HL)
+        d += elm.Line().endpoints((7.0, 0), (7.0, -0.7)).color(HL)
+        d += elm.Label().at((7.0, -1.1)).label("探头地（接地弹簧）", loc="center").color(HL)
+        d += elm.Label().at((7.0, top + 1.45)).label("示波器探头尖：顶在输出电容正端", loc="center").color(HL)
+    save_schem(d, "09", "09_p3_4_lab.png")
+
+
+def round8():
+    p1_4_paths(); p2_6_phases(); p3_3_loops(); p3_4_lab()
+    print("09_figs 第 8 轮补图 OK")
+
+
+if __name__ == "__main__":
+    round8()
