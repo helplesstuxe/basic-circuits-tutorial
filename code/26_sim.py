@@ -3,11 +3,14 @@ N 沟道 MOS 管双向电平转换。
 运行：/workspace/circuits-venv/bin/python code/26_sim.py   → 26-pullup-level-shift/img/26_p2_2_debounce.png
 同时打印电平转换模型的关键数字；code/figs/26_figs.py 会调用这里的函数（包括 level_shifter）画其余的图。
 数据来源：
-- 施密特门限：TI SN74HC14 数据手册，VCC = 4.5 V 一行典型值 VT+ 2.5 V、VT− 1.6 V（5 V 系统近似使用）。
+- 施密特门限：TI SN74HC14 数据手册只给 4.5 V、6 V 两栏（典型 VT+ 2.5 / 3.3 V，VT− 1.6 / 2.0 V），
+  本电路接 5 V，按两栏线性插值到 5 V：VT+ ≈ 2.77 V、VT− ≈ 1.73 V（与 TI 的 SN74HC14 SPICE 模型在 5 V 下一致）。
 - 单片机输入门限：Microchip ATmega328P 数据手册 VIL ≤ 0.3·VCC、VIH ≥ 0.6·VCC，内部上拉 20–50 kΩ。
 - 按键抖动时长：Ganssle《A Guide to Debouncing》第 1 部分，平均约 1.5 ms、多数不超过 6.2 ms。
   本脚本的抖动波形是按这个量级随机生成的示意波形，不是实测数据。
-- 电平转换 MOS 管：onsemi BSS138，VGS(th) 典型 1.3 V，VGS = 4.5 V 时 RDS(on) 典型 1.0 Ω。
+- 电平转换 MOS 管：BSS138。沟道参数取 Diodes 公司 BSS138 官方 SPICE 模型（spice/models/BSS138_diodes.lib）：
+  VTO = 1 V、KP = 0.395 A/V²；没有计入管子自身的结电容，所以松手后的上升过程比 SPICE 快（见 page2 仿真二）。
+  onsemi 手册的 VGS(th) 为 0.8 / 1.3 / 1.5 V（最小 / 典型 / 最大），模型的 1 V 在这个范围内。
 - I²C 上升时间：TI SLVA689A，tr = 0.8473·Rp·Cb。
 """
 import os, sys
@@ -15,7 +18,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "fig
 import numpy as np
 
 VCC = 5.0
-VT_P, VT_M = 2.5, 1.6            # SN74HC14 正向 / 负向门限典型值（V）
+VT_P = round(2.5 + (3.3 - 2.5) * (5.0 - 4.5) / (6.0 - 4.5), 2)   # SN74HC14 正向门限，插值到 5 V：2.77 V
+VT_M = round(1.6 + (2.0 - 1.6) * (5.0 - 4.5) / (6.0 - 4.5), 2)   # 负向门限，插值到 5 V：1.73 V
 V_MID = 2.5                      # 没有回差的输入：近似为一个 VCC/2 的单门限
 VIL, VIH = 0.3 * VCC, 0.6 * VCC  # ATmega328P 保证读成 0 / 1 的电压
 
@@ -94,7 +98,7 @@ def rp_max(tr, cb):
 
 
 # ---------------- N 沟道 MOS 管双向电平转换（AN10441 电路） ----------------
-VTH, KP = 1.3, 1.0 / (1.0 * (4.5 - 1.3))   # BSS138：门限 1.3 V；由 RDS(on) = 1 Ω @ VGS 4.5 V 反推（A/V²）
+VTH, KP = 1.0, 0.395                        # BSS138：Diodes 官方 SPICE 模型的 VTO（V）和 KP（A/V²）
 VDIODE, RDIODE = 0.6, 50.0                  # 体二极管：0.6 V 以上导通，串 50 Ω（示意）
 
 
@@ -180,9 +184,14 @@ if __name__ == "__main__":
     d_press = t[i_fall] - 5e-3
     d_release = t[i_rise] - 35e-3
     print(f"只有上拉：引脚翻转 {n_raw} 次；RC + 施密特：翻转 {n_out} 次")
-    print(f"按下后 {d_press*1e3:.1f} ms 认成按下（估算 R2·C·ln(5/1.6) = {R2*C1*np.log(5/1.6)*1e3:.1f} ms）")
-    print(f"松开后 {d_release*1e3:.1f} ms 认成松开（估算 (R1+R2)·C·ln(5/2.5) = {(R1+R2)*C1*np.log(2)*1e3:.1f} ms）")
+    est_p = R2 * C1 * np.log(VCC / VT_M)
+    est_r = (R1 + R2) * C1 * np.log(VCC / (VCC - VT_P))
+    print(f"门限（插值到 5 V）：VT+ = {VT_P:.2f} V，VT− = {VT_M:.2f} V")
+    print(f"按下后 {d_press*1e3:.1f} ms 认成按下（估算 R2·C·ln(5/{VT_M:.2f}) = {est_p*1e3:.1f} ms）")
+    print(f"松开后 {d_release*1e3:.1f} ms 认成松开（估算 (R1+R2)·C·ln(5/{VCC-VT_P:.2f}) = {est_r*1e3:.1f} ms）")
     assert n_out == 2 and n_raw > 6
+    # 与 SPICE（TI SN74HC14 模型，5 V，同一段抖动）对照：11.36 ms / 15.66 ms，见 review/spice/26.md
+    assert abs(d_press * 1e3 - 11.36) < 0.6 and abs(d_release * 1e3 - 15.66) < 0.8
 
     # 电平转换：和图 26-p2-3 同样的激励（图由 code/figs/26_figs.py 调用 level_shifter 画出）
     dt_ls = 2e-9
@@ -198,6 +207,8 @@ if __name__ == "__main__":
     print(f"电平转换：松手后 {(t_ls[ii]-15e-6)*1e9:.0f} ns 两边在 {VL[ii]:.2f} V 处分开")
     print(f"电平转换：源漏接反时，空闲的 3.3 V 侧被抬到 {VLs[kk(3e-6)]:.2f} V")
     assert VL[kk(10e-6)] < 0.15 and VH[kk(10e-6)] < 0.15 and VLs[kk(3e-6)] > 3.5
+    # 分开点 ≈ 3.3 V − VTO；SPICE（Diodes 模型）为 2.32 V
+    assert abs(VL[ii] - (3.3 - VTH)) < 0.05 and abs(VL[ii] - 2.32) < 0.05
 
     fig, axs = plt.subplots(3, 1, figsize=(7, 5.4), sharex=True)
     ms = t * 1e3
@@ -206,8 +217,8 @@ if __name__ == "__main__":
     axs[0].set_ylim(-0.5, 6.2)
     axs[0].legend(loc="center right", fontsize=9)
     axs[1].plot(ms, vc, **fs.LS["vout"], label="电容电压（R1 = R2 = 10 kΩ，C = 1 μF）")
-    fs.ref_h(axs[1], VT_P, "VT+ 2.5 V", x=0.2)
-    fs.ref_h(axs[1], VT_M, "VT− 1.6 V", x=0.2)
+    fs.ref_h(axs[1], VT_P, f"VT+ {VT_P:.2f} V", x=0.2)
+    fs.ref_h(axs[1], VT_M, f"VT− {VT_M:.2f} V", x=0.2)
     axs[1].set_ylim(-0.3, 5.6)
     axs[1].legend(loc="lower right", fontsize=9)
     axs[2].plot(ms, logic.astype(float), **fs.LS["vin"], label=f"施密特输入认出的电平：翻转 {n_out} 次")

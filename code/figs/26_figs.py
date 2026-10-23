@@ -148,7 +148,7 @@ def fig_p2_3():
     k = lambda tt: int(round(tt / dt))
     print(f"p2_3 正确接法：空闲 {VL[k(3e-6)]:.2f} / {VH[k(3e-6)]:.2f} V；3.3 V 侧拉低时 {VL[k(10e-6)]:.3f} / {VH[k(10e-6)]:.3f} V；"
           f"5 V 侧拉低时 {VL[k(27e-6)]:.3f} / {VH[k(27e-6)]:.3f} V")
-    # 上升沿：MOS 管在低压侧约 3.3−1.3 = 2.0 V 时关断，之后两边各自充电
+    # 上升沿：MOS 管在低压侧约 3.3 V − VTH（模型 1 V）≈ 2.3 V 时关断，之后两边各自充电
     i0 = k(15e-6)
     ii = i0 + np.argmax(VH[i0:] - VL[i0:] > 0.05)
     print(f"p2_3 松手后两边分开时的电压 {VL[ii]:.2f} V，时刻 +{(t[ii]-15e-6)*1e9:.0f} ns")
@@ -182,6 +182,7 @@ def fig_p2_3():
     fs.save(fig, N, "26_p2_3_shifter_sim.png")
     assert VL[k(27e-6)] < 0.2 and VH[k(10e-6)] < 0.2 and abs(VL[k(3e-6)] - 3.3) < 0.01
     assert VLs[k(3e-6)] > 3.7
+    assert abs(VL[ii] - 2.32) < 0.05          # SPICE（Diodes BSS138 模型）分开点 2.32 V
     return VL[ii]
 
 
