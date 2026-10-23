@@ -394,3 +394,142 @@ fs.save(bb.fig, N, "05_p4_1_bb_basic.png")
 bb = bb05(True)
 fs.save(bb.fig, N, "05_p4_2_bb_improved.png")
 print("05_figs p4 OK")
+
+# ======================================================================
+# 第 8 轮补图：page1–page3 正文讲到的电路连接（不动上面的图号）
+# ======================================================================
+HL = C["bad"]          # 强调色：接错的那根线、新加的元件
+
+
+def _superdiode(d, x0=0.0, fb_before=False, diode_rev=False, title=None, rl="$R_L$ 10 kΩ", show_voa=False):
+    """在 (x0, 0) 画基本型精密整流；fb_before=True 时反馈线从运放输出脚取（错误接法），
+    diode_rev=True 时二极管调头。返回 (op, 输出点)。"""
+    d += (op := elm.Opamp(leads=True).right().at((x0, 0)).anchor("center"))
+    d += elm.Line().left().at(op.in2).length(0.8)
+    d += elm.Dot(open=True).label("$V_+ = V_i$" if show_voa else "$V_i$", "left")
+    d += (pa := elm.Dot().at(op.out))
+    dio = elm.Diode().right().at(op.out).length(2.5)
+    if diode_rev:
+        dio = dio.reverse().color(HL).label("二极管调头", "top")
+    else:
+        dio = dio.label("$V_D$ ≈ 0.7 V" if show_voa else "二极管", "top")
+    d += dio
+    d += (j := elm.Dot())
+    d += elm.Line().right().length(1.0)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    d += (rr := elm.Resistor().down().at(j.center).length(2.2).label(rl, "bottom"))
+    d += elm.Ground()
+    src = pa.center if fb_before else j.center
+    col = HL if fb_before else C["fb"]
+    d += elm.Line().up().at(src).length(1.6).color(col)
+    d += elm.Line().left().tox(op.in1.x - 0.8).color(col).label("反馈线：$V_- = V_o$" if show_voa else "", "top", color=col)
+    d += elm.Line().down().toy(op.in1).color(col)
+    d += elm.Line().right().tox(op.in1).color(col)
+    if show_voa:
+        d += elm.Label().at((op.out.x + 1.1, op.out.y - 0.6)).label("$V_{oa}$（运放输出脚）", fontsize=11)
+        d += elm.Arrow().down().at((j.center.x - 0.6, j.center.y - 1.0)).length(1.0).color(C["cur"])
+        d += elm.Label().at((j.center.x - 0.75, j.center.y - 1.5)).label("$I$", fontsize=12, color=C["cur"], halign="right")
+    if title:
+        d += elm.Label().at((x0 + 1.6, -3.9)).label(title, fontsize=12)
+    return op, j, rr
+
+
+# ---------- 图 05-p1-4 两个常见接错：反馈取错位置、二极管接反 ----------
+with drawing() as d:
+    _superdiode(d, 0, fb_before=True, title="(a) 反馈线从运放输出脚取（二极管前面）")
+    d += elm.Label().at((1.0, 2.55)).label("反馈接在这里：二极管在环外", fontsize=11, color=HL)
+    _superdiode(d, 10.5, diode_rev=True, title="(b) 反馈位置对，但二极管调头")
+    d += elm.Label().at((11.6, 2.55)).label("反馈线：从二极管后面取", fontsize=11, color=C["fb"])
+save_schem(d, N, "05_p1_4_mistakes.png")
+
+# ---------- 图 05-p2-5 基本型的记号：V+、V−、V_oa、V_D、电流方向 ----------
+with drawing() as d:
+    _superdiode(d, 0, show_voa=True)
+save_schem(d, N, "05_p2_5_basic_labels.png")
+
+
+def _improved(d, x0=0.0, r1="$R_1$ 10 kΩ", rf="$R_f$ 10 kΩ", rev=False, rs=None, vin="$V_i$", vout="$V_o$", rl="$R_L$ 10 kΩ"):
+    """在 (x0, 0) 画改进型（反相型）精密半波整流（同图 05-p2-3）。rev=True：D1、D2 同时调头；
+    rs 给出时在输入前串一个信号源内阻（强调色）。返回 (op, 输入端点, 输出点)。"""
+    d += (op := elm.Opamp(leads=True).right().at((x0, 0)).anchor("center"))
+    d += elm.Line().left().at(op.in1).length(0.6)
+    d += (j := elm.Dot().label("$V_-$（虚地）", "bottom", ofst=0.15))
+    d += elm.Resistor().left().label(r1)
+    if rs:
+        d += (pin := elm.Dot())
+        d += elm.Resistor().left().label(rs, color=HL).color(HL)
+    else:
+        pin = None
+    d += (vi := elm.Dot(open=True).label(vin, "left"))
+    d += elm.Line().left().at(op.in2).length(0.6)
+    d += elm.Line().down().length(0.5)
+    d += elm.Ground()
+    d += elm.Line().up().at(j.center).length(1.4)
+    d += (k := elm.Dot())
+    e2 = elm.Diode().right().tox(op.out.x).label("$D_2$", "top")
+    d += (e2.reverse() if rev else e2)
+    d += elm.Line().down().toy(op.out)
+    e1 = elm.Diode().right().at(op.out).length(2.2).label("$D_1$", "bottom")
+    d += (e1.reverse() if rev else e1)
+    d += (o := elm.Dot())
+    if vout:
+        d += elm.Line().right().length(0.8)
+        d += elm.Dot(open=True).label(vout, "right")
+    d += elm.Line().up().at(k.center).length(1.4)
+    d += elm.Resistor().right().tox(o.center.x).label(rf)
+    d += elm.Line().down().toy(o.center)
+    if rl:
+        d += elm.Resistor().down().at(o.center).length(2.0).label(rl, "bottom")
+        d += elm.Ground()
+    return op, vi, o
+
+
+# ---------- 图 05-p2-6 例 3：两只二极管调头的半波 + 加权反相加法器 = 全波 ----------
+with drawing() as d:
+    op1, vi, o1 = _improved(d, 0, r1="R", rf="R", rev=True, vout="", rl=None)
+    d += elm.Label().at((o1.center.x + 0.35, o1.center.y - 0.45)).label("$V_h$", fontsize=12)
+    # 加法器：V_h 经 R/2、V_i 经 R 进入第二个运放的反相端，反馈电阻 R
+    d += (op2 := elm.Opamp(leads=True).right().at((o1.center.x + 4.5, o1.center.y)).anchor("in1"))
+    d += elm.Line().left().at(op2.in1).length(0.6)
+    d += (s := elm.Dot())
+    d += elm.Resistor().left().tox(o1.center).label("R/2", "bottom")
+    # V_i 支路：从输入端往上，越过第一级，接到加法点
+    d += elm.Line().up().at(vi.center).length(5.0).color(C["vin"])
+    d += elm.Resistor().right().tox(s.center.x).label("R（$V_i$ 直接送过来）", "top").color(C["vin"])
+    d += elm.Line().down().toy(s.center).color(C["vin"])
+    d += elm.Line().up().at(s.center).length(1.6)
+    d += elm.Line().right().length(0.2)
+    d += elm.Resistor().right().tox(op2.out.x + 0.5).label("R", "top")
+    d += elm.Line().down().toy(op2.out)
+    d += elm.Line().left().tox(op2.out)
+    d += elm.Line().left().at(op2.in2).length(0.4)
+    d += elm.Line().down().length(0.5)
+    d += elm.Ground()
+    d += elm.Line().right().at((op2.out.x + 0.5, op2.out.y)).length(0.8)
+    d += elm.Dot(open=True).label("$V_o = |V_i|$", "right")
+    d += elm.Label().at((0.8, -3.0)).label("第一级：D1、D2 同时调头的改进型", fontsize=11)
+    d += elm.Label().at((op2.center.x, -3.0)).label("第二级：加权反相加法器", fontsize=11)
+save_schem(d, N, "05_p2_6_fullwave_ex3.png")
+
+# ---------- 图 05-p3-3 排查表和练习里的两种情形 ----------
+with drawing() as d:
+    _superdiode(d, 0, fb_before=True, title="(a) 排查表第 1 行、练习 4：反馈线接在二极管前面")
+    d += elm.Label().at((1.0, 2.55)).label("错：反馈从运放输出脚取", fontsize=11, color=HL)
+    _improved(d, 13.0, r1="$R_1$", rf="$R_f$", rs="$R_s$ 1 kΩ")
+    d += elm.Label().at((11.2, -3.9)).label("(b) 排查表第 5 行、练习 3：信号源内阻 $R_s$ 和 $R_1$ 串联", fontsize=12)
+    d += elm.Label().at((6.7, -0.9)).label("信号源", fontsize=10, color=HL)
+save_schem(d, N, "05_p3_3_cases.png")
+
+# ---------- 图 05-p3-4 练习 5：精密整流 + RC 低通求平均 = 交流电压表 ----------
+with drawing() as d:
+    op, vi, o = _improved(d, 0, r1="$R_1$", rf="$R_f$", vout="", rl=None)
+    d += elm.Line().right().at(o.center).length(0.6)
+    d += elm.Resistor().right().label("$R$（滤波）", "top").color(C["fb"])
+    d += (a := elm.Dot())
+    d += elm.Capacitor().down().length(2.0).label("$C$", "bottom").color(C["fb"])
+    d += elm.Ground()
+    d += elm.Line().right().at(a.center).length(1.2)
+    d += elm.Dot(open=True).label("平均值 → 万用表", "right")
+    d += elm.Label().at((o.center.x + 0.1, o.center.y - 0.5)).label("整流输出", fontsize=10)
+save_schem(d, N, "05_p3_4_average.png")
+print("05_figs 第 8 轮补图 OK")
