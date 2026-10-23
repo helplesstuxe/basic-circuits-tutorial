@@ -10,6 +10,13 @@
 
 ## 常见错误
 - 截止频率漏 2π：自己推导，R 会算大 2π 倍，fc 低到 159 Hz（图 15-p3-2）。
-- 运放带宽不足：闭环带宽约 GBW/增益（02 节已核实 LM358 GBW 1.2 MHz）。经验法则"GBW ≥ 100 × 增益 × fc"出自 TI 资料 SLOD006，下载得到的是 HTML，未核实 → 页面标 [待核实]。
+- 运放带宽不足：闭环带宽约 GBW/增益（02 节已核实 LM358 GBW 1.2 MHz）。
+  - （本轮解决）经验法则出处改为 Microchip ADN003 https://ww1.microchip.com/downloads/en/DeviceDoc/adn003.pdf （已下载打开）：闭环带宽应至少为截止频率的 100 倍；Sallen-Key 增益 1：GBWP ≥ 100·fC；增益 > 1：GBWP ≥ 100·G·fC；MFB：GBWP ≥ 100·(−G + 1)·fC。
+  - TI SBOA588 https://www.ti.com/lit/pdf/sboa588 （已打开）：许多滤波设计工具推荐 GBWP 100 倍；修正无源元件可降低余量；其例子 GBWP 仅为滤波带宽 2.5 倍时误差约 17%。
+  - 15_figs.py 打印并断言 100 × 1 × 1 kHz = 100 kHz ≤ 1.2 MHz，100 × 10 × 100 kHz = 100 MHz。
 - Sallen-Key 两个电容位置接反：Q 由 0.71 变成 0.21（自己计算）。
-- 电容容差与材质（C0G/薄膜）影响 fc：未找到打开过的来源 → [待核实]。
+- （本轮解决）电容容差与材质影响 fc：
+  - KEMET X7R 商用手册 https://media.digikey.com/pdf/Data%20Sheets/Kemet%20PDFs/X7R_Dielectric_Comm_Rev_2019.pdf ：−55～+125 °C 容量变化 ±15%；容差 ±5/±10/±20%；老化约 3%/十倍时间。
+  - KEMET F3101（MIL-PRF-11015 引线 MLCC）https://content.kemet.com/datasheets/F3101_MIL-PRF-11015.pdf ：C0G 0 ± 30 ppm/°C，Class I 不受电压、频率、时间影响；X7R ±15%，Z5U +22/−56%；直流电压 > 5 V 时 Class II 容量下降；老化 C0G 无、X7R 2%/十倍时间。
+  - TI SLOA049B 第 12 节 https://www.ti.com/lit/an/sloa049b/sloa049b.pdf ：电容避免 < 10 pF，用 C0G（NP0）、1%；电阻用低温漂金属膜 1%。
+  - 页面删去未找到出处的"薄膜电容"；15_figs.py 打印并断言 30 ppm × 100 °C = 0.3%、两电容同时 −15% → fc +17.6%。
