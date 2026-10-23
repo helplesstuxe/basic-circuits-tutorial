@@ -1,6 +1,6 @@
 # 25 H 桥电机驱动 · 直觉篇
 
-[上一页：09 开关电源 · 参数与调试篇](../09-switching-power-supply/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md) · [22 三极管开关与继电器驱动 · 直觉篇](../22-bjt-relay-driver/page1.md)
+[上一页：09 开关电源 · 动手实验篇](../09-switching-power-supply/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md) · [22 三极管开关与继电器驱动 · 直觉篇](../22-bjt-relay-driver/page1.md)
 
 ## 痛点：电机要会正转、反转，还要能调速
 

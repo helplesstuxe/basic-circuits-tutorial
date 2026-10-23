@@ -1,6 +1,6 @@
 # 15 有源滤波 · 直觉篇
 
-[上一页：07 射极跟随器 · 参数与调试篇](../07-emitter-follower/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md)
+[上一页：07 射极跟随器 · 动手实验篇](../07-emitter-follower/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md)
 
 ## 痛点：有用的信号上骑着一层"毛刺"
 

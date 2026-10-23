@@ -1,6 +1,6 @@
 # 14 电压比较器 · 直觉篇
 
-[上一页：05 精密整流 · 参数与调试篇](../05-precision-rectifier/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)
+[上一页：05 精密整流 · 动手实验篇](../05-precision-rectifier/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)
 
 ## 痛点：电路要回答一个「是」或「否」
 

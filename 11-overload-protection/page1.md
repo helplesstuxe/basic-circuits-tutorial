@@ -1,6 +1,6 @@
 # 11 过载保护 · 直觉篇
 
-[上一页：08 线性稳压 · 参数与调试篇](../08-linear-regulator/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md) · [14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)
+[上一页：08 线性稳压 · 动手实验篇](../08-linear-regulator/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md) · [14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)
 
 ## 痛点：电机卡住的那一刻，电流会猛涨
 

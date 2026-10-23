@@ -1,6 +1,6 @@
 # 04 差分放大 · 直觉篇
 
-[上一页：19 星三角降压启动 · 参数与调试篇](../19-star-delta-start/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)
+[上一页：19 星三角降压启动 · 动手实验篇](../19-star-delta-start/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)
 
 ## 痛点：有用的信号被"淹没"在干扰里
 

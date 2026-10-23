@@ -1,6 +1,6 @@
 # 06 桥式整流 · 直觉篇
 
-[上一页：03 电压跟随器 · 参数与调试篇](../03-voltage-follower/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)、[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[05 精密整流 · 直觉篇](../05-precision-rectifier/page1.md)
+[上一页：03 电压跟随器 · 动手实验篇](../03-voltage-follower/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)、[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[05 精密整流 · 直觉篇](../05-precision-rectifier/page1.md)
 
 > [!WARNING]
 > **市电危险**：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。

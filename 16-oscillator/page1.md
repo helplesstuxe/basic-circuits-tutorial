@@ -1,6 +1,6 @@
 # 16 振荡器 · 直觉篇
 
-[上一页：23 光耦隔离 · 参数与调试篇](../23-optocoupler/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)、[15 有源滤波 · 直觉篇](../15-active-filter/page1.md)
+[上一页：23 光耦隔离 · 动手实验篇](../23-optocoupler/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)、[15 有源滤波 · 直觉篇](../15-active-filter/page1.md)
 
 ## 痛点：谁来给电路"打拍子"
 

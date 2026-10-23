@@ -1,6 +1,6 @@
 # 10 稳压管稳压 · 直觉篇
 
-[上一页：04 差分放大 · 参数与调试篇](../04-differential-amp/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md)
+[上一页：04 差分放大 · 动手实验篇](../04-differential-amp/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md)
 
 > [!NOTE]
 > 本节电路本身只工作在几伏到十几伏的低压上。它的输入如果来自 06 的变压器整流电源，那么变压器初级仍然接着 220 V 市电，[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md) 开头的安全提示全部适用。本节的动手实验一律用**可调直流电源**（实验室稳压电源）代替整流电源。

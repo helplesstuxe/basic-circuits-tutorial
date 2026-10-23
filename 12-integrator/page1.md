@@ -1,6 +1,6 @@
 # 12 积分电路 · 直觉篇
 
-[上一页：06 桥式整流 · 参数与调试篇](../06-bridge-rectifier/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)
+[上一页：06 桥式整流 · 动手实验篇](../06-bridge-rectifier/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)
 
 ## 痛点：电路要记住「一共攒了多少」
 

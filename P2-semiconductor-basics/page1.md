@@ -1,6 +1,6 @@
 # P2 半导体入门 · 直觉篇
 
-[上一页：P3 运放入门 · 参数与调试篇](../P3-opamp-basics/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)
+[上一页：P3 运放入门 · 动手实验篇](../P3-opamp-basics/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)
 
 ## 为什么要学这一节
 

@@ -1,6 +1,6 @@
 # 26 上拉/下拉电阻与电平转换 · 直觉篇
 
-[上一页：24 隔离电源与数字隔离器 · 参数与调试篇](../24-isolated-power/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 原理与实现篇](../P1-components-basics/page2.md) · [14 电压比较器 · 原理与实现篇](../14-voltage-comparator/page2.md) · [21 MOS 管开关 · 原理与实现篇](../21-mosfet-switch/page2.md)
+[上一页：24 隔离电源与数字隔离器 · 动手实验篇](../24-isolated-power/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 原理与实现篇](../P1-components-basics/page2.md) · [14 电压比较器 · 原理与实现篇](../14-voltage-comparator/page2.md) · [21 MOS 管开关 · 原理与实现篇](../21-mosfet-switch/page2.md)
 
 ## 痛点：按键没按，单片机却说「按了」
 

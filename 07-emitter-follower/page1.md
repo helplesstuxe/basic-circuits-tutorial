@@ -1,6 +1,6 @@
 # 07 射极跟随器 · 直觉篇
 
-[上一页：13 微分电路 · 参数与调试篇](../13-differentiator/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md)
+[上一页：13 微分电路 · 动手实验篇](../13-differentiator/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[03 电压跟随器 · 直觉篇](../03-voltage-follower/page1.md)
 
 ## 一、痛点：电压对了，电流不够
 

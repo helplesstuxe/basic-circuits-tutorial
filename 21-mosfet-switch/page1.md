@@ -1,6 +1,6 @@
 # 21 MOS 管开关 · 直觉篇
 
-[上一页：01 反相放大 · 参数与调试篇](../01-inverting-amp/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)
+[上一页：01 反相放大 · 动手实验篇](../01-inverting-amp/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)
 
 ## 痛点：小引脚想控制大电流
 

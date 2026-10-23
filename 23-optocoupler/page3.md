@@ -124,7 +124,7 @@ CTR 按 20% ÷ 2 = 10% 设计。输出要饱和： $I_C \ge (5 - 0.2) / 4.7\ \te
 
 - Sharp，PC817XxNSZ1B 系列数据手册（CTR、 $V_F$ 、 $V_{CE(sat)}$ 、80 V 耐压、5 kV 隔离、速度测试条件）：https://global.sharp/products/device/lineup/data/pdf/datasheet/PC817XxNSZ1B_e.pdf
 - Vishay，4N25 数据手册（CTR 至少 20%、LED 最大电流 60 mA、隔离 5000 V、上升下降约 2 μs）：https://www.vishay.com/docs/83725/4n25.pdf
-- Vishay，6N137 数据手册（10 MBd、输出侧电源 4.5 V 到 5.5 V、传输延迟）：https://www.vishay.com/docs/84732/6n137.pdf
+- Vishay，6N137 数据手册（10 MBd、输出侧电源 4.5 V 到 5.5 V、传输延迟）：https://www.vishay.com/docs/84732/6n137_vo2601_vo2611.pdf
 - Vishay，Optocoupler Switching Speed（负载电阻、基极–发射极电阻对速度的影响）：https://www.vishay.com/docs/83590/fastswit.pdf
 - Vishay，AN04 CTR 对开关速度的影响（CTR 高则开通快、关断慢）：https://www.vishay.com/docs/80579/an04_impactcurrenttransferratiooptocouplers.pdf
 - Vishay，H11AA1 交流输入光耦数据手册（LED 电流 ±40 mA、功耗 120 mW、VIORM 850 V、VISO 5000 V）：https://www.vishay.com/docs/83608/h11aa1.pdf

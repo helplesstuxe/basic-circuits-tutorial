@@ -12,7 +12,7 @@ from collections import Counter
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 IMG = re.compile(r"!\[[^\]]*\]\(([^)\s]+)[^)]*\)|<img[^>]*src=\"([^\"]+)\"")
-NUM = re.compile(r"图\s*([P0-9]{2})-p([1-3])-(\d+)")
+NUM = re.compile(r"图\s*([P0-9]{2})-p([1-9])-(\d+)")
 
 
 def check(path):

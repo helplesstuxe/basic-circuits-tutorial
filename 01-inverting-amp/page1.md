@@ -1,6 +1,6 @@
 # 01 反相放大 · 直觉篇
 
-[上一页：17 自锁 · 参数与调试篇](../17-self-locking/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)
+[上一页：17 自锁 · 动手实验篇](../17-self-locking/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)
 
 ## 为什么需要反相放大
 

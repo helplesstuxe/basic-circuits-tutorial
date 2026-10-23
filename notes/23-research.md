@@ -20,7 +20,7 @@
    - 关断时间随负载电阻增大（负载电流减小）而增大；随 CTR 增大而增大。
 5. Vishay 4N25 数据手册 <https://www.vishay.com/docs/83725/4n25.pdf>
    - CTR ≥ 20%（I_F 10 mA、V_CE 10 V）；V_F 典型 1.3 V（50 mA）；隔离测试电压 5000 V rms；t_r、t_f 2 μs（R_L 100 Ω）；有「传输延时随集电极负载电阻变化」曲线。
-6. Vishay 6N137 数据手册 <https://www.vishay.com/docs/84732/6n137.pdf>
+6. Vishay 6N137 数据手册 <https://www.vishay.com/docs/84732/6n137_vo2601_vo2611.pdf>
    - 高速光耦：10 MBd，内部是光电二极管 + 逻辑 IC，输出侧要 4.5–5.5 V 电源；t_PLH 典型 48 ns、最大 75 ns。
 7. Microchip ATmega328P 数据手册 <https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf>
    - V_IL 最大 0.3 V_CC、V_IH 最小 0.6 V_CC（V_CC 2.7–5.5 V）；I/O 内部上拉 20–50 kΩ。
