@@ -115,3 +115,274 @@ def p2_3():
 if __name__ == "__main__":
     p1_1(); p2_1(); p2_3()
     print("08_figs OK")
+
+import numpy as np                    # page4 面包板小工具要用
+import matplotlib
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+import figstyle as fs
+from figstyle import C
+
+# ======================================================================
+# page4 动手实验篇：面包板俯视图（本节点自带一份小工具，只在本文件内使用）
+# 面包板：列号 1..ncol；上半区 a–e 行、下半区 f–j 行，同一列的 a–e 五个孔连通，f–j 五个孔连通；
+# 上下各两条电源轨（tp/tn 在上，bp/bn 在下），每条轨整条连通（有的面包板轨道在中间断开，正文会提醒）。
+# 导线颜色：正电源 = 橙色，0 V（地）= 黑色，负电源 = 蓝色，信号 = 蓝绿色。
+# 每条导线、每个元件引脚都登记到「网络」里（并查集），最后用 assert 检查想要的连接都接上了、不该通的没通。
+# ======================================================================
+import matplotlib.patches as mpatches
+
+BB_Y = dict(a=9, b=8, c=7, d=6, e=5, f=3, g=2, h=1, i=0, j=-1)
+BB_RAIL_Y = dict(tp=11.4, tn=10.6, bp=-2.6, bn=-3.4)
+BB_WIRE = dict(pos=C["vout"], gnd="#000000", neg=C["vin"], sig=C["fb"])
+
+
+class Breadboard:
+    def __init__(self, ncol=30, rails=None, figsize=(10, 5.2)):
+        self.ncol = ncol
+        self.rails = rails or dict(tp=("+", "pos"), tn=("0 V", "gnd"), bp=("0 V", "gnd"), bn=("−", "neg"))
+        self.parent = {}
+        self.used = {}
+        self.pins = {}
+        self.fig, self.ax = plt.subplots(figsize=figsize)
+        ax = self.ax
+        ax.set_xlim(-7.5, ncol + 3.6)
+        ax.set_ylim(-6.0, 12.4)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        ax.add_patch(mpatches.FancyBboxPatch((-0.6, -4.1), ncol + 1.2, 16.2, boxstyle="round,pad=0.1",
+                                             fc="#f4f4f4", ec="0.6", lw=0.8))
+        ax.add_patch(mpatches.Rectangle((-0.4, 3.6), ncol + 0.8, 0.8, fc="#e2e2e2", ec="none"))
+        for r, y in BB_Y.items():
+            ax.text(-0.9, y, r, ha="center", va="center", fontsize=7, color="0.35")
+            ax.text(ncol + 0.9, y, r, ha="center", va="center", fontsize=7, color="0.35")
+            for c in range(1, ncol + 1):
+                ax.add_patch(mpatches.Rectangle((c - 0.13, y - 0.13), 0.26, 0.26, fc="0.72", ec="none"))
+        for c in range(1, ncol + 1):
+            if c == 1 or c % 5 == 0:
+                ax.text(c, 9.75, str(c), ha="center", va="center", fontsize=7, color="0.35")
+                ax.text(c, -1.75, str(c), ha="center", va="center", fontsize=7, color="0.35")
+        for name, y in BB_RAIL_Y.items():
+            lab, kind = self.rails[name]
+            ax.plot([0.5, ncol + 0.5], [y + 0.32 * (1 if name in ("tp", "bp") else -1)] * 2,
+                    color=BB_WIRE[kind], lw=1.0)
+            ax.text(ncol + 1.0, y, lab, ha="left", va="center", fontsize=8, color=BB_WIRE[kind])
+            for c in range(1, ncol + 1):
+                if c % 6 != 0:
+                    ax.add_patch(mpatches.Rectangle((c - 0.13, y - 0.13), 0.26, 0.26, fc="0.72", ec="none"))
+
+    # ---- 孔位与网络 ----
+    def xy(self, h):
+        if isinstance(h, tuple):
+            return h
+        for rail in ("tp", "tn", "bp", "bn"):
+            if h.startswith(rail):
+                c = int(h[len(rail):])
+                assert 1 <= c <= self.ncol and c % 6 != 0, f"电源轨孔 {h} 不存在"
+                return (c, BB_RAIL_Y[rail])
+        r, c = h[0], int(h[1:])
+        assert r in BB_Y and 1 <= c <= self.ncol, f"孔 {h} 不存在"
+        return (c, BB_Y[r])
+
+    def strip(self, h):
+        if isinstance(h, tuple):
+            return ("ext", h)
+        for rail in ("tp", "tn", "bp", "bn"):
+            if h.startswith(rail):
+                return rail
+        return ("T" if h[0] in "abcde" else "B") + h[1:]
+
+    def _find(self, s):
+        self.parent.setdefault(s, s)
+        while self.parent[s] != s:
+            s = self.parent[s]
+        return s
+
+    def _union(self, a, b):
+        self.parent[self._find(a)] = self._find(b)
+
+    def _use(self, h, who):
+        if isinstance(h, tuple):
+            return
+        self.xy(h)
+        assert h not in self.used, f"孔 {h} 已被 {self.used[h]} 占用，{who} 不能再插"
+        self.used[h] = who
+
+    def net(self, h):
+        return self._find(self.strip(self.pins.get(h, h)))
+
+    def connected(self, *hs):
+        return len({self.net(h) for h in hs}) == 1
+
+    # ---- 画导线、元件、外部接线端 ----
+    def wire(self, h1, h2, kind="sig", bend=0.0):
+        self._use(h1, f"导线{h1}-{h2}")
+        self._use(h2, f"导线{h1}-{h2}")
+        self._union(self.strip(h1), self.strip(h2))
+        (x1, y1), (x2, y2) = self.xy(h1), self.xy(h2)
+        if bend:
+            xm, ym = (x1 + x2) / 2, (y1 + y2) / 2 + bend
+            t = np.linspace(0, 1, 30)
+            xs = (1 - t) ** 2 * x1 + 2 * (1 - t) * t * xm + t ** 2 * x2
+            ys = (1 - t) ** 2 * y1 + 2 * (1 - t) * t * ym + t ** 2 * y2
+        else:
+            xs, ys = [x1, x2], [y1, y2]
+        self.ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
+        for x, y in ((x1, y1), (x2, y2)):
+            self.ax.plot(x, y, "o", ms=3.2, color=BB_WIRE[kind], zorder=4)
+
+    def ext(self, xy, text, kind="sig", dx=-0.45, dy=0.0, ha="right"):
+        """板外接线端（电池、电源、信号源的夹子）：画一个空心圆和文字，返回坐标元组，可直接当孔用。"""
+        self.ax.plot(*xy, "o", ms=7, mfc="white", mec=BB_WIRE[kind], mew=1.6, zorder=5)
+        self.ax.text(xy[0] + dx, xy[1] + dy, text, ha=ha, va="center", fontsize=8, color=BB_WIRE[kind], zorder=5)
+        return xy
+
+    def _pins(self, name, hs):
+        for k, h in hs.items():
+            self._use(h, f"{name}.{k}")
+            self.pins[f"{name}.{k}"] = h
+
+    def two(self, name, h1, h2, style="R", label=None, lpos=None):
+        """两脚元件：style = R 电阻 / C 瓷片电容 / CE 电解电容（h1 为 + 脚）/ D 二极管（h1 阳极、h2 阴极）/ LED / Z 稳压管 / L 电感 / F 保险丝。"""
+        self._pins(name, {"1": h1, "2": h2})
+        (x1, y1), (x2, y2) = self.xy(h1), self.xy(h2)
+        ax = self.ax
+        xm, ym = (x1 + x2) / 2, (y1 + y2) / 2
+        L = np.hypot(x2 - x1, y2 - y1)
+        ux, uy = (x2 - x1) / L, (y2 - y1) / L
+        w = min(0.45 * L, 1.3)
+        ax.plot([x1, xm - ux * w / 2], [y1, ym - uy * w / 2], color="0.45", lw=1.2, zorder=5)
+        ax.plot([xm + ux * w / 2, x2], [ym + uy * w / 2, y2], color="0.45", lw=1.2, zorder=5)
+        ang = np.degrees(np.arctan2(uy, ux))
+        fc = dict(R="#d9c7a3", C="#f2d06b", CE="#5b7fa8", D="#444444", LED="#ffb3b3", Z="#9a6a3a",
+                  L="#7f7f7f", F="#dddddd")[style]
+        h = 0.55 if style != "CE" else 0.8
+        rect = mpatches.FancyBboxPatch((xm - w / 2, ym - h / 2), w, h, boxstyle="round,pad=0.02",
+                                       fc=fc, ec="0.25", lw=0.8, zorder=6)
+        import matplotlib.transforms as mtr
+        rect.set_transform(mtr.Affine2D().rotate_deg_around(xm, ym, ang) + ax.transData)
+        ax.add_patch(rect)
+        if style in ("D", "Z", "LED"):     # 阴极色环画在 h2 一端
+            bx, by = xm + ux * w * 0.32, ym + uy * w * 0.32
+            ax.plot([bx - uy * h / 2, bx + uy * h / 2], [by + ux * h / 2, by - ux * h / 2],
+                    color="white" if style != "LED" else "0.2", lw=2.2, zorder=7)
+        if style == "CE":
+            ax.text(x1 - ux * 0.05 + 0.35 * uy, y1 + 0.35, "+", fontsize=9, ha="center", va="bottom",
+                    color="k", zorder=7, fontweight="bold")
+        if label:
+            ox, oy = lpos or ((0, 0.62) if abs(uy) < 0.5 else (0.45, 0))
+            ax.text(xm + ox, ym + oy, label, fontsize=7.5, ha="center" if abs(uy) < 0.5 and not lpos else "left",
+                    va="center", zorder=8,
+                    bbox=dict(boxstyle="round,pad=0.1", fc="white", ec="none", alpha=0.85))
+
+    def dip8(self, name, col, label, pinlabels=None):
+        """8 脚双列直插芯片跨在中间凹槽上，缺口朝左：1–4 脚在 f 行（col..col+3），5–8 脚在 e 行（col+3..col）。"""
+        hs = {}
+        for k in range(4):
+            hs[str(1 + k)] = f"f{col + k}"
+            hs[str(8 - k)] = f"e{col + k}"
+        self._pins(name, hs)
+        ax = self.ax
+        ax.add_patch(mpatches.FancyBboxPatch((col - 0.45, 3.35), 3.9, 1.3, boxstyle="round,pad=0.05",
+                                             fc="#333333", ec="k", zorder=6))
+        ax.add_patch(mpatches.Wedge((col - 0.45, 4.0), 0.25, -90, 90, fc="#888888", zorder=7))
+        ax.text(col + 1.5, 4.0, label, color="white", fontsize=7.5, ha="center", va="center", zorder=7)
+        for k in range(4):
+            for pin, y in ((1 + k, 3.0), (8 - k, 5.0)):
+                ax.plot([col + k, col + k], [y, 4.0 + (0.65 if y > 4 else -0.65)], color="0.3", lw=1.4, zorder=5)
+            ax.text(col + k, 3.55, str(1 + k), color="white", fontsize=6, ha="center", va="center", zorder=8)
+            ax.text(col + k, 4.45, str(8 - k), color="white", fontsize=6, ha="center", va="center", zorder=8)
+
+    def multi(self, name, hs, label, w=None, h=1.0, fc="#555555", at=None):
+        """多脚元件（三极管、电位器、模块……）：hs = {脚名: 孔}；画一个方块并从方块拉线到各脚，脚名标在孔旁。"""
+        self._pins(name, hs)
+        pts = [self.xy(v) for v in hs.values()]
+        xs = [p[0] for p in pts]
+        ys = [p[1] for p in pts]
+        cx, cy = at or (np.mean(xs), max(ys) + 1.1)
+        w = w or max(xs) - min(xs) + 1.0
+        ax = self.ax
+        ax.add_patch(mpatches.FancyBboxPatch((cx - w / 2, cy - h / 2), w, h, boxstyle="round,pad=0.05",
+                                             fc=fc, ec="k", lw=0.8, zorder=6))
+        ax.text(cx, cy, label, color="white", fontsize=7.5, ha="center", va="center", zorder=7)
+        for k, (x, y) in zip(hs.keys(), pts):
+            ax.plot([x, x], [y, cy - h / 2 if y < cy else cy + h / 2], color="0.3", lw=1.4, zorder=5)
+            ax.text(x + 0.18, y + 0.32 * (1 if y < cy else -1), k, fontsize=6.5, ha="left",
+                    va="bottom" if y < cy else "top", color="k", zorder=8)
+
+    def probe(self, h, text, dx=0.35, dy=0.35, ha="left"):
+        """测量点：在孔上画红紫色空心圈并写上名字。"""
+        x, y = self.xy(h)
+        self.ax.plot(x, y, "o", ms=9, mfc="none", mec=C["third"], mew=1.6, zorder=9)
+        self.ax.text(x + dx, y + dy, text, fontsize=7.5, color=C["third"], ha=ha, va="bottom", zorder=9,
+                     bbox=dict(boxstyle="round,pad=0.1", fc="white", ec="none", alpha=0.85))
+
+    def note(self, x, y, text, **kw):
+        self.ax.text(x, y, text, fontsize=8, **kw)
+
+    def legend(self, kinds=("pos", "gnd", "neg", "sig")):
+        from matplotlib.lines import Line2D
+        names = dict(pos="正电源线（橙）", gnd="0 V 地线（黑）", neg="负电源线（蓝）", sig="信号线（蓝绿）")
+        hs = [Line2D([], [], color=BB_WIRE[k], lw=2.4, label=names[k]) for k in kinds]
+        self.ax.legend(handles=hs, loc="upper center", bbox_to_anchor=(0.5, 0.035), ncol=len(hs), fontsize=8,
+                       frameon=False)
+
+
+def bb08():
+    """08 page4：12 V 直流输入的分立线性稳压。LM358（5–8 脚那一半空闲）、TIP31、1N4733A、R_Z 1k、R_f 3.9k、R_1 5.1k。
+    下方两条轨接电源（外侧 +12 V、内侧 0 V），右端用两根跳线连到上方两条轨；负载功率电阻放在面包板外，用两根线引出。"""
+    bb = Breadboard(ncol=30, rails=dict(tp=("+12 V", "pos"), tn=("0 V", "gnd"), bp=("0 V", "gnd"), bn=("+12 V", "pos")),
+                    figsize=(10, 5.6))
+    bb.wire(bb.ext((-2.0, -3.4), "12 V 直流电源 +", "pos"), "bn1", "pos")
+    bb.wire(bb.ext((-2.0, -2.2), "12 V 直流电源 −", "gnd"), "bp2", "gnd")
+    bb.wire("bn28", "tp28", "pos", bend=0.0)
+    bb.wire("bp29", "tn29", "gnd", bend=0.0)
+    bb.dip8("U1", 13, "LM358")
+    bb.wire("a13", "tp13", "pos")                 # 8 脚 V+ → +12 V
+    bb.wire("j16", "bp16", "gnd")                 # 4 脚 GND
+    bb.wire("c14", "c15", "sig")                  # 空闲的那一半：7 脚接 6 脚
+    bb.wire("a16", "tn16", "gnd")                 # 5 脚接地
+    # 调整管 TIP31：金属片朝后，脚朝下，从左到右 B、C、E
+    bb.multi("Q1", {"B": "f8", "C": "f9", "E": "f10"}, "TIP31", w=3.0, at=(9.0, 4.1))
+    bb.wire("j9", "bn9", "pos")                   # 集电极 → +12 V
+    bb.wire("g8", "g13", "sig")                   # 运放 1 脚 → 基极
+    bb.two("Rf", "i10", "i14", "R", "Rf 3.9k", lpos=(0, -0.62))
+    bb.two("R1", "j14", "bp14", "R", "R1 5.1k", lpos=(0.35, 0))
+    # 基准：+12 V → R_Z → 稳压管阴极（第 19 列）→ 3 脚
+    bb.wire("j17", "bn17", "pos")
+    bb.two("RZ", "i17", "i19", "R", "RZ 1k", lpos=(0, -0.62))
+    bb.two("DZ", "g20", "g19", "Z", "1N4733A", lpos=(1.6, 0.55))
+    bb.wire("j20", "bp20", "gnd")
+    bb.wire("h15", "h19", "sig")
+    # 负载：功率电阻放在板外
+    bb.wire("j10", bb.ext((10.0, -5.0), "接负载 RL 一端", "sig", dx=0.45, ha="left"), "sig")
+    bb.wire(bb.ext((5.0, -5.0), "RL 另一端", "gnd", dx=-0.45, ha="right"), "bp5", "gnd")
+    # 连接检查
+    assert bb.connected("tp1", "bn1") and bb.connected("tn1", "bp1") and not bb.connected("tp1", "tn1")
+    assert bb.connected("U1.8", "bn1") and bb.connected("U1.4", "bp1") and bb.connected("U1.5", "bp1")
+    assert bb.connected("U1.6", "U1.7")
+    assert bb.connected("Q1.C", "bn1") and bb.connected("Q1.B", "U1.1")
+    assert bb.connected("Q1.E", "Rf.1") and bb.connected("Rf.2", "U1.2") and bb.connected("R1.1", "U1.2")
+    assert bb.connected("R1.2", "bp1")
+    assert bb.connected("RZ.1", "bn1") and bb.connected("RZ.2", "DZ.2") and bb.connected("DZ.2", "U1.3")
+    assert bb.connected("DZ.1", "bp1")
+    assert not bb.connected("Q1.E", "Q1.B") and not bb.connected("U1.2", "U1.3") and not bb.connected("U1.1", "U1.2")
+    bb.probe("f19", "V_ref", dx=0.3, dy=0.35)
+    bb.probe("g14", "反相端", dx=0.3, dy=0.35)
+    bb.probe("h13", "运放输出", dx=-0.3, dy=-0.35, ha="right")
+    bb.probe("h10", "V_o", dx=-0.3, dy=0.0, ha="right")
+    bb.note(21.5, 1.4, "C_o 不接（见正文）")
+    bb.legend(("pos", "gnd", "sig"))
+    print(f"08 p4 面包板：连接检查通过，占用 {len(bb.used)} 个孔")
+    return bb
+
+
+def p4_breadboards():
+    bb = bb08()
+    fs.save(bb.fig, P, "08_p4_1_bb_regulator.png")
+    plt.close(bb.fig)
+    print("08_figs p4 OK")
+
+
+if __name__ == "__main__":
+    p4_breadboards()

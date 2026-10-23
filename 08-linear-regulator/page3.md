@@ -1,6 +1,6 @@
 # 08 线性稳压 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：11 过载保护 · 直觉篇](../11-overload-protection/page1.md) · 前置节点：[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[07 射极跟随器 · 直觉篇](../07-emitter-follower/page1.md)、[10 稳压管稳压 · 直觉篇](../10-zener-regulator/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [动手实验篇](page4.md) · [下一页：动手实验篇](page4.md) · 前置节点：[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[07 射极跟随器 · 直觉篇](../07-emitter-follower/page1.md)、[10 稳压管稳压 · 直觉篇](../10-zener-regulator/page1.md)
 
 > [!NOTE]
 > 本页的实验全部用**可调直流电源**（带限流功能的实验室电源）供电，电压不超过 20 V。不要直接接 06 的变压器整流电源做调试；如果最终要接，变压器初级接着 220 V 市电，[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md) 开头的安全提示全部适用。调整管和散热片工作时可能烫到七八十摄氏度，断电后也要等它凉下来再摸。
