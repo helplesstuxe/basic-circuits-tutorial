@@ -689,3 +689,184 @@ def p4_2_stopwatch(t, v_nom, v_lo, v_hi):
 if __name__ == "__main__":
     _t, _vn, _vl, _vh = p4_numbers()
     p4_1_breadboard(); p4_2_stopwatch(_t, _vn, _vl, _vh)
+
+
+# ======================================================================================
+# 第 8 轮补电路图（凡正文讲具体电路连接处，附近都要有电路图）
+# ======================================================================================
+EMPH = C["third"]          # 强调色（红紫）：新加上去的负载 R_L、等效出来的 R2∥R_L
+
+
+# ---------------- 图 P1-p2-8：空载分压器 / 接 R_L / 等效成 R1 串 R2∥R_L ----------------
+def p2_8_divider_load():
+    Vi, R1, R2, RL = 12.0, 10e3, 10e3, 10e3
+    par = R2 * RL / (R2 + RL)
+    v0 = Vi * R2 / (R1 + R2)
+    v1 = Vi * par / (R1 + par)
+    i0, i1 = Vi / (R1 + R2), Vi / (R1 + par)
+    print(f"[图 P1-p2-8] 空载：I = {i0*1e3:.2f} mA，V_o = {v0:.2f} V；接 R_L = 10 kΩ：R2∥R_L = {par/1e3:.2f} kΩ，"
+          f"I = {i1*1e3:.2f} mA，V_o = {v1:.2f} V")
+    assert abs(v0 - 6) < 1e-9 and abs(par - 5e3) < 1e-6 and abs(v1 - 4) < 1e-9
+    with drawing(fontsize=11) as d:
+        def divider(x0, title, rl=False, merged=False, vo="4.00 V"):
+            """左边电池，中间 R1 / R2（或合并后的 R2∥R_L）竖排，右边 V_o 输出端；rl=True 时在 V_o 与地之间并上 R_L。"""
+            nonlocal d
+            xr, top, mid, bot = x0 + 2.4, 3.0, 0.0, -3.0          # 电阻那一竖列的 x；顶线、中点、底线（GND）的 y
+            d += elm.Line().endpoints((x0, bot), (x0, -1.0))
+            d += elm.Battery().endpoints((x0, -1.0), (x0, 1.0))
+            d += elm.Line().endpoints((x0, 1.0), (x0, top))
+            d += elm.Label().at((x0 - 0.95, 0.0)).label("$V_i$\n12 V")
+            d += elm.Line().endpoints((x0, top), (xr, top))
+            d += elm.Line().endpoints((xr, top), (xr, 2.5))
+            d += (r1 := elm.Resistor().endpoints((xr, 2.5), (xr, 0.5)).label("$R_1$\n10 kΩ"))
+            d += elm.Line().endpoints((xr, 0.5), (xr, mid))
+            d += elm.Dot().at((xr, mid))
+            d += elm.Line().endpoints((xr, mid), (xr, -0.5))
+            r2 = elm.Resistor().endpoints((xr, -0.5), (xr, -2.5))
+            d += (r2.color(EMPH).label("$R_2 \\parallel R_L$\n5 kΩ", color=EMPH) if merged else r2.label("$R_2$\n10 kΩ"))
+            d += elm.Line().endpoints((xr, -2.5), (xr, bot))
+            d += elm.Line().endpoints((xr, bot), (x0, bot))
+            d += elm.CurrentLabelInline(direction="in").at(r1).label("$I$", loc="bottom")
+            if rl:
+                xl = xr + 1.9
+                d += elm.Line().endpoints((xr, mid), (xl, mid))
+                d += elm.Dot().at((xl, mid))
+                d += elm.Line().endpoints((xl, mid), (xl + 0.9, mid))
+                d += elm.Dot(open=True).at((xl + 0.9, mid)).label(f"$V_o$ = {vo}", "right", fontsize=10)
+                d += elm.Line().endpoints((xl, mid), (xl, -0.5)).color(EMPH)
+                d += elm.Resistor().endpoints((xl, -0.5), (xl, -2.5)).color(EMPH).label("$R_L$\n10 kΩ", "bottom", color=EMPH)
+                d += elm.Line().endpoints((xl, -2.5), (xl, bot)).color(EMPH)
+                d += elm.Line().endpoints((xl, bot), (xr, bot)).color(EMPH)
+                d += elm.Dot().at((xr, bot))
+            else:
+                d += elm.Line().endpoints((xr, mid), (xr + 1.9, mid))
+                d += elm.Dot(open=True).at((xr + 1.9, mid)).label(f"$V_o$ = {vo}", "right", fontsize=10)
+            d += elm.Label().at((x0 + 1.2, bot - 0.35)).label("GND（0 V）", fontsize=9)
+            d += elm.Label().at((x0 + 2.4, bot - 1.1)).label(title, fontsize=10)
+        divider(0.0, "(a) 空载：$V_o$ 端什么都不接", vo="6.00 V")
+        divider(8.0, "(b) 接上负载 $R_L$：$R_L$ 跨在 $V_o$ 和 GND 之间", rl=True)
+        divider(17.0, "(c) 等效：$R_1$ 串 $R_2 \\parallel R_L$，再用分压公式", merged=True)
+    save_schem(d, P, "P1_p2_8_divider_load.png")
+
+
+
+def _coil_circuit(d, x0, diode, title, sw_text, cur_text=None):
+    """12 V 电池 → 开关 S → 继电器线圈（竖着画）→ 回到 0 V；diode=True 时在线圈两端反向并联续流二极管（阴极朝 12 V）。"""
+    top, bot = 2.5, -2.5
+    xs, xc = x0 + 3.2, x0 + 5.0
+    d += elm.Line().endpoints((x0, bot), (x0, -1.0))
+    d += elm.Battery().endpoints((x0, -1.0), (x0, 1.0))
+    d += elm.Line().endpoints((x0, 1.0), (x0, top))
+    d += elm.Label().at((x0 - 0.9, 0.0)).label("12 V")
+    d += elm.Line().endpoints((x0, top), (x0 + 0.8, top))
+    d += elm.Switch().endpoints((x0 + 0.8, top), (x0 + 2.8, top)).label("S（刚断开）", fontsize=10)
+    d += elm.Label().at((x0 + 1.8, top - 0.75)).label(sw_text, fontsize=9, color=C["bad"] if not diode else "black")
+    d += elm.Line().endpoints((x0 + 2.8, top), (xc, top))
+    d += elm.Line().endpoints((xc, top), (xc, 1.0))
+    d += elm.Inductor2(loops=4).endpoints((xc, 1.0), (xc, -1.0))
+    d += elm.Label().at((xc - 1.0, 0.0)).label("KA 线圈\n0.1 H\n100 Ω", fontsize=10)
+    d += elm.Line().endpoints((xc, -1.0), (xc, bot))
+    d += elm.Line().endpoints((xc, bot), (x0, bot))
+    d += elm.Label().at((x0 + 2.4, bot - 0.35)).label("0 V", fontsize=9)
+    if diode:
+        xd = xc + 2.6
+        d += elm.Dot().at((xc, top)); d += elm.Dot().at((xc, bot))
+        d += elm.Line().endpoints((xc, top), (xd, top)).color(EMPH)
+        d += elm.Line().endpoints((xd, top), (xd, 1.0)).color(EMPH)
+        d += elm.Diode().endpoints((xd, -1.0), (xd, 1.0)).color(EMPH)
+        d += elm.Label().at((xd + 1.3, 0.6)).label("续流二极管\n阴极朝 12 V", color=EMPH, fontsize=10)
+        d += elm.Line().endpoints((xd, -1.0), (xd, bot)).color(EMPH)
+        d += elm.Line().endpoints((xd, bot), (xc, bot)).color(EMPH)
+        if cur_text:
+            d += elm.LoopArrow(direction="ccw", width=0.9, height=1.6).at((xc + 1.3, 0)).color(C["cur"])
+            d += elm.Label().at((xd + 1.3, -0.9)).label(cur_text, fontsize=9, color=C["cur"])
+    d += elm.Label().at((x0 + 3.0, bot - 1.1)).label(title, fontsize=10)
+
+
+# ---------------- 图 P1-p2-9：线圈断电的两种电路：无 / 有续流二极管 ----------------
+def p2_9_flyback_circuit():
+    print("[图 P1-p2-9] 12 V，线圈 0.1 H、100 Ω（120 mA）；无二极管时开关两端 1200 V，有二极管时 12.7 V")
+    with drawing(fontsize=11) as d:
+        _coil_circuit(d, 0.0, False, "(a) 不加二极管：电流只能硬挤过断开的开关", "开关两端约 1200 V")
+        _coil_circuit(d, 9.5, True, "(b) 线圈两端反向并联续流二极管", "开关两端 12.7 V", "断电后电流\n在这个小圈里绕")
+    save_schem(d, P, "P1_p2_9_flyback_circuit.png")
+
+
+# ---------------- 图 P1-p1-5：续流二极管反向并联在线圈两端（直觉篇用的单张图） ----------------
+def p1_5_freewheel():
+    print("[图 P1-p1-5] 12 V → 开关 S → KA 线圈 → 0 V，续流二极管阴极接 12 V 一侧")
+    with drawing(fontsize=11) as d:
+        _coil_circuit(d, 0.0, True, "开关断开后，线圈的电流经二极管绕回线圈", "", "断电后电流\n在这个小圈里绕")
+    save_schem(d, P, "P1_p1_5_freewheel.png")
+
+
+# ---------------- 图 P1-p2-10：RC 充放电电路（输入 V_i 在 5 V 和 0 V 之间切换） ----------------
+def p2_10_rc_circuit():
+    print("[图 P1-p2-10] R = 10 kΩ，C = 100 μF，τ = 1 s；I = (V_i − V_C)/R")
+    with drawing(fontsize=11) as d:
+        top, bot = 2.0, -2.0
+        d += elm.Line().endpoints((0, bot), (0, -1.0))
+        d += elm.SourceSquare().endpoints((0, -1.0), (0, 1.0))
+        d += elm.Line().endpoints((0, 1.0), (0, top))
+        d += elm.Label().at((-1.6, 0.0)).label("$V_i$\n5 V 或 0 V", fontsize=10)
+        d += (r := elm.Resistor().endpoints((0, top), (3.0, top)).label("R  10 kΩ"))
+        d += elm.CurrentLabelInline(direction="in").at(r).label("$I$", loc="bottom")
+        d += elm.Dot().at((3.0, top))
+        d += elm.Capacitor().endpoints((3.0, top), (3.0, bot)).label("C\n100 μF")
+        d += elm.Line().endpoints((3.0, bot), (0, bot))
+        d += elm.Line().endpoints((3.0, top), (4.8, top))
+        d += elm.Dot(open=True).at((4.8, top)).label("$V_C$", "right")
+        d += elm.Line().endpoints((3.0, bot), (4.8, bot))
+        d += elm.Dot(open=True).at((4.8, bot)).label("0 V", "right")
+        d += elm.Dot().at((3.0, bot))
+        d += elm.Label().at((1.5, top + 0.9)).label("电阻两端电压 = $V_i - V_C$", fontsize=10)
+    save_schem(d, P, "P1_p2_10_rc_circuit.png")
+
+
+# ---------------- 图 P1-p3-4：练习 6 那个画错的电路（线圈和自己的常开触点串在一个回路里） ----------------
+def p3_4_wrong_loop():
+    print("[图 P1-p3-4] 5 V → SB → KA 线圈 → KA 常开触点 → 灯 EL → 回到电源")
+    with drawing(fontsize=11) as d:
+        top, bot = 2.0, -2.0
+        d += elm.Line().endpoints((0, bot), (0, -1.0))
+        d += elm.Battery().endpoints((0, -1.0), (0, 1.0))
+        d += elm.Line().endpoints((0, 1.0), (0, top))
+        d += elm.Label().at((-0.9, 0)).label("5 V")
+        d += PushNO().endpoints((0, top), (2.5, top)).label("SB", ofst=0.6)
+        d += Coil().endpoints((2.5, top), (5.0, top)).label("KA 线圈", ofst=0.3)
+        d += elm.Line().endpoints((5.0, top), (6.5, top))
+        d += ContactNO().endpoints((6.5, top), (6.5, bot + 1.5)).label("KA 常开触点", "right", ofst=0.3)
+        d += elm.Line().endpoints((6.5, bot + 1.5), (6.5, bot))
+        d += LampX().endpoints((6.5, bot), (3.0, bot)).label("灯 EL", "bottom")
+        d += elm.Line().endpoints((3.0, bot), (0, bot))
+        d += elm.Label().at((3.2, -0.3)).label("全部串在一个回路里\n——这样接灯不会亮", fontsize=10, color=C["bad"])
+    save_schem(d, P, "P1_p3_4_wrong_loop.png")
+
+
+
+# ---------------- 图 P1-p3-5：带负载的分压器（参数篇的取舍图和练习 3 共用） ----------------
+def p3_5_divider_load():
+    print("[图 P1-p3-5] 12 V，R1 = R2，负载 R_L 跨在 V_o 与地之间")
+    with drawing(fontsize=11) as d:
+        x0, xr, xl, top, bot = 0.0, 2.4, 4.3, 3.0, -3.0
+        d += elm.Line().endpoints((x0, bot), (x0, -1.0))
+        d += elm.Battery().endpoints((x0, -1.0), (x0, 1.0))
+        d += elm.Line().endpoints((x0, 1.0), (x0, top))
+        d += elm.Label().at((x0 - 0.95, 0.0)).label("$V_i$\n12 V")
+        d += elm.Line().endpoints((x0, top), (xr, top))
+        d += elm.Resistor().endpoints((xr, top), (xr, 0.0)).label("$R_1$")
+        d += elm.Dot().at((xr, 0.0))
+        d += elm.Resistor().endpoints((xr, 0.0), (xr, bot)).label("$R_2$")
+        d += elm.Line().endpoints((xr, bot), (x0, bot))
+        d += elm.Line().endpoints((xr, 0.0), (xl, 0.0))
+        d += elm.Dot().at((xl, 0.0))
+        d += elm.Line().endpoints((xl, 0.0), (xl + 0.9, 0.0))
+        d += elm.Dot(open=True).at((xl + 0.9, 0.0)).label("$V_o$", "right")
+        d += elm.Resistor().endpoints((xl, 0.0), (xl, bot)).color(EMPH).label("$R_L$", "bottom", color=EMPH)
+        d += elm.Line().endpoints((xl, bot), (xr, bot)).color(EMPH)
+        d += elm.Dot().at((xr, bot))
+        d += elm.Label().at((xr, bot - 0.4)).label("GND（0 V）", fontsize=9)
+    save_schem(d, P, "P1_p3_5_divider_load.png")
+
+if __name__ == "__main__":
+    p1_5_freewheel(); p2_8_divider_load(); p2_9_flyback_circuit(); p2_10_rc_circuit(); p3_4_wrong_loop(); p3_5_divider_load()
