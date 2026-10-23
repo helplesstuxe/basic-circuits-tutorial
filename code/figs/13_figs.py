@@ -497,3 +497,89 @@ for lab, r1, cf in (("实用版（R1 + Cf）", sim.R1, sim.CF), ("拆掉 R1、Cf
     else:
         assert v[m].max() > 4
 print(f"[数值] 输入三角波 ±0.5 V 的真有效值 {0.5/np.sqrt(3):.3f} V（峰值 ÷ √3）")
+
+
+# ======================= 第 8 轮补图：正文讲到具体连接、附近却没有电路图的地方 =======================
+ACC = fs.C["bad"]
+def diff_var(d, x0, y0, r1=False, cf=False, title=None, hl=True, vals=("100 nF", "10 kΩ", "1 kΩ", "10 nF")):
+    d += (op := elm.Opamp(leads=True).right().at((x0, y0)).anchor("center"))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Capacitor().left().label(f"$C$ {vals[0]}")
+    if r1:
+        d += elm.Resistor().left().label(f"$R_1$ {vals[2]}").color(ACC if hl else "black")
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    if cf: d += (a := elm.Dot())
+    d += elm.Resistor().right().label(f"$R_f$ {vals[1]}").tox(op.out.x + 0.5)
+    if cf: d += (b := elm.Dot())
+    d += elm.Line().down().toy(op.out); d += elm.Dot()
+    if cf:
+        d += elm.Line().up().at(a.center).length(1.4).color(ACC if hl else "black")
+        d += elm.Capacitor().right().label(f"$C_f$ {vals[3]}").tox(b.center.x).color(ACC if hl else "black")
+        d += elm.Line().down().toy(b.center).color(ACC if hl else "black")
+    d += elm.Line().left().at(op.in2).length(0.5); d += elm.Line().down().length(0.5); d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(0.75)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    if title:
+        d += elm.Label().at((x0 - 1.5, y0 + (4.3 if cf else 3.0))).label(title, fontsize=12)
+    return op
+
+
+# ---------- 图 13-p1-7 无源 RC 微分 vs 运放微分（page1「痛点」第三段） ----------
+def passive_rc(d, x0, y0):
+    d += elm.Dot(open=True).at((x0, y0)).label("$V_i$", "left")
+    d += elm.Capacitor().right().label("$C$").label("$V_i - V_o$", "bottom", fontsize=10)
+    d += (n := elm.Dot())
+    d += elm.Line().right().length(1.5)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    d += (r := elm.Resistor().down().at(n.center))
+    d += elm.Ground()
+    d += elm.Label().at((r.center.x + 0.6, r.center.y)).label("$R$", halign="left")
+    d += elm.Label().at((r.center.x + 0.6, r.center.y - 0.7)).label("输出 = R 上的电压", fontsize=10, halign="left")
+    d += elm.Label().at((x0 + 0.5, y0 + 2.2)).label("（a）无源 RC：电容右端跟着输出变", fontsize=12, halign="left")
+with drawing(fontsize=11) as d:
+    passive_rc(d, 0, 0)
+    op = diff_var(d, 12.5, -0.7, hl=False)
+    d += elm.Label().at((9.5, 3.0)).label("（b）运放版：电容右端钉在虚地 0 V", fontsize=12, halign="left")
+    d += elm.Label().at((op.in1.x - 0.45, op.in1.y - 0.45)).label("0 V", fontsize=10, color=ACC)
+save_schem(d, N, "13_p1_7_passive_vs_opamp.png")
+
+
+# ---------- 图 13-p1-8 四种接法：理想 / 只串 R1 / 只并 Cf / 都加（与图 13-p1-6 的四行波形一一对应） ----------
+with drawing(fontsize=11) as d:
+    diff_var(d, 0, 0, title="① 只有 C 和 $R_f$（理想微分器）")
+    diff_var(d, 11, 0, r1=True, title="② 只串小电阻 $R_1$")
+    diff_var(d, 0, -9, cf=True, title="③ 只并小电容 $C_f$")
+    diff_var(d, 11, -9, r1=True, cf=True, title="④ 两个都加（实用微分器）")
+save_schem(d, N, "13_p1_8_four_variants.png")
+print("[电路图] 13-p1-8：新加的 R1 1 kΩ、Cf 10 nF 用强调色")
+
+# ---------- 图 13-p3-3 本教程双电源实用微分器 vs TI SBOA276C 单电源示例（page3 参数表） ----------
+def ti_single(d, x0, y0):
+    d += (op := elm.Opamp(leads=True).right().at((x0, y0)).anchor("center"))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Capacitor().left().label("C1 15 nF")
+    d += elm.Resistor().left().label("R1 1 kΩ")
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    d += elm.Resistor().right().label("R2（即 $R_f$）499 kΩ").tox(op.out.x + 0.5)
+    d += elm.Line().down().toy(op.out); d += elm.Dot()
+    d += elm.Line().left().at(op.in2).length(0.5).color(ACC)
+    d += elm.Line().down().length(1.0).color(ACC)
+    d += (k := elm.Dot().color(ACC).label("2.5 V", "right", color=ACC))
+    d += elm.Resistor().left().label("R3 100 kΩ").color(ACC)
+    d += elm.Line().up().length(0.4).color(ACC)
+    d += elm.Vdd().label("+5 V").color(ACC)
+    d += (r4 := elm.Resistor().down().at(k.center).color(ACC))
+    d += elm.Label().at((r4.center.x + 0.5, r4.center.y)).label("R4 100 kΩ", halign="left", color=ACC)
+    d += elm.Ground().color(ACC)
+    d += elm.Line().right().at(op.out).length(0.75)
+    d += elm.Dot(open=True).label("$V_o$（围绕 2.5 V 摆动）", "right")
+with drawing(fontsize=11) as d:
+    diff_var(d, 0, 0, r1=True, cf=True, hl=False)
+    d += elm.Label().at((-5.5, 4.4)).label("（a）本教程：±15 V 双电源，同相端接地", fontsize=12, halign="left")
+    ti_single(d, 14, 0)
+    d += elm.Label().at((6.5, 4.4)).label("（b）TI SBOA276C 示例（TLV9061）：5 V 单电源，同相端接 2.5 V", fontsize=12, halign="left")
+save_schem(d, N, "13_p3_3_supply_variants.png")
