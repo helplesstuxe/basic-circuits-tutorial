@@ -56,7 +56,7 @@ fig, (a0, a1) = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=True)
 tm = t * 1e3
 a0.plot(tm, vin, **fs.LS["vin"], label="输入电压 $V_i$")
 a0.fill_between(tm, 0, vin, where=vin > 0, color=fs.C["vin"], alpha=0.25)
-a0.fill_between(tm, 0, vin, where=vin < 0, color=fs.C["bad"], alpha=0.25)
+a0.fill_between(tm, 0, vin, where=vin < 0, color=fs.C["third"], alpha=0.25)  # 负面积不是错误，用红紫色
 a0.text(1.0, 0.45, "面积 +2 V·ms", ha="center", fontsize=9)
 a0.text(4.0, -0.3, "面积 −1 V·ms", ha="center", fontsize=9)
 print("[数值] 面积 +2 V·ms（1 V × 2 ms），−1 V·ms（−0.5 V × 2 ms）")

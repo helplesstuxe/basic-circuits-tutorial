@@ -64,9 +64,11 @@ $$V_{o,\text{直流}} = -\frac{R_f}{R} V_{dc} = -\frac{1\text{ MΩ}}{10\text{ k�
 
 ## 仿真：理想积分器 vs 实用积分器
 
-下面的代码把电路切成每 2 μs 一小段，一段一段地用「电压变化 = 电流 × 时间 ÷ C」往前推，同时让输出不超过 ±13.5 V。输入是 ±1 V、500 Hz 方波再加 20 mV 直流偏置。
+下面的代码把电路切成每 2 μs 一小段，一段一段地用「电压变化 = 电流 × 时间 ÷ C」往前推，同时让输出不超过 ±13.5 V。输入是 ±1 V、500 Hz 方波再加 20 mV 直流偏置。请在仓库根目录运行这段代码：开头两行让 Python 找到全书共用的 `code/figs/figstyle.py`（配色和中文字体），图片 integrator_drift.png 会存在当前目录，也就是仓库根目录。
 
 ```python
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                      # 数值计算
 import matplotlib                       # 画图库
 matplotlib.use("Agg")                   # 不弹窗口，直接存图
