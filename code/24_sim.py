@@ -23,7 +23,7 @@ def vdc_max(n, v1=V1):
 n_main = 220 / 12                         # 220 V → 12 V 的变压器
 v_main = vdc_max(n_main)
 v_lo, v_hi = vdc_max(n_main, V1 * 0.9), vdc_max(n_main, V1 * 1.1)
-print(f"[A] 匝数比 N1/N2 = {n_main:.2f}：副边 {V1/n_main:.1f} V 有效值，峰值 {math.sqrt(2)*V1/n_main:.2f} V，整流后最高 {v_main:.2f} V")
+print(f"[A] 匝数比 N1/N2 = {n_main:.2f}：次级 {V1/n_main:.1f} V 有效值，峰值 {math.sqrt(2)*V1/n_main:.2f} V，整流后最高 {v_main:.2f} V")
 print(f"[A] 电网 ±10%（{V1*0.9:.0f} V ~ {V1*1.1:.0f} V，示意）时：{v_lo:.2f} V ~ {v_hi:.2f} V")
 assert abs(v_main - 15.57) < 0.01                       # 与 06 page2 的 15.57 V 一致
 n_need = math.sqrt(2) * V1 / (9 + 2 * VD)               # 例：想要整流后约 9 V
@@ -65,12 +65,17 @@ def solve(i_user, extra=lambda v: 0.0, vin=5.0):
             hi = m
     return (lo + hi) / 2
 
-I_ISO, I_SENSOR = 1.7e-3, 3.0e-3        # ISO7721 副边电流典型 1.7 mA（1 Mbps）；传感器 3 mA（示意）
+I_ISO, I_SENSOR = 1.7e-3, 3.0e-3        # ISO7721 次级电流典型 1.7 mA（1 Mbps）；传感器 3 mA（示意）
 I_USER = I_ISO + I_SENSOR
 R_DUMMY = 270.0                          # 假负载：5.6 V / 20 mA ≈ 280 Ω，取 270 Ω
-VZ, RZ = 5.1, 24.0                       # 稳压管钳位：(5.6 − 5.1) V / 20 mA = 25 Ω，取 24 Ω
+# 稳压管钳位：模型与 P2/10 相同，V = V_Z0 + r_Z·I_Z（1N4733A：49 mA 时 5.1 V，r_Z = 7 Ω）
+VZ, IZT, RZD = 5.1, 0.049, 7.0
+VZ0 = VZ - RZD * IZT                     # 击穿起点 ≈ 4.757 V
+R_need = (5.6 - VZ0) / 0.020 - RZD       # 5.6 V 时吃 20 mA 所需的串联电阻 ≈ 35 Ω
+RZ = 36.0                                # 取 E24 标准值 36 Ω
+print(f"[B] 稳压管 V_Z0 = {VZ0:.3f} V；串联电阻需 {R_need:.1f} Ω，取 {RZ:.0f} Ω")
 dummy = lambda v: v / R_DUMMY
-zener = lambda v: max(v - VZ, 0.0) / RZ
+zener = lambda v: max(v - VZ0, 0.0) / (RZ + RZD)
 
 v_full, v_10 = v_module(I_FULL), v_module(0.1 * I_FULL)
 v_bare, v_dum, v_zen = solve(I_USER), solve(I_USER, dummy), solve(I_USER, zener)
@@ -79,8 +84,8 @@ print(f"[B] 满载 200 mA：{v_full:.2f} V；10% 负载 20 mA：{v_10:.2f} V（�
 print(f"[B] 现场侧只用 {I_USER*1e3:.1f} mA（{I_USER/I_FULL*100:.2f}% 负载）：不处理 {v_bare:.2f} V；输入 5.5 V 时 {v_bare_hi:.2f} V")
 print(f"[B] 加 {R_DUMMY:.0f} Ω 假负载：{v_dum:.2f} V，假负载电流 {v_dum/R_DUMMY*1e3:.1f} mA、功耗 {v_dum**2/R_DUMMY*1e3:.0f} mW，留给用户的电流约 {(I_FULL - v_dum/R_DUMMY)*1e3:.0f} mA")
 print(f"[B] 加 {VZ} V 稳压管 + {RZ:.0f} Ω：{v_zen:.2f} V，稳压管支路 {zener(v_zen)*1e3:.1f} mA")
-iz_off = next(i for i in np.linspace(0, I_FULL, 2001) if v_module(i) <= VZ)
-print(f"[B] 负载超过 {iz_off*1e3:.0f} mA（{iz_off/I_FULL*100:.0f}%）后模块输出低于 {VZ} V，稳压管支路不再耗电")
+v_zen_full = solve(0.18, zener)
+print(f"[B] 用户 180 mA 时：稳压管方案 {v_zen_full:.2f} V，稳压管支路仍吃 {zener(v_zen_full)*1e3:.1f} mA（模块最低也有 5.0 V，高于 V_Z0，支路不会完全关断）")
 ISO_ABS_MAX, ISO_REC_MAX = 6.0, 5.5
 assert v_bare > ISO_ABS_MAX                   # 结论 1：轻载时输出超过 ISO7721 的绝对最大值 6 V
 assert v_dum < 5.65 and v_zen < 5.65          # 结论 2：两种补救都把电压拉回手册 10% 负载时的水平
@@ -109,12 +114,12 @@ ax.plot(iu * 1e3, [solve(i, dummy) for i in iu], **fs.LS["vout"], label=f"并 {R
 ax.plot(iu * 1e3, [solve(i, zener) for i in iu], **fs.LS["third"], label=f"{VZ} V 稳压管 + {RZ:.0f} Ω 钳位")
 fs.ref_h(ax, ISO_ABS_MAX, f"{ISO_ABS_MAX:.0f} V", x=0.99)
 fs.ref_h(ax, ISO_REC_MAX, f"{ISO_REC_MAX} V", x=0.93)
-fs.mark(ax, I_USER * 1e3, v_dum, "{:.2f}", " V（两种补救相同）", dx=8, dy=6, color="k")
+fs.mark(ax, I_USER * 1e3, v_dum, "{:.2f}", " V（两种补救几乎相同）", dx=8, dy=6, color="k")
 v_dum100, v_zen100 = solve(0.1, dummy), solve(0.1, zener)
 fs.mark(ax, 100, v_dum100, "{:.2f}", " V", dx=-10, dy=-14, color=fs.C["vout"])
 fs.mark(ax, 100, v_zen100, "{:.2f}", " V", dx=4, dy=6, color=fs.C["third"])
 print(f"[B] 用户 100 mA 时：假负载方案 {v_dum100:.2f} V（假负载仍吃 {v_dum100/R_DUMMY*1e3:.1f} mA），稳压管方案 {v_zen100:.2f} V（稳压管支路 {zener(v_zen100)*1e3:.1f} mA）")
-assert abs(v_dum - v_zen) < 0.02 and zener(v_zen100) < 0.5 * v_dum100 / R_DUMMY   # 重载时稳压管支路耗电不到假负载的一半
+assert abs(v_dum - v_zen) < 0.02 and zener(v_zen100) < 0.7 * v_dum100 / R_DUMMY   # 重载时稳压管支路耗电明显少于假负载（但不为 0）
 ax.set_ylim(4.5, 11.5)
 ax.legend(loc="upper right", fontsize=8)
 fs.axlabels(ax, "现场侧电路自己用的电流", "mA", "模块输出电压", "V")
@@ -123,7 +128,8 @@ fs.save(fig, N, "24_p3_2_fix.png")
 # ================= C 传输延时对比 =================
 T_PHL, T_PLH = 0.5e-6, 40e-6            # 通用光耦，上拉 1.9 kΩ（TI SLLA526D 表中典型值）
 TAU = (T_PLH - T_PHL) / math.log((VCC_O := 5.0 - 0.2) / 2.5)   # 示意：从 0.2 V 回升，让输入变低后 40 µs 时刚好过 2.5 V
-T_ISO = 11e-9                           # ISO7721 典型传输延时
+T_ISO = 11e-9                           # ISO7721 典型传输延时（画波形用）
+T_ISO_MAX = 17e-9                       # ISO7721 最大传输延时（5 V，估算数据率用）
 F_SIG, VCC = 5e3, 5.0
 t = np.linspace(0, 400e-6, 40001)
 vin = np.where((t % (1 / F_SIG)) < 0.5 / F_SIG, VCC, 0.0)
@@ -144,11 +150,11 @@ t_fall = t[np.argmax(vo_opto < VCC / 2)]
 i_rise = np.argmax((t > 100e-6) & (vo_opto > VCC / 2))
 t_rise = t[i_rise] - 100e-6
 v_end_low = vo_opto[np.argmin(abs(t - 199.9e-6))]
-rate_opto = 1 / (4 * max(T_PHL, T_PLH)); rate_iso = 1 / (4 * T_ISO)
+rate_opto = 1 / (4 * max(T_PHL, T_PLH)); rate_iso = 1 / (4 * T_ISO_MAX)
 bit_uart = 1 / 115200
 print(f"[C] 光耦：输入变高后 {t_fall*1e6:.1f} µs 输出过半；输入变低后 {t_rise*1e6:.1f} µs 输出才回升过半")
 print(f"[C] 下一个脉冲到来前（{(1/F_SIG - 0.5/F_SIG)*1e6:.0f} µs 后）光耦输出只回到 {v_end_low:.2f} V")
-print(f"[C] 数字隔离器延时 {T_ISO*1e9:.0f} ns；按 SLLA526D 的估算式 1/(4·最大延时)：光耦 {rate_opto/1e3:.2f} kbps，ISO7721 {rate_iso/1e6:.1f} Mbps")
+print(f"[C] 数字隔离器延时典型 {T_ISO*1e9:.0f} ns、最大 {T_ISO_MAX*1e9:.0f} ns；按 SLLA526D 的估算式 1/(4·最大延时)：光耦 {rate_opto/1e3:.2f} kbps，ISO7721 {rate_iso/1e6:.1f} Mbps")
 print(f"[C] 115200 波特率串口一位宽 {bit_uart*1e6:.2f} µs，比光耦慢的那一边 {T_PLH*1e6:.0f} µs 短")
 assert abs(t_rise - T_PLH) < 0.5e-6 and t_fall < 1e-6
 assert bit_uart < T_PLH and T_ISO < bit_uart / 100

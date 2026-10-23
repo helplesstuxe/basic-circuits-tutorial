@@ -66,7 +66,7 @@ def p2_1():
         d += elm.Line().endpoints(gp, (gp[0] + 1.2, gp[1]))
         d += elm.Dot(open=True).at((gp[0] + 1.2, gp[1])).label("GND2", "right")
         d += elm.Label().at((xm, p1[1] + 2.0)).label("变压器 220 V → 12 V（N1/N2 ≈ 18.33）", loc="center")
-        d += elm.Label().at((s1[0] + 3.5, p2[1] - 0.9)).label("副边：与市电隔离", loc="center")
+        d += elm.Label().at((s1[0] + 3.5, p2[1] - 0.9)).label("次级：与市电隔离", loc="center")
     print(f"[图 24-p2-1] 220 V、12 V、N1/N2 ≈ {220/12:.2f}、{V_DC:.2f} V")
     schem.save_schem(d, P, "24_p2_1_transformer.png")
 
