@@ -4,8 +4,8 @@
 #   KT 线圈：公共点 → KM△ 常闭 → KT 线圈（时间继电器，通电延时）
 #   KMY 线圈：公共点 → KT 延时断开常闭 → KM△ 常闭（互锁）→ KMY 线圈
 #   KM△ 线圈：公共点 → [KT 延时闭合常开 并联 KM△ 自锁] → KMY 常闭（互锁）→ KM△ 线圈
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))  # 共享模块所在的文件夹
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
@@ -115,7 +115,7 @@ ax.plot(t, W_y * 100, **fs.LS["cur"], label="星三角启动")                  
 fs.ref_v(ax, t_d_on, "切换到三角形", y=0.3)                               # 切换时刻
 fs.axlabels(ax, "时间", "s", "转速 / 同步转速", "%")                       # 坐标
 ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例
-fs.save(fig, "19", "19_p2_3_sim.png")              # 保存
+fs.save(fig, "19", "19_p2_4_sim.png")              # 保存
 
 z = (t >= t_y_off - 0.03) & (t < t_d_on + 0.06)    # 放大切换前后约 0.1 s
 tm = (t[z] - (0.5 + T_SET)) * 1e3                  # 横轴：从 KT 到时算起的毫秒数
@@ -135,4 +135,4 @@ fs.ref_v(axs[1], (t_y_off - 0.5 - T_SET) * 1e3, "KMY 断开", y=0.98)        # K
 fs.ref_v(axs[1], (t_d_on - 0.5 - T_SET) * 1e3, "KM△ 闭合", y=0.75)        # KM△ 主触点闭合
 fs.axlabels(ax, "从 KT 到时起的时间", "ms", "线电流 / 额定电流", None)          # 坐标
 ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例
-fs.save(fig, "19", "19_p2_4_switch.png")           # 保存
+fs.save(fig, "19", "19_p2_5_switch.png")           # 保存

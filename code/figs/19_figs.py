@@ -117,8 +117,39 @@ def relay():
     fs.save(fig, P, "19_p1_3_relay.png")
 
 
+def three_phase():
+    """图 19-p2-1：三相电压一个周期的波形，以及两相之差（线电压）为什么是相电压的 √3 倍。"""
+    U_PH = 220.0                                   # 相电压有效值（V）
+    UM = U_PH * np.sqrt(2)                         # 相电压峰值（V）：有效值 × √2
+    t = np.linspace(0, 20e-3, 20001)               # 50 Hz 的一个周期 = 20 ms
+    w = 2 * np.pi * 50
+    u1 = UM * np.sin(w * t)                        # L1
+    u2 = UM * np.sin(w * t - 2 * np.pi / 3)        # L2：比 L1 晚 1/3 个周期
+    u3 = UM * np.sin(w * t - 4 * np.pi / 3)        # L3：比 L1 晚 2/3 个周期
+    u12 = u1 - u2                                  # L1 与 L2 之间的电压（线电压）
+    fig, ax = plt.subplots(figsize=fs.SIZE["tall"])
+    ax.plot(t * 1e3, u1, **fs.LS["vin"], label="$u_1$（L1 对零线）")
+    ax.plot(t * 1e3, u2, **fs.LS["vout"], label="$u_2$（L2 对零线）")
+    ax.plot(t * 1e3, u3, **fs.LS["third"], label="$u_3$（L3 对零线）")
+    ax.plot(t * 1e3, u12, **fs.LS["fb"], label="$u_1 - u_2$（L1 与 L2 之间）")
+    fs.ref_h(ax, 0.0)
+    k1 = np.argmax(u1); k12 = np.argmax(u12)
+    fs.mark(ax, t[k1] * 1e3, u1[k1], "{:.0f}", "V", dy=6)
+    fs.mark(ax, t[k12] * 1e3, u12[k12], "{:.0f}", "V", dy=6)
+    fs.mark(ax, t[k1] * 1e3, u2[k1], "{:.0f}", "V", dy=-14)
+    ax.set_ylim(-650, 750)
+    fs.axlabels(ax, "时间", "ms", "电压", "V")
+    ax.legend(loc="upper right", fontsize=8, ncol=2)
+    ratio = u12.max() / u1.max()
+    print(f"[图 19-p2-1] 相电压有效值 {U_PH:.0f} V，峰值 {UM:.0f} V；L2、L3 依次晚 1/3 个周期（{20 / 3:.2f} ms）")
+    print(f"[图 19-p2-1] u1 在 {t[k1] * 1e3:.1f} ms 到最高 {u1[k1]:.0f} V，这一刻 u2 = {u2[k1]:.0f} V（不是 -{UM:.0f} V），所以两者之差不是 2 倍")
+    print(f"[图 19-p2-1] u1 - u2 的最大值 {u12.max():.0f} V，出现在 {t[k12] * 1e3:.2f} ms；比值 {ratio:.3f} ≈ √3 = {np.sqrt(3):.3f}；有效值 {U_PH:.0f} × {ratio:.3f} = {U_PH * ratio:.0f} V ≈ 380 V")
+    assert abs(ratio - np.sqrt(3)) < 1e-3 and abs(u2[k1] + UM / 2) < 1
+    fs.save(fig, P, "19_p2_1_threephase.png")
+
+
 def main_circuit():
-    """图 19-p2-1：星三角主电路。三段绕组单独画出：上端 U1 V1 W1，下端 U2 V2 W2。"""
+    """图 19-p2-2：星三角主电路。三段绕组单独画出：上端 U1 V1 W1，下端 U2 V2 W2。"""
     with drawing(fontsize=10) as d:
         XS = [0, 1.8, 3.6]; XD = [6.0, 7.4, 8.8]
         tap = [-5.0, -5.4, -5.8]
@@ -156,8 +187,8 @@ def main_circuit():
         d += elm.Label().at((-1.6, -10.2)).label("KMY\n星形", fontsize=9)
         d += elm.Label().at((10.4, -7.2)).label("KM△\n三角形", fontsize=9)
         d += elm.Label().at((10.6, -9.6)).label("KM△ 下口：\nL1 列 → W2\nL2 列 → U2\nL3 列 → V2", fontsize=8, color="#4d4d4d")
-    print("[图 19-p2-1] 主电路：KM△ 闭合时 U1–W2、V1–U2、W1–V2 相连（三角形）；KMY 闭合时 U2、V2、W2 相连（星形）")
-    save_schem(d, P, "19_p2_1_main.png")
+    print("[图 19-p2-2] 主电路：KM△ 闭合时 U1–W2、V1–U2、W1–V2 相连（三角形）；KMY 闭合时 U2、V2、W2 相连（星形）")
+    save_schem(d, P, "19_p2_2_main.png")
 
 
 def rung(d, y, items, x0, x1):
@@ -181,7 +212,7 @@ def rung(d, y, items, x0, x1):
 
 
 def control():
-    """图 19-p2-2：星三角控制回路（四条支路：KM、KT、KMY、KM△）。"""
+    """图 19-p2-3：星三角控制回路（四条支路：KM、KT、KMY、KM△）。"""
     with drawing(fontsize=10) as d:
         d += elm.Dot(open=True).at((-9.6, 0)).label("L", "left")
         d += elm.Line().right(0.4)
@@ -210,8 +241,8 @@ def control():
         d += elm.Dot().at((X1, 0))
         d += elm.Line().at((X1, ys[3])).right(0.6)
         d += elm.Dot(open=True).label("N", "right")
-    print("[图 19-p2-2] 控制回路：KM 自锁；KT 经 KM△ 常闭；KMY 经 KT 延时断开 + KM△ 常闭；KM△ 经 KT 延时闭合（并 KM△ 自锁）+ KMY 常闭")
-    save_schem(d, P, "19_p2_2_control.png")
+    print("[图 19-p2-3] 控制回路：KM 自锁；KT 经 KM△ 常闭；KMY 经 KT 延时断开 + KM△ 常闭；KM△ 经 KT 延时闭合（并 KM△ 自锁）+ KMY 常闭")
+    save_schem(d, P, "19_p2_3_control.png")
 
 
 def delay_sweep():
@@ -284,6 +315,7 @@ if __name__ == "__main__":
     windings()
     bars()
     relay()
+    three_phase()
     main_circuit()
     control()
     delay_sweep()
