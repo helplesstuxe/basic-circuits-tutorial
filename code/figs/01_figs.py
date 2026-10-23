@@ -180,3 +180,23 @@ Vi_pk, Vo_sat = 2.0, -14.9                            # 练习 3：输入峰值 
 Vm = (Vi_pk * 100e3 + Vo_sat * 10e3) / 110e3          # 反相端电压 = 两端电压按 R1、Rf 分压
 print(f"练习 3：输入 +{Vi_pk:g} V、输出卡在 {Vo_sat} V 时，反相端电压 {Vm:.3f} V；R1 电流 {(Vi_pk-Vm)/10:.3f} mA，Rf 电流 {(Vm-Vo_sat)/100:.3f} mA")
 assert abs(Vm - 0.464) < 0.001
+
+# 练习 3 补充：LM358B 输出经 R_f 吸电流时负侧下限约 −14.39 V（review/spice/01.md 的 SPICE 值），反相端随之变化
+Vo_sat_load = -14.39
+Vm2 = (Vi_pk * 100e3 + Vo_sat_load * 10e3) / 110e3
+print(f"练习 3（带载下限）：输出卡在 {Vo_sat_load} V 时，反相端电压 {Vm2:.2f} V；电流 {(Vi_pk-Vm2)/10:.3f} mA")
+assert abs(Vm2 - 0.51) < 0.005
+
+# ---------- page2 第一节：1.2 kHz 时 A ≈ 1000，但输出幅度几乎不变（第 7 轮按 SPICE 更正） ----------
+# 高频时运放自身的 A 落后 90°，可写成 A = −j·1000；代入 V_o = −(R_f/R_1)·V_i / (1 + 11/A)
+A_12k = GBW / 1.2e3                                   # 1.2 MHz ÷ 1.2 kHz = 1000
+den = 1 + 11 / (-1j * A_12k)                          # 修正分母 = 1 + j·0.011（两项成直角）
+Vo_12k = -10 * 0.5 / den                              # 输入峰值 0.5 V
+err_12k = 100 * (1 - abs(Vo_12k) / 5)
+lag_12k = np.degrees(np.angle(den))                   # 多落后的角度
+print(f"page2：1.2 kHz 时 A = {A_12k:.0f}，|分母| = √(1 + 0.011²) = {abs(den):.5f}，|V_o| = {abs(Vo_12k):.3f} V，幅度误差 {err_12k:.3f}%，多落后 {lag_12k:.1f}°；反相端 ≈ 5 V ÷ A = {5/A_12k*1e3:.0f} mV")
+assert abs(A_12k - 1000) < 1e-9 and abs(abs(den) - 1.00006) < 1e-5 and err_12k < 0.01 and abs(lag_12k - 0.6) < 0.05
+fc10 = GBW / 11
+g50k = 10 / np.sqrt(1 + (50e3 / fc10) ** 2)           # 10 倍电路在 50 kHz 时的倍数
+print(f"page2：10 倍电路带宽 {fc10/1e3:.0f} kHz，50 kHz 时倍数 {g50k:.2f}，下降 {100*(1-g50k/10):.0f}%")
+assert abs(g50k - 9.09) < 0.01
