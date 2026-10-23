@@ -490,3 +490,251 @@ def fig_p4_2():
 if __name__ == "__main__":
     fig_p4_1()
     fig_p4_2()
+
+
+# ======================= 第 8 轮补电路图（page1–page3：凡正文讲具体电路连接处，附近都要有电路图） =======================
+from schem import C as _C
+EMPH = _C["third"]      # 强调色（红紫）：新加的元件、测量点
+BAD = _C["bad"]         # 朱红：错误接法
+
+
+def _opto(d, x0=0.0, vin="12 V\n信号", rin="$R_{in}$ 2.2 kΩ", rl="$R_L$ 4.7 kΩ", vcc="+5 V", part="PC817",
+          out="输出 → 单片机引脚", src="dc", bleed=None, rbe=None, ceq=None, gy=-2.6, sides=True, g2="GND2"):
+    """光耦输入电路通用画法（光耦放在 (x0, 0)）。src: "dc" 电压源 / "btn" 电池 + 按钮。
+    bleed: LED 两端并的泄放电阻标注；rbe: 基极–发射极电阻标注（4N25 类）；ceq: 输出端等效电容标注。返回关键点。"""
+    d += (oc := elm.Optocoupler(base=bool(rbe)).right().at((x0, 0)))
+    d += elm.Label().at((x0 + 0.75, 0.75)).label(part, fontsize=10)
+    ax, cy = oc.anode
+    tap = ax - 0.7
+    d += elm.Line().endpoints(oc.anode, (tap, 0))
+    d += elm.Resistor().endpoints((tap, 0), (tap - 2.6, 0)).label(rin, "top")
+    xs = tap - 3.2
+    d += elm.Line().endpoints((tap - 2.6, 0), (xs, 0))
+    d += elm.Line().endpoints(oc.cathode, (ax, gy))
+    d += elm.Line().endpoints((ax, gy), (xs, gy))
+    if src == "dc":
+        d += elm.SourceV().endpoints((xs, gy), (xs, 0))
+        d += elm.Label().at((xs - 0.7, gy / 2)).label(vin, halign="right")
+    else:
+        d += elm.Battery().endpoints((xs, gy), (xs, gy + 1.3))
+        d += elm.Button().endpoints((xs, gy + 1.3), (xs, 0))
+        d += elm.Label().at((xs - 0.7, gy + 0.6)).label(vin, halign="right")
+        d += elm.Label().at((xs - 0.7, gy + 1.95)).label("按钮", halign="right")
+    d += elm.Ground().at((xs, gy))
+    d += elm.Label().at((xs + 0.9, gy - 0.8)).label("GND1")
+    if bleed:
+        d += elm.Dot().at((tap, 0)); d += elm.Dot().at((tap, gy))
+        d += elm.Resistor().endpoints((tap, 0), (tap, gy)).color(EMPH)
+        d += elm.Label().at((tap - 0.4, gy / 2)).label(bleed, halign="right", color=EMPH)
+    cx = oc.collector[0]
+    jx = cx + 1.0
+    d += elm.Line().endpoints(oc.collector, (jx, oc.collector[1]))
+    d += elm.Dot().at((jx, oc.collector[1]))
+    d += elm.Resistor().endpoints((jx, oc.collector[1]), (jx, 2.5)).label(rl, "bottom")
+    if "内部" in rl:
+        d.elements[-1].linestyle("--")
+    d += elm.Vdd().at((jx, 2.5)).label(vcc)
+    ox = jx + 1.6
+    d += elm.Line().endpoints((jx, oc.collector[1]), (ox, oc.collector[1]))
+    d += elm.Dot(open=True).at((ox, oc.collector[1])).label(out, "right")
+    eg = gy - (0.8 if rbe else 0)
+    d += elm.Line().endpoints(oc.emitter, (cx, eg))
+    d += elm.Ground().at((cx, eg))
+    d += elm.Label().at((cx + 0.9, eg - 0.8)).label(g2)
+    if rbe:
+        bx, by = oc.absanchors["base"]
+        d += elm.Resistor().endpoints((bx, by), (bx, eg)).color(EMPH)
+        d += elm.Label().at((bx - 0.3, (by + eg) / 2)).label(rbe, halign="right", color=EMPH)
+        d += elm.Line().endpoints((bx, eg), (cx, eg)).color(EMPH)
+    if ceq:
+        kx = jx + 0.8
+        d += elm.Dot().at((kx, oc.collector[1]))
+        d += elm.Capacitor().endpoints((kx, oc.collector[1]), (kx, gy)).color(EMPH).linestyle("--")
+        d += elm.Label().at((kx + 0.4, gy / 2 - 0.2)).label(ceq, halign="left", color=EMPH, fontsize=10)
+        d += elm.Line().endpoints((kx, gy), (cx, gy)).color(EMPH).linestyle("--")
+    barrier(d, x0 + 0.75, (-1.9 if rbe else gy - 1.0), 1.9)
+    if sides:
+        d += elm.Label().at((xs + 1.2, 2.2)).label("输入侧", color=_C["bad"])
+        d += elm.Label().at((ox + 0.6, 2.2)).label("输出侧", color=_C["vin"])
+    return dict(oc=oc, xs=xs, jx=jx, ox=ox, cx=cx, gy=gy, eg=eg, tap=tap)
+
+
+def fig_p1_4():
+    """图 23-p1-4：断开两侧电源，万用表电阻挡/通断挡测 GND1 与 GND2 之间，应为开路。"""
+    with drawing(fontsize=11) as d:
+        r = _opto(d, vin="12 V 信号\n（已断开）", vcc="+5 V\n（已断开）")
+        y = r["gy"] - 2.0
+        d += elm.Line().endpoints((r["xs"], r["gy"]), (r["xs"], y)).color(EMPH)
+        d += elm.Line().endpoints((r["xs"], y), (-0.6, y)).color(EMPH)
+        d += elm.MeterOhm().endpoints((-0.6, y), (2.2, y)).color(EMPH).label("万用表 电阻挡 / 通断挡", "bottom", color=EMPH)
+        d += elm.Line().endpoints((2.2, y), (r["cx"], y)).color(EMPH)
+        d += elm.Line().endpoints((r["cx"], y), (r["cx"], r["gy"])).color(EMPH)
+        d += elm.Label().at((0.8, y - 1.3)).label("应显示开路（OL 或 1）", color=EMPH, fontsize=10)
+    save_schem(d, P, "23_p1_4_gnd_check.png")
+
+
+def fig_p2_4():
+    """图 23-p2-4：第五步的等效电路——LED 熄灭后，R_L 给输出端的等效电容充电。"""
+    tau = 4.7e3 * C_EQ
+    print(f"[图 23-p2-4] 等效电容 {C_EQ*1e9:.1f} nF；4.7 kΩ 时 R_L·C = {tau*1e6:.1f} μs")
+    with drawing(fontsize=11) as d:
+        _opto(d, vin="12 V\n→ 0 V", rl="$R_L$", ceq="等效电容 $C$\n（存储时间 + 米勒效应，\n标定值约 3.3 nF）",
+              out="$V_{out}$", sides=False)
+        d += elm.Label().at((3.0, -4.6)).label("LED 熄灭后：+5 V 经 $R_L$ 给 $C$ 充电，$\\tau = R_L C$", fontsize=10)
+    save_schem(d, P, "23_p2_4_rise_equiv.png")
+
+
+def fig_p2_5():
+    """图 23-p2-5：例 1（24 V PLC、6.8 kΩ、10 kΩ 上拉、5 V）与例 3（5 V 输入、1.5 kΩ、4.7 kΩ 上拉、3.3 V）。"""
+    i1 = (24 - V_F) / 6.8e3
+    i3 = (5 - V_F) / 1.5e3
+    assert abs(i1 * 1e3 - 3.35) < 0.01 and abs(i3 * 1e3 - 2.53) < 0.01
+    print(f"[图 23-p2-5] 例 1：I_F = {i1*1e3:.2f} mA；例 3：I_F = {i3*1e3:.2f} mA")
+    with drawing(fontsize=11) as d:
+        _opto(d, 0, vin="PLC\n24 V", rin="$R_{in}$ 6.8 kΩ", rl="$R_L$ 10 kΩ", vcc="+5 V", out="5 V 单片机", sides=False)
+        d += elm.Label().at((0.8, 4.3)).label(f"(a) 例 1：$I_F$ ≈ {i1*1e3:.2f} mA", fontsize=11)
+        x1 = 12.5
+        _opto(d, x1, vin="5 V\n信号", rin="$R_{in}$ 1.5 kΩ", rl="$R_L$ 4.7 kΩ", vcc="+3.3 V", out="3.3 V 单片机", sides=False)
+        d += elm.Label().at((x1 + 0.8, 4.3)).label(f"(b) 例 3：$I_F$ ≈ {i3*1e3:.2f} mA", fontsize=11)
+    save_schem(d, P, "23_p2_5_examples.png")
+
+
+def fig_p2_6():
+    """图 23-p2-6：第六节低压实验——9 V 电池 + 按钮 + 2.2 kΩ 点亮 LED；输出侧 4.7 kΩ 上拉，万用表测 4 脚。"""
+    i_f = (9 - V_F) / 2.2e3
+    print(f"[图 23-p2-6] 9 V、2.2 kΩ：I_F = {i_f*1e3:.2f} mA")
+    with drawing(fontsize=11) as d:
+        r = _opto(d, vin="9 V\n电池", rin="$R_{in}$ 2.2 kΩ\n（步骤 4 换 22 kΩ）", src="btn", out="", sides=False)
+        oc = r["oc"]
+        d += elm.Label().at((oc.anode[0] + 0.15, 0.35)).label("1", fontsize=9, halign="left")
+        d += elm.Label().at((oc.cathode[0] + 0.15, -1.85)).label("2", fontsize=9, halign="left")
+        d += elm.Label().at((oc.collector[0] + 0.15, 0.3)).label("4", fontsize=9, halign="left")
+        d += elm.Label().at((oc.emitter[0] + 0.15, -1.85)).label("3", fontsize=9, halign="left")
+        ox, gy, cx = r["ox"], r["gy"], r["cx"]
+        y = oc.collector[1]
+        d += elm.MeterV().endpoints((ox, y), (ox, gy)).color(EMPH)
+        d += elm.Label().at((ox + 0.6, (y + gy) / 2)).label("万用表\n红表笔 → 4 脚\n黑表笔 → 地", halign="left", color=EMPH)
+        d += elm.Line().endpoints((ox, gy), (cx, gy)).color(EMPH)
+        d += elm.Label().at((0.8, -4.4)).label("电池负极（GND1）和 5 V 电源的地（GND2）不相连", fontsize=10)
+    save_schem(d, P, "23_p2_6_lab.png")
+
+
+def fig_p2_7():
+    """图 23-p2-7：用 Arduino 读光耦——去掉 4.7 kΩ，改用 2 号脚的内部上拉，3 脚接 Arduino GND。"""
+    with drawing(fontsize=11) as d:
+        r = _opto(d, vin="9 V\n电池", rin="$R_{in}$ 2.2 kΩ", src="btn", rl="Arduino 内部上拉\n（INPUT_PULLUP）",
+                  vcc="Arduino 5 V", out="Arduino 2 号脚", g2="Arduino GND", sides=False)
+        d += elm.Label().at((0.8, -4.4)).label("输入侧的地（电池负极）不要接 Arduino", fontsize=10)
+    save_schem(d, P, "23_p2_7_arduino.png")
+
+
+def fig_p3_3():
+    """图 23-p3-3：(a) LED 两端并泄放电阻（防前级漏电流）；(b) 4N25 基极–发射极接电阻（加快关断）。"""
+    with drawing(fontsize=11) as d:
+        _opto(d, 0, rin="$R_{in}$", rl="$R_L$", bleed="泄放电阻\n4.7～10 kΩ", vin="前级\n输出", sides=False)
+        d += elm.Label().at((0.0, 4.3)).label("(a) LED 两端并泄放电阻", fontsize=11)
+        x1 = 13.0
+        _opto(d, x1, part="4N25", rin="$R_{in}$", rl="$R_L$", rbe="$R_{BE}$", vin="信号", sides=False)
+        d += elm.Label().at((x1 + 0.6, 4.3)).label("(b) 4N25：基极–发射极接电阻", fontsize=11)
+    save_schem(d, P, "23_p3_3_bleed_rbe.png")
+
+
+def fig_p3_4():
+    """图 23-p3-4：高速光耦 6N137 的接法——输出侧单独接 5 V 电源，输出脚外接上拉。"""
+    with drawing(fontsize=11) as d:
+        d += (u := module("6N137", ("阳极 2", "阴极 3"), ("VCC 8", "输出 6", "GND 5"), w=3.4).at((0, 0)))
+        A = u.absanchors
+        a, k = A["阳极 2"], A["阴极 3"]
+        xs = a[0] - 4.2
+        d += elm.Resistor().endpoints((a[0] - 0.6, a[1]), (a[0] - 3.2, a[1])).label("$R_{in}$", "top")
+        d += elm.Line().endpoints(a, (a[0] - 0.6, a[1]))
+        d += elm.Line().endpoints((a[0] - 3.2, a[1]), (xs, a[1]))
+        gy = k[1] - 1.6
+        d += elm.SourceV().endpoints((xs, gy), (xs, a[1]))
+        d += elm.Label().at((xs - 0.7, (gy + a[1]) / 2)).label("信号", halign="right")
+        d += elm.Line().endpoints(k, (k[0] - 0.6, k[1]))
+        d += elm.Line().endpoints((k[0] - 0.6, k[1]), (k[0] - 0.6, gy))
+        d += elm.Line().endpoints((k[0] - 0.6, gy), (xs, gy))
+        d += elm.Ground().at((xs, gy))
+        d += elm.Label().at((xs + 0.9, gy - 0.8)).label("GND1")
+        v, o, g = A["VCC 8"], A["输出 6"], A["GND 5"]
+        px = v[0] + 1.0
+        top = v[1] + 1.4
+        d += elm.Line().endpoints(v, (px, v[1])).color(EMPH)
+        d += elm.Line().endpoints((px, v[1]), (px, top)).color(EMPH)
+        d += elm.Dot().at((px, top))
+        d += elm.Vdd().at((px, top)).label("+5 V（输出侧电源，4.5～5.5 V）", color=EMPH)
+        rx = px + 1.4
+        d += elm.Line().endpoints((px, top), (rx, top))
+        d += elm.Resistor().endpoints((rx, top), (rx, o[1]))
+        d += elm.Label().at((rx + 0.4, (top + o[1]) / 2)).label("上拉", halign="left")
+        d += elm.Line().endpoints(o, (rx, o[1]))
+        d += elm.Dot().at((rx, o[1]))
+        d += elm.Line().endpoints((rx, o[1]), (rx + 1.2, o[1]))
+        d += elm.Dot(open=True).at((rx + 1.2, o[1])).label("→ 单片机", "right")
+        d += elm.Line().endpoints(g, (px, g[1]))
+        d += elm.Line().endpoints((px, g[1]), (px, gy))
+        d += elm.Ground().at((px, gy))
+        d += elm.Label().at((px + 0.9, gy - 0.8)).label("GND2")
+    save_schem(d, P, "23_p3_4_6n137.png")
+
+
+def fig_p3_5():
+    """图 23-p3-5（示意，不要动手做）：交流输入光耦经 100 kΩ 接市电，输出 10 kΩ 上拉，做过零检测。"""
+    with drawing(fontsize=11) as d:
+        x = 0.0
+        d += elm.SourceSin().endpoints((-4.0, -2.4), (-4.0, 0)).label("220 V\n市电", "left").color(BAD)
+        d += elm.Resistor().endpoints((-4.0, 0), (-1.4, 0)).label("100 kΩ（示意值）", "top").color(BAD)
+        d += elm.Line().endpoints((-1.4, 0), (-0.6, 0)).color(BAD)
+        d += elm.Line().endpoints((-0.6, 0), (-0.6, -2.4)).color(BAD)
+        d += elm.Line().endpoints((-0.6, 0), (0.6, 0)).color(BAD)
+        d += elm.LED().endpoints((0.6, 0), (0.6, -2.4)).color(BAD)
+        d += elm.LED().endpoints((-0.6, -2.4), (-0.6, 0)).flip().color(BAD)
+        d += elm.Line().endpoints((0.6, -2.4), (-4.0, -2.4)).color(BAD)
+        d += (q := elm.NpnPhoto().anchor("base").at((2.6, -1.2)))
+        d += elm.Line().endpoints((-1.1, 0.6), (3.8, 0.6)).linestyle(":")
+        d += elm.Line().endpoints((3.8, 0.6), (3.8, -3.0)).linestyle(":")
+        d += elm.Line().endpoints((3.8, -3.0), (-1.1, -3.0)).linestyle(":")
+        d += elm.Line().endpoints((-1.1, -3.0), (-1.1, 0.6)).linestyle(":")
+        d += elm.Label().at((1.35, 1.0)).label("交流输入光耦（两只 LED 反向并联）", fontsize=10)
+        barrier(d, 1.6, -3.4, 0.4, "")
+        cx = q.collector[0]
+        d += elm.Line().endpoints(q.collector, (cx, 0.0))
+        d += elm.Line().endpoints((cx, 0.0), (cx + 2.6, 0.0))
+        d += elm.Dot().at((cx + 2.6, 0.0))
+        d += elm.Resistor().endpoints((cx + 2.6, 0.0), (cx + 2.6, 2.4))
+        d += elm.Label().at((cx + 3.0, 1.2)).label("10 kΩ", halign="left")
+        d += elm.Vdd().at((cx + 2.6, 2.4)).label("+5 V")
+        d += elm.Line().endpoints((cx + 2.6, 0.0), (cx + 4.0, 0.0))
+        d += elm.Dot(open=True).at((cx + 4.0, 0.0)).label("过零脉冲 → 单片机", "right")
+        d += elm.Line().endpoints(q.emitter, (cx, -3.8))
+        d += elm.Ground().at((cx, -3.8))
+        d += elm.Label().at((-2.2, -3.6)).label("整个输入侧带 220 V：原理示意，不要动手做", color=BAD, fontsize=10)
+    save_schem(d, P, "23_p3_5_zerocross_schem.png")
+
+
+def fig_p3_7():
+    """图 23-p3-7：练习 4——用导线把 GND1 和 GND2 连起来（错误）。"""
+    with drawing(fontsize=11) as d:
+        r = _opto(d)
+        y = r["gy"] - 1.8
+        d += elm.Line().endpoints((r["xs"], r["gy"]), (r["xs"], y)).color(BAD)
+        d += elm.Line().endpoints((r["xs"], y), (r["cx"], y)).color(BAD)
+        d += elm.Line().endpoints((r["cx"], y), (r["cx"], r["gy"])).color(BAD)
+        d += elm.Label().at((0.8, y - 0.5)).label("错误：一根导线把 GND1 和 GND2 连在一起，隔离失效", color=BAD, fontsize=10)
+    save_schem(d, P, "23_p3_7_gnd_link.png")
+
+
+def fig_p3_6():
+    """图 23-p3-6：练习 1、3、5 共用的电路（PC817 / 4N25，12 V 输入、5 V 输出侧）。"""
+    with drawing(fontsize=11) as d:
+        _opto(d, 0, rin="$R_{in}$（练习 3：470 Ω）", rl="$R_L$ = ?", out="单片机", sides=False)
+        d += elm.Label().at((0.0, 4.3)).label("(a) 练习 1、3：PC817，$I_F$ 5 mA，CTR 按 25%", fontsize=11)
+        x1 = 13.5
+        _opto(d, x1, part="4N25", rin="$R_{in}$ = ?", rl="$R_L$ 4.7 kΩ", out="单片机", sides=False)
+        d += elm.Label().at((x1 + 0.4, 4.3)).label("(b) 练习 5：4N25，CTR 按 10%", fontsize=11)
+    save_schem(d, P, "23_p3_6_ex_circuits.png")
+
+
+if __name__ == "__main__":
+    fig_p1_4(); fig_p2_4(); fig_p2_5(); fig_p2_6(); fig_p2_7(); fig_p3_3(); fig_p3_4(); fig_p3_5(); fig_p3_7(); fig_p3_6()
