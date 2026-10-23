@@ -302,7 +302,7 @@ bb.wire((32.9, -4.4), "B-29", "gnd", via=[(32.9, -6.7)])
 bb.note(9.0, -0.3, "测输出：g8", va="center")
 bb.note(21.0, -0.3, "测输入：g24", va="center")
 bb.note(0.5, -9.6, "慢速实验：C 换 100 µF 电解（+ 脚插 j20，− 脚接地），输入换成一节 1.5 V 电池", ha="left")
-bb.note(0.5, -10.4, "对照实验：去掉运放的作用——把 1 kΩ 直接并在 C 上（j20 到地）", ha="left")
+bb.note(0.5, -10.4, "对照实验：去掉运放的作用——把 1 kΩ 改并在 C 上（i20 到地），红表笔改插 f20", ha="left")
 bb.legend()
 bb.save(N, "15_p4_1_breadboard.png")
 
