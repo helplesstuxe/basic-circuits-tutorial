@@ -469,3 +469,212 @@ def p4_breadboards():
 
 if __name__ == "__main__":
     p4_breadboards()
+
+
+# ======================================================================
+# 第 8 轮补图：page1–page3 正文讲到的电路连接（不动上面的图号）
+# ======================================================================
+HL = C["bad"]          # 强调色：新加的、接错的、要注意的元件
+
+
+def divider_load_schem():
+    """图 07-p1-4：直接用分压器去带 50 Ω 负载。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Vdd().label("电源")
+        d += elm.Resistor().down().label("$R_1$", "top")
+        d += (j := elm.Dot().label("空载时 5 V", "left"))
+        d += elm.Resistor().down().label("$R_2$", "top")
+        d += elm.Ground()
+        d += elm.Line().right().at(j.center).length(2.2).color(HL)
+        d += elm.Resistor().down().label("负载\n50 Ω", "bottom").color(HL)
+        d += elm.Ground().color(HL)
+        d += elm.Label().at((j.center.x + 2.6, j.center.y + 0.9)).label("接上 50 Ω 后，它和 $R_2$ 并联，\n电压塌下去", fontsize=10, color=HL, halign="left")
+    print("[图 07-p1-4] 5 V、50 Ω")
+    save_schem(d, P, "07_p1_4_divider_load.png")
+
+
+def pot_experiment(d, x0, mode, re="$R_E$\n1 kΩ / 220 Ω", note=None):
+    """低压实验：9 V、1 kΩ 电位器滑片调到 5 V。mode="follower" 滑片 → 2N3904 基极；mode="direct" 220 Ω 直接挂滑片。"""
+    d += elm.Vdd().at((x0, 0)).label("+9 V")
+    d += (pot := elm.Potentiometer().down().at((x0, 0)))
+    d += elm.Label().at((x0 - 0.5, -1.5)).label("电位器\n1 kΩ", fontsize=10, halign="right")
+    d += elm.Ground()
+    d += elm.Line().right().at(pot.tap).length(1.6)
+    d += (w := elm.Dot())
+    d += elm.Label().at((w.center.x - 0.3, w.center.y + 0.75)).label("滑片 5 V（空载）", fontsize=10)
+    if mode == "follower":
+        d += elm.Line().right().length(0.8)
+        d += (q := elm.BjtNpn().anchor("base").label("2N3904", "right", ofst=(0.1, -0.2)))
+        d += elm.Label().at((q.base[0] - 0.1, q.base[1] - 0.45)).label("$V_B$", fontsize=10, color=C["vin"])
+        d += elm.Line().up().at(q.collector).length(0.4)
+        d += elm.Vdd().label("+9 V")
+        d += elm.Line().down().at(q.emitter).length(0.5)
+        d += (je := elm.Dot().label("$V_E$", "right"))
+        d += elm.Resistor().down().label(re, "bottom")
+        d += elm.Ground()
+    else:
+        d += elm.Line().right().length(1.6).color(HL)
+        d += elm.Resistor().down().label("220 Ω\n直接接滑片", "bottom").color(HL)
+        d += elm.Ground().color(HL)
+    if note:
+        d += elm.Label().at((x0 + 1.8, -6.6)).label(note, fontsize=10, color=HL if mode == "direct" else "black")
+
+
+def pot_schem(name, tag):
+    with drawing(fontsize=11) as d:
+        pot_experiment(d, 0, "follower", note="(a) 加三极管：1 kΩ 时 $V_E$ 约 4.36 V，220 Ω 时约 4.28 V")
+        pot_experiment(d, 10.0, "direct", note="(b) 拿掉三极管：滑片电压掉到约 2.36 V")
+    print(f"[{tag}] 9 V、1 kΩ 电位器、5 V、2N3904、1 kΩ/220 Ω、4.36 V、4.28 V、2.36 V")
+    save_schem(d, P, name)
+
+
+def thevenin_beta_schem():
+    """图 07-p2-5：软电源推基极时，内阻被除以 β + 1、负载被乘以 β + 1。"""
+    with drawing(fontsize=11) as d:
+        d += elm.SourceV().up().at((0, -3.0))
+        d += elm.Label().at((-0.9, -2.0)).label("$V_s$", fontsize=11)
+        d += elm.Line().up().length(0.6)
+        d += elm.Resistor().right().length(2.4).label("$R_s$（软电源内阻）", "top").color(HL)
+        d += (jb := elm.Dot())
+        d += elm.Line().right().length(0.6)
+        d += (q := elm.BjtNpn().anchor("base"))
+        d += elm.Line().up().at(q.collector).length(0.4)
+        d += elm.Vdd().label("$V_{CC}$")
+        d += elm.Line().down().at(q.emitter).length(0.5)
+        d += (je := elm.Dot())
+        d += elm.Resistor().down().label("$R_L$", "top").length(2.0)
+        d += elm.Ground()
+        d += elm.Line().at((0, -3.0)).down().length(0.2)
+        d += elm.Ground()
+        d += elm.Line().right().at(je.center).length(1.4)
+        d += elm.Dot(open=True).label("$V_o$", "right")
+        d += elm.Arrow().at((jb.center.x - 0.1, jb.center.y - 1.6)).to((jb.center.x - 0.1, jb.center.y - 0.2)).color(C["vin"])
+        d += elm.Label().at((jb.center.x - 0.3, jb.center.y - 2.2)).label("往右看进基极：\n约 $(\\beta+1)R_L$", fontsize=10, color=C["vin"])
+        d += elm.Arrow().at((je.center.x + 1.9, je.center.y - 1.3)).to((je.center.x + 0.9, je.center.y - 0.15)).color(C["vout"])
+        d += elm.Label().at((je.center.x + 2.0, je.center.y - 1.8)).label("往回看：约 $R_s/(\\beta+1)$\n再加不到 1 Ω", fontsize=10, color=C["vout"], halign="left")
+        d += elm.Label().at((2.6, -4.6)).label("(a) 实际电路", fontsize=11)
+        # (b) 从负载往回看的等效电路
+        X = 11.5
+        d += elm.SourceV().up().at((X, -3.0))
+        d += elm.Label().at((X - 0.9, -2.0)).label("$V_s - V_{BE}$", fontsize=11, halign="right")
+        d += elm.Line().up().length(0.6)
+        d += elm.Resistor().right().length(2.6).label("约 $R_s/(\\beta+1)$", "top").color(HL)
+        d += (k := elm.Dot())
+        d += elm.Resistor().down().toy(-3.0).label("$R_L$", "bottom")
+        d += elm.Line().left().tox(X)
+        d += elm.Line().right().at(k.center).length(1.2)
+        d += elm.Dot(open=True).label("$V_o$", "right")
+        d += elm.Label().at((X + 1.4, -4.6)).label("(b) 从负载往回看的等效", fontsize=11)
+    print("[图 07-p2-5] R_s/(β+1)、(β+1)R_L、不到 1 Ω")
+    save_schem(d, P, "07_p2_5_thevenin_beta.png")
+
+
+def base_resistor_schem():
+    """图 07-p3-3：基极串 470 Ω，反馈取运放输出（R_B 在环外）与反馈取自发射极对比。"""
+    with drawing(fontsize=11) as d:
+        for X, loop in ((0.0, False), (12.0, True)):
+            if loop:
+                d += (op := elm.Opamp(leads=True).right().flip().at((X, 0)).anchor("in2"))
+                d += elm.Line().left().at(op.in2).length(1.0)
+                d += elm.Dot(open=True).label("$V_i$ 5 V", "left")
+            else:
+                op = opamp_follower(d, X, 0, "$V_i$ 5 V")
+            d += elm.Line().right().at(op.out).length(0.5)
+            d += elm.Resistor().right().length(2.0).label("$R_B$ 470 Ω", "top").color(HL)
+            d += (q := elm.BjtNpn().anchor("base").label("TIP31", "right", ofst=(0.1, -0.2)))
+            d += elm.Line().up().at(q.collector).length(0.4)
+            d += elm.Vdd().label("+12 V")
+            d += elm.Line().down().at(q.emitter).length(1.6)
+            d += (je := elm.Dot())
+            d += elm.Resistor().down().label("$R_L$ 50 Ω", "top")
+            d += elm.Ground()
+            d += elm.Line().right().at(je.center).length(1.2)
+            if loop:
+                d += elm.Dot(open=True).label("$V_o$ 5.00 V", "right")
+                d += elm.Line().left().at(op.in1).length(0.5).color(C["fb"])
+                d += elm.Line().down().toy(je.center).color(C["fb"])
+                d += elm.Line().right().tox(je.center).label("反馈取自发射极", "bottom", color=C["fb"]).color(C["fb"])
+                d += elm.Label().at((op.out[0] + 0.3, op.out[1] - 0.45)).label("约 6.50 V", fontsize=10)
+                d += elm.Label().at((X + 3.0, -5.6)).label("(b) 反馈取自发射极：运放自动补上 $R_B$ 的压降", fontsize=11, color=C["fb"])
+            else:
+                d += elm.Dot(open=True).label("$V_o$ 约 3.5 V", "right")
+                d += elm.Label().at((X + 3.0, -5.6)).label("(a) 反馈只取运放自己的输出：$R_B$ 在环外", fontsize=11, color=HL)
+    print("[图 07-p3-3] 470 Ω、5 V、+12 V、50 Ω、约 3.5 V、6.50 V、5.00 V（数值见 rout_rin_rb 的打印，β = 50）")
+    save_schem(d, P, "07_p3_3_base_resistor.png")
+
+
+def exercise_schem():
+    """图 07-p3-4：练习 1、练习 2 的电路。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 0)).label("$V_i$ 9 V", "left")
+        d += elm.Line().right().length(1.2)
+        d += (q := elm.BjtNpn().anchor("base").label("TIP31\n不加散热片", "right", ofst=(0.1, -0.2)))
+        d += elm.Line().up().at(q.collector).length(0.4)
+        d += elm.Vdd().label("$V_{CC}$ 15 V")
+        d += elm.Line().down().at(q.emitter).length(0.6)
+        d += (je := elm.Dot())
+        d += elm.Resistor().down().label("$R_L$ 20 Ω", "top")
+        d += elm.Ground()
+        d += elm.Line().right().at(je.center).length(1.0)
+        d += elm.Dot(open=True).label("$V_o$", "right")
+        d += elm.Label().at((1.5, -5.4)).label("(a) 练习 1（β = 50）", fontsize=11)
+        op = opamp_follower(d, 8.5, 0, "$V_i$ 2.7 V")
+        d += elm.Label().at((op.center[0] - 0.1, op.center[1] + 0.05)).label("LM358\n接 5 V", fontsize=9)
+        d += elm.Line().right().at(op.out).length(0.8)
+        d += (q := elm.BjtNpn().anchor("base").label("NPN\nβ = 100", "right", ofst=(0.1, -0.2)))
+        d += elm.Line().up().at(q.collector).length(0.4)
+        d += elm.Vdd().label("+5 V")
+        d += elm.Line().down().at(q.emitter).length(0.6)
+        d += (je := elm.Dot())
+        d += elm.Resistor().down().label("$R_L$ 100 Ω", "top")
+        d += elm.Ground()
+        d += elm.Line().right().at(je.center).length(1.0)
+        d += elm.Dot(open=True).label("$V_o$", "right")
+        d += elm.Label().at((10.5, -5.4)).label("(b) 练习 2：全部用 5 V 单电源", fontsize=11)
+    print("[图 07-p3-4] 9 V、15 V、20 Ω、TIP31；2.7 V、5 V、100 Ω、β = 100")
+    save_schem(d, P, "07_p3_4_exercises.png")
+
+
+def pushpull_schem():
+    """图 07-p3-5：练习 4 的推挽射极跟随器（不加偏置）。"""
+    with drawing(fontsize=11) as d:
+        d += (qn := elm.BjtNpn().right().anchor("emitter").at((0, 0.3)).label("NPN", "right", ofst=(0.1, 0.2)))
+        d += elm.Line().up().at(qn.collector).length(0.4)
+        d += elm.Vdd().label("正电源")
+        d += (qp := elm.BjtPnp().right().anchor("emitter").at((0, -0.3)).label("PNP", "right", ofst=(0.1, -0.2)))
+        d += elm.Line().down().at(qp.collector).length(0.4)
+        d += elm.Vss().label("负电源")
+        d += elm.Line().at(qn.emitter).to(qp.emitter)
+        d += elm.Dot().at((0, 0))
+        d += elm.Line().at((0, 0)).right().length(1.6)
+        d += (jo := elm.Dot())
+        d += elm.Resistor().down().label("$R_L$", "top")
+        d += elm.Ground()
+        d += elm.Line().right().at(jo.center).length(1.0)
+        d += elm.Dot(open=True).label("$V_o$", "right")
+        xb = qn.base[0] - 0.8
+        d += elm.Line().at(qn.base).left().tox(xb)
+        d += elm.Line().down().toy(qp.base[1])
+        d += elm.Line().right().tox(qp.base[0])
+        d += elm.Dot().at((xb, 0))
+        d += elm.Line().at((xb, 0)).left().length(1.4)
+        d += elm.Dot(open=True).label("$V_i$\n±3 V 正弦", "left")
+        d += elm.Label().at((xb - 0.3, 1.9)).label("两只基极接在一起", fontsize=10, color=C["vin"])
+        d += elm.Label().at((0.3, 0.45)).label("发射极接在一起", fontsize=10, color=C["vout"], halign="left")
+    print("[图 07-p3-5] ±3 V")
+    save_schem(d, P, "07_p3_5_pushpull_schem.png")
+
+
+def round8():
+    divider_load_schem()
+    pot_schem("07_p1_5_pot_experiment.png", "图 07-p1-5")
+    thevenin_beta_schem()
+    pot_schem("07_p2_6_pot_experiment.png", "图 07-p2-6")
+    base_resistor_schem()
+    exercise_schem()
+    pushpull_schem()
+    print("07_figs 第 8 轮补图 OK")
+
+
+if __name__ == "__main__":
+    round8()
