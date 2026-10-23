@@ -1,4 +1,4 @@
-# 12 积分器 · 参数与调试篇
+# 12 积分电路 · 参数与调试篇
 
 [上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：19 星三角降压启动](../19-star-delta-start/page1.md) · 前置节点：[P1 元件速成](../P1-components-basics/page1.md) · [01 反相放大](../01-inverting-amp/page1.md)
 

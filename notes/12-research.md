@@ -1,4 +1,4 @@
-# 12 积分器 · 调研笔记（作者 C）
+# 12 积分电路 · 调研笔记（作者 C）
 
 ## 已打开并引用的资料
 - TI SBOA275B *Integrator Circuit*：https://www.ti.com/lit/an/sboa275b/sboa275b.pdf（本地 /workspace/authorC/refs/sboa275b.pdf）
