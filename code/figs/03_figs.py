@@ -106,12 +106,15 @@ save_schem(d, N, "03_p2_3_vref_buffer.png")
 
 # ---------- 图 03-p3-1 容性负载：振铃与隔离电阻 ----------
 wt = 2 * np.pi * 1.2e6                                 # LM358B 增益带宽积 1.2 MHz
-Ro, CL = 50.0, 0.1e-6                                  # 运放开环输出电阻 50 Ω（示意用假设值）、负载电容 0.1 μF
+Ro, CL = 300.0, 0.1e-6                                 # LM358B 手册：开环输出电阻 RO = 300 Ω（f = 1 MHz、IO = 0）；负载电容 0.1 μF
+CLOAD_RATED = 100e-12                                  # LM358B 手册：容性负载驱动能力 100 pF
+print(f"负载电容 0.1 μF 是手册容性负载能力 100 pF 的 {CL / CLOAD_RATED:.0f} 倍")
+assert round(CL / CLOAD_RATED) == 1000
 t = np.linspace(0, 60e-6, 6001)
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
 ax.plot(t * 1e6, np.where(t > 0, 1.0, 0.0) * 0.1, **fs.LS["vin"], label="$V_i$ 输入阶跃 0.1 V")
-res = {}
-for Riso, key, name in ((0.0, "bad", "直接接 0.1 μF"), (10.0, "vout", "串 10 Ω 隔离电阻")):
+res, settle = {}, {}
+for Riso, key, name in ((0.0, "bad", "直接接 0.1 μF"), (10.0, "third", "串 10 Ω"), (33.0, "vout", "串 33 Ω 隔离电阻")):
     T = (Ro + Riso) * CL
     # 负载电压 / 输入 = wt / (T s² + (1 + wt·Riso·CL) s + wt)（单极点运放 + 输出电阻 + 隔离电阻 + 电容）
     _, y = signal.step(([wt], [T, 1 + wt * Riso * CL, wt]), T=t)
@@ -119,13 +122,18 @@ for Riso, key, name in ((0.0, "bad", "直接接 0.1 μF"), (10.0, "vout", "串 1
     k = np.argmax(y)
     os_pct = (y[k] / 0.1 - 1) * 100
     res[Riso] = os_pct
+    out = np.abs(y - 0.1) > 0.002                      # 偏离 0.1 V 超过 2%
+    settle[Riso] = t[np.nonzero(out)[0][-1]] if out[-1] == False else np.inf
     ax.plot(t * 1e6, y, **fs.LS[key], label=f"负载电压：{name}")
-    fs.mark(ax, t[k] * 1e6, y[k] * 1e3 / 1e3, fmt="{:.3f}", unit=" V", dx=6, dy=4)
-    print(f"{name}：最高 {y[k]:.3f} V，过冲 {os_pct:.1f}%")
-assert res[0.0] > 50 and res[10.0] < 10
+    if Riso != 10.0:
+        fs.mark(ax, t[k] * 1e6, y[k], fmt="{:.3f}", unit=" V", dx=6, dy=4)
+    print(f"{name}：最高 {y[k]:.3f} V，过冲 {os_pct:.1f}%，进入 ±2% 的时间 {settle[Riso] * 1e6:.1f} μs")
+assert res[0.0] > 80 and 30 < res[10.0] < 50 and res[33.0] < 2
+assert settle[0.0] == np.inf and settle[33.0] < 10e-6   # 直接接电容：60 μs 内都没稳住；33 Ω：10 μs 内稳住
+print(f"1 mA 负载电流在 33 Ω 上的压降：{1e-3 * 33 * 1e3:.0f} mV")
 fs.ref_h(ax, 0.1, "0.1 V")
-fs.axlabels(ax, "时间", "μs", "电压", "V"); ax.legend(loc="lower right", fontsize=8)
-ax.set_ylim(-0.01, 0.2)
+fs.axlabels(ax, "时间", "μs", "电压", "V"); ax.legend(loc="upper right", fontsize=8, ncol=2)
+ax.set_ylim(-0.01, 0.27)
 fs.save(fig, N, "03_p3_1_cap_load.png")
 
 # ---------- 图 03-p3-2 单电源 5 V 跟随器：两头都到不了 ----------
