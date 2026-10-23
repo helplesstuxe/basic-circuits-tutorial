@@ -138,7 +138,7 @@ fs.save(fig, N, "03_p3_1_cap_load.png")
 
 # ---------- 图 03-p3-2 单电源 5 V 跟随器：两头都到不了 ----------
 vin = np.linspace(0, 5, 501)
-V_HI, V_LO = 5.0 - 1.5, 0.1                            # LM358B：输出最高约 V+ − 1.5 V，最低约 0.1 V
+V_HI, V_LO = 5.0 - 1.5, 0.02                           # LM358B：输出最高约 V+ − 1.5 V；最低按 SPICE（TI 模型 0.024 V）取约 0.02 V（第 7 轮由 0.1 V 更正）
 vout = np.clip(vin, V_LO, V_HI)
 print(f"单电源 5 V 跟随器：输出范围 {V_LO} V ～ {V_HI} V")
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
@@ -147,7 +147,7 @@ ax.plot(vin, vout, **fs.LS["vout"], label="实际 $V_o$")
 fs.ref_h(ax, V_HI, f"{V_HI} V", x=0.02, ha="left")
 fs.ref_h(ax, V_LO, f"{V_LO} V", x=0.6, ha="left")
 fs.mark(ax, V_HI, V_HI, fmt="{:.1f}", unit=" V", dx=6, dy=-14)
-assert vout.max() == 3.5 and vout.min() == 0.1
+assert vout.max() == 3.5 and vout.min() == 0.02
 fs.axlabels(ax, "输入 $V_i$", "V", "输出 $V_o$", "V"); ax.legend(loc="lower right", fontsize=8)
 fs.save(fig, N, "03_p3_2_single_supply.png")
 
