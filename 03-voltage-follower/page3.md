@@ -1,6 +1,6 @@
 # 03 电压跟随器 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md) · 前置节点：[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md) · 后续：[07 射极跟随器 · 直觉篇](../07-emitter-follower/page1.md)、[15 有源滤波 · 直觉篇](../15-active-filter/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：动手实验篇](page4.md) · 前置节点：[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md) · 后续：[07 射极跟随器 · 直觉篇](../07-emitter-follower/page1.md)、[15 有源滤波 · 直觉篇](../15-active-filter/page1.md)
 
 ## 这一页解决什么问题
 
