@@ -335,3 +335,103 @@ a2.set_ylim(0, 1.75); a2.legend(loc="lower right", fontsize=8)
 fs.axlabels(a2, "时间", "s", "万用表直流读数", "V")
 a2.set_title("用万用表看：电容慢慢充电", fontsize=10)
 fs.save(fig, N, "15_p4_2_no_scope.png")
+
+
+# ======================= 第 8 轮补图：正文讲到具体连接、附近却没有电路图的地方 =======================
+ACC = fs.C["bad"]
+
+
+def load_to_ground(d, at, label="1 kΩ 负载", color=ACC):
+    """从 at 点往下接一只负载电阻到地（强调色），标签放在电阻右侧。"""
+    d += (rl := elm.Resistor().down().at(at).color(color))
+    d += elm.Ground().color(color)
+    d += elm.Label().at((rl.center.x + 0.5, rl.center.y)).label(label, color=color, halign="left")
+
+
+# ---------- 图 15-p1-3 1 kΩ 负载接在哪里：无源 RC 直接带负载 vs 有源（跟随器）带负载 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).at((0, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(2.0)
+    d += (m := elm.Dot())
+    d += elm.Line().right().length(0.8)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    load_to_ground(d, m.center)
+    d += elm.Label().at((-0.5, 3.4)).label("（a）无源 RC：负载直接并在电容上", fontsize=12, halign="left")
+    d += elm.Dot(open=True).at((10.5, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    op = follower_tail(d, n.center, out_len=1.8)
+    load_to_ground(d, (op.out.x + 0.9, op.out.y))
+    d += elm.Dot().at((op.out.x + 0.9, op.out.y))
+    d += elm.Label().at((10.0, 3.4)).label("（b）有源：负载接在运放输出端", fontsize=12, halign="left")
+save_schem(d, N, "15_p1_3_load_position.png")
+print(f"[数值] 无源 RC 直接带 1 kΩ：低频输出只剩 1/(1 + 16) = {1 / 17:.2f} 倍；有源版不变")
+
+# ---------- 图 15-p2-4 一阶低通推导用：同一个电流 I 流过 R 和 C ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += (r := elm.Resistor().right().label("$R$ 16 kΩ"))
+    d += (n := elm.Dot())
+    d += (c := elm.Capacitor().down().label("$C$ 10 nF", "bottom"))
+    d += elm.Ground()
+    follower_tail(d, n.center)
+    d += elm.Arrow().right().at((r.start.x + 0.4, r.start.y + 1.1)).length(2.2).color(ACC).label("$I$", "top", color=ACC)
+    d += elm.Label().at((r.center.x, r.center.y - 0.6)).label("$V_R = I R$", color=ACC)
+    d += elm.Label().at((c.center.x - 0.6, c.center.y)).label("$V_C = I X_C$", color=ACC, halign="right")
+    d += elm.Label().at((n.center.x + 1.0, n.center.y - 1.9)).label("跟随器：$V_o = V_C$", halign="left", fontsize=10)
+save_schem(d, N, "15_p2_4_first_order_derive.png")
+
+
+# ---------- 图 15-p3-3 Sallen-Key：正确接法 vs 两个电容接反（排查表第三行） ----------
+def sallen(d, x0, y0, c_gnd="10 nF", c_fb="33 nF", hl=False, title=None):
+    col = ACC if hl else "black"
+    d += elm.Dot(open=True).at((x0, y0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R_1$ 4.22 kΩ")
+    d += (a := elm.Dot())
+    d += elm.Resistor().right().label("$R_2$ 18.4 kΩ")
+    d += (b := elm.Dot())
+    d += elm.Capacitor().down().label(c_gnd, "bottom").color(col)
+    d += elm.Ground()
+    op = follower_tail(d, b.center, out_len=2.4)
+    d += elm.Line().up().at(a.center).length(3.6)
+    d += elm.Capacitor().right().label(c_fb).tox(op.out.x + 1.4).color(col)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    if title:
+        d += elm.Label().at((x0 - 0.5, y0 + 4.6)).label(title, fontsize=12, halign="left")
+
+
+with drawing(fontsize=11) as d:
+    sallen(d, 0, 0, title="（a）正确：接地的是 10 nF，接输出的是 33 nF")
+    sallen(d, 15, 0, c_gnd="33 nF", c_fb="10 nF", hl=True, title="（b）接反：接地的成了 33 nF，接输出的成了 10 nF")
+save_schem(d, N, "15_p3_3_sk_caps_swapped.png")
+Qs = np.sqrt(R1 * R2 * C1 * C2) / (C2 * (R1 + R2))
+print(f"[数值] 电容接反：Q = {Qs:.2f}")
+
+# ---------- 图 15-p3-4 练习 4 答案：一阶有源高通 + 2 倍同相放大 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Capacitor().right().label("$C$ 100 nF")
+    d += (n := elm.Dot())
+    d += elm.Resistor().down().label("$R$ 15.9 kΩ", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.0)
+    d += (op := elm.Opamp(leads=True).right().anchor("in2"))
+    d += elm.Line().left().at(op.in1).length(0.4)
+    d += elm.Line().up().length(1.4).color(ACC)
+    d += (k2 := elm.Dot().color(ACC))
+    d += elm.Resistor().right().label("$R_f$ 10 kΩ").tox(op.out.x + 0.6).color(ACC)
+    d += elm.Line().down().toy(op.out).color(ACC)
+    d += elm.Dot()
+    d += elm.Resistor().left().at(k2.center).label("$R_1$ 10 kΩ").color(ACC)
+    d += elm.Line().down().length(0.6).color(ACC)
+    d += elm.Ground().color(ACC)
+    d += elm.Line().right().at(op.out).length(1.2)
+    d += elm.Dot(open=True).label("$V_o$（通带内约 2 倍）", "right")
+save_schem(d, N, "15_p3_4_highpass_gain2.png")
