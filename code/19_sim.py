@@ -88,6 +88,9 @@ k_sw = np.searchsorted(t, t_d_on)                  # 三角形接通的下标
 pk_sw = I_y[k_sw:k_sw + 200].max()                 # 切换到三角形后的电流尖峰
 print(f"[电流] 切换前 {I_y[np.searchsorted(t, t_y_off) - 1]:.2f} 倍；空档里 0；接成三角形瞬间 {pk_sw:.1f} 倍（稳态模型的示意值），最后稳定在 {I_y[-1]:.2f} 倍")  # 打印切换电流
 assert pk_sw < pk_d and I_y[k_sw - 5] == 0         # 结论 3：切换尖峰比直接启动小；空档里电流为 0
+ratio_sw = pk_sw / pk_d                             # 切换尖峰 ÷ 直接启动峰值（无残余电压的模型）
+print(f"[电流] 切换尖峰 / 直接启动峰值 = {pk_sw:.1f} / {pk_d:.1f} = {ratio_sw:.2f}；西门子 24499345：℘ 理论最大 2，实测有利接法 0.8、不利接法 1.37")
+assert abs(ratio_sw - 0.45) < 0.01 and ratio_sw < 0.8 < 1.37 < 2  # 模型值小于实测：因为模型里没有残余电压
 assert abs(I_y[-1] - I_d[-1]) < 0.01               # 结论 4：最后两种启动方式的运行电流一样
 
 fig, axs = plt.subplots(3, 1, figsize=(9.5, 6.0), sharex=True, gridspec_kw=dict(height_ratios=[1.1, 1.4, 1.0]))  # 三行

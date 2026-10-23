@@ -224,7 +224,7 @@ fs.save(fig, "19", "19_p2_4_switch.png")           # 保存
 
 图 19-p2-3 第二行最能说明问题：直接启动的电流一上来就是 5.8 倍额定电流，星形阶段只有 1.9 倍，程序打印的比值是 0.333，和推导的三分之一一致。代价在第三行：星形转矩小，电动机要好几秒才转到同步转速的 91%，比直接启动慢得多。
 
-图 19-p2-3 第二行在 6.5 s 附近还有一个 2.6 倍的小尖峰：电动机已经转得很快，接成三角形后电压升高，电流跳一下又很快回落，最后和直接启动一样稳定在 0.83 倍。这个尖峰的大小是本模型的示意值，真实电动机还和切换瞬间电动机自身的残余电压有关 [待核实]。
+图 19-p2-3 第二行在 6.5 s 附近还有一个 2.6 倍的小尖峰：电动机已经转得很快，接成三角形后电压升高，电流跳一下又很快回落，最后和直接启动一样稳定在 0.83 倍。这个尖峰的大小只是本模型的示意值：程序把它和直接启动峰值相比，得到 2.6 ÷ 5.8 ≈ 0.45。真实电动机还要多考虑一件事。西门子应用实例《[Star-delta (Wye-delta) Switching of 3-Phase Motors](https://cache.industry.siemens.com/dl/files/345/24499345/att_1039101/v1/CD_FE_III_001_V20_EN.pdf)》（条目号 24499345）讲到：在切换空档里转子还在转，它的磁场会在定子绕组里感应出一个逐渐衰减的**残余电压**。接成三角形的瞬间，这个残余电压和电源电压的相位差决定了二者之差 $\Delta U$ ，差得越多，尖峰越大。手册把"切换尖峰 ÷ 启动电流峰值"叫作暂态电流系数 ℘，理论上最大可到 2。实测时接线顺序有利的是 0.8，不利的是 1.37。本模型没有残余电压（空档里电流直接为 0，再按稳态公式算），所以 0.45 只能当作"没有残余电压时"的参考。实际接线要按手册推荐的端子顺序接。还要注意，对调两相改转向后，有利接法会自动变成不利接法，反过来也一样。
 
 切换那一瞬间放大来看，见 图 19-p2-4：
 
@@ -281,5 +281,6 @@ fs.save(fig, "19", "19_p2_4_switch.png")           # 保存
 - 电工天下：《电动机星三角启动的接线图》（U1–W2、V1–U2、W1–V2 三角形，尾端短接成星形）<https://www.dgjs123.com/diandongji/2281.html>
 - 电工天下：《星三角控制电路原理图及星三角启动说明》（启动电流、力矩都为全压的 1/3）<https://www.dgjs123.com/diandongji/13701.html>
 - Tutorialspoint：*Voltage and Currents in Star and Delta Connected Systems*（星形线电压 = √3 相电压、线电流 = 相电流；三角形线电压 = 相电压、线电流 = √3 相电流）<https://www.tutorialspoint.com/article/voltage-and-currents-in-star-and-delta-connected-systems>
+- Siemens 应用实例 24499345：*Star-delta (Wye-delta) Switching of 3-Phase Motors*（残余电压与相位、暂态电流系数 ℘ 理论最大 2，实测 0.8 / 1.37）<https://support.industry.siemens.com/cs/ww/en/view/24499345>
 - Siemens：*Starting Motors* 白皮书（切换到三角形时还有一个较小的电流尖峰）<https://assets.new.siemens.com/siemens/assets/api/uuid:6ba7593d-d8d0-481c-b029-a5987c11366f/startingmotors-whitepaper.pdf>
 - 施耐德电气中国 FAQ FA421304（转换间隙过短会相间短路，过长转速下降、冲击大）<https://www.schneider-electric.cn/zh/faqs/FA421304/>
