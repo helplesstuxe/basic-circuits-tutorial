@@ -414,3 +414,136 @@ a2.set_ylim(-2.4, 3.0); a2.legend(loc="upper right", fontsize=8, ncol=2)
 fs.axlabels(a2, "时间", "ms", "声音（相对）", None)
 a2.set_title("拍频：670 Hz 与 660 Hz 一起响，每秒忽大忽小 10 次", fontsize=10)
 fs.save(fig, N, "16_p4_2_no_scope.png")
+
+
+# ======================= 补充原理图（图 16-p2-5 起） =======================
+ACC = fs.C["bad"]
+
+
+def wien_at(d, ox=0.0, oy=0.0, fb="plain", bias=False, out_label="$V_o$", out_dot=True):
+    """文氏桥（与 wien() 同尺寸），整体平移 (ox, oy)。fb="diode" 时 R_f = 12 kΩ + (10 kΩ ∥ 反向并联二极管)；
+    bias=True 时把 R_g、并联 RC 的「地」改接 2.5 V 偏置点。新增部分用朱红色。"""
+    p = lambda x, y: (x + ox, y + oy)
+    d += (op := elm.Opamp(leads=True, flip=True).right().anchor("in1").at(p(0, -0.625)))
+    P = p(op.out.x - ox + 0.8, 0)
+    d += elm.Line().endpoints(op.out, P); d += elm.Dot().at(P)
+    if out_dot:
+        d += elm.Line().right().at(P).length(0.8); d += elm.Dot(open=True).label(out_label, "right")
+    y2 = 0.625; B = p(-1.6, y2); J = p(-0.6, y2); Cx = -4.0
+    d += elm.Line().endpoints(op.in2, p(Cx, y2)); d += elm.Dot().at(B); d += elm.Dot().at(J)
+    d += elm.Resistor().down().at(B).length(1.6).label("$R$ 10 kΩ", "top")
+    if not bias:
+        d += elm.Ground()
+    d += elm.Capacitor().down().at(p(Cx, y2)).length(1.6).label("$C$ 10 nF", "top")
+    if not bias:
+        d += elm.Ground()
+    d += elm.Line().up().at(J).toy(oy + 2.0)
+    d += elm.Capacitor().right().length(1.8).label("$C$ 10 nF")
+    d += elm.Resistor().right().tox(P[0]).label("$R$ 10 kΩ")
+    d += elm.Line().down().toy(oy)
+    K = p(-0.4, -2.4)
+    d += elm.Line().endpoints(op.in1, p(-0.4, -0.625)); d += elm.Line().endpoints(p(-0.4, -0.625), K); d += elm.Dot().at(K)
+    if fb == "plain":
+        d += elm.Resistor().right().at(K).tox(P[0]).label("$R_f$ 22 kΩ", "bottom")
+        d += elm.Line().up().toy(oy)
+    else:
+        d += elm.Resistor().right().at(K).length(1.5).label("12 kΩ", "bottom").color(ACC)
+        d += (n1 := elm.Dot().color(ACC))
+        d += elm.Resistor().right().length(2.2).label("10 kΩ", "top").color(ACC)
+        d += (n2 := elm.Dot().color(ACC))
+        d += elm.Line().right().tox(P[0]).color(ACC)
+        d += elm.Line().up().toy(oy).color(ACC)
+        a1 = (n1.center[0], n1.center[1] - 0.9); b1 = (n2.center[0], n2.center[1] - 0.9)
+        a2 = (n1.center[0], n1.center[1] - 1.8); b2 = (n2.center[0], n2.center[1] - 1.8)
+        d += elm.Line().endpoints(n1.center, a2).color(ACC); d += elm.Line().endpoints(n2.center, b2).color(ACC)
+        d += elm.Dot().at(a1).color(ACC); d += elm.Dot().at(b1).color(ACC)
+        d += elm.Diode().right().at(a1).to(b1).color(ACC).label("$D_1$", "top")
+        d += elm.Diode().left().at(b2).to(a2).color(ACC).label("$D_2$", "bottom")
+        d += elm.Label().at(p(1.9, -5.3)).label("$R_f$ = 12 kΩ + （10 kΩ ∥ $D_1$、$D_2$）", color=ACC)
+    d += elm.Resistor().left().at(K).length(2.0).label("$R_g$ 10 kΩ", "bottom")
+    if not bias:
+        d += elm.Ground()
+    else:
+        yb = -3.1
+        d += elm.Line().down().toy(oy + yb).color(ACC)
+        d += elm.Line().endpoints(p(-1.6, y2 - 1.6), p(Cx, y2 - 1.6)).color(ACC)
+        d += elm.Dot().at(p(Cx, y2 - 1.6)).color(ACC)
+        d += elm.Line().endpoints(p(Cx, y2 - 1.6), p(Cx, yb)).color(ACC)
+        d += elm.Line().endpoints(p(Cx - 0.6, yb), p(-2.4, yb)).color(ACC)
+        d += elm.Dot().at(p(Cx, yb)).color(ACC)
+        d += elm.Dot(open=True).at(p(Cx - 0.6, yb)).color(ACC).label("2.5 V 偏置点", "left", color=ACC)
+    return op, P
+
+
+# ---------- 图 16-p2-5 双电源与单电源（2.5 V 偏置点）两种接法 ----------
+with drawing() as d:
+    wien_at(d, 0, 0)
+    d += elm.Label().at((-1.0, 3.6)).label("（a）±5 V 双电源：下端接地")
+    wien_at(d, 11.5, 0, bias=True)
+    d += elm.Label().at((10.5, 3.6)).label("（b）只有 5 V 单电源：下端改接 2.5 V 偏置点")
+save_schem(d, N, "16_p2_5_supply_variants.png")
+
+
+# ---------- 图 16-p2-6 二极管稳幅的文氏桥 ----------
+with drawing() as d:
+    wien_at(d, 0, 0, fb="diode")
+save_schem(d, N, "16_p2_6_diode_agc.png")
+
+# ---------- 图 16-p2-7 文氏桥 + 过零比较器 ----------
+with drawing() as d:
+    op1, P = wien_at(d, 0, 0, fb="diode", out_dot=False)
+    d += elm.Line().right().at(P).length(1.2)
+    d += (vi := elm.Dot().label("$V_i$（正弦）", "top"))
+    d += (cmp_ := elm.Opamp(leads=True, flip=True).right().anchor("in2").at((P[0] + 2.4, 0)).color(ACC))
+    d += elm.Line().endpoints(vi.center, cmp_.in2)
+    d += elm.Line().left().at(cmp_.in1).length(0.6).color(ACC)
+    d += elm.Line().down().length(0.7).color(ACC); d += elm.Ground().color(ACC)
+    d += elm.Label().at((cmp_.in1.x - 1.3, cmp_.in1.y - 0.9)).label("0 V", color=ACC)
+    d += elm.Line().right().at(cmp_.out).length(0.8).color(ACC)
+    d += elm.Dot(open=True).label("$V_o$（方波）", "right")
+    d += elm.Label().at((cmp_.out.x - 1.6, 1.9)).label("比较器（14 节）", color=ACC)
+save_schem(d, N, "16_p2_7_comparator.png")
+
+
+# ---------- 图 16-p3-3 削顶与稳幅：两种 R_f ----------
+with drawing() as d:
+    wien_at(d, 0, 0)
+    d += elm.Label().at((-0.5, 3.6)).label("（a）只用 $R_f$ 22 kΩ，没有稳幅")
+    wien_at(d, 11.5, 0, fb="diode")
+    d += elm.Label().at((11.0, 3.6)).label("（b）二极管稳幅")
+save_schem(d, N, "16_p3_3_stab_variants.png")
+
+
+def relax_led(d):
+    """直觉篇弛张振荡器换成 75 kΩ / 10 µF，输出端串限流电阻和 LED 到地（新增部分朱红色）。"""
+    d += (op := elm.Opamp(leads=True, flip=True).right())
+    P = (op.out.x + 0.8, 0)
+    d += elm.Line().endpoints(op.out, P); d += elm.Dot().at(P)
+    d += elm.Line().right().at(P).length(1.2); d += (vo := elm.Dot().label("$V_o$", "top"))
+    d += elm.Resistor().down().at(vo.center).length(1.8).label("限流电阻", "bottom").color(ACC)
+    d += elm.LED().down().length(1.6).label("LED", "bottom").color(ACC)
+    d += elm.Ground().color(ACC)
+    B = (-1.6, op.in2.y); J = (-0.5, op.in2.y)
+    d += elm.Line().endpoints(op.in2, B); d += elm.Dot().at(B); d += elm.Dot().at(J)
+    d += elm.Resistor().up().at(B).length(2.0).label("$R_a$ 10 kΩ", "top")
+    d += elm.Vdd().label("+5 V")
+    d += elm.Line().endpoints(B, (-3.6, op.in2.y))
+    d += elm.Resistor().down().length(2.0).label("$R_b$ 10 kΩ", "top"); d += elm.Ground()
+    d += elm.Line().up().at(P).toy(2.0)
+    d += elm.Resistor().left().tox(J[0]).label("$R_c$ 10 kΩ")
+    d += elm.Line().down().toy(op.in2.y)
+    A = (-1.3, op.in1.y); K = (-0.4, op.in1.y)
+    d += elm.Line().endpoints(op.in1, A); d += elm.Dot().at(K)
+    d += elm.Capacitor().down().at(A).length(1.8).label("$C$ 10 µF", "top").color(ACC); d += elm.Ground()
+    d += elm.Dot().at(A).label("$V_C$", "left")
+    d += elm.Line().down().at(P).toy(-2.0)
+    d += elm.Resistor().left().tox(K[0]).label("$R$ 75 kΩ", "bottom").color(ACC)
+    d += elm.Line().up().toy(op.in1.y)
+
+
+# ---------- 图 16-p3-4 练习 4：1 Hz LED 闪烁 ----------
+T_led = 1.39 * 75e3 * 10e-6
+print(f"练习 4：R = 75 kΩ、C = 10 µF，T ≈ {T_led:.2f} s（{1/T_led:.2f} Hz）")
+with drawing() as d:
+    relax_led(d)
+save_schem(d, N, "16_p3_4_led_1hz.png")
