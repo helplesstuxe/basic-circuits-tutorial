@@ -3,7 +3,7 @@
 下面每条都是作者真的打开过的来源；没找到出处的数值在正文标「[待核实]」或写明「示意值」。
 
 1. **onsemi 2N3904 数据手册** https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf
-   - $V_{CEO}$ 40 V； $I_C$ 连续 200 mA；功耗 625 mW；"useful dynamic range extends to 100 mA as a switch"。
+   - $V_{CEO}$ 40 V； $I_C$ 连续 200 mA；功耗 625 mW（TO-92，环境 25 °C，每升高 1 °C 减 5 mW）；结到环境热阻 $\theta_{JA}$ 200 °C/W（与 07 一致）；"useful dynamic range extends to 100 mA as a switch"。
    - $h_{FE}$ 最小：0.1 mA 时 40、1 mA 时 70、10 mA 时 100（最大 300）、50 mA 时 60、100 mA 时 30。
    - $V_{CE(sat)}$ ≤ 0.2 V（10 mA / 1 mA）、≤ 0.3 V（50 mA / 5 mA），即强制 β = 10 的测试条件； $V_{BE(sat)}$ 0.65–0.85 V（10 mA）、≤ 0.95 V（50 mA）。
 2. **松乐 SRD 系列继电器数据手册**（alldatasheet 镜像）https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html

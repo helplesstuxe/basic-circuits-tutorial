@@ -15,6 +15,7 @@
 |---|---|---|---|
 | 2N3904 | $V_{CEO}$ （集电极-发射极耐压） | 40 V | 关断尖峰必须钳在它以下 |
 | 2N3904 | $I_C$ 连续 | 200 mA | 手册说当开关用的有效范围到 100 mA |
+| 2N3904 | 功耗 $P_D$ ；结到环境热阻 $\theta_{JA}$ （每发 1 W 热，管芯比周围空气热多少度） | TO-92、环境 25 °C 时 625 mW，环境每升高 1 °C 减 5 mW；200 °C/W | 温升 = 功耗 × 200 °C/W；与 [07 射极跟随器 · 参数与调试篇](../07-emitter-follower/page3.md) 用的是同一组额定值 |
 | 2N3904 | $h_{FE}$ 最小值 | 10 mA 时 100，50 mA 时 60，100 mA 时 30 | 电流越大 β 越小，按最小值算 |
 | 2N3904 | $V_{CE(sat)}$ | ≤ 0.2 V（10 mA / 1 mA），≤ 0.3 V（50 mA / 5 mA） | 手册用强制 β = 10 测饱和压降 |
 | SRD-05VDC 高灵敏型 | 线圈 | 70 Ω ±10%，71.4 mA，0.36 W | 决定 $I_{C(max)}$ |
@@ -108,7 +109,7 @@ $I_{C(max)} = (12 - 0.2)/400 = 29.5\ \text{mA}$ ，最低基极电流 $29.5/60 =
 
 ## 参考资料
 
-- onsemi，2N3904 数据手册：https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf
+- onsemi，2N3904 数据手册（TO-92 环境 25 °C 时 625 mW、每升高 1 °C 减 5 mW、 $\theta_{JA}$ 200 °C/W）：https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf
 - 松乐 SRD 系列继电器数据手册（alldatasheet 镜像）：https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html
 - TI，ULN2003A 数据手册：https://www.ti.com/lit/ds/symlink/uln2003a.pdf
 - TE Connectivity，线圈抑制与继电器寿命：https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html
