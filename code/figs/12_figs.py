@@ -1,4 +1,4 @@
-"""12 积分器：全部配图（图 12-p2-3 由 code/12_sim.py 生成）。
+"""12 积分电路：全部配图（图 12-p2-3 由 code/12_sim.py 生成）。
 运行：/workspace/circuits-venv/bin/python code/figs/12_figs.py
 图上的每个数字都由本脚本打印；关键结论用 assert 检查。
 """
