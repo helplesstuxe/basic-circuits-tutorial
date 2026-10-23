@@ -1,15 +1,15 @@
 # 11 过载保护 · 原理与实现篇
 
-[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P1 元件速成](../P1-components-basics/page1.md) · [P2 半导体入门](../P2-semiconductor-basics/page1.md) · [14 电压比较器](../14-voltage-comparator/page1.md)
+[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md) · [14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md)
 
 ## 最小知识
 
 读这一页只需要四样东西，前三样前面的节点都讲过：
 
 - **欧姆定律和功率**： $V = IR$ ， $P = I^2 R$ 。
-- **比较器和回差**：比较器只比较两个输入谁大，输出非高即低；施密特比较器用一个正反馈电阻造出两条门限，输入在两条门限之间时输出保持原状（见 [14 电压比较器](../14-voltage-comparator/page2.md)）。LM393 是开集电极输出，输出端必须接上拉电阻。
-- **MOS 管当开关**：栅极接 5 V，N 沟道 MOS 管导通；栅极接 0 V，MOS 管断开（见 [21 MOS 管开关](../21-mosfet-switch/page1.md)）。本例沿用 21 节的 IRLZ44N，它在栅极 5 V 时导通电阻最大 25 mΩ（[数据手册](https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf)）。
-- **RC 充电**：电容通过电阻充电时，电压按 $e^{-t/\tau}$ 的规律逼近终点，时间常数 $\tau = RC$ 。一个 τ 走完约 63% 的路程，三个 τ 走完约 95%（见 [P1 元件速成](../P1-components-basics/page2.md)）。
+- **比较器和回差**：比较器只比较两个输入谁大，输出非高即低；施密特比较器用一个正反馈电阻造出两条门限，输入在两条门限之间时输出保持原状（见 [14 电压比较器 · 原理与实现篇](../14-voltage-comparator/page2.md)）。LM393 是开集电极输出，输出端必须接上拉电阻。
+- **MOS 管当开关**：栅极接 5 V，N 沟道 MOS 管导通；栅极接 0 V，MOS 管断开（见 [21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md)）。本例沿用 21 节的 IRLZ44N，它在栅极 5 V 时导通电阻最大 25 mΩ（[数据手册](https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf)）。
+- **RC 充电**：电容通过电阻充电时，电压按 $e^{-t/\tau}$ 的规律逼近终点，时间常数 $\tau = RC$ 。一个 τ 走完约 63% 的路程，三个 τ 走完约 95%（见 [P1 元件速成 · 原理与实现篇](../P1-components-basics/page2.md)）。
 
 ## 电路总览
 
