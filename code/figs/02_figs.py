@@ -125,3 +125,15 @@ for G, key in ((2, "vout"), (10, "third"), (100, "fb")):
 assert abs(GBW / 10 - 120e3) < 1
 fs.axlabels(ax, "频率", "Hz", "放大倍数", None); ax.legend(loc="lower left", fontsize=8)
 fs.save(fig, N, "02_p3_2_bandwidth.png")
+
+# ---------- 正文与练习里的其余数字（只打印 + 断言） ----------
+IB = 10e-9                                            # LM358B 输入偏置电流典型值 10 nA（最大 35 nA，TI 手册）
+for Rsrc in (100e6,):
+    print(f"输入电流 {IB*1e9:g} nA 流过 {Rsrc/1e6:g} MΩ 内阻，误差电压 {IB*Rsrc:.1f} V（最大 35 nA 时 {35e-9*Rsrc:.1f} V）")
+assert abs(IB * 100e6 - 1.0) < 1e-9
+Rs, R1, Rf, Vs = 50e3, 10e3, 20e3, 1.0                 # 新练习 2：内阻 50 kΩ 的分压器输出 1 V
+v_inv = -Rf / (Rs + R1) * Vs
+v_non = (1 + Rf / R1) * Vs
+print(f"练习 2：反相 {v_inv:.3f} V（只有理想 -2 V 的 {v_inv/-2*100:.0f}%），同相 {v_non:.1f} V")
+assert abs(v_inv + 0.333) < 0.001 and v_non == 3.0
+print(f"带宽两种写法：反馈分压比 R1/(R1+Rf)，同相 10 倍 → {1.2e6/10/1e3:.0f} kHz，反相 10 倍 → {1.2e6/11/1e3:.0f} kHz")

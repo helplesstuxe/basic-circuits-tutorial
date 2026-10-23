@@ -1,6 +1,6 @@
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 # 02 同相放大最小仿真：信号源内阻 R_s 从 100 Ω 增大到 1 MΩ 时，比较反相放大和同相放大的实际倍数。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
