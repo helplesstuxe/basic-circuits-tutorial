@@ -1,6 +1,7 @@
 """13 仿真：反相微分器。三角波输入 → 方波输出；输入混入一点高频干扰时，理想微分器把它放大得很厉害，
 实用微分器（输入串 R1、反馈 R_f 旁并 C_f）则基本把它压住。另外用「有限带宽运放」模型演示理想微分器的振铃。
 运行：/workspace/circuits-venv/bin/python code/13_sim.py   → 13-differentiator/img/13_p2_3_noise.png
+lm358() 调用 ngspice 和 TI 的 LM358B 模型（spice/models/），给 page1 图 13-p1-6 和示波器读数用。
 page2 的代码块是本文件的精简版（不依赖 figstyle）；code/figs/13_figs.py 会调用这里的函数。
 """
 import os, sys
@@ -76,6 +77,48 @@ def simulate(t, vin, r1=0.0, cf=0.0, gbw=None, rf=RF, c=C):
         vo += (k1[2] + 2 * k2[2] + 2 * k3[2] + k4[2]) * dt / 6
         vo = min(max(vo, -VSAT), VSAT)
     return np.clip(out, -VSAT, VSAT)
+
+
+ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..")
+LM358_LIB = os.path.abspath(os.path.join(ROOT, "spice", "models", "LMx58B_LM2904B.lib"))  # TI 官方 LM358B 模型（只读）
+
+
+def lm358(src, r1=None, cf=None, tstop=6e-3, tstep=0.5e-6):
+    """用 ngspice + TI LM358B 官方模型（SLOM472C）跑一次 ±15 V 反相微分器的瞬态仿真。
+    src：输入源的 SPICE 写法，如 "PULSE(-0.5 0.5 0 1m 1m 1n 2m)"（±0.5 V、500 Hz 三角波）；
+    r1 / cf 为 None 表示不加（理想微分器：只有 C 和 R_f）。返回 (t, v_out)。
+    网表写在临时目录里，跑完即删，不在仓库里留文件。"""
+    import shutil, subprocess, tempfile
+    ng = shutil.which("ngspice") or "/usr/bin/ngspice"
+    r1_txt = f"{r1:g}" if r1 else "1m"            # 1 mΩ ≈ 不加 R1
+    cf_txt = f"{cf:g}" if cf else "1e-18"         # 1e-18 F ≈ 不加 C_f
+    cir = f"""* 13 微分器 + LM358B
+.include {LM358_LIB}
+VP vp 0 15
+VN vn 0 -15
+VI in 0 {src}
+R1 in a {r1_txt}
+C1 a m {C:g}
+RF m out {RF:g}
+CF m out {cf_txt}
+XU 0 m vp vn out LMX58B_LM2904B
+.control
+tran {tstep:g} {tstop:g} 0 {tstep:g}
+wrdata out.txt v(out)
+.endc
+.end
+"""
+    tmp = tempfile.mkdtemp(prefix="d13_")
+    try:
+        with open(os.path.join(tmp, ".spiceinit"), "w") as f:
+            f.write("set ngbehavior=psa\nset num_threads=1\n")   # 读入 PSpice 格式的厂家模型
+        with open(os.path.join(tmp, "d.cir"), "w", encoding="utf-8") as f:
+            f.write(cir)
+        subprocess.run([ng, "-b", "d.cir"], cwd=tmp, capture_output=True, text=True, timeout=600, check=True)
+        d = np.loadtxt(os.path.join(tmp, "out.txt"))
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    return d[:, 0], d[:, 1]
 
 
 def noise_pp(t, y_noisy, y_clean, t0):

@@ -201,10 +201,10 @@ int_pp = float(np.ptp(vo_int[t > 1e-3]))
 print(f"[数值] 方波 ±0.5 V、500 Hz，边沿 0.2 ms：积分器（RC 1 ms）三角波峰峰 {int_pp:.2f} V；"
       f"微分器（R_f·C 1 ms）边沿脉冲 {pk_dif:.1f} V、平顶 0 V；电容–电容（C/C_f = {sim.C/CF2:.0f}）平顶 {cc_flat:.1f} V")
 assert abs(pk_dif - 5.0) < 0.05 and abs(cc_flat + 2.0) < 1e-6 and abs(vo_dif[k_flat]).max() < 1e-6
-IB = 20e-9                                    # 示意的运放输入偏置电流 20 nA
-drift = IB / CF2
-print(f"[数值] 电容–电容接法：偏置电流 {IB*1e9:.0f} nA 只能流进 C_f，输出漂移 {drift:.2f} V/s，"
-      f"约 {13.5 / drift:.0f} s 撞到 13.5 V")
+for IB in (10e-9, 20e-9):                     # LM358 输入偏置电流典型约 10～20 nA（TI 模型约 10 nA）
+    drift = IB / CF2
+    print(f"[数值] 电容–电容接法：偏置电流 {IB*1e9:.0f} nA 只能流进 C_f，输出漂移 {drift:.2f} V/s，"
+          f"约 {13.5 / drift:.0f} s 漂过 13.5 V")
 fig, axs = plt.subplots(4, 1, figsize=(7, 6.2), sharex=True)
 tm = t * 1e3
 axs[0].plot(tm, vin, **fs.LS["vin"], label="输入：±0.5 V 方波（边沿 0.2 ms）")
@@ -217,3 +217,61 @@ for a, lim in zip(axs, [(-0.9, 1.1), (-0.8, 0.5), (-6.5, 7.5), (-2.8, 1.6)]):
     a.legend(loc="upper right", fontsize=7.5)
 axs[3].set_xlabel(fs.qlabel("时间", "ms"))
 fs.save(fig, N, "13_p1_5_three_circuits.png")
+
+# ---------- 图 13-p1-6 用 LM358B 搭理想微分器会自己振；加小电阻 R1 或小电容 C_f 就压住了（ngspice + TI 官方模型） ----------
+TRI = "PULSE(-0.5 0.5 0 1m 1m 1n 2m)"          # ±0.5 V、500 Hz 三角波（与图 13-p1-3 相同）
+cases = [("只有 C 和 $R_f$（理想微分器）", None, None, {**fs.LS["bad"], "lw": 0.7, "marker": None}),
+         ("只串小电阻 $R_1$ = 1 kΩ", sim.R1, None, fs.LS["third"]),
+         ("只并小电容 $C_f$ = 10 nF", None, sim.CF, fs.LS["fb"]),
+         ("$R_1$、$C_f$ 都加（实用微分器）", sim.R1, sim.CF, fs.LS["vout"])]
+res = []
+for name, r1, cf, st in cases:
+    t, v = sim.lm358(TRI, r1=r1, cf=cf)
+    k1 = (t > 1e-3) & (t < 2e-3)                 # 1 ms 拐角之后的半个周期（输出应为 +1 V）
+    k2 = (t > 1.7e-3) & (t < 2.0e-3)             # 平顶后段
+    pk, pp = float(v[k1].max()), float(np.ptp(v[k2]))
+    pps = f"{pp:.2f} V" if pp >= 0.1 else f"{pp*1e3:.0f} mV"
+    res.append((t, v, pk, pp, pps))
+    print(f"[数值] LM358B，{name.replace('$', '')}：拐角后最高 {pk:.2f} V，平顶后段（1.7～2.0 ms）峰峰 {pps}")
+t0, v0, pk0, pp0, _ = res[0]
+x = v0[(t0 > 1e-3) & (t0 < 2e-3)]; x = x - x.mean(); tt = t0[(t0 > 1e-3) & (t0 < 2e-3)]
+zc = tt[1:][np.diff(np.sign(x)) != 0]
+f_ring_lm = 1 / (2 * np.mean(np.diff(zc)))
+print(f"[数值] LM358B 理想微分器振铃频率约 {f_ring_lm/1e3:.1f} kHz；每个拐角都重新激发，整段平顶上一直在振")
+assert pk0 > 4.0 and pp0 > 4.0 and 12e3 < f_ring_lm < 14.5e3
+assert all(r[2] < 1.7 and r[3] < 0.05 for r in res[1:])
+fig, axs = plt.subplots(4, 1, figsize=(7, 6.4), sharex=True)
+for a, (name, r1, cf, st), (t, v, pk, pp, pps) in zip(axs, cases, res):
+    w = (t > 0.8e-3) & (t < 4.2e-3)
+    a.plot(t[w] * 1e3, v[w], **st, label=(f"{name}：拐角后冲到 {pk:.2f} V，平顶上一直振（峰峰 {pps}）" if a is axs[0]
+           else f"{name}：最高 {pk:.2f} V，没有振铃"))
+    fs.ref_h(a, 1.0); fs.ref_h(a, -1.0)
+    a.set_ylim(-3.5, 8.0 if a is axs[0] else 2.6); a.set_ylabel(fs.qlabel("输出", "V"), fontsize=8)
+    a.legend(loc="upper right", fontsize=7.5)
+fs.ref_h(axs[3], 1.0, "+1 V", x=0.01, ha="left"); fs.ref_h(axs[3], -1.0, "−1 V", x=0.01, ha="left")
+axs[3].set_xlabel(fs.qlabel("时间", "ms"))
+print("[参考线] ±1 V（理想微分器应有的方波电平）")
+fig.tight_layout()
+fs.save(fig, N, "13_p1_6_ringing_fix.png")
+
+# ---------- page1「在示波器上会看到什么」各步的读数（实用微分器 R1 1 kΩ + C_f 10 nF，LM358B） ----------
+t, v = sim.lm358(TRI, r1=sim.R1, cf=sim.CF)
+s1_hi = float(v[(t > 5.6e-3) & (t < 6.0e-3)].mean()); s1_lo = float(v[(t > 4.6e-3) & (t < 5.0e-3)].mean())
+t, v = sim.lm358("PULSE(-0.5 0.5 0 0.5m 0.5m 1n 1m)", r1=sim.R1, cf=sim.CF)
+s2_lo = float(v[(t > 5.42e-3) & (t < 5.49e-3)].mean()); s2_hi = float(v[(t > 5.92e-3) & (t < 5.99e-3)].mean())  # 每半个周期的末尾
+SIN = "SIN(0 0.5 159.155)"                      # 159 Hz、幅度 0.5 V 正弦
+t, v = sim.lm358(SIN, r1=sim.R1, cf=sim.CF, tstop=40e-3, tstep=2e-6)
+s3_p = float(v[t > 20e-3].max())
+t, v = sim.lm358(SIN, tstop=40e-3, tstep=2e-6)
+s3_i_hi, s3_i_lo = float(v[t > 20e-3].max()), float(v[t > 20e-3].min())
+t, v = sim.lm358("PULSE(-0.5 0.5 0.5m 1u 1u 1m 2m)", r1=sim.R1, cf=sim.CF)   # ±0.5 V、500 Hz 方波，边沿 1 µs
+s4_hi, s4_lo = float(v[t > 2e-3].max()), float(v[t > 2e-3].min())
+s4_flat = float(np.abs(v[(t > 3.2e-3) & (t < 3.5e-3)]).max())
+print(f"[数值] 示波器第 1 步（500 Hz 三角波，实用版）：方波 {s1_hi:+.2f} V / {s1_lo:+.2f} V")
+print(f"[数值] 示波器第 2 步（1 kHz 三角波，实用版）：每半个周期末尾 {s2_hi:+.2f} V / {s2_lo:+.2f} V")
+print(f"[数值] 示波器第 3 步（159 Hz、0.5 V 正弦）：实用版输出幅度 {s3_p:.3f} V；"
+      f"拆掉 R1、C_f 后峰值 {s3_i_hi:+.2f} V / {s3_i_lo:+.2f} V（叠着振铃）")
+print(f"[数值] 示波器第 4 步（±0.5 V 方波，实用版）：边沿脉冲 {s4_hi:+.2f} V / {s4_lo:+.2f} V，"
+      f"边沿后 0.7～1.0 ms 平顶处 |V_o| ≤ {s4_flat:.3f} V")
+assert abs(s1_hi - 1) < 0.03 and abs(s1_lo + 1) < 0.03 and abs(s3_p - 0.5) < 0.02
+assert s3_i_hi > 0.55 and s4_hi < 5
