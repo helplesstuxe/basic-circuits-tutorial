@@ -1,6 +1,6 @@
 # 01 反相放大 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md) · 前置节点：[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md) · 后续：[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[04 差分放大 · 直觉篇](../04-differential-amp/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：动手实验篇](page4.md) · 前置节点：[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md) · 后续：[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)、[04 差分放大 · 直觉篇](../04-differential-amp/page1.md)
 
 ## 痛点：公式明明算对了，实测倍数却不对
 
