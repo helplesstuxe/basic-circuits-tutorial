@@ -553,6 +553,648 @@ def node_02():
                 "[图 02-p4-3] ①(第 9 列)→蓝线 g9→g16→3 脚；R1 10k 第 12 列→第 10 列→M；②(第 12 列)→2 脚；Rf 20k ②↔③(第 14 列，1 脚)；电源三种：双 9 V / 单 9 V 分压 / M 接 V−")
 
 
+# ======================================================================================
+# 03 电压跟随器：图 03-p4-1（03_p4_1_breadboard.png）→ 图 03-p4-3
+# 依据 code/figs/03_figs.py 的 p4_1_breadboard()：T1 = V+，T2、B2 = M，B1 = V−；T2-1↔B2-1 黑线
+#   分压：T1-6→a6；Rd1 10k b6–b10；Rd2 10k c10–c12；a12→M；① 第 10 列
+#   e10→f10、g10→g16 蓝线 → 3 脚；a14→V+（8 脚）；j17→V−（4 脚）；h14→h15 蓝绿短线（1 脚→2 脚）；③ 第 14 列
+#   B 半边：c15–c16、a17→M；RL 1k h22–h25，j25→M；负载线 j22→j14（或改插 j10）
+#   灰框：B2-28↔B1-28 黑线（只在一节 9 V 时插）
+# ======================================================================================
+def _vplus(d, xy, text="V+"):
+    d += elm.Vdd().at(xy).label(text)
+
+
+def node_03():
+    with drawing(fontsize=11) as d:
+        title(d, (6.0, 5.6), "跟随器（第 6～25 列）")
+        top, y1, bot = 3.6, 0.0, -3.0                     # V+ 线、① 节点、M 的 y
+        x0 = 0.0
+        _vplus(d, (x0, top))
+        colnote(d, (x0 - 0.15, top - 0.25), "T1→a6（第 6 列）", "left", ofst=0.0)
+        d += elm.Resistor().endpoints((x0, top), (x0, y1))
+        lab(d, (x0 - 0.7, (top + y1) / 2), "Rd1 10k\n（47k / 拔掉）", ha="right", fs_=10)
+        d += elm.Dot().at((x0, y1))
+        d += elm.Resistor().endpoints((x0, y1), (x0, bot))
+        lab(d, (x0 - 0.7, (y1 + bot) / 2), "Rd2 10k\n（47k / 100k / 拔掉）", ha="right", fs_=10)
+        d += elm.Ground().at((x0, bot)).label("M", "bottom")
+        colnote(d, (x0 + 0.15, bot + 0.3), "a12（第 12 列）", "right", ofst=0.0)
+        probe(d, (x0, y1), "①", dx=-0.9)
+        colnote(d, (x0 - 1.2, y1 - 0.45), "第 10 列", "bottom", ofst=0.0)
+        # ① → 蓝线 → 3 脚（+，画在上面）
+        xop = 5.0
+        d += (op := elm.Opamp(leads=True).theta(0).flip().anchor("in2").at((xop, y1)))
+        p_p, p_m, po = op.absanchors["in2"], op.absanchors["in1"], op.absanchors["out"]
+        d += elm.Line().at((x0, y1)).to(p_p).color(BLUE).linewidth(2.0)
+        lab(d, ((x0 + xop) / 2 + 0.3, y1 + 0.35), "蓝线 e10→f10、g10→g16", ha="center", fs_=8.5, color=BLUE)
+        top_pin, bot_pin = op.absanchors["vs"], op.absanchors["vd"]
+        d += elm.Line().at(top_pin).to((top_pin[0], top_pin[1] + 0.5))
+        _vplus(d, (top_pin[0], top_pin[1] + 0.5))
+        _pin(d, top_pin, "8", dx=0.25, dy=0.25)
+        colnote(d, (top_pin[0] - 0.15, top_pin[1] + 0.35), "a14", "left", ofst=0.0)
+        d += elm.Line().at(bot_pin).to((bot_pin[0], bot_pin[1] - 0.5))
+        d += elm.Vss().at((bot_pin[0], bot_pin[1] - 0.5)).label("V−", "bottom")
+        _pin(d, bot_pin, "4", dx=0.25, dy=-0.25)
+        colnote(d, (bot_pin[0] - 0.15, bot_pin[1] - 0.35), "j17", "left", ofst=0.0)
+        _pin(d, p_p, "3", dx=0.3, dy=0.22)
+        _pin(d, p_m, "2", dx=0.3, dy=-0.22)
+        _pin(d, po, "1", dx=-0.3, dy=0.22)
+        lab(d, (po[0] - 0.4, po[1] - 0.95), "LM358\nA 半边", ha="right", fs_=9)
+        # 1 脚 → 2 脚：蓝绿短线 h14→h15（从下面绕回来）
+        x3 = po[0] + 0.8
+        d += elm.Line().at(po).to((x3, po[1]))
+        d += elm.Dot().at((x3, po[1]))
+        yf = bot_pin[1] - 1.9                            # 绕到 V− 符号下面，不和 4 脚的线交叉
+        for a, b in (((x3, po[1]), (x3, yf)), ((x3, yf), (p_m[0] - 0.4, yf)), ((p_m[0] - 0.4, yf), (p_m[0] - 0.4, p_m[1])),
+                     ((p_m[0] - 0.4, p_m[1]), p_m)):
+            d += elm.Line().at(a).to(b).color(TEAL).linewidth(1.6)
+        lab(d, ((p_m[0] + x3) / 2, yf - 0.35), "蓝绿短线 h14→h15（1 脚接 2 脚）", ha="center", fs_=8.5, color=TEAL)
+        probe(d, (x3, po[1]), "③", dx=0.0, dy=1.0)
+        colnote(d, (x3 + 0.4, po[1] + 1.0), "第 14 列", "right", ofst=0.0)
+        # 负载：同一根负载线，一头固定在 j22（RL 上端），另一头插 j14 或 j10
+        xL = x3 + 4.2
+        d += elm.Line().at((x3, po[1])).to((xL, po[1])).color(BLUE).linewidth(2.0)
+        lab(d, ((x3 + xL) / 2 - 0.4, po[1] - 0.75), "负载线插 j14\n（经跟随器）", ha="center", fs_=9, color=BLUE)
+        yt = top + 0.9
+        xt = 1.4
+        d += elm.Dot().at((xt, y1))
+        for a, b in (((xt, y1), (xt, yt)), ((xt, yt), (xL, yt)), ((xL, yt), (xL, po[1] + 0.05))):
+            d += elm.Line().at(a).to(b).color(BLUE).linewidth(1.4).linestyle("--")
+        lab(d, ((xt + xL) / 2 + 1.0, yt + 0.35), "或：负载线改插 j10（直接接分压点，不经跟随器）", ha="center", fs_=9, color=BLUE)
+        d += elm.Dot().at((xL, po[1]))
+        colnote(d, (xL + 0.15, po[1] + 0.3), "j22", "right", ofst=0.0)
+        d += elm.Resistor().endpoints((xL, po[1]), (xL, bot))
+        lab(d, (xL + 0.45, (po[1] + bot) / 2), "RL 1k（10k）\nh22–h25", fs_=10)
+        d += elm.Ground().at((xL, bot)).label("M", "bottom")
+        colnote(d, (xL + 0.15, bot + 0.3), "j25→M", "right", ofst=0.0)
+        d += elm.Arrow().at((xL - 0.6, po[1] - 0.6)).to((xL - 0.6, bot + 0.7)).color(C["cur"]).linewidth(1.2)
+        lab(d, (xL - 0.75, (po[1] + bot) / 2 - 0.6), "负载电流", ha="right", fs_=8.5, color=C["cur"])
+        _lm358_follower(d, xL + 3.2, 0.4)
+        ys = -6.6
+        _supply(d, 1.5, ys, "dual")
+        _supply(d, 11.0, ys, "short")
+        title(d, (13.2, ys + 1.6), "一节 9 V（第 10～17 步，插灰框：B2–B1 第 28 列黑线）")
+        for k, line in enumerate((
+            "读图：一条线 = 一个节点；实心圆点 = 导线相连；黄色圆圈①③ = 测量点（黑表笔接 M）；灰色小字 = 面包板列号或孔位；小黑字 1～8 = LM358 引脚号。",
+            "所有 M 符号都是同一个中点地（T2、B2 两条 M 轨在第 1 列用黑线连通），所有 V+、V− 符号分别是同一条电源轨；下面一排是两种供电接法，每次只用一种。",
+            "负载线只有一根：实线 = 插 j14（③，经跟随器），虚线 = 改插 j10（①，直接接分压点），两种插法不同时用。",
+        )):
+            note(d, (-3.0, ys - 6.4 - 0.6 * k), line)
+    print("[图 03-p4-3] V+→Rd1 10k→①(第 10 列)→Rd2 10k→M；①→蓝线→3 脚；1 脚→h14→h15→2 脚；③(第 14 列)→负载线→RL 1k(j22–j25)→M；或负载线改插 j10")
+    save_schem(d, "03", "03_p4_3_schem_lab.png")
+
+
+# ======================================================================================
+# 04 差分放大：图 04-p4-1（04_p4_1_breadboard.png）→ 图 04-p4-3
+# 依据 code/figs/04_figs.py 的面包板图：T1 = V+，T2、B2 = M，B1 = V−；LM358 在第 14～17 列（同 01）
+#   1.5 V 电池盒：+ → j3，− → B2-2（M）；电位器 A g3/g4（滑）/g5，j5→M；e3→f3 橙线；电位器 B c3/c4（滑）/c5，a5→M
+#   A 滑片 i4→i9 蓝线 → ①（第 9 列）→ R1 10k h9–h12 → 第 12 列 → j12→j15 蓝绿线 → 2 脚；R2 100k i12–i14 → ③（第 14 列，1 脚）
+#   B 滑片 d4→d20 蓝线，e20→f20 → ②（第 20 列）→ R3 10k g16–g20 → ④（第 16 列，3 脚）→ R4 100k i16–i19 → j19→M（第 13、14 步换 10k）
+#   灰框（单 9 V）同 01
+# ======================================================================================
+def node_04():
+    with drawing(fontsize=11) as d:
+        title(d, (6.5, 6.6), "差分放大（第 3～20 列）")
+        yMa = 1.2                                          # 电位器 A 下端 M 的高度
+        xb, xp = -0.8, 2.0                                 # 电池盒、电位器那两竖列
+        yt = 4.6
+        d += elm.Battery().endpoints((xb, -3.9), (xb, yt)).reverse()
+        lab(d, (xb - 0.45, 0.6), "1.5 V\n电池盒", ha="right", fs_=10)
+        d += elm.Ground().at((xb, -3.9)).label("M", "bottom")
+        colnote(d, (xb - 0.15, -3.6), "− → B2 第 2 列", "left", ofst=0.0)
+        d += elm.Line().at((xb, yt)).to((xp, yt))
+        colnote(d, (xb + 0.1, yt + 0.05), "+ → j3", "top")
+        # 电位器 A（下半区 g3–g5）
+        d += (pa := elm.Potentiometer().endpoints((xp, yt), (xp, yMa)))
+        lab(d, (xp + 0.35, yt - 0.55), "电位器 A 10k", fs_=9.5)
+        d += elm.Ground().at((xp, yMa)).label("M", "bottom")
+        colnote(d, (xp + 0.15, yMa + 0.3), "j5→M", "right", ofst=0.0)
+        # e3→f3 橙线：把 1.5 V 带到上半区，给电位器 B
+        xo = 0.0
+        d += elm.Dot().at((xo, yt))
+        ybt, ybb = -0.8, -3.9
+        d += elm.Line().at((xo, yt)).to((xo, ybt)).color(C["vout"]).linewidth(2.0)
+        d += elm.Line().at((xo, ybt)).to((xp, ybt)).color(C["vout"]).linewidth(2.0)
+        lab(d, ((xo + xp) / 2, ybt - 0.35), "橙线 e3→f3", ha="center", fs_=8.5, color=C["vout"])
+        d += (pb := elm.Potentiometer().endpoints((xp, ybt), (xp, ybb)))
+        lab(d, (xp + 0.35, ybt - 0.55), "电位器 B 10k", fs_=9.5)
+        d += elm.Ground().at((xp, ybb)).label("M", "bottom")
+        colnote(d, (xp + 0.15, ybb + 0.3), "a5→M", "right", ofst=0.0)
+        ta, tb = pa.absanchors["tap"], pb.absanchors["tap"]
+        colnote(d, (ta[0] + 0.1, ta[1] - 0.3), "滑 g4", "right", ofst=0.0)
+        colnote(d, (tb[0] + 0.1, tb[1] - 0.3), "滑 c4", "right", ofst=0.0)
+        # 运放：2 脚（−）在上
+        xop = 11.0
+        d += (op := elm.Opamp(leads=True).theta(0).anchor("in1").at((xop, ta[1])))
+        p_m, p_p, po = op.absanchors["in1"], op.absanchors["in2"], op.absanchors["out"]
+        y1 = ta[1]
+        x1, x2 = 5.4, 8.4                                  # ① 第 9 列、第 12 列
+        d += elm.Line().at(ta).to((x1, y1)).color(BLUE).linewidth(2.0)
+        lab(d, ((ta[0] + x1) / 2 + 0.2, y1 + 0.35), "蓝线 i4→i9", ha="center", fs_=8.5, color=BLUE)
+        d += elm.Dot().at((x1, y1))
+        probe(d, (x1, y1), "①", dx=0.0, dy=-1.0)
+        colnote(d, (x1 + 0.4, y1 - 1.0), "第 9 列", "right", ofst=0.0)
+        d += elm.Resistor().at((x1, y1)).to((x2, y1))
+        lab(d, ((x1 + x2) / 2, y1 + 0.55), "R1 10k", ha="center")
+        d += elm.Dot().at((x2, y1))
+        colnote(d, (x2, y1 - 0.2), "第 12 列", "bottom")
+        d += elm.Line().at((x2, y1)).to(p_m).color(TEAL).linewidth(1.6)
+        lab(d, ((x2 + xop) / 2 + 0.05, y1 + 0.3), "j12→j15", ha="center", fs_=8, color=TEAL)
+        # R2：第 12 列 ↔ 第 14 列（1 脚）
+        x3 = po[0] + 0.8
+        yR = y1 + 1.9
+        d += elm.Line().at((x2, y1)).to((x2, yR))
+        d += elm.Resistor().at((x2, yR)).to((x3, yR))
+        lab(d, ((x2 + x3) / 2, yR + 0.55), "R2 100k（i12–i14）", ha="center")
+        d += elm.Line().at(po).to((x3, po[1]))
+        d += elm.Line().at((x3, yR)).to((x3, po[1]))
+        d += elm.Dot().at((x3, po[1]))
+        d += elm.Line().at((x3, po[1])).to((x3 + 0.6, po[1]))
+        probe(d, (x3 + 0.6, po[1]), "③", dx=0.7)
+        colnote(d, (x3 + 1.6, po[1] - 0.45), "第 14 列", "bottom", ofst=0.0)
+        # 电源脚
+        top_pin, bot_pin = op.absanchors["vd"], op.absanchors["vs"]
+        d += elm.Line().at(top_pin).to((top_pin[0], top_pin[1] + 0.5))
+        d += elm.Vdd().at((top_pin[0], top_pin[1] + 0.5)).label("V+")
+        _pin(d, top_pin, "8", dx=0.25, dy=0.25)
+        colnote(d, (top_pin[0] - 0.15, top_pin[1] + 0.35), "a14", "left", ofst=0.0)
+        d += elm.Line().at(bot_pin).to((bot_pin[0], bot_pin[1] - 0.5))
+        d += elm.Vss().at((bot_pin[0], bot_pin[1] - 0.5)).label("V−", "bottom")
+        _pin(d, bot_pin, "4", dx=0.25, dy=-0.25)
+        colnote(d, (bot_pin[0] + 0.15, bot_pin[1] - 0.35), "j17", "right", ofst=0.0)
+        _pin(d, p_m, "2", dx=0.3, dy=0.22)
+        _pin(d, p_p, "3", dx=0.3, dy=-0.22)
+        _pin(d, po, "1", dx=-0.3, dy=0.22)
+        lab(d, (po[0] - 0.4, po[1] + 0.95), "LM358\nA 半边", ha="right", fs_=9)
+        # B 滑片 → d4→d20 蓝线、e20→f20 → ② 第 20 列 → R3 10k → ④ 第 16 列 → 3 脚；R4 100k → j19 → M
+        y2 = tb[1]
+        x20, x16 = 5.4, 8.9
+        d += elm.Line().at(tb).to((x20, y2)).color(BLUE).linewidth(2.0)
+        lab(d, ((tb[0] + x20) / 2 + 0.3, y2 + 0.35), "蓝线 d4→d20\ne20→f20", ha="center", fs_=8.5, color=BLUE)
+        d += elm.Dot().at((x20, y2))
+        probe(d, (x20, y2), "②", dx=0.0, dy=-1.0)
+        colnote(d, (x20 + 0.4, y2 - 1.0), "第 20 列", "right", ofst=0.0)
+        d += elm.Resistor().at((x20, y2)).to((x16, y2))
+        lab(d, ((x20 + x16) / 2, y2 + 0.55), "R3 10k（g16–g20）", ha="center", fs_=10)
+        d += elm.Dot().at((x16, y2))
+        d += elm.Line().at((x16, y2)).to((x16, p_p[1]))
+        d += elm.Line().at((x16, p_p[1])).to(p_p)
+        colnote(d, (x16 + 0.1, (y2 + p_p[1]) / 2), "第 16 列 = 3 脚", "right", ofst=0.0)
+        probe(d, (x16, y2), "④", dx=1.0, dy=0.0)
+        yb4 = y2 - 3.0
+        d += elm.Resistor().endpoints((x16, y2), (x16, yb4))
+        lab(d, (x16 - 0.45, (y2 + yb4) / 2), "R4 100k\n（i16–i19）", ha="right", fs_=10)
+        d += elm.Line().at((x16, yb4)).to((x16, yb4 - 0.8)).linewidth(2.2)
+        d += elm.Ground().at((x16, yb4 - 0.8)).label("M", "bottom")
+        lab(d, (x16 + 0.3, yb4 - 0.35), "j19→M 黑线\n（第 13、14 步换成 10 kΩ）", fs_=8.5, color=GRAY)
+        _lm358_follower(d, x3 + 4.2, 0.4)
+        ys = -9.6
+        _supply(d, 1.5, ys, "dual")
+        _supply(d, 9.5, ys, "single")
+        for k, line in enumerate((
+            "读图：一条线 = 一个节点；实心圆点 = 导线相连；黄色圆圈①～④ = 测量点（黑表笔接 M）；灰色小字 = 面包板列号或孔位；小黑字 1～8 = LM358 引脚号。",
+            "所有 M 符号都是同一个中点地（上下两条 M 轨在第 1 列用黑线连通），所有 V+、V− 符号分别是同一条电源轨；下面一排是两种供电接法，每次只用一种。",
+            "共模线（图中没画，第 8～14、18、19 步）：拔掉 i4–i9 和 e20–f20，插 j9→j20 把①②连成一点，再从 f20 拉一根长线到要加的共模电压。",
+        )):
+            note(d, (-3.0, ys - 6.4 - 0.6 * k), line)
+    print("[图 04-p4-3] 1.5 V→电位器 A/B；A 滑片→①(第 9 列)→R1 10k→第 12 列→2 脚，R2 100k→③(第 14 列)；B 滑片→②(第 20 列)→R3 10k→④(第 16 列，3 脚)→R4 100k→j19→M")
+    save_schem(d, "04", "04_p4_3_schem_lab.png")
+
+
+# ======================================================================================
+# 05 精密整流（LM741）：图 05-p4-1 → 图 05-p4-3（基本型），图 05-p4-2 → 图 05-p4-4（改进型）
+# 依据 code/figs/05_figs.py 的 bb05()：tp = +9 V，tn = 0 V，bp = 0 V，bn = −9 V；tn29↔bp29
+#   LM741 在第 12～15 列：a13→+9 V（7 脚），j15→−9 V（4 脚）；RA 8.2k g5–g9，h5→+9 V（改进型 / 输入为负：→ −9 V）
+#   RB 100 j9→bp9；Vi 第 9 列下半区；g13（2 脚）→e8；D1 阳极 c14（6 脚）、阴极 c11；RL 10k a11→tn11；Vo 第 11 列上半区
+#   基本型：i9→i14（→3 脚），b8→b11；改进型：g14→bp14，R1 10k h9–h13，D2 阳极 d8、阴极 d14，Rf 20k b8–b11
+# ======================================================================================
+PURPLE = C["third"]
+
+
+class Ring(Element):
+    """红紫色空心圆圈：面包板图里 bb.probe 的测量点（Vi、Vo、6 脚、V_B …），旁边写名字。"""
+    def __init__(self, r=0.17, **kw):
+        super().__init__(**kw)
+        self.segments.append(SegmentCircle((0, 0), r, fill="white", color=PURPLE, lw=1.6))
+        self.anchors["center"] = (0, 0)
+
+
+def ring(d, node_xy, text, dx=-0.8, dy=0.0, ha=None):
+    """测量点：从节点拉一根细线到红紫色圆圈，圆圈旁写名字（与面包板图一致）。"""
+    x, y = node_xy
+    cx, cy = x + dx, y + dy
+    d += elm.Line().at((x, y)).to((cx, cy)).color("#595959").linewidth(0.7)
+    d += Ring().at((cx, cy))
+    if ha is None:
+        ha = "right" if dx < 0 else "left"
+    off = -0.3 if ha == "right" else 0.3
+    if ha == "center":
+        d += elm.Label().at((cx, cy + (0.42 if dy >= 0 else -0.42))).label(text, fontsize=10.5, color=PURPLE, halign="center", valign="center")
+    else:
+        d += elm.Label().at((cx + off, cy)).label(text, fontsize=10.5, color=PURPLE, halign=ha, valign="center")
+
+
+def _bat_pm9(d, x, y):
+    """两节 9 V 串联：电池① 正极 → +9 V 轨（tp1），相接处 → 0 V 轨（tn2），电池② 负极 → −9 V 轨（bn1）。"""
+    yt, yb = y, y - 4.4
+    ym = (yt + yb) / 2
+    title(d, (x + 1.2, yt + 1.5), "电源：两节 9 V 串联")
+    d += elm.Vdd().at((x, yt)).label("+9 V")
+    d += elm.Battery().endpoints((x, ym), (x, yt)).reverse()
+    lab(d, (x + 0.5, (ym + yt) / 2), "电池① 9 V", fs_=10)
+    d += elm.Dot().at((x, ym))
+    d += elm.Battery().endpoints((x, yb), (x, ym)).reverse()
+    lab(d, (x + 0.5, (ym + yb) / 2), "电池② 9 V", fs_=10)
+    d += elm.Vss().at((x, yb)).label("−9 V", "bottom")
+    d += elm.Line().at((x, ym)).to((x - 1.4, ym))
+    d += elm.Ground().at((x - 1.4, ym)).label("0 V", "bottom")
+    colnote(d, (x + 0.15, yt - 0.3), "正极 → tp1（+9 V 轨）", "right", ofst=0.0)
+    colnote(d, (x + 0.5, ym - 0.05), "相接处 → tn2（0 V 轨）", "right", ofst=0.0)
+    colnote(d, (x + 0.15, yb + 0.3), "负极 → bn1（−9 V 轨）", "right", ofst=0.0)
+    lab(d, (x - 1.0, yb - 1.2), "上、下两条 0 V 轨在第 29 列用黑线连通", fs_=8.5, color=GRAY)
+
+
+def _lm741_pwr(d, op, top_is="vd"):
+    """LM741 电源脚：7 脚 → +9 V（a13），4 脚 → −9 V（j15）。top_is 是画在上面的那个电源锚点名。"""
+    top_pin = op.absanchors[top_is]
+    bot_pin = op.absanchors["vs" if top_is == "vd" else "vd"]
+    d += elm.Line().at(top_pin).to((top_pin[0], top_pin[1] + 0.5))
+    d += elm.Vdd().at((top_pin[0], top_pin[1] + 0.5)).label("+9 V")
+    _pin(d, top_pin, "7", dx=0.25, dy=0.25)
+    colnote(d, (top_pin[0] - 0.15, top_pin[1] + 0.35), "a13", "left", ofst=0.0)
+    d += elm.Line().at(bot_pin).to((bot_pin[0], bot_pin[1] - 0.5))
+    d += elm.Vss().at((bot_pin[0], bot_pin[1] - 0.5)).label("−9 V", "bottom")
+    _pin(d, bot_pin, "4", dx=0.25, dy=-0.25)
+    colnote(d, (bot_pin[0] - 0.15, bot_pin[1] - 0.35), "j15", "left", ofst=0.0)
+    return top_pin, bot_pin
+
+
+_N05 = (
+    "读图：一条线 = 一个节点；实心圆点 = 导线相连；红紫色圆圈 = 测量点（与面包板图同名，黑表笔接 0 V）；灰色小字 = 面包板列号或孔位；小黑字 = LM741 引脚号（1、5、8 脚不接）。",
+    "二极管符号的三角形指向阴极（竖杠 = 实物上的色环）；所有 0 V 符号是同一个地（两条 0 V 轨连通），+9 V、−9 V 符号分别是同一条电源轨。",
+)
+
+
+def node_05():
+    # ---------------- 图 05-p4-3：基本型 ----------------
+    with drawing(fontsize=11) as d:
+        title(d, (6.5, 5.8), "基本型精密整流（输入为正的接法）")
+        top, y1, bot = 3.6, 0.0, -3.0
+        x0 = 0.0
+        d += elm.Vdd().at((x0, top)).label("+9 V")
+        colnote(d, (x0 - 0.15, top - 0.3), "h5→+9 V 轨\n（输入改负：改插 −9 V 轨）", "left", ofst=0.0)
+        d += elm.Resistor().endpoints((x0, top), (x0, y1))
+        lab(d, (x0 + 0.45, (top + y1) / 2), "RA 8.2k\n（g5–g9）", fs_=10)
+        d += elm.Dot().at((x0, y1))
+        d += elm.Resistor().endpoints((x0, y1), (x0, bot))
+        lab(d, (x0 + 0.45, (y1 + bot) / 2), "RB 100", fs_=10)
+        d += elm.Ground().at((x0, bot)).label("0 V", "bottom")
+        colnote(d, (x0 - 0.15, bot + 0.3), "j9→下方 0 V 轨", "left", ofst=0.0)
+        ring(d, (x0, y1), "Vi", dx=-0.9)
+        colnote(d, (x0 - 0.9, y1 - 0.3), "第 9 列下半", "bottom", ofst=0.0)
+        xop = 5.0
+        d += (op := elm.Opamp(leads=True).theta(0).flip().anchor("in2").at((xop, y1)))
+        p_p, p_m, po = op.absanchors["in2"], op.absanchors["in1"], op.absanchors["out"]
+        d += elm.Line().at((x0, y1)).to(p_p).color(TEAL).linewidth(1.8)
+        lab(d, ((x0 + xop) / 2 + 0.4, y1 + 0.35), "蓝绿线 i9→i14", ha="center", fs_=8.5, color=TEAL)
+        _, bot_pin = _lm741_pwr(d, op, "vs")
+        _pin(d, p_p, "3", dx=0.3, dy=0.22)
+        _pin(d, p_m, "2", dx=0.3, dy=-0.22)
+        _pin(d, po, "6", dx=-0.3, dy=0.22)
+        lab(d, (po[0] - 0.4, po[1] - 0.95), "LM741", ha="right", fs_=9.5)
+        x6 = po[0] + 0.8
+        xo = x6 + 3.4
+        d += elm.Line().at(po).to((x6, po[1]))
+        d += elm.Dot().at((x6, po[1]))
+        ring(d, (x6, po[1]), "6 脚", dx=0.0, dy=1.0, ha="center")
+        colnote(d, (x6 - 0.15, po[1] + 0.25), "第 14 列", "left", ofst=0.0)
+        d += elm.Diode().at((x6, po[1])).to((xo, po[1]))
+        lab(d, ((x6 + xo) / 2, po[1] + 0.6), "D1 1N4148", ha="center", fs_=10)
+        lab(d, ((x6 + xo) / 2, po[1] - 0.55), "阳极 c14 → 阴极 c11\n（色环在第 11 列）", ha="center", fs_=8.5, color=GRAY)
+        d += elm.Dot().at((xo, po[1]))
+        ring(d, (xo, po[1]), "Vo", dx=0.0, dy=1.0, ha="center")
+        colnote(d, (xo + 0.15, po[1] + 0.25), "第 11 列上半", "right", ofst=0.0)
+        xr = xo + 2.6
+        d += elm.Line().at((xo, po[1])).to((xr, po[1]))
+        d += elm.Resistor().endpoints((xr, po[1]), (xr, bot))
+        lab(d, (xr + 0.45, (po[1] + bot) / 2), "RL 10k", fs_=10)
+        d += elm.Ground().at((xr, bot)).label("0 V", "bottom")
+        colnote(d, (xr + 0.15, bot + 0.3), "a11→上方 0 V 轨", "right", ofst=0.0)
+        d += elm.Arrow().at((xr - 0.55, po[1] - 0.5)).to((xr - 0.55, bot + 0.7)).color(C["cur"]).linewidth(1.2)
+        lab(d, (xr - 1.0, bot + 1.0), "Vi 为正：\nD1 导通", ha="right", fs_=8.5, color=C["cur"])
+        # 反馈：Vo（第 11 列）→ b8→b11 → 第 8 列 → e8→g13 → 2 脚。接在二极管「后面」
+        yf = bot_pin[1] - 1.9
+        x8 = (p_m[0] + xo) / 2 + 0.6
+        path = [(xo, po[1]), (xo, yf), (p_m[0] - 0.5, yf), (p_m[0] - 0.5, p_m[1]), p_m]
+        for a, b in zip(path[:-1], path[1:]):
+            d += elm.Line().at(a).to(b).color(TEAL).linewidth(1.8)
+        d += elm.Dot().at((x8, yf))
+        lab(d, ((xo + x8) / 2, yf - 0.35), "蓝绿线 b11→b8", ha="center", fs_=8.5, color=TEAL)
+        lab(d, ((x8 + p_m[0]) / 2 - 0.3, yf - 0.35), "蓝绿线 e8→g13", ha="center", fs_=8.5, color=TEAL)
+        colnote(d, (x8, yf + 0.15), "第 8 列上半", "top", ofst=0.0)
+        _bat_pm9(d, 1.5, -7.6)
+        note(d, (6.6, -8.4), "反馈线从 D1 的阴极（Vo）引回 2 脚：二极管在反馈环里，")
+        note(d, (6.6, -9.0), "它的 0.6～0.7 V 压降由运放自动补上，所以 Vo ≈ Vi。")
+        note(d, (6.6, -10.0), "测量表第 6、7 步（输入为负）：只把 h5 那根线从 +9 V 轨改插 −9 V 轨，")
+        note(d, (6.6, -10.6), "D1 截止，Vo ≈ 0，6 脚掉到约 −8 V。")
+        for k, line in enumerate(_N05):
+            note(d, (-3.0, -14.0 - 0.6 * k), line)
+    print("[图 05-p4-3] +9 V→RA 8.2k→Vi(第 9 列)→RB 100→0 V；Vi→i9→i14→3 脚；6 脚→D1(阳 c14、阴 c11)→Vo(第 11 列)→RL 10k→0 V；Vo→b11→b8→e8→g13→2 脚")
+    save_schem(d, "05", "05_p4_3_schem_lab.png")
+
+    # ---------------- 图 05-p4-4：改进型 ----------------
+    with drawing(fontsize=11) as d:
+        title(d, (6.5, 6.6), "改进型精密整流（输入为负的接法）")
+        top, y1, bot = 3.6, 0.0, -3.0
+        x0 = 0.0
+        d += elm.Vdd().at((x0, top)).label("−9 V")
+        colnote(d, (x0 - 0.15, top - 0.3), "h5→−9 V 轨\n（下方最外一条）", "left", ofst=0.0)
+        d += elm.Resistor().endpoints((x0, top), (x0, y1))
+        lab(d, (x0 - 0.65, (top + y1) / 2 - 0.4), "RA 8.2k\n（g5–g9）", ha="right", fs_=10)
+        d += elm.Dot().at((x0, y1))
+        d += elm.Resistor().endpoints((x0, y1), (x0, bot))
+        lab(d, (x0 + 0.45, (y1 + bot) / 2), "RB 100", fs_=10)
+        d += elm.Ground().at((x0, bot)).label("0 V", "bottom")
+        colnote(d, (x0 - 0.15, bot + 0.3), "j9→下方 0 V 轨", "left", ofst=0.0)
+        ring(d, (x0, y1), "Vi", dx=-0.9)
+        colnote(d, (x0 - 0.9, y1 - 0.3), "第 9 列下半", "bottom", ofst=0.0)
+        xg, xop = 3.6, 5.2
+        d += elm.Resistor().at((x0, y1)).to((xg, y1))
+        lab(d, ((x0 + xg) / 2, y1 - 0.55), "R1 10k（h9–h13）", ha="center", fs_=10)
+        d += elm.Dot().at((xg, y1))
+        d += (op := elm.Opamp(leads=True).theta(0).anchor("in1").at((xop, y1)))
+        p_m, p_p, po = op.absanchors["in1"], op.absanchors["in2"], op.absanchors["out"]
+        d += elm.Line().at((xg, y1)).to(p_m)
+        _lm741_pwr(d, op, "vd")
+        _pin(d, p_m, "2", dx=0.3, dy=0.22)
+        _pin(d, p_p, "3", dx=0.3, dy=-0.22)
+        _pin(d, po, "6", dx=-0.3, dy=0.22)
+        lab(d, (po[0] - 0.4, po[1] + 0.95), "LM741", ha="right", fs_=9.5)
+        d += elm.Line().at(p_p).to((p_p[0] - 0.6, p_p[1]))
+        d += elm.Line().at((p_p[0] - 0.6, p_p[1])).to((p_p[0] - 0.6, p_p[1] - 0.6)).linewidth(2.2)
+        d += elm.Ground().at((p_p[0] - 0.6, p_p[1] - 0.6)).label("0 V", "bottom")
+        colnote(d, (p_p[0] - 0.75, p_p[1] - 0.3), "g14→下方 0 V 轨", "left", ofst=0.0)
+        # 虚地：第 13 列下半（2 脚）→ 蓝绿线 g13→e8 → 第 8 列上半；D2、Rf 都从这里出发
+        yD, yR = y1 + 2.7, y1 + 4.3
+        d += elm.Line().at((xg, y1)).to((xg, yD)).color(TEAL).linewidth(1.8)
+        lab(d, (xg - 0.15, (y1 + yD) / 2), "蓝绿线\ng13→e8", ha="right", fs_=8.5, color=TEAL)
+        d += elm.Dot().at((xg, yD))
+        colnote(d, (xg - 0.15, yD + 0.2), "虚地：第 8 列上半", "left", ofst=0.0)
+        x6 = po[0] + 0.8
+        xo = x6 + 3.4
+        d += elm.Line().at(po).to((x6, po[1]))
+        d += elm.Dot().at((x6, po[1]))
+        d += elm.Diode().at((xg, yD)).to((x6, yD))
+        lab(d, ((xg + x6) / 2, yD + 0.55), "D2 1N4148：阳极 d8（虚地）→ 阴极 d14（6 脚）", ha="center", fs_=9.5)
+        d += elm.Line().at((x6, yD)).to((x6, po[1]))
+        d += elm.Line().at((xg, yD)).to((xg, yR))
+        d += elm.Resistor().at((xg, yR)).to((xo, yR))
+        lab(d, ((xg + xo) / 2, yR + 0.55), "Rf 20k（b8–b11）", ha="center", fs_=10)
+        d += elm.Line().at((xo, yR)).to((xo, po[1]))
+        ring(d, (x6, po[1]), "6 脚", dx=0.0, dy=-1.0, ha="center")
+        colnote(d, (x6 - 0.15, po[1] - 0.3), "第 14 列", "left", ofst=0.0)
+        d += elm.Diode().at((x6, po[1])).to((xo, po[1]))
+        lab(d, ((x6 + xo) / 2, po[1] + 0.6), "D1 1N4148", ha="center", fs_=10)
+        lab(d, ((x6 + xo) / 2, po[1] - 0.6), "阳极 c14 → 阴极 c11", ha="center", fs_=8.5, color=GRAY)
+        d += elm.Dot().at((xo, po[1]))
+        ring(d, (xo, po[1]), "Vo", dx=0.0, dy=-1.0, ha="center")
+        colnote(d, (xo + 0.15, po[1] - 0.3), "第 11 列上半", "right", ofst=0.0)
+        xr = xo + 2.6
+        d += elm.Line().at((xo, po[1])).to((xr, po[1]))
+        d += elm.Resistor().endpoints((xr, po[1]), (xr, bot))
+        lab(d, (xr + 0.45, (po[1] + bot) / 2), "RL 10k", fs_=10)
+        d += elm.Ground().at((xr, bot)).label("0 V", "bottom")
+        colnote(d, (xr + 0.15, bot + 0.3), "a11→上方 0 V 轨", "right", ofst=0.0)
+        d += elm.Arrow().at((xr - 0.55, po[1] - 0.5)).to((xr - 0.55, bot + 0.7)).color(C["cur"]).linewidth(1.2)
+        lab(d, (xr - 1.0, bot + 1.0), "Vi 为负：\nD1 导通", ha="right", fs_=8.5, color=C["cur"])
+        _bat_pm9(d, 1.5, -7.6)
+        note(d, (6.6, -8.4), "Vi 为负：6 脚变正，D1 导通、D2 截止，Vo ≈ −(20k/10k)·Vi，是正的。")
+        note(d, (6.6, -9.0), "Vi 为正（测量表第 12、13 步，h5 改插 +9 V 轨）：6 脚变负，D2 导通，")
+        note(d, (6.6, -9.6), "把 6 脚钳在虚地下面约 0.4 V，D1 截止，Vo ≈ 0。")
+        note(d, (6.6, -10.6), "3 脚直接接 0 V，所以 2 脚（虚地）也在 0 V 附近。")
+        for k, line in enumerate(_N05):
+            note(d, (-3.0, -14.0 - 0.6 * k), line)
+    print("[图 05-p4-4] −9 V→RA→Vi→RB→0 V；Vi→R1 10k→2 脚(虚地，g13→e8 到第 8 列)；3 脚→0 V；D2 阳 d8、阴 d14；6 脚→D1→Vo→RL；Rf 20k Vo↔虚地")
+    save_schem(d, "05", "05_p4_4_schem_lab.png")
+
+
+# ======================================================================================
+# 06 桥式整流：图 06-p4-1（06_p4_1_bb_bridge.png）→ 图 06-p4-2
+# 依据 code/figs/06_figs.py 的 bb06()：tp = 直流 +，tn = 直流 −（下方两条轨不用）
+#   ~1 → a12，~2 → j12；D3 c8→c12，D1 d12→d16，D4 g8→g12，D2 h12→h16（阳极→阴极，色环全朝右）
+#   e8–f8 黑线（− 端），e16–f16 橙线（+ 端）；a16→直流 +，a8→直流 −；a22→直流 +，a26→直流 −
+#   C1 b22(+)–b26（先不插，100 µF 后换 470 µF）；RL 470 Ω（方案 B 1 kΩ）d22–d26；测量点 ~1 b12、~2 i12、V+ e22、V− e26
+# ======================================================================================
+from schemdraw.segments import SegmentArc, Segment as _Seg
+
+
+class Hop(Element):
+    """横线上的「跨线弯」：两根线交叉但不相连。放在交叉点，横线在这里断开、向上拱一个半圆。"""
+    def __init__(self, r=0.25, **kw):
+        super().__init__(**kw)
+        self.segments.append(SegmentArc((0, 0), 2 * r, 2 * r, theta1=0, theta2=180))
+        self.anchors["top"], self.anchors["bot"] = (0, r), (0, -r)
+
+
+def _par_arrow(d, a, b, off, dashed=False):
+    """沿 a→b 方向、向外偏 off 画一支电流箭头（取中间一段）。"""
+    import math
+    (xa, ya), (xb, yb) = a, b
+    L = math.hypot(xb - xa, yb - ya)
+    ux, uy = (xb - xa) / L, (yb - ya) / L
+    nx, ny = off[0], off[1]
+    p0 = (xa + ux * L * 0.28 + nx, ya + uy * L * 0.28 + ny)
+    p1 = (xa + ux * L * 0.72 + nx, ya + uy * L * 0.72 + ny)
+    e = elm.Arrow().at(p0).to(p1).color(C["cur"]).linewidth(1.3)
+    if dashed:
+        e = e.linestyle("--")
+    d += e
+
+
+def node_06():
+    POS, NEG, ACW = C["vout"], "black", TEAL
+    with drawing(fontsize=11) as d:
+        title(d, (4.5, 6.0), "桥式整流 + 电容滤波（第 8～26 列）")
+        T, B, Lf, R = (3.2, 2.3), (3.2, -2.3), (0.9, 0.0), (5.5, 0.0)
+        d += elm.Diode().at(T).to(R)           # D1：~1 → +
+        d += elm.Diode().at(B).to(R)           # D2：~2 → +
+        d += elm.Diode().at(Lf).to(T)          # D3：− → ~1
+        d += elm.Diode().at(Lf).to(B)          # D4：− → ~2
+        lab(d, (4.6, 1.75), "D1  d12→d16", fs_=10)
+        lab(d, (4.6, -1.75), "D2  h12→h16", fs_=10)
+        lab(d, (1.8, 1.75), "D3  c8→c12", ha="right", fs_=10)
+        lab(d, (1.15, -2.75), "D4\ng8→g12", fs_=10)
+        for p in (T, B, Lf, R):
+            d += elm.Dot().at(p)
+        # 交流输入（绿线）：~1 → a12（第 12 列上半），~2 → j12（第 12 列下半）
+        xs, yT, yB = -2.8, 3.6, -3.6
+        d += elm.SourceSin().endpoints((xs, -1.0), (xs, 1.0))
+        lab(d, (xs - 0.6, 0.0), "交流输入\n适配器 9 V AC\n（或发生器）", ha="right", fs_=9.5)
+        for a, b in (((xs, 1.0), (xs, yT)), ((xs, yT), (T[0], yT)), ((T[0], yT), T)):
+            d += elm.Line().at(a).to(b).color(ACW).linewidth(1.8)
+        for a, b in (((xs, -1.0), (xs, yB)), ((xs, yB), (Lf[0] - 0.25, yB)),
+                     ((Lf[0] + 0.25, yB), (B[0], yB)), ((B[0], yB), B)):
+            d += elm.Line().at(a).to(b).color(ACW).linewidth(1.8)
+        d += Hop().at((Lf[0], yB)).theta(0).color(ACW).linewidth(1.8)
+        lab(d, ((xs + T[0]) / 2, yT + 0.35), "绿线 ~1 → a12", ha="center", fs_=9, color=ACW)
+        lab(d, ((xs + B[0]) / 2 - 0.6, yB + 0.35), "绿线 ~2 → j12", ha="center", fs_=9, color=ACW)
+        colnote(d, (T[0] + 0.15, T[1] + 0.35), "~1：第 12 列上半", "right", ofst=0.0)
+        colnote(d, (B[0] + 0.15, B[1] - 0.35), "~2：第 12 列下半", "right", ofst=0.0)
+        ring(d, (T[0], yT), "~1", dx=0.0, dy=0.9, ha="left")
+        ring(d, (-1.2, yB), "~2", dx=0.0, dy=-0.9, ha="left")
+        # + 端：第 16 列（e16–f16 橙线连通上下）→ a16 → 直流 + 轨 → a22
+        xC, xL = 10.0, 12.2
+        yN = -5.0
+        d += elm.Line().at(R).to((xL, 0.0)).color(POS).linewidth(1.8)
+        lab(d, (R[0] + 0.15, 0.4), "+ 端：第 16 列", fs_=9.5)
+        lab(d, ((R[0] + xC) / 2 + 0.3, -0.4), "橙线 a16→直流 + 轨→a22", ha="center", fs_=8.5, color=POS)
+        # − 端：第 8 列（e8–f8 黑线连通上下）→ a8 → 直流 − 轨 → a26；跨过 ~2 的绿线（不相连）
+        hx = Lf[0]
+        d += elm.Line().at(Lf).to((hx, yN)).color(NEG).linewidth(1.8)
+        d += elm.Line().at((hx, yN)).to((xL, yN)).color(NEG).linewidth(1.8)
+        lab(d, (hx - 0.15, -1.0), "− 端：\n第 8 列", ha="right", fs_=9.5)
+        lab(d, ((hx + xC) / 2, yN - 0.35), "黑线 a8→直流 − 轨→a26", ha="center", fs_=8.5)
+        lab(d, (hx + 0.4, yB - 0.55), "绿线跨过，不相连", fs_=8, color=GRAY)
+        # 负载
+        for x in (xC, xL):
+            d += elm.Dot().at((x, 0.0))
+            d += elm.Dot().at((x, yN))
+        d += elm.Capacitor(polar=True).endpoints((xC, 0.0), (xC, yN)).linestyle("--")
+        lab(d, (xC - 0.45, -1.9), "C1\n100 µF\n→ 470 µF", ha="right", fs_=9.5)
+        lab(d, (xC - 0.45, -3.6), "+ b22\n− b26\n（先不插）", ha="right", fs_=8.5, color=GRAY)
+        d += elm.Resistor().endpoints((xL, 0.0), (xL, yN))
+        lab(d, (xL + 0.45, -2.2), "RL 470 Ω\n（方案 B：1 kΩ）", fs_=10)
+        colnote(d, (xL + 0.45, -3.3), "d22–d26", "right", ofst=0.0)
+        ring(d, (xL, 0.0), "V+（第 22 列）", dx=0.9, dy=0.0)
+        ring(d, (xL, yN), "V−（第 26 列）", dx=0.9, dy=0.0)
+        d += elm.Arrow().at((xL - 0.6, -0.8)).to((xL - 0.6, yN + 0.9)).color(C["cur"]).linewidth(1.3)
+        # 两个半周的电流路径
+        k = 0.42
+        _par_arrow(d, T, R, (-k, -k))                    # ~1 高：~1 → D1 → +
+        _par_arrow(d, Lf, B, (k, k))                    # … → − → D4 → ~2
+        _par_arrow(d, B, R, (-k, k), dashed=True)        # ~2 高：~2 → D2 → +
+        _par_arrow(d, Lf, T, (k, -k), dashed=True)       # … → − → D3 → ~1
+        lx = 8.0
+        d += elm.Arrow().at((lx, 4.4)).to((lx + 0.9, 4.4)).color(C["cur"]).linewidth(1.3)
+        lab(d, (lx + 1.1, 4.4), "~1 比 ~2 高的半周：~1 → D1 → + → RL → − → D4 → ~2", fs_=9, color=C["cur"])
+        d += elm.Arrow().at((lx, 3.7)).to((lx + 0.9, 3.7)).color(C["cur"]).linewidth(1.3).linestyle("--")
+        lab(d, (lx + 1.1, 3.7), "~2 比 ~1 高的半周：~2 → D2 → + → RL → − → D3 → ~1", fs_=9, color=C["cur"])
+        lab(d, (lx + 1.1, 3.0), "两个半周流过 RL 的电流方向相同（从 + 到 −）", fs_=9, color=C["cur"])
+        for kk, line in enumerate((
+            "D1～D4 都是 1N4007：符号的三角形指向阴极，也就是实物上有灰色色环的一端；面包板上四只二极管的色环全部朝右。",
+            "读图：一条线 = 一个节点；实心圆点 = 导线相连；红紫色圆圈 = 测量点（与面包板图同名）；灰色小字 = 面包板列号或孔位；天蓝色箭头 = 电流方向。",
+            "第 12 列的上半区（~1）和下半区（~2）隔着凹槽，不相连；第 8 列（−）、第 16 列（+）分别靠 e8–f8、e16–f16 两根短跳线把上下两半连成一个节点。",
+            "量 V+、V− 时表笔接直流 + 轨和直流 − 轨（也就是第 22、26 列）；直流 − 不是大地，交流输入两根线可以互换。",
+        )):
+            note(d, (-5.5, -7.8 - 0.6 * kk), line)
+    print("[图 06-p4-2] ~1(a12)、~2(j12)；D1 ~1→+、D2 ~2→+、D3 −→~1、D4 −→~2；+ 第 16 列→直流 + 轨→a22；− 第 8 列→直流 − 轨→a26；C1(+ b22)、RL d22–d26")
+    save_schem(d, "06", "06_p4_2_schem_lab.png")
+
+
+# ======================================================================================
+# 07 射极跟随器：图 07-p4-1（07_p4_1_bb_follower.png）→ 图 07-p4-3；图 07-p4-2（07_p4_2_bb_direct.png）→ 图 07-p4-4
+# 依据 code/figs/07_figs.py 的 bb07()：tp = +9 V，tn = 0 V（下方两条轨不用）；电池正极 → tp1，负极 → tn2
+#   RP 1k：端 1 e3（a3 → +9 V），滑片 W e4，端 3 e5（a5 → 0 V）
+#   follower：2N3904 平面朝自己 E e13、B e14、C e15；绿线 c4 → c14；橙线 a15 → +9 V；RL a13 → 0 V 轨；测量点 V_B b14、V_E b13、V_C c15
+#   direct：拿掉三极管，220 Ω（RX）a4 → 0 V 轨；测量点「滑片」c4
+# ======================================================================================
+def _ef07(mode):
+    POS, NEG, SIG = C["vout"], "black", TEAL
+    yP, yN = 3.4, -4.4
+    xb, xp = -3.4, 0.6
+    with drawing(fontsize=11) as d:
+        ttl = ("射极跟随器：电位器滑片推 2N3904 基极" if mode == "follower"
+               else "对照组：220 Ω 直接挂在电位器滑片上")
+        title(d, (3.2, yP + 1.6), ttl)
+        # 两条电源轨
+        xr = 9.6 if mode == "follower" else 6.0
+        d += elm.Line().at((xb, yP)).to((xr, yP)).color(POS).linewidth(2.0)
+        d += elm.Line().at((xb, yN)).to((xr, yN)).color(NEG).linewidth(2.0)
+        lab(d, (xr + 0.2, yP), "+9 V 轨（上方第一条）", fs_=10, color=POS)
+        lab(d, (xr + 0.2, yN), "0 V 轨（上方第二条）", fs_=10)
+        # 9 V 电池
+        d += elm.Battery().endpoints((xb, yN), (xb, yP)).reverse()
+        lab(d, (xb - 0.55, -0.5), "9 V 电池\n红线 → tp1\n黑线 → tn2", ha="right", fs_=10)
+        for x in (xb, xp):
+            d += elm.Dot().at((x, yP))
+            d += elm.Dot().at((x, yN))
+        # 电位器：端 1 在上（+9 V），端 3 在下（0 V），滑片向右
+        d += elm.Line().at((xp, yP)).to((xp, 2.0)).color(POS).linewidth(1.8)
+        d += (pot := elm.Potentiometer().endpoints((xp, 2.0), (xp, -3.0)))
+        d += elm.Line().at((xp, -3.0)).to((xp, yN)).color(NEG).linewidth(1.8)
+        lab(d, (xp - 0.6, -0.5), "RP 1k", ha="right")
+        colnote(d, (xp, 2.0), "端 1：e3，橙线 a3 → +9 V", "left", ofst=0.25)
+        colnote(d, (xp, -3.0), "端 3：e5，黑线 a5 → 0 V", "left", ofst=0.25)
+        tx, ty = pot.tap
+        colnote(d, (tx + 0.25, ty + (0.35 if mode == "follower" else -0.35)), "滑片 W：e4（第 4 列）", "right", ofst=0.0)
+        d += elm.Dot().at((tx, ty))
+        if mode == "follower":
+            xq = 6.4
+            d += elm.Line().at((tx, ty)).to((xq - 0.6, ty)).color(SIG).linewidth(1.8)
+            lab(d, ((tx + xq) / 2 - 0.2, ty - 0.35), "绿线 c4 → c14", ha="center", fs_=9, color=SIG)
+            d += (q := elm.BjtNpn(circle=True).anchor("base").at((xq - 0.6, ty)))
+            lab(d, (q.center[0] + 0.85, q.center[1] + 0.05), "Q1\n2N3904", fs_=10)
+            xc, yc = q.collector
+            xe, ye = q.emitter
+            lab(d, (xc + 0.15, yc - 0.05), "C", fs_=10)
+            lab(d, (xe + 0.15, ye + 0.1), "E", fs_=10)
+            d += elm.Line().at((xc, yc)).to((xc, yP)).color(POS).linewidth(1.8)
+            d += elm.Dot().at((xc, yP))
+            colnote(d, (xc, (yc + yP) / 2 + 0.35), "C：e15，橙线 a15 → +9 V", "right", ofst=0.2)
+            ye2 = ye - 0.6
+            d += elm.Line().at((xe, ye)).to((xe, ye2))
+            d += elm.Dot().at((xe, ye2))
+            d += elm.Resistor().endpoints((xe, ye2), (xe, yN))
+            d += elm.Dot().at((xe, yN))
+            lab(d, (xe + 0.5, (ye2 + yN) / 2 + 0.2), "RL 1 kΩ\n（换 220 Ω）", fs_=10)
+            colnote(d, (xe + 0.5, (ye2 + yN) / 2 - 0.75), "a13 → 0 V 轨", "right", ofst=0.0)
+            colnote(d, (xe + 0.2, ye2 + 0.25), "E：e13", "right", ofst=0.0)
+            colnote(d, (q.base[0] - 0.1, ty - 0.75), "B：e14", "left", ofst=0.0)
+            ring(d, (xq - 0.9, ty), "V_B（b14）", dx=0.0, dy=1.5, ha="center")
+            ring(d, (xe, ye2), "V_E（b13）", dx=-1.6, dy=0.0)
+            ring(d, (xc, yc + 0.6), "V_C（c15）", dx=1.0, dy=0.0)
+            # 电流方向
+            xa = xe + 2.9
+            d += elm.Arrow().at((xa, yc + 0.9)).to((xa, yN + 0.9)).color(C["cur"]).linewidth(1.3)
+            lab(d, (xa + 0.2, 0.0), "I_E：+9 V → C → E → RL → 0 V\n1 kΩ 时约 4.3 mA，220 Ω 时约 19 mA", fs_=9, color=C["cur"])
+            lab(d, (tx + 0.3, ty + 0.75), "I_B 很小（只有 I_E 的约 β 分之一）", fs_=8.5, color=C["cur"])
+            lab(d, (q.center[0] - 0.7, yN - 0.8), "2N3904 印字面朝自己，三只脚从左到右 E、B、C → 第 13、14、15 列", ha="center", fs_=9, color=GRAY)
+            notes = (
+                "读图：一条线 = 一个节点；实心圆点 = 导线相连；红紫色圆圈 = 测量点（与面包板图同名，黑表笔接 0 V 轨）；灰色小字 = 面包板列号或孔位；天蓝色箭头 = 电流方向。",
+                "三极管符号上带箭头的那只脚是发射极 E，箭头朝外表示 NPN；E 比 B 低一个 V_BE（约 0.7 V），所以 V_E 跟着滑片走、总比 V_B 低 0.7 V 左右。",
+                "绿线从 c4 跨到 c14，中途经过第 13 列只是从上面越过，不插孔；第 9 步串电流表时把 RL 的 a13 脚改插 a11，表接在 b13 和 b11 之间。",
+            )
+        else:
+            xr2 = tx + 2.4
+            d += elm.Line().at((tx, ty)).to((xr2, ty))
+            d += elm.Dot().at((xr2, ty))
+            d += elm.Resistor().endpoints((xr2, ty), (xr2, yN))
+            d += elm.Dot().at((xr2, yN))
+            lab(d, (xr2 + 0.5, (ty + yN) / 2 + 0.2), "RX 220 Ω", fs_=10)
+            colnote(d, (xr2 + 0.5, (ty + yN) / 2 - 0.4), "a4 → 0 V 轨", "right", ofst=0.0)
+            ring(d, (tx + 1.2, ty), "滑片（c4）", dx=0.0, dy=1.2, ha="center")
+            xa = xr2 - 0.55
+            d += elm.Arrow().at((xa, ty - 0.8)).to((xa, yN + 0.6)).color(C["cur"]).linewidth(1.3)
+            lab(d, (xr2 + 0.5, -3.6), "约 11 mA", fs_=9, color=C["cur"])
+            lab(d, (2.0, yN - 0.8), "三极管、绿线、a15 的橙线和 RL 都已拔掉", ha="center", fs_=9, color=GRAY)
+            notes = (
+                "读图：一条线 = 一个节点；实心圆点 = 导线相连；红紫色圆圈 = 测量点（黑表笔接 0 V 轨）；灰色小字 = 面包板列号或孔位；天蓝色箭头 = 电流方向。",
+                "220 Ω 和电位器下段（约 556 Ω）并联，滑片电压从 5 V 掉到约 2.36 V；电流只在电位器上段和 220 Ω 之间分配，没有三极管帮忙。",
+            )
+        for k, line in enumerate(notes):
+            note(d, (xb - 2.4, yN - 1.7 - 0.6 * k), line)
+    return d
+
+
+def node_07():
+    d = _ef07("follower")
+    print("[图 07-p4-3] 9 V：+ → tp1、− → tn2；RP 端 1 e3(a3→+9 V)、W e4、端 3 e5(a5→0 V)；W→绿线 c4→c14→B；C e15→a15→+9 V；E e13→RL a13→0 V")
+    save_schem(d, "07", "07_p4_3_schem_lab.png")
+    d = _ef07("direct")
+    print("[图 07-p4-4] RP 同上；RX 220 Ω a4→0 V 轨；测量点 滑片 c4")
+    save_schem(d, "07", "07_p4_4_schem_lab.png")
+
+
 # ---------------- 登记表：键 = 节点编号（与 save_schem 的 prefix 相同） ----------------
 NODES = {
     "P1": node_P1,
@@ -560,6 +1202,11 @@ NODES = {
     "P3": node_P3,
     "01": node_01,
     "02": node_02,
+    "03": node_03,
+    "04": node_04,
+    "05": node_05,
+    "06": node_06,
+    "07": node_07,
 }
 
 
