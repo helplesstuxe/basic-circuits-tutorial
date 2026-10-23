@@ -1,6 +1,6 @@
 # 23 光耦隔离 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：16 振荡器 · 直觉篇](../16-oscillator/page1.md) · 前置节点：[P2 半导体入门](../P2-semiconductor-basics/page1.md)、[22 三极管开关与继电器驱动](../22-bjt-relay-driver/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：16 振荡器 · 直觉篇](../16-oscillator/page1.md) · 前置节点：[P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)、[22 三极管开关与继电器驱动 · 直觉篇](../22-bjt-relay-driver/page1.md)
 
 > [!WARNING]
 > **市电危险**：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。
@@ -70,7 +70,13 @@
 
 *图 23-p3-2　交流输入光耦做市电过零检测（示意）*
 
-图 23-p3-2 下方的输出每秒出现 100 个脉冲（50 Hz，一个周期过零两次）。当市电绝对值小于约 41 V 时输出高于 3.0 V，单片机读成高电平，脉冲宽约 0.85 ms。电阻值和功率只是为了算图而取的示意值 [待核实：实际产品的输入电阻取值、耐压和功率等级]，不是可以照抄的电路。
+图 23-p3-2 下方的输出每秒出现 100 个脉冲（50 Hz，一个周期过零两次）。当市电绝对值小于约 41 V 时输出高于 3.0 V，单片机读成高电平，脉冲宽约 0.85 ms。100 kΩ 是为了算图而取的**示意值**，不是可以照抄的电路。不过可以用手册上的数字检查一下它"合不合理"，这个推理过程值得学：
+
+1. **LED 电流够不够、会不会过大**：峰值电流 311 V ÷ 100 kΩ ≈ 3.11 mA。[Vishay H11AA1 手册](https://www.vishay.com/docs/83608/h11aa1.pdf)（一种交流输入光耦）允许的 LED 连续电流是 ±40 mA，功耗上限 120 mW。这里 LED 功耗按有效值估算只有约 2.6 mW，离上限很远。
+2. **电阻自己扛不扛得住**：电阻上几乎是全部 220 V，功耗 $220^2 \div 100\ \text{k}\Omega \approx 0.48$ W。[Yageo CFR 碳膜电阻手册](https://cdn.sparkfun.com/assets/a/9/3/0/e/yageo-cfr_datasheet.pdf) 规定，电阻能长期承受的电压是 $\sqrt{P \times R}$ 和"最高工作电压"二者中较小的那个。1/4 W 的 100 kΩ 只能承受 158 V，比 220 V 低，功率也只有一半，两头都不够。1/2 W 的能承受 224 V，刚好压线，没有余量。1 W 的能承受 316 V，功率也有一倍余量。另一种常见做法是拆成两只 50 kΩ 串联，每只只分到 110 V、0.24 W。
+3. **隔离够不够**：H11AA1 的重复峰值隔离电压 VIORM 是 850 V，1 分钟隔离耐压 VISO 是 5000 V（有效值），都远高于市电峰值 311 V。
+
+这三步只说明示意值"量级上说得通"。真实产品还要看电阻的脉冲耐受能力、板上的爬电距离和相关安全标准，必须由专业人员设计。
 
 ## 四、练习
 
@@ -113,6 +119,8 @@ $I_F = (12 - 1.2) / 470 \approx 23.0\ \text{mA}$ ，没超过 PC817 的 50 mA，
 - Vishay，6N137 数据手册（10 MBd、输出侧电源 4.5 V 到 5.5 V、传输延迟）：https://www.vishay.com/docs/84732/6n137.pdf
 - Vishay，Optocoupler Switching Speed（负载电阻、基极–发射极电阻对速度的影响）：https://www.vishay.com/docs/83590/fastswit.pdf
 - Vishay，AN04 CTR 对开关速度的影响（CTR 高则开通快、关断慢）：https://www.vishay.com/docs/80579/an04_impactcurrenttransferratiooptocouplers.pdf
+- Vishay，H11AA1 交流输入光耦数据手册（LED 电流 ±40 mA、功耗 120 mW、VIORM 850 V、VISO 5000 V）：https://www.vishay.com/docs/83608/h11aa1.pdf
+- Yageo，CFR 碳膜电阻数据手册（最高工作电压、RCWV = √(P·R) 与最高工作电压取小）：https://cdn.sparkfun.com/assets/a/9/3/0/e/yageo-cfr_datasheet.pdf
 - Vishay，交流输入光耦数据手册（反向并联的两只 LED）：https://www.vishay.com/docs/83741/83741.pdf
 - ArduinoGetStarted，Arduino – PC817 Optocoupler（漏电流的输出加泄放电阻）：https://arduinogetstarted.com/tutorials/arduino-pc817-optocoupler-monitor-12v-24v-dc-input-signal
 - Shutdown Circuit，Optocoupler Isolated Digital Signal（两侧地不能用导线、电阻或电容连接；普通光耦只到几 kHz，6N137 需要输出侧电源）：https://shutdowncircuit.com/blocks/optocoupler/

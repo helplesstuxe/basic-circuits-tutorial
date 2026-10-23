@@ -135,6 +135,19 @@ def zero_cross():
     print(f"[过零] 峰值 {vp:.0f} V；|v| < {v_th:.0f} V 时输出高于 3.0 V；每个过零脉冲宽约 {width*1e3:.2f} ms；每秒 100 个")
     print(f"[过零] 输入电阻 100 kΩ 上的功耗约 {p_r:.2f} W（示意）")
     assert 0.5e-3 < width < 1.2e-3
+    # ---- 示意值的推理（H11AA1、Yageo CFR 手册数字），不是可照抄的设计 ----
+    i_pk = vp / r_in                                    # LED 峰值电流
+    print(f"[过零] LED 峰值电流 {i_pk*1e3:.2f} mA，远小于 H11AA1 的 ±40 mA；LED 功耗按有效值估算约 {i_pk/np.sqrt(2)*V_F*1e3:.1f} mW（上限 120 mW）")
+    assert abs(i_pk - 3.11e-3) < 0.01e-3 and i_pk < 40e-3 and i_pk / np.sqrt(2) * V_F < 0.120
+    print(f"[过零] 市电峰值 {vp:.0f} V < H11AA1 VIORM 850 V（峰值），隔离耐压 VISO 5000 V（有效值，1 分钟）")
+    assert vp < 850
+    rcwv = lambda p_w, r, vmax: min(np.sqrt(p_w * r), vmax)   # Yageo CFR：额定连续工作电压 = √(P·R) 与最高工作电压取小
+    for name, p_w, vmax in (("CFR-25 1/4 W", 0.25, 250), ("CFR-50 1/2 W", 0.5, 350), ("CFR-100 1 W", 1.0, 500)):
+        print(f"[过零] 单只 100 kΩ 用 {name}：允许 {rcwv(p_w, r_in, vmax):.0f} V，实际 220 V，功耗 {p_r:.2f} W / 额定 {p_w} W")
+    assert rcwv(0.25, r_in, 250) < 220 < rcwv(0.5, r_in, 350) < 230 and rcwv(1.0, r_in, 500) > 300
+    half_v, half_p = 220 / 2, 110 ** 2 / 50e3           # 拆成两只 50 kΩ 串联
+    print(f"[过零] 两只 50 kΩ 串联：每只 {half_v:.0f} V、{half_p:.3f} W；用 1/2 W 时每只允许 {rcwv(0.5, 50e3, 350):.0f} V")
+    assert abs(p_r - 0.484) < 0.001 and abs(half_p - 0.242) < 0.001 and rcwv(0.5, 50e3, 350) > half_v
     fig, axs = plt.subplots(2, 1, figsize=(7, 3.6), sharex=True)
     axs[0].plot(t * 1e3, v, **fs.LS["vin"], label="市电（示意）")
     axs[0].axhspan(-v_th, v_th, color=fs.C["ref"], alpha=0.25)
