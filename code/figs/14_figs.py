@@ -355,3 +355,115 @@ print(f"[数值] 门限（输出低按 0 V）：V_H {vh0:.3f} V，V_L {vl0:.3f} 
 print(f"[数值] 输出低、V_in = 2.0 V 时同相端 {vp20:.3f} V；上拉电流 {ipu*1e3:.2f} mA；"
       f"LED 电流约 {iled*1e3:.1f} mA（按压降 1.9 V、B 路输出低 {VOL} V 估算）；回差 {vh - vl0:.3f} V")
 assert 2.73 <= vh <= 2.75 and 2.25 <= vl0 <= 2.26 and abs(vp20 - 1.82) < 0.01 and abs(ipu - 2.2e-3) < 0.05e-3
+
+
+# ======================= 第 8 轮补图：正文讲到具体连接、附近却没有电路图的地方 =======================
+ACC = fs.C["bad"]
+
+
+def schmitt_core(d, x0, y0, vin_label="$V_{in}$", r2="$R_2$ 100 kΩ"):
+    """施密特比较器主体：反相端接 2.5 V 基准，Vin 经 R1 到同相端，R2 从同相端接到输出点；返回 (op, 输出点 x)。"""
+    d += (op := elm.Opamp(leads=True).right().at((x0, y0)).anchor("center")
+          .label("LM393", loc="center", ofst=(-0.35, 0), fontsize=9))
+    vref_divider(d, op)
+    d += elm.Line().right().at(op.out).length(0.75)
+    d += elm.Line().left().at(op.in2).length(0.75)
+    d += elm.Line().down().length(1.5)
+    d += (j := elm.Dot().label("$V_+$", "top", ofst=(0.25, 0.05)))
+    d += (r1 := elm.Resistor().left().label("$R_1$ 10 kΩ"))
+    d += elm.Dot(open=True).label(vin_label, "left")
+    d += (r2e := elm.Resistor().right().at(j.center).label(r2, "bottom").tox(op.out.x + 0.75))
+    d += elm.Line().up().toy(op.out)
+    d += elm.Dot()
+    return op, r1, r2e
+
+
+# ---------- 图 14-p1-4 示波器实验：电位器代替传感器，两路探头的位置（page1「在示波器上会看到什么」） ----------
+with drawing(fontsize=11) as d:
+    d += (op := elm.Opamp(leads=True).right().label("比较器\nLM393", loc="center", ofst=(-0.35, 0), fontsize=9))
+    vref_divider(d, op)
+    d += elm.Line().left().at(op.in2).length(0.75)
+    d += elm.Line().down().length(1.5)
+    d += (jv := elm.Dot())
+    d += elm.Line().left().length(1.25)
+    d += elm.Line().left().length(1.25).color(ACC)
+    d += (pot := elm.Potentiometer().up().anchor("tap").color(ACC))
+    d += elm.Label().at((pot.center.x - 1.0, pot.center.y)).label("电位器", color=ACC, halign="right")
+    d += elm.Vdd().at(pot.end).label("+5 V").color(ACC)
+    d += elm.Ground().at(pot.start).color(ACC)
+    d += elm.Line().down().at(jv.center).length(1.0)
+    d += elm.Dot(open=True).label("CH1：$V_{in}$", "bottom")
+    output_pullup(d, op)
+    d += elm.Line().down().at((op.out.x + 2.5, op.out.y)).length(1.0)
+    d += elm.Dot(open=True).label("CH2：$V_o$", "bottom")
+save_schem(d, N, "14_p1_4_scope_setup.png")
+print("[电路图] 14-p1-4：电位器（强调色）代替传感器，CH1 接同相端，CH2 接输出")
+
+# ---------- 图 14-p2-3 推门限用的两个状态：输出低 / 输出高（page2 第 2 节） ----------
+with drawing(fontsize=11) as d:
+    for k, (x0, low) in enumerate([(0, True), (14, False)]):
+        op, r1, r2e = schmitt_core(d, x0, 0)
+        o = (op.out.x + 0.75, op.out.y)
+        d += elm.Line().right().at(o).length(1.25)
+        d += (q := elm.Dot())
+        d += elm.Resistor().up().label("$R_3$ 2.2 kΩ")
+        d += elm.Vdd().label("$V_{CC}$ 5 V")
+        d += elm.Line().down().at(q.center).length(0.75)
+        d += (sw := elm.Switch(action="close" if low else "open").down().color(ACC))
+        d += elm.Label().at((sw.center.x + 0.6, sw.center.y)).label("输出管\n导通" if low else "输出管\n截止", color=ACC, halign="left", fontsize=10)
+        d += elm.Ground()
+        d += elm.Label().at((q.center.x + 0.35, q.center.y + 0.35)).label("$V_o \\approx 0$" if low else "$V_o \\approx V_{CC}$", halign="left", fontsize=10)
+        # 电流方向：输出低时电流从 Vin 经 R1、R2 流向输出；输出高时从 VCC 经 R3、R2 流回同相端
+        y = r1.center.y - 1.0
+        if low:
+            d += elm.Arrow().right().at((r1.start.x - 1.2, y)).length(5.0).color(ACC).label("$I$：$V_{in}$ → $R_1$ → $R_2$ → 输出（到地）", "bottom", fontsize=10, color=ACC)
+        else:
+            d += elm.Arrow().left().at((r1.start.x + 3.8, y)).length(5.0).color(ACC).label("$I$：$V_{CC}$ → $R_3$ → $R_2$ → $V_+$（→ $R_1$）", "bottom", fontsize=10, color=ACC)
+        title = "（a）输出为低：求上门限 $V_H$" if low else "（b）输出为高：求下门限 $V_L$"
+        d += elm.Label().at((x0 - 4.5, 6.4)).label(title, fontsize=12, halign="left")
+save_schem(d, N, "14_p2_3_two_states.png")
+print("[电路图] 14-p2-3：两种输出状态下 R2 下端接到哪里（导通到地 / 经 R3 到 VCC）")
+
+# ---------- 图 14-p3-4 练习 3：上拉电阻改接 3.3 V，比较器仍用 5 V ----------
+with drawing(fontsize=11) as d:
+    op, r1, r2e = schmitt_core(d, 0, 0)
+    d += elm.Line().right().at((op.out.x + 0.75, op.out.y)).length(1.25)
+    d += (q := elm.Dot())
+    d += elm.Resistor().up().label("$R_3$ 上拉").color(ACC)
+    d += elm.Vdd().label("+3.3 V（单片机电源）").color(ACC)
+    d += elm.Line().right().at(q.center).length(1.0)
+    d += elm.Dot(open=True).label("$V_o$ → 3.3 V 单片机", "right")
+    d += elm.Label().at((op.center.x, op.center.y - 1.6)).label("比较器电源 $V_{CC}$ = 5 V", fontsize=10)
+save_schem(d, N, "14_p3_4_pullup_3v3.png")
+
+# ---------- 图 14-p3-5 练习 4 答案：电池先经 100 kΩ/100 kΩ 分压，再进窗口比较器 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).at((0, 0)).label("电池 +\n3.0～4.2 V", "left").color(ACC)
+    d += elm.Line().right().length(0.75).color(ACC)
+    d += (ra := elm.Resistor().down().color(ACC))
+    d += (jm := elm.Dot().color(ACC))
+    d += (rb := elm.Resistor().down().color(ACC))
+    for r_ in (ra, rb):
+        d += elm.Label().at((r_.center.x - 0.5, r_.center.y)).label("100 kΩ", color=ACC, halign="right")
+    d += elm.Ground().color(ACC)
+    d += elm.Line().right().at(jm.center).length(1.5)
+    d += elm.Label().at((jm.center.x + 0.75, jm.center.y - 0.45)).label("1.5～2.1 V", fontsize=10, color=ACC)
+    d += (ja := elm.Dot())
+    xa = ja.center.x
+    d += (A := elm.Opamp(leads=True).right().anchor("in2").at((xa + 0.75, jm.center.y + 2.0)).label("A", loc="center", ofst=(-0.4, 0)))
+    d += (B := elm.Opamp(leads=True).right().anchor("in1").at((xa + 0.75, jm.center.y - 1.5)).label("B", loc="center", ofst=(-0.4, 0)))
+    d += elm.Line().up().at(ja.center).toy(A.in2); d += elm.Line().right().tox(A.in2)
+    d += elm.Line().down().at(ja.center).toy(B.in1); d += elm.Line().right().tox(B.in1)
+    d += elm.Line().left().at(A.in1).length(0.4); d += elm.Line().up().length(0.6)
+    d += elm.Dot(open=True).label("$V_L$ 1.5 V", "left")
+    d += elm.Line().left().at(B.in2).length(0.4); d += elm.Line().down().length(0.6)
+    d += elm.Dot(open=True).label("$V_H$ 2.1 V", "left")
+    d += elm.Line().right().at(A.out).length(1.0)
+    d += (jo := elm.Dot())
+    d += elm.Line().down().toy(B.out); d += elm.Line().left().tox(B.out)
+    d += elm.Resistor().up().at(jo.center).label("2.2 kΩ")
+    d += elm.Vdd().label("+5 V")
+    d += elm.Line().right().at(jo.center).length(1.25)
+    d += elm.Dot(open=True).label("$V_o$（高 = 电池正常）", "right")
+save_schem(d, N, "14_p3_5_battery_window.png")
+print("[电路图] 14-p3-5：新加的 100 kΩ/100 kΩ 分压用强调色")
