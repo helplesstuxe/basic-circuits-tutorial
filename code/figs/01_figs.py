@@ -550,3 +550,64 @@ def p4_2_family(fam):
 if __name__ == "__main__":
     _r, _fam = p4_numbers()
     p4_1_breadboard(); p4_2_family(_fam)
+
+
+# ====================== 第 8 轮补电路图（page1–3） ======================
+EMPH = fs.C["third"]          # 新出现的元件用强调色
+
+
+def _inv_core(d, x0, r1_txt, rf_txt):
+    """以 (x0, 0) 为 R1 左端画反相放大主体，返回 (R1 左端坐标, op)。"""
+    op = elm.Opamp(leads=True).at((x0 + 4.2, -0.6)).anchor("in1")
+    d += op
+    j = (op.in1[0] - 0.5, op.in1[1])
+    d += elm.Line().endpoints(op.in1, j)
+    d += elm.Dot().at(j)
+    d += elm.Resistor().endpoints((x0, j[1]), j).label(r1_txt)
+    top = j[1] + 1.6
+    xo = op.out[0] + 0.5
+    d += elm.Line().endpoints(j, (j[0], top))
+    d += elm.Resistor().endpoints((j[0], top), (xo, top)).label(rf_txt)
+    d += elm.Line().endpoints((xo, top), (xo, op.out[1]))
+    d += elm.Dot().at((xo, op.out[1]))
+    g = (op.in2[0] - 0.5, op.in2[1])
+    d += elm.Line().endpoints(op.in2, g)
+    d += elm.Line().endpoints(g, (g[0], g[1] - 0.5))
+    d += elm.Ground().at((g[0], g[1] - 0.5))
+    d += elm.Line().endpoints(op.out, (op.out[0] + 1.25, op.out[1]))
+    d += elm.Dot(open=True).at((op.out[0] + 1.25, op.out[1])).label("$V_o$", "right")
+    return (x0, j[1]), op
+
+
+# ---------- 图 01-p3-3 信号源内阻与 R1 串联 ----------
+with drawing() as d:
+    a, op = _inv_core(d, 0.0, "$R_1$ 10 kΩ", "$R_f$ 100 kΩ")
+    y = a[1]
+    xs = -4.4                                            # 信号源内部：理想电压源 + 内阻
+    d += elm.SourceSin().endpoints((xs, y - 2.2), (xs, y))
+    d += elm.Label().at((xs - 0.75, y - 1.1)).label("$V_i$", halign="right")
+    d += elm.Resistor().endpoints((xs, y), (xs + 2.6, y)).label("$R_s$ 1 kΩ").color(EMPH)
+    d += elm.Line().endpoints((xs + 2.6, y), a)
+    d += elm.Dot(open=True).at((xs + 2.9, y))                 # 信号源输出端子
+    d += elm.Ground().at((xs, y - 2.2))
+    import matplotlib.patches as _mp                     # 虚线框标出「信号源」这一整块
+    box = dict(x0=xs - 1.1, y0=y - 2.75, x1=xs + 2.75, y1=y + 1.05)
+    for p, q in [((box["x0"], box["y0"]), (box["x1"], box["y0"])), ((box["x1"], box["y0"]), (box["x1"], box["y1"])),
+                 ((box["x1"], box["y1"]), (box["x0"], box["y1"])), ((box["x0"], box["y1"]), (box["x0"], box["y0"]))]:
+        d += elm.Line().endpoints(p, q).linestyle("--").color(EMPH).linewidth(1)
+    d += elm.Label().at((xs + 0.8, y - 3.15)).label("信号源（内部串着 $R_s$）", fontsize=10, color=EMPH)
+    d += elm.Label().at((-0.2, y - 1.25)).label("电流 $V_i/(R_s+R_1)$ →", fontsize=10, halign="left")
+save_schem(d, N, "01_p3_3_source_resistance.png")
+
+# ---------- 图 01-p3-4 练习 4：两路加权混音 ----------
+with drawing() as d:
+    a, op = _inv_core(d, 0.0, "$R_1$ = ?", "$R_f$ 50 kΩ")
+    y = a[1]
+    d += elm.Dot(open=True).at(a).label("$V_1$ 话筒", "left")
+    jx = op.in1[0] - 0.5
+    yb = y - 1.9                                         # 第二路接到虚地点左边、和 R1 同一个节点
+    d += elm.Line().endpoints((jx - 0.9, y), (jx - 0.9, yb)).color(EMPH)
+    d += elm.Dot().at((jx - 0.9, y))
+    d += elm.Resistor().endpoints((a[0], yb), (jx - 0.9, yb)).label("$R_2$ = ?", "bottom").color(EMPH)
+    d += elm.Dot(open=True).at((a[0], yb)).label("$V_2$ 伴奏", "left").color(EMPH)
+save_schem(d, N, "01_p3_4_mixer_exercise.png")
