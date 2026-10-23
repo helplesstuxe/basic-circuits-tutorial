@@ -10,7 +10,7 @@
 2. **虚断**：比较器（和运放一样）的输入端几乎不取电流。LM393 的输入偏置电流只有纳安级，相对于本节几十微安的电阻电流可以忽略。
 3. **开环会饱和**：[P3 运放入门](../P3-opamp-basics/page1.md) 讲过，两输入端稍有差别，输出就顶到头。
 
-注意第 2 条和第 3 条：**虚断照样成立，虚短不成立。** 虚短要靠负反馈把两输入端「拉平」，比较器没有负反馈，两输入端可以差好几伏。这是本节最容易犯的错误，后面会用数字说明。
+注意第 2 条和第 3 条：**虚断照样成立，虚短不成立**。虚短要靠负反馈把两输入端「拉平」，比较器没有负反馈，两输入端可以差好几伏。这是本节最容易犯的错误，后面会用数字说明。
 
 ## 1. 基本比较器：只看谁大
 
@@ -96,6 +96,7 @@ import numpy as np                      # 数值计算
 import matplotlib                       # 画图库
 matplotlib.use("Agg")                   # 不弹窗口，直接存图
 import matplotlib.pyplot as plt
+import figstyle as fs                   # 全书统一的配色、线型和中文字体
 
 VCC, VREF = 5.0, 2.5                    # 电源 5 V，基准 2.5 V
 R1, R2, R3 = 10e3, 100e3, 2.2e3         # 输入电阻、正反馈电阻、上拉电阻（Ω）
@@ -127,20 +128,20 @@ print(f"普通比较器翻转 {n1} 次，施密特比较器翻转 {n2} 次")
 assert n2 == 2                          # 一升一降，只翻两次
 
 fig, ax = plt.subplots(3, 1, figsize=(7, 5), sharex=True)
-ax[0].plot(t, vin, lw=0.8)              # 输入
+ax[0].plot(t, vin, **fs.LS["vin"])      # 输入：蓝色实线
 for y in (V_H, VREF, V_L):
-    ax[0].axhline(y, ls=":", color="gray")   # 三条门限参考线
-ax[0].set_ylabel("Vin / V")
-ax[1].plot(t, plain, color="tab:red")   # 普通比较器输出
-ax[1].set_ylabel("plain / V")
-ax[2].plot(t, schmitt, color="tab:orange")   # 施密特输出
-ax[2].set_ylabel("Schmitt / V")
-ax[2].set_xlabel("t / s")
+    fs.ref_h(ax[0], y)                  # 三条门限：灰色点线
+ax[0].set_ylabel(fs.qlabel("输入", "V"))
+ax[1].plot(t, plain, **fs.LS["bad"])    # 普通比较器：朱红色（反面例子）
+ax[1].set_ylabel(fs.qlabel("普通", "V"))
+ax[2].plot(t, schmitt, **fs.LS["vout"]) # 施密特输出：橙色实线
+ax[2].set_ylabel(fs.qlabel("施密特", "V"))
+ax[2].set_xlabel(fs.qlabel("时间", "s"))
 fig.savefig("comparator_noise.png", dpi=100)  # 存到当前目录
 print("已保存 comparator_noise.png")
 ```
 
-运行后会打印上门限 2.750 V、下门限 2.255 V、回差 0.495 V，普通比较器翻转 98 次，施密特比较器翻转 2 次。图 14-p2-2 是同一仿真用全书统一配色画出的结果（由 `code/14_sim.py` 生成）。
+运行后会打印上门限 2.750 V、下门限 2.255 V、回差 0.495 V，普通比较器翻转 98 次，施密特比较器翻转 2 次。代码里的线型都取自全书共用的 `figstyle`：输入用蓝色，门限用灰色点线，普通比较器作为「反面例子」用朱红色（带 × 标记），施密特输出用橙色。图 14-p2-2 是同一仿真由 `code/14_sim.py` 画出的版本，配色与这段代码一致。
 
 ![三行图：上为带噪声的三角形输入和 2.75、2.5、2.26 V 三条门限；中为普通比较器输出，在 5 秒和 15 秒附近共翻转 98 次；下为施密特比较器输出，只在 7.08 秒翻高、16.67 秒翻低](img/14_p2_2_noise_compare.png)
 
