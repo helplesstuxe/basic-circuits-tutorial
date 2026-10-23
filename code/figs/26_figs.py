@@ -644,3 +644,262 @@ def p4_breadboards():
 
 if __name__ == "__main__":
     p4_breadboards()
+
+
+# ======================= 第 8 轮补电路图（page1–page3：凡正文讲具体电路连接处，附近都要有电路图） =======================
+from schem import C as _C
+EMPH = _C["third"]      # 强调色（红紫）：新加的上拉 / 下拉电阻等
+BAD = _C["bad"]
+
+
+def _pin(d, x, y, text="单片机\n输入引脚"):
+    d += elm.Line().endpoints((x, y), (x + 1.2, y))
+    d += elm.Dot(open=True).at((x + 1.2, y)).label(text, "right")
+
+
+def fig_p1_4():
+    """图 26-p1-4：悬空、上拉、下拉三种接法（按键与电阻的位置）。"""
+    with drawing(fontsize=11) as d:
+        # (a) 悬空
+        x = 0.0
+        d += elm.Dot().at((x, 3.0))
+        d += elm.Button().endpoints((x, 3.0), (x, 0.6))
+        d += elm.Label().at((x - 0.9, 1.8)).label("按键", halign="right", fontsize=10)
+        d += elm.Ground().at((x, 0.6))
+        d += elm.Line().endpoints((x, 3.0), (x, 4.2)).linestyle(":").color(BAD)
+        d += elm.Label().at((x, 4.6)).label("什么都没接", color=BAD, fontsize=10)
+        _pin(d, x, 3.0)
+        d += elm.Label().at((x + 1.2, -0.9)).label("(a) 悬空：松开时电平不确定")
+        # (b) 上拉
+        x = 6.0
+        d += elm.Vdd().at((x, 5.6)).label("5 V")
+        d += elm.Resistor().endpoints((x, 5.6), (x, 3.0)).color(EMPH)
+        d += elm.Label().at((x - 0.45, 4.3)).label("上拉电阻\n10 kΩ", halign="right", color=EMPH, fontsize=10)
+        d += elm.Dot().at((x, 3.0))
+        d += elm.Button().endpoints((x, 3.0), (x, 0.6))
+        d += elm.Label().at((x - 0.9, 1.8)).label("按键", halign="right", fontsize=10)
+        d += elm.Ground().at((x, 0.6))
+        _pin(d, x, 3.0)
+        d += elm.Label().at((x + 1.2, -0.9)).label("(b) 上拉：松开为 1，按下为 0")
+        # (c) 下拉
+        x = 12.0
+        d += elm.Vdd().at((x, 5.6)).label("5 V")
+        d += elm.Button().endpoints((x, 5.6), (x, 3.0))
+        d += elm.Label().at((x - 0.9, 4.3)).label("按键", halign="right", fontsize=10)
+        d += elm.Dot().at((x, 3.0))
+        d += elm.Resistor().endpoints((x, 3.0), (x, 0.6)).color(EMPH)
+        d += elm.Label().at((x - 0.45, 1.8)).label("下拉电阻\n10 kΩ", halign="right", color=EMPH, fontsize=10)
+        d += elm.Ground().at((x, 0.6))
+        _pin(d, x, 3.0)
+        d += elm.Label().at((x + 1.2, -0.9)).label("(c) 下拉：松开为 0，按下为 1")
+    save_schem(d, N, "26_p1_4_pull_up_down.png")
+
+
+def fig_p2_4():
+    """图 26-p2-4：推导一的电路：V_CC 经上拉电阻 R 到引脚，按键从引脚接地；松手时只有漏电流，按下时电流 V_CC/R。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Vdd().at((0, 6.0)).label("$V_{CC}$ = 5 V")
+        d += elm.Resistor().endpoints((0, 6.0), (0, 3.0)).color(EMPH)
+        d += elm.Label().at((-0.45, 4.5)).label("$R$\n10 kΩ", halign="right", color=EMPH)
+        d += elm.Dot().at((0, 3.0))
+        d += elm.Button().endpoints((0, 3.0), (0, 0.4))
+        d += elm.Label().at((-0.9, 1.7)).label("按键", halign="right", fontsize=10)
+        d += elm.Ground().at((0, 0.4))
+        d += elm.Line().endpoints((0, 3.0), (3.0, 3.0))
+        d += elm.Label().at((1.5, 3.45)).label("$I_{leak}$ ≤ 1 μA →", fontsize=10)
+        d += elm.Label().at((1.5, 2.55)).label("$V_{pin}$", fontsize=10)
+        d += elm.Dot(open=True).at((3.0, 3.0)).label("单片机\n输入引脚", "right")
+        d += elm.Label().at((0.9, 1.5)).label("按下时：$I = V_{CC}/R$ = 0.5 mA ↓", halign="left", color=EMPH, fontsize=10)
+    save_schem(d, N, "26_p2_4_pullup_calc.png")
+
+
+def _od(d, x0, vtxt, rtxt, ctxt, drv, rx, rcol="black"):
+    """开漏总线一根线：电源经上拉 R_p 到线，线对地有电容 C_b，开漏输出管（这里画成开关）把线拉低，右边是接收方。"""
+    y = 3.0
+    d += elm.Vdd().at((x0 + 2.0, 6.0)).label(vtxt)
+    d += elm.Resistor().endpoints((x0 + 2.0, 6.0), (x0 + 2.0, y)).color(rcol)
+    d += elm.Label().at((x0 + 1.55, 4.5)).label(rtxt, halign="right", color=rcol, fontsize=10)
+    d += elm.Line().endpoints((x0, y), (x0 + 6.5, y))
+    for xx in (x0, x0 + 2.0, x0 + 4.0):
+        d += elm.Dot().at((xx, y))
+    d += elm.Switch().endpoints((x0, y), (x0, 0.6))
+    d += elm.Ground().at((x0, 0.6))
+    d += elm.Label().at((x0 - 1.0, 1.8)).label(drv, halign="right", fontsize=10)
+    d += elm.Capacitor().endpoints((x0 + 4.0, y), (x0 + 4.0, 0.6)).linestyle("--")
+    d += elm.Ground().at((x0 + 4.0, 0.6))
+    d += elm.Label().at((x0 + 4.45, 1.8)).label(ctxt, halign="left", fontsize=10)
+    d += elm.Dot(open=True).at((x0 + 6.5, y)).label(rx, "right")
+
+
+def fig_p2_5():
+    """图 26-p2-5：推导二的电路：开漏输出 + 上拉 R_p + 线电容 C_b。"""
+    with drawing(fontsize=11) as d:
+        _od(d, 0, "$V_{CC}$", "上拉电阻\n$R_p$", "线电容 $C_b$\n（导线 + 引脚，\n虚线表示不是\n真的元件）",
+            "开漏输出管\n（只会拉低或松手，\n拉低时吸收 $I_{OL}$）", "接收方输入", rcol=EMPH)
+    save_schem(d, N, "26_p2_5_open_drain.png")
+
+
+def _ls_model(d, x0, swap, title):
+    """仿真二的模型：BSS138 电平转换，两边各 10 kΩ 上拉、50 pF 线电容、开漏输出（导通电阻 100 Ω）。swap=True：源漏接反。"""
+    y = 3.0
+    q = elm.NFet().theta(-90).reverse().anchor("source").at((x0 + 4.0, y))
+    d += q
+    left, right = q.source, q.drain
+    yd = y - 1.3
+    dcol = BAD if swap else "#8c8c8c"
+    d += elm.Line().endpoints(left, (left[0], yd)).color(dcol if swap else "black")
+    d += elm.Line().endpoints(right, (right[0], yd)).color(dcol if swap else "black")
+    if swap:   # 源极在 5 V 侧：体二极管正极在右（5 V 侧）、负极在左（3.3 V 侧）
+        d += elm.Diode().endpoints((right[0], yd), (left[0], yd)).color(BAD)
+        d += elm.Label().at(((left[0] + right[0]) / 2, yd - 0.95)).label("体二极管把 5 V 侧送进 3.3 V 侧", color=BAD, fontsize=9)
+    else:
+        d += elm.Diode().endpoints((left[0], yd), (right[0], yd)).color(dcol)
+        d += elm.Label().at(((left[0] + right[0]) / 2, yd - 0.95)).label("体二极管", color=dcol, fontsize=10)
+    d += elm.Dot().at(left); d += elm.Dot().at(right)
+    sl, sr = ("D", "S") if swap else ("S", "D")
+    d += elm.Label().at((left[0] - 0.15, y + 0.35)).label(sl, halign="right", color=BAD if swap else "black")
+    d += elm.Label().at((right[0] + 0.15, y + 0.35)).label(sr, halign="left", color=BAD if swap else "black")
+    d += elm.Label().at((q.gate[0] - 0.3, q.gate[1] + 0.5)).label("Q1 BSS138", halign="right", fontsize=10)
+    # 栅极接 3.3 V
+    yt = y + 2.8
+    d += elm.Line().endpoints(q.gate, (q.gate[0], yt))
+    d += elm.Line().endpoints((x0 + 2.0, yt), (q.gate[0], yt))
+    d += elm.Dot().at((x0 + 2.0, yt))
+    d += elm.Vdd().at((x0 + 2.0, yt)).label("3.3 V")
+    d += elm.Resistor().endpoints((x0 + 2.0, yt), (x0 + 2.0, y))
+    d += elm.Label().at((x0 + 1.6, y + 1.4)).label("10 kΩ", halign="right", fontsize=10)
+    d += elm.Vdd().at((x0 + 7.0, yt)).label("5 V")
+    d += elm.Resistor().endpoints((x0 + 7.0, yt), (x0 + 7.0, y))
+    d += elm.Label().at((x0 + 7.4, y + 1.4)).label("10 kΩ", halign="left", fontsize=10)
+    d += elm.Line().endpoints((x0 - 1.6, y), left)
+    d += elm.Line().endpoints(right, (x0 + 10.6, y))
+    for xx in (x0 - 1.6, x0 + 0.0, x0 + 2.0, x0 + 7.0, x0 + 9.0, x0 + 10.6):
+        d += elm.Dot().at((xx, y))
+    d += elm.Label().at((x0 + 1.0, y + 0.35)).label("$V_L$", fontsize=10)
+    d += elm.Label().at((x0 + 8.0, y + 0.35)).label("$V_H$", fontsize=10)
+    for xx, side in ((x0 - 1.6, "l"), (x0 + 10.6, "r")):   # 开漏输出：100 Ω + 开关
+        d += elm.Resistor().endpoints((xx, y), (xx, y - 1.6))
+        d += elm.Switch().endpoints((xx, y - 1.6), (xx, y - 3.2))
+        d += elm.Ground().at((xx, y - 3.2))
+        lab = "开漏输出\n100 Ω + 开关" + ("\n（3.3 V 侧器件）" if side == "l" else "\n（5 V 侧器件）")
+        d += elm.Label().at((xx + (-0.9 if side == "l" else 0.9), y - 1.6)).label(lab, halign="right" if side == "l" else "left", fontsize=9)
+    for xx in (x0 + 0.0, x0 + 9.0):
+        d += elm.Capacitor().endpoints((xx, y), (xx, y - 2.2)).linestyle("--")
+        d += elm.Ground().at((xx, y - 2.2))
+        d += elm.Label().at((xx + 0.4, y - 1.1)).label("50 pF", halign="left", fontsize=9)
+    d += elm.Label().at((x0 + 4.5, y - 4.4)).label(title, color=BAD if swap else "black")
+
+
+def fig_p2_6():
+    """图 26-p2-6：仿真二的模型电路：(a) 正确接法；(b) 源极、漏极接反。"""
+    with drawing(fontsize=11) as d:
+        _ls_model(d, 0, False, "(a) 正确接法：源极接 3.3 V 侧，漏极接 5 V 侧")
+        _ls_model(d, 19.0, True, "(b) 接反：源极到了 5 V 侧")
+    save_schem(d, N, "26_p2_6_shifter_model.png")
+
+
+def fig_p2_7():
+    """图 26-p2-7：例 3：两只比较器的开漏输出共用 4.7 kΩ 上拉（线与）；其中一只换成推挽输出时的短路路径。"""
+    with drawing(fontsize=11) as d:
+        for x0, push in ((0.0, False), (11.0, True)):
+            y = 3.0
+            d += elm.Vdd().at((x0 + 2.0, 6.0)).label("5 V")
+            d += elm.Resistor().endpoints((x0 + 2.0, 6.0), (x0 + 2.0, y))
+            d += elm.Label().at((x0 + 1.55, 4.5)).label("4.7 kΩ", halign="right", fontsize=10)
+            d += elm.Line().endpoints((x0, y), (x0 + (5.2 if push else 6.0), y)).color(BAD if push else "black")
+            for xx in (x0, x0 + 2.0, x0 + 4.0):
+                d += elm.Dot().at((xx, y))
+            # 比较器 1：开漏，拉低
+            c1 = BAD if push else "black"
+            d += elm.Switch(action="close").endpoints((x0, y), (x0, 0.6)).color(c1)
+            d += elm.Ground().at((x0, 0.6))
+            d += elm.Label().at((x0 - 1.0, 1.8)).label("比较器 1\n开漏输出\n（正在拉低）", halign="right", color=c1, fontsize=10)
+            if not push:
+                d += elm.Switch().endpoints((x0 + 4.0, y), (x0 + 4.0, 0.6))
+                d += elm.Ground().at((x0 + 4.0, 0.6))
+                d += elm.Label().at((x0 + 4.9, 1.8)).label("比较器 2\n开漏输出", halign="left", fontsize=10)
+                d += elm.Dot(open=True).at((x0 + 6.0, y)).label("线与输出", "right")
+                d += elm.Label().at((x0 + 2.5, -0.9)).label("(a) 两只开漏输出：任一只拉低，线就为低")
+            else:
+                xp = x0 + 4.0
+                d += elm.Line().endpoints((xp, y), (xp + 1.2, y)).color(BAD)
+                d += elm.Vdd().at((xp + 1.2, 6.0)).label("5 V")
+                d += elm.Switch(action="close").endpoints((xp + 1.2, 6.0), (xp + 1.2, y)).color(BAD)
+                d += elm.Switch().endpoints((xp + 1.2, y), (xp + 1.2, 0.6)).color(OFF if "OFF" in globals() else "#8c8c8c")
+                d += elm.Ground().at((xp + 1.2, 0.6))
+                d += elm.Dot().at((xp + 1.2, y))
+                d += elm.Label().at((xp + 2.1, 4.5)).label("比较器 2 换成推挽输出\n上管导通，输出 5 V", halign="left", color=BAD, fontsize=10)
+                d += elm.Label().at((x0 + 2.5, -0.9)).label("(b) 推挽输出高、另一只拉低：5 V 直接短到地", color=BAD)
+    save_schem(d, N, "26_p2_7_wired_and.png")
+
+
+def fig_p3_3():
+    """图 26-p3-3：扫描一的电路：3.3 V I²C 时钟线 SCL，上拉 R_p 取 1.5 / 4.7 / 10 kΩ，总线电容 200 pF。"""
+    with drawing(fontsize=11) as d:
+        _od(d, 0, "3.3 V", "上拉 $R_p$\n1.5 / 4.7 / 10 kΩ", "总线电容 $C_b$\n200 pF",
+            "主机开漏输出\n（400 kHz 时钟）", "SCL（接各从机）", rcol=EMPH)
+    save_schem(d, N, "26_p3_3_scl_rp.png")
+
+
+def fig_p3_4():
+    """图 26-p3-4：扫描二的电路：R1 = R2 = R、C = 1 μF；电容电压同时送施密特输入和单门限输入。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Vdd().at((0, 6)).label("+5 V")
+        d += elm.Resistor().endpoints((0, 6), (0, 3.5)).color(EMPH)
+        d += elm.Label().at((-0.45, 4.75)).label("R1 = R\n100 Ω～47 kΩ", halign="right", color=EMPH, fontsize=10)
+        d += elm.Dot().at((0, 3.5)).label("A", loc="left", ofst=0.15)
+        d += elm.Button().endpoints((0, 3.5), (0, 1.0))
+        d += elm.Label().at((-0.9, 2.25)).label("按键", halign="right", fontsize=10)
+        d += elm.Ground().at((0, 1.0))
+        d += elm.Resistor().endpoints((0, 3.5), (3.5, 3.5)).color(EMPH).label("R2 = R", loc="top", color=EMPH)
+        d += elm.Dot().at((3.5, 3.5)).label("B", loc="top", ofst=0.15)
+        d += elm.Capacitor().endpoints((3.5, 3.5), (3.5, 1.0)).label("C\n1 μF", loc="bottom")
+        d += elm.Ground().at((3.5, 1.0))
+        d += elm.Line().endpoints((3.5, 3.5), (5.0, 3.5))
+        d += elm.Line().endpoints((4.5, 3.5), (4.5, 5.5)).color(BAD)
+        d += elm.Dot().at((4.5, 3.5))
+        d += elm.Line().endpoints((4.5, 5.5), (5.0, 5.5)).color(BAD)
+        g = logic.SchmittNot().anchor("in1").at((5.0, 3.5))
+        d += g
+        d += elm.Label().at((g.out[0] + 0.6, 3.5)).label("74HC14 施密特输入\n（回差 1.73 V / 2.77 V）", halign="left", fontsize=10)
+        g2 = logic.Not().anchor("in1").at((5.0, 5.5)).color(BAD)
+        d += g2
+        d += elm.Label().at((g2.out[0] + 0.6, 5.5)).label("对照：单门限 2.5 V 的普通输入\n（线上叠加 20 mV 噪声）", halign="left", color=BAD, fontsize=10)
+    save_schem(d, N, "26_p3_4_tau_sweep_circuit.png")
+
+
+def fig_p3_5():
+    """图 26-p3-5：练习 1：门磁开关一直闭合，10 kΩ 上拉接 3 V 电池。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Vdd().at((0, 6.0)).label("3 V 电池")
+        d += elm.Resistor().endpoints((0, 6.0), (0, 3.0)).color(EMPH)
+        d += elm.Label().at((-0.45, 4.5)).label("上拉电阻\n10 kΩ（或 1 MΩ）", halign="right", color=EMPH, fontsize=10)
+        d += elm.Dot().at((0, 3.0))
+        d += elm.Switch(action="close").endpoints((0, 3.0), (0, 0.6))
+        d += elm.Label().at((-1.0, 1.8)).label("门磁开关\n（门关着时闭合）", halign="right", fontsize=10)
+        d += elm.Ground().at((0, 0.6))
+        _pin(d, 0, 3.0)
+        d += elm.Label().at((0.4, 4.5)).label("电流 ↓", halign="left", color=EMPH, fontsize=10)
+    save_schem(d, N, "26_p3_5_door_switch.png")
+
+
+def fig_p3_6():
+    """图 26-p3-6：练习 4：5 V 推挽输出经 10 kΩ / 20 kΩ 分压送 3.3 V 芯片输入（输入电容 10 pF）。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 3.0)).label("5 V 芯片\n推挽输出", "left")
+        d += elm.Resistor().endpoints((0, 3.0), (3.0, 3.0)).color(EMPH).label("10 kΩ", "top", color=EMPH)
+        d += elm.Dot().at((3.0, 3.0))
+        d += elm.Resistor().endpoints((3.0, 3.0), (3.0, 0.4)).color(EMPH)
+        d += elm.Label().at((3.45, 1.7)).label("20 kΩ", halign="left", color=EMPH, fontsize=10)
+        d += elm.Ground().at((3.0, 0.4))
+        d += elm.Line().endpoints((3.0, 3.0), (6.5, 3.0))
+        d += elm.Dot().at((5.2, 3.0))
+        d += elm.Capacitor().endpoints((5.2, 3.0), (5.2, 0.4)).linestyle("--")
+        d += elm.Label().at((5.65, 1.7)).label("输入电容\n10 pF", halign="left", fontsize=10)
+        d += elm.Ground().at((5.2, 0.4))
+        d += elm.Dot(open=True).at((6.5, 3.0)).label("3.3 V 芯片\n输入", "right")
+    save_schem(d, N, "26_p3_6_divider.png")
+
+
+if __name__ == "__main__":
+    fig_p1_4(); fig_p2_4(); fig_p2_5(); fig_p2_6(); fig_p2_7(); fig_p3_3(); fig_p3_4(); fig_p3_5(); fig_p3_6()
