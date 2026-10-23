@@ -527,3 +527,40 @@ def p4_2_points(fam, fam_l):
 if __name__ == "__main__":
     _r, _fam, _fam_l = p4_numbers()
     p4_1_breadboard(); p4_2_points(_fam, _fam_l)
+
+
+# ====================== 第 8 轮补电路图（page1–3） ======================
+EMPH = fs.C["third"]          # 新出现的元件用强调色
+BAD = fs.C["bad"]
+
+# ---------- 图 03-p2-4 例 1：3.3 V 分压直接接 2 kΩ 模块 vs 经跟随器 ----------
+with drawing() as d:
+    d.here = (0, 0)                                      # (a) 直接接：分压点就是模块输入
+    d += (s := elm.Dot(open=True).label("分压点", "top"))
+    d += elm.Line().right().at(s.center).length(1.5)
+    d += elm.Resistor().down().label("模块\n2 kΩ", "bottom").color(BAD)
+    d += elm.Ground()
+    d.here = s.center
+    d += elm.Line().left().length(0.01)
+    divider(d, top="10 kΩ", bot="20 kΩ", vs="5 V")
+    d += elm.Label().at((-0.5, -5.0)).label("(a) 直接接：只剩约 0.77 V", fontsize=11, color=BAD)
+    d.here = (10.0, 0); d.theta = 0                      # (b) 中间加跟随器（画完分压器后方向要复位）
+    op, pin, pout = follower(d, vin=None, vout=None, out_len=1.0)
+    d.here = pin
+    divider(d, top="10 kΩ", bot="20 kΩ", vs="5 V")
+    d += elm.Resistor().down().at(pout).label("模块\n2 kΩ", "bottom")
+    d += elm.Ground()
+    d += elm.Label().at((pin[0] + 1.5, -5.0)).label("(b) 经跟随器：约 3.33 V", fontsize=11)
+save_schem(d, N, "03_p2_4_ref_module.png")
+
+# ---------- 图 03-p3-3 跟随器驱动电容：串隔离电阻 R_iso ----------
+with drawing() as d:
+    d.here = (0, 0); d.theta = 0
+    op, pin, pout = follower(d, vin="$V_i$ 0.1 V 阶跃", vout=None, out_len=0.8)
+    d += elm.Resistor().right().at(pout).label("$R_{iso}$ 33 Ω").color(EMPH)
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().at(n.center).label("$C_L$\n0.1 μF", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.0)
+    d += elm.Dot(open=True).label("接负载", "right")
+save_schem(d, N, "03_p3_3_riso_circuit.png")
