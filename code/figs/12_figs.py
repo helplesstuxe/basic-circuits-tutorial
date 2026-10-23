@@ -429,3 +429,120 @@ def p4_breadboards():
 
 if __name__ == "__main__":
     p4_breadboards()
+
+
+# ===== 第 8 轮补图（page1–3）=====
+from schem import *
+HL = C["bad"]
+
+
+def _l(d, xy, text, color=None):
+    e = elm.Label().at(xy).label(text, loc="center")
+    if color: e = e.color(color)
+    d += e
+
+
+def integ2(d, vin="$V_i$ 输入", rl="$R$ 10 kΩ", cl="$C$ 100 nF", par=None, cin=False, trim=False):
+    """反相积分器变体：par=("sw"/"rf", 标签) 在 C 旁并开关或电阻；cin 输入串隔直电容；trim 同相端接可调基准。"""
+    d += (op := elm.Opamp(leads=True))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Resistor().left().label(rl)
+    if cin:
+        d += elm.Capacitor().left().label("$C_{in}$ 隔直").color(HL)
+    d += (ind := elm.Dot(open=True).label(vin, "left"))
+    op.ind = ind
+    d += elm.Line().up().at(j.center).length(1.5)
+    d += (a := elm.Dot())
+    d += elm.Capacitor().right().label(cl).tox(op.out.x + 0.5)
+    d += (b := elm.Dot())
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    if par:
+        kind, lab = par
+        d += elm.Line().up().at(a.center).length(1.5)
+        if kind == "sw":
+            d += elm.Switch().right().tox(b.center.x).label(lab).color(HL)
+        else:
+            d += elm.Resistor().right().tox(b.center.x).label(lab).color(HL)
+        d += elm.Line().down().toy(b.center)
+    d += elm.Line().left().at(op.in2).length(0.5)
+    if trim:
+        d += elm.Line().down().length(0.3)
+        d += (sv := elm.SourceV().down().length(1.6).reverse().color(HL))
+        _l(d, (sv.center.x - 1.6, sv.center.y), "可调基准\n（抵消失调）", HL)
+    else:
+        d += elm.Line().down().length(0.5)
+    d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(1.25)
+    d += elm.Dot(open=True).label("$V_o$ 输出", "right")
+    return op
+
+
+def p1_4_passive():
+    with drawing(fontsize=11) as d:
+        # (a) 无源 RC：输入 → R → 输出点，C 接地
+        d += elm.Dot(open=True).at((0, 3)).label("$V_i$ 输入", "left")
+        d += elm.Resistor().right().label("$R$")
+        d += (n := elm.Dot())
+        d += elm.Capacitor().down().length(2.2)
+        _l(d, (n.center.x + 0.7, n.center.y - 1.1), "$C$")
+        d += elm.Ground()
+        d += elm.Line().right().at(n.center).length(1.5)
+        d += elm.Dot(open=True).label("电容电压当输出", "right")
+        _l(d, (2.5, -0.9), "(a) 无源 RC：电容越满，电流越小")
+        # (b) 运放积分器
+        d.here = (13.0, 2.2)
+        integ2(d)
+        _l(d, (12.5, -0.9), "(b) 运放积分器：反相端是虚地，电流恒为输入 ÷ R")
+    save_schem(d, "12", "12_p1_4_passive_vs_opamp.png")
+
+
+def p1_5_bench():
+    with drawing(fontsize=11) as d:
+        op = integ2(d, vin="")
+        x0, y0 = op.ind.center.x, op.ind.center.y
+        d += elm.SourceSin().down().at((x0 - 1.5, y0)).length(2.2)
+        _l(d, (x0 - 3.2, y0 - 1.1), "信号发生器")
+        d += elm.Line().right().at((x0 - 1.5, y0)).tox(x0)
+        d += elm.Ground().at((x0 - 1.5, y0 - 2.2))
+        d += elm.Line().down().at((x0 - 0.75, y0)).length(0.0)
+        d += elm.Dot().at((x0 - 0.75, y0))
+        d += elm.Line().up().at((x0 - 0.75, y0)).length(1.2).color(C["vin"])
+        _l(d, (x0 - 0.75, y0 + 1.6), "示波器 CH1", C["vin"])
+        xo = op.out.x + 1.25
+        d += elm.Line().down().at((xo, op.out.y)).length(1.2).color(C["vout"])
+        _l(d, (xo, op.out.y - 1.6), "示波器 CH2", C["vout"])
+        _l(d, (op.center.x, op.center.y - 2.6), "运放 ±15 V 供电（图中省略）")
+    save_schem(d, "12", "12_p1_5_bench.png")
+
+
+def p2_4_ramp():
+    with drawing(fontsize=11) as d:
+        integ2(d, vin="−0.5 V 恒定输入", rl="$R$ 10 kΩ", cl="$C$ 100 nF（RC = 1 ms）", par=("sw", "清零开关"))
+    save_schem(d, "12", "12_p2_4_ramp.png")
+
+
+def p3_3_fixes():
+    with drawing(fontsize=11) as d:
+        integ2(d, par=("rf", "$R_f$"), cin=True)
+        _l(d, (1.0, -3.8), "(a) 输入端串隔直电容")
+        d.here = (16.0, 0)
+        integ2(d, par=("rf", "$R_f$"), trim=True)
+        _l(d, (16.5, -3.8), "(b) 同相端接可调基准")
+    save_schem(d, "12", "12_p3_3_fixes.png")
+
+
+def p3_4_coulomb():
+    with drawing(fontsize=11) as d:
+        integ2(d, vin="电流传感器\n0.1 V/A", rl="$R$ 200 kΩ", cl="$C$ 1 μF（RC = 0.2 s）", par=("sw", "测量前清零"))
+    save_schem(d, "12", "12_p3_4_coulomb.png")
+
+
+def round8():
+    p1_4_passive(); p1_5_bench(); p2_4_ramp(); p3_3_fixes(); p3_4_coulomb()
+    print("12_figs 第 8 轮补图 OK")
+
+
+if __name__ == "__main__":
+    round8()
