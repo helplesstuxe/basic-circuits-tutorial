@@ -156,11 +156,11 @@ def p2_4_flyback():
     t1 = np.linspace(t_off - 20e-6, t_off + 60e-6, 3000)
     taup = L / (R + Roff)
     i1 = np.where(t1 < t_off, I0, I0 * np.exp(-(t1 - t_off) / taup))
-    vsw = np.where(t1 < t_off, 0.0, V + i1 * Roff)                # 开关两端电压
+    vsw = np.where(t1 < t_off, 0.0, i1 * Roff)                    # 开关两端电压 = 电流 × 断开电阻（电源 12 V 与线圈电压已在回路里抵消）
     x1 = (t1 - t_off) * 1e6
     axs[0, 0].plot(x1, i1 * 1e3, **fs.LS["cur"], label="线圈电流 $I$")
     axs[0, 1].plot(x1, vsw, **fs.LS["bad"], label="开关两端电压（无二极管）")
-    peak = V + I0 * Roff
+    peak = I0 * Roff                                               # 120 mA × 10 kΩ = 1200 V（与 SPICE 一致）
     fs.mark(axs[0, 1], 0, peak, fmt="{:.0f}", unit=" V", dx=5, dy=-8, color=fs.C["bad"])
     fs.mark(axs[0, 0], taup * 1e6, I0 * np.exp(-1) * 1e3, fmt="{:.1f}", unit=" mA", dx=5, dy=3)
     print(f"[图 P1-p2-4] 无二极管：τ' = {taup*1e6:.1f} μs，尖峰 {peak:.0f} V")

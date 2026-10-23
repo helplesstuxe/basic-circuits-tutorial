@@ -137,7 +137,7 @@ $L$ 是电感量（单位亨利 H）。这就是高中物理里的自感电动�
 
 *图 P1-p2-4　电感断电：无续流二极管（上排）与有续流二极管（下排）*
 
-图 P1-p2-4 上排没有二极管：开关断开后，电流只能硬挤过断开的开关（这里把它等效成 10 kΩ），天蓝色电流在约 10 μs 内就降下来，但代价是开关两端出现朱红色的 1212 V 尖峰——比电源高了一百倍。TE 公司的继电器应用白皮书（[Relay Coil Suppression with DC Relays](https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/relay-coil-suppression-dc-relays.html)）也指出，12 V 直流继电器断电时可能产生 1000～1500 V 的反向电压。下排加了二极管：电流改走二极管，慢慢衰减（τ = L/R = 1 ms），开关两端只有 12.7 V（电源 12 V 加二极管压降 0.7 V），开关就安全了。代价是电流消失得慢，触点释放也变慢，这一点在 [22 三极管开关与继电器驱动 · 原理与实现篇](../22-bjt-relay-driver/page2.md) 里还会细讲。
+图 P1-p2-4 上排没有二极管：开关断开后，电流只能硬挤过断开的开关（这里把它等效成 10 kΩ），天蓝色电流在约 10 μs 内就降下来，但代价是开关两端出现朱红色的 1200 V 尖峰（断开瞬间 120 mA 全部挤过 10 kΩ：0.12 A × 10 kΩ = 1200 V）——比电源高了一百倍。TE 公司的继电器应用白皮书（[Relay Coil Suppression with DC Relays](https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/relay-coil-suppression-dc-relays.html)）也指出，12 V 直流继电器断电时可能产生 1000～1500 V 的反向电压。下排加了二极管：电流改走二极管，慢慢衰减（τ = L/R = 1 ms），开关两端只有 12.7 V（电源 12 V 加二极管压降 0.7 V），开关就安全了。代价是电流消失得慢，触点释放也变慢，这一点在 [22 三极管开关与继电器驱动 · 原理与实现篇](../22-bjt-relay-driver/page2.md) 里还会细讲。
 
 细看下排还有两个数：按 τ = 1 ms 的纯指数衰减，1 ms 时电流应剩 120 × 36.8% ≈ 44.1 mA，图上却只有 39.7 mA；而且电流在断开后 2.90 ms 就降到 0，不像纯指数那样"永远到不了"。原因是二极管导通时自己要占约 0.7 V，相当于在线圈回路里多串了一节反着接的小电池，一直在帮着"刹车"，所以电流比纯指数掉得快，并在约 2.9 ms 时彻底归零。电流归零后二极管不再导通，开关两端的电压也就从 12.7 V 回到电源电压 12 V。
 
