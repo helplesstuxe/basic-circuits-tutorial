@@ -556,3 +556,107 @@ i_coil, i_lamp = V / RC * 1000, P_LAMP / V * 1000
 print(f"[数值] 每只线圈 {i_coil:.0f} mA；三角形稳态（KM + KM△）线圈合计 {2 * i_coil:.0f} mA，"
       f"加两只 1 W 灯泡共约 {2 * (i_coil + i_lamp):.0f} mA")
 assert round(2 * i_coil) == 60 and round(2 * (i_coil + i_lamp)) == 227
+
+
+# ======================= page1–3 补充原理图（国标元件） =======================
+ACC = fs.C["bad"]
+
+
+def yd_branches(d, oy, mode, title):
+    """从「公共点」画 KMY、KM△ 两条支路到 N。mode："ok" 正常；"short" KMY 常闭被跳线短接；"none" 去掉 KMY 常闭。"""
+    X1 = 11.0
+    d += elm.Label().at((-1.6, oy + 2.4)).label(title, halign="left", fontsize=11)
+    d += elm.Dot(open=True).at((-0.8, oy)).label("公共点\n（KM 自锁之后）", "left")
+    d += elm.Line().right(0.8)
+    d += elm.Dot()
+    rung(d, oy, [(TimerNC, "KT 延时断开"), (ContactNC, "KM△ 常闭"), (Coil, "KMY 线圈")], 0, X1)
+    y2 = oy - 3.0
+    d += elm.Line().at((0, oy)).down(3.0)
+    d += elm.Line().at((0, y2)).right(0.4)
+    a = d.here
+    d += TimerNO().right().label("KT 延时闭合", ofst=0.6)
+    b = d.here
+    d += elm.Line().at(a).down(1.4)
+    d += ContactNO().right().tox(b[0]).label("KM△ 自锁", "bottom", ofst=0.25)
+    d += elm.Line().up(1.4)
+    d += elm.Dot().at(a); d += elm.Dot().at(b)
+    d += elm.Line().at(b).right(0.4)
+    if mode == "none":
+        d += elm.Line().right(1.6).linestyle("--").color(ACC).label("（KMY 常闭被去掉）", ofst=0.3, color=ACC)
+        d += elm.Line().right(0.4)
+    else:
+        c0 = d.here
+        col = ACC if mode == "ok_acc" else "black"
+        d += ContactNC().right().color(col).label("KMY 常闭", ofst=0.6, color=col)
+        c1 = d.here
+        if mode == "short":
+            d += elm.Dot().at(c0).color(ACC); d += elm.Dot().at(c1).color(ACC)
+            d += elm.Wire("n", k=-1.0).at(c0).to(c1).color(ACC).linestyle("--")
+            d += elm.Label().at(((c0[0] + c1[0]) / 2 + 0.6, y2 - 1.75)).label("跳线（短接 KMY 常闭）", color=ACC)
+        d += elm.Line().at(c1).right(0.4)
+    d += (c := Coil().right().label("KM△ 线圈", ofst=0.4))
+    d += elm.Line().right().tox(X1)
+    d += elm.Line().at((X1, oy)).down(3.0)
+    d += elm.Dot().at((X1, oy))
+    d += elm.Line().at((X1, y2)).right(0.6)
+    d += elm.Dot(open=True).label("N", "right")
+
+
+def lowvolt_lamps():
+    """图 19-p2-6：12 V 实验。（a）三只指示灯各接在一组常开触点上；（b）每只继电器线圈反并 1N4007。"""
+    XN = 9.0
+    with drawing(fontsize=10) as d:
+        d += elm.Label().at((-1.0, 3.0)).label("（a）指示灯：LED 串 1 kΩ，接在各自的一组常开触点上", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((0, 1.6)).label("+12 V", "top")
+        d += elm.Line().down().toy(-6.0)
+        d += elm.Dot(open=True).at((XN, 1.6)).label("−", "top")
+        d += elm.Line().down().toy(-6.0)
+        for i, k in enumerate(["KM", "KMY", "KM△"]):
+            y = -2.4 * i
+            d += elm.Dot().at((0, y))
+            d += elm.Line().at((0, y)).right(0.6)
+            d += ContactNO().right().label(f"{k} 常开", ofst=0.5)
+            d += elm.Line().right(0.4)
+            d += elm.Resistor().right(1.6).label("1 kΩ", ofst=0.2)
+            d += elm.Line().right(0.4)
+            d += elm.LED().right(1.6).color(ACC).label(f"{k} 灯", ofst=0.2, color=ACC)
+            d += elm.Line().right().tox(XN)
+            d += elm.Dot()
+        oy = -9.0
+        d += elm.Label().at((-1.0, oy + 2.4)).label("（b）KM、KMY、KM△ 三只继电器线圈都这样反并一只 1N4007", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((1.0, oy)).label("接 + 的一端", "left")
+        d += elm.Line().right(1.0)
+        a = d.here
+        d += elm.Dot()
+        d += Coil().right(3.0).label("继电器线圈 12 V", ofst=0.4)
+        b = d.here
+        d += elm.Dot()
+        d += elm.Line().right(1.0)
+        d += elm.Dot(open=True).label("接 − 的一端", "right")
+        d += elm.Line().at(a).down(1.4).color(ACC)
+        d += elm.Diode().at((b[0], oy - 1.4)).to((a[0], oy - 1.4)).color(ACC).label("1N4007（阴极朝 +）", "bottom", ofst=0.2, color=ACC)
+        d += elm.Line().at(b).down(1.4).color(ACC)
+    print("[图 19-p2-6] 12 V 实验：三只 LED 各串 1 kΩ 接在 KM、KMY、KM△ 常开上；线圈反并 1N4007")
+    save_schem(d, P, "19_p2_6_lowvolt.png")
+
+
+def short_test():
+    """图 19-p2-7：实验第 4 步，KM△ 支路里的 KMY 常闭被跳线短接。"""
+    with drawing(fontsize=10) as d:
+        yd_branches(d, 0, "short", "实验第 4 步：只改 KM△ 线圈支路，其余照图 19-p2-3 不变")
+    print("[图 19-p2-7] 实验第 4 步：跳线短接 KM△ 支路里的 KMY 常闭")
+    save_schem(d, P, "19_p2_7_short.png")
+
+
+def ex2_branches():
+    """图 19-p3-3：练习 2。（a）去掉 KMY 常闭，只靠 KT 转换触点；（b）装回 KMY 常闭。"""
+    with drawing(fontsize=10) as d:
+        yd_branches(d, 0, "none", "（a）去掉 KMY 常闭：只靠 KT 的转换触点同时断 KMY、通 KM△")
+        yd_branches(d, -8.0, "ok_acc", "（b）装回 KMY 常闭：KM△ 线圈要等 KMY 释放才通电")
+    print("[图 19-p3-3] 练习 2：空档 (a) 12 - 19 = -7 ms，(b) 12 ms")
+    save_schem(d, P, "19_p3_3_ex2.png")
+
+
+lowvolt_lamps()
+short_test()
+ex2_branches()
