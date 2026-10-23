@@ -486,3 +486,192 @@ i_lamp = P_LAMP / V * 1000
 print(f"[数值] 线圈电流 {V:.0f} V ÷ {RC:.0f} Ω = {i_coil:.0f} mA；1 W 灯泡电流约 {i_lamp:.0f} mA；"
       f"一路合计约 {i_coil + i_lamp:.0f} mA；短接实验两路同时吸合约 {2 * (i_coil + i_lamp):.0f} mA")
 assert round(i_coil) == 30 and round(i_lamp) == 83
+
+
+# ======================= page1–3 补充原理图（国标元件） =======================
+ACC = fs.C["bad"]
+
+
+def rung_c(d, y, items, x0, x1, gap=0.4):
+    """rung 的带颜色版：items 里每项 (类, 标签[, 颜色])，或 ("par", (类, 标签[, 颜色]), (类, 标签[, 颜色]))。"""
+    def put(E, lab, c=None, **kw):
+        e = E().right(**kw)
+        if c:
+            e = e.color(c)
+        return e.label(lab, ofst=0.6 if E is not Coil else 0.4, color=c or "black")
+    d += elm.Line().at((x0, y)).right(gap)
+    for it in items:
+        if it[0] == "par":
+            t1, t2 = it[1], it[2]
+            a = d.here
+            d += put(*t1)
+            b = d.here
+            c2 = t2[2] if len(t2) > 2 else None
+            d += elm.Line().at(a).down(1.5).color(c2 or "black")
+            e = t2[0]().right().tox(b[0])
+            if c2:
+                e = e.color(c2)
+            d += e.label(t2[1], "bottom", ofst=0.25, color=c2 or "black")
+            d += elm.Line().up(1.5).color(c2 or "black")
+            d += elm.Dot().at(a); d += elm.Dot().at(b)
+            d += elm.Line().at(b).right(gap)
+        else:
+            d += put(*it)
+            d += elm.Line().right(gap)
+    if x1 is not None:
+        d += elm.Line().right().tox(x1)
+
+
+def lowvolt_interlock():
+    """图 18-p2-4：12 V 低压互锁实验。继电器线圈两端各并 1 kΩ + LED 和反并的 1N4007。"""
+    XN = 17.6
+    with drawing(fontsize=10) as d:
+        d += elm.Dot(open=True).at((-1.0, 2.2)).label("+12 V（代替 L）", "top")
+        d += elm.Line().down().toy(-10.6)
+        d += elm.Dot(open=True).at((XN, 2.2)).label("−（代替 N）", "top")
+        d += elm.Line().down().toy(-10.6)
+        d += elm.Dot().at((-1.0, 0))
+        d += elm.Line().at((-1.0, 0)).right(0.6)
+        d += PushNC().right().label("SB1 停止（常闭）", ofst=0.6)
+        d += elm.Line().right(0.4)
+        d += elm.Dot()
+        xs = d.here[0]
+        for k, (y, sb, me, other) in enumerate([(0, "SB2 正转", "KM1", "KM2"), (-5.6, "SB3 反转", "KM2", "KM1")]):
+            if k:
+                d += elm.Line().at((xs, 0)).down().toy(y)
+            items = [("par", (PushNO, sb + "（常开）"), (ContactNO, me + " 第一组常开（自锁）")),
+                     (ContactNC, other + " 第二组常闭（互锁）")]
+            d += elm.Line().at((xs, y)).right(0.4)
+            rung_c(d, y, items, xs, None, gap=0.4)
+            d += elm.Line().right().tox(11.0)
+            # 线圈 + 两条并联支路
+            a = d.here
+            d += (c := Coil().right(4.2).label(me + " 线圈 12 V", ofst=0.4))
+            b = d.here
+            d += elm.Dot().at(a); d += elm.Dot().at(b)
+            d += elm.Line().at(b).right().tox(XN)
+            d += elm.Dot()
+            d += elm.Line().at(a).down(1.4).color(ACC)
+            d += elm.Line().right(0.4).color(ACC)
+            d += elm.Resistor().right(1.6).color(ACC).label("1 kΩ", "bottom", ofst=0.2, color=ACC)
+            d += elm.LED().right(2.2).color(ACC).label("LED", "bottom", ofst=0.2, color=ACC)
+            d += elm.Line().up(1.4).color(ACC)
+            d += elm.Line().at((a[0], y - 1.4)).down(1.4).color(ACC)
+            d += elm.Diode().at((b[0], y - 2.8)).to((a[0], y - 2.8)).color(ACC)   # 阴极朝 + 端：反并
+            d += elm.Line().at((b[0], y - 1.4)).down(1.4).color(ACC)
+            d += elm.Label().at(((a[0] + b[0]) / 2, y - 3.35)).label("1N4007", color=ACC)
+            d += elm.Dot().at((a[0], y - 1.4)).color(ACC); d += elm.Dot().at((b[0], y - 1.4)).color(ACC)
+    print("[图 18-p2-4] 12 V 互锁实验：LED 串 1 kΩ 并在线圈两端，1N4007 反并在线圈两端，FR 省略")
+    save_schem(d, P, "18_p2_4_lowvolt.png")
+
+
+def control_at(d, oy, items1, items2, X1=13.5, title=None):
+    """在高度 oy 画一套两行控制回路：L — SB1 — FR — 分两路 — N。"""
+    if title:
+        d += elm.Label().at((-7.0, oy + 2.6)).label(title, halign="left", fontsize=11)
+    d += elm.Dot(open=True).at((-7.0, oy)).label("L", "left")
+    d += elm.Line().right(0.4)
+    d += PushNC().right().label("SB1 停止", ofst=0.6)
+    d += elm.Line().right(0.4)
+    d += ThermalNC().right().label("FR", ofst=0.6)
+    d += elm.Line().right().tox(0)
+    d += elm.Dot()
+    rung_c(d, oy, items1, 0, X1)
+    d += elm.Line().at((0, oy)).down(4.4)
+    rung_c(d, oy - 4.4, items2, 0, X1)
+    d += elm.Line().at((X1, oy)).down(4.4)
+    d += elm.Dot().at((X1, oy))
+    d += elm.Line().at((X1, oy - 4.4)).right(0.6)
+    d += elm.Dot(open=True).label("N", "right")
+
+
+def button_only_vs_double():
+    """图 18-p3-3：（a）只做按钮互锁（没有接触器常闭）；（b）双重互锁。"""
+    with drawing(fontsize=10) as d:
+        p1 = ("par", (PushNO, "SB2 正转"), (ContactNO, "KM1 自锁"))
+        p2 = ("par", (PushNO, "SB3 反转"), (ContactNO, "KM2 自锁"))
+        control_at(d, 0, [(PushNC, "SB3 常闭"), p1, (Coil, "KM1 线圈")],
+                   [(PushNC, "SB2 常闭"), p2, (Coil, "KM2 线圈")], X1=13.5,
+                   title="（a）只做按钮互锁：线圈前面没有对方接触器的常闭触点")
+        control_at(d, -9.2, [(PushNC, "SB3 常闭"), p1, (ContactNC, "KM2 常闭", ACC), (Coil, "KM1 线圈")],
+                   [(PushNC, "SB2 常闭"), p2, (ContactNC, "KM1 常闭", ACC), (Coil, "KM2 线圈")], X1=13.5,
+                   title="（b）双重互锁：再串入对方接触器的常闭辅助触点")
+    print("[图 18-p3-3] （a）只做按钮互锁 （b）双重互锁")
+    save_schem(d, P, "18_p3_3_button_only.png")
+
+
+def self_lock_nc():
+    """图 18-p3-4：练习 2。（a）KM1 回路误串自己的常闭；（b）正确：串 KM2 常闭。"""
+    with drawing(fontsize=10) as d:
+        for k, (oy, nc, c, t) in enumerate([(0, "KM1 常闭（接错：自己的）", ACC, "（a）错误：KM1 线圈回路里串的是 KM1 自己的常闭触点"),
+                                             (-5.4, "KM2 常闭（对方的）", None, "（b）正确：串 KM2 的常闭辅助触点")]):
+            d += elm.Label().at((0, oy + 2.4)).label(t, halign="left", fontsize=11)
+            d += elm.Dot(open=True).at((0, oy)).label("L", "left")
+            item = (ContactNC, nc, c) if c else (ContactNC, nc)
+            rung_c(d, oy, [(PushNC, "SB1 停止"), ("par", (PushNO, "SB2 正转"), (ContactNO, "KM1 自锁")),
+                           item, (Coil, "KM1 线圈")], 0, 16.5)
+            d += elm.Dot(open=True).label("N", "right")
+    print("[图 18-p3-4] 练习 2：自己锁自己 vs 正确互锁")
+    save_schem(d, P, "18_p3_4_self_nc.png")
+
+
+def phase_swap_vs_rotate():
+    """图 18-p3-5：练习 3。KM2 下口（a）对调 L1、L3；（b）轮换一格 L1→T2、L2→T3、L3→T1。"""
+    with drawing(fontsize=10) as d:
+        for ox, perm, t in [(0, (2, 1, 0), "（a）对调两相：L1→T3，L3→T1\n（反转）"),
+                            (8.0, (1, 2, 0), "（b）轮换一格：L1→T2，L2→T3，L3→T1\n（仍是正转）")]:
+            X = [ox + 0, ox + 1.5, ox + 3.0]
+            d += elm.Label().at((ox + 1.8, 1.7)).label(t, fontsize=10)
+            for i, x in enumerate(X):
+                d += elm.Dot(open=True).at((x, 0)).label(f"L{i + 1}", "top")
+                d += ContactNO().at((x, -0.3)).down().length(1.6)
+                d += elm.Line().at((x, 0)).down(0.3)
+            yc = -0.3 - 0.8 - 0.05
+            d += elm.Line().at((X[0] + 0.25, yc)).to((X[2] + 0.25, yc)).linestyle("--").color("#808080")
+            d += elm.Label().at((ox + 3.9, -1.1)).label("KM2", fontsize=10)
+            hs = [-2.4, -2.9, -3.4]
+            XT = [x + 0.6 for x in X]
+            for i, x in enumerate(X):
+                t_ = perm[i]
+                c = ACC if t_ != i else "black"
+                d += elm.Line().at((x, -1.9)).to((x, hs[i])).color(c)
+                d += elm.Line().to((XT[t_], hs[i])).color(c)
+                d += elm.Line().to((XT[t_], -4.5)).color(c)
+            for i, x in enumerate(XT):
+                d += elm.Label().at((x + 0.4, -4.2)).label(f"T{i + 1}", fontsize=10)
+            X = XT
+            d += elm.Line().at((X[1], -4.5)).down(0.4)
+            d += (m := Motor3().down().length(1.0))
+            d += elm.Line().at((X[0], -4.5)).right().tox(X[1] - 0.35)
+            d += elm.Line().to((X[1] - 0.35, -5.2))
+            d += elm.Line().at((X[2], -4.5)).left().tox(X[1] + 0.35)
+            d += elm.Line().to((X[1] + 0.35, -5.2))
+    print("[图 18-p3-5] 练习 3：对调两相（反转） vs 轮换一格（正转）")
+    save_schem(d, P, "18_p3_5_phase.png")
+
+
+def sequence_control():
+    """图 18-p3-6：练习 4 顺序控制。KM2 线圈回路串 KM1 常开辅助触点。"""
+    XN = 17.0
+    with drawing(fontsize=10) as d:
+        d += elm.Dot(open=True).at((0, 1.4)).label("L", "top")
+        d += elm.Line().down().toy(-6.6)
+        d += elm.Dot(open=True).at((XN, 1.4)).label("N", "top")
+        d += elm.Line().down().toy(-6.6)
+        d += elm.Dot().at((0, 0))
+        rung_c(d, 0, [(PushNC, "SB1 停止 M1"), ("par", (PushNO, "SB2 启动 M1"), (ContactNO, "KM1 自锁")),
+                      (Coil, "KM1 线圈")], 0, XN)
+        d += elm.Dot()
+        d += elm.Dot().at((0, -4.2))
+        rung_c(d, -4.2, [(PushNC, "SB3 停止 M2"), ("par", (PushNO, "SB4 启动 M2"), (ContactNO, "KM2 自锁")),
+                         (ContactNO, "KM1 常开（顺序）", ACC), (Coil, "KM2 线圈")], 0, XN)
+        d += elm.Dot()
+    print("[图 18-p3-6] 练习 4：KM2 回路串 KM1 常开 → K2' = S3' (S4 + K2) K1")
+    save_schem(d, P, "18_p3_6_sequence.png")
+
+
+lowvolt_interlock()
+button_only_vs_double()
+self_lock_nc()
+phase_swap_vs_rotate()
+sequence_control()
