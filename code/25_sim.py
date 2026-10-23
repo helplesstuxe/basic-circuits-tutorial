@@ -101,7 +101,7 @@ if __name__ == "__main__":
     f = 20e3
     fig, axes = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=False)
     ax = axes[0]
-    styles = [("ref", 0.25), ("vin", 0.50), ("vout", 0.75)]
+    styles = [("third", 0.25), ("vin", 0.50), ("vout", 0.75)]
     for key, d in styles:
         t, I, W, V = run(pwm_schedule(d, f), 0.4, dt=0.5e-6)   # 每个 PWM 周期正好 100 步
         ax.plot(t * 1e3, W * 60 / (2 * np.pi), **{**fs.LS[key], "lw": 1.3}, label=f"占空比 {d:.0%}：稳定在 {W[-20000:].mean()*60/2/np.pi:.0f} rpm")

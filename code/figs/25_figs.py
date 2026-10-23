@@ -16,7 +16,7 @@ _spec = importlib.util.spec_from_file_location("sim25", os.path.join(HERE, "..",
 sim = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(sim)
 RPM = 60 / (2 * np.pi)
 ON = fs.LS["vout"]["color"]      # 电流路径：橙色
-BAD = fs.LS["bad"]["color"]      # 短路路径：红紫色
+BAD = fs.LS["bad"]["color"]      # 短路路径：朱红色
 OFF = "#8c8c8c"
 
 
@@ -98,7 +98,7 @@ def fig_p1_3():
     ax[0].plot(t, W * RPM, **fs.LS["vout"], label="转速")
     fs.ref_h(ax[0], 0)
     fs.axlabels(ax[0], "时间", "s", "转速", "rpm"); ax[0].set_xlabel("")
-    ax[1].plot(t, I, **fs.LS["vin"], label="电机电流（A→B 方向为正）")
+    ax[1].plot(t, I, **fs.LS["cur"], label="电机电流（A→B 方向为正）")
     fs.ref_h(ax[1], 0)
     ax[1].legend(loc="lower left", fontsize=8)
     fs.axlabels(ax[1], "时间", "s", "电流", "A")
