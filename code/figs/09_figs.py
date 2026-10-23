@@ -1,6 +1,6 @@
 """09 开关电源：电路图（schemdraw）。运行：/workspace/circuits-venv/bin/python code/figs/09_figs.py
 图上的数字与 code/09_sim.py 一致（12 V → 5 V、1 A、200 kHz、47 µH、47 µF、占空比约 44%），本脚本也会打印它们。
-全部是低压直流电路；变体二（反激副边）的初级接市电，图上只画成方框并写明危险。"""
+全部是低压直流电路；变体二（反激电源次级）的初级接市电，图上只画成方框并写明危险。"""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import schem
@@ -121,7 +121,7 @@ def p2_4():
 
 
 def p2_5():
-    """反激电源副边输出级（附图那一格的实用画法）。"""
+    """反激电源次级输出级（简化画法的补全）。"""
     with schem.drawing(fontsize=11) as d:
         t = elm.Transformer(t1=4, t2=4).anchor("p1")
         d += t.at((0, 4.0))
@@ -136,7 +136,7 @@ def p2_5():
         d += elm.Line().endpoints((bx + 1.8, t.p1[1]), (t.p1[0] - 0.8, t.p1[1]))
         d += elm.Line().endpoints((bx + 1.8, t.p2[1]), (t.p2[0] - 0.8, t.p2[1]))
         d += elm.Label().at((bx, (y0 + y1) / 2)).label("初级（接市电！）\n整流后约 311 V 直流\n+ MOSFET 开关", loc="center")
-        # 副边：串联二极管 → 电容 ∥ 稳压管
+        # 次级：串联二极管 → 电容 ∥ 稳压管
         top, bot = t.s1[1], t.s2[1]
         x = t.s1[0]
         d += elm.Diode().endpoints((x, top), (x + 2.5, top)).label("整流二极管", "top")
@@ -144,14 +144,14 @@ def p2_5():
         d += elm.Capacitor().endpoints((x + 2.5, top), (x + 2.5, bot)).label("$C_o$", "bottom")
         d += elm.Line().endpoints((x + 2.5, top), (x + 4.3, top))
         d += elm.Dot().at((x + 4.3, top))
-        d += elm.Zener().endpoints((x + 4.3, bot), (x + 4.3, top)).label("稳压管\n（附图画法，\n实际多为反馈）", "bottom")
+        d += elm.Zener().endpoints((x + 4.3, bot), (x + 4.3, top)).label("稳压管\n（简化画法，\n实际多为反馈）", "bottom")
         d += elm.Line().endpoints((x + 4.3, top), (x + 5.3, top))
         d += elm.Dot(open=True).at((x + 5.3, top)).label("$V_o$", "right")
         d += elm.Line().endpoints((x, bot), (x + 5.3, bot))
         d += elm.Dot(open=True).at((x + 5.3, bot)).label("0 V", "right")
         d += elm.Dot().at((x + 2.5, bot)); d += elm.Dot().at((x + 4.3, bot))
         d += elm.Label().at(((t.p1[0] + t.s1[0]) / 2, top + 1.0)).label("变压器：隔离", loc="center")
-        d += elm.Label().at((x + 1.5, bot - 0.8)).label("副边：脉冲 → 二极管整流 → 电容滤波（同 06）", loc="center")
+        d += elm.Label().at((x + 1.5, bot - 0.8)).label("次级：脉冲 → 二极管整流 → 电容滤波（同 06）", loc="center")
     schem.save_schem(d, P, "09_p2_5_flyback.png")
 
 
