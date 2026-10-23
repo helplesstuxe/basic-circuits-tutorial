@@ -421,3 +421,165 @@ ax.set_xticks(np.arange(len(steps)) + 0.5); ax.set_xticklabels(steps, fontsize=8
 ax.set_yticks([]); [ax.spines[s].set_visible(False) for s in ("left", "top", "right")]
 ax.set_title("实验操作顺序（从左到右）与应有状态：实心 = 是 / 亮", fontsize=10)
 fs.save(fig, P, "17_p4_2_sequence.png")
+
+
+# ======================= 补充原理图（图 17-p2-4 起） =======================
+ACC = fs.C["bad"]
+
+
+def rung_variant(d, y, mode="ok"):
+    """在高度 y 画一条自锁控制回路（与 rung_selflock 同样的元件顺序）。
+    mode="ok" 正确；"bypass" 自锁触点并在 SB1+SB2 整体两端（错误①）；"no_stop" 停止按钮用了常开（错误②）。"""
+    d += (l0 := elm.Dot(open=True).at((0, y)).label("L", "left"))
+    d += elm.Line().right(0.6)
+    d += (a0 := elm.Dot())
+    if mode == "no_stop":
+        d += PushNO().right().label("SB1 停止（误用常开）", ofst=0.6, color=ACC).color(ACC)
+    else:
+        d += PushNC().right().label("SB1 停止", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += (a := elm.Dot())
+    d += PushNO().right().label("SB2 启动", ofst=0.6)
+    d += (b := elm.Dot())
+    d += elm.Line().right(0.6)
+    d += ThermalNC().right().label("FR", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += Coil().right().label("KM 线圈", ofst=0.4)
+    d += elm.Line().right(0.6)
+    d += elm.Dot(open=True).label("N", "right")
+    if mode == "bypass":
+        d += elm.Line().down(1.9).at(a0.center).color(ACC)
+        d += ContactNO().right().tox(b.center).label("KM 自锁触点（并到了 SB1 外面）", "bottom", ofst=0.25, color=ACC).color(ACC)
+        d += elm.Line().up(1.9).color(ACC)
+    else:
+        d += elm.Line().down(1.9).at(a.center)
+        d += ContactNO().right().tox(b.center).label("KM 自锁触点", "bottom", ofst=0.25)
+        d += elm.Line().up(1.9)
+
+
+# ---------- 图 17-p2-4 正确接法与两种错误接法 ----------
+with drawing(fontsize=11) as d:
+    for i, (mode, title) in enumerate([("ok", "（a）正确：自锁触点只并在 SB2 两端，SB1 用常闭"),
+                                       ("bypass", "（b）错误①：自锁触点并在 SB1 和 SB2 串联的两端"),
+                                       ("no_stop", "（c）错误②：停止按钮用了常开触点")]):
+        y = -6.0 * i
+        d += elm.Label().at((-0.6, y + 2.3)).label(title, halign="left")
+        rung_variant(d, y, mode)
+save_schem(d, P, "17_p2_4_wrong_wiring.png")
+
+
+# ---------- 图 17-p2-5 例 3：运行指示灯 HL1 与停机指示灯 HL2 ----------
+with drawing(fontsize=11) as d:
+    XN = 13.0
+    d += elm.Dot(open=True).at((0, 1.2)).label("L", "top")
+    d += elm.Line().down().toy(-5.2)
+    d += elm.Dot(open=True).at((XN, 1.2)).label("N", "top")
+    d += elm.Line().down().toy(-5.2)
+    d += elm.Dot().at((0, 0))
+    d += elm.Line().at((0, 0)).right(0.6)
+    d += PushNC().right().label("SB1 停止", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += (a := elm.Dot())
+    d += PushNO().right().label("SB2 启动", ofst=0.6)
+    d += (b := elm.Dot())
+    d += elm.Line().right(0.6)
+    d += ThermalNC().right().label("FR", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += (c1 := elm.Dot())
+    d += Coil().right().label("KM 线圈", ofst=0.4)
+    d += (c2 := elm.Dot())
+    d += elm.Line().right().tox(XN)
+    d += elm.Dot()
+    d += elm.Line().down(1.9).at(a.center)
+    d += ContactNO().right().tox(b.center).label("KM 自锁触点", "bottom", ofst=0.25)
+    d += elm.Line().up(1.9)
+    d += elm.Line().down(1.6).at(c1.center).color(ACC)
+    d += LampX().right().tox(c2.center).label("HL1 运行", "bottom", ofst=0.3, color=ACC).color(ACC)
+    d += elm.Line().up(1.6).color(ACC)
+    d += elm.Dot().at((0, -4.4)).color(ACC)
+    d += elm.Line().at((0, -4.4)).right(3.0).color(ACC)
+    d += ContactNC().right().label("KM 常闭辅助触点", "bottom", ofst=0.3, color=ACC).color(ACC)
+    d += elm.Line().right(3.0).color(ACC)
+    d += LampX().right().label("HL2 停机", "bottom", ofst=0.3, color=ACC).color(ACC)
+    d += elm.Line().right().tox(XN).color(ACC)
+    d += elm.Dot().color(ACC)
+save_schem(d, P, "17_p2_5_lamps.png")
+
+
+# ---------- 图 17-p2-6 12 V 低压实验接线（原理图） ----------
+with drawing(fontsize=11) as d:
+    XN = 14.0
+    d += elm.Dot(open=True).at((0, 2.0)).label("+12 V（代替 L）", "top")
+    d += elm.Line().down().toy(-5.4)
+    d += elm.Dot(open=True).at((XN, 2.0)).label("−（代替 N）", "top")
+    d += elm.Line().down().toy(-5.4)
+    d += elm.Dot().at((0, 0))
+    d += elm.Line().at((0, 0)).right(0.6)
+    d += PushNC().right().label("停止按钮（常闭）", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += (a := elm.Dot())
+    d += PushNO().right().label("启动按钮（常开）", ofst=0.6)
+    d += (b := elm.Dot())
+    d += elm.Line().right(1.2)
+    d += (c1 := elm.Dot())
+    d += Coil().right().label("继电器线圈 12 V", ofst=0.4)
+    d += (c2 := elm.Dot())
+    d += elm.Line().right().tox(XN)
+    d += elm.Dot()
+    d += elm.Line().down(1.9).at(a.center)
+    d += ContactNO().right().tox(b.center).label("第一组常开触点（自锁）", "bottom", ofst=0.25)
+    d += elm.Line().up(1.9)
+    d += elm.Line().down(1.6).at(c1.center).color(ACC)
+    d += elm.Diode().left().at((c2.center[0], c2.center[1] - 1.6)).to((c1.center[0], c1.center[1] - 1.6)).label("1N4007", "bottom", color=ACC).color(ACC)
+    d += elm.Line().up(1.6).at((c2.center[0], c2.center[1] - 1.6)).color(ACC)
+    d += elm.Dot().at((0, -4.6))
+    d += elm.Line().at((0, -4.6)).right(2.4)
+    d += ContactNO().right().label("第二组常开触点", "bottom", ofst=0.3)
+    d += elm.Line().right(1.2)
+    d += elm.Resistor().right().label("1 kΩ")
+    d += elm.Line().right(0.8)
+    d += elm.LED().right().label("LED（代替电动机）", ofst=0.4)
+    d += elm.Line().right().tox(XN)
+    d += elm.Dot()
+save_schem(d, P, "17_p2_6_lowvolt.png")
+
+
+# ---------- 图 17-p3-4 二线控制与三线控制 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Label().at((-0.6, 2.4)).label("（a）二线控制：旋钮 / 拨动开关不会自己弹回，来电即转", halign="left")
+    d += elm.Dot(open=True).at((0, 0)).label("L", "left")
+    d += elm.Line().right(0.6)
+    d += elm.Switch().right().length(2.4).label("旋钮 / 拨动开关（不复位）", ofst=0.4, color=ACC).color(ACC)
+    d += elm.Line().right(2.5)
+    d += ThermalNC().right().label("FR", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += Coil().right().label("KM 线圈", ofst=0.4)
+    d += elm.Line().right(0.6)
+    d += elm.Dot(open=True).label("N", "right")
+    d += elm.Label().at((-0.6, -2.4)).label("（b）三线控制：会弹回的按钮 + KM 自锁触点，有失压保护", halign="left")
+    rung_variant(d, -5.2, "ok")
+save_schem(d, P, "17_p3_4_two_three_wire.png")
+
+
+# ---------- 图 17-p3-5 控制线压降的等效电路 ----------
+rho, dist, r_coil = 0.01724, 42.0, 8.2
+r_w = rho * dist / 1.0
+v_coil = 24 * r_coil / (r_coil + 2 * r_w)
+print(f"[图 17-p3-5] 1 mm² 铜线 {dist:.0f} m：单根 {r_w:.2f} Ω，去回共 {2*r_w:.2f} Ω；线圈电压 {v_coil:.1f} V = {v_coil/24*100:.0f}%")
+assert abs(v_coil / 24 - 0.85) < 0.01
+with drawing(fontsize=11) as d:
+    d += (src := elm.SourceSin().up().length(3.0))
+    d += elm.Label().at((-0.6, 1.5)).label("24 V\n控制电源", halign="right")
+    d += elm.Line().right(0.8)
+    d += elm.Resistor().right().length(2.6).label("去线电阻", color=ACC).color(ACC)
+    d += elm.Line().right(0.8)
+    d += PushNO().right().label("SB2（远处按钮盒）", ofst=0.6)
+    d += elm.Line().right(0.6)
+    d += elm.Line().down(1.5)
+    d += (kc := Coil().down().length(1.5))
+    d += elm.Label().at((kc.center[0] + 0.5, kc.center[1])).label("KM 线圈\n（吸合瞬间约 8.2 Ω）", halign="left")
+    d += elm.Line().left().tox(src.start[0] + 4.2)
+    d += elm.Resistor().left().length(2.6).label("回线电阻", "bottom", color=ACC).color(ACC)
+    d += elm.Line().left().tox(src.start[0])
+    d += elm.Label().at((src.start[0] + 4.6, -1.5)).label(f"1 mm² 铜线，{dist:.0f} m：每根约 {r_w:.2f} Ω", color=ACC)
+save_schem(d, P, "17_p3_5_wire_loop.png")
