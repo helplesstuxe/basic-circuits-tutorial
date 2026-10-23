@@ -182,7 +182,7 @@ fs.save(fig, N, "16_p3_1_distortion.png")
 
 # ---------- 图 16-p3-2 运放输出不到电源轨：占空比变歪 ----------
 fig, axs = plt.subplots(1, 2, figsize=fs.SIZE["pair"], sharey=True)
-for ax, (vh, vl, name) in zip(axs, [(5.0, 0.0, "理想：输出 0～5 V"), (3.5, 0.1, "LM358：输出 0.1～3.5 V")]):
+for ax, (vh, vl, name) in zip(axs, [(5.0, 0.0, "理想：输出 0～5 V"), (3.5, 0.1, "LM358B：输出 0.1～3.5 V")]):
     t, VC, VO, T, th = relax_sim(vh, vl)
     up, dn = (5 + vh) / 3, (5 + vl) / 3
     print(f"{name}：门限 {dn:.2f}/{up:.2f} V，周期 {T*1e3:.2f} ms，高电平占 {th/T*100:.0f}%")
@@ -195,3 +195,14 @@ for ax, (vh, vl, name) in zip(axs, [(5.0, 0.0, "理想：输出 0～5 V"), (3.5,
         assert th / T > 0.6
 axs[0].set_ylabel("电压 / V"); axs[0].set_ylim(-0.3, 6.5)
 fs.save(fig, N, "16_p3_2_lm358_duty.png")
+
+# ---------- 正文里的其余数字（只打印 + 断言） ----------
+# 文氏桥在 f0 处：容抗 = R，串联支路与并联支路的"总阻碍"之比 2:1，相位相同，所以分到 1/3
+Rw, Cw = 10e3, 10e-9
+f0w = 1 / (2 * np.pi * Rw * Cw)
+Xc = 1 / (2 * np.pi * f0w * Cw)
+Zs = Rw - 1j * Xc                                    # 串联 R + C
+Zp = 1 / (1 / Rw + 1j * 2 * np.pi * f0w * Cw)        # 并联 R ∥ C
+print(f"f0 = {f0w:.0f} Hz：容抗 {Xc/1e3:.1f} kΩ；串联 |Z| = {abs(Zs)/Rw:.3f} R，并联 |Z| = {abs(Zp)/Rw:.3f} R，之比 {abs(Zs)/abs(Zp):.2f}")
+print(f"两支路相位 {np.degrees(np.angle(Zs)):.0f}° 和 {np.degrees(np.angle(Zp)):.0f}°，分压比 {abs(Zp/(Zs+Zp)):.4f}")
+assert abs(abs(Zs) / abs(Zp) - 2) < 1e-9 and abs(abs(Zp / (Zs + Zp)) - 1 / 3) < 1e-9
