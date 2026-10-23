@@ -1,6 +1,6 @@
 # 04 差分放大 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：10 稳压管稳压 · 直觉篇](../10-zener-regulator/page1.md) · 前置节点：[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：动手实验篇](page4.md) · 前置节点：[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)、[02 同相放大 · 直觉篇](../02-noninverting-amp/page1.md)
 
 ## 这一页解决什么问题
 
