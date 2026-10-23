@@ -1,6 +1,6 @@
 # 26 上拉/下拉电阻与电平转换 · 原理与实现篇
 
-[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [14 电压比较器 · 直觉篇](../14-voltage-comparator/page1.md) · [21 MOS 管开关 · 直觉篇](../21-mosfet-switch/page1.md)
+[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P1 元件速成 · 原理与实现篇](../P1-components-basics/page2.md) · [14 电压比较器 · 原理与实现篇](../14-voltage-comparator/page2.md) · [21 MOS 管开关 · 原理与实现篇](../21-mosfet-switch/page2.md)
 
 ## 最小知识
 
@@ -46,6 +46,8 @@ $$t_r = R_p C_b \ln\frac{1 - 0.3}{1 - 0.7} = R_p C_b \ln\frac{0.7}{0.3} \approx 
 TI 应用笔记 SLVA689A 由此给出上拉电阻的上限和下限：
 
 $$R_{p(max)} = \frac{t_r}{0.8473 C_b}, \qquad R_{p(min)} = \frac{V_{CC} - V_{OL(max)}}{I_{OL}}$$
+
+式中 $I_{OL}$ 是输出管拉低时允许吸收的电流，I²C 规定 3 mA。
 
 中文意思：**电阻太大，上升沿超过规范；电阻太小，输出管「拉不动」，低电平降不到 $V_{OL}$ 以下**。
 
@@ -101,9 +103,12 @@ $$V_{GS} = 3.3\text{ V} - V_L \gt V_{GS(th)} \quad\Longleftrightarrow\quad V_L \
 
 ## 仿真一：按键抖动经过 RC 和施密特门限
 
-下面这段程序把推导三变成数字：先随机生成一段按下、松开时各带抖动的触点状态（抖动时长取 Ganssle 实测的毫秒量级，是示意波形），然后一步一步算电容电压，最后按施密特门限判断。复制到装有 numpy 和 matplotlib 的 Python 里就能运行，图存在当前目录：
+下面这段程序把推导三变成数字：先随机生成一段按下、松开时各带抖动的触点状态（抖动时长取 Ganssle 实测的毫秒量级，是示意波形），然后一步一步算电容电压，最后按施密特门限判断。图里有中文标签，所以开头借用教程的 figstyle 设置中文字体（不然中文会显示成方框）；请在仓库根目录运行，需要 numpy 和 matplotlib，图存在当前目录：
 
 ```python
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
+import figstyle                         # 只借用它设置中文字体
 import numpy as np                      # 数值计算
 import matplotlib                       # 画图库
 matplotlib.use("Agg")                   # 不弹窗口，直接存图
@@ -166,7 +171,7 @@ print("已保存 debounce.png")
 
 ## 仿真二：电平转换管两个方向的动作
 
-`code/26_sim.py` 里还有一个 MOS 管电平转换模型：BSS138 门限取 1.3 V，导通电阻按手册「4.5 V 时 1 Ω」反推，体二极管 0.6 V 起导通；两边各 10 kΩ 上拉、各 50 pF 线电容；两边的器件都是开漏输出，导通电阻 100 Ω。先让 3.3 V 一侧在 5～15 μs 拉低，再让 5 V 一侧在 22～32 μs 拉低，结果见图 26-p2-3：
+`code/26_sim.py` 里还有一个 MOS 管电平转换模型（函数 `level_shifter`）：BSS138 门限取 1.3 V，导通电阻按手册「 $V_{GS}$ = 4.5 V 时 1 Ω」反推（本电路 $V_{GS}$ 最多 3.3 V，实际导通电阻会更大，这里按 4.5 V 的值近似；它仍远小于 10 kΩ 上拉，不影响结论），体二极管 0.6 V 起导通；两边各 10 kΩ 上拉、各 50 pF 线电容；两边的器件都是开漏输出，导通电阻 100 Ω。先让 3.3 V 一侧在 5～15 μs 拉低，再让 5 V 一侧在 22～32 μs 拉低，运行 `code/26_sim.py` 会打印下面用到的 0.08 V、328 ns 后 2.02 V 分开、接反时 3.85 V 这几个数；图 26-p2-3 由 `code/figs/26_figs.py` 调用同一个函数画出：
 
 ![三层波形：(a) 正确接法下，任一侧拉低时两侧都降到约 0.08 V，松手后 3.3 V 侧回到 3.3 V、5 V 侧回到 5 V；(b) 放大松手后的上升沿，两条线一起升到约 2.0 V 后分开；(c) 源极和漏极接反时，空闲时 3.3 V 侧被抬到 3.85 V](img/26_p2_3_shifter_sim.png)
 

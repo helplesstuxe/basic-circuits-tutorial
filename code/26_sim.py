@@ -1,7 +1,7 @@
 """26 仿真：上拉/下拉电阻与电平转换——悬空输入、按键抖动与 RC + 施密特去抖、上拉电阻与上升时间、
 N 沟道 MOS 管双向电平转换。
 运行：/workspace/circuits-venv/bin/python code/26_sim.py   → 26-pullup-level-shift/img/26_p2_2_debounce.png
-code/figs/26_figs.py 会调用这里的函数画其余的图。
+同时打印电平转换模型的关键数字；code/figs/26_figs.py 会调用这里的函数（包括 level_shifter）画其余的图。
 数据来源：
 - 施密特门限：TI SN74HC14 数据手册，VCC = 4.5 V 一行典型值 VT+ 2.5 V、VT− 1.6 V（5 V 系统近似使用）。
 - 单片机输入门限：Microchip ATmega328P 数据手册 VIL ≤ 0.3·VCC、VIH ≥ 0.6·VCC，内部上拉 20–50 kΩ。
@@ -183,6 +183,21 @@ if __name__ == "__main__":
     print(f"按下后 {d_press*1e3:.1f} ms 认成按下（估算 R2·C·ln(5/1.6) = {R2*C1*np.log(5/1.6)*1e3:.1f} ms）")
     print(f"松开后 {d_release*1e3:.1f} ms 认成松开（估算 (R1+R2)·C·ln(5/2.5) = {(R1+R2)*C1*np.log(2)*1e3:.1f} ms）")
     assert n_out == 2 and n_raw > 6
+
+    # 电平转换：和图 26-p2-3 同样的激励（图由 code/figs/26_figs.py 调用 level_shifter 画出）
+    dt_ls = 2e-9
+    t_ls = np.arange(0, 40e-6, dt_ls)
+    pl = (t_ls > 5e-6) & (t_ls < 15e-6)          # 3.3 V 侧在 5～15 μs 拉低
+    ph = (t_ls > 22e-6) & (t_ls < 32e-6)         # 5 V 侧在 22～32 μs 拉低
+    VL, VH = level_shifter(t_ls, pl, ph)
+    VLs, VHs = level_shifter(t_ls, pl, ph, swapped=True)
+    kk = lambda tt: int(round(tt / dt_ls))
+    i0 = kk(15e-6)
+    ii = i0 + np.argmax(VH[i0:] - VL[i0:] > 0.05)  # 松手后两边开始分开的时刻
+    print(f"电平转换：3.3 V 侧拉低时两边 {VL[kk(10e-6)]:.2f} / {VH[kk(10e-6)]:.2f} V；5 V 侧拉低时 {VL[kk(27e-6)]:.2f} / {VH[kk(27e-6)]:.2f} V")
+    print(f"电平转换：松手后 {(t_ls[ii]-15e-6)*1e9:.0f} ns 两边在 {VL[ii]:.2f} V 处分开")
+    print(f"电平转换：源漏接反时，空闲的 3.3 V 侧被抬到 {VLs[kk(3e-6)]:.2f} V")
+    assert VL[kk(10e-6)] < 0.15 and VH[kk(10e-6)] < 0.15 and VLs[kk(3e-6)] > 3.5
 
     fig, axs = plt.subplots(3, 1, figsize=(7, 5.4), sharex=True)
     ms = t * 1e3
