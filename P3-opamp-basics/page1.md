@@ -1,6 +1,6 @@
 # P3 运放入门 · 直觉篇
 
-[上一页：P1 元件速成 · 参数与调试篇](../P1-components-basics/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成](../P1-components-basics/page1.md)
+[上一页：P1 元件速成 · 参数与调试篇](../P1-components-basics/page3.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md)
 
 ## 为什么要学运放
 

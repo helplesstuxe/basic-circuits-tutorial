@@ -1,6 +1,6 @@
 # P3 运放入门 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：P2 半导体入门](../P2-semiconductor-basics/page1.md) · 前置节点：[P1 元件速成](../P1-components-basics/page1.md) · 后续：[01 反相放大](../01-inverting-amp/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · 后续：[01 反相放大 · 直觉篇](../01-inverting-amp/page1.md)
 
 ## 本页要解决的问题
 
