@@ -1,12 +1,14 @@
 """08 线性稳压：电路图（schemdraw）。运行：/workspace/circuits-venv/bin/python code/figs/08_figs.py
-图上的数字与 code/08_sim.py 的打印一致（V_ref 5.16 V、V_o 9.11 V、运放输出 9.86 V），本脚本也会打印它们。"""
+图上的数字与 code/08_sim.py 的打印一致（V_ref 4.82 V、V_o 8.51 V、运放输出 9.26 V），本脚本也会打印它们。"""
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import schem
 from schem import elm
 
 P = "08"
-VREF, RF, R1 = 5.162, 3900.0, 5100.0
+VZ0 = 5.1 - 7.0 * 0.049                  # 1N4733A 击穿起点（见 10 page2）
+VREF = VZ0 + 7.0 * (14.0 - VZ0) / 1007.0   # 14 V 输入、R_Z 1 kΩ 时的基准
+RF, R1 = 3900.0, 5100.0
 VO = VREF * (1 + RF / R1)
 VB = VO + 0.755
 
@@ -79,7 +81,7 @@ def p2_1():
         regulator(d, detail=True)
         d += elm.Label().at((4.6, 4.9)).label("LM358（由 $V_i$ 供电）", loc="center")
     print(f"[图 08-p2-1] V_ref {VREF:.2f} V、运放输出 {VB:.2f} V、V_o {VO:.2f} V、R_Z 1 kΩ、R_f 3.9 kΩ、R_1 5.1 kΩ、C_o 10 µF、0.5 A")
-    assert abs(VO - 9.11) < 0.005
+    assert abs(VO - 8.51) < 0.005
     schem.save_schem(d, P, "08_p2_1_detail.png")
 
 

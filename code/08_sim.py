@@ -1,6 +1,6 @@
 """08 线性稳压：静态与时域计算，生成 08-linear-regulator/img/ 里的曲线图。
 运行：/workspace/circuits-venv/bin/python code/08_sim.py
-电路（见 08 page2）：稳压管基准（10 的 1N4733A 模型：V = V_Z + r_Z·I_Z，经 R_Z = 1 kΩ 从 V_i 供电）
+电路（见 08 page2）：稳压管基准（10 的 1N4733A 模型：V = V_Z + r_Z·(I_Z − I_ZT)，即 V = V_Z0 + r_Z·I_Z，V_Z0 ≈ 4.757 V；经 R_Z = 1 kΩ 从 V_i 供电）
 → 运放 LM358 接成同相放大（02 的公式，R_1 = 5.1 kΩ，R_f = 3.9 kΩ），输出推动 TIP31 射极跟随器（07 的指数模型）。
 示意假设：运放开环增益 A = 1e5；运放输出最高到 V_i − 1.5 V（与 07 的估算相同）；β = 50；I_S = 1e-13 A。
 图上的每个数字都由本脚本打印；关键结论用 assert 检查。
@@ -12,7 +12,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 N = "08"
-VZ, RZ_DYN, R_Z = 5.1, 7.0, 1000.0       # 1N4733A（见 10 page2）与它的限流电阻
+VZ, IZT, RZ_DYN, R_Z = 5.1, 0.049, 7.0, 1000.0   # 1N4733A（见 10 page2）：49 mA 时 5.1 V；限流电阻 1 kΩ
+VZ0 = VZ - RZ_DYN * IZT                  # 击穿起点 ≈ 4.757 V
 R1, RF = 5100.0, 3900.0                   # 同相放大：倍数 1 + RF/R1
 A_OL = 1e5                                # 运放开环增益（示意值）
 HEAD = 1.5                                # 运放输出最高 = V_i − 1.5 V（同 07）
@@ -22,9 +23,9 @@ K = R1 / (R1 + RF)                        # 分压比
 
 
 def vref(vi):
-    """稳压管基准：I_Z = (V_i − V_Z)/(R_Z + r_Z)，V_ref = V_Z + r_Z·I_Z。"""
-    iz = max(vi - VZ, 0.0) / (R_Z + RZ_DYN)
-    return VZ + RZ_DYN * iz, iz
+    """稳压管基准：I_Z = (V_i − V_Z0)/(R_Z + r_Z)，V_ref = V_Z0 + r_Z·I_Z。"""
+    iz = max(vi - VZ0, 0.0) / (R_Z + RZ_DYN)
+    return VZ0 + RZ_DYN * iz, iz
 
 
 def vbe(il):
@@ -77,11 +78,13 @@ a1.plot(t * 1e3, vi_t, **fs.LS["vin"], label="输入 $V_i$：平均 14 V，纹�
 a1.plot(t * 1e3, vo_t, **fs.LS["vout"], label="输出 $V_o$")
 fs.axlabels(a1, None, None, "电压", "V"); a1.set_ylim(0, 17)
 a1.legend(loc="lower right", fontsize=8)
-a2.plot(t * 1e3, (vo_t - 9.0) * 1e3, **fs.LS["vout"], label=f"输出 $V_o$ 放大看：纹波 {rout*1e3:.1f} mV")
-fs.axlabels(a2, "时间", "ms", "输出 − 9 V", "mV"); a2.set_ylim(90, 150)
+VOFF = np.floor(vo_t.mean() * 10) / 10          # 放大看时减掉的整数部分
+a2.plot(t * 1e3, (vo_t - VOFF) * 1e3, **fs.LS["vout"], label=f"输出 $V_o$ 放大看：纹波 {rout*1e3:.1f} mV")
+lo_mv = np.floor((vo_t.min() - VOFF) * 1e3 / 10) * 10 - 10
+fs.axlabels(a2, "时间", "ms", f"输出 − {VOFF:.1f} V", "mV"); a2.set_ylim(lo_mv, lo_mv + 60)
 a2.legend(loc="upper right", fontsize=8)
-a2.set_title(f"输出平均 {vo_t.mean():.3f} V（纵轴放大：只显示 9.09–9.15 V）", fontsize=9, loc="left")
-print(f"[数值] 纵轴 9.09–9.15 V")
+a2.set_title(f"输出平均 {vo_t.mean():.3f} V（纵轴放大：只显示 {VOFF + lo_mv/1e3:.2f}–{VOFF + (lo_mv+60)/1e3:.2f} V）", fontsize=9, loc="left")
+print(f"[数值] 纵轴 {VOFF + lo_mv/1e3:.2f}–{VOFF + (lo_mv+60)/1e3:.2f} V")
 fs.save(fig, N, "08_p1_2_ripple.png")
 
 # ---------- 图 08-p1-3 功率去哪了（V_i = 14 V，0.5 A）----------
@@ -91,7 +94,7 @@ p_pass = (14.0 - vo14) * (IL + vo14 / (R1 + RF))
 p_other = p_in - p_load - p_pass
 eta = p_load / p_in
 print(f"[功率] 输入 {p_in:.2f} W = 负载 {p_load:.2f} W + 调整管 {p_pass:.2f} W + 基准与分压 {p_other:.2f} W；效率 {eta*100:.0f}%")
-assert 2.0 < p_pass < 3.0 and 0.6 < eta < 0.7
+assert 2.0 < p_pass < 3.0 and 0.55 < eta < 0.7
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
 names = ["从输入拿走", "负载得到", "调整管发热", "基准与分压"]
 vals = [p_in, p_load, p_pass, p_other]
@@ -132,6 +135,11 @@ fs.save(fig, N, "08_p2_2_dropout.png")
 vis2 = np.linspace(11.5, 20, 200)
 pc = (vis2 - vo14) * IL
 eff = vo14 * IL / (vis2 * (IL + np.array([vref(v)[1] for v in vis2]) + vo14 / (R1 + RF)))
+# 市电偏高 10%：二极管压降（桥式两只约 1.4 V）不跟着涨。原峰值 15 V → 变压器峰值 16.4 V → ×1.1 → 减 1.4 V
+vpk_hi = (14.0 + 1.0 + 1.4) * 1.1 - 1.4
+v_hi = vpk_hi - 1.0                                    # 纹波仍按 2 V（峰峰）算，平均 = 峰值 − 1 V
+print(f"[散热] 市电 +10%：整流峰值 {vpk_hi:.2f} V，平均约 {v_hi:.2f} V（若直接 14 × 1.1 = {14*1.1:.1f} V）")
+assert abs(v_hi - 15.6) < 0.1
 p156 = (15.6 - vo14) * IL
 print(f"[散热] V_i = 14 V：P_C ≈ {(14-vo14)*IL:.2f} W；V_i = 15.6 V（市电 +10%）：P_C ≈ {p156:.2f} W；V_i = 20 V：{(20-vo14)*IL:.2f} W，效率 {eff[-1]*100:.0f}%")
 for p in ((14 - vo14) * IL, p156):
@@ -141,7 +149,7 @@ fig, ax = plt.subplots(figsize=fs.SIZE["single"])
 ax.plot(vis2, pc, **fs.LS["bad"], label="调整管功耗 $P_C$（左轴）")
 fs.ref_h(ax, 2.0, "TIP31 不加散热片 2 W", x=0.98, ha="right")
 fs.mark(ax, 14.0, (14 - vo14) * IL, "{:.2f}", " W", dx=6, dy=-14)
-fs.mark(ax, 15.6, p156, "{:.2f}", " W", dx=6, dy=-14)
+fs.mark(ax, 15.6, p156, "{:.2f}", " W", dx=4, dy=12)
 fs.axlabels(ax, "输入 $V_i$", "V", "功耗", "W"); ax.set_ylim(0, 6)
 ax2 = ax.twinx()
 ax2.plot(vis2, eff * 100, **fs.LS["third"], label="效率（右轴）")
@@ -151,23 +159,23 @@ fs.mark(ax2, 14.0, e14 * 100, "{:.0f}", " %", dx=6, dy=6)
 fs.mark(ax2, 20.0, eff[-1] * 100, "{:.0f}", " %", dx=-30, dy=8)
 h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
 ax.legend(h1 + h2, l1 + l2, loc="upper center", fontsize=8)
-assert eff[-1] < 0.5 and e14 > 0.6
+assert eff[-1] < 0.5 and e14 > 0.55
 fs.save(fig, N, "08_p3_1_heat.png")
 
-# ---------- 图 08-p3-2 压差不够：纹波谷底掉到门槛以下 ----------
-vi_lo = ripple_in(t, 12.0, 2.0)
+# ---------- 图 08-p3-2 压差不够：纹波谷底掉到门槛以下（平均 11.5 V）----------
+vi_lo = ripple_in(t, 11.5, 2.0)
 vo_lo = np.array([reg(v, IL)[0] for v in vi_lo])
 dip = vo_lo.max() - vo_lo.min()
-print(f"[压差] 输入平均 12 V、纹波 2 V：谷底 {vi_lo.min():.1f} V < {vmin05:.2f} V，输出最低 {vo_lo.min():.2f} V，纹波 {dip*1e3:.0f} mV（正常时 {rout*1e3:.1f} mV）")
-assert dip > 10 * rout
+print(f"[压差] 输入平均 11.5 V、纹波 2 V：谷底 {vi_lo.min():.1f} V < {vmin05:.2f} V，输出最低 {vo_lo.min():.2f} V，纹波 {dip*1e3:.0f} mV（正常时 {rout*1e3:.1f} mV）")
+assert dip > 5 * rout
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(t * 1e3, vi_lo, **fs.LS["vin"], label="输入：平均 12 V，纹波 2 V")
+ax.plot(t * 1e3, vi_lo, **fs.LS["vin"], label="输入：平均 11.5 V，纹波 2 V")
 ax.plot(t * 1e3, vo_lo, **fs.LS["vout"], label="输出 $V_o$")
 ax.plot(t * 1e3, vi_lo - drop, **fs.LS["third"], label=f"输入 − {drop:.2f} V")
 ax.axhline(vmin05, **fs.LS["ref"], label=f"最低输入 {vmin05:.2f} V")
 k = np.argmin(vo_lo)
 fs.mark(ax, t[k] * 1e3, vo_lo[k], "{:.2f}", " V", dx=6, dy=-14)
-fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(7, 15.5)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(6.5, 15)
 ax.legend(loc="upper right", fontsize=8, ncol=2)
 fs.save(fig, N, "08_p3_2_low_headroom.png")
 print("08_sim OK")
