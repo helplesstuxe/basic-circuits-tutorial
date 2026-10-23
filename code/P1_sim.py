@@ -1,7 +1,7 @@
 # P1 最小仿真：RC 电路先充电、再放电。思路：把时间切成很多 1 ms 的小段，每一段里
 #   ① 用欧姆定律算流过电阻的电流；② 电流 × 时间 = 流进电容的电荷；③ 电荷 ÷ C = 电容电压涨了多少。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数

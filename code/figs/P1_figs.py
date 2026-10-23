@@ -15,12 +15,14 @@ P = "P1"
 # ---------------- 图 P1-p1-1：分压电路 ----------------
 def p1_1_divider():
     with drawing() as d:
-        d += (src := elm.Battery().up().label("$V_i$\n12 V", "left"))
+        d += (src := elm.Battery().up())
+        d += elm.Label().at((src.center.x - 0.9, src.center.y)).label("$V_i$\n12 V")
         d += elm.Line().right(2.5)
         d += (r1 := elm.Resistor().down().label("$R_1$\n10 kΩ"))
         d += (j := elm.Dot())
         d += (r2 := elm.Resistor().down().label("$R_2$\n10 kΩ"))
         d += elm.Line().left().tox(src.start)
+        d += elm.Line().up().toy(src.start)          # 把电池下端接到底线上，回路闭合
         d += elm.Line().right().at(j.center).length(2.0)
         d += elm.Dot(open=True).label("$V_o$ = 6 V", "right")
         d += elm.Line().right().at(r2.end).length(2.0)
@@ -219,6 +221,110 @@ def p2_5_timer():
     fs.save(fig, P, "P1_p2_5_timer.png")
 
 
+# ---------------- 图 P1-p2-6：通电延时与断电延时的四种触点符号 ----------------
+class TimerOffNO(Element2Term):
+    """断电延时「断开」常开触点：与 TimerNO 相同，只是半圆弧翻过来，开口朝向动触片。"""
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.segments.append(Segment([(0, 0), (0.85, 0.42), GAP, (1, 0)]))
+        self.segments.append(Segment([(0.45, 0.22), (0.45, 0.78)]))
+        self.segments.append(SegmentArc((0.45, 0.62), width=0.5, height=0.32, theta1=0, theta2=180))
+
+
+class TimerOffNC(Element2Term):
+    """断电延时「闭合」常闭触点：与 TimerNC 相同，只是半圆弧翻过来。"""
+    def __init__(self, **kw):
+        super().__init__(**kw)
+        self.segments.append(Segment([(0, 0), (1.12, 0.42), GAP, (1, 0)]))
+        self.segments.append(Segment([(1, 0), (1, 0.5)]))
+        self.segments.append(Segment([(0.5, 0.19), (0.5, 0.78)]))
+        self.segments.append(SegmentArc((0.5, 0.62), width=0.5, height=0.32, theta1=0, theta2=180))
+
+
+def p2_6_timer_symbols():
+    with drawing(fontsize=11) as d:
+        items = [(TimerNO, "通电延时型\n常开触点\n（延时闭合）"), (TimerNC, "通电延时型\n常闭触点\n（延时断开）"),
+                 (TimerOffNO, "断电延时型\n常开触点\n（延时断开）"), (TimerOffNC, "断电延时型\n常闭触点\n（延时闭合）")]
+        x = 0
+        for cls, lab in items:
+            d += elm.Line().at((x, 0)).down().length(0.4)
+            d += cls().down().label(lab, "bottom", fontsize=10, ofst=0.35)
+            d += elm.Line().down().length(0.4)
+            x += 3.6
+    print("[图 P1-p2-6] 4 个延时触点符号：通电延时型半圆弧开口朝右（背离动触片），断电延时型开口朝左（朝向动触片）")
+    save_schem(d, P, "P1_p2_6_timer_symbols.png")
+
+
+# ---------------- 图 P1-p2-7：戴维南等效——分压器 = 6 V 理想电压源串 5 kΩ 内阻 ----------------
+def p2_7_thevenin():
+    Vi, R1, R2 = 12.0, 10e3, 10e3
+    Voc = Vi * R2 / (R1 + R2)                 # 空载（开路）电压
+    Isc = Vi / R1                             # 输出端短路时的电流（R2 被短路，只剩 R1）
+    Rth = Voc / Isc                           # 内阻 = 空载电压 ÷ 短路电流
+    print(f"[P1-p2-7] 空载电压 V_th = {Voc:.2f} V，短路电流 = {Isc*1e3:.2f} mA，内阻 R_th = {Rth/1e3:.2f} kΩ")
+    assert abs(Voc - 6) < 1e-9 and abs(Isc - 1.2e-3) < 1e-12 and abs(Rth - 5e3) < 1e-6
+    assert abs(Rth - R1 * R2 / (R1 + R2)) < 1e-6          # 和「R1、R2 并联」的结果一样
+    for RL in (10e3, 100e3):
+        par = R2 * RL / (R2 + RL)
+        direct = Vi * par / (R1 + par)                     # 原理篇第一节的老算法：先并联、再分压
+        thev = Voc * RL / (Rth + RL)                       # 新算法：6 V 串 5 kΩ，再和 R_L 分压
+        print(f"[P1-p2-7] R_L = {RL/1e3:g} kΩ：先并联再分压 {direct:.2f} V，等效电路 {thev:.2f} V，掉了 {(Voc-thev)/Voc*100:.1f}%")
+        assert abs(direct - thev) < 1e-9
+    # 规律：负载是内阻的 10 倍时，输出掉 1/11
+    print(f"[P1-p2-7] R_L = 10 × R_th 时输出为空载的 {10/11*100:.1f}%，掉 {1/11*100:.1f}%")
+    assert abs(1 / 11 * 100 - 9.1) < 0.05
+    # 内阻算例（完整示例）：电源盒空载 5.00 V，接 100 Ω 后 4.00 V
+    E, RLa, Va = 5.0, 100.0, 4.0
+    Ia = Va / RLa; r = (E - Va) / Ia
+    Vb = E * 50 / (r + 50)
+    print(f"[P1 内阻算例] 电流 {Ia*1e3:.0f} mA，内阻 r = {r:.0f} Ω；换 50 Ω 负载输出 {Vb:.2f} V；短路电流 {E/r*1e3:.0f} mA")
+    assert abs(Ia - 0.04) < 1e-12 and abs(r - 25) < 1e-9 and abs(Vb - 3.33) < 0.005
+    # 内阻留空题：9 V 电池空载 9.0 V，接 30 Ω 后 8.1 V
+    E5, R5, V5 = 9.0, 30.0, 8.1
+    I5 = V5 / R5; r5 = (E5 - V5) / I5
+    print(f"[P1 内阻留空题] 电流 {I5*1e3:.0f} mA，内阻 {r5:.2f} Ω；接 10 Ω 时输出 {E5*10/(r5+10):.2f} V")
+    assert abs(I5 - 0.27) < 1e-9 and abs(r5 - 3.33) < 0.005
+    with drawing(fontsize=11) as d:
+        # 左：原来的分压器 + 负载
+        d += (src := elm.Battery().up().at((0, 0)))
+        d += elm.Label().at((src.center.x - 0.9, src.center.y)).label("12 V")
+        d += elm.Line().right(2.0)
+        d += elm.Resistor().down().label("$R_1$\n10 kΩ")
+        d += (j := elm.Dot())
+        d += elm.Resistor().down().label("$R_2$\n10 kΩ")
+        d += elm.Line().left().tox(src.start)
+        d += elm.Line().up().toy(src.start)
+        d += elm.Line().right().at(j.center).length(1.8)
+        d += (a := elm.Dot(open=True).label("A", "right"))
+        d += elm.Resistor().down().label("$R_L$", "bottom")
+        d += elm.Line().left().length(1.8)
+        d += elm.Label().at((1.5, -2.9)).label("原电路：分压器 + 负载", fontsize=10)
+        # 中间的「等效」箭头
+        d += elm.Label().at((6.0, 1.5)).label("从 A 点往里看\n两者一模一样  ⇔", fontsize=10)
+        # 右：等效电路
+        x0 = 9.0
+        d += (s2 := elm.Battery().up().at((x0, 0)))
+        d += elm.Label().at((x0 - 0.9, s2.center.y)).label("$V_{th}$\n6 V")
+        d += elm.Resistor().right().label("$R_{th}$  5 kΩ")
+        d += (b := elm.Dot(open=True).label("A", "right"))
+        d += elm.Resistor().down().label("$R_L$", "bottom")
+        d += elm.Line().left().tox(s2.start)
+        d += elm.Label().at((x0 + 1.5, -0.8)).label("等效电路：理想电压源串内阻", fontsize=10)
+    save_schem(d, P, "P1_p2_7_thevenin.png")
+
+
+# ---------------- 参数与调试篇新增练习的答案数字 ----------------
+def p3_new_exercises():
+    T, on, off = 3.0, 2.0, 6.0
+    nd_close = on + T if on + T < off else None          # 通电延时常开：等满 3 s 才闭合，线圈先断电就不闭合
+    print(f"[P1 练习 4] 线圈 {on:g} s 通电、{off:g} s 断电，设定 {T:g} s：通电延时常开 {nd_close:g} s 闭合、{off:g} s 断开；"
+          f"断电延时常开 {on:g} s 闭合、{off + T:g} s 断开")
+    assert nd_close == 5.0 and off + T == 9.0
+    # 若线圈只通电 2 s（2 s→4 s），不到 3 s，通电延时触点根本不动作
+    assert not (2.0 + T < 4.0)
+    print("[P1 练习 4] 若线圈 2 s→4 s 只通电 2 s：通电延时常开不闭合；断电延时常开 2 s 闭合、7 s 断开")
+
+
 # ---------------- 图 P1-p3-1：改变 R（τ）对充电曲线的影响 ----------------
 def p3_1_tau_scan():
     C = 100e-6
@@ -309,6 +415,6 @@ def p3_datasheet_numbers():
 
 if __name__ == "__main__":
     p1_1_divider(); p1_2_rc(); p1_3_symbols(); p1_4_relay_loops()
-    p2_1_loading(); p2_3_square(); p2_4_flyback(); p2_5_timer()
+    p2_1_loading(); p2_3_square(); p2_4_flyback(); p2_5_timer(); p2_6_timer_symbols(); p2_7_thevenin()
     p3_1_tau_scan(); p3_2_divider_tradeoff(); p3_3_rl_answer()
-    p3_datasheet_numbers()
+    p3_datasheet_numbers(); p3_new_exercises()
