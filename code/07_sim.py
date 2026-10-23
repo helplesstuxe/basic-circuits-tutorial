@@ -1,7 +1,7 @@
 # 07 射极跟随器最小仿真：运放（输出电流有限）直接带 50 Ω 负载，和"运放 → NPN 射极跟随器 → 负载"对比。
 # 三极管用指数模型 I_C = I_S·e^(V_BE/V_T)（与 P2 相同的思路），β 取 50；运放按 LM358 典型拉电流 30 mA 限流。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
@@ -64,7 +64,9 @@ print(f"[负载] 负载从 1 kΩ 变到 20 Ω（电流变 50 倍），跟随器�
 print(f"[反馈] 反馈取自发射极时，50 Ω 负载下运放输出 = {5.0 + vbe50:.2f} V（低于上限 {V_OH:.1f} V），基极电流 {ie50/(BETA+1)*1e3:.2f} mA（低于 30 mA）")
 assert vf1k - vf20 < 0.2                           # 结论 4：负载变 50 倍，输出只变一百多毫伏
 assert ie50 / (BETA + 1) < I_LIM and 5.0 + vbe50 < V_OH   # 结论 5：反馈接发射极时运放完全带得动
-assert 0.35 < p50 < 2.0                            # 结论 6：管耗超过 2N3904 的 350 mW，但在 TIP31 不加散热片的 2 W 以内
+P_3904, RTH_3904 = 0.625, 200.0                   # onsemi 2N3904（TO-92）：环境 25 °C 时额定 625 mW；结到环境热阻 200 °C/W
+print(f"[功耗] 50 Ω 时管耗 {p50:.2f} W，超过 2N3904 额定 {P_3904 * 1e3:.0f} mW（25 °C）；温升 {p50:.2f} × {RTH_3904:.0f} = {p50 * RTH_3904:.0f} °C，25 °C 环境下结温约 {25 + p50 * RTH_3904:.0f} °C，超过 150 °C 上限")
+assert P_3904 < p50 < 2.0 and 25 + p50 * RTH_3904 > 150   # 结论 6：管耗超过 2N3904 的额定值，但在 TIP31 不加散热片的 2 W 以内
 
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
 ax.semilogx(RL, v_dir, **fs.LS["bad"], label="运放直接带负载")

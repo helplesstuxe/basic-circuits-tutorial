@@ -139,7 +139,7 @@ def power_curve():
     p5 = (VCC - v5) * ie5 * BETA / (BETA + 1)
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
     ax.plot(vo, p, **fs.LS["vout"], label="管耗 $P_C$（负载 50 Ω）")
-    fs.ref_h(ax, 0.35, "2N3904 不加散热片 0.35 W", x=0.02, ha="left")
+    fs.ref_h(ax, 0.625, "2N3904 额定 0.625 W（25 °C）", x=0.02, ha="left")
     fs.ref_h(ax, 2.0, "TIP31 不加散热片 2 W", x=0.02, ha="left")
     fs.mark(ax, vo[k], p[k], "{:.2f}", " W", dx=4, dy=4)
     fs.mark(ax, v5, p5, "{:.2f}", " W", dx=6, dy=-14)
@@ -147,7 +147,7 @@ def power_curve():
     ax.legend(loc="center right", fontsize=8)
     print(f"[图 07-p3-1] 最大管耗在 V_o = {vo[k]:.1f} V（V_CC 的一半），{p[k]:.2f} W；V_i 5 V 时 {p5:.2f} W")
     print(f"[温升] TIP31 不加散热片 θ_JA 62.5 °C/W：{p5:.2f} W → 结温比环境高 {p5 * 62.5:.0f} °C；最坏 {p[k]:.2f} W → {p[k] * 62.5:.0f} °C")
-    assert abs(vo[k] - VCC / 2) < 0.1 and p5 > 0.35
+    assert abs(vo[k] - VCC / 2) < 0.1 and p5 > 0.625
     fs.save(fig, P, "07_p3_1_power.png")
 
 
