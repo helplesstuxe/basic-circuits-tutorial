@@ -1,6 +1,6 @@
 # 24 隔离电源与数字隔离器 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：26 上拉/下拉电阻与电平转换 · 直觉篇](../26-pullup-level-shift/page1.md) · 前置节点：[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md)、[09 开关电源 · 直觉篇](../09-switching-power-supply/page1.md)、[09 开关电源 · 原理与实现篇](../09-switching-power-supply/page2.md)、[23 光耦隔离 · 直觉篇](../23-optocoupler/page1.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [下一页：动手实验篇](page4.md) · 前置节点：[06 桥式整流 · 直觉篇](../06-bridge-rectifier/page1.md)、[09 开关电源 · 直觉篇](../09-switching-power-supply/page1.md)、[09 开关电源 · 原理与实现篇](../09-switching-power-supply/page2.md)、[23 光耦隔离 · 直觉篇](../23-optocoupler/page1.md)
 
 > [!WARNING]
 > **市电危险**：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。
