@@ -386,3 +386,196 @@ def p4_breadboards():
 
 if __name__ == "__main__":
     p4_breadboards()
+
+
+# ======================================================================
+# 第 8 轮补图：page1–page3 正文讲到的电路连接（不动上面的图号）
+# ======================================================================
+from schem import *                    # drawing / save_schem / elm
+HL = C["bad"]                          # 强调色：新加的、要注意的元件
+
+
+def p1_4_zener_follower():
+    """图 08-p1-4：10 节末尾的「稳压管 + 射极跟随器」，输出被钉在 V_Z − V_BE。"""
+    with drawing(fontsize=11) as d:
+        d += elm.Dot(open=True).at((0, 4)).label("$V_i$", "left")
+        d += elm.Dot().at((1.5, 4))
+        d += elm.Resistor().endpoints((1.5, 4), (1.5, 1.5)).label("$R_Z$", "bottom")
+        d += elm.Dot().at((1.5, 1.5))
+        d += elm.Zener().endpoints((1.5, -1.5), (1.5, 1.5)).label("稳压管", "bottom")
+        d += elm.Label().at((1.3, 1.5)).label("$V_Z$", loc="left")
+        q = elm.BjtNpn().theta(0).anchor("base").at((3.0, 1.5))
+        d += q
+        d += elm.Line().endpoints((1.5, 1.5), q.base)
+        d += elm.Line().endpoints(q.collector, (q.collector[0], 4))
+        d += elm.Line().endpoints((0, 4), (q.collector[0], 4))
+        d += elm.Label().at((q.center[0] + 1.0, q.center[1] + 0.1)).label("射极跟随器", loc="center", color=HL)
+        ex = q.emitter[0]
+        d += elm.Line().endpoints(q.emitter, (ex, -0.2))
+        d += elm.Dot().at((ex, -0.2))
+        d += elm.Resistor().endpoints((ex, -0.2), (ex, -1.5)).label("负载", "bottom")
+        d += elm.Line().endpoints((ex, -0.2), (ex + 1.3, -0.2))
+        d += elm.Dot(open=True).at((ex + 1.3, -0.2)).label("$V_o = V_Z - V_{BE}$", "right", color=HL)
+        d += elm.Line().endpoints((1.5, -1.5), (ex + 1.3, -1.5))
+        d += elm.Dot(open=True).at((ex + 1.3, -1.5)).label("0 V", "right")
+    print("[图 08-p1-4] V_o = V_Z − V_BE")
+    save_schem(d, P, "08_p1_4_zener_follower.png")
+
+
+def p2_4_ripple_path():
+    """图 08-p2-4：输入纹波经 R_Z 与 r_Z 分压漏到基准，再被同相放大 1.765 倍。"""
+    dvref = 2.0 * 7.0 / 1007.0
+    with drawing(fontsize=11) as d:
+        d += elm.SourceSin().endpoints((0, -1.5), (0, 3))
+        d += elm.Label().at((-0.9, 0.75)).label("$\\Delta V_i$\n2 V 峰峰", loc="left")
+        d += elm.Line().endpoints((0, 3), (0.5, 3))
+        d += elm.Resistor().endpoints((0.5, 3), (3.5, 3)).label("$R_Z$ 1 kΩ", "top")
+        d += elm.Dot().at((3.5, 3))
+        d += elm.Resistor().endpoints((3.5, 3), (3.5, 1.0)).label("$r_Z$ 7 Ω", "bottom").color(HL)
+        d += elm.Battery().endpoints((3.5, 1.0), (3.5, -1.5)).reverse().label("$V_{Z0}$\n4.757 V", "bottom")
+        d += elm.Line().endpoints((0, -1.5), (3.5, -1.5))
+        d += elm.Label().at((5.4, 0.9)).label("稳压管模型\n（电池串小电阻）", loc="right", fontsize=9, color="#666666")
+        d += elm.Line().endpoints((3.5, 3), (5.2, 3))
+        d += elm.Dot(open=True).at((5.2, 3)).label(f"$\\Delta V_{{ref}}$ ≈ {dvref*1e3:.1f} mV", "top")
+        d += elm.Arrow().endpoints((5.6, 3), (8.4, 3)).color(C["vout"]).label("同相放大 ×1.765", "bottom", color=C["vout"])
+        d += elm.Label().at((8.6, 3)).label(f"输出纹波\n≈ {dvref*1.765e3:.1f} mV", loc="right", color=C["vout"])
+    print(f"[图 08-p2-4] ΔV_ref {dvref*1e3:.1f} mV、输出纹波 {dvref*1.765e3:.1f} mV")
+    assert abs(dvref * 1e3 - 13.9) < 0.05 and abs(dvref * 1.765e3 - 24.5) < 0.1
+    save_schem(d, P, "08_p2_4_ripple_path.png")
+
+
+def chip3(d, x, y, name, bottom="GND", w=2.5, h=1.6):
+    """三端稳压芯片的方框：返回 (IN, OUT, 底脚) 三个引脚坐标。"""
+    x1, y1 = x + w, y + h
+    for a, b in (((x, y), (x1, y)), ((x1, y), (x1, y1)), ((x1, y1), (x, y1)), ((x, y1), (x, y))):
+        d += elm.Line().endpoints(a, b)
+    d += elm.Label().at((x + w / 2, y + h * 0.72)).label(name, loc="center")
+    d += elm.Label().at((x + 0.15, y + h / 2 - 0.1)).label("IN", loc="right", fontsize=9)
+    d += elm.Label().at((x1 - 0.15, y + h / 2 - 0.1)).label("OUT", loc="left", fontsize=9)
+    d += elm.Label().at((x + w / 2, y + 0.25)).label(bottom, loc="center", fontsize=9)
+    return (x, y + h / 2), (x1, y + h / 2), (x + w / 2, y)
+
+
+def lm317_core(d, x0=0.0, r1_hl=False):
+    """LM317：R1 接 OUT 与 ADJ，R2 接 ADJ 与地。返回 (输出节点 x, 地线 y)。"""
+    pin_in, pin_out, adj = chip3(d, x0 + 1.5, 2.2, "LM317", bottom="ADJ")
+    d += elm.Dot(open=True).at((x0, pin_in[1])).label("$V_i$", "left")
+    d += elm.Line().endpoints((x0, pin_in[1]), pin_in)
+    xr = pin_out[0] + 1.2
+    d += elm.Line().endpoints(pin_out, (xr + 1.6, pin_out[1]))
+    d += elm.Dot().at((xr, pin_out[1]))
+    r1 = elm.Resistor().endpoints((xr, pin_out[1]), (xr, 0.6)).label("$R_1$", "bottom")
+    d += r1.color(HL) if r1_hl else r1
+    d += elm.Dot().at((xr, 0.6))
+    d += elm.Line().endpoints(adj, (adj[0], 0.6))
+    d += elm.Line().endpoints((adj[0], 0.6), (xr, 0.6))
+    d += elm.Resistor().endpoints((xr, 0.6), (xr, -1.6)).label("$R_2$", "bottom")
+    d += elm.Line().endpoints((x0, -1.6), (xr + 1.6, -1.6))
+    d += elm.Dot(open=True).at((x0, -1.6)).label("0 V", "left")
+    return xr, pin_out[1], -1.6
+
+
+def p2_5_lm317():
+    """图 08-p2-5：LM317 可调稳压的接法。"""
+    with drawing(fontsize=11) as d:
+        xr, yo, yg = lm317_core(d)
+        d += elm.Dot(open=True).at((xr + 1.6, yo)).label("$V_o$", "right")
+        d += elm.Label().at((xr + 1.6, (yo + 0.6) / 2)).label("$V_{REF}$\n1.25 V", loc="center", color=C["vin"], fontsize=10)
+        d += elm.Arrow().endpoints((3.2, 1.6), (3.2, 0.9)).color(C["cur"])
+        d += elm.Label().at((3.45, 1.25)).label("$I_{ADJ}$", loc="right", color=C["cur"], fontsize=10)
+    print("[图 08-p2-5] LM317：V_REF 1.25 V、R1、R2、I_ADJ")
+    save_schem(d, P, "08_p2_5_lm317.png")
+
+
+def p3_3_lab():
+    """图 08-p3-3：第五节动手实验的接法——原理篇电路 + 可调直流电源 + 180 Ω / 18 Ω 负载切换 + 示波器。"""
+    top = 6.0
+    with drawing(fontsize=11) as d:
+        d += elm.SourceV().endpoints((-1.2, -2.5), (-1.2, top))
+        d += elm.Label().at((-3.0, 1.75)).label("可调直流电源\n14 V\n限流 0.6 A", loc="left")
+        d += elm.Line().endpoints((1.5, 0), (1.5, -2.5))
+        d += elm.Line().endpoints((-1.2, top), (1.5, top))
+        d += elm.Dot().at((1.5, top))
+        d += elm.Resistor().endpoints((1.5, top), (1.5, 3.0)).label("$R_Z$\n1 kΩ", "bottom")
+        d += elm.Dot().at((1.5, 3.0))
+        d += elm.Zener().endpoints((1.5, 0), (1.5, 3.0)).label("1N4733A", "bottom")
+        op = elm.Opamp(leads=True).right().anchor("in2").at((3.2, 3.0))
+        d += op
+        d += elm.Line().endpoints((1.5, 3.0), op.in2)
+        d += elm.Label().at((1.3, 3.0)).label(f"$V_{{ref}}$\n{VREF:.2f} V", loc="left")
+        d += elm.Label().at((4.6, 4.9)).label("LM358（由输入供电）", loc="center")
+        q = elm.BjtNpn().theta(0).anchor("base").at((op.out[0] + 1.2, op.out[1]))
+        d += q
+        d += elm.Line().endpoints(op.out, q.base)
+        d += elm.Label().at((op.out[0] + 0.55, op.out[1] + 0.35)).label("约 9.2 V", loc="center", fontsize=9)
+        cx = q.collector[0]
+        d += elm.Line().endpoints((1.5, top), (cx, top))
+        d += elm.Line().endpoints(q.collector, (cx, top))
+        d += elm.Label().at((cx + 1.2, q.center[1] + 0.2)).label("TIP31\n装散热片", loc="center", color=HL)
+        qx = q.emitter[0]; ex = qx + 2.7
+        d += elm.Line().endpoints(q.emitter, (qx, 1.9))
+        d += elm.Line().endpoints((qx, 1.9), (ex + 4.4, 1.9))
+        d += elm.Dot().at((ex - 1.5, 1.9))
+        d += elm.Resistor().endpoints((ex - 1.5, 1.9), (ex - 1.5, -0.3)).label("$R_f$ 3.9 kΩ", "bottom")
+        d += elm.Dot().at((ex - 1.5, -0.3))
+        d += elm.Resistor().endpoints((ex - 1.5, -0.3), (ex - 1.5, -2.5)).label("$R_1$ 5.1 kΩ", "bottom")
+        d += elm.Line().endpoints(op.in1, (op.in1[0] - 0.4, op.in1[1]))
+        d += elm.Line().endpoints((op.in1[0] - 0.4, op.in1[1]), (op.in1[0] - 0.4, -0.3))
+        d += elm.Line().endpoints((op.in1[0] - 0.4, -0.3), (ex - 1.5, -0.3))
+        d += elm.Capacitor().endpoints((ex + 0.4, 1.9), (ex + 0.4, -2.5)).label("$C_o$\n10 µF", "bottom")
+        d += elm.Dot().at((ex + 0.4, 1.9)); d += elm.Dot().at((ex + 0.4, -2.5))
+        d += elm.Dot().at((ex + 2.8, 1.9))
+        sw = elm.SwitchSpdt2().down().anchor("a").at((ex + 2.8, 1.9)).color(HL)
+        d += sw
+        d += elm.Label().at((ex + 3.3, 1.2)).label("S", loc="right", color=HL)
+        d += elm.Line().endpoints(sw.b, (ex + 2.0, sw.b[1]))
+        d += elm.Line().endpoints(sw.c, (ex + 3.6, sw.c[1]))
+        d += elm.Resistor().endpoints((ex + 2.0, sw.b[1]), (ex + 2.0, -2.5)).label("180 Ω\n10 W", "bottom")
+        d += elm.Resistor().endpoints((ex + 3.6, sw.c[1]), (ex + 3.6, -2.5)).label("18 Ω\n10 W", "bottom").color(HL)
+        d += elm.Dot(open=True).at((ex + 4.4, 1.9)).label(f"$V_o$ {VO:.2f} V\n接示波器", "right")
+        d += elm.Line().endpoints((-1.2, -2.5), (ex + 4.4, -2.5))
+        d += elm.Dot(open=True).at((ex + 4.4, -2.5)).label("0 V（示波器地）", "right")
+        for x in (1.5, ex - 1.5, ex + 2.0, ex + 3.6):
+            d += elm.Dot().at((x, -2.5))
+        d += elm.Label().at((ex + 2.8, -3.6)).label("开关 S 在 180 Ω（约 0.05 A）和 18 Ω（约 0.47 A）之间切换", loc="center", fontsize=9, color=HL)
+    print(f"[图 08-p3-3] 14 V、限流 0.6 A、V_ref {VREF:.2f} V、V_o {VO:.2f} V、180 Ω / 18 Ω")
+    save_schem(d, P, "08_p3_3_lab.png")
+
+
+def p3_4_protect():
+    """图 08-p3-4：故障表最后两行的改法。(a) 7812 输出与输入之间反接保护二极管；(b) LM317 加假负载。"""
+    with drawing(fontsize=11) as d:
+        pin_in, pin_out, gnd = chip3(d, 1.5, 0.8, "7812")
+        d += elm.Dot(open=True).at((0, pin_in[1])).label("$V_i$", "left")
+        d += elm.Line().endpoints((0, pin_in[1]), pin_in)
+        xo = pin_out[0] + 1.5
+        d += elm.Line().endpoints(pin_out, (xo + 1.2, pin_out[1]))
+        d += elm.Dot().at((0.8, pin_in[1])); d += elm.Dot().at((xo, pin_out[1]))
+        d += elm.Line().endpoints((0.8, pin_in[1]), (0.8, 3.2))
+        d += elm.Line().endpoints((xo, pin_out[1]), (xo, 3.2))
+        d += elm.Diode().endpoints((xo, 3.2), (0.8, 3.2)).color(HL).label("保护二极管（阴极接输入）", "top", color=HL)
+        d += elm.Capacitor().endpoints((xo, pin_out[1]), (xo, -1.0)).label("输出电容\n存着 12 V", "bottom")
+        d += elm.Dot(open=True).at((xo + 1.2, pin_out[1])).label("$V_o$ 12 V", "right")
+        d += elm.Line().endpoints(gnd, (gnd[0], -1.0))
+        d += elm.Line().endpoints((0, -1.0), (xo + 1.2, -1.0))
+        d += elm.Dot(open=True).at((0, -1.0)).label("0 V", "left")
+        d += elm.Label().at((3.2, -2.9)).label("(a) 7812：断电时电容的电从二极管放掉", loc="center")
+        X = 10.5
+        xr, yo, yg = lm317_core(d, X, r1_hl=False)
+        xl = xr + 1.6
+        d += elm.Dot().at((xl, yo))
+        d += elm.Resistor().endpoints((xl, yo), (xl, yg)).label("假负载", "bottom").color(HL)
+        d += elm.Line().endpoints((xl, yo), (xl + 1.0, yo))
+        d += elm.Dot(open=True).at((xl + 1.0, yo)).label("$V_o$", "right")
+        d += elm.Label().at((X + 3.6, -2.9)).label("(b) LM317：一直接着假负载（或减小 $R_1$）", loc="center")
+    print("[图 08-p3-4] 7812 保护二极管、LM317 假负载")
+    save_schem(d, P, "08_p3_4_protect.png")
+
+
+def round8():
+    p1_4_zener_follower(); p2_4_ripple_path(); p2_5_lm317(); p3_3_lab(); p3_4_protect()
+    print("08_figs 第 8 轮补图 OK")
+
+
+if __name__ == "__main__":
+    round8()
