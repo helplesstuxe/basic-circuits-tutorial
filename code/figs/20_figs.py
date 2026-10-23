@@ -184,3 +184,266 @@ def three_way():
 
 if __name__ == "__main__":
     problem(); railway(); circuit(); path(); neutral(); three_way()
+
+
+# ======================= page4 动手实验篇：面包板接线图 =======================
+# 面包板俯视图小工具（各节点脚本各带一份，互不依赖）。
+# 坐标：列号 1…ncol 从左到右；上半区 a–e、下半区 f–j（同一列的 a–e 五个孔互相连通，f–j 也连通）；
+# 上下各有两条电源轨：靠外的一条标「+」，靠里的一条标「−」，整条横向连通。
+from matplotlib.patches import Rectangle, FancyBboxPatch, Circle
+
+BB_Y = {r: 5.6 - i for i, r in enumerate("abcde")}
+BB_Y.update({r: -1.4 - i for i, r in enumerate("fghij")})
+BB_Y.update({"T+": 8.6, "T-": 7.7, "B-": -6.7, "B+": -7.6})
+WIRE = dict(pos=(fs.C["bad"], "正电源"), gnd=("#000000", "地（0 V）"), neg=(fs.C["third"], "负电源"),
+            sig=(fs.C["vin"], "输入信号"), out=(fs.C["vout"], "输出"), fb=(fs.C["fb"], "反馈 / 其他连线"))
+
+
+class Breadboard:
+    def __init__(self, ncol=30, title=None, size=(10, 6.4), rails=("+", "−", "−", "+")):
+        self.ncol, self.used = ncol, set()
+        self.fig, self.ax = plt.subplots(figsize=size)
+        ax = self.ax
+        ax.add_patch(FancyBboxPatch((0.2, -8.3), ncol + 0.6, 17.6, boxstyle="round,pad=0.1",
+                                    fc="#f7f5ef", ec="0.55", lw=1.0))
+        ax.add_patch(Rectangle((0.4, -0.55), ncol + 0.2, 0.7, fc="#e4e0d6", ec="none"))   # 中间凹槽
+        for key, lab in zip(("T+", "T-", "B-", "B+"), rails):
+            y = BB_Y[key]
+            col = fs.C["bad"] if lab.startswith("+") else ("#000000" if lab in ("−", "GND", "0 V") else fs.C["third"])
+            ax.plot([0.6, ncol + 0.4], [y + 0.42, y + 0.42], color=col, lw=1.0)
+            ax.text(0.0, y, lab, ha="right", va="center", fontsize=10, color=col, fontweight="bold")
+            for c in range(1, ncol + 1):
+                if c % 6:
+                    ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
+        for r in "abcdefghij":
+            y = BB_Y[r]
+            ax.text(0.15, y, r, ha="right", va="center", fontsize=8, color="0.35")
+            ax.text(ncol + 0.85, y, r, ha="left", va="center", fontsize=8, color="0.35")
+            for c in range(1, ncol + 1):
+                ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
+        for c in range(1, ncol + 1):
+            if c == 1 or c % 5 == 0:
+                ax.text(c, 6.35, str(c), ha="center", va="bottom", fontsize=7.5, color="0.35")
+                ax.text(c, -6.15, str(c), ha="center", va="top", fontsize=7.5, color="0.35")
+        ax.set_xlim(-3.4, ncol + 4.8)
+        ax.set_ylim(-11.2, 11.6)
+        ax.set_aspect("equal")
+        ax.axis("off")
+        if title:
+            ax.set_title(title, fontsize=11)
+
+    def xy(self, h):
+        """'e10' → 第 10 列 e 排；'T+3' / 'B-7' → 上（T）/ 下（B）电源轨第 3 / 7 列。"""
+        if h[0] in "TB" and h[1] in "+-":
+            return float(h[2:]), BB_Y[h[:2]]
+        return float(h[1:]), BB_Y[h[0]]
+
+    def _hole(self, p):
+        x, y = self.xy(p) if isinstance(p, str) else p
+        if isinstance(p, str):
+            self.ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=4))
+        return x, y
+
+    def wire(self, a, b, kind="fb", via=None):
+        """导线：a、b 为孔名或 (x, y)；via 为中间拐点列表。颜色按 kind 取（见 WIRE）。"""
+        self.used.add(kind)
+        pts = [self._hole(a)] + list(via or []) + [self._hole(b)]
+        xs, ys = zip(*pts)
+        self.ax.plot(xs, ys, color=WIRE[kind][0], lw=2.4, solid_capstyle="round", zorder=5)
+
+    def part(self, a, b, label, kind="R", lab_side=1):
+        """两脚元件：R 电阻、C 电容、E 电解电容（+ 脚在 a）、D 二极管（a 阳 b 阴）、L LED（a 阳）、
+        S 按钮、P 小灯泡。画成方框简化符号，标签写在旁边。"""
+        (x1, y1), (x2, y2) = self._hole(a), self._hole(b)
+        ax = self.ax
+        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
+        ax.plot([x1, x2], [y1, y2], color="0.35", lw=1.2, zorder=5)
+        fc = dict(R="#d9c7a3", C="#f2d27a", E="#6d8fb5", D="#555555", L="#ffffff", S="#bbbbbb",
+                  P="#fff7c2")[kind]
+        horiz = abs(x2 - x1) >= abs(y2 - y1)
+        w, h = (0.9, 0.5) if horiz else (0.5, 0.9)
+        if kind in "LP":
+            ax.add_patch(Circle((mx, my), 0.42, fc=fc, ec="0.2", lw=1.0, zorder=6))
+        else:
+            ax.add_patch(FancyBboxPatch((mx - w / 2, my - h / 2), w, h, boxstyle="round,pad=0.05",
+                                        fc=fc, ec="0.2", lw=1.0, zorder=6))
+        if kind in "EDL":
+            ax.text(x1 + (0.25 if horiz else 0.25), y1 + (0.3 if horiz else 0), "+", fontsize=8,
+                    ha="center", va="center", zorder=7, color=fs.C["bad"])
+        if lab_side == "r":
+            ax.text(max(x1, x2) + 0.3, my, label, ha="left", va="center", fontsize=8.5, zorder=7)
+        elif horiz:
+            ax.text(mx, my + 0.55 * lab_side, label, ha="center", va="bottom" if lab_side > 0 else "top",
+                    fontsize=8.5, zorder=7)
+        else:
+            ax.text(mx + 0.45 * lab_side, my, label, ha="left" if lab_side > 0 else "right",
+                    va="center", fontsize=8.5, zorder=7)
+
+    def chip(self, col, label, npin=8, names=None):
+        """DIP 芯片跨在中间凹槽上：第 1 脚在 f 排第 col 列（左下，缺口朝左），逆时针数，
+        第 npin 脚在 e 排第 col 列。脚号和脚名写在芯片体上。"""
+        half = npin // 2
+        ax = self.ax
+        y0, y1 = BB_Y["f"] + 0.22, BB_Y["e"] - 0.22
+        ax.add_patch(Rectangle((col - 0.5, y0), half, y1 - y0, fc="#2b2b2b", ec="k", zorder=6))
+        ax.add_patch(Circle((col - 0.5, (y0 + y1) / 2), 0.28, fc="#f7f5ef", ec="none", zorder=7))
+        ax.text(col + (half - 1) / 2, (y0 + y1) / 2, label, color="w", ha="center",
+                va="center", fontsize=9, zorder=8)
+        for i in range(half):
+            for p, row in ((i + 1, "f"), (npin - i, "e")):
+                x, y = col + i, BB_Y[row]
+                ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=7))
+                txt = str(p) + ("\n" + names[p] if names and p in names else "")
+                ax.text(x, y0 + 0.08 if row == "f" else y1 - 0.08, txt, ha="center",
+                        va="bottom" if row == "f" else "top", fontsize=6, color="w", zorder=8,
+                        linespacing=0.9)
+
+    def module(self, x, y, w, h, label, fc="#e6f0f8"):
+        """面包板外的模块（电池、信号源、继电器模块等），返回方框中心。"""
+        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.08", fc=fc, ec="0.3",
+                                         lw=1.0, zorder=6))
+        self.ax.text(x + w / 2, y + h / 2, label, ha="center", va="center", fontsize=8.5, zorder=7)
+        return x + w / 2, y + h / 2
+
+    def note(self, x, y, text, **kw):
+        self.ax.text(x, y, text, fontsize=8, zorder=8, **kw)
+
+    def legend(self, loc="lower center"):
+        from matplotlib.lines import Line2D
+        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=WIRE[k][1]) for k in WIRE if k in self.used]
+        self.ax.legend(handles=hs, loc=loc, ncol=len(hs), fontsize=8.5, frameon=False,
+                       bbox_to_anchor=(0.5, -0.01))
+
+    def save(self, prefix, name):
+        return fs.save(self.fig, prefix, name)
+
+# ---------- page4 动手实验篇：9 V 双控 / 三地控制面包板 ----------
+import itertools as _it
+
+V_BAT, R1, V_LED = 9.0, 1000.0, 1.868            # 电池、限流电阻；红 LED 压降取 review/spice/20.md 的 SPICE 值
+I_LED = (V_BAT - V_LED) / R1
+print(f"[数值] LED 电流 ({V_BAT:.0f} − {V_LED:.2f}) / {R1 / 1000:.0f} kΩ = {I_LED * 1000:.2f} mA，1 kΩ 两端 {I_LED * R1:.2f} V")
+assert abs(I_LED * 1000 - 7.13) < 0.01            # 与 SPICE 7.131 mA 一致
+
+
+def _find_factory(links):
+    par = {}
+    def f(x):
+        par.setdefault(x, x)
+        while par[x] != x:
+            x = par[x]
+        return x
+    for a, b in links:
+        par[f(a)] = f(b)
+    return f
+
+
+def _lit(links):
+    f = _find_factory(links)
+    return f("LED+") == f("+9V") and f("LED-") == f("0V")
+
+
+def _slide(bb, c, label):
+    """三脚单刀双掷拨动开关插在 f 排 c−1、c、c+1（中间是 COM，以实测为准）。"""
+    ax = bb.ax
+    ax.add_patch(FancyBboxPatch((c - 1.35, -1.05), 2.7, 0.7, boxstyle="round,pad=0.05",
+                                fc="#cfd8e3", ec="0.25", lw=1.0, zorder=6))
+    ax.add_patch(Rectangle((c - 0.85, -0.85), 0.6, 0.3, fc="0.3", ec="none", zorder=7))   # 拨杆
+    ax.text(c + 0.35, -0.7, label, ha="left", va="center", fontsize=7.5, zorder=8)
+    for x in (c - 1, c, c + 1):
+        bb._hole(f"f{x}")
+    ax.text(c - 1, -0.15, "1", ha="center", va="bottom", fontsize=7, color="0.25", zorder=8)
+    ax.text(c, -0.15, "COM", ha="center", va="bottom", fontsize=7, color="0.25", zorder=8)
+    ax.text(c + 1, -0.15, "2", ha="center", va="bottom", fontsize=7, color="0.25", zorder=8)
+
+
+def _grey_unused(bb):
+    for t in bb.ax.texts:
+        if t.get_text() == "（未用）":
+            t.set_color("0.6"); t.set_fontweight("normal"); t.set_fontsize(8.5)
+    for ln in bb.ax.lines:
+        ys = ln.get_ydata()
+        if len(ys) == 2 and ys[0] == ys[1] and ys[0] in (BB_Y["T+"] + 0.42, BB_Y["T-"] + 0.42):
+            ln.set_color("0.75")
+
+
+WIRE["pos"] = (fs.C["bad"], "+9 V")
+WIRE["gnd"] = ("#000000", "0 V（电池负极）")
+WIRE["sig"] = (fs.C["vin"], "跨线 A")
+WIRE["fb"] = (fs.C["fb"], "跨线 B")
+WIRE["out"] = (fs.C["vout"], "S2 公共端 → 1 kΩ")
+
+# ---------- 图 20-p4-1：两地控制（page2 第六节第 2 步的正确接法） ----------
+bb = Breadboard(30, "双控开关面包板俯视图（9 V 电池、两只三脚拨动开关、1 kΩ + 红 LED）",
+                size=(10, 6.4), rails=("（未用）", "（未用）", "0 V", "+9 V"))
+_grey_unused(bb)
+_slide(bb, 6, "S1")
+_slide(bb, 16, "S2")
+bb.wire("j6", "B+6", "pos")                        # +9 V → S1 公共端
+bb.wire("g5", "g17", "sig")                        # 跨线 A：S1 的 1 → S2 的 2（与原理篇仿真的正确接法相同）
+bb.wire("h7", "h15", "fb")                         # 跨线 B：S1 的 2 → S2 的 1
+bb.part("i16", "i21", "R1 1 kΩ", "R", lab_side=-1)
+bb.part("h21", "h24", "LED", "L", lab_side=1)      # 长脚（阳极）在第 21 列
+bb.wire("j24", "B-24", "gnd")
+bb.module(0.6, -10.4, 3.2, 1.3, "9 V 电池", fc="#e6f0f8")
+bb.wire((3.2, -9.1), "B+3", "pos")
+bb.wire((1.4, -9.1), "B-1", "gnd")
+bb.note(1.0, 3.6, "上半区不用。开关引脚以蜂鸣挡实测为准；\n测量点 M：第 21 列（R1 与 LED 长脚相接处）", va="center",
+        bbox=dict(fc="#f7f5ef", ec="none", pad=1.5))
+bb.ax.text(21, BB_Y["g"], "M", ha="center", va="center", fontsize=9, color="k", fontweight="bold", zorder=9,
+           bbox=dict(fc="w", ec="0.3", boxstyle="circle,pad=0.15"))
+bb.legend()
+bb.save(P, "20_p4_1_breadboard.png")
+
+# 按图 20-p4-1 的插法逐个列出连通关系，核对真值表：两亮两灭、拨任一只都翻转
+def board2(s1, s2):
+    L = [("+9V", "S1.COM"), ("S1.1", "S2.2"), ("S1.2", "S2.1"), ("S2.COM", "R"), ("R", "LED+"), ("LED-", "0V")]
+    L += [("S1.COM", f"S1.{1 + s1}"), ("S2.COM", f"S2.{1 + s2}")]
+    return _lit(L)
+tab2 = {s: board2(*s) for s in _it.product((0, 1), repeat=2)}
+assert sum(tab2.values()) == 2 and all(tab2[s] == bool(s[0] ^ s[1]) for s in tab2)
+print("[数值] 两地控制：", "，".join(f"S1={a} S2={b} {'亮' if v else '灭'}" for (a, b), v in tab2.items()))
+
+# ---------- 图 20-p4-2：扩展——三地控制，中间加一只中途开关 ----------
+WIRE["sig"] = (fs.C["vin"], "跨线 A / C")
+WIRE["fb"] = (fs.C["fb"], "跨线 B / D")
+WIRE["neg"] = (fs.C["third"], "中途开关引线")
+bb = Breadboard(38, "三地控制扩展：S1、S3 两只三脚拨动开关 + 中途开关 S2（9 V）",
+                size=(11.5, 6.6), rails=("（未用）", "（未用）", "0 V", "+9 V"))
+_grey_unused(bb)
+_slide(bb, 6, "S1")
+_slide(bb, 30, "S3")
+bb.wire("j6", "B+6", "pos")
+bb.wire("g5", "g14", "sig")                        # 跨线 A：S1 的 1 → 中途开关入 1
+bb.wire("h7", "h16", "fb")                         # 跨线 B：S1 的 2 → 中途开关入 2
+bb.wire("g20", "g31", "sig")                       # 跨线 C：中途开关出 1 → S3 的 2
+bb.wire("h22", "h29", "fb")                        # 跨线 D：中途开关出 2 → S3 的 1
+bb.part("i30", "i34", "R1 1 kΩ", "R", lab_side=-1)
+bb.part("h34", "h37", "LED", "L", lab_side=1)
+bb.wire("j37", "B-37", "gnd")
+bb.module(12.4, -10.6, 11.2, 1.0, "S2 中途开关（六脚双刀双掷，外侧四脚对角交叉）", fc="#efe6f3")
+for c, name in ((14, "入1"), (16, "入2"), (20, "出1"), (22, "出2")):
+    bb.wire((c, -9.5), f"j{c}", "neg")
+    bb.ax.text(c + 0.15, -9.0, name, ha="left", va="center", fontsize=7, zorder=8)
+bb.module(0.6, -10.4, 3.2, 1.3, "9 V 电池", fc="#e6f0f8")
+bb.wire((3.2, -9.1), "B+3", "pos")
+bb.wire((1.4, -9.1), "B-1", "gnd")
+bb.note(1.0, 3.6, "上半区不用；中途开关的四根引线可用鳄鱼夹线或焊好的杜邦线", va="center",
+        bbox=dict(fc="#f7f5ef", ec="none", pad=1.5))
+bb.legend()
+_lg = bb.ax.get_legend(); _lg.set_loc("upper center"); _lg.set_bbox_to_anchor((0.5, 0.995))
+bb.save(P, "20_p4_2_three_way.png")
+
+def board3(s1, s2, s3):
+    L = [("+9V", "S1.COM"), ("S1.1", "M.入1"), ("S1.2", "M.入2"), ("M.出1", "S3.2"), ("M.出2", "S3.1"),
+         ("S3.COM", "R"), ("R", "LED+"), ("LED-", "0V")]
+    L += [("S1.COM", f"S1.{1 + s1}"), ("S3.COM", f"S3.{1 + s3}")]
+    L += [("M.入1", "M.出1"), ("M.入2", "M.出2")] if s2 == 0 else [("M.入1", "M.出2"), ("M.入2", "M.出1")]
+    return _lit(L)
+tab3 = {s: board3(*s) for s in _it.product((0, 1), repeat=3)}
+assert sum(tab3.values()) == 4 and all(tab3[s] == bool(s[0] ^ s[1] ^ s[2]) for s in tab3)
+for s in tab3:                                     # 任拨一只，灯都翻转
+    for k in range(3):
+        t = list(s); t[k] ^= 1
+        assert tab3[s] != tab3[tuple(t)]
+print("[数值] 三地控制 8 种组合亮 4 种，任拨一只都翻转；全 0 时", "亮" if tab3[(0, 0, 0)] else "灭")
