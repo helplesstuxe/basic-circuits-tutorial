@@ -1,8 +1,8 @@
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 # P3 最小仿真：开环增益 A 有限时，反相放大器的闭环放大倍数和反相端电压 V- 各是多少。
 # 思路：运放只做一件事 V_o = A·(V+ − V-)；反相端节点满足「流进 = 流出」（输入电流为 0），
 #      两式联立就能解出 V_o，不需要任何「虚短」假设。看 A 越大，结果越接近 −R_f/R_1、V- 越接近 0。
-import sys, os                                     # 下一行让 Python 找到 code/figs 里的共享画图样式
-sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数

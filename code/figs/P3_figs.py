@@ -112,18 +112,19 @@ vi = fs.sine(t, 1e3, amp=0.8)
 ideal = -10 * vi                                       # 理想：峰值 8 V
 cases = [("±15 V 双电源", 15, -15, "vout"), ("±5 V 双电源", 5, -5, "third"), ("5 V 单电源", 5, 0, "bad")]
 UP, DN = 1.5, 0.1                                      # LM358B：输出最高离正电源约 1.5 V，最低离负电源约 0.1 V
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(t * 1e3, ideal, **fs.LS["good"], zorder=5, label="理想 $V_o$ = −10 $V_i$")
-for lab, vcc, vee, key in cases:
+# 三种电源拆成上下三个子图，避免单电源曲线把 ±5 V 的削顶段盖住
+fig, axs = plt.subplots(3, 1, figsize=(7, 6.2), sharex=True)
+for ax, (lab, vcc, vee, key) in zip(axs, cases):
     lo, hi = vee + DN, vcc - UP
     v = np.clip(ideal, lo, hi)
     style = {**fs.LS[key], "markevery": 0.05} if key == "bad" else fs.LS[key]
+    ax.plot(t * 1e3, ideal, **fs.LS["good"], zorder=5, label="理想 $V_o$ = −10 $V_i$")
     ax.plot(t * 1e3, v, **style, label=f"{lab}：{lo:g} ~ {hi:g} V")
     print(f"{lab}: 输出范围 {lo:g} V ~ {hi:g} V，实际峰值 {v.max():.2f} V / 谷值 {v.min():.2f} V")
+    fs.ref_h(ax, 0, "0 V")
+    fs.axlabels(ax, "时间" if ax is axs[-1] else None, "ms" if ax is axs[-1] else None, "电压", "V")
+    ax.set_ylim(-9.5, 9.5); ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8)
 assert np.clip(ideal, -14.9, 13.5).max() == ideal.max() and np.clip(ideal, -14.9, 13.5).min() == ideal.min()  # ±15 V 时 ±8 V 不削顶
-fs.ref_h(ax, 0, "0 V")
-fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-9.5, 9.5)
-ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1), fontsize=8)
 fs.save(fig, N, "P3_p3_1_supply_clip.png")
 
 # ---------- 图 P3-p3-2 开环增益不够时的增益误差 ----------
@@ -133,9 +134,12 @@ for G, key in ((1, "vout"), (10, "third"), (100, "fb")):
     err = 100 * (1 - 1 / (1 + (1 + G) / A))            # 反相放大：实际倍数比理想倍数小了百分之几
     ax.loglog(A, err, **fs.LS[key], label=f"目标倍数 {G}")
     e = 100 * (1 - 1 / (1 + (1 + G) / 1.4e5))
-    fs.mark(ax, 1.4e5, e, fmt="{:.3f}", unit=" %", dx=6, dy=2)
+    fs.mark(ax, 1.4e5, e, fmt="{:.2g}", unit=" %", dx=6, dy=2)   # 统一保留两位有效数字：0.0014 / 0.0079 / 0.072
+    print(f"目标倍数 {G}：A = 14 万时误差 {e:.2g} %")
 fs.ref_v(ax, 1.4e5, "LM358B 典型 A = 14 万", y=0.98)
 e100 = 100 * (1 - 1 / (1 + 101 / 1.4e5))
 assert 0.07 < e100 < 0.075                              # 目标 100 倍时误差约 0.072 %
+assert f"{100 * (1 - 1 / (1 + 2 / 1.4e5)):.2g}" == "0.0014"   # 目标 1 倍：2/140000 ≈ 0.0014 %
+assert f"{100 * (1 - 1 / (1 + 11 / 1.4e5)):.2g}" == "0.0079"  # 目标 10 倍：11/140000 ≈ 0.0079 %
 fs.axlabels(ax, "开环增益 A", None, "增益误差", "%"); ax.legend(loc="lower left")
 fs.save(fig, N, "P3_p3_2_gain_error.png")
