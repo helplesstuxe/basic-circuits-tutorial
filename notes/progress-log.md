@@ -1,0 +1,21 @@
+- 2026-10-23 10:37 P1-components-basics（作者 D）：汉字 page1 1736 / page2 2363 / page3 1825；图 4+5+3=12；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:39 P2-semiconductor-basics（作者 B）：汉字 page1 1969 / page2 2274 / page3 2265；图 3+5+2=10；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:40 P3-opamp-basics（作者 A）：汉字 page1 1746 / page2 1922 / page3 2229；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 1 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:46 01-inverting-amp（作者 A）：汉字 page1 1270 / page2 1455 / page3 1762；图 3+4+2=9；count_cjk OK、run_blocks 1 PASS 1 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:46 17-self-locking（作者 D）：汉字 page1 1451 / page2 2103 / page3 2140；图 4+3+3=10；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:49 02-noninverting-amp（作者 A）：汉字 page1 1045 / page2 1515 / page3 1539；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 1 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:50 21-mosfet-switch（作者 C）：汉字 page1 1482 / page2 2310 / page3 2339；图 2+3+2=7；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:50 05-precision-rectifier（作者 B）：汉字 page1 1575 / page2 2323 / page3 2593；图 3+4+2=9；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:54 03-voltage-follower（作者 A）：汉字 page1 989 / page2 1237 / page3 1456；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 1 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:56 22-bjt-relay-driver（作者 D）：汉字 page1 1571 / page2 2433 / page3 1948；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:59 04-differential-amp（作者 A）：汉字 page1 908 / page2 1228 / page3 1267；图 2+3+2=7；count_cjk OK、run_blocks 1 PASS 1 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 10:59 14-voltage-comparator（作者 C）：汉字 page1 1228 / page2 2082 / page3 2250；图 3+2+3=8；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:00 06-bridge-rectifier（作者 B）：汉字 page1 1756 / page2 2925 / page3 2640；图 3+4+2=9；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:04 15-active-filter（作者 A）：汉字 page1 906 / page2 1156 / page3 1201；图 2+3+2=7；count_cjk OK、run_blocks 1 PASS 0 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:05 12-integrator（作者 C）：汉字 page1 1128 / page2 1672 / page3 1798；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:07 18-interlock（作者 D）：汉字 page1 1599 / page2 3033 / page3 2287；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:08 10-zener-regulator（作者 B）：汉字 page1 1605 / page2 1961 / page3 2033；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:12 13-differentiator（作者 C）：汉字 page1 1216 / page2 1718 / page3 1719；图 3+3+2=8；count_cjk OK、run_blocks 1 PASS 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:12 16-oscillator（作者 A）：汉字 page1 856 / page2 1308 / page3 1273；图 2+4+2=8；count_cjk OK、run_blocks 1 PASS 0 SKIP 0 FAIL、脚本 2 PASS、check_figs OK、math spacing 0、check_github_math 3/3 OK
+- 2026-10-23 11:16 总纲复核并提交作者 A 的 7 个节点（P3、01、02、03、04、15、16）：count_cjk 21/21 页 OK、run_blocks 7 PASS 5 SKIP 0 FAIL、脚本 14 PASS、check_figs 21/21 OK、math spacing 0、check_github_math 21/21 OK；页面与 research 笔记里 19 个 URL 全部返回 200（均为真实 TI/PySpice/schemdraw 文档）。
+- 2026-10-23 11:16 共享文件：figure 脚本路径统一为 `code/figs/NN_figs.py`（已有的 19 个节点全部用这个路径，没有节点用 `code/NN_figs.py`），AUTHOR_GUIDE 同步修改；GitHub 公式规则补充 `\lt` `\gt` 与「图注里不写公式等式」；P1 page3 导航「P3 运放速成」改为「P3 运放入门」（P1 尚未提交，随 P1 节点一起提交）；.gitignore 加 `.done`。

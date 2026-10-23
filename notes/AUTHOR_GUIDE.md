@@ -14,7 +14,7 @@
 └── img/          本节点的全部 PNG（由脚本生成，不手工放图）
 ```
 
-画图和仿真脚本放在 `code/`，文件名以节点编号开头，例如 `code/01_figs.py`、`code/01_sim.py`；共用模块在 `code/figs/`。
+画图和仿真脚本放在 `code/`，文件名以节点编号开头，仿真脚本放 `code/NN_*.py`（例如 `code/01_sim.py`），画图脚本放 `code/figs/NN_figs.py`（例如 `code/figs/01_figs.py`）；共用模块 `figstyle.py`、`schem.py` 也在 `code/figs/`。
 
 每页的固定结构：
 
@@ -35,7 +35,7 @@
 ## 2. 图的规则
 
 - 电路图用 schemdraw（通过 `code/figs/schem.py`），波形和曲线用 matplotlib（通过 `code/figs/figstyle.py`），全部输出 PNG。**禁止** ASCII 图、手工截图和 Mermaid。
-- 图片由 `code/NN_figs.py` 生成，存到 `NN-slug/img/`，文件名写成 `NN_pX_k_含义.png`，例如 `01_p2_1_waveform.png`。每张不超过 200 KB（`figstyle.save` 会自动压缩并检查）。
+- 图片由 `code/figs/NN_figs.py` 生成，存到 `NN-slug/img/`，文件名写成 `NN_pX_k_含义.png`，例如 `01_p2_1_waveform.png`。每张不超过 200 KB（`figstyle.save` 会自动压缩并检查）。
 - 图号写成「图 NN-pX-k」：NN 是节点编号，X 是页码，k 是本页第几张图，从 1 开始连续。例如 `01-inverting-amp/page2.md` 里的第 2 张图是「图 01-p2-2」。
 - 每张图三件套：
   1. **引导句**：图前一句话告诉读者要看什么，例如「请看图 01-p2-1 里橙色曲线的峰值」。
@@ -117,6 +117,8 @@ md 要能直接在 github.com 上正常显示公式：
   - 公式末尾的 `\%` 移到公式外面，写成 `$…$%`。
 - 含 `\begin…` 的整行 `$$…$$` 要单独成段，前后各留一个空行。
 - 用 `tools/check_github_math.py` 检查：它会调用 GitHub 的渲染接口，统计源文件里的公式数和渲染出来的公式数，两者相等才算通过。加 `--fix` 会做上面那些等价替换。
+- 行内公式里的 `<` `>` 一律写成 `\lt` `\gt`，例如 `$R_f \lt 2R_g$`、`$V_i \gt 0$`（直接写 `<` 会被当成 HTML 标签吞掉）。
+- 图注里不写公式等式，公式放正文：图注只写「图 NN-pX-k　这张图是什么」，要讲的关系式写在图前引导句或图后讲解里。
 - GitHub 手机 App 不渲染公式，这是平台限制，不用处理。
 
 ## 6. 安全提醒
@@ -142,10 +144,10 @@ md 要能直接在 github.com 上正常显示公式：
 
 ```bash
 PY=/workspace/circuits-venv/bin/python
-$PY code/NN_figs.py                                   # 重新生成本节点全部图片，检查 assert 和打印的数值
+$PY code/figs/NN_figs.py                              # 重新生成本节点全部图片，检查 assert 和打印的数值
 $PY tools/count_cjk.py NN-slug/page*.md --min 500     # 每页正文汉字数 ≥ 500
 $PY tools/run_blocks.py NN-slug/page*.md              # 页面里的代码块逐块运行
-$PY tools/run_blocks.py --scripts code/NN_*.py        # code/ 里的脚本逐个运行
+$PY tools/run_blocks.py --scripts code/NN_*.py code/figs/NN_figs.py  # 本节点脚本逐个运行
 $PY tools/check_figs.py NN-slug/page*.md              # 图片存在、PNG、< 200 KB，图号连续且被引用
 $PY tools/fix_inline_math_spacing.py NN-slug/page*.md # 补公式前的空格
 $PY tools/check_github_math.py NN-slug/page*.md       # GitHub 渲染公式数与源文件一致
@@ -155,4 +157,4 @@ $PY tools/check_github_math.py NN-slug/page*.md       # GitHub 渲染公式数�
 
 - **作者不运行任何 git 命令**（不 add、不 commit、不 push、不切分支）。写完、自查通过后，向总纲报告改动的文件清单和自查结果。
 - 总纲是唯一的提交者，负责复核、提交和推送。
-- 只修改自己负责的节点文件夹和对应的 `code/NN_*.py`。需要改 `code/figs/` 里的共用模块或 `tools/` 时，先告诉总纲。
+- 只修改自己负责的节点文件夹和对应的 `code/NN_*.py`、`code/figs/NN_figs.py`。需要改 `code/figs/` 里的共用模块或 `tools/` 时，先告诉总纲。
