@@ -1,0 +1,126 @@
+* 12 积分电路：方波 → 三角波。直觉篇 图 12-p1-3 与 §示波器 第1、2步（±1 V 500 / 250 / 5000 Hz，RC 1 ms）；原理与实现篇 结论一、二，例题 1（±2 V 250 Hz）、例题 2（20 kΩ / 47 nF，±1 V 1 kHz）；
+* 参数与调试篇 图 12-p3-2（C = 5 nF / 1 μF，理想积分器）、练习 3（±5 V 1 kHz，C 68 nF）。LM358B（TI 官方模型），±15 V，峰峰值取第 4 个（1 kHz 取第 11 个）周期
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e12
+VP vcc 0 15
+VN vee 0 -15
+VR rst 0 PWL(0 1 49u 1 50u 0)
+.model swr sw vt=0.5 vh=0.1 ron=1 roff=1e15
+* 理想积分器：R 输入，C 反馈；电容旁的开关只在 t < 50 μs 时闭合，给电容清零（代替“初始输出 0 V”），之后断开（1e15 Ω）
+.subckt integ in o vcc vee rst r=10k c=100n
+R1 in m {r}
+C1 m o {c}
+S1 m o rst 0 swr
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+* 实用积分器：C 旁并 R_f，有直流工作点，不需要清零
+.subckt pinteg in o vcc vee r=10k c=100n rf=1meg
+R1 in m {r}
+C1 m o {c}
+R2 m o {rf}
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+Vs500 is500 0 PULSE(-1 1 50u 100n 100n 0.0009999 0.002)
+Xs500 is500 os500 vcc vee rst integ r=10k c=100n
+Vs250 is250 0 PULSE(-1 1 50u 100n 100n 0.0019999 0.004)
+Xs250 is250 os250 vcc vee rst integ r=10k c=100n
+Vs5k is5k 0 PULSE(-1 1 50u 100n 100n 9.99e-05 0.0002)
+Xs5k is5k os5k vcc vee rst integ r=10k c=100n
+Vex1 iex1 0 PULSE(-2 2 50u 100n 100n 0.0019999 0.004)
+Xex1 iex1 oex1 vcc vee rst integ r=10k c=100n
+Vex2 iex2 0 PULSE(-1 1 50u 100n 100n 0.0004999 0.001)
+Xex2 iex2 oex2 vcc vee rst integ r=20k c=47n
+Vp3 ip3 0 PULSE(-5 5 50u 100n 100n 0.0004999 0.001)
+Xp3 ip3 op3 vcc vee rst integ r=10k c=68n
+Vc5n ic5n 0 PULSE(-1 1 50u 100n 100n 0.0009999 0.002)
+Xc5n ic5n oc5n vcc vee rst integ r=10k c=5n
+Vc1u ic1u 0 PULSE(-1 1 50u 100n 100n 0.0009999 0.002)
+Xc1u ic1u oc1u vcc vee rst integ r=10k c=1u
+.control
+tran 2u 22m 0 2u
+meas tran lo_s500 find v(os500) at=0.007048
+meas tran hi_s500 find v(os500) at=0.008048
+let tp_s500 = hi_s500 - lo_s500
+echo "RES tp_s500 $&tp_s500"
+meas tran mx_s500 max v(os500) from=0.00605 to=0.00805
+meas tran mn_s500 min v(os500) from=0.00605 to=0.00805
+let pp_s500 = mx_s500 - mn_s500
+echo "RES pp_s500 $&pp_s500"
+echo "RES mn_s500 $&mn_s500"
+echo "RES mx_s500 $&mx_s500"
+meas tran lo_s250 find v(os250) at=0.014048
+meas tran hi_s250 find v(os250) at=0.016048
+let tp_s250 = hi_s250 - lo_s250
+echo "RES tp_s250 $&tp_s250"
+meas tran mx_s250 max v(os250) from=0.01205 to=0.01605
+meas tran mn_s250 min v(os250) from=0.01205 to=0.01605
+let pp_s250 = mx_s250 - mn_s250
+echo "RES pp_s250 $&pp_s250"
+echo "RES mn_s250 $&mn_s250"
+echo "RES mx_s250 $&mx_s250"
+meas tran lo_s5k find v(os5k) at=0.002148
+meas tran hi_s5k find v(os5k) at=0.002248
+let tp_s5k = hi_s5k - lo_s5k
+echo "RES tp_s5k $&tp_s5k"
+meas tran mx_s5k max v(os5k) from=0.00205 to=0.00225
+meas tran mn_s5k min v(os5k) from=0.00205 to=0.00225
+let pp_s5k = mx_s5k - mn_s5k
+echo "RES pp_s5k $&pp_s5k"
+echo "RES mn_s5k $&mn_s5k"
+echo "RES mx_s5k $&mx_s5k"
+meas tran lo_ex1 find v(oex1) at=0.014048
+meas tran hi_ex1 find v(oex1) at=0.016048
+let tp_ex1 = hi_ex1 - lo_ex1
+echo "RES tp_ex1 $&tp_ex1"
+meas tran mx_ex1 max v(oex1) from=0.01205 to=0.01605
+meas tran mn_ex1 min v(oex1) from=0.01205 to=0.01605
+let pp_ex1 = mx_ex1 - mn_ex1
+echo "RES pp_ex1 $&pp_ex1"
+echo "RES mn_ex1 $&mn_ex1"
+echo "RES mx_ex1 $&mx_ex1"
+meas tran lo_ex2 find v(oex2) at=0.010548
+meas tran hi_ex2 find v(oex2) at=0.011048
+let tp_ex2 = hi_ex2 - lo_ex2
+echo "RES tp_ex2 $&tp_ex2"
+meas tran mx_ex2 max v(oex2) from=0.01005 to=0.01105
+meas tran mn_ex2 min v(oex2) from=0.01005 to=0.01105
+let pp_ex2 = mx_ex2 - mn_ex2
+echo "RES pp_ex2 $&pp_ex2"
+echo "RES mn_ex2 $&mn_ex2"
+echo "RES mx_ex2 $&mx_ex2"
+meas tran lo_p3 find v(op3) at=0.010548
+meas tran hi_p3 find v(op3) at=0.011048
+let tp_p3 = hi_p3 - lo_p3
+echo "RES tp_p3 $&tp_p3"
+meas tran mx_p3 max v(op3) from=0.01005 to=0.01105
+meas tran mn_p3 min v(op3) from=0.01005 to=0.01105
+let pp_p3 = mx_p3 - mn_p3
+echo "RES pp_p3 $&pp_p3"
+echo "RES mn_p3 $&mn_p3"
+echo "RES mx_p3 $&mx_p3"
+meas tran lo_c5n find v(oc5n) at=0.007048
+meas tran hi_c5n find v(oc5n) at=0.008048
+let tp_c5n = hi_c5n - lo_c5n
+echo "RES tp_c5n $&tp_c5n"
+meas tran mx_c5n max v(oc5n) from=0.00605 to=0.00805
+meas tran mn_c5n min v(oc5n) from=0.00605 to=0.00805
+let pp_c5n = mx_c5n - mn_c5n
+echo "RES pp_c5n $&pp_c5n"
+echo "RES mn_c5n $&mn_c5n"
+echo "RES mx_c5n $&mx_c5n"
+meas tran lo_c1u find v(oc1u) at=0.007048
+meas tran hi_c1u find v(oc1u) at=0.008048
+let tp_c1u = hi_c1u - lo_c1u
+echo "RES tp_c1u $&tp_c1u"
+meas tran mx_c1u max v(oc1u) from=0.00605 to=0.00805
+meas tran mn_c1u min v(oc1u) from=0.00605 to=0.00805
+let pp_c1u = mx_c1u - mn_c1u
+echo "RES pp_c1u $&pp_c1u"
+echo "RES mn_c1u $&mn_c1u"
+echo "RES mx_c1u $&mx_c1u"
+meas tran sa find v(os500) at=150u
+meas tran sb find v(os500) at=850u
+let slope = (sb - sa) / 0.7
+echo "RES slope $&slope"
+.endc
+.end

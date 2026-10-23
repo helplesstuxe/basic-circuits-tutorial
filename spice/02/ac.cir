@@ -1,0 +1,95 @@
+* 02 同相放大 小信号交流（LM358B，±15 V）
+* page2 图02-p2-2：10k/20k，内阻 1k 时反相 1.82、内阻 100k 时反相 0.18；同相 100 Ω～1 MΩ 始终 3
+* page3 图02-p3-2：同相 2/10/100 倍带宽 600 kHz / 120 kHz / 12 kHz（R1=10k，Rf=10k/90k/990k）
+* page2 例1 带宽约 120 kHz（10k/91k）；page3 练习3 4 倍（10k/30k）带宽约 300 kHz
+* page3 §一.3 交流耦合：1 µF 隔直 + 同相端 100 kΩ 接地，信号源看到的输入电阻约 100 kΩ（1 kHz）
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VI in 0 DC 0 AC 1
+RSa in sa 1k
+R1a sa ma 10k
+RFa ma oa 20k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+RSb in sb 100k
+R1b sb mb 10k
+RFb mb ob 20k
+XB 0 mb vcc vee ob LMX58B_LM2904B
+RSc in pc 100
+XC pc mc vcc vee oc LMX58B_LM2904B
+R1c mc 0 10k
+RFc oc mc 20k
+RSd in pd 1Meg
+XD pd md vcc vee od LMX58B_LM2904B
+R1d md 0 10k
+RFd od md 20k
+XE in me vcc vee oe LMX58B_LM2904B
+R1e me 0 10k
+RFe oe me 10k
+XF in mf vcc vee of LMX58B_LM2904B
+R1f mf 0 10k
+RFf of mf 90k
+XG in mg vcc vee og LMX58B_LM2904B
+R1g mg 0 10k
+RFg og mg 990k
+XH in mh vcc vee oh LMX58B_LM2904B
+R1h mh 0 10k
+RFh oh mh 91k
+XK in mk vcc vee ok LMX58B_LM2904B
+R1k mk 0 10k
+RFk ok mk 30k
+* 交流耦合
+VIC inc 0 DC 0 AC 1
+CC inc pl 1u
+RBl pl 0 100k
+XL pl ml vcc vee ol LMX58B_LM2904B
+R1l ml 0 10k
+RFl ol ml 20k
+.control
+ac dec 100 10 1e7
+let ga=abs(v(oa))
+let gb=abs(v(ob))
+let gc=abs(v(oc))
+let gd=abs(v(od))
+let ge=abs(v(oe))
+let gf=abs(v(of))
+let gg=abs(v(og))
+let gh=abs(v(oh))
+let gk=abs(v(ok))
+let gl=abs(v(ol))
+let zin=abs(v(inc)/i(VIC))
+meas ac g_a find ga at=100
+meas ac g_b find gb at=100
+meas ac g_c find gc at=100
+meas ac g_d find gd at=100
+meas ac g_e find ge at=100
+meas ac g_f find gf at=100
+meas ac g_g find gg at=100
+meas ac g_h find gh at=100
+meas ac g_k find gk at=100
+meas ac g_l find gl at=1e3
+meas ac z_l find zin at=1e3
+let le=g_e*0.7071
+let lf=g_f*0.7071
+let lg=g_g*0.7071
+let lh=g_h*0.7071
+let lk=g_k*0.7071
+meas ac bwe when ge=le fall=1
+meas ac bwf when gf=lf fall=1
+meas ac bwg when gg=lg fall=1
+meas ac bwh when gh=lh fall=1
+meas ac bwk when gk=lk fall=1
+echo "RES ga $&g_a"
+echo "RES gb $&g_b"
+echo "RES gc $&g_c"
+echo "RES gd $&g_d"
+echo "RES gh $&g_h"
+echo "RES bwe $&bwe"
+echo "RES bwf $&bwf"
+echo "RES bwg $&bwg"
+echo "RES bwh $&bwh"
+echo "RES bwk $&bwk"
+echo "RES gl $&g_l"
+echo "RES zl $&z_l"
+.endc
+.end

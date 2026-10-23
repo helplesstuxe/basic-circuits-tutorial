@@ -1,0 +1,66 @@
+* 05 精密整流 page2 §2～§3 / page3 §2～§3：基本型 + LM741（图05-p2-2 / 图05-p3-1 第一行 / 图05-p3-2 朱红线）
+* 页面：1 kHz 平均值误差 −3.5%，过零后约 60 µs 输出才超过 10 mV，运放脚 −13.5～0.9 V；10 kHz：741 −70.3%，TL072 −11.8%；20 kHz 741 −100%
+* 输入峰值 0.2 V 正弦，±15 V（页面）；R 均 10 kΩ（页面代码 R1=RF=RL=10k）；二极管用 1N4148（page3 推荐，页面仿真用 0.7 V 折线模型）
+* 平均值误差 = 第二个周期 v(o) 平均 ÷ (0.2/π) − 1，与页面代码定义相同
+.include ../models/LM741_TI.lib
+.include ../models/1N4148_nexperia.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VI i 0 SIN(0 0.2 1k)
+* 基本型：同相端接 Vi，运放输出脚 oa → 1N4148 → o，o 接回反相端，RL=10k 到地
+X1 i o vcc vee oa LM741
+XD1 oa o 1N4148
+RL o 0 10k
+.control
+tran 5e-07 0.002 0 5e-07
+meas tran av_1k avg v(o) from=0.001 to=0.002
+meas tran lo_1k min v(oa) from=0.001 to=0.002
+meas tran hi_1k max v(oa) from=0.001 to=0.002
+echo "RES av_1k $&av_1k"
+echo "RES lo_1k $&lo_1k"
+echo "RES hi_1k $&hi_1k"
+meas tran tr_1k when v(o)=0.01 rise=1 td=0.001
+echo "RES tr_1k $&tr_1k"
+alter @VI[sin] = [ 0 0.2 2000 ]
+tran 2.5e-07 0.001 0 2.5e-07
+meas tran av_2k avg v(o) from=0.0005 to=0.001
+meas tran lo_2k min v(oa) from=0.0005 to=0.001
+meas tran hi_2k max v(oa) from=0.0005 to=0.001
+echo "RES av_2k $&av_2k"
+echo "RES lo_2k $&lo_2k"
+echo "RES hi_2k $&hi_2k"
+meas tran tr_2k when v(o)=0.01 rise=1 td=0.0005
+echo "RES tr_2k $&tr_2k"
+alter @VI[sin] = [ 0 0.2 5000 ]
+tran 1e-07 0.0004 0 1e-07
+meas tran av_5k avg v(o) from=0.0002 to=0.0004
+meas tran lo_5k min v(oa) from=0.0002 to=0.0004
+meas tran hi_5k max v(oa) from=0.0002 to=0.0004
+echo "RES av_5k $&av_5k"
+echo "RES lo_5k $&lo_5k"
+echo "RES hi_5k $&hi_5k"
+meas tran tr_5k when v(o)=0.01 rise=1 td=0.0002
+echo "RES tr_5k $&tr_5k"
+alter @VI[sin] = [ 0 0.2 10000 ]
+tran 5e-08 0.0002 0 5e-08
+meas tran av_10k avg v(o) from=0.0001 to=0.0002
+meas tran lo_10k min v(oa) from=0.0001 to=0.0002
+meas tran hi_10k max v(oa) from=0.0001 to=0.0002
+echo "RES av_10k $&av_10k"
+echo "RES lo_10k $&lo_10k"
+echo "RES hi_10k $&hi_10k"
+meas tran tr_10k when v(o)=0.01 rise=1 td=0.0001
+echo "RES tr_10k $&tr_10k"
+alter @VI[sin] = [ 0 0.2 20000 ]
+tran 2.5e-08 0.0001 0 2.5e-08
+meas tran av_20k avg v(o) from=5e-05 to=0.0001
+meas tran lo_20k min v(oa) from=5e-05 to=0.0001
+meas tran hi_20k max v(oa) from=5e-05 to=0.0001
+echo "RES av_20k $&av_20k"
+echo "RES lo_20k $&lo_20k"
+echo "RES hi_20k $&hi_20k"
+meas tran tr_20k when v(o)=0.01 rise=1 td=5e-05
+echo "RES tr_20k $&tr_20k"
+.endc
+.end

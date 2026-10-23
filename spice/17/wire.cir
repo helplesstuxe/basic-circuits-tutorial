@@ -1,0 +1,11 @@
+* 17 自锁 page3 §2 图17-p3-2：控制线长度对线圈吸合电压的影响（只仿真 24 V 控制；220 V 属市电，按规则不仿真）
+* 线圈吸合瞬间按 8.2 Ω 电阻近似（页面：70 VA、24 V）；往返导线电阻 Rw = 2·L·0.01724/A
+VC v 0 24
+RW v c 1
+RCOIL c 0 8.2
+.control
+dc RW 0.001 3 0.0005
+meas dc rw85 WHEN v(c)=20.4
+echo "RESULT rw85 $&rw85"
+.endc
+.end

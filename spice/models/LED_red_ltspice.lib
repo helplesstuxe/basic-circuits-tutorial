@@ -1,0 +1,8 @@
+* 红色 LED 模型（无厂家官方 SPICE 下载可用 → 取自 LTspice 自带器件库 standard.dio 的公认通用模型）
+* SOURCE: https://ltwiki.org/files/LTspiceIV/lib/cmp/standard.dio （已实际打开下载，2026-10-23）
+* 原文两行（mfg=Kingbright / mfg=Vishay，均为 LTspice 库条目，不是厂家官网文件）：
+*   .model APT1608SURCK d(IS=2.01E-17 N=2.139 RS=2 m=0.431 Vj=2.32 Cjo=35pF IBV=10u BV=5 EG=2.26 XTI=3 Iave=30mA Vpk=5 mfg=Kingbright type=LED)
+*   .MODEL TLSV5100RED D(IS=2.1e-19 N=1.8 RS=10 Ikf=1.1m Eg=2.3 Cjo=50p Bv=6 Ibv=10u mfg=Vishay type=LED)
+* 改动：删去 ngspice 不认识的 LTspice 专用参数 Iave/Vpk/mfg/type，其余参数原样保留。
+.model APT1608SURCK D(IS=2.01E-17 N=2.139 RS=2 M=0.431 VJ=2.32 CJO=35pF IBV=10u BV=5 EG=2.26 XTI=3)
+.model TLSV5100RED D(IS=2.1e-19 N=1.8 RS=10 IKF=1.1m EG=2.3 CJO=50p BV=6 IBV=10u)

@@ -1,0 +1,40 @@
+* 11 过载保护 · 原理与实现篇 推导一：两条门限（V_H 193 mV / V_L 146 mV）；参数与调试篇 参数总表
+* 比较器部分照图 11-p2-1：LM393（TI LM393A 官方宏模型）、R_A 33k / R_B 1k / R_H 100k / 上拉 2.2 kΩ 到 5 V，输出接 IRLZ44N 栅极（Infineon）
+* 采样点电压用三角波慢扫（0.12→0.22→0.12 V，各 1 s），经 R_F 10 kΩ 送反相端（不接 C_F，保留偏置电流误差）
+.include ../models/LM393A.lib
+.include ../models/IRLZ44N_infineon.lib
+V5 v5 0 5
+VS s 0 PWL(0 0.12 1 0.22 2 0.12)
+RF s f 10k
+RA v5 p 33k
+RB p 0 1k
+RH p g 100k
+RPU v5 g 2.2k
+XU p f v5 0 g LM393A
+XM vd g 0 irlz44n
+* 对照：R_F 换成 1 Ω（几乎没有偏置电流压降），看 R_F 10 kΩ 让门限移动多少
+RF2 s f2 1
+RA2 v5 p2 33k
+RB2 p2 0 1k
+RH2 p2 g2 100k
+RPU2 v5 g2 2.2k
+XU2 p2 f2 v5 0 g2 LM393A
+XM2 vd2 g2 0 irlz44n
+VD2 vd2 0 0.1
+VD vd 0 0.1
+.control
+tran 100u 2 0 100u
+meas tran vh find v(s) when v(g)=2.5 fall=1
+meas tran vl find v(s) when v(g)=2.5 rise=1
+meas tran voh max v(g) from=0 to=0.5
+meas tran vol min v(g) from=0.8 to=1.2
+echo "RES vh $&vh"
+echo "RES vl $&vl"
+echo "RES voh $&voh"
+echo "RES vol $&vol"
+meas tran vh2 find v(s) when v(g2)=2.5 fall=1
+echo "RES vh2 $&vh2"
+meas tran ib avg i(VS) from=0.4 to=0.6
+echo "RES ib $&ib"
+.endc
+.end

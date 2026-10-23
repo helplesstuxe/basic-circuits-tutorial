@@ -1,0 +1,23 @@
+* 23 上升沿：page2 B 部分 图23-p2-3（5 kHz 方波、R_L=1/4.7/10/47 kΩ，升到 3.0 V 的时间、10%→90%、47 kΩ 熄灭 100 μs 后的电压）；
+*            page3 图23-p3-1（上升时间随 R_L）与练习 2；page3 参数表“上升 4 μs、下降 3 μs（负载 100 Ω）”的手册条件。
+* 输入侧：12 V 方波经 RIN 驱动 LED（MODE=0）；或手册条件 V_CC=2 V、I_C=2 mA、R_L=100 Ω 时用电流源驱动（run.py 设参数）。
+* 页面模型用“1 nF 示意电容”，SPICE 用的是 PC817 模型自身的结电容（C_jc 19 pF 等）加光敏三极管的米勒效应，外部不再加电容。
+.include ../models/PC817_ltspice.lib
+*@def VIN=12
+*@def RIN=2.2k
+*@def VCC=5
+*@def RL=4.7k
+*@def IGAIN=2e-4
+*@def TSTOP=400u
+VIN in 0 PULSE(@VIN@ 0 100u 50n 50n 100u 200u)
+RIN in a @RIN@
+XU1 a 0 out g2 PC817 Igain=@IGAIN@
+RG2 g2 0 1m
+VCC vcc 0 @VCC@
+RL vcc out @RL@
+.control
+tran 20n @TSTOP@ 0 20n
+wrdata rise.dat v(out)
+echo "RESULT DONE 1"
+.endc
+.end

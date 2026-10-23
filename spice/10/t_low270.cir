@@ -1,0 +1,20 @@
+* 10 稳压管稳压 · 参数与调试篇 图 10-p3-2（朱红色）：输入 10–11 V，R 270 Ω，负载 20 mA（电流源，假设），1N4733A
+* 输入：平均 10.5 V、1 V 峰峰的 100 Hz 锯齿（1 ms 上升、9 ms 下降，近似整流电容放电），从 t=0 开始
+VIN in 0 PWL(0m 10 1m 11 10m 10 11m 11 20m 10 21m 11 30m 10 31m 11 40m 10 41m 11 50m 10 51m 11 60m 10 61m 11 70m 10 71m 11 80m 10 81m 11 90m 10 91m 11 100m 10)
+.include ../models/1N47xxA_diodes_zener.lib
+XZ za o DI_1N4733A
+VZM za 0 0
+R1 in o 270
+IL o 0 DC 20m
+.control
+tran 10u 100m 0 10u
+meas tran opp pp v(o) from=60m to=100m
+meas tran oav avg v(o) from=60m to=100m
+meas tran omn min v(o) from=60m to=100m
+meas tran izmn min i(VZM) from=60m to=100m
+echo "RES opp $&opp"
+echo "RES oav $&oav"
+echo "RES omn $&omn"
+echo "RES izmn $&izmn"
+.endc
+.end

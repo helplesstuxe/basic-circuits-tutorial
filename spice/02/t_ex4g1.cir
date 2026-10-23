@@ -1,0 +1,27 @@
+* 02 page3 练习4 改法：倍数降到 1（跟随器，Rf 用 1 Ω 导线、不接 R1），页面答案：输出 1.5～3.5 V，同相端最高 3.5 V，余量为 0
+* 假设（页面未给全部元件值）：2.5 V 偏置点 = 5 V 经两只 10 kΩ 分压，对地 10 µF；信号经 1 µF 接同相端，同相端经 100 kΩ 接偏置点
+* 信号 −1～+1 V（峰值 1 V、1 kHz 正弦）；用 .ic 让电容一开始就充好电（相当于上电后已稳定），跑 10 ms 读后 2 ms
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 5
+RB1 vcc b 10k
+RB2 b 0 10k
+CB b 0 10u
+VS s 0 SIN(0 1 1k)
+CI s p 1u
+RP p b 100k
+X1 p m vcc 0 o LMX58B_LM2904B
+RF o m 1
+.ic v(b)=2.5 v(p)=2.5 v(o)=2.5 v(m)=2.5
+.control
+tran 2u 10m
+meas tran omax max v(o) from=8m to=10m
+meas tran omin min v(o) from=8m to=10m
+meas tran pmax max v(p) from=8m to=10m
+meas tran bavg avg v(b) from=8m to=10m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+echo "RES pmax $&pmax"
+echo "RES bavg $&bavg"
+.endc
+.end

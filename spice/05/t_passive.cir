@@ -1,0 +1,17 @@
+* 05 page1 §一 / 图05-p1-1（以及图05-p1-3 朱红线）：普通二极管半波整流，1N4148 + RL 10k
+* 页面：输入峰值 0.2 V 时输出始终 0 V；输入峰值 10 V 时输出约 10 − 0.7 = 9.3 V
+* 1 kHz（图05-p1-3），读第二个周期最大值
+.include ../models/1N4148_nexperia.lib
+VI i 0 SIN(0 0.2 1k)
+XD1 i o 1N4148
+RL o 0 10k
+.control
+tran 1u 2m
+meas tran p02 max v(o) from=1m to=2m
+echo "RES p02 $&p02"
+alter @VI[sin] = [ 0 10 1k ]
+tran 1u 2m
+meas tran p10 max v(o) from=1m to=2m
+echo "RES p10 $&p10"
+.endc
+.end

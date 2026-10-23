@@ -1,0 +1,29 @@
+* 23 光耦隔离：PC817（LTspice 库模型，非厂家官方）直流工作点。
+* 核对：page1 图23-p1-2/图23-p1-3；page2 §三 第一～五步、A 部分输出、图23-p2-2、例1～例3、§六 动手步骤 3～4；page3 §一 1 kΩ/10 mA 的“说不清”区、练习 1/3。
+* 电路照页面：输入侧 VIN → RIN → PC817 LED（1 脚）→ 2 脚 → GND1；输出侧 VCC → RL → 集电极（4 脚，= 输出）→ 发射极（3 脚）→ GND2。
+* GND1 与 GND2 之间用 1 GΩ 连接（仅为了让 SPICE 有直流通路；表示“隔离”）。
+* IGAIN 由 run.py 按页面 CTR（I_F=5 mA、V_CE=5 V）标定后传入。
+.include ../models/PC817_ltspice.lib
+*@def VIN=12
+*@def RIN=2.2k
+*@def VCC=5
+*@def RL=4.7k
+*@def IGAIN=2e-4
+VIN in g1 @VIN@
+RIN in a @RIN@
+XU1 a g1 out 0 PC817 Igain=@IGAIN@
+RISO g1 0 1G
+VCC vcc 0 @VCC@
+RL vcc out @RL@
+.control
+op
+let if=(v(in)-v(a))/@RIN@
+let vf=v(a)-v(g1)
+let vout=v(out)
+let ic=(@VCC@-v(out))/@RL@
+echo "RESULT IF $&if"
+echo "RESULT VF $&vf"
+echo "RESULT VOUT $&vout"
+echo "RESULT IC $&ic"
+.endc
+.end

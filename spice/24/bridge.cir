@@ -1,0 +1,26 @@
+* 24 变压器方案的次级低压侧：page2 §一 第 2 条、§二 图24-p2-1 / 图24-p2-2（12 V 有效值 → 整流滤波后最高 15.57 V，
+*   电网 ±10% 时 13.87～17.27 V）；page2 例 1（次级约 7.4 V → 约 9 V，电网高 10% 约 10.0 V）；page3 练习 4（9 V 次级）。
+* 只仿真次级：初级接 220 V 市电，不仿真（用理想正弦源代替“变压器次级”，有效值 = 220/匝数比 × 电网系数）。
+* 二极管：Diodes Inc. 1N4007 官方模型（4 只桥式）。C 与 R_LOAD 页面未给，假设 1000 μF、10 kΩ 轻载（“最高电压”= 峰值）。
+.include ../models/1N4007_diodes.lib
+*@def VRMS=12
+*@def RLOAD=10k
+*@def CF=1000u
+VS a b SIN(0 {@VRMS@*sqrt(2)} 50)
+RBA b 0 100Meg
+D1 a p DI_1N4007
+D2 b p DI_1N4007
+D3 0 a DI_1N4007
+D4 0 b DI_1N4007
+CF p 0 @CF@
+RL p 0 @RLOAD@
+.control
+tran 20u 1.0 0.8 20u
+meas tran vmax MAX v(p)
+meas tran vmin MIN v(p)
+let vpk=@VRMS@*sqrt(2)
+echo "RESULT VMAX $&vmax"
+echo "RESULT VMIN $&vmin"
+echo "RESULT VPK $&vpk"
+.endc
+.end

@@ -1,0 +1,29 @@
+* 16 振荡器：弛张方波振荡器（page1 图16-p1-1/16-p1-2，示波器第 3、5 步；page2 §周期推导、例 2；page3 图16-p3-2、练习 4）
+* 同相端经三只相等电阻 RA=RB=RC=10k 分别接 +5 V、地、输出；反相端接 C 到地，经 R 接输出。
+* XL：TI LM358B 官方模型，5 V 单电源；XI：理想比较型运放（B 源，输出 0..5 V，带 10 ns 输出 RC 以便收敛）
+*@def R=10k
+*@def C=100n
+*@def TSTOP=20m
+*@def TSTEP=1u
+.include ../models/LMx58B_LM2904B.lib
+VCC vcc 0 5
+RAl vcc pl 10k
+RBl pl 0 10k
+RCl ol pl 10k
+Rl ol nl @R@
+Cl nl 0 @C@ IC=0
+XL pl nl vcc 0 ol LMX58B_LM2904B
+RAi vcc pi 10k
+RBi pi 0 10k
+RCi oi pi 10k
+Ri oi ni @R@
+Ci ni 0 @C@ IC=0
+Bi oix 0 V=2.5+2.5*tanh(2000*(v(pi)-v(ni)))
+Rix oix oi 1
+Cix oi 0 10p
+.control
+tran @TSTEP@ @TSTOP@ 0 @TSTEP@ uic
+wrdata relax.txt v(ol) v(nl) v(pl) v(oi) v(ni)
+echo "RESULT done 1"
+.endc
+.end

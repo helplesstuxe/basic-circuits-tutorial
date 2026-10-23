@@ -1,0 +1,25 @@
+* 13 微分电路：page3 §扫描图二（R1 扫描表，理想运放、不加 Cf）及 page2 Python 仿真（只串 R1）
+* 反相微分器，理想运放（增益 1e6 的 VCVS，不限幅），与页面扫描条件一致。C=100nF, Rf=10k；R1、Cf 可选（实用微分器）。
+* 输入：±VM 三角波，频率 FT（默认 ±0.5 V、500 Hz，斜率 ±1 V/ms），可叠加 AN 幅度、20 kHz 正弦干扰。
+* 理想微分器用 R1=1m（近似 0）、Cf=1e-18（近似开路）。
+.param R1=1m
+.param CF=1e-18
+.param AN=0
+.param VM=0.5
+.param FT=500
+*@def TSTOP=8m
+VP vp 0 15
+VN vn 0 -15
+VT tri 0 PULSE({-VM} {VM} 0 {0.5/FT} {0.5/FT} 1n {1/FT})
+VNZ in tri SIN(0 {AN} 20k)
+R1 in a {R1}
+C1 a m 100n
+RF m out 10k
+CF m out {CF}
+EU out 0 0 m 1e6
+.control
+tran 0.5u @TSTOP@ 0 0.5u
+wrdata out.txt v(out) v(in)
+echo "RESULT done 1"
+.endc
+.end

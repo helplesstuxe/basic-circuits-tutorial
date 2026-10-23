@@ -1,0 +1,17 @@
+* P3 page3 图P3-p3-1 下：−10 倍，0.8 V 峰值，5 V 单电源（VEE 接地），10 kΩ 负载接地（假设）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 5
+VA a 0 SIN(0 0.8 1k)
+R1 a m 10k
+RF m o 100k
+X1 0 m vcc 0 o LMX58B_LM2904B
+RL o 0 10k
+.control
+tran 2u 4m
+meas tran omax max v(o) from=2m to=4m
+meas tran omin min v(o) from=2m to=4m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+.endc
+.end

@@ -1,0 +1,21 @@
+* 01 page3 §一.4 压摆率：输出峰值 10 V 时 f ≤ 0.5e6/(2π·10) ≈ 8 kHz（按手册 SR 0.5 V/µs）
+* 10k/100k，±15 V，输入 1 V 峰值 8 kHz；读输出峰峰值和最大斜率（理想正弦应为 20 Vpp、0.503 V/µs）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VA a 0 SIN(0 1 8k)
+R1a a ma 10k
+RFa ma oa 100k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+.control
+tran 0.2u 1m
+let d=deriv(v(oa))/1e6
+meas tran omax max v(oa) from=0.5m to=1m
+meas tran omin min v(oa) from=0.5m to=1m
+meas tran smax max d from=0.5m to=1m
+let opp=omax-omin
+echo "RES opp $&opp"
+echo "RES smax $&smax"
+.endc
+.end

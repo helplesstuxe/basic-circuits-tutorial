@@ -1,0 +1,52 @@
+* 06 page2 §6 / 图06-p2-3、图06-p2-4：运放全波整流（绝对值电路）。A1：05 改进型、两只二极管同时调头；A2：反相加法器，Vi 经 R、Vh 经 R/2，反馈 R
+* R = 10 kΩ、R/2 = 5 kΩ（页面）。运放：TL072，±15 V（假设；页面按开环增益 10 万的静态计算，未指定型号）。二极管 1N4148。频率 50 Hz（假设，页面为静态）
+* 页面：峰值 0.5 V → 输出峰值 500.0 mV，与 |Vi| 最大误差 40 µV，平均 318.0 mV（理论 318.3 mV）；二极管桥输出始终 0
+* page3 练习4：峰值 0.3 V → 平均 0.191 V；R/2 错装成 R → 只剩负半周翻正，平均约 0.095 V
+* 另加：同一 0.5 V 信号送进 1N4148 桥 + 10k 负载，看输出
+.include ../models/TL072.lib
+.include ../models/1N4148_nexperia.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VI i 0 SIN(0 0.5 50)
+X1 0 m1 vcc vee oa TL072
+R1 i m1 10k
+RF1 h m1 10k
+XD1 h oa 1N4148
+XD2 oa m1 1N4148
+RLH h 0 100k
+X2 0 m2 vcc vee o TL072
+RA i m2 10k
+RB h m2 5k
+RF2 o m2 10k
+* 对照：二极管桥（地参考取桥负端经大电阻）
+XB1 i bp 1N4148
+XB2 0 bp 1N4148
+XB3 bn i 1N4148
+XB4 bn 0 1N4148
+RBL bp bn 10k
+RBG bn 0 1G
+.control
+tran 10u 60m 0 10u
+let err = v(o) - abs(v(i))
+let vb = v(bp)-v(bn)
+meas tran pk max v(o) from=20m to=60m
+meas tran av avg v(o) from=20m to=60m
+meas tran emax max err from=20m to=60m
+meas tran emin min err from=20m to=60m
+meas tran bpk max vb from=20m to=60m
+echo "RES pk $&pk"
+echo "RES av $&av"
+echo "RES emax $&emax"
+echo "RES emin $&emin"
+echo "RES bpk $&bpk"
+alter @VI[sin] = [ 0 0.3 50 ]
+tran 10u 60m 0 10u
+meas tran av3 avg v(o) from=20m to=60m
+echo "RES av3 $&av3"
+alter RB resistance=10k
+tran 10u 60m 0 10u
+meas tran av3b avg v(o) from=20m to=60m
+echo "RES av3b $&av3b"
+.endc
+.end

@@ -1,0 +1,20 @@
+* 10 稳压管稳压 · 直觉篇 图 10-p1-3：平均 12 V、1 V 纹波，R 180 Ω，RL 255 Ω，1N4733A（Diodes）
+* 输入：平均 12 V、1 V 峰峰的 100 Hz 锯齿（1 ms 上升、9 ms 下降，近似整流电容放电），从 t=0 开始
+VIN in 0 PWL(0m 11.5 1m 12.5 10m 11.5 11m 12.5 20m 11.5 21m 12.5 30m 11.5 31m 12.5 40m 11.5 41m 12.5 50m 11.5 51m 12.5 60m 11.5 61m 12.5 70m 11.5 71m 12.5 80m 11.5 81m 12.5 90m 11.5 91m 12.5 100m 11.5)
+.include ../models/1N47xxA_diodes_zener.lib
+XZ za o DI_1N4733A
+VZM za 0 0
+R1 in o 180
+RL o 0 255
+.control
+tran 10u 100m 0 10u
+meas tran opp pp v(o) from=60m to=100m
+meas tran oav avg v(o) from=60m to=100m
+meas tran omn min v(o) from=60m to=100m
+meas tran izmn min i(VZM) from=60m to=100m
+echo "RES opp $&opp"
+echo "RES oav $&oav"
+echo "RES omn $&omn"
+echo "RES izmn $&izmn"
+.endc
+.end

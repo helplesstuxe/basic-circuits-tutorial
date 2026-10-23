@@ -1,0 +1,81 @@
+* 17 自锁：低压版控制回路（page1 图17-p1-2、图17-p1-4；page2 §逐毫秒仿真 图17-p2-2、图17-p2-3、例1；page3 练习1、练习4 图17-p3-3）
+* 不仿真 220/380 V 主电路和电动机（市电，按规则跳过）；控制回路改用 12 V 直流继电器代替 KM。
+* KM 行为模型（参数取自页面）：线圈 400 Ω（12 V 小继电器典型值，假设）；
+*   衔铁 = 线圈电压/Uc 经 τ=10.54 ms 的 RC 后进入带回差的开关：上升到 0.85 吸合、下降到 0.45 释放。
+*   τ 的取法：满电压时滤波电压到 0.85 的时间 = τ·ln(1/0.15) = 20 ms（页面的吸合时间）。
+* 按钮、FR 都是由 PWL 控制的理想开关（1 = 按下 / 脱扣）。
+*@def SB1=0 0
+*@def SB2=0 0
+*@def SB3=0 0
+*@def SB4=0 0
+*@def FR=0 0
+*@def SUP=0 1
+*@def TSTOP=10
+.model SWN SW(VT=0.5 VH=0.01 RON=0.01 ROFF=1e9)
+.model SWARM SW(VT=0.65 VH=0.2 RON=1 ROFF=1e9)
+VSB1 s1 0 PWL(@SB1@)
+VSB2 s2 0 PWL(@SB2@)
+VSB3 s3 0 PWL(@SB3@)
+VSB4 s4 0 PWL(@SB4@)
+VFR  fr 0 PWL(@FR@)
+VSUPn supn 0 PWL(@SUP@)
+BSUP vs 0 V=12*v(supn)
+* ---------- 回路 A：正确接法  K' = /S1·/FR·(S2 + K)
+* 常闭：用 B 源取反控制
+BnA1 n1 0 V=1-v(s1)
+SA1n vs a1 n1 0 SWN
+SA2 a1 b1 s2 0 SWN
+SAk a1 b1 armA 0 SWN
+BnFR nfr 0 V=1-v(fr)
+SAfr b1 c1 nfr 0 SWN
+RcA c1 0 400
+BfA fA0 0 V=v(c1)/12
+RfA fA0 fA 10.54k
+CfA fA 0 1u IC=0
+VarmA va 0 1
+SarmA va armA fA 0 SWARM
+RarmA armA 0 1k
+* ---------- 回路 W1：错误①  K' = /S1·S2 + K（自锁触点并在 SB1+SB2 两端）
+SW1n vs w1a n1 0 SWN
+SW1s w1a w1b s2 0 SWN
+SW1k vs w1b armW1 0 SWN
+RcW1 w1b 0 400
+BfW1 fW10 0 V=v(w1b)/12
+RfW1 fW10 fW1 10.54k
+CfW1 fW1 0 1u IC=0
+SarmW1 va armW1 fW1 0 SWARM
+RarmW1 armW1 0 1k
+* ---------- 回路 W2：错误②  停止按钮用常开  K' = S1·(S2 + K)
+SW2n vs w2a s1 0 SWN
+SW2s w2a w2b s2 0 SWN
+SW2k w2a w2b armW2 0 SWN
+RcW2 w2b 0 400
+BfW2 fW20 0 V=v(w2b)/12
+RfW2 fW20 fW2 10.54k
+CfW2 fW2 0 1u IC=0
+SarmW2 va armW2 fW2 0 SWARM
+RarmW2 armW2 0 1k
+* ---------- 回路 T：两地控制（练习4）  K' = /S1·/S3·(S2 + S4 + K)
+BnT3 n3 0 V=1-v(s3)
+ST1 vs t1 n1 0 SWN
+ST3 t1 t2 n3 0 SWN
+ST2 t2 t3 s2 0 SWN
+ST4 t2 t3 s4 0 SWN
+STk t2 t3 armT 0 SWN
+RcT t3 0 400
+BfT fT0 0 V=v(t3)/12
+RfT fT0 fT 10.54k
+CfT fT 0 1u IC=0
+SarmT va armT fT 0 SWARM
+RarmT armT 0 1k
+* ---------- 指示灯（例3）：HL1 并在 KM 线圈上；HL2 经 KM 常闭辅助触点接电源（灯用 12 V 小灯泡，按 240 Ω 电阻近似）
+RHL1 c1 0 240
+BnK nk 0 V=1-v(armA)
+SHL2 vs h2 nk 0 SWN
+RHL2 h2 0 240
+.control
+tran 0.5m @TSTOP@ 0 0.5m uic
+wrdata sl.txt v(armA) v(armW1) v(armW2) v(armT) v(c1) v(h2) v(fA)
+echo "RESULT done 1"
+.endc
+.end

@@ -1,0 +1,38 @@
+* 12 积分电路 · 直觉篇 图 12-p1-1：+1 V 2 ms → 0 V 1 ms → −0.5 V 2 ms，RC = 1 ms（10 kΩ / 100 nF），LM358B（TI 官方模型），±15 V
+* 时间整体推后 0.05 ms（前 50 μs 给电容清零）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e12
+VP vcc 0 15
+VN vee 0 -15
+VR rst 0 PWL(0 1 49u 1 50u 0)
+.model swr sw vt=0.5 vh=0.1 ron=1 roff=1e15
+* 理想积分器：R 输入，C 反馈；电容旁的开关只在 t < 50 μs 时闭合，给电容清零（代替“初始输出 0 V”），之后断开（1e15 Ω）
+.subckt integ in o vcc vee rst r=10k c=100n
+R1 in m {r}
+C1 m o {c}
+S1 m o rst 0 swr
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+* 实用积分器：C 旁并 R_f，有直流工作点，不需要清零
+.subckt pinteg in o vcc vee r=10k c=100n rf=1meg
+R1 in m {r}
+C1 m o {c}
+R2 m o {rf}
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+VA a 0 PWL(0 0 50u 0 50.1u 1 2.05m 1 2.0501m 0 3.05m 0 3.0501m -0.5 5.05m -0.5 5.0501m 0)
+XI a o vcc vee rst integ
+.control
+tran 2u 6m 0 2u
+meas tran v0 find v(o) at=50u
+meas tran v2 find v(o) at=2.05m
+meas tran v3 find v(o) at=3.05m
+meas tran v5 find v(o) at=5.05m
+let d2 = v2 - v0
+let d3 = v3 - v0
+let d5 = v5 - v0
+echo "RES d2 $&d2"
+echo "RES d3 $&d3"
+echo "RES d5 $&d5"
+.endc
+.end

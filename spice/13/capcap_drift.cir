@@ -1,0 +1,23 @@
+* 13 微分电路：page1 §附图第二格 偏置电流使电容–电容接法漂移（页面：20 nA 示意值 → 0.40 V/s，约 34 s 撞到 13.5 V）
+* C=100n 输入接地（无信号），Cf=50n，LM358B（TI 官方模型，其输入偏置电流由模型给定），±15 V。
+* 开关在 t<10 ms 时短接 Cf（复位），之后断开，观察输出漂移斜率与饱和时间。
+.include ../models/LMx58B_LM2904B.lib
+VP vp 0 15
+VN vn 0 -15
+VR rst 0 PWL(0 1 9.9m 1 10m 0)
+.model SRST SW(RON=10 ROFF=1e15 VT=0.5 VH=0.1)
+CC 0 mc 100n
+CCF mc oc 50n
+SC mc oc rst 0 SRST
+XC 0 mc vp vn oc LMX58B_LM2904B
+.control
+tran 5m 120 0 5m
+meas tran v1 FIND v(oc) AT=1
+meas tran v3 FIND v(oc) AT=3
+let slope = (v3 - v1)/2
+echo "RESULT slope $&slope"
+meas tran vend FIND v(oc) AT=120
+echo "RESULT vend $&vend"
+wrdata drift.txt v(oc)
+.endc
+.end

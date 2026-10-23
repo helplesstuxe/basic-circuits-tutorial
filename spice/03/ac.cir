@@ -1,0 +1,18 @@
+* 03 page3 §3 末段：跟随器倍数 1，闭环带宽约 GBW ÷ 1 ≈ 1.2 MHz（LM358B，±15 V，输出空载）
+* 同时读低频倍数（page2 "倍数 A/(1+A) ≈ 0.99999"）与最大增益（看有没有尖峰）
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VS i 0 DC 0 AC 1
+X1 i o vcc vee o LMX58B_LM2904B
+.control
+ac dec 200 10 100Meg
+let g = mag(v(o))
+meas ac g10 find g at=10
+meas ac gpk max g
+meas ac bw when g=0.70711 fall=last
+echo "RES g10 $&g10"
+echo "RES gpk $&gpk"
+echo "RES bw $&bw"
+.endc
+.end

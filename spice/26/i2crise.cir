@@ -1,0 +1,22 @@
+* 节点 26 page2 推导二 / page3 图 26-p3-1 / 例题1 / 练习2：I²C 上拉 Rp 给总线电容 Cb 充电
+* 总线从 0 V 释放（开漏管断开）后，测 0.3·VDD→0.7·VDD 的上升时间 tr，以及 1.25 µs（400 kHz 半个周期）时的电压
+.param RP=1.5k CB=200p VDD=3.3
+*@def V30=0.99
+*@def V70=2.31
+VDD vdd 0 {VDD}
+RP vdd bus {RP}
+CB bus 0 {CB}
+* 开漏管：0～1 µs 导通（10 Ω），之后断开
+SDRV bus 0 ctl 0 SWM
+VCTL ctl 0 PWL(0 1 1u 1 1.0001u 0)
+.model SWM SW(VT=0.5 VH=0.1 RON=10 ROFF=1e12)
+.control
+tran 1n 30u 0 1n
+meas tran t30 WHEN v(bus)=@V30@ RISE=1
+meas tran t70 WHEN v(bus)=@V70@ RISE=1
+meas tran vend FIND v(bus) AT=2.2501u
+echo "RESULT t30 $&t30"
+echo "RESULT t70 $&t70"
+echo "RESULT vend $&vend"
+.endc
+.end

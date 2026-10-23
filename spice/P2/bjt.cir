@@ -1,0 +1,61 @@
+* P2 三极管（2N3904，onsemi 官方模型）
+* 对应：page2 §3 图P2-p2-3（5 V，RC=1k，RB=47k，页面按 β=100：Vin=1.64 V → IB 20 µA、IC 2.0 mA、VCE 3.0 V；Vin=5 V → IB 91.5 µA、饱和 VCE 0.2 V、IC 4.8 mA）
+*       page2 §5 图P2-p2-5（RB=10k，RC=1k，5 V：0.7 V 以下截止，1.18 V 进入饱和，饱和 IC 4.8 mA / VCE 0.2 V）
+*       page1 图P2-p1-3 左（5 V 控制，RB=10k，RC=220 Ω + 红 LED → "几百微安"基极电流）
+* LED 无厂家官方 SPICE 模型 → 按页面的"约 2 V 恒压"模型用 2 V 电压源代替（替代模型）
+.include ../models/2N3904_onsemi.lib
+VCC vcc 0 5
+VIN in 0 0
+* 图P2-p2-3
+RB1 in b1 47k
+RC1 vcc c1 1k
+Q1 c1 b1 0 Q2n3904
+* 图P2-p2-5
+RB2 in b2 10k
+RC2 vcc c2 1k
+Q2 c2 b2 0 Q2n3904
+* 图P2-p1-3 左：控制 5 V
+V5 ctl 0 5
+RB3 ctl b3 10k
+RC3 vcc l3 220
+VLED l3 c3 2
+Q3 c3 b3 0 Q2n3904
+.control
+op
+let ib3=(5-v(b3))/10k
+let ic3=i(VLED)
+echo "RES ib3 $&ib3"
+echo "RES ic3 $&ic3"
+dc VIN 0 5 0.001
+let ib1 = (v(in)-v(b1))/47k
+let icq2 = (5-v(c2))/1k
+meas dc ic2_07 find icq2 at=0.7
+meas dc vin_1ma when icq2=1m rise=1
+echo "RES ic2_07 $&ic2_07"
+echo "RES vin_1ma $&vin_1ma"
+meas dc ib1_164 find ib1 at=1.64
+meas dc vce1_164 find v(c1) at=1.64
+meas dc ib1_5 find ib1 at=5
+meas dc vce1_5 find v(c1) at=5
+meas dc vin_sat when v(c2)=0.2 fall=1
+meas dc vin_on when v(c2)=4.99 fall=1
+meas dc vce2_5 find v(c2) at=5
+let ic1 = (5-v(c1))/1k
+meas dc ic1_164 find ic1 at=1.64
+meas dc ic1_5 find ic1 at=5
+let ic2 = (5-v(c2))/1k
+meas dc ic2_5 find ic2 at=5
+meas dc vin_sat3 when v(c2)=0.3 fall=1
+echo "RES ib1_164 $&ib1_164"
+echo "RES vce1_164 $&vce1_164"
+echo "RES ic1_164 $&ic1_164"
+echo "RES ib1_5 $&ib1_5"
+echo "RES vce1_5 $&vce1_5"
+echo "RES ic1_5 $&ic1_5"
+echo "RES vin_sat $&vin_sat"
+echo "RES vin_sat3 $&vin_sat3"
+echo "RES vin_on $&vin_on"
+echo "RES vce2_5 $&vce2_5"
+echo "RES ic2_5 $&ic2_5"
+.endc
+.end

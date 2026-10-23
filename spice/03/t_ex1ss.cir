@@ -1,0 +1,26 @@
+* 03 page2 例1 第4步：运放用 5 V 单电源时，跟随器输出 3.33 V 给 2 kΩ 模块，"输出上限约 3.5 V，只剩 0.17 V 余量"
+* 10k/20k 把 5 V 分成 3.33 V 接同相端，跟随器输出接 2 kΩ 到电路地。
+* 说明：ngspice 里 TI 模型在"单电源、V− 就是 SPICE 全局地、输出带 ≤5 kΩ 负载"时会收敛到输出 6.5 V 这种不可能的假解，
+*       所以这里把电路"地"（节点 g = 运放 V− 脚）放在 −2.5 V、V+ 放在 +2.5 V：电位差与单 5 V 完全相同，结果按相对 g 的电压读
+* 之后把分压器上端慢慢升到 7.5 V（分压点 0→5 V），看带 2 kΩ 负载时的输出上限
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 2.5
+VG g 0 -2.5
+VD t g PWL(0 0 1m 5 5m 5 25m 7.5)
+RA t d 10k
+RB d g 20k
+X1 d o vcc g o LMX58B_LM2904B
+RL o g 2k
+.control
+tran 10u 25m
+let vo = v(o)-v(g)
+let vd = v(d)-v(g)
+meas tran o333 find vo at=4m
+meas tran d333 find vd at=4m
+meas tran omax max vo
+echo "RES o333 $&o333"
+echo "RES d333 $&d333"
+echo "RES omax2k $&omax"
+.endc
+.end

@@ -1,0 +1,35 @@
+* 13 微分电路：page2 §结论二（159 Hz 放大 1 倍、1.59 kHz 10 倍、20 kHz 约 126 倍）与 page1 示波器第 3 步（159 Hz、0.5 V 正弦）
+* 理想微分器（无 R1、Cf）与实用微分器（R1=1k、Cf=10n），C=100nF, Rf=10k，LM358B（TI 官方模型），±15 V。
+.include ../models/LMx58B_LM2904B.lib
+.param R1=1m
+.param CF=1e-18
+VP vp 0 15
+VN vn 0 -15
+VI in 0 DC 0 AC 1 SIN(0 0.5 159.155)
+R1 in a {R1}
+C1 a m 100n
+RF m out 10k
+CF m out {CF}
+XU 0 m vp vn out LMX58B_LM2904B
+.control
+ac dec 400 10 1meg
+let gm = mag(v(out))
+meas ac g159 FIND gm AT=159.155
+meas ac g1590 FIND gm AT=1591.55
+meas ac g20k FIND gm AT=20k
+meas ac g50k FIND gm AT=50k
+echo "RESULT g159 $&g159"
+echo "RESULT g1590 $&g1590"
+echo "RESULT g20k $&g20k"
+echo "RESULT g50k $&g50k"
+meas ac gpk MAX gm
+meas ac fpk WHEN gm=gpk
+echo "RESULT gpk $&gpk"
+echo "RESULT fpk $&fpk"
+tran 2u 40m 0 2u
+meas tran vamp MAX v(out) from=20m to=40m
+meas tran vmin MIN v(out) from=20m to=40m
+echo "RESULT tran_amp $&vamp"
+echo "RESULT tran_min $&vmin"
+.endc
+.end

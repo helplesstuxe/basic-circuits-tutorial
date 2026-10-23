@@ -1,0 +1,20 @@
+* 05 page3 练习5：峰值 0.1 V 正弦经半波整流的平均值。用改进型（R1 = Rf = 10k，LM741，1N4148）实测
+* 页面：理想半波平均 = 峰值/π ≈ 31.8 mV（全波 63.7 mV 为算术）。100 Hz（假设，低频避开速度问题）
+.include ../models/LM741_TI.lib
+.include ../models/1N4148_nexperia.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VI i 0 SIN(0 0.1 100)
+X1 0 m vcc vee oa LM741
+R1 i m 10k
+RF o m 10k
+XD1 oa o 1N4148
+XD2 m oa 1N4148
+RL o 0 10k
+.control
+tran 5u 20m
+meas tran av avg v(o) from=10m to=20m
+echo "RES av $&av"
+.endc
+.end

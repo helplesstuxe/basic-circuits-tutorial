@@ -1,0 +1,23 @@
+* 14 电压比较器：page3 §4 图14-p3-2 / 图14-p3-3 窗口比较器
+* 两只 LM393A，5 V；A：同相端接输入、反相端接下限 2.25 V；B：反相端接输入、同相端接上限 2.75 V；输出并联共用 2.2k 上拉。
+* 门限用理想电压源给出（页面只给门限值，未给分压电阻）。输入 Vin = 2.5 − 0.5·cos(2πt/20 s)。
+.include ../models/LM393A.lib
+VCC vcc 0 5
+VL vl 0 2.25
+VH vh 0 2.75
+BIN in 0 V = 2.5 - 0.5*cos(2*3.14159265358979*time/20)
+XA in vl vcc 0 out LM393A
+XB vh in vcc 0 out LM393A
+RR3 vcc out 2.2k
+.control
+tran 1m 20 0 1m
+meas tran t1 WHEN v(out)=2.5 RISE=1
+meas tran t2 WHEN v(out)=2.5 FALL=1
+meas tran t3 WHEN v(out)=2.5 RISE=2
+meas tran t4 WHEN v(out)=2.5 FALL=2
+echo "RESULT t1 $&t1"
+echo "RESULT t2 $&t2"
+echo "RESULT t3 $&t3"
+echo "RESULT t4 $&t4"
+.endc
+.end

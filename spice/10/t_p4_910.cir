@@ -1,0 +1,20 @@
+* 10 稳压管稳压 · 参数与调试篇 练习 4：同上，R 改为 910 Ω（页面答案），平均输入 30 V（假设，同上）
+* 输入：平均 30 V、1 V 峰峰的 100 Hz 锯齿（1 ms 上升、9 ms 下降，近似整流电容放电），从 t=0 开始
+VIN in 0 PWL(0m 29.5 1m 30.5 10m 29.5 11m 30.5 20m 29.5 21m 30.5 30m 29.5 31m 30.5 40m 29.5 41m 30.5 50m 29.5 51m 30.5 60m 29.5 61m 30.5 70m 29.5 71m 30.5 80m 29.5 81m 30.5 90m 29.5 91m 30.5 100m 29.5)
+.include ../models/1N47xxA_diodes_zener.lib
+XZ za o DI_1N4742A
+VZM za 0 0
+R1 in o 910
+RL o 0 1.2k
+.control
+tran 10u 100m 0 10u
+meas tran opp pp v(o) from=60m to=100m
+meas tran oav avg v(o) from=60m to=100m
+meas tran omn min v(o) from=60m to=100m
+meas tran izmn min i(VZM) from=60m to=100m
+echo "RES opp $&opp"
+echo "RES oav $&oav"
+echo "RES omn $&omn"
+echo "RES izmn $&izmn"
+.endc
+.end

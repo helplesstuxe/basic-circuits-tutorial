@@ -1,0 +1,66 @@
+* 06 page1 图06-p1-2 / 图06-p1-3，page2 图06-p2-2 / §5 代码，page3 图06-p3-1：变压器次级 12 V 有效值 50 Hz + 二极管桥 + 电容 + 75 Ω
+* 只仿低压次级（市电初级 220 V 不仿真：页面所有实验与仿真都从低压次级开始，初级只是理想降压比，逐点仿真没有意义且不应照做）
+* 次级 = 正弦源串 1 Ω 内阻（页面代码的假设值）。二极管：1N4001 用 Diodes Inc. 1N4007 官方模型替代（同一 1N400x 管芯，只差耐压）
+* 页面：无电容峰值 15.4 V；2200 µF：最高 14.67 V、最低 14.00 V、纹波 0.67 V、平均 14.34 V、负载 191 mA、每半周导通 2.42 ms、尖峰 1.19～1.2 A、第一周期浪涌 6.7 A
+* 扫描（图06-p3-1）：470 / 1000 / 2200 / 4700 / 10000 µF → 纹波 2.89 / 1.45 / 0.67 / 0.31 / 0.15 V
+.include ../models/1N4007_diodes.lib
+.options method=gear reltol=1e-4
+VS s 0 SIN(0 16.97056 50)
+RS s a 1
+RFa a 0 1G
+RFb b 0 1G
+VB b 0 0
+D1 a pb DI_1N4007
+D2 b pb DI_1N4007
+D3 n a DI_1N4007
+D4 n b DI_1N4007
+VSENS pb p 0
+C1 p n 2200u
+RL p n 75
+RGN n 0 1G
+.control
+* 无电容：C 改成 1 pF
+alter C1 capacitance=1p
+tran 20u 60m
+let vo = v(p)-v(n)
+meas tran pk0 max vo from=20m to=60m
+echo "RES pk0 $&pk0"
+alter C1 capacitance=2200u
+tran 20u 500m 0 20u
+let vo = v(p)-v(n)
+meas tran mx max vo from=460m to=500m
+meas tran mn min vo from=460m to=500m
+meas tran av avg vo from=460m to=500m
+meas tran ipk max i(VSENS) from=460m to=500m
+meas tran inr max i(VSENS) from=0 to=20m
+meas tran tr when i(VSENS)=0.005 rise=last
+meas tran tf when i(VSENS)=0.005 fall=last
+echo "RES mx $&mx"
+echo "RES mn $&mn"
+echo "RES av $&av"
+echo "RES ipk $&ipk"
+echo "RES inr $&inr"
+echo "RES tr $&tr"
+echo "RES tf $&tf"
+alter C1 capacitance=470u
+tran 20u 500m 0 20u
+let vo = v(p)-v(n)
+meas tran r470 pp vo from=460m to=500m
+echo "RES r470 $&r470"
+alter C1 capacitance=1000u
+tran 20u 500m 0 20u
+let vo = v(p)-v(n)
+meas tran r1000 pp vo from=460m to=500m
+echo "RES r1000 $&r1000"
+alter C1 capacitance=4700u
+tran 20u 800m 0 20u
+let vo = v(p)-v(n)
+meas tran r4700 pp vo from=760m to=800m
+echo "RES r4700 $&r4700"
+alter C1 capacitance=10000u
+tran 20u 1.5 0 20u
+let vo = v(p)-v(n)
+meas tran r10000 pp vo from=1.46 to=1.5
+echo "RES r10000 $&r10000"
+.endc
+.end

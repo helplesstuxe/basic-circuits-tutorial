@@ -1,0 +1,17 @@
+* 01 page3 故障排查表「单电源供电时负半周全没了：看输出负半周是否平在约 0.1 V」
+* 10k/100k，LM358B 单 5 V 供电（V− 脚接地），同相端接地，输入 0.2 V 峰值 1 kHz，输出无外接负载
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 5
+VA a 0 SIN(0 0.2 1k)
+R1a a ma 10k
+RFa ma oa 100k
+XA 0 ma vcc 0 oa LMX58B_LM2904B
+.control
+tran 2u 4m
+meas tran omax max v(oa) from=2m to=4m
+meas tran omin min v(oa) from=2m to=4m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+.endc
+.end

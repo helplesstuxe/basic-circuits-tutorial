@@ -1,0 +1,21 @@
+* 07 page2 §5 图07-p2-4：LM358 → TIP31C（页面第四节说要换 TIP31），反馈取自发射极，50 Ω（页面：Vo 5.00 V，运放输出 5.71 V）
+* 运放输出直接接基极
+* 运放 LM358（TI LMx58 模型），12 V 单电源（页面 V_OH = 12 − 1.5 V 按 12 V 供电估）。Vi = 5 V（用 PWL 从 0 慢升，避免 .op 不收敛）
+* 四种接法分成 t_opA/B/B3/C/RB 五个文件：放在同一文件里时 SPICE 初始点不收敛
+.include ../models/LMx58_LM2904.lib
+.include ../models/TIP31C_onsemi.lib
+.include ../models/2N3904_onsemi.lib
+.options method=gear reltol=1e-4
+VCC vcc 0 12
+VI i 0 PWL(0 0 5m 5)
+X1 i e vcc 0 o LMX58_LM2904
+Q1 vcc o e Qtip31c
+RL e 0 50
+.control
+tran 10u 10m 0 10u
+meas tran vex find v(e) at=9.9m
+echo "RES ve $&vex"
+meas tran vox find v(o) at=9.9m
+echo "RES vo $&vox"
+.endc
+.end

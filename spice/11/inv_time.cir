@@ -1,0 +1,54 @@
+* 11 过载保护 · 参数与调试篇 图 11-p3-2 (a)：不同 τ 的反时限切断时间（5 A 堵转、20 A 短路，原电流 1 A）；原理与实现篇 例题 3（0.2 Ω、0.5→3 A）
+* 每路：电流源阶跃流过 R_S → R_F 10 kΩ / C_F → LM393（TI LM393A 官方宏模型）反相端；门限网络 33k/1k/100k、上拉 2.2 kΩ 同图 11-p2-1
+* 只看“判”的时间（输出跌到 2.5 V），不接电机，故电流不会被切断（与页面曲线的定义一致）
+.include ../models/LM393A.lib
+V5 v5 0 5
+.subckt det i0 v5 g cf=10u rs=0.1
+RS i0 0 {rs}
+RF i0 f 10k
+CF f 0 {cf}
+RA v5 p 33k
+RB p 0 1k
+RH p g 100k
+RPU v5 g 2.2k
+XU p f v5 0 g LM393A
+.ends
+Ia10_5 0 sa10_5 PWL(0 1 10m 1 10.001m 5)
+Xa10_5 sa10_5 v5 ga10_5 det cf=1u rs=0.1
+Ia10_20 0 sa10_20 PWL(0 1 10m 1 10.001m 20)
+Xa10_20 sa10_20 v5 ga10_20 det cf=1u rs=0.1
+Ia47_5 0 sa47_5 PWL(0 1 10m 1 10.001m 5)
+Xa47_5 sa47_5 v5 ga47_5 det cf=4.7u rs=0.1
+Ia47_20 0 sa47_20 PWL(0 1 10m 1 10.001m 20)
+Xa47_20 sa47_20 v5 ga47_20 det cf=4.7u rs=0.1
+Ia100_5 0 sa100_5 PWL(0 1 10m 1 10.001m 5)
+Xa100_5 sa100_5 v5 ga100_5 det cf=10u rs=0.1
+Ia100_20 0 sa100_20 PWL(0 1 10m 1 10.001m 20)
+Xa100_20 sa100_20 v5 ga100_20 det cf=10u rs=0.1
+Iex3 0 sex3 PWL(0 0.5 10m 0.5 10.001m 3)
+Xex3 sex3 v5 gex3 det cf=10u rs=0.2
+.control
+tran 5u 0.12 0 5u
+meas tran ta10_5 when v(ga10_5)=2.5 fall=1
+let da10_5 = ta10_5 - 10.001m
+echo "RES a10_5 $&da10_5"
+meas tran ta10_20 when v(ga10_20)=2.5 fall=1
+let da10_20 = ta10_20 - 10.001m
+echo "RES a10_20 $&da10_20"
+meas tran ta47_5 when v(ga47_5)=2.5 fall=1
+let da47_5 = ta47_5 - 10.001m
+echo "RES a47_5 $&da47_5"
+meas tran ta47_20 when v(ga47_20)=2.5 fall=1
+let da47_20 = ta47_20 - 10.001m
+echo "RES a47_20 $&da47_20"
+meas tran ta100_5 when v(ga100_5)=2.5 fall=1
+let da100_5 = ta100_5 - 10.001m
+echo "RES a100_5 $&da100_5"
+meas tran ta100_20 when v(ga100_20)=2.5 fall=1
+let da100_20 = ta100_20 - 10.001m
+echo "RES a100_20 $&da100_20"
+meas tran tex3 when v(gex3)=2.5 fall=1
+let dex3 = tex3 - 10.001m
+echo "RES ex3 $&dex3"
+.endc
+.end

@@ -1,0 +1,11 @@
+* 节点 26 page2 推导二 / 例1 / 练习2：上拉下限 Rp(min) = (VCC − VOL)/IOL —— 把输出管当作 3 mA 恒流灌电流，看引脚电压是否正好 0.4 V
+.param RP=967 VDD=3.3 IOL=3m
+VDD vdd 0 {VDD}
+RP vdd bus {RP}
+IOL bus 0 {IOL}
+.control
+op
+echo "RESULT vol $&v(bus)"
+echo "RESULT i $&i(VDD)"
+.endc
+.end

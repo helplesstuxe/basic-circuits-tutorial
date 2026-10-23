@@ -1,0 +1,46 @@
+* 06 page2 例1 / 例2 / 例3：负载按恒流源处理（页面给的是负载电流），次级内阻 1 Ω（假设，同页面代码），二极管 1N4007 模型替代 1N4001
+* 例1：12 V、2200 µF、0.2 A → 页面估算上限：最高 15.57 V、纹波 0.909 V、平均 15.1 V；页面说"真实输出还要再低一些"
+* 例2：9 V、0.5 A、6800 µF → 页面：电容最高约 11.33 V，纹波要求 ≤ 1 V
+* 例3：12 V、一只二极管半波、2200 µF、0.2 A → 页面：纹波约 1.82 V，最高约 16.27 V，二极管反向电压约 33 V
+* 例2 另用 0.5 Ω 内阻再跑一次，看内阻假设的影响
+* 只仿低压次级（同 t_bridge.cir 说明）
+.include ../models/1N4007_diodes.lib
+.options method=gear reltol=1e-4
+VS s 0 SIN(0 16.97056 50)
+RS s a 1
+RFa a 0 1G
+D1 a pb DI_1N4007
+D2 0 pb DI_1N4007
+D3 n a DI_1N4007
+D4 n 0 DI_1N4007
+VSENS pb p 0
+C1 p n 2200u
+IL p n 0.2
+RGN n 0 1G
+.control
+tran 20u 1 0 20u
+let vo = v(p)-v(n)
+meas tran e1mx max vo from=0.96 to=1
+meas tran e1pp pp vo from=0.96 to=1
+meas tran e1av avg vo from=0.96 to=1
+echo "RES e1mx $&e1mx"
+echo "RES e1pp $&e1pp"
+echo "RES e1av $&e1av"
+alter @VS[sin] = [ 0 12.7279 50 ]
+alter C1 capacitance=6800u
+alter IL dc=0.5
+tran 20u 2 0 20u
+let vo = v(p)-v(n)
+meas tran e2mx max vo from=1.96 to=2
+meas tran e2pp pp vo from=1.96 to=2
+meas tran e2ipk max i(VSENS) from=1.96 to=2
+echo "RES e2mx $&e2mx"
+echo "RES e2pp $&e2pp"
+echo "RES e2ipk $&e2ipk"
+alter RS resistance=0.5
+tran 20u 2 0 20u
+let vo = v(p)-v(n)
+meas tran e2mxh max vo from=1.96 to=2
+echo "RES e2mxh $&e2mxh"
+.endc
+.end

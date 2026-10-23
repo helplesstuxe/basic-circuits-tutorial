@@ -1,0 +1,55 @@
+* P1 RC 充放电
+* 对应：page1 图P1-p1-2（5 V，10 kΩ，100 µF，τ=1 s，1τ 63%，5τ >99%）；page2 §3 图P1-p2-2（1τ 3.161 V，5τ 4.966 V=99.3%，
+*       断电后再 1τ（t=6τ）1.826 V；百分比表 63.2/86.5/95.0/98.2/99.3%）；page3 图P1-p3-1（100 µF，4.7k/10k/22k，2.35 s 时 4.97 V）；
+*       page3 练习2（100k，47 µF，τ=4.7 s，4.7 s 时 6.32 V → 推断电源 10 V；5τ=23.5 s）；page2 §8 例2（47k·10µF τ=0.47 s）
+* 电容按理想电容（页面未给 ESR/漏电流）；电源先接通 5τ，再在 t=5 s 切到 0 V（放电）
+Vs s 0 PWL(0 0 1u 5 5 5 5.000001 0)
+R1 s c 10k
+C1 c 0 100u IC=0
+* 图P1-p3-1 三条曲线（一直充电）
+V2 s2 0 PWL(0 0 1u 5)
+R47 s2 c47 4.7k
+C47 c47 0 100u IC=0
+R10 s2 c10 10k
+C10 c10 0 100u IC=0
+R22 s2 c22 22k
+C22 c22 0 100u IC=0
+* 练习2：10 V，100k，47 µF
+V3 s3 0 PWL(0 0 1u 10)
+R3 s3 c3 100k
+C3 c3 0 47u IC=0
+* 例2：47k，10µF，5 V
+R4 s2 c4 47k
+C4 c4 0 10u IC=0
+.control
+tran 1m 25 uic
+meas tran v1t find v(c) at=1
+meas tran v2t find v(c) at=2
+meas tran v3t find v(c) at=3
+meas tran v4t find v(c) at=4
+meas tran v5t find v(c) at=5
+meas tran v6t find v(c) at=6
+meas tran c47 find v(c47) at=2.35
+meas tran tau10 when v(c10)=3.1606 rise=1
+meas tran c10_5 find v(c10) at=5
+meas tran tau22 when v(c22)=3.1606 rise=1
+meas tran c22_11 find v(c22) at=11
+meas tran c3_47 find v(c3) at=4.7
+meas tran c3_235 find v(c3) at=23.5
+meas tran tau4 when v(c4)=3.1606 rise=1
+echo "RES v1t $&v1t"
+echo "RES v2t $&v2t"
+echo "RES v3t $&v3t"
+echo "RES v4t $&v4t"
+echo "RES v5t $&v5t"
+echo "RES v6t $&v6t"
+echo "RES c47 $&c47"
+echo "RES tau10 $&tau10"
+echo "RES c10_5 $&c10_5"
+echo "RES tau22 $&tau22"
+echo "RES c22_11 $&c22_11"
+echo "RES c3_47 $&c3_47"
+echo "RES c3_235 $&c3_235"
+echo "RES tau4 $&tau4"
+.endc
+.end

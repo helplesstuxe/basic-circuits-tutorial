@@ -1,0 +1,13 @@
+* 02 page1 §四 第5步：拔掉 Rf（只剩 R1=10k 接地），输入 0.5 V，±15 V → 输出贴到电源边上
+.include ../models/LMx58B_LM2904B.lib
+.options rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+V05 i05 0 0.5
+XG i05 mg vcc vee og LMX58B_LM2904B
+R1g mg 0 10k
+.control
+op
+echo "RES vog $&v(og)"
+.endc
+.end

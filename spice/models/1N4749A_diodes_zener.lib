@@ -1,0 +1,14 @@
+* SOURCE: https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt  （2026-10-23 审校 B 实际打开；与 1N47xxA_diodes_zener.lib 同一来源文件）
+* Diodes Incorporated 1N4749A（24 V / 1 W 稳压管），子电路原样复制。引脚：1 = 阳极，2 = 阴极。
+*SRC=1N4749A;DI_1N4749A;Diodes;Zener 10V-50V; 24.0V  1.00W   Diodes Inc.
+* Zener   （原文件此行为无注释标记的分类标签，这里加 * 变成注释，其余未改）
+*SYM=HZEN
+.SUBCKT DI_1N4749A  1 2
+*        Terminals    A   K
+D1 1 2 DF
+DZ 3 1 DR
+VZ 2 3 22.2
+.MODEL DF D ( IS=17.2p RS=0.620 N=1.10
++ CJO=54.6p VJ=1.00 M=0.330 TT=50.1n )
+.MODEL DR D ( IS=3.43f RS=1.79 N=2.42 )
+.ENDS

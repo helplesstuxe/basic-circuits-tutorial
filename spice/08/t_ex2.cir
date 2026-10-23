@@ -1,0 +1,38 @@
+* 08 page2 图08-p2-1：分立线性稳压。R_Z 1 kΩ + 1N4733A 基准，LM358（TI LMx58 模型，由输入供电），TIP31（用 TIP31C 模型）调整管，R_f 3.9 kΩ / R_1 5.1 kΩ
+* page2 §8 例2：R_f 2.0 kΩ，输入 12 V，负载 0.3 A（23.16 Ω，按 SPICE 输出电压折算）。页面：V_o 6.71 V，调整管 1.59 W
+* C_o 10 µF 在这些文件里不接：理想 10 µF 直接并在输出时该模型组合会自激（见 t_stab_C10.cir）；100 Hz 下 10 µF 的容抗 159 Ω，远大于跟随器毫欧级输出阻抗，对直流和 100 Hz 纹波结果几乎没有影响
+.param VDC=12
+.param RZV=1k
+.param RFV=2.0k
+.param RLV=23.16
+.include ../models/LMx58_LM2904.lib
+.include ../models/TIP31C_onsemi.lib
+.include ../models/1N47xxA_diodes_zener.lib
+.options method=trap
+* （t_dc13 / t_ex2 用默认 reltol：reltol=1e-5 时该模型启动不收敛）
+* 输入 i = 直流 VR + 锯齿 VS。R_Z 上端 rz = v(i) + VRMP，VRMP 在 5 ms 内从 -VDC 升到 0，之后 rz 与 i 完全相同；
+* 这样基准慢慢建立、运放供电一开始就在，避开该运放模型的初始点不收敛（只影响启动，不影响 5 ms 之后的结果）
+VR r 0 12
+VS i r 0
+VRMP rz i PWL(0 {-VDC} 5m 0)
+RZ rz ref {RZV}
+XZ 0 ref DI_1N4733A
+X1 ref fb i 0 ob LMX58_LM2904
+Q1 i ob o Qtip31c
+RF o fb {RFV}
+R1 fb 0 5.1k
+RL o 0 {RLV}
+.control
+tran 2u 30m 0 2u
+meas tran vref find v(ref) at=29m
+meas tran vo find v(o) at=29m
+meas tran vob find v(ob) at=29m
+meas tran ii find i(VR) at=29m
+meas tran iz find i(VRMP) at=29m
+echo "RES vref $&vref"
+echo "RES vo $&vo"
+echo "RES vob $&vob"
+echo "RES iin $&ii"
+echo "RES iz $&iz"
+.endc
+.end

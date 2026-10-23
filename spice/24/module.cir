@@ -1,0 +1,29 @@
+* 24 不稳压隔离模块 NME0505SC 的负载特性：page2 §三 图24-p2-4、§五 程序 B 部分（满载 5.00 V、10% 负载 5.61 V、
+*   4.7 mA 时 10.05 V、并 270 Ω 后 5.58 V / 115 mW）；page3 §四 图24-p3-2（270 Ω 假负载与 1N4733A + 36 Ω 钳位）、练习 3。
+* Murata 没有 NME 系列的 SPICE 模型，模块本身用页面给出的同一个示意模型（行为源 B1，公式照抄 page2 程序的 v_module），
+* SPICE 要核对的是：① 页面二分法解出的工作点；② 稳压管换成 Diodes Inc. 1N4733A 官方模型后（不再用 V = 4.76 V + 7 Ω × I 线性化）结果变多少。
+* MODE：0 = 不处理；1 = 并 270 Ω 假负载；2 = 36 Ω + 1N4733A 钳位。用户负载 = 理想电流源 IUSER。
+.include ../models/1N47xxA_diodes_zener.lib
+*@def IUSER=4.7m
+*@def VIN=5
+*@def MODE=0
+.param vin=@VIN@
+B1 m 0 V = (5*(1+0.12*(1-max(i(VS),0)/0.2)/0.9) + 4.4/(1+exp((max(i(VS),0)/0.2-0.065)/0.006))) * (1+1.2*(vin-5)/5)
+VS m out 0
+IU out 0 @IUSER@
+RDUM out d1 {if(@MODE@==1, 270, 1e12)}
+VD1 d1 0 0
+RZ out z1 {if(@MODE@==2, 36, 1e12)}
+XZ 0 z1 DI_1N4733A
+.control
+op
+let vout=v(out)
+let itot=i(VS)
+let idum=i(VD1)
+let iz=v(out,z1)/36
+echo "RESULT VOUT $&vout"
+echo "RESULT ITOT $&itot"
+echo "RESULT IDUM $&idum"
+echo "RESULT IZ $&iz"
+.endc
+.end

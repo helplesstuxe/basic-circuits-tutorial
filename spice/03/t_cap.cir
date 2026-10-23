@@ -1,0 +1,38 @@
+* 03 page3 图03-p3-1：跟随器驱动 0.1 µF 电容，输入 0.1 V 小阶跃
+* 页面（简化模型：运放输出电阻固定 300 Ω）：直接接电容最高 0.190 V、60 µs 还在振荡；串 10 Ω 最高 0.140 V（过冲 40%）；
+*   串 33 Ω 最高 0.101 V（过冲约 1%），约 8 µs 稳在 0.1 V ±2%
+* 这里用 TI 官方 LM358B 模型，±15 V（假设），阶跃在 t=5 µs、上升 10 ns；Riso 在运放输出与电容之间，反馈取自运放输出脚
+* 读电容一侧（负载）电压：最高值、阶跃后 50～60 µs 的峰峰值、进入 ±2% 后不再出去的时刻
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VS i 0 PWL(0 0 5u 0 5.01u 0.1)
+X1 i o vcc vee o LMX58B_LM2904B
+RISO o c 1m
+CL c 0 0.1u
+BH h 0 V=abs(v(c)-0.1)-0.002
+.control
+tran 10n 70u
+meas tran pk0 max v(c) from=5u to=70u
+meas tran pp0a max v(c) from=55u to=65u
+meas tran pp0b min v(c) from=55u to=65u
+meas tran ts0 when v(h)=0 fall=last
+echo "RES pk0 $&pk0"
+echo "RES pp0a $&pp0a"
+echo "RES pp0b $&pp0b"
+echo "RES ts0 $&ts0"
+alter RISO resistance=10
+tran 10n 70u
+meas tran pk10 max v(c) from=5u to=70u
+meas tran ts10 when v(h)=0 fall=last
+echo "RES pk10 $&pk10"
+echo "RES ts10 $&ts10"
+alter RISO resistance=33
+tran 10n 70u
+meas tran pk33 max v(c) from=5u to=70u
+meas tran ts33 when v(h)=0 fall=last
+echo "RES pk33 $&pk33"
+echo "RES ts33 $&ts33"
+.endc
+.end

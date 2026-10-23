@@ -1,0 +1,118 @@
+* 10 稳压管稳压 · 直觉篇 图 10-p1-1 主电路（R 180 Ω + 1N4733A）；图 10-p1-2 输入扫描；page2 图 10-p2-1 负载扫描；
+* page2 §4/§5 两个最坏情况与例 1；page3 图 10-p3-1 R 取值窗口；page3 §4 动手实验；page3 练习 1、练习 2
+* 稳压管：Diodes Inc. DI_1N4733A（页面引用 Vishay 手册：5.1 V @49 mA、r_Z 7 Ω）
+.include ../models/1N47xxA_diodes_zener.lib
+VIN in 0 DC 10
+R1 in o 180
+XZ za o DI_1N4733A
+VZM za 0 0
+RL o 0 255
+IL o 0 DC 0
+.control
+* ---- 图 10-p1-2：RL 255 Ω，输入 10/11/12/14 V ----
+foreach v 10 11 12 14
+  alter VIN dc = $v
+  op
+  let x = v(o)
+  echo "RES vo_rl_$v $&x"
+end
+dc VIN 0 15 0.005
+meas dc vin_on1 when i(VZM)=1e-3 rise=1
+meas dc vin_on01 when i(VZM)=1e-4 rise=1
+echo "RES vin_on1 $&vin_on1"
+echo "RES vin_on01 $&vin_on01"
+* ---- 去掉电阻负载，改用电流源负载 ----
+alter RL 1e12
+* page1 §四：12 V、20 mA
+alter VIN dc = 12
+alter IL dc = 0.02
+op
+let x = -i(VIN)
+echo "RES iin12 $&x"
+let x = v(o)
+echo "RES vo12_20 $&x"
+* page2 图 10-p2-1：10 V，负载 0→40 mA
+alter VIN dc = 10
+dc IL 0 0.04 0.0001
+meas dc iz0 find i(VZM) at=0
+meas dc vo0 find v(o) at=0
+meas dc iz20 find i(VZM) at=0.02
+meas dc vo20 find v(o) at=0.02
+meas dc vo40 find v(o) at=0.04
+meas dc ildrop1 when i(VZM)=1e-3 fall=1
+meas dc ildrop01 when i(VZM)=1e-4 fall=1
+echo "RES iz0 $&iz0"
+echo "RES vo0 $&vo0"
+echo "RES iz20 $&iz20"
+echo "RES vo20 $&vo20"
+echo "RES vo40 $&vo40"
+echo "RES ildrop1 $&ildrop1"
+echo "RES ildrop01 $&ildrop01"
+* page2 §4/§5、例 1：14 V 空载
+alter IL dc = 0
+alter VIN dc = 14
+op
+let x = i(VZM)
+echo "RES iz14 $&x"
+let x = v(o)
+echo "RES vo14 $&x"
+* page3 图 10-p3-1：R 扫描
+alter VIN dc = 10
+alter IL dc = 0.02
+dc R1 40 400 0.5
+meas dc rmax5 when i(VZM)=5e-3 fall=1
+meas dc rcut01 when i(VZM)=1e-4 fall=1
+echo "RES rmax5 $&rmax5"
+echo "RES rcut01 $&rcut01"
+alter VIN dc = 14
+alter IL dc = 0
+dc R1 40 400 0.5
+let pz = v(o)*i(VZM)
+meas dc rmin065 when pz=0.65 fall=1
+meas dc pz40 find pz at=40
+meas dc iz40 find i(VZM) at=40
+echo "RES rmin065 $&rmin065"
+echo "RES pz40 $&pz40"
+echo "RES iz40 $&iz40"
+* 练习 1：R 120 Ω；练习 2：R 47 Ω（14 V 空载）
+foreach r 120 47
+  alter R1 = $r
+  op
+  let x = i(VZM)
+  echo "RES izr$r $&x"
+  let x = v(o)
+  echo "RES vor$r $&x"
+end
+* page3 §4 动手实验：10 V，R 180 / 270，负载 1k / 510 / 255
+alter VIN dc = 10
+alter R1 = 180
+foreach l 1000 510 255
+  alter RL = $l
+  op
+  let x = i(VZM)
+  echo "RES lab180_iz_$l $&x"
+  let x = v(o)
+  echo "RES lab180_vo_$l $&x"
+end
+alter R1 = 270
+foreach l 1000 510 255
+  alter RL = $l
+  op
+  let x = i(VZM)
+  echo "RES lab270_iz_$l $&x"
+  let x = v(o)
+  echo "RES lab270_vo_$l $&x"
+end
+alter VIN dc = 9.5
+op
+let x = v(o)
+echo "RES lab_vo_270_255_95 $&x"
+alter VIN dc = 14
+alter R1 = 180
+alter RL = 1e12
+* 动手实验第 1 步：空载输入扫描，稳压管开始导通（1 mA）
+dc VIN 0 15 0.005
+meas dc lab_on1 when i(VZM)=1e-3 rise=1
+echo "RES lab_on1 $&lab_on1"
+.endc
+.end

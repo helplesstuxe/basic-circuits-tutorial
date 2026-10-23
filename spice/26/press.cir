@@ -1,0 +1,10 @@
+* 节点 26 page2 推导一：按键按下时流过上拉电阻的电流（引脚被按键接地）
+.param RP=10k
+VCC vcc 0 5
+RP vcc pin {RP}
+VSW pin 0 0
+.control
+op
+echo "RESULT i $&i(VSW)"
+.endc
+.end

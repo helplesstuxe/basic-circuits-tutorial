@@ -1,0 +1,19 @@
+* 01 page3 练习2：±12 V LM358B 输出最高约 10.5 V、最低约 −11.9 V；Rs=500 Ω、R1=51k、Rf=1 MΩ；最大不削顶输入峰值约 0.53 V
+* 用 0.8 V 峰值输入（必然削顶）读出上下限
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 12
+VN vee 0 -12
+VA a 0 SIN(0 0.8 1k)
+RS a s 500
+R1 s m 51k
+RF m o 1Meg
+X1 0 m vcc vee o LMX58B_LM2904B
+.control
+tran 2u 4m
+meas tran omax max v(o) from=2m to=4m
+meas tran omin min v(o) from=2m to=4m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+.endc
+.end

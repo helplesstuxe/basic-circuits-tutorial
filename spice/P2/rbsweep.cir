@@ -1,0 +1,37 @@
+* P2 基极电阻扫描（2N3904）
+* 对应：page2 例2（3.3 V 驱动，5 V，100 Ω 负载，IC≈48 mA，RB 选 1.5 kΩ）；page3 图P2-p3-1（β=60 在 3.2 kΩ、β=200 在 10.8 kΩ 离开饱和；
+*       RB=4.7k、β=60 时 VCE 1.68 V；1 kΩ 时都饱和在 0.2 V）；page3 练习3（5 V 驱动，12 V、120 Ω 负载，RB=1 kΩ，边界约 2.2 kΩ）
+* 真实 2N3904 的 β 只有一个（随电流变化），用它代替页面"β=60 / β=200 两只管子"的理想模型
+.include ../models/2N3904_onsemi.lib
+.param rbv=1k
+V33 d33 0 3.3
+VCC vcc 0 5
+RB d33 b {rbv}
+RL vcc c 100
+Q1 c b 0 Q2n3904
+V5 d5 0 5
+V12 v12 0 12
+RB2 d5 b2 {rbv}
+RL2 v12 c2 120
+Q2 c2 b2 0 Q2n3904
+.control
+let k = 0
+let vals = vector(60)
+compose rblist values 500 700 1000 1200 1500 1800 2000 2200 2500 2700 3000 3200 3500 4000 4700 5600 6800 8200 10000 10800 12000 15000 20000
+let n = length(rblist)
+let j = 0
+while j < n
+  let r = rblist[j]
+  alter RB = r
+  alter RB2 = r
+  op
+  let vce = v(c)
+  let ic = (5 - v(c))/100
+  let ibb = (3.3 - v(b))/r
+  let vce2 = v(c2)
+  let ic2 = (12 - v(c2))/120
+  echo "SWEEP $&r $&vce $&ic $&ibb $&vce2 $&ic2"
+  let j = j + 1
+end
+.endc
+.end

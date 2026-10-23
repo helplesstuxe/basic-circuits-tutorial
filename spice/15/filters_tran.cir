@@ -1,0 +1,30 @@
+* 15 有源滤波：瞬态，LM358B，±15 V
+* XA page1 图15-p1-1：50 Hz 1 V 正弦 + 10 kHz 0.3 V 噪声 -> 一阶有源低通（16k/10n）
+* XB/XC page3 图15-p3-1：0~1 V、500 Hz 方波 -> 一阶低通 / Sallen-Key（4.22k/18.4k/10n/33n）
+.include ../models/LMx58B_LM2904B.lib
+VP vp 0 15
+VN vn 0 -15
+VS s 0 SIN(0 1 50)
+VNZ in s SIN(0 0.3 10k)
+VCL cl 0 SIN(0 1 50)
+RA in a 16k
+CA a 0 10n
+XA a oa vp vn oa LMX58B_LM2904B
+RAc cl ac 16k
+CAc ac 0 10n
+XAc ac oac vp vn oac LMX58B_LM2904B
+VSQ sq 0 PULSE(0 1 0.5m 1u 1u 0.999m 2m)
+RB sq b 16k
+CB b 0 10n
+XB b ob vp vn ob LMX58B_LM2904B
+RC1 sq m 4.22k
+RC2 m p 18.4k
+CC1 p 0 10n
+CC2 m oc 33n
+XC p oc vp vn oc LMX58B_LM2904B
+.control
+tran 1u 60m 0 1u
+wrdata tran.txt v(in) v(oa) v(oac) v(sq) v(ob) v(oc)
+echo "RESULT done 1"
+.endc
+.end

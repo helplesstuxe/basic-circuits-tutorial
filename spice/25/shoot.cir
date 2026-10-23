@@ -1,0 +1,21 @@
+* 25 H 桥：page3「扫描二之前：扫描一 死区时间从 0 到 400 ns」图25-p3-1 与死区表（59.7/45.2/30.4/15.3/0 A，91.5/51.9/23.3/5.95 µJ）。
+* 这是页面自己的示意模型（不是器件模型）：每只管子在 200 ns 内导通程度线性 1→0 或 0→1，导通时电阻 = 25 mΩ / 导通程度；
+*   上管 t=0 开始关断，下管 t=TDEAD 开始导通；回路 12 V、走线 20 nH、0.01 Ω。
+*   两管串联的电导 = gH·gL / (R_ON·(gH+gL))，任一只断开时为 0。另并 10 MΩ 防止节点悬空。
+*@def TDEAD=0
+VM vm 0 12
+LS vm x 20n
+RS x y 0.01
+VSN y z 0
+BSW z 0 I=v(z)*max(1-time/200n,0)*min(max((time-@TDEAD@)/200n,0),1)/(0.025*(max(1-time/200n,0)+min(max((time-@TDEAD@)/200n,0),1)+1e-12))
+RL z 0 10Meg
+.control
+tran 0.05n 800n 0 0.05n uic
+let i = i(VSN)
+let p = 12*i
+meas tran ipk MAX i
+meas tran e INTEG p FROM=0 TO=800n
+echo "RESULT IPK $&ipk"
+echo "RESULT E $&e"
+.endc
+.end

@@ -1,0 +1,57 @@
+* 06 page3 §3 / 图06-p3-2：信号发生器 50 Hz、峰值 5 V、内阻 50 Ω，桥 + 100 µF + 1 kΩ；示波器地夹接错（输出负端 n 与发生器地 b 被地线连通）
+* 页面：正确接法平均 2.93 V、纹波 0.20 V；接错：端口负半周被钳在 −0.70 V，短路电流约 86 mA，平均 3.17 V，纹波 0.50 V
+* 页面器材写"4 只 1N4148 或 1N4001"：两种都跑（1N4001 用 1N4007 模型替代）。低压实验，无市电
+* 正确接法：n 与 b 之间 1 GΩ（只为给 SPICE 一条直流通路）；接错：n 与 b 之间 1 mΩ
+.include ../models/1N4148_nexperia.lib
+.include ../models/1N4007_diodes.lib
+.options method=gear reltol=1e-4
+VS s 0 SIN(0 5 50)
+RG s a 50
+* b 即发生器地 = 0
+XD1 a p 1N4148
+XD2 0 p 1N4148
+XD3 n a 1N4148
+XD4 n 0 1N4148
+C1 p n 100u
+RL p n 1k
+RW n 0 1G
+* 同一电路 1N4001（1N4007 模型）
+RG2 s a2 50
+D1 a2 p2 DI_1N4007
+D2 0 p2 DI_1N4007
+D3 n2 a2 DI_1N4007
+D4 n2 0 DI_1N4007
+C2 p2 n2 100u
+RL2 p2 n2 1k
+RW2 n2 0 1G
+.control
+tran 20u 1 0 20u
+let vo = v(p)-v(n)
+let vo2 = v(p2)-v(n2)
+meas tran okav avg vo from=0.96 to=1
+meas tran okpp pp vo from=0.96 to=1
+meas tran okav2 avg vo2 from=0.96 to=1
+meas tran okpp2 pp vo2 from=0.96 to=1
+echo "RES okav $&okav"
+echo "RES okpp $&okpp"
+echo "RES okav2 $&okav2"
+echo "RES okpp2 $&okpp2"
+alter RW resistance=1m
+alter RW2 resistance=1m
+tran 20u 1 0 20u
+let vo = v(p)-v(n)
+let vo2 = v(p2)-v(n2)
+meas tran bdav avg vo from=0.96 to=1
+meas tran bdpp pp vo from=0.96 to=1
+meas tran bdcl min v(a) from=0.96 to=1
+meas tran bdav2 avg vo2 from=0.96 to=1
+meas tran bdpp2 pp vo2 from=0.96 to=1
+meas tran bdcl2 min v(a2) from=0.96 to=1
+echo "RES bdav $&bdav"
+echo "RES bdpp $&bdpp"
+echo "RES bdcl $&bdcl"
+echo "RES bdav2 $&bdav2"
+echo "RES bdpp2 $&bdpp2"
+echo "RES bdcl2 $&bdcl2"
+.endc
+.end

@@ -1,0 +1,119 @@
+* 04 差分放大 图04-p1-2 / 图04-p2-1 四电阻差分放大的直流值（LM358B，±15 V；页面除例1外没写电源，按前面节点取 ±15 V）
+* 用一个运放实例 + alter 逐个换输入和电阻；TI 模型直接 op 不收敛，用瞬态：VR 0.1 ms 内 0→1 V，E1/E2 按倍数给出 V1、V2，2 ms 时读稳态
+* p1a: page1 §二 代数 2.01/2.00 V → 0.1 V
+* p1b: page1 §二 两输入同加 1 V → 0.1 V；page2 例1①
+* p2d: page2 §一 V2=2.2、V1=2.1 → V+=2.0 V，Vo=1.0 V
+* e1b: page2 例1② 5.01/5.00 → 0.1 V，同相端 4.55 V
+* e2: page2 例2 20k/60k，1.5/1.2 → Vp 1.125、Vo 0.9 V
+* x1: page3 练习1 5k/50k，0.82/0.80 → 0.2 V
+* bal: page1 平衡线：四只 10k（倍数 1），收到 1.3 与 −0.7 → 2
+* x4: page3 练习4 共模 12 V、差 0.2 V，10k/100k → 2 V（±15 V 下），同相端约 10.9 V
+* z0: 零输入：输出偏移（失调）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VR r 0 PWL(0 0 100u 1)
+E1 n1 0 r 0 2.0
+E2 n2 0 r 0 2.01
+R1 n1 m 10000
+R2 m o 100000
+R3 n2 p 10000
+R4 p 0 100000
+X1 p m vcc vee o LMX58B_LM2904B
+.control
+tran 10u 2m
+meas tran o_p1a find v(o) at=1.9m
+meas tran p_p1a find v(p) at=1.9m
+echo "RES o_p1a $&o_p1a"
+echo "RES p_p1a $&p_p1a"
+alter E1 gain=3.0
+alter E2 gain=3.01
+alter R1 resistance=10000
+alter R2 resistance=100000
+alter R3 resistance=10000
+alter R4 resistance=100000
+tran 10u 2m
+meas tran o_p1b find v(o) at=1.9m
+meas tran p_p1b find v(p) at=1.9m
+echo "RES o_p1b $&o_p1b"
+echo "RES p_p1b $&p_p1b"
+alter E1 gain=2.1
+alter E2 gain=2.2
+alter R1 resistance=10000
+alter R2 resistance=100000
+alter R3 resistance=10000
+alter R4 resistance=100000
+tran 10u 2m
+meas tran o_p2d find v(o) at=1.9m
+meas tran p_p2d find v(p) at=1.9m
+echo "RES o_p2d $&o_p2d"
+echo "RES p_p2d $&p_p2d"
+alter E1 gain=5.0
+alter E2 gain=5.01
+alter R1 resistance=10000
+alter R2 resistance=100000
+alter R3 resistance=10000
+alter R4 resistance=100000
+tran 10u 2m
+meas tran o_e1b find v(o) at=1.9m
+meas tran p_e1b find v(p) at=1.9m
+echo "RES o_e1b $&o_e1b"
+echo "RES p_e1b $&p_e1b"
+alter E1 gain=1.2
+alter E2 gain=1.5
+alter R1 resistance=20000
+alter R2 resistance=60000
+alter R3 resistance=20000
+alter R4 resistance=60000
+tran 10u 2m
+meas tran o_e2 find v(o) at=1.9m
+meas tran p_e2 find v(p) at=1.9m
+echo "RES o_e2 $&o_e2"
+echo "RES p_e2 $&p_e2"
+alter E1 gain=0.8
+alter E2 gain=0.82
+alter R1 resistance=5000
+alter R2 resistance=50000
+alter R3 resistance=5000
+alter R4 resistance=50000
+tran 10u 2m
+meas tran o_x1 find v(o) at=1.9m
+meas tran p_x1 find v(p) at=1.9m
+echo "RES o_x1 $&o_x1"
+echo "RES p_x1 $&p_x1"
+alter E1 gain=-0.7
+alter E2 gain=1.3
+alter R1 resistance=10000
+alter R2 resistance=10000
+alter R3 resistance=10000
+alter R4 resistance=10000
+tran 10u 2m
+meas tran o_bal find v(o) at=1.9m
+meas tran p_bal find v(p) at=1.9m
+echo "RES o_bal $&o_bal"
+echo "RES p_bal $&p_bal"
+alter E1 gain=12.0
+alter E2 gain=12.2
+alter R1 resistance=10000
+alter R2 resistance=100000
+alter R3 resistance=10000
+alter R4 resistance=100000
+tran 10u 2m
+meas tran o_x4 find v(o) at=1.9m
+meas tran p_x4 find v(p) at=1.9m
+echo "RES o_x4 $&o_x4"
+echo "RES p_x4 $&p_x4"
+alter E1 gain=0
+alter E2 gain=0
+alter R1 resistance=10000
+alter R2 resistance=100000
+alter R3 resistance=10000
+alter R4 resistance=100000
+tran 10u 2m
+meas tran o_z0 find v(o) at=1.9m
+meas tran p_z0 find v(p) at=1.9m
+echo "RES o_z0 $&o_z0"
+echo "RES p_z0 $&p_z0"
+.endc
+.end

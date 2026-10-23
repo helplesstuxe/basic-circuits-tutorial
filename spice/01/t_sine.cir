@@ -1,0 +1,31 @@
+* 01 page1 §三 图01-p1-3（电阻比 2，0.5 V 峰值→−1.0 V）、page1 §五 第1步（10k/100k，0.5 V 峰值 1 kHz → 峰值 5 V，
+*    输入在 0.25 ms 到最高点时输出在最低点 −5 V）、第2步 Rf=47k → 峰值 2.35 V；page2 图01-p2-2 左图（5.00 / −5.00 V）
+* LM358B，±15 V，输出无外接负载（示波器 1 MΩ 忽略）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VA a 0 SIN(0 0.5 1k)
+R1a a ma 10k
+RFa ma oa 100k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+R1b a mb 10k
+RFb mb ob 20k
+XB 0 mb vcc vee ob LMX58B_LM2904B
+R1c a mc 10k
+RFc mc oc 47k
+XC 0 mc vcc vee oc LMX58B_LM2904B
+.control
+tran 2u 4m
+meas tran amax max v(oa) from=2m to=4m
+meas tran amin min v(oa) from=2m to=4m
+meas tran aat find v(oa) at=2.25m
+meas tran bat find v(ob) at=2.25m
+meas tran cmax max v(oc) from=2m to=4m
+echo "RES amax $&amax"
+echo "RES amin $&amin"
+echo "RES aat $&aat"
+echo "RES bat $&bat"
+echo "RES cmax $&cmax"
+.endc
+.end

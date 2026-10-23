@@ -1,0 +1,25 @@
+* 05 page3 练习4 / 故障排查表第1行：反馈线错接在二极管前面（运放脚），基本型退化为"跟随器 + 普通二极管"
+* 页面：0.2 V 直流 → 输出 0，运放脚 = 0.2 V；2 V → 输出约 2 − 0.7 = 1.3 V
+* LM741 ±15 V，1N4148，RL 10k；输入慢爬，读 9 ms
+.include ../models/LM741_TI.lib
+.include ../models/1N4148_nexperia.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VR r 0 PWL(0 0 5m 1)
+EI i 0 r 0 0.2
+X1 i oa vcc vee oa LM741
+XD1 oa o 1N4148
+RL o 0 10k
+.control
+tran 10u 10m
+meas tran o1 find v(o) at=9m
+meas tran a1 find v(oa) at=9m
+echo "RES o1 $&o1"
+echo "RES a1 $&a1"
+alter EI gain=2
+tran 10u 10m
+meas tran o2 find v(o) at=9m
+echo "RES o2 $&o2"
+.endc
+.end

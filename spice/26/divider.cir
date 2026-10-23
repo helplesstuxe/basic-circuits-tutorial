@@ -1,0 +1,14 @@
+* 节点 26 page3 练习 4：用 10k/20k 分压把 5 V 信号降到 3.3 V 侧（下端接 3.3 V 芯片输入，约 10 pF）
+* 页面：高电平 3.33 V；时间常数 (10k∥20k)×10 pF = 67 ns
+VIN in 0 PULSE(0 5 1u 1n 1n 10u 20u)
+R1 in out 10k
+R2 out 0 20k
+CIN out 0 10p
+.control
+tran 1n 6u
+meas tran vhi FIND v(out) AT=5u
+meas tran t63 WHEN v(out)=2.1067 RISE=1
+echo "RESULT vhi $&vhi"
+echo "RESULT tau $&t63"
+.endc
+.end

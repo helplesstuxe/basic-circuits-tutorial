@@ -1,0 +1,27 @@
+* 03 page2 例3 / 图03-p2-3：2.5 V 基准缓冲。5 V 经两只 10 kΩ 分压，分压点并 100 nF 到地，接 LM358B 跟随器（5 V 单电源）
+* 页面只给定性结论："负载突然抽电流时，由运放的输出级及时补上，基准电压几乎不跳"
+* 本文件是较温和的假设脉冲：0.1 mA、上下沿 100 ns、宽 1 µs（页面没给数值）；1 mA/10 ns 的情况见 t_ref.cir
+* 收敛说明同 t_ex1ss.cir：电路地 g（运放 V− 脚）放在 −2.5 V，V+ 在 +2.5 V，电位差与单 5 V 相同；分压器上端 1 ms 内 0→5 V，等 15 ms 稳定
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 2.5
+VG g 0 -2.5
+VD t g PWL(0 0 1m 5)
+RA t d 10k
+RB d g 10k
+CF d g 100n
+X1 d o vcc g o LMX58B_LM2904B
+IADC o g PULSE(0 0.1m 15m 100n 100n 1u 1)
+.control
+tran 5n 15.05m 14.9m
+let vo = v(o)-v(g)
+meas tran a0 find vo at=14.95m
+meas tran amin min vo from=15m to=15.05m
+meas tran amax max vo from=15m to=15.05m
+meas tran a1 find vo at=15.04m
+echo "RES a0 $&a0"
+echo "RES amin $&amin"
+echo "RES amax $&amax"
+echo "RES a1 $&a1"
+.endc
+.end

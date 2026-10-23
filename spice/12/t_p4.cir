@@ -1,0 +1,62 @@
+* 12 积分电路 · 参数与调试篇 练习 4：库仑计，R 200 kΩ、C 1 μF（RC 0.2 s）。① 传感器 0.1 V（1 A）持续 10 s → 输出变化（页面 5 V，带负号）；
+* ② 输入接地、运放加 1 mV 等效失调（串在同相端，+1 mV 与 −1 mV 两种极性）连续 1 小时：漂移速度（页面 5 mV/s）与 1 h 后的输出。LM358B（TI 官方模型）自带的失调和偏置电流同样计入。±15 V
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e12
+VP vcc 0 15
+VN vee 0 -15
+VR rst 0 PWL(0 1 49u 1 50u 0)
+.model swr sw vt=0.5 vh=0.1 ron=1 roff=1e15
+* 理想积分器：R 输入，C 反馈；电容旁的开关只在 t < 50 μs 时闭合，给电容清零（代替“初始输出 0 V”），之后断开（1e15 Ω）
+.subckt integ in o vcc vee rst r=10k c=100n
+R1 in m {r}
+C1 m o {c}
+S1 m o rst 0 swr
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+* 实用积分器：C 旁并 R_f，有直流工作点，不需要清零
+.subckt pinteg in o vcc vee r=10k c=100n rf=1meg
+R1 in m {r}
+C1 m o {c}
+R2 m o {rf}
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+VA a 0 PWL(0 0 50u 0 50.1u 0.1 10.0501 0.1 10.0502 0)
+XI a o vcc vee rst integ r=200k c=1u
+R1q 0 mq 200k
+C1q mq oq 1u
+S1q mq oq rst 0 swr
+VOS np 0 1m
+XAq np mq vcc vee oq LMX58B_LM2904B
+* 同样 1 mV，但极性与 LM358B 自身漂移同向（同相端 −1 mV）：最坏情况
+R1w 0 mw 200k
+C1w mw ow 1u
+S1w mw ow rst 0 swr
+VOSW nw 0 -1m
+XAw nw mw vcc vee ow LMX58B_LM2904B
+* 对照：同样的电路但不加 1 mV（只剩模型自带的失调和偏置电流），两者相减得到 1 mV 单独造成的漂移
+R1z 0 mz 200k
+C1z mz oz 1u
+S1z mz oz rst 0 swr
+XAz 0 mz vcc vee oz LMX58B_LM2904B
+.control
+tran 0.5 3600 0 0.5
+meas tran v10 find v(o) at=10.0501
+meas tran q1 find v(oq) at=100
+meas tran q2 find v(oq) at=600
+let qr = (q2 - q1) / 500
+meas tran z1 find v(oz) at=100
+meas tran z2 find v(oz) at=600
+let zr = (z2 - z1) / 500
+meas tran zend find v(oz) at=3600
+echo "RES zr $&zr"
+echo "RES zend $&zend"
+meas tran qend find v(oq) at=3600
+echo "RES v10 $&v10"
+echo "RES qr $&qr"
+echo "RES qend $&qend"
+meas tran wend find v(ow) at=3600
+meas tran wsat when v(ow)=-13.5 fall=1
+echo "RES wend $&wend"
+echo "RES wsat $&wsat"
+.endc
+.end

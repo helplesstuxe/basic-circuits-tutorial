@@ -1,0 +1,44 @@
+* 节点 26 page2 仿真二 / 图 26-p2-3 / 推导四：BSS138 双向电平转换（AN10441 接法）
+* 栅极接 3.3 V；源极接 3.3 V 侧线 L，漏极接 5 V 侧线 H；两侧各 10 kΩ 上拉、50 pF 线电容；
+* 两侧开漏驱动导通电阻 100 Ω；3.3 V 侧 5～15 µs 拉低，5 V 侧 22～32 µs 拉低。
+* SWAP=1 时把源漏接反（源极到 5 V 侧）。模型：Diodes Inc. BSS138（页面用的是 onsemi BSS138，见报告）
+.include ../models/BSS138_diodes.lib
+.param SWAP=0
+*@def SWAP=0
+VLO vlo 0 3.3
+VHI vhi 0 5
+RPL vlo l 10k
+RPH vhi h 10k
+CL l 0 50p
+CH h 0 50p
+.if (SWAP == 0)
+XM h vlo l BSS138/ZTX
+.else
+XM l vlo h BSS138/ZTX
+.endif
+SL l 0 cl 0 SWD
+SH h 0 ch 0 SWD
+VCL cl 0 PWL(0 0 5u 0 5.001u 1 15u 1 15.001u 0)
+VCH ch 0 PWL(0 0 22u 0 22.001u 1 32u 1 32.001u 0)
+.model SWD SW(VT=0.5 VH=0.1 RON=100 ROFF=1e12)
+.control
+tran 1n 40u 0 1n
+meas tran l10 FIND v(l) AT=10u
+meas tran h10 FIND v(h) AT=10u
+meas tran l27 FIND v(l) AT=27u
+meas tran h27 FIND v(h) AT=27u
+meas tran l3 FIND v(l) AT=3u
+meas tran h3 FIND v(h) AT=3u
+meas tran l38 FIND v(l) AT=39u
+meas tran h38 FIND v(h) AT=39u
+echo "RESULT l10 $&l10"
+echo "RESULT h10 $&h10"
+echo "RESULT l27 $&l27"
+echo "RESULT h27 $&h27"
+echo "RESULT l3 $&l3"
+echo "RESULT h3 $&h3"
+echo "RESULT l38 $&l38"
+echo "RESULT h38 $&h38"
+wrdata ls.txt v(l) v(h)
+.endc
+.end

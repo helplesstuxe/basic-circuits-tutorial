@@ -1,0 +1,16 @@
+* SOURCE: https://ltwiki.org/files/LTspiceIV/lib/sub/PC817.sub  （2026-10-23 审校 B 实际下载；LTspice 自带库，非 Sharp/Everlight 官方模型——两家官网均未提供 SPICE 下载）
+* 原文件版权行：Copyright (c) Linear Technology Corp. 1998, 1999, 2000.  All rights reserved.
+* 引脚：1 = LED 阳极，2 = LED 阴极，3 = 集电极，4 = 发射极。
+* 为 ngspice 做的改动（模型参数一个没改）：
+*   ① LTspice 由符号传入 {Igain}；ngspice 需要 "params:" 默认值。这里写 Igain=1 只是占位，
+*      run.py 每次都按页面的 CTR（I_F=5 mA、V_CE=5 V 下标定）显式传入，不使用这个默认值。
+*   ② LTspice 衬底写法 "[4]" 改为 ngspice 的第四个节点 "4"。
+.subckt PC817 1 2 3 4 params: Igain=1
+R1 N003 2 2
+D1 1 N003 LD
+G1 3 N004 N003 2 {Igain}
+C1 1 2 18p
+Q1 3 N004 4 4 NP
+.model LD D(Is=1e-20 Cjo=18p)
+.model NP NPN(Bf=1200 Vaf=140 Ikf=100m Rc=1 Cjc=19p Cje=7p Cjs=7p C2=3e-15)
+.ends PC817

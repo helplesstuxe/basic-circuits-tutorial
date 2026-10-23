@@ -1,0 +1,54 @@
+* SOURCE: https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt  (opened 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* Diodes Incorporated 1N47xxA zener models (vendor file as archived in LTspice 'Vendor List'; 1N4733A is obsolete at Diodes and no longer on diodes.com).
+* Pins: 1 = anode, 2 = cathode. Subckt bodies copied unmodified.
+*SRC=1N4728A;DI_1N4728A;Diodes;Zener <=10V; 3.30V  1.00W   Diodes Inc.
+* Zener
+*SYM=HZEN
+.SUBCKT DI_1N4728A  1 2
+*        Terminals    A   K
+D1 1 2 DF
+DZ 3 1 DR
+VZ 2 3 0.972
+.MODEL DF D ( IS=125p RS=0.620 N=1.10
++ CJO=364p VJ=0.750 M=0.330 TT=50.1n )
+.MODEL DR D ( IS=25.0f RS=1.24 N=3.00 )
+.ENDS
+
+*SRC=1N4733A;DI_1N4733A;Diodes;Zener <=10V; 5.10V  1.00W   Diodes Inc.
+* Zener
+*SYM=HZEN
+.SUBCKT DI_1N4733A  1 2
+*        Terminals    A   K
+D1 1 2 DF
+DZ 3 1 DR
+VZ 2 3 3.69
+.MODEL DF D ( IS=80.8p RS=0.620 N=1.10
++ CJO=189p VJ=0.750 M=0.330 TT=50.1n )
+.MODEL DR D ( IS=16.2f RS=0.296 N=1.87 )
+.ENDS
+
+*SRC=1N4742A;DI_1N4742A;Diodes;Zener 10V-50V; 12.0V  1.00W   Diodes Inc.
+* Zener
+*SYM=HZEN
+.SUBCKT DI_1N4742A  1 2
+*        Terminals    A   K
+D1 1 2 DF
+DZ 3 1 DR
+VZ 2 3 10.9
+.MODEL DF D ( IS=34.3p RS=0.620 N=1.10
++ CJO=94.2p VJ=1.00 M=0.330 TT=50.1n )
+.MODEL DR D ( IS=6.87f RS=0.550 N=1.49 )
+.ENDS
+
+*SRC=1N4761A;DI_1N4761A;Diodes;Zener >50V; 75.0V  1.00W   Diodes Inc. Zener
+*SYM=HZEN
+.SUBCKT DI_1N4761A  1 2
+*        Terminals    A   K
+D1 1 2 DF
+DZ 3 1 DR
+VZ 2 3 72.7
+.MODEL DF D ( IS=5.49p RS=0.620 N=1.10
++ CJO=27.7p VJ=1.00 M=0.330 TT=50.1n )
+.MODEL DR D ( IS=1.10f RS=30.4 N=3.00 )
+.ENDS
+

@@ -1,0 +1,54 @@
+* 09 开关电源 · page2 §六 程序最后一行：用理想占空比 0.417 时的输出（页面 4.71 V）
+* 上管：页面只给 R_DS(on) 示意值 -> 压控开关 RON（假设），过渡 20 ns（page3 §四）；不含驱动/控制芯片损耗
+* 续流：Vishay 1N5822
+.param D=0.41667 T=5u tr=20n
+VIN in 0 12
+CIN in 0 10u
+S1 in sw g 0 SWM
+VG g 0 PULSE(0 1 {tr} {tr} {tr} {D*T-tr} {T})
+.model SWM SW(VT=0.5 VH=0.01 RON=0.05 ROFF=1e7)
+.include ../models/1N5822_vishay.lib
+VDI 0 da 0
+XD da sw d1n5822
+L1 sw lx 4.7e-05 IC=1.0
+RDCR lx o 0.05
+CO o 0 4.7e-05 IC=5.0
+RL o 0 5
+.control
+tran 2n 4.000000m 0 4n uic
+meas tran vo avg v(o) from=3.995000m to=4.000000m
+meas tran vpp pp v(o) from=3.995000m to=4.000000m
+meas tran ilmin min i(L1) from=3.995000m to=4.000000m
+meas tran ilmax max i(L1) from=3.995000m to=4.000000m
+meas tran vswlo find v(sw) at=3.999750m
+meas tran vswhi find v(sw) at=3.995833m
+meas tran ia1 find i(L1) at=3.995521m
+meas tran ia2 find i(L1) at=3.996563m
+meas tran ib1 find i(L1) at=3.997813m
+meas tran ib2 find i(L1) at=3.999271m
+let sup = (ia2-ia1)/(1.041675e-06)/1000
+let sdn = (ib1-ib2)/(1.4583250000000001e-06)/1000
+let pdv = (v(da)-v(sw))*i(VDI)
+meas tran pd avg pdv from=3.995000m to=4.000000m
+meas tran idav avg i(VDI) from=3.995000m to=4.000000m
+let pinv = -v(in)*i(VIN)
+meas tran pin avg pinv from=3.995000m to=4.000000m
+let plv = v(o)*v(o)/5
+meas tran pout avg plv from=3.995000m to=4.000000m
+let psv = (v(in)-v(sw))*(-i(VIN))
+meas tran pq avg psv from=3.995000m to=4.000000m
+echo "RES vo $&vo"
+echo "RES vpp $&vpp"
+echo "RES ilmin $&ilmin"
+echo "RES ilmax $&ilmax"
+echo "RES vswlo $&vswlo"
+echo "RES vswhi $&vswhi"
+echo "RES sup $&sup"
+echo "RES sdn $&sdn"
+echo "RES pd $&pd"
+echo "RES idav $&idav"
+echo "RES pin $&pin"
+echo "RES pout $&pout"
+echo "RES pq $&pq"
+.endc
+.end

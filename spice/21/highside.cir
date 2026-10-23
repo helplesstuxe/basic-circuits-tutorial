@@ -1,0 +1,19 @@
+* 21 MOS 管开关：P 沟道高边开关的栅极电压（page1 图21-p1-2 工作过程；page3 练习 5 及其两种改法中的「改法一」）
+* 电路：Q1 源极接 VS（12 V 或 24 V），Q1 栅极经上拉 10 kΩ 接 VS（page3 练习 5 给出 10 kΩ）；Q2（N 沟道小管）漏极经 RSER 接 Q1 栅极、源极接地，
+* 栅极由单片机 VIN（0/5 V）直接驱动。Q1 栅极只有电容、直流不取电流，所以直流 V_GS 只由上拉/RSER/Q2 决定，这里不放 Q1 模型（页面未给 Q1 型号）。
+* Q2 型号页面未给，假设 2N7000（onsemi 官方模型 spice/models/2N7000_onsemi.lib）。
+.include ../models/2N7000_onsemi.lib
+*@def VS=12
+*@def VIN=5
+*@def RSER=0.001
+VS vs 0 @VS@
+VIN in 0 @VIN@
+RPU vs g1 10k
+RSER g1 dq2 @RSER@
+X2 dq2 in 0 2n7000
+.control
+op
+let vgs1=v(g1)-v(vs)
+echo "RESULT VGS1 $&vgs1"
+.endc
+.end

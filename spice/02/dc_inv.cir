@@ -1,0 +1,26 @@
+* 02 对照：反相放大 + 信号源内阻（LM358B，±15 V）
+* F page1 §四 第3步 对照 01 反相（R1=10k、Rf=100k）串 100 kΩ：0.5 V → 增益变成 10/110（−0.4545 V）
+* I page2 图02-p2-3 / 图02-p2-2 左端：同一对电阻（10k/20k）、内阻≈0 时反相倍数 2（0.5 V → −1 V）
+* N page3 练习2 反相：内阻 50k、空载 1 V，R1=10k、Rf=20k → 约 −0.33 V（只剩 17%）
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VS in 0 0.5
+RS in s 100k
+R1 s m 10k
+RF m o 100k
+X1 0 m vcc vee o LMX58B_LM2904B
+.control
+op
+echo "RES vof $&v(o)"
+alter VS dc=1
+alter RS resistance=50k
+alter RF resistance=20k
+op
+echo "RES von $&v(o)"
+alter RS resistance=1m
+alter VS dc=0.5
+op
+echo "RES voi $&v(o)"
+.endc
+.end

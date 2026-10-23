@@ -1,0 +1,58 @@
+* 19 星三角：三相电压/电流关系的低压等比例核对（不接市电）
+* 核对：page1 图19-p1-1（星形每段 ≈ 线电压/√3，三角形每段 = 线电压）；page2 §一 图19-p2-1（相差 1/3 周期 6.67 ms、两相之差峰值 = √3 倍）；
+*       page2 §二 推导 I_LY/I_LΔ = 1/3、例题 1 的绕组电流比 0.577
+* 为不涉及市电，相电压取 12 V 有效值（=220 V 的 12/220 等比例缩小），比值与电压大小无关。
+* 绕组阻抗 Z = 3 Ω + j4 Ω（L = 12.73 mH，示意值，比值与 Z 无关）
+*@def VPH=12
+VA a 0 SIN(0 {@VPH@*sqrt(2)} 50 0 0 0)
+VB b 0 SIN(0 {@VPH@*sqrt(2)} 50 0 0 -120)
+VC c 0 SIN(0 {@VPH@*sqrt(2)} 50 0 0 120)
+* 星形：三段接到星点 n（星点不接零线）
+VYA a ya 0
+RYA ya yra 3
+LYA yra n 12.732m
+VYB b yb 0
+RYB yb yrb 3
+LYB yrb n 12.732m
+VYC c yc 0
+RYC yc yrc 3
+LYC yrc n 12.732m
+RNB n 0 1G
+* 三角形：三段分别接在 a-b、b-c、c-a
+VDA a da 0
+VDB b db 0
+VDC c dc 0
+VZ1 da z1 0
+RZ1 z1 z1r 3
+LZ1 z1r db 12.732m
+RZ2 db z2r 3
+LZ2 z2r dc 12.732m
+RZ3 dc z3r 3
+LZ3 z3r da 12.732m
+.control
+tran 20u 0.3 0 20u
+let vab=v(a)-v(b)
+let van=v(a)-v(n)
+let vdd=v(da)-v(db)
+meas tran ILY rms i(VYA) from=0.2 to=0.3
+meas tran ILD rms i(VDA) from=0.2 to=0.3
+meas tran IPD rms i(VZ1) from=0.2 to=0.3
+meas tran VLL rms vab from=0.2 to=0.3
+meas tran VPY rms van from=0.2 to=0.3
+meas tran VPD rms vdd from=0.2 to=0.3
+meas tran VPA max v(a) from=0.2 to=0.3
+meas tran VPAB max vab from=0.2 to=0.3
+meas tran TA when v(a)=0 rise=11
+meas tran TB when v(b)=0 rise=11
+echo "RESULT ILY $&ILY"
+echo "RESULT ILD $&ILD"
+echo "RESULT IPD $&IPD"
+echo "RESULT VLL $&VLL"
+echo "RESULT VPY $&VPY"
+echo "RESULT VPD $&VPD"
+echo "RESULT VPA $&VPA"
+echo "RESULT VPAB $&VPAB"
+echo "RESULT TA $&TA"
+echo "RESULT TB $&TB"
+.endc
+.end

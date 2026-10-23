@@ -1,0 +1,21 @@
+* 01 page3 练习3：10k/100k，±15 V，输入 2 V 峰值 1 kHz；(1) 输出削在 −14.9～13.5 V；(2) 输入 +2 V 瞬间反相端约 0.46 V
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VA a 0 SIN(0 2 1k)
+R1a a ma 10k
+RFa ma oa 100k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+.control
+tran 2u 4m
+meas tran omax max v(oa) from=2m to=4m
+meas tran omin min v(oa) from=2m to=4m
+meas tran vmpk find v(ma) at=2.25m
+meas tran vopk find v(oa) at=2.25m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+echo "RES vmpk $&vmpk"
+echo "RES vopk $&vopk"
+.endc
+.end

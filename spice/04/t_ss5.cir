@@ -1,0 +1,29 @@
+* 04 page2 例1 第4步："若用 5 V 单电源的 LM358B，共模上限约 3.5 V，就超了"——例1② V2=5.01 V、V1=5.00 V，10k/100k
+* 5 V 单电源（V− 接地）。负载只有反馈网络（≥10k），不触发 g 节点那个模型假解。输入从 0 慢慢升到终值（瞬态），读 9 ms 时稳态
+* 对照：例1① 3.01/3.00 V（同相端 2.74 V，在共模范围内）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VP vcc 0 5
+VR r 0 PWL(0 0 5m 1)
+E1 n1 0 r 0 5.00
+E2 n2 0 r 0 5.01
+R1 n1 m 10k
+R2 m o 100k
+R3 n2 p 10k
+R4 p 0 100k
+X1 p m vcc 0 o LMX58B_LM2904B
+.control
+tran 10u 10m
+meas tran o5 find v(o) at=9m
+meas tran p5 find v(p) at=9m
+meas tran m5 find v(m) at=9m
+echo "RES o5 $&o5"
+echo "RES p5 $&p5"
+echo "RES m5 $&m5"
+alter E1 gain=3.00
+alter E2 gain=3.01
+tran 10u 10m
+meas tran o3 find v(o) at=9m
+echo "RES o3 $&o3"
+.endc
+.end

@@ -1,0 +1,33 @@
+* 12 积分电路 · 参数与调试篇 练习 2：R 10 kΩ、C 1 μF，输入端等效 5 mV 直流偏置（在输入加 5 mV 源；LM358B 模型自带的 264 μV 失调和 10 nA 偏置电流也在里面）
+* 理想积分器：多久漂到 −13.5 V（页面 27 s）；并 R_f 1 MΩ：最终偏移（页面 −0.5 V）。LM358B（TI 官方模型），±15 V
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e12
+VP vcc 0 15
+VN vee 0 -15
+VR rst 0 PWL(0 1 49u 1 50u 0)
+.model swr sw vt=0.5 vh=0.1 ron=1 roff=1e15
+* 理想积分器：R 输入，C 反馈；电容旁的开关只在 t < 50 μs 时闭合，给电容清零（代替“初始输出 0 V”），之后断开（1e15 Ω）
+.subckt integ in o vcc vee rst r=10k c=100n
+R1 in m {r}
+C1 m o {c}
+S1 m o rst 0 swr
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+* 实用积分器：C 旁并 R_f，有直流工作点，不需要清零
+.subckt pinteg in o vcc vee r=10k c=100n rf=1meg
+R1 in m {r}
+C1 m o {c}
+R2 m o {rf}
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+VA a 0 5m
+XI a oi vcc vee rst integ r=10k c=1u
+XP a op vcc vee pinteg r=10k c=1u rf=1meg
+.control
+tran 5m 40 0 5m
+meas tran t135 when v(oi)=-13.5 fall=1
+meas tran pfin avg v(op) from=35 to=40
+echo "RES t135 $&t135"
+echo "RES pfin $&pfin"
+.endc
+.end

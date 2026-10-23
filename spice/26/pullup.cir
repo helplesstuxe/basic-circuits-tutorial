@@ -1,0 +1,22 @@
+* 节点 26 page1 图 26-p1-1 / page2 推导一：10 kΩ 上拉 + 引脚漏电流、50 Hz 耦合、按下电流
+* 页面：5 V − 1 µA×10 kΩ = 4.99 V；50 kΩ 时压降 0.05 V；按下电流 10k→0.5 mA、1k→5 mA；
+*       人手 20 V/50 Hz 经 0.5 pF 耦合，10 kΩ 上拉时只剩约 31 µV（示意模型，参数取自页面）
+.param RP=10k ILK=1u
+VCC vcc 0 5
+RP vcc pin {RP}
+ILK pin 0 {ILK}
+CIN pin 0 10p
+* 50 Hz 干扰：20 V 幅度经 0.5 pF 耦合到引脚
+VF f 0 SIN(0 20 50)
+CC f pin 0.5p
+.control
+op
+echo "RESULT vpin $&v(pin)"
+echo "RESULT ipress 0"
+tran 10u 60m
+meas tran vmax MAX v(pin) FROM=20m TO=60m
+meas tran vmin MIN v(pin) FROM=20m TO=60m
+echo "RESULT vmax $&vmax"
+echo "RESULT vmin $&vmin"
+.endc
+.end

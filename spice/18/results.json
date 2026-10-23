@@ -1,0 +1,362 @@
+[
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "不互锁 t=1.5 s KM1/KM2 页面「吸/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "不互锁 t=2.5 s KM1/KM2 页面「吸/吸」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/吸",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "不互锁 t=3.5 s KM1/KM2 页面「放/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "不互锁 t=4.4 s KM1/KM2 页面「放/吸」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/吸",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "不互锁 t=5.5 s KM1/KM2 页面「吸/吸」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/吸",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "接触器互锁 t=1.5 s KM1/KM2 页面「吸/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "接触器互锁 t=2.5 s KM1/KM2 页面「吸/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "接触器互锁 t=3.5 s KM1/KM2 页面「放/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "接触器互锁 t=4.4 s KM1/KM2 页面「放/吸」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/吸",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "接触器互锁 t=5.5 s KM1/KM2 页面「吸/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "双重互锁 t=1.5 s KM1/KM2 页面「吸/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "双重互锁 t=2.5 s KM1/KM2 页面「放/吸」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/吸",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "双重互锁 t=3.5 s KM1/KM2 页面「放/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "双重互锁 t=4.4 s KM1/KM2 页面「放/吸」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/吸",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出 图18-p2-2",
+  "desc": "双重互锁 t=5.5 s KM1/KM2 页面「放/放」",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：放/放",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出",
+  "desc": "不互锁：两只同时吸合总时长",
+  "page": 2975,
+  "spice": 2974.8726800000004,
+  "unit": "ms",
+  "dev": -0.004279663865532757,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出",
+  "desc": "接触器互锁：同时吸合总时长",
+  "page": 0,
+  "spice": 0.0,
+  "unit": "ms",
+  "dev": null,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 代码输出",
+  "desc": "双重互锁：同时吸合总时长",
+  "page": 0,
+  "spice": 0.0,
+  "unit": "ms",
+  "dev": null,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 图18-p2-3",
+  "desc": "竞赛：KM1 吸合时刻",
+  "page": 5.02,
+  "spice": 5.0200791,
+  "unit": "s",
+  "dev": 0.0015756972111686206,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 图18-p2-3",
+  "desc": "竞赛：KM2 线圈白白通电时长",
+  "page": 15,
+  "spice": 15.073790000000642,
+  "unit": "ms",
+  "dev": 0.491933333337613,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §双重互锁",
+  "desc": "2 s 按 SB3：KM1 释放时刻",
+  "page": 2.01,
+  "spice": 2.0100791,
+  "unit": "s",
+  "dev": 0.003935323383095555,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §双重互锁",
+  "desc": "KM2 吸合时刻",
+  "page": 2.03,
+  "spice": 2.0300791,
+  "unit": "s",
+  "dev": 0.0038965517241488015,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §双重互锁",
+  "desc": "换向空档",
+  "page": 20,
+  "spice": 20.000000000000018,
+  "unit": "ms",
+  "dev": 8.881784197001252e-14,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 例1",
+  "desc": "正转中按反转(接触器互锁)：KM1/KM2",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：吸/放",
+  "v": "✅"
+ },
+ {
+  "where": "p3 图18-p3-1",
+  "desc": "按钮互锁：KM2 吸合 12 ms、KM1 释放 19 ms 的空档",
+  "page": -7,
+  "spice": -7.000000000000117,
+  "unit": "ms",
+  "dev": -1.6748507342916648e-12,
+  "note": "两只同时闭合 7.0 ms",
+  "v": "✅"
+ },
+ {
+  "where": "p3 图18-p3-1",
+  "desc": "按钮互锁：KM2 吸合 17 ms、KM1 释放 19 ms 的空档",
+  "page": -2,
+  "spice": -1.9999999999997797,
+  "unit": "ms",
+  "dev": 1.1013412404281553e-11,
+  "note": "两只同时闭合 2.0 ms",
+  "v": "✅"
+ },
+ {
+  "where": "p3 图18-p3-1",
+  "desc": "按钮互锁：KM2 吸合 22 ms、KM1 释放 4 ms 的空档",
+  "page": 18,
+  "spice": 18.000000000000238,
+  "unit": "ms",
+  "dev": 1.3223989804424087e-12,
+  "note": "两只同时闭合 0.0 ms",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习1",
+  "desc": "按钮互锁：KM2 吸合 15 ms、KM1 释放 18 ms 的空档",
+  "page": -3,
+  "spice": -3.0000000000001137,
+  "unit": "ms",
+  "dev": -3.7895612573872005e-12,
+  "note": "两只同时闭合 3.0 ms",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习1",
+  "desc": "改成双重互锁后的空档(=KM2 吸合时间)",
+  "page": 15,
+  "spice": 15.000000000000124,
+  "unit": "ms",
+  "dev": 8.289665250534503e-13,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p3 图18-p3-2",
+  "desc": "按钮互锁：熔焊后按反转，KM2 是否吸合(页面：吸合，短路)",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：KM2 吸合，同时闭合 0.88 s",
+  "v": "✅"
+ },
+ {
+  "where": "p3 图18-p3-2",
+  "desc": "双重互锁：熔焊后按反转，KM2 是否吸合(页面：一直断开)",
+  "page": null,
+  "spice": 0.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：KM2 释放",
+  "v": "✅"
+ },
+ {
+  "where": "p3 图18-p3-2",
+  "desc": "松开停止后 KM1 线圈重新通电(自锁触点也粘住)",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：重新通电",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习4",
+  "desc": "KM1 未吸合时按 M2 启动：KM2 不吸",
+  "page": null,
+  "spice": 0.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：KM2 放",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习4",
+  "desc": "M1 启动后 M2 仍停（需再按 SB4）",
+  "page": null,
+  "spice": 0.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：KM2 放",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习4",
+  "desc": "M1 运行中按 SB4：KM2 吸合",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：KM2 吸",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习4",
+  "desc": "M1 停止：M2 跟着停",
+  "page": null,
+  "spice": 0.0,
+  "unit": "",
+  "dev": null,
+  "note": "SPICE：KM2 放",
+  "v": "✅"
+ }
+]

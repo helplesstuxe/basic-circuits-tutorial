@@ -1,0 +1,24 @@
+* 23 CTR 标定（page2 §三 第四步 / page3 参数表：PC817 手册 CTR 在 I_F=5 mA、V_CE=5 V 下给出）。
+* 用电流源给 LED 灌 IFT，集电极直接接 5 V（V_CE=5 V），读 I_C/I_F；也用于扫 I_F 画图23-p2-2 的曲线（MODE=1 时带 RL 上拉）。
+.include ../models/PC817_ltspice.lib
+*@def IGAIN=2e-4
+*@def IFT=5m
+*@def RL=4.7k
+IIF 0 a @IFT@
+XU1 a 0 c 0 PC817 Igain=@IGAIN@
+VCE vcc 0 5
+VIC vcc c 0
+RL2 vcc o @RL@
+XU2 b 0 o 0 PC817 Igain=@IGAIN@
+IIF2 0 b 0
+.control
+op
+let ctr=i(VIC)/@IFT@
+let vf=v(a)
+echo "RESULT CTR $&ctr"
+echo "RESULT VF $&vf"
+dc IIF2 0 6m 5u
+wrdata sw.dat v(o)
+echo "RESULT DONE 1"
+.endc
+.end

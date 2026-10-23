@@ -1,0 +1,65 @@
+* 21 MOS 管开关：低边开关开通/关断（page1 图21-p1-1；page2 §1～§4、图21-p2-1、图21-p2-2、例1、例2；page3 §1 分压、§2 扫描一 图21-p3-1、练习4）
+* 电路照页面：+12 V → 负载 4 Ω（12 V/3 A 灯带，纯电阻）→ D；S 接地；驱动 0→VDRV（5 V）经 RG=100 Ω 到 G；RGS=10 kΩ 接 G-S。
+* 驱动沿 5 ns（假设：单片机引脚边沿）。0 时刻开通，10 μs 关断（与 code/21_sim.py 相同）。
+* 器件：Infineon IRLZ44N 官方模型（spice/models/IRLZ44N_infineon.lib）。
+.include ../models/IRLZ44N_infineon.lib
+*@def RG=100
+*@def RGS=10k
+*@def VDRV=5
+*@def RL=4
+VDD vdd 0 12
+RL vdd d @RL@
+VDR drv 0 PWL(0 0 1n 0 6n @VDRV@ 10u @VDRV@ 10.005u 0)
+RG drv g @RG@
+RGS g 0 @RGS@
+X1 d g 0 irlz44n
+.control
+tran 0.5n 20u 0 0.5n
+let id=i(VDD)*(-1)
+let ig=(v(drv)-v(g))/@RG@
+let p=v(d)*id
+meas tran IGPK max ig from=0 to=1u
+meas tran VGSS find v(g) at=9.9u
+meas tran VDSS find v(d) at=9.9u
+meas tran IDS find id at=9.9u
+* 平台电压：开通时 V_DS 降到 6 V 那一刻的 V_GS
+meas tran TV6 when v(d)=6 fall=1
+meas tran VPL find v(g) when v(d)=6 fall=1
+meas tran TV6OFF when v(d)=6 rise=1
+meas tran VPLOFF find v(g) when v(d)=6 rise=1
+* 平台段（V_DS 90%→10%）
+meas tran TD90 when v(d)=10.8 fall=1
+meas tran TD10 when v(d)=1.2 fall=1
+meas tran TU10 when v(d)=1.2 rise=1
+meas tran TU90 when v(d)=10.8 rise=1
+* 电流爬升 10%→90%（开通）、下降 90%→10%（关断）
+meas tran TI10 when id=0.3 rise=1
+meas tran TI90 when id=2.7 rise=1
+meas tran TF90 when id=2.7 fall=1
+meas tran TF10 when id=0.3 fall=1
+* 完成开通：V_DS 降到 2·I_L·R_ON = 0.15 V（同 code/21_sim.py 的判据）
+meas tran TONDONE when v(d)=0.15 fall=1
+* 开关能量：开通 0～3 μs*RG/100 窗口，关断 10～(10+3)μs 窗口，减去导通损耗由 run.py 处理
+meas tran EON integ p from=0 to={@RG@*3e-8+0.2e-6}
+meas tran EOFF integ p from=10u to={10e-6+@RG@*6e-8+0.2e-6}
+meas tran TPLS when v(g)=2 rise=1
+echo "RESULT IGPK $&IGPK"
+echo "RESULT VGSS $&VGSS"
+echo "RESULT VDSS $&VDSS"
+echo "RESULT IDS $&IDS"
+echo "RESULT VPL $&VPL"
+echo "RESULT VPLOFF $&VPLOFF"
+echo "RESULT TD90 $&TD90"
+echo "RESULT TD10 $&TD10"
+echo "RESULT TU10 $&TU10"
+echo "RESULT TU90 $&TU90"
+echo "RESULT TI10 $&TI10"
+echo "RESULT TI90 $&TI90"
+echo "RESULT TF90 $&TF90"
+echo "RESULT TF10 $&TF10"
+echo "RESULT TONDONE $&TONDONE"
+echo "RESULT EON $&EON"
+echo "RESULT EOFF $&EOFF"
+wrdata ls.txt v(g) v(d) id
+.endc
+.end
