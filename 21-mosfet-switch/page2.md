@@ -1,6 +1,6 @@
 # 21 MOS 管开关 · 原理与实现篇
 
-[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P1 元件速成](../P1-components-basics/) · [P2 半导体入门](../P2-semiconductor-basics/)
+[上一页：直觉篇](page1.md) · [直觉篇](page1.md) · 本页：原理与实现篇 · [参数与调试篇](page3.md) · [下一页：参数与调试篇](page3.md) · 前置节点：[P1 元件速成 · 直觉篇](../P1-components-basics/page1.md) · [P2 半导体入门 · 直觉篇](../P2-semiconductor-basics/page1.md)
 
 ## 先补一点最小知识
 
