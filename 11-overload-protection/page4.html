@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>11 过载保护 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/11-overload-protection/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="11-过载保护--动手实验篇">11 过载保护 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../23-optocoupler/page1.html">下一页：23 光耦隔离 · 直觉篇</a> · 前置节点：<a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a> · <a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a> · <a href="../14-voltage-comparator/page1.html">14 电压比较器 · 直觉篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>在面包板上搭一个「缩小版」的电子过载保护：比较器那一半（33 kΩ / 1 kΩ / 100 kΩ / 2.2 kΩ）和原理与实现篇完全一样，只把「量」和「滤」两处换成小电流、慢动作的数值，用万用表、秒表和一只 LED 亲手验证三件事：</p>
+<ol>
+<li>两条门限：正常时同相端约 193 mV，跳闸后约 146 mV（<a href="page2.html">11 过载保护 · 原理与实现篇</a> 「推导一：两条门限」）。</li>
+<li>反时限：过载越重，跳得越快，跳闸时间符合 <span class="math math-inline">\(t_{trip} = \tau \ln \frac{I - I_0}{I - I_{trip}}\)</span> （<a href="page2.html">11 过载保护 · 原理与实现篇</a> 「推导二：RC 延时和「反时限」」）。</li>
+<li>打嗝：有回差、不锁存时，过载不撤掉，电路就会「断一会儿、通一会儿」地循环（<a href="page3.html">11 过载保护 · 参数与调试篇</a> 「闭环：切断以后会发生什么」）。</li>
+</ol>
+<p>原电路是 12 V 电机、0.1 Ω 采样电阻、τ = 0.1 s，跳闸电流 1.93 A，几十毫秒就动作，只能用示波器看。本页做了两处替换：</p>
+<ul>
+<li><strong>采样电阻 <span class="math math-inline">\(R_S\)</span> 从 0.1 Ω 换成 10 Ω。</strong> 门限电压不变，跳闸电流就从 1.93 A 缩小到约 19.3 mA，负载用几只电阻代替电机，全程电流不超过 40 mA。</li>
+<li><strong>滤波电容 <span class="math math-inline">\(C_F\)</span> 从 10 μF 换成 470 μF。</strong> τ 从 0.1 s 变成 <span class="math math-inline">\(10\text{ kΩ} \times 470\text{ μF} = 4.7\text{ s}\)</span> ，跳闸、打嗝都放慢到秒级，眼睛和秒表就能跟上。</li>
+</ul>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>只用 12 V 及以下的直流电。</strong> 可调直流电源设 12 V、限流 100 mA，或用 12 V 直流适配器。本页不接电机，也不需要任何市电设备。</li>
+<li><strong>470 μF 电解电容分正负极。</strong> 长脚（正极）插 j16，接滤波节点；有白色条纹的短脚（负极）接 0 V 轨。接反了电容会鼓包甚至爆开。</li>
+<li><strong>会发热的元件不要用手摸。</strong> 过载电阻用 470 Ω 时，导通期间功耗约 <span class="math math-inline">\(12^2 / 470 \approx 0.3\text{ W}\)</span> ，要用 1/2 W 以上的电阻；7805 和 MOS 管在本实验里只会微温，但换成大负载后会很烫。</li>
+<li><strong>接线、改线之前先断电。</strong> 断电就是关掉电源输出或拔下适配器。唯一的例外是第 8、11 步「插上 RO」：RO 一端已插好，另一端插到 +12 V 轨上，手只拿电阻本体的绝缘部分。如果你不放心，也可以断电插好 RO 再通电，只是要等滤波电容重新充好（约 30 s）再计时。</li>
+<li><strong>不要把 12 V 接到 +5 V 轨上。</strong> 上方最外侧轨只接 7805 的输出；LM393 的电源脚接 12 V 也能工作，但门限会跟着变成别的数值，本页所有读数都作废。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>比较器</td>
+<td>LM393（DIP-8）</td>
+<td>1</td>
+<td>只用 B 组（5、6、7 脚），A 组输入接地</td>
+</tr>
+<tr>
+<td>MOS 管</td>
+<td>IRLZ44N（TO-220）</td>
+<td>1</td>
+<td>逻辑电平 MOS 管，5 V 栅压就能完全导通</td>
+</tr>
+<tr>
+<td>稳压芯片</td>
+<td>7805（TO-220）</td>
+<td>1</td>
+<td>把 12 V 降成 5 V，给比较器和门限分压供电</td>
+</tr>
+<tr>
+<td>7805 输入、输出电容</td>
+<td>0.33 μF、0.1 μF 瓷片电容</td>
+<td>各 1</td>
+<td>手册推荐值，防止 7805 自激</td>
+</tr>
+<tr>
+<td>采样电阻 <span class="math math-inline">\(R_S\)</span></td>
+<td>10 Ω，1/4 W</td>
+<td>1</td>
+<td>原电路是 0.1 Ω，这里放大 100 倍</td>
+</tr>
+<tr>
+<td>滤波电阻 <span class="math math-inline">\(R_F\)</span></td>
+<td>10 kΩ</td>
+<td>1</td>
+<td>与原电路相同</td>
+</tr>
+<tr>
+<td>滤波电容 <span class="math math-inline">\(C_F\)</span></td>
+<td>470 μF，16 V 以上电解电容</td>
+<td>1</td>
+<td>原电路是 10 μF，这里加大 47 倍</td>
+</tr>
+<tr>
+<td>门限电阻 <span class="math math-inline">\(R_A\)</span> / <span class="math math-inline">\(R_B\)</span> / <span class="math math-inline">\(R_H\)</span> / <span class="math math-inline">\(R_{PU}\)</span></td>
+<td>33 kΩ / 1 kΩ / 100 kΩ / 2.2 kΩ</td>
+<td>各 1</td>
+<td>与原电路完全相同</td>
+</tr>
+<tr>
+<td>正常负载 RN</td>
+<td>1.5 kΩ，1/4 W</td>
+<td>1</td>
+<td>代替「正常运转的电机」</td>
+</tr>
+<tr>
+<td>指示灯</td>
+<td>红色 LED + 2.2 kΩ 限流电阻</td>
+<td>各 1</td>
+<td>也是负载的一部分；灯亮 = MOS 管导通</td>
+</tr>
+<tr>
+<td>过载电阻 RO</td>
+<td>1 kΩ（1/4 W）、470 Ω（1/2 W）</td>
+<td>各 1</td>
+<td>并到负载上，制造「轻过载」和「重过载」</td>
+</tr>
+<tr>
+<td>电源</td>
+<td>12 V 直流（可调电源或适配器）</td>
+<td>1</td>
+<td>限流设 100 mA</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>直流电压挡 2 V / 200 mV / 20 V</td>
+<td>1</td>
+<td>电流全部用「采样电阻电压 ÷ 10 Ω」得到，不需要串电流表</td>
+</tr>
+<tr>
+<td>秒表</td>
+<td>手机秒表即可</td>
+<td>1</td>
+<td>测跳闸时间和打嗝周期</td>
+</tr>
+<tr>
+<td>面包板、跳线</td>
+<td>830 孔（30 列以上）</td>
+<td>若干</td>
+<td>橙色接正，黑色接 0 V，绿色是信号</td>
+</tr>
+</tbody>
+</table>
+<p>搭之前用电阻挡量出 <span class="math math-inline">\(R_S\)</span> 、RN、两只 RO 的实际阻值记下，Python 核对时要用。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p>电路和 <a href="page2.html">11 过载保护 · 原理与实现篇</a> 「电路总览」里的完整电路图一样：负载接在 +12 V 和 MOS 管漏极之间，源极经 <span class="math math-inline">\(R_S\)</span> 接地，采样点经 <span class="math math-inline">\(R_F\)</span> 、 <span class="math math-inline">\(C_F\)</span> 滤波后进比较器反相端。区别只是电机换成了 RN、LED 和可插拔的 RO，多了一只 7805 供 5 V。请先看图 11-p4-1，认清第 8、13、16、21 列分别是漏极、采样点、滤波节点和比较器输出，再照下面的步骤一根根插线。</p>
+<p><a class="img-link" href="img/11_p4_1_bb_protect.png"><img alt="30 列面包板俯视图：下方最外侧轨是加 12 伏，第二条是 0 伏；上方最外侧轨是 7805 输出的 5 伏，第二条是 0 伏，第 1 列一根黑线把上下两条 0 伏轨连起来。左边 7805 插 f2 到 f4，输入接加 12 伏轨，输出经一根橙线 g4 到 5 伏轨；中间 IRLZ44N 插 f13 到 f15（S、D、G）；右边 LM393 插第 20 到 23 列，上半区有 2.2k、100k、33k、1k 四只门限电阻；两根绿色斜线分别从 c21 到 g15（栅极）和从 c22 到 g16（滤波节点）；下半区第 13 列 10 欧采样电阻接地，10k 从 i13 到 i16，470 微法电解电容从 j16 到 0 伏轨；漏极经 h14 到 h8 的绿线引到第 8 列，那里有 1.5k 到加 12 伏、LED 和 2.2k 到加 12 伏，以及斜插的过载电阻 RO（i8 到 bn5）；紫色圆圈标出 h4 的 5 V、g13 的 V_S、g14 的 V_D、h16 的 V_−、c23 的 V_+、d21 的 V_G" src="img/11_p4_1_bb_protect.png" loading="lazy" /></a></p>
+<p><em>图 11-p4-1　低压慢动作过载保护的面包板接线（第 8 列 = 漏极 / 负载下端，第 13 列 = 采样点，第 16 列 = 滤波节点，第 21 列 = 比较器输出 / 栅极）</em></p>
+<p>面包板上元件多、斜线多，先对照 图 11-p4-2 的电路原理图认清每一列是哪个节点，再按步骤插线。</p>
+<p><a class="img-link" href="img/11_p4_2_schem_lab.png"><img alt="图 11-p4-1 对应的电路原理图：12 V 电源正极接下方 +12 V 轨，负极接 0 V 轨；7805 的 1 脚 IN（f2）经橙线 j2 接 +12 V，2 脚 GND（f3）经黑线 j3 接 0 V，3 脚 OUT（f4）经橙线 g4 送到上方 +5 V 轨，0.33 微法和 0.1 微法电容分别跨在 IN、OUT 与 GND 之间；LM393 B 组 5 脚同相端接 33k 和 1k 分压点，100k 回差电阻从 7 脚输出接回 5 脚，2.2k 把 7 脚上拉到 5 V，8 脚接 +5 V、4 脚接 0 V；7 脚经绿线 c21 到 IRLZ44N 栅极 G（f15）；漏极 D（f14）经绿线 h14 到第 8 列，RN 1.5k、LED 加 2.2k、过载电阻 RO 都接在 +12 V 和第 8 列之间；源极 S（f13）在第 13 列，经 10 欧采样电阻接 0 V，再经 10k 和 470 微法滤波到第 16 列，由绿线 c22 送进 6 脚反相端；紫色圆圈标出 5 V、V_+、V_G、V_D、V_S、V_− 六个测量点" src="img/11_p4_2_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 11-p4-2　图 11-p4-1 对应的电路原理图（灰色小字是面包板孔位，绿色是面包板上的三根信号线，紫色 RO 是过载时才插的电阻）</em></p>
+<p><strong>对照看</strong>：面包板的连通规则见 <a href="../P1-components-basics/page4.html">P1 元件速成 · 动手实验篇</a>：同一列的 a–e、f–j 各自连通，凹槽两边不通。所以 7805 的三只脚 f2、f3、f4 各占一列，j2、j3、g4 三根线分别把 IN、GND、OUT 接出去；IRLZ44N 也一样，第 13、14、15 列下半分别就是 S、D、G。LM393 跨在凹槽上，B 组的 5、6、7 脚在上半区第 23、22、21 列，所以门限电阻全插在上半区，而采样、滤波在下半区，要靠两根绿斜线 c21 → g15、c22 → g16 才能连过来。原理图的结构和 <a href="page2.html">11 过载保护 · 原理与实现篇</a> 「电路总览」里的完整电路相同，只是电机换成了 RN、LED 和 RO，比较器改由 7805 的 5 V 供电；同相端的两条门限可以按同一页「推导一：两条门限」核对。</p>
+<ol>
+<li><strong>铺电源轨。</strong> 电源正极接下方最外侧轨（+12 V），负极接下方第二条轨（0 V）；黑线 tn1 → bp1 把上方第二条轨也变成 0 V。上方最外侧轨留给 5 V，先空着。先不要打开电源。</li>
+<li><strong>插 7805。</strong> 正面（有字一面）朝你，三只脚从左到右 IN、GND、OUT 插 f2、f3、f4。橙线 j2 → +12 V 轨，黑线 j3 → 0 V 轨。0.33 μF 插 h2–h3，0.1 μF 插 i3–i4。橙线 g4 → tp8，把 5 V 送到上方最外侧轨。</li>
+<li><strong>插 LM393。</strong> 缺口朝左，跨在中间凹槽上，1 脚在 f20，8 脚在 e20。橙线 a20 → +5 V 轨（8 脚电源）；黑线 j23 → 0 V 轨（4 脚地）；j21、j22 两根黑线把不用的 A 组输入（2、3 脚）接地。</li>
+<li><strong>插门限电阻。</strong> 2.2 kΩ（ <span class="math math-inline">\(R_{PU}\)</span> ）插 b17–b21，橙线 a17 → +5 V 轨；100 kΩ（ <span class="math math-inline">\(R_H\)</span> ）插 a21–a23；33 kΩ（ <span class="math math-inline">\(R_A\)</span> ）插 b23–b27，橙线 a27 → +5 V 轨；1 kΩ（ <span class="math math-inline">\(R_B\)</span> ）插 d23–d25，黑线 a25 → 0 V 轨。第 21 列是 7 脚输出，第 23 列是 5 脚同相端。</li>
+<li><strong>插 MOS 管。</strong> IRLZ44N <strong>背面（金属散热片）朝你</strong>，这时三只脚从左到右是 S、D、G，插 f13、f14、f15。绿线 c21 → g15：比较器输出直接驱动栅极。</li>
+<li><strong>插采样和滤波。</strong> 10 Ω（ <span class="math math-inline">\(R_S\)</span> ）插 j13 → 0 V 轨；10 kΩ（ <span class="math math-inline">\(R_F\)</span> ）插 i13–i16；470 μF 正极插 j16、负极插 0 V 轨。绿线 c22 → g16：滤波后的电压送进 6 脚反相端。</li>
+<li><strong>插负载。</strong> 绿线 h14 → h8，把漏极引到第 8 列。1.5 kΩ（RN）插 j8 → +12 V 轨；LED 长脚（阳极）插 g10、短脚（阴极）插 g8；2.2 kΩ 插 j10 → +12 V 轨。RO 先不插。</li>
+<li><strong>检查后通电。</strong> 对照电路图逐根检查：负载都在 +12 V 和第 8 列之间，第 13 列只经 <span class="math math-inline">\(R_S\)</span> 接地，电解电容长脚在 j16。打开电源，LED 应该立刻亮起。<strong>等 30 s</strong>，让 470 μF 充到稳定值，再开始测量。</li>
+</ol>
+<p>画图脚本会检查 7805、比较器、MOS 管、门限电阻和负载的每一处连接，并确认 +12 V、+5 V、0 V 三条轨互不相连；接错一处图就画不出来。</p>
+<h2 id="测量表">测量表</h2>
+<p>「应该读到」的数来自 ngspice 仿真：比较器和 MOS 管用的是 <a href="../review/spice/11.html">review/spice/11.md</a> 同款厂商模型（LM393、IRLZ44N），只把 <span class="math math-inline">\(R_S\)</span> 、 <span class="math math-inline">\(C_F\)</span> 和负载换成本页的数值，LED 用一般红色 LED 的模型（正向压降约 1.9 V），RO 在仿真的第 2 s 接入。原电路在 1 A 运行时，采样点 0.100 V、栅极 4.90 V；本页正常运行时采样点约 0.124 V，栅极同样是 4.90 V。黑表笔一律接 0 V 轨。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>7805 输出</td>
+<td>h4</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>5.00 V（4.8～5.2 V 都正常）</td>
+<td>0 V：7805 插反或 j2 没接到 +12 V 轨</td>
+</tr>
+<tr>
+<td>2</td>
+<td>同相端门限 <span class="math math-inline">\(V_+\)</span> （正常）</td>
+<td>c23</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0.193 V</td>
+<td>约 0.147 V：输出是低的，先看第 4 步</td>
+</tr>
+<tr>
+<td>3</td>
+<td>栅极 <span class="math math-inline">\(V_G\)</span> （正常）</td>
+<td>d21</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>4.90 V</td>
+<td>接近 0：6 脚和 5 脚接反了，或 c22 / c21 两根线互换</td>
+</tr>
+<tr>
+<td>4</td>
+<td>采样电压 <span class="math math-inline">\(V_S\)</span> （正常）</td>
+<td>g13</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0.124 V（÷ 10 Ω = 12.4 mA）</td>
+<td>0：LED 不亮，MOS 管没导通；先查栅极线</td>
+</tr>
+<tr>
+<td>5</td>
+<td>反相端 <span class="math math-inline">\(V_-\)</span> （正常，通电 30 s 后）</td>
+<td>h16</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0.126 V，比 <span class="math math-inline">\(V_S\)</span> 高约 1 mV</td>
+<td>一直在爬：电容还没充满，再等一会儿</td>
+</tr>
+<tr>
+<td>6</td>
+<td>漏极 <span class="math math-inline">\(V_D\)</span> （正常）</td>
+<td>g14</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0.125 V（MOS 管完全导通）</td>
+<td>几伏：栅压不够，查 5 V 和 <span class="math math-inline">\(R_{PU}\)</span></td>
+</tr>
+<tr>
+<td>7</td>
+<td>插上 RO = 1 kΩ（i8 → bn5）后的 <span class="math math-inline">\(V_S\)</span></td>
+<td>g13</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0.241 V（24.1 mA，超过跳闸电流 19.3 mA）</td>
+<td>不变：RO 没插进 +12 V 轨</td>
+</tr>
+<tr>
+<td>8</td>
+<td>从插上 RO 到 LED 熄灭的时间（秒表）</td>
+<td>—</td>
+<td>—</td>
+<td>—</td>
+<td>约 4.1 s</td>
+<td>立刻熄灭：电容没充好或用了 47 μF；永远不灭：RO 阻值太大</td>
+</tr>
+<tr>
+<td>9</td>
+<td>跳闸后的 <span class="math math-inline">\(V_G\)</span> / <span class="math math-inline">\(V_D\)</span> / <span class="math math-inline">\(V_+\)</span></td>
+<td>d21 / g14 / c23</td>
+<td>0 V 轨</td>
+<td>20 V / 20 V / 2 V</td>
+<td>0.09 V / 约 12.0 V / 0.147 V</td>
+<td><span class="math math-inline">\(V_+\)</span> 没变：100 kΩ 回差电阻没接到第 21 列</td>
+</tr>
+<tr>
+<td>10</td>
+<td>打嗝：LED 灭多久、亮多久（秒表，RO = 1 kΩ 不拔）</td>
+<td>h16 看 <span class="math math-inline">\(V_-\)</span></td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>灭约 1.2 s、亮约 3.1 s； <span class="math math-inline">\(V_-\)</span> 在 0.148～0.193 V 之间来回</td>
+<td>不打嗝一直灭：检查 <span class="math math-inline">\(R_F\)</span> 、 <span class="math math-inline">\(C_F\)</span> 是否接到第 16 列</td>
+</tr>
+<tr>
+<td>11</td>
+<td>换 RO = 470 Ω： <span class="math math-inline">\(V_S\)</span> 和跳闸时间</td>
+<td>g13</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0.369 V（36.9 mA）；约 1.5 s 熄灭；之后灭约 1.2 s、亮约 1.1 s</td>
+<td>先拔掉 1 kΩ，等 30 s 恢复后再插 470 Ω</td>
+</tr>
+<tr>
+<td>12</td>
+<td>拔掉 RO 后</td>
+<td>g13、h16</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>LED 常亮； <span class="math math-inline">\(V_S\)</span> 回到 0.124 V， <span class="math math-inline">\(V_-\)</span> 慢慢回到 0.126 V</td>
+<td>一直灭：如果正好拔在灭的那 1.2 s 里，等它自己亮</td>
+</tr>
+</tbody>
+</table>
+<p>第 7、8、11 步合起来就是反时限：过载电流 24.1 mA 时要 4.1 s，36.9 mA 时只要 1.5 s。代入推导二的公式，以正常时的 <span class="math math-inline">\(V_-\)</span> = 0.1256 V 为起点、门限 0.1927 V 为终点：</p>
+<ul>
+<li>RO = 1 kΩ： <span class="math math-inline">\(4.7 \times \ln \frac{0.2406 - 0.1256}{0.2406 - 0.1927} \approx 4.12\text{ s}\)</span> ，仿真 4.09 s。</li>
+<li>RO = 470 Ω： <span class="math math-inline">\(4.7 \times \ln \frac{0.3689 - 0.1256}{0.3689 - 0.1927} \approx 1.52\text{ s}\)</span> ，仿真 1.51 s。</li>
+</ul>
+<p>第 10 步的「灭」那段与过载轻重无关：电流断了，电容从 193 mV 放电到约 147 mV，用时 <span class="math math-inline">\(4.7 \times \ln (0.193 / 0.148) \approx 1.24\text{ s}\)</span> ，两种 RO 都一样。「亮」那段则是电容从 148 mV 再爬回 193 mV，过载越重爬得越快，所以 470 Ω 时只亮约 1.1 s。这和 <a href="page3.html">11 过载保护 · 参数与调试篇</a> 「闭环」一节里原电路「断 28 ms、通 14 ms」的打嗝是同一件事，只是时间放大了 47 倍左右。</p>
+<p>电解电容的容量误差常有 ±20%，所以秒表读数偏差两三成也正常。下面的 Python 会用你量到的第一次跳闸时间反推实际的 τ，再用它预测打嗝时间。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>本页把一切都放慢到秒级，就是为了只用万用表和秒表。以下现象只有示波器（或原电路的毫秒级速度）才能看到，本页做不了：</p>
+<ul>
+<li><strong>原电路的毫秒级动作</strong>：堵转 5 A、26 ms 跳闸的过程，见 <a href="page1.html">11 过载保护 · 直觉篇</a> 第一节「痛点」里有保护和无保护的电流对比图。</li>
+<li><strong>无回差时的高速振荡</strong>：去掉 100 kΩ 后，比较器每秒翻转几千次，MOS 管半开半关、发热，见 <a href="page3.html">11 过载保护 · 参数与调试篇</a> 「闭环：切断以后会发生什么」的三行电流波形图的第一行。万用表只会显示一个跳来跳去的平均值，看不出振荡本身。</li>
+<li><strong>门限附近的抖动</strong>：电流缓慢越过门限时，无回差比较器翻转多次、有回差只翻转两次，见 <a href="page2.html">11 过载保护 · 原理与实现篇</a> 「仿真」一节的三行对比图。</li>
+<li><strong>电机启动冲击和误跳闸</strong>：τ 太小时启动冲击会被误判为过载，见 <a href="page3.html">11 过载保护 · 参数与调试篇</a> 「τ 的取舍：反时限曲线和启动电流」的 (b) 图。本页用电阻代替电机，没有启动冲击。</li>
+</ul>
+<p>用万用表能做的「慢动作」替代是第 10 步：把红表笔留在 h16，盯着读数在 0.148 V 和 0.193 V 之间来回爬，同时看 LED 一灭一亮。这就是参数与调试篇第二行「打嗝」波形里的那条滤波电压，只是慢了几十倍。</p>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>代码先用你量到的电阻和 5 V 算出两条门限和跳闸电流，再用推导二的公式预测跳闸时间和打嗝时间，偏差超过 10% 就提示。因为电解电容误差大，它还会用你测到的第一次跳闸时间反推实际的 τ 和 <span class="math math-inline">\(C_F\)</span> 。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# 11 过载保护 · 动手实验核对：门限、跳闸电流、跳闸时间和打嗝时间
+import math
+
+# ---- 1. 你量到的值（示例值，换成你自己的）----
+VCC = 5.00                        # 第 1 步：7805 输出
+RA, RB, RH, RPU = 33e3, 1e3, 100e3, 2.2e3
+RS, RF, CF = 10.0, 10e3, 470e-6   # CF 用标称值
+VP_RUN, VP_TRIP = 0.193, 0.147    # 第 2、9 步：同相端
+VS_RUN = 0.124                    # 第 4 步：正常采样电压
+VM_RUN = 0.126                    # 第 5 步：正常时的反相端（滤波后）电压
+runs = [  # (说明, 第 7/11 步的 V_S, 秒表测的跳闸时间 s, 灭的时间 s, 亮的时间 s)
+    (&quot;RO 1k&quot;, 0.241, 4.3, 1.3, 3.2),
+    (&quot;RO 470&quot;, 0.368, 1.6, 1.3, 1.1),
+]
+
+warn = 0
+def check(name, meas, calc):
+    global warn
+    dev = (meas - calc) / calc
+    flag = &quot;  ← 偏差超过 10%&quot; if abs(dev) &gt; 0.10 else &quot;&quot;
+    warn += bool(flag)
+    print(f&quot;{name:&lt;22} 实测 {meas:8.4f}   计算 {calc:8.4f}   偏差 {dev * 100:+5.1f}%{flag}&quot;)
+
+# ---- 2. 两条门限（戴维南等效，见原理与实现篇推导一）----
+VT = VCC * RB / (RA + RB)
+RT = RA * RB / (RA + RB)
+VH = VT + (VCC - VT) * RT / (RT + RH + RPU)
+VL = VT * RH / (RT + RH)
+print(f&quot;门限：V_H = {VH * 1000:.1f} mV，V_L = {VL * 1000:.1f} mV；跳闸电流 {VH / RS * 1000:.1f} mA&quot;)
+check(&quot;V_+ 正常 (V)&quot;, VP_RUN, VH)
+check(&quot;V_+ 跳闸后 (V)&quot;, VP_TRIP, VL)
+
+# ---- 3. 跳闸时间和打嗝 ----
+tau = RF * CF
+v0 = VM_RUN                       # 过载开始时电容上的电压
+first = True
+for name, vs, t_m, off_m, on_m in runs:
+    print(f&quot;--- {name}：过载电流 {vs / RS * 1000:.1f} mA&quot;)
+    if vs &lt;= VH:
+        print(&quot;  V_S 没超过门限，不会跳闸；检查 RO 是否插好&quot;)
+        continue
+    t_trip = tau * math.log((vs - v0) / (vs - VH))
+    if first:                     # 用第一次跳闸时间反推实际的 τ
+        tau_eff = t_m / math.log((vs - v0) / (vs - VH))
+        print(f&quot;  由实测跳闸时间反推：τ ≈ {tau_eff:.2f} s，C_F ≈ {tau_eff / RF * 1e6:.0f} µF（标称 {CF * 1e6:.0f} µF）&quot;)
+        first = False
+    t_off = tau_eff * math.log(VH / VL)
+    t_on = tau_eff * math.log((vs - VL) / (vs - VH))
+    check(&quot;  跳闸时间 (s, 标称 τ)&quot;, t_m, t_trip)
+    check(&quot;  灭的时间 (s)&quot;, off_m, t_off)
+    check(&quot;  亮的时间 (s)&quot;, on_m, t_on)
+print(&quot;全部在范围内&quot; if warn == 0 else f&quot;有 {warn} 项需要检查&quot;)
+</code></pre>
+<p>示例数据是按仿真值加了一点出入编的练习值，不是实测结果。如果三个时间都按同一个比例偏大或偏小，多半是电容实际容量和标称值不同，看反推出来的 <span class="math math-inline">\(C_F\)</span> 就知道；如果只有门限偏差大，先查 7805 输出和四只门限电阻。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>实测值</th>
+<th>计算值</th>
+<th>偏差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>7805 输出</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_+\)</span> 正常 / 跳闸后</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>正常 <span class="math math-inline">\(V_S\)</span> 和电流</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>正常 <span class="math math-inline">\(V_G\)</span> / <span class="math math-inline">\(V_D\)</span></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>RO 1 kΩ： <span class="math math-inline">\(V_S\)</span> 和电流</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>RO 1 kΩ：跳闸时间</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>RO 1 kΩ：灭 / 亮时间</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>RO 470 Ω： <span class="math math-inline">\(V_S\)</span> 和电流</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>RO 470 Ω：跳闸时间</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>RO 470 Ω：灭 / 亮时间</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="思考题">思考题</h3>
+<p><strong>1. 为什么两种过载下「灭」的时间几乎一样，而「亮」的时间不一样？</strong></p>
+<details><summary>答案</summary>
+<p>灭的时候 MOS 管断开，采样电压接近 0，电容只是从 193 mV 往 0 放电，放到 147 mV 就恢复，这段时间只由 τ 和两条门限决定，和过载多重无关。亮的时候电容从 147 mV 往过载时的采样电压爬，终点越高，爬到 193 mV 越快，所以重过载亮得短。</p>
+</details>
+<p><strong>2. 如果把 1.5 kΩ 的正常负载换成 820 Ω，会发生什么？</strong></p>
+<details><summary>答案</summary>
+<p>正常电流变成约 12 / 820 + 4.5 mA ≈ 19.1 mA，已经非常接近跳闸电流 19.3 mA。电阻和门限的误差稍有偏差，电路就可能在「正常」时也慢慢跳闸，或者稍加一点负载就跳。原电路把跳闸电流定在正常电流的约 1.9 倍，就是为了留出这种余量。</p>
+</details>
+<p><strong>3. 想让这个电路跳闸后一直保持断开，直到按复位才恢复，可以怎么改？</strong></p>
+<details><summary>答案</summary>
+<p>要让电路「记住」跳过闸，也就是锁存。最简单的思路是用 LM393 的另一半或一个小单片机记住状态，复位按钮清除它；也可以借鉴 <a href="../17-self-locking/page1.html">17 自锁 · 直觉篇</a> 的自锁思路，只是反过来锁住「断开」。参数与调试篇「闭环」一节第三行就是锁存后的效果：跳闸后平均电流为 0。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>我能用万用表量出比较器同相端的两条门限，并用戴维南等效算出它们。</li>
+<li>我能用「采样电阻电压 ÷ 阻值」读出负载电流，而不必串电流表。</li>
+<li>我能用秒表测出两种过载的跳闸时间，并用 <span class="math math-inline">\(t_{trip}\)</span> 公式解释为什么过载越重跳得越快。</li>
+<li>我能说出打嗝时「灭」和「亮」两段时间各由什么决定。</li>
+<li>我能说出原电路哪些毫秒级现象必须用示波器看，以及本页是怎样把它们放慢的。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

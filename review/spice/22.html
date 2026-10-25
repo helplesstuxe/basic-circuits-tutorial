@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>22 三极管开关与继电器驱动 · SPICE 核对报告（审校 B）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/22.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="22-三极管开关与继电器驱动--spice-核对报告审校-b">22 三极管开关与继电器驱动 · SPICE 核对报告（审校 B）</h1>
+<p>运行：<code>python spice/22/run.py</code>（在仓库根目录，退出码 0）。网表：</p>
+<ul>
+<li><code>spice/22/relay.cir</code>：线圈侧完整电路。先跑 <code>op</code>，再跑关断瞬态。<code>DMODE</code> 选续流方式：0 = 无二极管（100 pF 杂散），1 = 仅 1N4148，2 = 1N4148 + 24 V 稳压管。</li>
+<li><code>spice/22/sweep.cir</code>：图 22-p3-1 的 R_B 扫描，<a href="http://run.py">run.py</a> 逐点调用 <code>op</code>。</li>
+</ul>
+<h2 id="模型与来源">模型与来源</h2>
+<ul>
+<li><strong>Q1 2N3904</strong>：<code>spice/models/2N3904_onsemi.lib</code>（<code>Q2n3904</code>，onsemi 官方模型，审校 A 已下载，这里直接复用）。</li>
+<li><strong>D1 1N4148</strong>：<code>spice/models/1N4148_nexperia.lib</code>（Nexperia 官方模型，复用）。</li>
+<li><strong>24 V 稳压管 1N4749A</strong>：<code>spice/models/1N4749A_diodes_zener.lib</code>，本轮新建。
+<ul>
+<li>来源：<a href="https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt%EF%BC%88Diodes">https://ltwiki.org/files/LTspiceIV/Vendor List/Diodes Incorporated/Spice/spicemodels_zener_diodes.txt（Diodes</a> Inc. 厂家文件，LTspice Vendor List 存档，已实际打开）。与现有的 <code>1N47xxA_diodes_zener.lib</code> 同一来源，但那个文件里没有 24 V 这一档，所以另建一个文件，没有覆盖原文件。</li>
+<li>唯一改动：原文件里有一行没带注释符的分类标签 <code>Zener</code>，前面加了 <code>*</code>。子电路本体原样保留。</li>
+<li>页面只写「24 V 稳压管」，没给型号。选 1N4749A 是我的假设。</li>
+</ul>
+</li>
+<li><strong>继电器线圈</strong>：页面给 SRD-05VDC 高灵敏型 70 Ω。电感按页面和 code/22_sim.py 的示意值 0.1 H，杂散电容 100 pF 也是页面示意值。厂家手册没有电感参数，这是一个假设。</li>
+<li><strong>ULN2003A</strong>：TI 明确表示不提供 SPICE 模型（TI E2E 论坛官方回复），所以练习 5 只复核算术，记 ℹ️。</li>
+<li><strong>跳过</strong>：继电器触点侧的 220 V 负载回路（市电），只仿真 5 V / 12 V 线圈驱动侧。</li>
+</ul>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>核对项</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p2 §2 第一步</td>
+<td>I_C(max) = 4.8/70（SPICE 为实际 I_C）（SPICE 的 V_CE(sat) 为 0.27 V，比 0.2 V 稍大，I_C 略小）</td>
+<td>68.6 mA</td>
+<td>67.52 mA</td>
+<td>-1.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例1 / A 部分</td>
+<td>5 V 引脚、R_B=680 Ω 的 I_B（模型 V_BE≈0.87 V（大电流饱和），比 0.7 V 高）</td>
+<td>6.32 mA</td>
+<td>6.067 mA</td>
+<td>-4.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 动手 步骤2</td>
+<td>680 Ω 时 V_CE（万用表 20 V 档）（0.27 V 仍在手册 ≤0.3 V（50 mA/5 mA）内；页面写「0.2 V 左右」合适）</td>
+<td>0.2 V</td>
+<td>0.2733 V</td>
+<td>+36.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图22-p1-2</td>
+<td>开到底时线圈拿到的额定电压比例</td>
+<td>96 %</td>
+<td>94.53 %</td>
+<td>-1.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图22-p1-2 / A 部分</td>
+<td>开到底时三极管功耗 V_CE·I_C（SPICE V_CE(sat)=0.27 V（手册上限 0.3 V → 20.6 mW），在器件公差内；远小于 625 mW）</td>
+<td>13.7 mW</td>
+<td>18.45 mW</td>
+<td>+34.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图22-p1-2 / A 部分</td>
+<td>另加基极功耗 I_B·V_BE 后的总功耗（页面未计）（基极再加约 5 mW，不影响结论）</td>
+<td>— mW</td>
+<td>23.76 mW</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p2 §2</td>
+<td>饱和裕量 β_forced 下 I_B/I_C(max)/30 倍数</td>
+<td>2.8 倍</td>
+<td>2.696 倍</td>
+<td>-3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例2</td>
+<td>3.3 V 引脚、R_B=470 Ω 的 I_B</td>
+<td>5.53 mA</td>
+<td>5.175 mA</td>
+<td>-6.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例2</td>
+<td>3.3 V、470 Ω 时 V_CE（饱和）（在手册 ≤0.3 V 内）</td>
+<td>0.2 V</td>
+<td>0.2827 V</td>
+<td>+41.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例2</td>
+<td>3.3 V 引脚仍用 680 Ω 的 I_B（V_BE 比 0.7 V 高，实际更小）</td>
+<td>3.82 mA</td>
+<td>3.593 mA</td>
+<td>-5.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 A 部分 / 动手 步骤3</td>
+<td>R_B=10 kΩ：SPICE 典型 2N3904 的等效 β（页面说结果「看运气」，β 在 30～300 之间都可能；典型模型落在中间）</td>
+<td>100</td>
+<td>77.64</td>
+<td>-22.4%</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p2 A 部分 β=100 行</td>
+<td>R_B=10 kΩ 时 V_CE（页面 β=100 → 1.99 V）（模型 β≈78，与页面 β=100 那一行同属「半开」，结论一致：线圈电压不够）</td>
+<td>1.99 V</td>
+<td>2.712 V</td>
+<td>+36.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 A 部分 β=100 行</td>
+<td>R_B=10 kΩ 时线圈电压比例（页面 60%，&lt;75% 吸不上）（同上，结论一致）</td>
+<td>60 %</td>
+<td>45.76 %</td>
+<td>-23.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 A 部分</td>
+<td>R_B=10 kΩ 半开时三极管功耗（页面 β=100 → 85.6 mW）（接近放大区最坏值 89 mW）</td>
+<td>85.6 mW</td>
+<td>88.98 mW</td>
+<td>+3.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 A 部分</td>
+<td>放大区最坏功耗 V_CC²/(4R)（SPICE 半开点 V_CE=2.7 V 正好接近 V_CC/2）</td>
+<td>89.3 mW</td>
+<td>88.98 mW</td>
+<td>-0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习3</td>
+<td>10 kΩ 时 β≈100（SPICE 典型管 β 见上一行）（练习是反推题，算术无误）</td>
+<td>100</td>
+<td>77.64</td>
+<td>-22.4%</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 图22-p3-1</td>
+<td>左端平台（饱和时线圈电压比例）</td>
+<td>96 %</td>
+<td>96.09 %</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图22-p3-1</td>
+<td>跌破 75% 的 R_B（SPICE 典型管；页面三条线 2.41/8.03/24.08 kΩ）（典型管在 50 mA 附近 β≈60，拐点落在页面 β=30 与 β=100 两条线之间，图的结论成立）</td>
+<td>— kΩ</td>
+<td>4.491 kΩ</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 图22-p3-1</td>
+<td>680 Ω 离典型管拐点的倍数（页面「好几倍」）</td>
+<td>— 倍</td>
+<td>6.604 倍</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 B 部分</td>
+<td>关断前线圈电流</td>
+<td>68.6 mA</td>
+<td>67.48 mA</td>
+<td>-1.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 B 部分</td>
+<td>线圈储能 ½LI²（L=0.1 H 为页面示意值）</td>
+<td>0.235 mJ</td>
+<td>0.2277 mJ</td>
+<td>-3.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-2</td>
+<td>无二极管：集电极尖峰（100 pF 杂散）（SPICE 的 Gummel-Poon 模型不含击穿，所以和页面一样“冲到两千多伏”；页面已说明真实电路会在 40 V 以上先击穿）</td>
+<td>2170 V</td>
+<td>2129 V</td>
+<td>-1.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-2</td>
+<td>尖峰出现时刻（2N3904 自身 C_ob 并在 100 pF 上，谐振稍慢）</td>
+<td>5 μs</td>
+<td>5.023 μs</td>
+<td>+0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-3 右</td>
+<td>只有二极管 1N4148：集电极钳位电压（1N4148 在 68 mA 时 V_F≈0.86 V（页面取 0.7 V））</td>
+<td>5.7 V</td>
+<td>5.858 V</td>
+<td>+2.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-3 左</td>
+<td>只有二极管 1N4148：电流降到 7.14 mA 用时（二极管压降比 0.7 V 大，电流掉得稍快）</td>
+<td>2.17 ms</td>
+<td>2.094 ms</td>
+<td>-3.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-3 右</td>
+<td>二极管 + 24 V 稳压管 1N4749A：集电极钳位电压（1N4749A 在 68 mA 时 V_Z 比标称 24 V 高）</td>
+<td>29.7 V</td>
+<td>30.06 V</td>
+<td>+1.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-3 左</td>
+<td>二极管 + 24 V 稳压管 1N4749A：电流降到 7.14 mA 用时</td>
+<td>0.23 ms</td>
+<td>0.2222 ms</td>
+<td>-3.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图22-p2-3</td>
+<td>加稳压管后快几倍</td>
+<td>9.7 倍</td>
+<td>9.423 倍</td>
+<td>-2.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3</td>
+<td>55 Ω 线圈的 I_C(max)</td>
+<td>87.3 mA</td>
+<td>84.92 mA</td>
+<td>-2.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3</td>
+<td>560 Ω 给的 I_B（V_BE 比 0.7 V 高）</td>
+<td>7.68 mA</td>
+<td>7.327 mA</td>
+<td>-4.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3</td>
+<td>560 Ω 时 V_CE（饱和）（87 mA 下仍饱和，在手册 ≤0.3 V（50 mA）附近）</td>
+<td>0.2 V</td>
+<td>0.3292 V</td>
+<td>+64.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>12 V/400 Ω 的 I_C</td>
+<td>29.5 mA</td>
+<td>29.54 mA</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>3.3 V、1.5 kΩ 给的 I_B（V_BE 比 0.7 V 高）</td>
+<td>1.73 mA</td>
+<td>1.671 mA</td>
+<td>-3.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>V_CE（饱和）</td>
+<td>0.2 V</td>
+<td>0.1823 V</td>
+<td>-8.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习4</td>
+<td>12 V 继电器 + 24 V 稳压管关断钳位（≤40 V）（电感沿用 0.1 H 示意值；钳位电压只取决于 V_CC+V_F+V_Z，与电感无关）</td>
+<td>36.7 V</td>
+<td>37.01 V</td>
+<td>+0.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习5</td>
+<td>ULN2003A：TI 不提供 SPICE 模型，只核算术 82%/78%/91%（算术复核无误）</td>
+<td>—</td>
+<td>nan</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+</tbody>
+</table>
+<p>统计：✅ 31　⚠️ 0　❌ 0　（ℹ️ 5）</p>
+<h2 id="结论">结论</h2>
+<ul>
+<li><strong>A 部分（饱和检查）</strong>：结论全部成立。
+<ul>
+<li>5 V / 680 Ω 时 I_B = 6.07 mA，V_CE = 0.27 V，线圈拿到 94.5%。</li>
+<li>3.3 V / 470 Ω 时 I_B = 5.18 mA，仍然饱和。</li>
+<li>真实管子的 V_BE 约 0.85 V，高于页面取的 0.7 V，所以基极电流比页面低 4–6%，饱和压降高 0.07 V。两项都在手册公差内（V_CE(sat) ≤ 0.3 V）。</li>
+</ul>
+</li>
+<li><strong>R_B = 10 kΩ</strong>：典型模型的 β ≈ 78，V_CE = 2.71 V，线圈电压 46%，吸不上。与页面「β = 100 时半开、继电器不吸」的结论同向。半开功耗 89 mW，与页面 85.6 mW 和最坏值 89 mW 一致。</li>
+<li><strong>图 22-p3-1</strong>：典型管跌破 75% 的点在 R_B ≈ 4.5 kΩ。它在大电流下 β 约 60，所以拐点落在页面 β = 30 和 β = 100 两条线之间。680 Ω 离拐点 6.6 倍，与页面「好几倍」一致。</li>
+<li><strong>B 部分（关断）</strong>：
+<ul>
+<li>无二极管时尖峰 2129 V，出现在 5.0 μs。onsemi 模型不含击穿，所以 SPICE 和页面一样只体现 LC 谐振。页面已说明真实管子会先击穿。</li>
+<li>只接 1N4148：钳位 5.86 V，电流降到 7.14 mA 用 2.09 ms。</li>
+<li>再串 1N4749A：钳位 30.1 V，用 0.222 ms，快 9.4 倍。</li>
+<li>以上各项都在 4% 以内。</li>
+</ul>
+</li>
+<li>例 3、练习 2 和练习 4（12 V 继电器 + 24 V 稳压管钳位 37.0 V，低于 40 V）都通过。</li>
+<li><strong>无需修改。</strong> 可选的一句补充（不算错误）：动手步骤 2 可以改成「应在 0.2～0.3 V 左右」，因为 SPICE 和手册上限都是 0.27～0.3 V。</li>
+</ul>
+<h2 id="面包板万用表读数page2-六仅-5-v-线圈侧220-v-触点侧不要上电测">面包板万用表读数（page2 §六，仅 5 V 线圈侧；220 V 触点侧不要上电测）</h2>
+<table>
+<thead>
+<tr>
+<th>测量</th>
+<th>量程</th>
+<th>红表笔 → 黑表笔</th>
+<th>预期读数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>步骤 2：V_CE（R_B = 680 Ω，基极接 5 V）</td>
+<td>DC 20 V</td>
+<td>Q1 集电极 → Q1 发射极（GND）</td>
+<td>约 0.27 V（0.2～0.3 V），继电器吸合</td>
+</tr>
+<tr>
+<td>线圈两端电压</td>
+<td>DC 20 V</td>
+<td>+5 V → Q1 集电极</td>
+<td>约 4.73 V（额定的 94%）</td>
+</tr>
+<tr>
+<td>R_B 两端电压（算 I_B = 读数 / 680）</td>
+<td>DC 20 V</td>
+<td>单片机引脚 → Q1 基极</td>
+<td>约 4.13 V → I_B ≈ 6.1 mA</td>
+</tr>
+<tr>
+<td>V_BE</td>
+<td>DC 2 V</td>
+<td>Q1 基极 → Q1 发射极</td>
+<td>约 0.87 V</td>
+</tr>
+<tr>
+<td>步骤 3：V_CE（R_B 换 10 kΩ）</td>
+<td>DC 20 V</td>
+<td>Q1 集电极 → Q1 发射极</td>
+<td>典型管约 2.7 V，继电器不吸或抖动；β 很大的管子才会读到约 0.2 V</td>
+</tr>
+<tr>
+<td>续流二极管方向检查（插板前单独测；装上后它和 70 Ω 线圈并联，两个方向都读得很低）</td>
+<td>二极管档</td>
+<td>红 → D1 阳极（接 Q1 集电极那端），黑 → D1 阴极（+5 V 那端）</td>
+<td>0.5～0.7 V；反过来测应显示 OL</td>
+</tr>
+</tbody>
+</table>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>改动文件：<code>22-bjt-relay-driver/page2.md</code>（只改一句）。本节点 ❌ 0、⚠️ 0，ℹ️ 按要求不改；脚本和图不用改（检查时运行脚本重新生成了本节点的图，内容不变）。</p>
+<ul>
+<li>采纳报告的可选补充：page2 §六 动手步骤 2 的「应在 0.2 V 左右」改为「应在 0.2～0.3 V 左右（真实管子的饱和压降比本页取的 0.2 V 略高，SPICE 约 0.27 V）」。</li>
+<li>导航链接：报告未指出错误链接。</li>
+</ul>
+<p>检查：count_cjk、run_blocks（页面 + <code>code/22_sim.py</code>、<code>code/figs/22_figs.py</code>）、check_figs、check_github_math 全部通过；fix_inline_math_spacing --check 为 0。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

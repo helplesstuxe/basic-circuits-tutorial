@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>24 隔离电源与数字隔离器 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/24-isolated-power/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="24-隔离电源与数字隔离器--参数与调试篇">24 隔离电源与数字隔离器 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../06-bridge-rectifier/page1.html">06 桥式整流 · 直觉篇</a>、<a href="../09-switching-power-supply/page1.html">09 开关电源 · 直觉篇</a>、<a href="../09-switching-power-supply/page2.html">09 开关电源 · 原理与实现篇</a>、<a href="../23-optocoupler/page1.html">23 光耦隔离 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节特有的危险：</p>
+<ul>
+<li>工频变压器的初级接 220 V；排查变压器方案时，只在次级的低压侧测量，初级一律交给持证电工。</li>
+<li>器件上印的&quot;隔离电压&quot;是出厂短时测试的电压，<strong>不是可以长期承受的电压</strong>，更不代表能用来隔离市电（见第二部分）。</li>
+<li>示波器、电脑等接了地的仪器会把隔离的两侧连起来（见第三部分）。</li>
+</ul>
+</blockquote>
+<h2 id="一参数表">一、参数表</h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>本节取值</th>
+<th>含义</th>
+<th>怎么用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>匝数比 <span class="math math-inline">\(N_1 / N_2\)</span></td>
+<td>18.33（220 V 到 12 V）</td>
+<td>初级与次级的匝数之比，等于电压之比</td>
+<td>按 <span class="math math-inline">\(\sqrt{2} V_1 / (V_{o,\max} + 2V_D)\)</span> 定；整流后约 15.57 V（见 <a href="page2.html">24 隔离电源与数字隔离器 · 原理与实现篇</a>）</td>
+</tr>
+<tr>
+<td>负载调整率</td>
+<td>NME0505SC 典型 12%、最大 14%</td>
+<td>负载从 10% 变到 100%，输出的变化量</td>
+<td>不稳压模块轻载偏高、满载偏低，后级要能承受这个范围</td>
+</tr>
+<tr>
+<td>最小负载</td>
+<td>满载的 10%（20 mA）</td>
+<td>低于它输出超出规格；低于 5% 可升到约两倍</td>
+<td>用户电流不够时加假负载或稳压管钳位（见第四部分）</td>
+</tr>
+<tr>
+<td>线性调整率</td>
+<td>最大 1.2 %/%</td>
+<td>输入每变 1%，输出约变 1.2%</td>
+<td>输入 5.5 V 时空载输出按模型约 11.25 V</td>
+</tr>
+<tr>
+<td>模块隔离测试电压</td>
+<td>1 kVDC，1 秒</td>
+<td>出厂时每只都加这个电压测一下</td>
+<td>只说明短时能扛，不是工作电压；NME 只算功能隔离</td>
+</tr>
+<tr>
+<td>数字隔离器耐压 <span class="math math-inline">\(V_{ISO}\)</span></td>
+<td>ISO7721：DW 封装 5000 VRMS，D 封装 3000 VRMS</td>
+<td>60 秒鉴定测试；量产时每只加 1.2 倍、测 1 秒</td>
+<td>长期工作电压看另一项（DW 封装 1500 VRMS，D 封装 450 VRMS）</td>
+</tr>
+<tr>
+<td>传输延时</td>
+<td>ISO7721：最小 6、典型 11、最大 17 ns（5 V）</td>
+<td>输入变化到输出变化的时间</td>
+<td>最高数据率约 <span class="math math-inline">\(1 / (4 \times \text{最大延时})\)</span> ，按最大 17 ns 约 14.7 Mbps（见 <a href="page1.html">24 隔离电源与数字隔离器 · 直觉篇</a>）</td>
+</tr>
+<tr>
+<td>CMTI</td>
+<td>ISO7721：最小 85、典型 100 kV/µs</td>
+<td>两侧地之间电压急剧跳变时，仍能正确传信号的能力</td>
+<td>现场侧有大功率开关时要关心；白皮书给的高速光耦最小约 20 kV/µs</td>
+</tr>
+<tr>
+<td>电源电压</td>
+<td>ISO7721：每侧 2.25 V 到 5.5 V，绝对最大 6 V</td>
+<td>两侧各自的工作电压范围</td>
+<td>隔离模块的输出要落在这个范围里</td>
+</tr>
+<tr>
+<td>每通道电流</td>
+<td>ISO7721：约 1.7 mA（1 Mbps）</td>
+<td>每一侧的工作电流</td>
+<td>算隔离电源的负载，往往远小于最小负载</td>
+</tr>
+</tbody>
+</table>
+<p>表里有两类数字最容易误用：<strong>耐压</strong>和<strong>负载</strong>。下面逐个讲。</p>
+<h2 id="二隔离耐压测试电压不等于工作电压">二、隔离耐压：测试电压不等于工作电压</h2>
+<p>NME0505SC 手册专门回答了一个常见问题：&quot;正常工作时，两侧之间能长期承受多高的电压？&quot;它的答案是：1 kVDC 只是出厂时每只测 1 秒的测试电压，反映的是<strong>对短时冲击电压的承受能力</strong>；这个系列只被认证为<strong>功能隔离</strong>，两侧都应保持在安全特低电压范围内（峰值 42.4 V 或直流 60 V 以下），<strong>绝不能当作安全隔离系统的一部分</strong>。手册还提醒，反复做高压测试本身会让绝缘变差，确需复测时要把电压降低 20%。</p>
+<p>ISO7721 的手册把这件事分得更细：</p>
+<ul>
+<li><span class="math math-inline">\(V_{ISO}\)</span> 5000 VRMS（DW 封装）是 60 秒的鉴定测试，量产时每只加 1.2 倍、测 1 秒；</li>
+<li>可以长期工作的电压是另一项&quot;最大工作隔离电压&quot;，DW 封装是 1500 VRMS，D 封装只有 450 VRMS；</li>
+<li>同一型号有加强绝缘和基本绝缘两种等级（例如 ISO7721B 只做基本绝缘），封装越大，引脚之间的爬电距离越长（DW 封装 8 mm，D 封装 4 mm）。</li>
+</ul>
+<p>这几行里的生词逐个解释：</p>
+<ul>
+<li><strong>VRMS</strong>：按有效值计的伏特数，和&quot;220 V 市电&quot;里的 220 V 是同一种算法。</li>
+<li><strong>鉴定测试</strong>：给一个型号做认证时，抽样把电压加到极限、看会不会击穿的测试，不是日常使用的条件。</li>
+<li><strong>加强绝缘</strong>：单独这一层绝缘就足以保护人，相当于两道保护；<strong>基本绝缘</strong>只算一道保护，还需要第二道（例如接地的金属外壳）才能防触电；<strong>功能隔离</strong>更弱，只保证电路正常工作，完全不承担保护人的责任。</li>
+<li><strong>爬电距离</strong>：沿着芯片封装表面，从一侧引脚走到另一侧引脚的最短距离。表面脏了、受潮了，电会沿表面&quot;爬&quot;过去，所以这段距离越长越安全。</li>
+<li><strong>推荐工作范围</strong>：手册保证芯片按规格正常工作的条件；<strong>绝对最大值</strong>是超过就可能损坏的界限，两者之间的区域&quot;不一定坏，但不保证正常&quot;。</li>
+</ul>
+<p>打个比方：测试电压像桥梁验收时的<strong>极限载重测试</strong>，开一辆超重卡车压一次，没塌就算合格；工作电压像桥头的<strong>限载牌</strong>，平时只能按牌子上的数通行。没人会因为桥扛住过一次超重测试，就天天按那个重量过车。</p>
+<p>结论：<strong>看隔离等级要看&quot;工作电压&quot;和&quot;认证等级&quot;，不要只看印在最前面的那个大数字</strong>。 涉及市电的隔离设计，选型和验收要由有资质的工程师按相关安全标准做，本教程不展开。</p>
+<h2 id="三示波器和-usb-线最常见的隔离失效">三、示波器和 USB 线：最常见的&quot;隔离失效&quot;</h2>
+<p>隔离做好之后，最容易把它破坏的往往是调试工具本身。Wikipedia 的 Isolation transformer 词条提到，给被隔离的电路接上示波器、台式万用表之类的测试仪器，可能会让它重新接地。见图 24-p3-1：</p>
+<p><a class="img-link" href="img/24_p3_1_scope.png"><img alt="左边是单片机侧 GND1，经一根 USB 地线连到电脑；右边是现场侧 GND2，经示波器探头的地夹连到示波器，示波器是三孔插头；底部一条朱红色线把电脑和示波器连起来，标注&quot;可能经插座地线连通 ×&quot;和&quot;GND1 和 GND2 绕过隔离带连在了一起&quot;" src="img/24_p3_1_scope.png" loading="lazy" /></a></p>
+<p><em>图 24-p3-1　USB 线和示波器地夹可能让两侧的地连起来</em></p>
+<p>图 24-p3-1 的路径是这样的：单片机侧通过 USB 线连到电脑，GND1 就跟电脑的地相连；现场侧用示波器测量，探头的地夹夹在 GND2 上；如果电脑和示波器都通过三孔插头接了插座的地线，那么底部那条朱红色线就成立了，<strong>GND1 和 GND2 绕过隔离带连在了一起</strong>。这时：</p>
+<ul>
+<li>隔离的保护作用消失，现场侧的故障电流可以经地线窜到单片机侧；</li>
+<li>如果两侧的地之间原本有电压差，地夹一夹上去就会有电流流过，可能打火、烧坏探头地线或电路板。</li>
+</ul>
+<p>是否真的连通，取决于具体的电脑、电源适配器和示波器怎么接地，所以图上写的是&quot;可能&quot;。稳妥的做法是：</p>
+<ol>
+<li>一次只在<strong>一侧</strong>测量，测另一侧之前先拔掉这一侧的仪器连接；</li>
+<li>接好所有仪器后，<strong>断电</strong>用万用表测 GND1 和 GND2 之间，仍然应该是开路（同 <a href="../23-optocoupler/page3.html">23 光耦隔离 · 参数与调试篇</a> 的检查方法）。</li>
+</ol>
+<h2 id="四轻载电压偏高假负载与稳压管钳位">四、轻载电压偏高：假负载与稳压管钳位</h2>
+<p><a href="page2.html">24 隔离电源与数字隔离器 · 原理与实现篇</a> 算过：现场侧只用 4.7 mA 时，NME0505SC 的输出约 10.05 V，超过 ISO7721 的绝对最大值 6 V。Murata 的 DCAN-68 给了两种补救：</p>
+<ul>
+<li><strong>假负载</strong>：在输出端并一只电阻，永远吃掉约 10% 的电流。简单，但这部分功率一直被浪费，留给用户的只剩约 90%。</li>
+<li><strong>稳压管钳位</strong>：用&quot;稳压管 + 串联电阻&quot;跨在输出上。电压高时它导通吃电流，把电压往下拉；用户负载变重、电压自然降下来之后，它就几乎不导通，不再浪费功率。DCAN-68 的例子里，15 V 输出用 220 Ω 串联电阻，在负载超过约 60% 后稳压管就不再导通。</li>
+</ul>
+<p>两种接法见图 24-p3-3：假负载直接并在 VOUT 和 GND2 之间；稳压管的负极朝 VOUT，和串联电阻一起跨在输出上；两种接法里现场侧电路都照常接在输出端。元件值在下一段算出。</p>
+<p><a class="img-link" href="img/24_p3_3_fixes.png"><img alt="电路图：两块 NME0505SC，输出端都接现场侧电路 4.7 mA；左图 (a) 在 VOUT 与 GND2 之间并红紫色 270 Ω 假负载；右图 (b) 在 VOUT 与 GND2 之间跨红紫色的 36 Ω 电阻串 5.1 V 稳压管，稳压管负极朝 VOUT" src="img/24_p3_3_fixes.png" loading="lazy" /></a></p>
+<p><em>图 24-p3-3　两种补救的接法：(a) 假负载；(b) 稳压管钳位</em></p>
+<p>本节按 5 V 输出算：假负载取 270 Ω；稳压管用 1N4733A 类 5.1 V 稳压管，模型同 <a href="../10-zener-regulator/page2.html">10 稳压管稳压 · 原理与实现篇</a>：电压 <span class="math math-inline">\(V = V_{Z0} + r_Z I_Z\)</span> ，击穿起点 <span class="math math-inline">\(V_{Z0} = 5.1 - 7 \times 0.049 \approx 4.76\ \text{V}\)</span> ，动态电阻 <span class="math math-inline">\(r_Z = 7\ \Omega\)</span> 。想让输出在 5.6 V 时支路吃 20 mA，总电阻要 <span class="math math-inline">\((5.6 - 4.76)\ \text{V} / 20\ \text{mA} \approx 42\ \Omega\)</span> ，扣掉 <span class="math math-inline">\(r_Z\)</span> 的 7 Ω，串联电阻约 35 Ω，取 36 Ω。两种方案的输出电压随用户电流的变化见图 24-p3-2：</p>
+<p><a class="img-link" href="img/24_p3_2_fix.png"><img alt="横轴是现场侧电路自己用的电流 0 到 120 mA，纵轴是模块输出电压 4.5 到 11.5 V；朱红色带叉曲线是不处理，在 0 附近接近 10 V；橙色曲线是并 270 Ω 假负载，红紫色点划线是 5.1 V 稳压管加 36 Ω 钳位，两条都在 5.6 V 附近缓慢下降；两条灰色点线分别标 6 V 和 5.5 V；4.7 mA 处黑色标注 5.58 V（两种补救几乎相同），100 mA 处橙色标 5.27 V、红紫色标 5.29 V" src="img/24_p3_2_fix.png" loading="lazy" /></a></p>
+<p><em>图 24-p3-2　两种补救下模块输出电压随用户电流的变化（示意模型）</em></p>
+<p>从图 24-p3-2 能读出三件事：</p>
+<ol>
+<li>朱红色带叉的&quot;不处理&quot;曲线在用户电流很小时远高于上面那条 6 V 灰色点线，会损坏 ISO7721。</li>
+<li>用户只用 4.7 mA 时，橙色（假负载）和红紫色点划线（稳压管）都把电压拉到约 5.58 V（稳压管方案 5.59 V），两种补救效果几乎相同。这时假负载吃 20.7 mA、功耗约 115 mW；稳压管支路吃 19.3 mA。</li>
+<li>用户电流增大到 100 mA 时，两者开始不同：假负载仍然吃 19.5 mA（输出 5.27 V），稳压管支路只吃 12.4 mA（输出 5.29 V）。按这个模型，模块满载时也有约 5.0 V，始终高于击穿起点 4.76 V，所以稳压管支路<strong>一直不会完全关断</strong>：用户用到 180 mA 时，支路仍吃约 6.7 mA（输出 5.04 V）。所以<strong>用户负载变化大时，稳压管钳位更省电，但没有&quot;理想稳压管&quot;想象的那么省</strong>。</li>
+</ol>
+<p>还要注意这是线性化模型。真实稳压管在小电流时拐点很软：1N4733A 手册在 1 mA 时的动态电阻最大 550 Ω，远大于 49 mA 时的 7 Ω，所以几 mA 以下电压会比模型低、电流也不会突然变成 0。实际选型要查所选型号的伏安曲线，拐点的讨论见 <a href="../10-zener-regulator/page2.html">10 稳压管稳压 · 原理与实现篇</a>。</p>
+<blockquote>
+<p><strong>💡 实际芯片会怎样</strong></p>
+<p>上面第 2、3 条的支路电流是按线性化模型（4.76 V 起击穿、再串 7 Ω）算的。换成 1N4733A 的厂家 SPICE 模型复核：输出电压几乎一样（5.61 V、5.31 V、5.06 V），但支路电流更小，用户 4.7 mA 时约 16 mA（模型 19.3 mA），100 mA 时约 8.5 mA（模型 12.4 mA），180 mA 时只剩约 3 mA（模型 6.7 mA）。原因就是上一段说的「拐点软」：真实稳压管在 5.0～5.3 V 这一段还没完全击穿，吃的电流比直线模型少。所以稳压管方案实际上比这里算的还要省电一些，结论不变。</p>
+</blockquote>
+<p>还要再提醒一次：5.58 V 低于 6 V 的绝对最大值，但仍略高于下面那条 5.5 V 灰色点线（ISO7721 推荐工作范围的上限）。要求严格时，改用带稳压的隔离电源，或在模块后面加一级 LDO（见 <a href="../08-linear-regulator/page2.html">08 线性稳压 · 原理与实现篇</a>），把现场侧稳定在 5.0 V 或 3.3 V。</p>
+<h2 id="五变体反激式隔离电源">五、变体：反激式隔离电源</h2>
+<p>功率再大一些（几瓦到几十瓦），或者需要从市电直接得到隔离的低压直流，常用<strong>反激电源</strong>。它的次级输出级在 <a href="../09-switching-power-supply/page2.html">09 开关电源 · 原理与实现篇</a> 第八部分已经画过：初级的 MOSFET 导通时能量存进变压器，断开时经次级二极管放给电容和负载。</p>
+<p>和本节的不稳压小模块不同，反激电源一般<strong>带反馈</strong>，所以输出是稳的。Wikipedia 的 Flyback converter 词条列了三种反馈方式：</p>
+<ul>
+<li>次级用光耦把输出电压的信息送回初级（见 <a href="../23-optocoupler/page2.html">23 光耦隔离 · 原理与实现篇</a>，光耦又一次用来过隔离带）；</li>
+<li>在变压器上多绕一组辅助绕组，从初级这边间接感知输出；</li>
+<li>初级侧检测，不需要光耦，但通常要求<strong>最小负载</strong>，和本节的不稳压模块是同一类问题。</li>
+</ul>
+<p>手机充电器就是常见的反激电源。它的初级接市电，<strong>只能由持证电工或专业人员处理，不要自己拆开测量</strong>。</p>
+<h2 id="六故障排查">六、故障排查</h2>
+<p>下表每一步凡是要改线、拆线，都先<strong>断电</strong>再动手；涉及市电的成品（变压器初级、充电器内部）一律送修或交给持证电工，不要自己拆。</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一上电，现场侧的芯片就发烫或损坏</td>
+<td>不稳压模块负载太轻，输出升到约两倍</td>
+<td>断电后断开后级，只接假负载或什么都不接，再上电测 VOUT 对 GND2</td>
+<td>断电后加假负载或稳压管钳位；严格时加 LDO（见 08）或换稳压型模块</td>
+</tr>
+<tr>
+<td>接上示波器后现场侧出现干扰、打火，或单片机复位</td>
+<td>探头地夹把 GND2 接到了大地；USB 线又把 GND1 接到了大地</td>
+<td>断电后接好全部仪器，测 GND1 与 GND2 之间是否开路</td>
+<td>一次只在一侧测量；测另一侧前先断开这一侧的仪器</td>
+</tr>
+<tr>
+<td>断电测 GND1 与 GND2 之间有导通</td>
+<td>某根导线、屏蔽外壳（包住电路、挡外界干扰的金属壳，本身是导体）、安装螺丝跨过了隔离带</td>
+<td>保持断电，逐一断开跨隔离带的连接，看何时变成开路</td>
+<td>去掉桥接；隔离带两侧的线和铜皮都不相连</td>
+</tr>
+<tr>
+<td>串口低速正常，提到 115200 波特率（每秒传多少位，见 <a href="../23-optocoupler/page2.html">23 光耦隔离 · 原理与实现篇</a> 第四节）就乱码</td>
+<td>用了通用光耦，回升太慢（上拉 1.9 kΩ 时约 40 µs）</td>
+<td>断电接好探头（只在一侧测），上电后用示波器看光耦输出的上升沿多长</td>
+<td>断电后换数字隔离器；或按白皮书减小上拉电阻（100 Ω 时约 3 µs），但电流会增大</td>
+</tr>
+<tr>
+<td>数字隔离器输出一直停在一个电平</td>
+<td>输入侧掉电或信号丢失时输出进入默认状态（ISO772x 默认高）；或现场侧 VCC2 没电</td>
+<td>测 VCC1 对 GND1、VCC2 对 GND2，都应在 2.25 V 到 5.5 V</td>
+<td>断电后检查隔离电源和接线；注意两侧电源各自以本侧的地为参考</td>
+</tr>
+<tr>
+<td>变压器方案的输出随时间忽高忽低</td>
+<td>变压器加整流滤波本身不稳压，电网电压一变就跟着变</td>
+<td>在次级低压侧测整流后的直流电压，记录变化范围</td>
+<td>断电后在次级后面加稳压（见 08），按最低输入电压检查压差；初级侧的任何改动交给持证电工</td>
+</tr>
+<tr>
+<td>现场侧 5 V 实测约 5.6 V，略高于芯片推荐值</td>
+<td>不稳压模块在 10% 负载附近本来就偏高 12% 左右</td>
+<td>测实际负载电流，对照手册负载调整率</td>
+<td>断电后加 LDO 或换稳压型隔离模块</td>
+</tr>
+</tbody>
+</table>
+<h2 id="七练习">七、练习</h2>
+<p><strong>练习 1（易，误区）</strong>：一只隔离 DC-DC 模块上印着&quot;1 kVDC 隔离&quot;。同学说：&quot;220 V 市电的峰值才约 311 V，比 1000 V 低得多，可以用它把单片机和市电隔开。&quot;他错在哪里？</p>
+<details>
+<summary>答案</summary>
+<p>1 kVDC 是出厂时每只测 1 秒的测试电压，不是长期工作电压。NME 系列手册写明它只是功能隔离，两侧都应保持在安全特低电压范围内（峰值 42.4 V 或直流 60 V 以下），绝不能作为安全隔离系统的一部分。隔离市电要选认证了相应绝缘等级和工作电压的器件，并由专业人员按安全标准设计。</p>
+</details>
+<p><strong>练习 2（易，误区）</strong>：ISO7721 的 DW 封装标着 5000 VRMS，能不能理解成它两侧之间可以长期承受 5000 V 有效值？</p>
+<details>
+<summary>答案</summary>
+<p>不能。5000 VRMS 是 60 秒的鉴定测试电压（量产时加 1.2 倍、测 1 秒）。长期工作的电压看&quot;最大工作隔离电压&quot;，DW 封装是 1500 VRMS，D 封装只有 450 VRMS。</p>
+</details>
+<p><strong>练习 3（中）</strong>：按图 24-p3-2 的示意模型，现场侧电流从 4.7 mA 增加到 100 mA。假负载方案和稳压管方案的&quot;额外电流&quot;各是多少？哪个更省电？如果用户电流长期稳定在 4.7 mA，两者有区别吗？</p>
+<details>
+<summary>答案</summary>
+<p>100 mA 时，假负载仍吃 19.5 mA，稳压管支路只吃 12.4 mA（用厂家 SPICE 模型约 8.5 mA），稳压管方案更省电（但支路没有完全关断）。用户电流稳定在 4.7 mA 时，两者都把输出拉到约 5.58–5.59 V，额外电流也差不多（20.7 mA 对 19.3 mA），这时选更简单的假负载即可。</p>
+</details>
+<p><strong>练习 4（难，变体迁移）</strong>：把隔离电源换成工频变压器方案：220 V 变 9 V（有效值）的变压器，次级接桥式整流加大电容滤波，后面接一只 5 V LDO。电网电压按 ±10% 波动，整流后的直流电压（取滤波后的峰值，忽略纹波）在什么范围？LDO 的输入在最坏情况下比输出高多少，够不够用？电路见图 24-p3-4（初级带市电，只做纸面计算）。</p>
+<p><a class="img-link" href="img/24_p3_4_ex4_ldo.png"><img alt="电路图：朱红色的 220 V 市电经保险丝接 220 V 变 9 V 的变压器初级；次级 9 V 接桥式整流，正端并大电容，接 5 V LDO 的 IN，LDO 的 GND 接 GND2，OUT 输出 5 V" src="img/24_p3_4_ex4_ldo.png" loading="lazy" /></a></p>
+<p><em>图 24-p3-4　练习 4：变压器 + 桥式整流 + 大电容 + 5 V LDO（只做计算）</em></p>
+<details>
+<summary>答案</summary>
+<p>峰值 = 有效值 × √2，桥式整流每次经过两只二极管，扣约 2 × 0.7 = 1.4 V（见 <a href="../06-bridge-rectifier/page1.html">06 桥式整流 · 直觉篇</a>）。额定时 <span class="math math-inline">\(9\sqrt{2} - 1.4 \approx 11.33\ \text{V}\)</span> ；电网低 10% 时 <span class="math math-inline">\(8.1\sqrt{2} - 1.4 \approx 10.06\ \text{V}\)</span> ，高 10% 时 <span class="math math-inline">\(9.9\sqrt{2} - 1.4 \approx 12.60\ \text{V}\)</span> 。按最坏的 10.06 V 算，LDO 两端还有约 5.06 V，远大于一般 LDO 需要的压差（具体看所选型号手册），够用。实际还要扣掉滤波纹波，并检查 12.60 V 时 LDO 的发热（见 <a href="../08-linear-regulator/page2.html">08 线性稳压 · 原理与实现篇</a>）。整个练习只在纸上算；变压器初级接市电，搭建交给持证电工。</p>
+</details>
+<h2 id="小结">小结</h2>
+<ul>
+<li>隔离耐压分&quot;测试电压&quot;和&quot;工作电压&quot;，还要看认证等级；功能隔离的小模块不能用来隔离市电。</li>
+<li>示波器地夹和 USB 线可能让 GND1 与 GND2 连通（图 24-p3-1）；一次只测一侧，断电后测两地之间必须开路。</li>
+<li>不稳压模块轻载电压偏高：假负载简单，稳压管钳位在负载变化大时更省电；两者在轻载时都约 5.58–5.59 V，稳压管支路重载时也不会完全关断，仍略高于 ISO7721 推荐上限，严格时加 LDO（图 24-p3-2）。</li>
+<li>要稳压、功率更大时用带反馈的反激电源（见 <a href="../09-switching-power-supply/page2.html">09 开关电源 · 原理与实现篇</a>）。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Murata，NME 系列（NME0505SC）数据手册（1 kVDC 1 秒测试、功能隔离、安全特低电压范围、反复耐压测试的影响、负载调整率、最小负载）：<a href="https://pdf.digi-electronics.com/pdf/1732/NME0505SC-datasheet.pdf">https://pdf.digi-electronics.com/pdf/1732/NME0505SC-datasheet.pdf</a></li>
+<li>Murata，DCAN-68 隔离 DC-DC 模块应用笔记（最小负载、假负载、稳压管钳位及其 15 V 例子）：<a href="https://www.murata.com/-/media/webrenewal/products/power/appnote/dcan-68.pdf">https://www.murata.com/-/media/webrenewal/products/power/appnote/dcan-68.pdf</a></li>
+<li>TI，ISO772x 数据手册 SLLSEP3G（ <span class="math math-inline">\(V_{ISO}\)</span> 、最大工作隔离电压、爬电距离、加强与基本绝缘、CMTI、传输延时、电源电压、默认输出）：<a href="https://www.ti.com/lit/ds/symlink/iso7721.pdf">https://www.ti.com/lit/ds/symlink/iso7721.pdf</a></li>
+<li>TI，SLLA526D《Replacing Optocouplers with Digital Isolators》白皮书（光耦延时与上拉电阻、CMTI 对比）：<a href="https://www.ti.com/lit/wp/slla526d/slla526d.pdf">https://www.ti.com/lit/wp/slla526d/slla526d.pdf</a></li>
+<li>Wikipedia，Isolation transformer（测试仪器可能使被隔离电路接地）：<a href="https://en.wikipedia.org/wiki/Isolation_transformer">https://en.wikipedia.org/wiki/Isolation_transformer</a></li>
+<li>Wikipedia，Flyback converter（反激电源的工作过程、三种反馈方式、初级侧检测需要最小负载、用于充电器）：<a href="https://en.wikipedia.org/wiki/Flyback_converter">https://en.wikipedia.org/wiki/Flyback_converter</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

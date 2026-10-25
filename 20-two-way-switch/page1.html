@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20 双控开关 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/20-two-way-switch/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="20-双控开关--直觉篇">20 双控开关 · 直觉篇</h1>
+<p><a href="../25-h-bridge/page4.html">上一页：25 H 桥电机驱动 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节点特有的危险点：① 墙上的双控开关盒里，<strong>灯关着的时候也有导线带电</strong>：火线一直接在一只开关上，两根跨线里总有一根带电；② 开关如果错接在零线上，灯照样能开能关，看不出毛病，但灯灭时灯头仍然带 220 V，换灯泡时最容易出事；③ 只关墙上的开关不等于断电，动手前必须断开配电箱里对应的断路器并验电。</p>
+</blockquote>
+<h2 id="一痛点楼下开了灯上楼以后怎么关">一、痛点：楼下开了灯，上楼以后怎么关？</h2>
+<p>家里的楼梯、长走廊、卧室门口和床头，都有同一个麻烦：<strong>进去的时候在这头开灯，出来的时候在那头关灯</strong>。</p>
+<p>如果只在楼下装一个普通开关（见图 20-p1-1 左边），上楼前开灯没问题，到了楼上就只剩两个选择：开着灯不管，或者再摸黑走下来关。装两个普通开关也不行：两个开关串联，必须两个都合上灯才亮，楼上的人关了灯，楼下的人就开不了；两个开关并联，只要有一个合着，另一个就关不掉。</p>
+<p>两个普通开关的串联和并联接法画在图 20-p1-4 里。</p>
+<p><a class="img-link" href="img/20_p1_4_two_switches.png"><img alt="两个普通开关控制一盏灯：（a）串联，楼下开关和楼上开关依次串在火线和灯之间；（b）并联，两个开关并在火线和灯之间" src="img/20_p1_4_two_switches.png" loading="lazy" /></a></p>
+<p><em>图 20-p1-4　两个普通开关控制一盏灯：（a）串联　（b）并联</em></p>
+<p>图 20-p1-4（a）里电流要依次穿过两个开关，任何一个断开灯就灭，所以楼上关掉以后楼下打不开。（b）里两个开关是两条并排的路，只要一条通着灯就亮，所以另一个人关不掉。两种接法都做不到&quot;拨任意一个灯就翻转&quot;。</p>
+<p><a class="img-link" href="img/20_p1_1_problem.png"><img alt="左边楼梯只有楼下有开关，灯亮着，楼上没有开关；右边楼梯上下各有一个开关" src="img/20_p1_1_problem.png" loading="lazy" /></a></p>
+<p><em>图 20-p1-1　只在楼下装开关与上下各装一个开关的对比</em></p>
+<p>我们想要的是图 20-p1-1 右边：<strong>不管另一个开关现在拨在哪边，拨一下手边的开关，灯就从亮变灭或者从灭变亮</strong>。这叫&quot;双控&quot;，也叫&quot;两地控制&quot;。</p>
+<h2 id="二类比铁路上的两个道岔">二、类比：铁路上的两个道岔</h2>
+<p>把电流想成一列火车。火车从左边进站，从右边出站。中间铺了两条平行的轨道，叫&quot;上轨&quot;和&quot;下轨&quot;。两头各有一个道岔，道岔只能把火车引到上轨或下轨中的一条。</p>
+<p>看图 20-p1-2：上面一行，两个道岔都扳到上轨，火车走上轨开出去，结果是通的；下面一行，左边的道岔扳到上轨，右边的扳到下轨，火车在上轨走到尽头发现没路了，结果是<strong>不通</strong>。</p>
+<p><a class="img-link" href="img/20_p1_2_railway.png"><img alt="上下两行铁路示意：两个道岔都指向上轨时出站通；一个指上轨、一个指下轨时出站不通" src="img/20_p1_2_railway.png" loading="lazy" /></a></p>
+<p><em>图 20-p1-2　两个道岔指向同一条轨道，火车才过得去</em></p>
+<p>关键在这里：无论现在是通还是不通，<strong>只要扳动任意一个道岔，&quot;两个道岔是否指向同一条轨&quot;就会反过来</strong>，于是通变不通、不通变通。图 20-p1-2 下面一行只要把右边的道岔扳回上轨，就和上面一行一样了。</p>
+<h2 id="三看一张完整的电路">三、看一张完整的电路</h2>
+<p>把道岔换成开关，把两条轨道换成两根导线，就是双控开关电路，见图 20-p1-3。</p>
+<p><a class="img-link" href="img/20_p1_3_circuit.png"><img alt="双控电路：火线 L 接楼下开关 S1 的刀，S1 的两个触点分别通过跨线 A、跨线 B 接到楼上开关 S2 的两个触点，S2 的刀接灯，灯另一端接零线 N" src="img/20_p1_3_circuit.png" loading="lazy" /></a></p>
+<p><em>图 20-p1-3　双控电路：两只单刀双掷开关和两根跨线</em></p>
+<p>图 20-p1-3 里的两只开关都叫<strong>单刀双掷开关</strong>：中间那个能转动的&quot;刀&quot;一端固定在公共端，另一端只能搭在两个触点中的一个上（P1 里讲过，开关就是用手把电路接通或断开，见 <a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a>；单刀双掷开关不是&quot;通或断&quot;，而是在两条路之间二选一）。两只开关之间的两根导线叫<strong>跨线</strong>，作用就是那两条轨道。</p>
+<p>图中 S1 的刀搭在跨线 A 上，S2 的刀也搭在跨线 A 上，电流从火线 L 出发，经 S1、跨线 A、S2、灯，回到零线 N，灯亮。这时：</p>
+<ul>
+<li>在楼下拨 S1：S1 改搭跨线 B，两把刀不在同一根线上，灯灭；</li>
+<li>或者在楼上拨 S2：效果一样，灯灭。</li>
+</ul>
+<p>灭了以后再拨任意一只，两把刀又回到同一根跨线上，灯又亮。</p>
+<p>要数&quot;拨过几次&quot;，得先定一个起点。电工装好以后交房时，习惯让灯处在<strong>灭</strong>的状态，我们就把这时两只开关的位置叫&quot;出厂位置&quot;：S1 的刀搭在跨线 A 上，S2 的刀搭在跨线 B 上。注意，图 20-p1-3 画的不是出厂位置，而是从出厂位置拨过 S2 一次、灯已经亮了的状态。从灯灭的出厂位置开始，用 0 和 1 记两只开关&quot;有没有被拨过&quot;，灯的状态就是两者的<strong>异或</strong>（意思是&quot;两者不一样&quot;）：一个拨过、一个没拨过，灯亮；都没拨或者都拨过，灯灭。四种情况可以列成一张表：</p>
+<table>
+<thead>
+<tr>
+<th>S1 拨过没有</th>
+<th>S2 拨过没有</th>
+<th>S1 的刀在</th>
+<th>S2 的刀在</th>
+<th>灯</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0（没拨）</td>
+<td>0（没拨）</td>
+<td>跨线 A</td>
+<td>跨线 B</td>
+<td>灭（出厂位置）</td>
+</tr>
+<tr>
+<td>1（拨过）</td>
+<td>0（没拨）</td>
+<td>跨线 B</td>
+<td>跨线 B</td>
+<td>亮</td>
+</tr>
+<tr>
+<td>0（没拨）</td>
+<td>1（拨过）</td>
+<td>跨线 A</td>
+<td>跨线 A</td>
+<td>亮（就是图 20-p1-3）</td>
+</tr>
+<tr>
+<td>1（拨过）</td>
+<td>1（拨过）</td>
+<td>跨线 B</td>
+<td>跨线 A</td>
+<td>灭</td>
+</tr>
+</tbody>
+</table>
+<p>从表里任何一行出发，只改一只开关（也就是只改一列里的 0 或 1），都会跳到灯的状态相反的另一行。这就是&quot;拨任意一只，灯都翻转&quot;。表里没有任何一行要求&quot;另一只开关必须在某个位置&quot;，所以楼上楼下的人谁也不用管对方刚才拨成了什么样。</p>
+<p>还要注意图 20-p1-3 的一个细节：开关在<strong>火线</strong>一侧，灯在零线一侧。这不是随便画的，国家标准要求&quot;相线（就是火线）应经开关控制&quot;，下一页的仿真会说明接反了会怎样。</p>
+<h2 id="四一句话总结">四、一句话总结</h2>
+<p><strong>双控开关就是两只单刀双掷开关加两根跨线：两把刀搭在同一根跨线上灯就亮，拨任意一只都会让灯翻转</strong>。下一页用一个小程序把四种开关组合全部列出来，画成状态图，再看三种常见的接错法各会出什么毛病。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Wikipedia，Multiway switching（两只单刀双掷开关加一对跨线实现两地控制，四种组合中两种亮灯）：<a href="https://en.wikipedia.org/wiki/Multiway_switching">https://en.wikipedia.org/wiki/Multiway_switching</a></li>
+<li>Samotech，How to wire a 2-way light switch (UK)（每只开关有 COM、L1、L2 三个端子，火线进第一只的 COM，第二只的 COM 去灯）：<a href="https://www.samotech.co.uk/guides/wiring/how-to-wire-2-way-light-switch-uk/">https://www.samotech.co.uk/guides/wiring/how-to-wire-2-way-light-switch-uk/</a></li>
+<li>GB 50303-2015《建筑电气工程施工质量验收规范》第 20.1.4 条（相线应经开关控制）：<a href="https://gf.cabr-fire.com/article-19525.htm">https://gf.cabr-fire.com/article-19525.htm</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

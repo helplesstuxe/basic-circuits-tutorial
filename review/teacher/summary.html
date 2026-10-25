@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>资深教师审读 · 汇总</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/summary.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="资深教师审读--汇总">资深教师审读 · 汇总</h1>
+<p>审读对象：29 个节点 × 3 页，按 00-design §5.3 的拓扑顺序逐节审读。逐条意见见同目录下的 <code>NN.md</code>，跨章节问题见 <code>cross-chapter.md</code>，依据见 <code>best-practices.md</code>。本次只做审读，没有改动任何页面、代码或图片，也没有运行 git。</p>
+<h2 id="计数表按导航顺序">计数表（按导航顺序）</h2>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>必改</th>
+<th>建议</th>
+<th>节点</th>
+<th>必改</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>4</td>
+<td>7</td>
+<td>04</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>2</td>
+<td>8</td>
+<td>10</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>1</td>
+<td>8</td>
+<td>13</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr>
+<td>17</td>
+<td>3</td>
+<td>6</td>
+<td>07</td>
+<td>1</td>
+<td>4</td>
+</tr>
+<tr>
+<td>01</td>
+<td>1</td>
+<td>6</td>
+<td>15</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td>21</td>
+<td>2</td>
+<td>6</td>
+<td>08</td>
+<td>1</td>
+<td>5</td>
+</tr>
+<tr>
+<td>22</td>
+<td>0</td>
+<td>5</td>
+<td>11</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td>02</td>
+<td>0</td>
+<td>6</td>
+<td>23</td>
+<td>1</td>
+<td>3</td>
+</tr>
+<tr>
+<td>05</td>
+<td>1</td>
+<td>5</td>
+<td>16</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td>14</td>
+<td>0</td>
+<td>4</td>
+<td>09</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr>
+<td>18</td>
+<td>1</td>
+<td>5</td>
+<td>25</td>
+<td>0</td>
+<td>5</td>
+</tr>
+<tr>
+<td>03</td>
+<td>0</td>
+<td>4</td>
+<td>20</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr>
+<td>06</td>
+<td>1</td>
+<td>2</td>
+<td>24</td>
+<td>0</td>
+<td>4</td>
+</tr>
+<tr>
+<td>12</td>
+<td>1</td>
+<td>3</td>
+<td>26</td>
+<td>0</td>
+<td>3</td>
+</tr>
+<tr>
+<td>19</td>
+<td>1</td>
+<td>3</td>
+<td><strong>合计（29 节点）</strong></td>
+<td><strong>22</strong></td>
+<td><strong>129</strong></td>
+</tr>
+</tbody>
+</table>
+<p>跨章节问题另计（<a href="http://cross-chapter.md">cross-chapter.md</a>）：必改 3、建议 21。其中大部分与各节点的条目相同，只是从全书角度重新汇总，因此不计入上面的合计。</p>
+<p><strong>市电节点的安全提示</strong>：06、09、17、18、19、20、22、23、24 九个节点，各页都有 <code>[!WARNING]</code>，动手实验都限定在低压，全部合格。另有两处非市电节点存在<strong>烫伤风险</strong>，见 Top 10 的第 1、2 条。</p>
+<h2 id="top-10-问题按安全性--会导致电路做不出来或误判--概念矛盾排序">Top 10 问题（按安全性 &gt; 会导致电路做不出来或误判 &gt; 概念矛盾排序）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>级别</th>
+<th>位置</th>
+<th>问题</th>
+<th>改法要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>必改</td>
+<td>07 page1 L63</td>
+<td>叫读者用手指去碰一只发热约 0.65 W 的 2N3904，超过额定功耗近一倍，有烫伤风险。这个场景与 page2 的动手参数也矛盾。</td>
+<td>改为&quot;不要用手摸&quot;，只在仿真里看；动手实验用 220 Ω。</td>
+</tr>
+<tr>
+<td>2</td>
+<td>必改</td>
+<td>08 page3 L72</td>
+<td>说 20 °C/W 的散热片在 2.45 W 下&quot;不烫手&quot;。实际温升约 41 °C，表面约 65 °C，与本页 L6 的说法矛盾。</td>
+<td>改为约 60–70 °C，不要摸，用测温枪测。</td>
+</tr>
+<tr>
+<td>3</td>
+<td>必改</td>
+<td>18 page2 L283</td>
+<td>动手第 3 步说&quot;短接一只互锁触点，两盏灯会一起亮&quot;。实际看到的是一只被&quot;挤掉&quot;，读者会以为自己接错了。</td>
+<td>改成短接两只；或者说明只短接一只时的现象，以及约 10 ms 的重叠。</td>
+</tr>
+<tr>
+<td>4</td>
+<td>必改</td>
+<td>23 page3 L35</td>
+<td>建议&quot;上拉 1 kΩ 加 I_F 10 mA&quot;，与本页图 23-p3-1 的 19.2 mA 相矛盾。按这个数值做，CTR 25% 时输出只有约 2.5 V，落在不确定区。</td>
+<td>改为 2.2 kΩ、约 9–10 mA；若用 1 kΩ，则要约 20 mA。</td>
+</tr>
+<tr>
+<td>5</td>
+<td>必改</td>
+<td>17 page2 L151</td>
+<td>继电器释放电压&quot;降到 10% 以上就会释放&quot;，意思写反了。</td>
+<td>改为&quot;释放电压不低于额定值的 10%&quot;。</td>
+</tr>
+<tr>
+<td>6</td>
+<td>必改</td>
+<td>P2 page2 L37–39；10 page2/page3；08、24 沿用</td>
+<td>稳压管模型把在 I_ZT 下测得的 5.1 V 当成击穿起点，算出 49 mA 时 5.44 V，与手册矛盾。10 一处说偏高、一处说偏低。</td>
+<td>全书统一用 V = V_Z + r_Z(I_Z − I_ZT)，或者明确改记为 V_Z0。</td>
+</tr>
+<tr>
+<td>7</td>
+<td>必改</td>
+<td>P3 page1 L9</td>
+<td>把 14（开环比较器）列入&quot;建立在虚短上&quot;的节点，正好制造了本节最想消除的误区。另外，02、03、04、13、07 引用虚短时都省略了&quot;未饱和&quot;这一条件。</td>
+<td>去掉 14，并注明 14 是反例；各节引用虚短时统一加上&quot;未饱和&quot;。</td>
+</tr>
+<tr>
+<td>8</td>
+<td>必改</td>
+<td>17 page1 L8、L12；19 page1 L28；11、18 也在用</td>
+<td>&quot;三相 / 380 V 线电压&quot;在没有任何定义的情况下就出现了。19 又用&quot;串了两段&quot;去解释 ÷√3，读者会推出 ÷2。</td>
+<td>17 加一个最小定义框；19 改为&quot;相位错开 1/3 周期，所以不能对半分&quot;。</td>
+</tr>
+<tr>
+<td>9</td>
+<td>必改</td>
+<td>21 page3 L55 与 page2 L153</td>
+<td>&quot;体二极管&quot;在没有定义的情况下就用来判断引脚（09、26 也在用）；&quot;D1 关断瞬间扛全部电流&quot;把主语写错了。</td>
+<td>在 21 page1 定义体二极管（可以借用 25 page2 L11 的写法）；改为&quot;MOS 管关断时电流转到 D1&quot;。</td>
+</tr>
+<tr>
+<td>10</td>
+<td>必改</td>
+<td>06 page3 L36；12 page3 L14 与 L36</td>
+<td>同一页里的结论自相矛盾：06 说&quot;1000 µF 时纹波 1.45 V&quot;，又说&quot;要小于 1 V 用 1000 µF 左右&quot;；12 对 R_f 一处说&quot;尽量大&quot;，一处说&quot;尽量小&quot;。</td>
+<td>06 改为约 1500–1900 µF，选 2200 µF；12 改为&quot;下限按十倍规则、上限按允许的偏移&quot;两步法。</td>
+</tr>
+</tbody>
+</table>
+<p>其余 8 条必改见各节点文件：</p>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>问题</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1（4 条）</td>
+<td>10% 误差的引文；二极管先用后讲；常闭触点的图文不符；延时触点的描述</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>&quot;闭环&quot;没有定义</td>
+</tr>
+<tr>
+<td>01</td>
+<td>0.707 没有来由</td>
+</tr>
+<tr>
+<td>05</td>
+<td>page3 L85 练习答案的 R1 = 9.1 kΩ，违反了题目自己&quot;输入电阻不小于 10 kΩ&quot;的约束</td>
+</tr>
+<tr>
+<td>17</td>
+<td>page2 L16 错误回指 P1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>跨章节的结构性建议</strong>（详见 <a href="http://cross-chapter.md">cross-chapter.md</a> 第四部分）：现行导航顺序是按作者并行写作排出来的，主题交错，P3 又先于 P2。建议在 README 里增加一条&quot;按主题分组&quot;的推荐顺序，这条顺序已对照全部 55 条依赖边核对过：</p>
+<blockquote>
+<p>P1 → P2 → P3 → 01 → 02 → 03 → 04 → 05 → 12 → 13 → 14 → 15 → 16 → 06 → 10 → 07 → 08 → 09 → 21 → 22 → 23 → 24 → 25 → 26 → 17 → 18 → 19 → 20 → 11</p>
+</blockquote>
+<p>迁移题的标签应统一为&quot;变体迁移&quot;（AUTHOR_GUIDE L32）：15、16 写成了&quot;变式迁移&quot;，08、09、10、20、23、24 的 page3 缺少这类题。</p>
+<h2 id="文件清单">文件清单</h2>
+<p>全部位于 <code>/workspace/basic-circuits-tutorial/review/teacher/</code>：</p>
+<table>
+<thead>
+<tr>
+<th>类别</th>
+<th>文件</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>汇总与依据</td>
+<td><code>summary.md</code>、<code>best-practices.md</code>、<code>cross-chapter.md</code></td>
+</tr>
+<tr>
+<td>各节点（29 个）</td>
+<td><code>P1.md</code> <code>P2.md</code> <code>P3.md</code> <code>01.md</code> … <code>26.md</code></td>
+</tr>
+</tbody>
+</table>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

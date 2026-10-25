@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 电压跟随器：SPICE 复核报告</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/03.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="03-电压跟随器spice-复核报告">03 电压跟随器：SPICE 复核报告</h1>
+<ul>
+<li>
+<p>工具：ngspice 44.2，batch 模式。<code>spice/03/.spiceinit</code> 里写了 <code>set ngbehavior=psa</code>，TI 的 PSpice 模型需要这一行。</p>
+</li>
+<li>
+<p>运行：在仓库根目录执行 <code>python spice/03/run.py</code>，退出码 0，已实际运行（51 个比对项，约 3 分钟）。</p>
+</li>
+<li>
+<p>网表：</p>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dc_div.cir</code></td>
+<td>分压器直接接负载 / 经跟随器接负载（page1、page2 仿真、例1、例2、练习2）</td>
+</tr>
+<tr>
+<td><code>dc_vin.cir</code></td>
+<td>跟随器基本输入输出、练习1</td>
+</tr>
+<tr>
+<td><code>t_cap.cir</code></td>
+<td>图 03-p3-1，0.1 µF 容性负载阶跃</td>
+</tr>
+<tr>
+<td><code>t_ss5.cir</code></td>
+<td>图 03-p3-2，5 V 单电源</td>
+</tr>
+<tr>
+<td><code>t_ex1ss.cir</code></td>
+<td>例1 第4步</td>
+</tr>
+<tr>
+<td><code>t_ex5.cir</code></td>
+<td>练习5</td>
+</tr>
+<tr>
+<td><code>t_sr.cir</code> / <code>t_step.cir</code></td>
+<td>压摆率、练习4、page1 第4步正弦</td>
+</tr>
+<tr>
+<td><code>ac.cir</code></td>
+<td>带宽</td>
+</tr>
+<tr>
+<td><code>t_ref.cir</code> / <code>t_ref2.cir</code></td>
+<td>例3 基准缓冲</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>收敛说明：</p>
+<ul>
+<li>TI 模型直接做 op 常不收敛，所以直流值都用&quot;输入从 0 爬升的瞬态&quot;求稳态。</li>
+<li>单电源、V− 接 SPICE 全局地、输出带 ≤5 kΩ 负载时，模型会收敛到输出 ≈6.5 V（高于电源）的假解。遇到这种情况，把电路地放在 −2.5 V、V+ 放在 +2.5 V（电位差仍是 5 V），结果按相对电路地读。见 <code>t_ex1ss.cir</code> 和 <code>t_ref*.cir</code>。</li>
+<li>曾试过&quot;输出串 33 Ω + 1 µF&quot;的基准接法，模型同样锁进假状态，结果不可信，所以没有采用（见下文 ❌ 的修改建议）。</li>
+</ul>
+</li>
+</ul>
+<h2 id="模型与来源">模型与来源</h2>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LM358B</td>
+<td>spice/models/LMx58B_LM2904B.lib（复用，子电路 LMX58B_LM2904B）</td>
+<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
+</tr>
+</tbody>
+</table>
+<p>没有用替代模型。</p>
+<h2 id="假设">假设</h2>
+<ul>
+<li>
+<p>page1、page2 没有写运放电源，按前面节点的做法取 ±15 V。单电源的情况按页面写的 5 V / 12 V。</p>
+</li>
+<li>
+<p>电阻取标称值。</p>
+</li>
+<li>
+<p>例2 和练习2 的开路电压取 1 V，表中给的是比例。</p>
+</li>
+<li>
+<p>图 03-p3-1：</p>
+<ul>
+<li>阶跃在 5 µs 处，上升沿 10 ns；</li>
+<li>Riso 接在运放输出和电容之间，反馈取自运放输出脚。</li>
+<li>页面图是按&quot;固定 300 Ω 输出电阻&quot;的简化模型画的，这里用的是完整的官方模型。</li>
+</ul>
+</li>
+<li>
+<p>练习5：分压点电容取 10 µF，不接负载。</p>
+</li>
+<li>
+<p>例3：页面没有给模数转换器抽电流的数值，假设了两种脉冲：</p>
+<ul>
+<li>1 mA、上下沿 10 ns、宽 1 µs；</li>
+<li>0.1 mA、上下沿 100 ns、宽 1 µs。</li>
+</ul>
+<p>比较器门限端不取电流。对照组是同一脉冲直接从带 100 nF 的分压点抽取。</p>
+</li>
+<li>
+<p>带宽用 ac 分析的 −3 dB 点（取最后一次下穿 0.707 的位置）。</p>
+</li>
+</ul>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page1 开头 10 V 两只 10k 分压，空载</td>
+<td>5.00 V</td>
+<td>5.000 V</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 图03-p1-1 1k 直接接分压点</td>
+<td>约 0.83 V（&quot;不到 1 V&quot;）</td>
+<td>0.833 V</td>
+<td>+0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 图03-p1-3 / 第2步 1k 接跟随器输出：分压点 / 负载</td>
+<td>5 V / 5 V</td>
+<td>5.000 / 5.000 V</td>
+<td>&lt;0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 第2步 负载电流</td>
+<td>约 5 mA</td>
+<td>5.00 mA</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 第3步 1k 改接分压点，跟随器输出</td>
+<td>0.83 V</td>
+<td>0.834 V</td>
+<td>+0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 第4步 1 kHz、1 V 峰正弦，两条线重合</td>
+<td>峰值 1 V</td>
+<td>1.000 V，与输入最大偏差 0.46 mV</td>
+<td>&lt;0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 代数 5 V→5 V，−1.2 V→−1.2 V</td>
+<td>5 / −1.2 V</td>
+<td>5.0004 / −1.1997 V</td>
+<td>&lt;0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 代数 2.5 V→2.5 V</td>
+<td>2.5 V</td>
+<td>2.5003 V</td>
+<td>+0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 A=10万：5 V 输入时输出少约 0.05 mV</td>
+<td>0.05 mV</td>
+<td>差 0.38 mV（主要来自失调 0.29 mV）</td>
+<td>×7.6</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page2 低频倍数 0.99999</td>
+<td>0.99999</td>
+<td>1.00002</td>
+<td>&lt;0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 仿真/图03-p2-2 直接接 1k / 10k / 100k</td>
+<td>0.83 / 3.33 / 4.76 V</td>
+<td>0.833 / 3.333 / 4.762 V</td>
+<td>&lt;0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例1 空载 / 直接接 2k / 经跟随器</td>
+<td>3.33 / 0.77 / 3.33 V</td>
+<td>3.333 / 0.769 / 3.334 V</td>
+<td>&lt;0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例1 模块电流</td>
+<td>约 1.7 mA</td>
+<td>1.667 mA</td>
+<td>−2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例1 第4步 5 V 单电源：带 2k 输出 / 上限 / 余量</td>
+<td>3.33 / 3.5 / 0.17 V</td>
+<td>3.334 / 3.500 / 0.166 V</td>
+<td>&lt;2.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例2 内阻 50k、后级 200k 直接接</td>
+<td>80%</td>
+<td>80.04%</td>
+<td>+0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例3 基准 2.5 V（缓冲后）</td>
+<td>2.5 V</td>
+<td>2.5003 V</td>
+<td>+0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例3 &quot;负载突然抽电流时……基准电压几乎不跳&quot;</td>
+<td>几乎不跳</td>
+<td>见下面三个数</td>
+<td>—</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>└ 1 mA 快脉冲，跟随器输出</td>
+<td>—</td>
+<td>先掉 0.62 V，再冲到 3.0 V</td>
+<td>—</td>
+<td>（同上）</td>
+</tr>
+<tr>
+<td>└ 0.1 mA 较缓脉冲，跟随器输出</td>
+<td>—</td>
+<td>跳 ±56 mV</td>
+<td>—</td>
+<td>（同上）</td>
+</tr>
+<tr>
+<td>└ 对照：1 mA 快脉冲直接从带 100 nF 的分压点抽</td>
+<td>—</td>
+<td>只掉 10 mV</td>
+<td>—</td>
+<td>（同上）</td>
+</tr>
+<tr>
+<td>page3 图03-p3-1 直接接 0.1 µF 最高</td>
+<td>0.190 V</td>
+<td>0.1955 V</td>
+<td>+2.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图03-p3-1 直接接，60 µs 还在振荡</td>
+<td>仍在振</td>
+<td>55～65 µs 峰峰值 61 mV</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图03-p3-1 串 10 Ω 最高（过冲 40%）</td>
+<td>0.140 V</td>
+<td>0.151 V（过冲 51%）</td>
+<td>+7.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图03-p3-1 串 33 Ω 最高</td>
+<td>0.101 V</td>
+<td>0.108 V</td>
+<td>+7.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图03-p3-1 串 33 Ω 过冲约 1%、约 8 µs 进入 ±2%</td>
+<td>1% / 8 µs</td>
+<td>8.0% / 21 µs</td>
+<td>×8 / ×2.6</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page3 §一 33 Ω × 1 mA 压降</td>
+<td>33 mV</td>
+<td>33 mV（欧姆定律）</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图03-p3-2 5 V 单电源输出上限 / 跟不上的输入</td>
+<td>3.5 V / 3.5 V</td>
+<td>3.500 V / 3.55 V</td>
+<td>&lt;1.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图03-p3-2 及小结 5 V 单电源输出下限&quot;约 0.1 V&quot;</td>
+<td>约 0.1 V</td>
+<td>0.024 V</td>
+<td>−76%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page3 §三 压摆率</td>
+<td>约 0.5 V/µs</td>
+<td>0.518 V/µs（上升和下降相同）</td>
+<td>+3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 §三 1 V 峰 80 kHz / 3 V 峰 27 kHz 是不失真边缘</td>
+<td>峰值 1 / 3 V</td>
+<td>1.005 / 3.002 V，最大斜率 0.505 / 0.509 V/µs（正好顶到压摆率）</td>
+<td>&lt;0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>（补充）3 V 峰 80 kHz 超过 fmax</td>
+<td>变三角波</td>
+<td>输出峰值只有 1.59 V，三角波</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 §三 末段 跟随器带宽</td>
+<td>约 1.2 MHz</td>
+<td>2.76 MHz，并有 4.8 dB 尖峰</td>
+<td>+130%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page3 练习1 1.8 V、3.6k：输出 / 电流</td>
+<td>1.8 V / 0.5 mA</td>
+<td>1.8003 V / 0.5001 mA</td>
+<td>&lt;0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习2 直接接 / 经跟随器</td>
+<td>1/2 / 约 100%</td>
+<td>50.01% / 100.05%</td>
+<td>&lt;0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习3 33 Ω × 0.5 mA</td>
+<td>16.5 mV</td>
+<td>16.5 mV（欧姆定律）</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4 2 V 峰 40 kHz 不失真</td>
+<td>2 V</td>
+<td>2.003 V</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4 100 kHz 峰值最多 0.8 V</td>
+<td>0.8 V</td>
+<td>0.806 V（斜率 0.506 V/µs）</td>
+<td>+0.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习5 12 V 单电源偏置 / 上限</td>
+<td>6 V / 10.5 V</td>
+<td>6.000 / 10.50 V</td>
+<td>&lt;0.01%</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>统计：✅ 30　⚠️ 4　❌ 1</strong></p>
+<ul>
+<li>按表格行计数。例3 的三条&quot;└&quot;子行算在同一条 ❌ 里，不另计。</li>
+<li><a href="http://run.py">run.py</a> 共有 51 个比对项。</li>
+</ul>
+<h2 id="--️-的修改建议页面口吻可直接粘贴">❌ / ⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>❌ page2 例3 第134段（&quot;负载突然抽电流时，由运放的输出级及时补上，基准电压几乎不跳。&quot;）</strong></p>
+<p>把这句换成：</p>
+<blockquote>
+<p>负载慢慢变化或一直取电流时，由运放的输出级补上，基准电压稳稳不动；但模数转换器采样时抽的是极短的电流脉冲，LM358B 这种 1 MHz 级的慢运放来不及反应，跟随器输出反而会跳一下（用 TI 官方模型仿真：1 mA、1 µs 的快脉冲能让输出跳 0.6 V）。所以实际电路还要在模数转换器参考端就近并一个电容（按模数转换器手册推荐的数值），由电容先顶住瞬间的电流，跟随器负责把电容慢慢补满；电容大时，跟随器输出和电容之间要串几十欧的隔离电阻（见<a href="../../03-voltage-follower/page3.html">参数与调试篇</a>第一节）。</p>
+</blockquote>
+<p><strong>⚠️ page2 第37段（&quot;输出比 5 V 少约 0.05 mV&quot;）</strong></p>
+<p>在句末&quot;任何万用表都量不出来&quot;之后补：</p>
+<blockquote>
+<p>实际芯片还有失调电压（LM358B 典型零点几毫伏，最大 3 mV），它往往比这 0.05 mV 大得多，但同样小到万用表难以分辨。</p>
+</blockquote>
+<p><strong>⚠️ page3 图03-p3-1 说明（&quot;过冲约 1%，约 8 μs 就稳在……&quot;）</strong></p>
+<p>在&quot;真实芯片的振铃程度仍要以实测为准&quot;之后补：</p>
+<blockquote>
+<p>用 TI 官方模型仿真同一电路，直接接时最高 0.196 V、串 10 Ω 最高 0.151 V，和图中接近；串 33 Ω 时过冲约 8%，大约 20 μs 才进入 ±2%，比图中的简化模型慢。想要几乎不过冲，可以把隔离电阻加到 50 Ω 左右（仿真过冲不到 1%，约 14 μs 稳定）。</p>
+</blockquote>
+<p><strong>⚠️ page3 第二节&quot;输入接近 0 时，输出最低只到约 0.1 V&quot;及本页小结&quot;约 0.1～3.5 V&quot;</strong></p>
+<p>改为：</p>
+<blockquote>
+<p>输入接近 0 时，输出最低只能到几十毫伏（TI 模型约 0.02 V，带负载时会更高），到不了真正的 0 V。</p>
+</blockquote>
+<p>小结中的&quot;约 0.1～3.5 V&quot;改为&quot;约几十毫伏～3.5 V&quot;。</p>
+<p><strong>⚠️ page3 第三节末段（&quot;在这里最宽，约 1.2 MHz&quot;）</strong></p>
+<p>改为：</p>
+<blockquote>
+<p>在这里最宽，至少约 1.2 MHz（TI 官方模型仿真约 2.8 MHz，而且接近带宽处有约 5 dB 的抬高，这也说明跟随器的稳定余量最小）。</p>
+</blockquote>
+<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
+<p>条件：LM358B，±15 V 供电（第 8 脚 +15 V，第 4 脚 −15 V）。跟随器接法是第 1 脚接第 2 脚，输入接第 3 脚。电阻 ±5%。</p>
+<table>
+<thead>
+<tr>
+<th>条件</th>
+<th>红笔 → 黑笔</th>
+<th>应读到</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10 V 经两只 10k 分压，空载</td>
+<td>分压点 → GND</td>
+<td>4.75～5.25 V（典型 5.00 V）</td>
+<td>两只 5% 电阻</td>
+</tr>
+<tr>
+<td>1k 接跟随器输出</td>
+<td>第 1 脚 → GND</td>
+<td>与分压点相同（差 &lt;3 mV）</td>
+<td></td>
+</tr>
+<tr>
+<td>同上</td>
+<td>第 1 脚 → 第 3 脚</td>
+<td>−3～+3 mV（典型约 0.3 mV）</td>
+<td>失调电压</td>
+</tr>
+<tr>
+<td>同上，电流表串在第 1 脚和 1k 之间</td>
+<td>电流表</td>
+<td>约 5 mA</td>
+<td>运放供给</td>
+</tr>
+<tr>
+<td>1k 改接到分压点</td>
+<td>分压点 → GND；第 1 脚 → GND</td>
+<td>约 0.83 V；约 0.83 V</td>
+<td>对照组</td>
+</tr>
+<tr>
+<td>例1：5 V 经 10k/20k 分压，2k 模块接在跟随器输出</td>
+<td>第 1 脚 → GND；模块两端</td>
+<td>3.33 V；3.33 V（模块电流 1.7 mA）</td>
+<td></td>
+</tr>
+<tr>
+<td>改用 5 V 单电源（第 4 脚接 GND），输入调到 4 V</td>
+<td>第 1 脚 → GND</td>
+<td>约 3.5 V</td>
+<td>共模上限 / 输出上限</td>
+</tr>
+<tr>
+<td>5 V 单电源，输入接 GND</td>
+<td>第 1 脚 → GND</td>
+<td>几十毫伏以内</td>
+<td>到不了 0 V</td>
+</tr>
+<tr>
+<td>练习5：12 V 单电源，两只 10k 分压并 10 µF</td>
+<td>分压点 → GND；第 1 脚 → GND</td>
+<td>6.0 V；6.0 V</td>
+<td>接通约 0.5 s 后再读</td>
+</tr>
+<tr>
+<td>输出串 33 Ω、负载 1 mA</td>
+<td>33 Ω 两端</td>
+<td>约 33 mV</td>
+<td>隔离电阻的压降</td>
+</tr>
+</tbody>
+</table>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>本节点 ❌ 1 条已改；⚠️ 4 条全部处理（改 4、不改 0）。数值全部取自本报告的 SPICE 结果。</p>
+<ol>
+<li><strong>❌ page2 例 3「负载突然抽电流时，由运放的输出级及时补上，基准电压几乎不跳」</strong>：已改。改成：慢变化/持续取电流时输出级补上、基准不动；但模数转换器采样的极短电流脉冲，LM358B 这种 1 MHz 级慢运放来不及反应，跟随器输出反而会跳（TI 模型：1 mA、1 µs 快脉冲先掉 0.62 V、再冲到 3.0 V；对照直接从并 100 nF 的分压点抽只掉 10 mV）；实际要在模数转换器参考端就近并电容（按 ADC 手册推荐值），电容大时跟随器输出与电容之间串几十欧隔离电阻，链接到 <a href="../../03-voltage-follower/page3.html">03 电压跟随器 · 参数与调试篇</a> 第一节。并注明图 03-p2-3 只画了跟随器部分。图 03-p2-3 是示意电路图，本身没有错误数值，不重画；报告里「33 Ω + 1 µF」接法仿真不可信，因此没有给出具体电容/电阻值。</li>
+<li><strong>⚠️ page2 代数「输出比 5 V 少约 0.05 mV」</strong>：已改。补一句失调电压（LM358B 典型零点几毫伏、最大 3 mV；SPICE 输出与输入差约 0.38 mV），比 0.05 mV 大但同样难用万用表分辨。</li>
+<li><strong>⚠️ page3 图 03-p3-1（33 Ω 过冲约 1%、约 8 μs）</strong>：已改文字，不改图（图和脚本是页面写明的简化模型）。在「真实芯片的振铃程度仍要以实测为准」后补 TI 模型结果：直接接 0.196 V、串 10 Ω 0.151 V，与图接近；串 33 Ω 过冲约 8%、约 21 μs 进入 ±2%；50 Ω 左右过冲不到 1%、约 14 μs 稳定。</li>
+<li><strong>⚠️ page3 第二节「输出最低只到约 0.1 V」/小结「约 0.1～3.5 V」</strong>：已改为「几十毫伏（TI 模型约 0.02 V，带负载时更高）」「约几十毫伏～3.5 V」（第二节末、本页小结两处）。为保持页/图/脚本一致，<code>code/figs/03_figs.py</code> 中图 03-p3-2 的下限 <code>V_LO</code> 由 0.1 改为 0.02（注释写明依据 SPICE 0.024 V），断言同步更新，图 03-p3-2 已重新生成（下限标注 0.02 V），图片替代文字同步改为「0.02 伏以下被托住」。</li>
+<li><strong>⚠️ page3 第三节「在这里最宽，约 1.2 MHz」</strong>：已改为「至少约 1.2 MHz（TI 官方模型 SPICE 仿真约 2.8 MHz，而且接近带宽处有约 5 dB 的抬高，这也说明跟随器的稳定余量最小）」（报告值 2.76 MHz / 4.8 dB 取约数）。</li>
+</ol>
+<p>改动文件：<code>03-voltage-follower/page2.md</code>、<code>03-voltage-follower/page3.md</code>、<code>code/figs/03_figs.py</code>、<code>03-voltage-follower/img/03_p3_2_single_supply.png</code>（重新生成；同脚本其余图重新输出但内容不变）、<code>review/spice/03.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（1652/1953/2636 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（03_sim.py、03_figs.py）、check_figs、check_github_math（5/16/20）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>作者指南</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/AUTHOR_GUIDE.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="作者指南">作者指南</h1>
+<p>写任何一页之前，先读完 <a href="00-design.html">00-design.md</a>，找到你负责的节点的内容提要和它的前置节点。本指南是硬性规则；与本指南冲突时以 <a href="../specs/task-spec.html">specs/task-spec.md</a> 为准。</p>
+<h2 id="1-文件与页面结构">1. 文件与页面结构</h2>
+<p>每个知识点一个文件夹，例如 <code>01-inverting-amp/</code>，里面只放四个页面和一个图片文件夹：</p>
+<pre><code class="language-text">01-inverting-amp/
+├── page1.md      直觉篇
+├── page2.md      原理与实现篇
+├── page3.md      参数与调试篇
+├── page4.md      动手实验篇
+└── img/          本节点的全部 PNG（由脚本生成，不手工放图）
+</code></pre>
+<p>画图和仿真脚本放在 <code>code/</code>，文件名以节点编号开头，仿真脚本放 <code>code/NN_*.py</code>（例如 <code>code/01_sim.py</code>），画图脚本放 <code>code/figs/NN_figs.py</code>（例如 <code>code/figs/01_figs.py</code>）；共用模块 <code>figstyle.py</code>、<code>schem.py</code> 也在 <code>code/figs/</code>。</p>
+<p>每页的固定结构：</p>
+<ul>
+<li>
+<p>第一行是一级标题，格式为「NN 电路名 · 直觉篇」（或「原理与实现篇」「参数与调试篇」「动手实验篇」）。</p>
+</li>
+<li>
+<p>标题下面一行写导航：上一页、本节点其余三页、下一页，以及前置节点的链接。上一页、下一页按 README 的阅读顺序排：节点内 page1 → page4，page4 的下一页是下一个节点的 page1，下一个节点 page1 的上一页是本节点 page4；全书第一页 P1 page1 的上一页和最后一页 26 page4 的下一页都是 README。正文里提到「下一页」「下一篇」时要与导航一致。</p>
+</li>
+<li>
+<p>跨节点链接一律写全名加篇名，格式 <code>[NN 名称 · 篇名](../NN-slug/pageN.md)</code>，例如 <code>[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)</code>、<code>[下一页：17 自锁 · 直觉篇](../17-self-locking/page1.md)</code>。名称照抄 00-design §5.1（写「17 自锁」，不写「17 自锁电路」「自锁控制」），链接指向具体的 <a href="http://pageN.md">pageN.md</a>，不指向文件夹。</p>
+</li>
+<li>
+<p><strong>交叉引用必须是链接</strong>。正文里不写纯文字的「见 06 page2」「page3 会再讲」：跨节点写 <code>[NN 名称 · 篇名](../NN-slug/pageN.md)</code>，本节点内写 <code>[NN 名称 · 篇名](pageN.md)</code>；要指到某一节，就在链接后面写「第七节」「例 3」这样的文字。代码块里的注释可以写「见 P2 page2」，因为代码里没法放链接。自查（只应剩下代码注释）：
+<code>grep -nE '(^|[^/A-Za-z_-])page ?[1234]([^.0-9a-z_]|$)' */page*.md</code></p>
+</li>
+<li>
+<p><strong>page1 直觉篇</strong>：痛点引入（读者在什么场景下会需要这个电路）→ 生活类比 → 示意图或电路图 → 用一句话说出这个电路「做了什么」。</p>
+</li>
+<li>
+<p><strong>page2 原理与实现篇</strong>：先补最小必要知识（或链接到前置节点）→ 推导，每一步都先用中文说意思再写公式，并代一组数算一遍 → 一段逐行注释的最小可运行 Python 仿真 → 仿真输出图和讲解 → 渐隐式例题（完整示例 → 关键步骤留空 → 变体迁移）。</p>
+</li>
+<li>
+<p><strong>page3 参数与调试篇</strong>：每个元件参数的物理含义、常用取值范围，改变它以后波形或效果怎么变（最好配一张参数扫描图）→ 故障排查表 → 练习题。</p>
+</li>
+<li>
+<p><strong>page4 动手实验篇</strong>（第 8 轮新增，完整说明见设计目录里的 LAB_BRIEF）：让读者用面包板、万用表和不超过 12 V 的直流电源把电路真的搭出来、量出来，再和前三页的数字对照。固定十部分，依次是：</p>
+<ol>
+<li>导航行（见上）；</li>
+<li>「这次实验要验证什么」：一两句话，并链接到 page2 里对应的结论；</li>
+<li>⚠️ 安全须知：只用 12 V 及以下的直流电；电解电容分正负；三极管、稳压管、电阻可能发烫，不要用手摸；接线、改线前先断电。涉及 220 V/380 V 的节点（06、09、17、18、19、20、22、23、24）只做低压替代版（12 V/24 V 线圈、小灯泡或 LED 代替市电负载，按钮代替真实开关），必须写明「不要接 220 V」、市电部分请电工做；23 的过零检测、24 的市电初级不做实验。用两节 9 V 电池串联得到 ±9 V 时，要提醒两轨之间实际相差 18 V；</li>
+<li>器材清单，表格列「元件 | 型号或数值 | 数量 | 说明」，型号用页面里用过的、常见易买的，不写价格；</li>
+<li>搭建步骤：编号步骤写清每个元件插在面包板哪一排、哪一列；配面包板俯视接线图「图 NN-p4-1」（matplotlib + figstyle 绘制，标出行号、列号和电源轨，导线颜色区分正负和信号，图前同样要有引导句），并链接到 page2 的电路图；</li>
+<li>测量表，表格列「步骤 | 测什么 | 红表笔 | 黑表笔 | 挡位 | 应该读到 | 读不到时先查」。数值取 <code>review/spice/NN.md</code> 里的万用表范围；那里没有的，用 <code>code/NN_sim.py</code> 或 <code>spice/NN/run.py</code> 实际算出来，不准编造；</li>
+<li>「没有示波器怎么办」：给出用万用表、LED 或手机观察的替代方法（把 RC 放大到秒级、用 LED 亮灭看振荡、直流挡读平均值等）；确实只能用示波器看的照实说，并引用前几页的图或另画「图 NN-p4-2」说明示波器上应看到的样子；</li>
+<li>一段 Python：读者填入自己量到的电阻实际值和电源电压，代码算出应读到的数并与实测值比较，偏差超过 10% 时打印提示；开头照旧写 <code>sys.path</code> 两行，填一组示例实测值，必须能被 <code>tools/run_blocks.py</code> 跑通；</li>
+<li>实验记录表（留空，列「实测值 / 计算值 / 偏差」）加 3 道思考题，答案折叠；</li>
+<li>自测清单，3–5 条「我能……」。</li>
+</ol>
+<p>page4 正文不少于 <strong>1500</strong> 汉字（<code>tools/count_cjk.py NN-slug/page4.md --min 1500</code>），并且和其他页一样要通过 <code>run_blocks.py</code>、<code>check_figs.py</code>、<code>check_github_math.py</code>。</p>
+</li>
+<li>
+<p>故障排查表固定四列：</p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+</table>
+</li>
+<li>
+<p>练习题至少 3 道，由易到难，最后一道是变体迁移题；答案放在 <code>&lt;details&gt;&lt;summary&gt;答案&lt;/summary&gt; … &lt;/details&gt;</code> 里，<code>&lt;summary&gt;</code> 后空一行再写 Markdown。</p>
+</li>
+<li>
+<p><strong>每页正文不少于 500 汉字</strong>（page4 不少于 1500 汉字），代码、公式、图注不计入。用 <code>tools/count_cjk.py</code> 检查。</p>
+</li>
+<li>
+<p>有两个变体的节点（06、09、13、16）两种变体都要讲，见 00-design 的内容提要。</p>
+</li>
+</ul>
+<h2 id="2-图的规则">2. 图的规则</h2>
+<ul>
+<li>
+<p>电路图用 schemdraw（通过 <code>code/figs/schem.py</code>），波形和曲线用 matplotlib（通过 <code>code/figs/figstyle.py</code>），全部输出 PNG。<strong>禁止</strong> ASCII 图、手工截图和 Mermaid。</p>
+</li>
+<li>
+<p>图片由 <code>code/figs/NN_figs.py</code> 生成，存到 <code>NN-slug/img/</code>，文件名写成 <code>NN_pX_k_含义.png</code>，例如 <code>01_p2_1_waveform.png</code>。每张不超过 200 KB（<code>figstyle.save</code> 会自动压缩并检查）。</p>
+</li>
+<li>
+<p>图号写成「图 NN-pX-k」：NN 是节点编号，X 是页码，k 是本页第几张图，从 1 开始连续。例如 <code>01-inverting-amp/page2.md</code> 里的第 2 张图是「图 01-p2-2」。</p>
+</li>
+<li>
+<p>每张图三件套：</p>
+<ol>
+<li><strong>引导句</strong>：图前一句话告诉读者要看什么，例如「请看图 01-p2-1 里橙色曲线的峰值」。</li>
+<li><strong>图注</strong>：图下一行，格式为 <code>*图 01-p2-1　反相放大的输入与输出波形*</code>。</li>
+<li><strong>图后讲解</strong>：至少两三句，说明图里的现象和它说明了什么。</li>
+</ol>
+</li>
+<li>
+<p><strong>文字讲到电路连接就要配原理图；面包板图旁边要有原理图和「对照看」段。</strong> page4 的每张面包板接线图后面紧跟一张用 <code>code/figs/lab_schem.py</code> 画的原理图（文件名 <code>NN_p4_k_schem_lab.png</code>，节点旁标出对应的面包板孔位），再写一段以「对照看」开头的文字，把面包板上的孔位、导线和原理图里的元件、节点一一对上。</p>
+</li>
+<li>
+<p><strong>颜色词必须与图一致</strong>。figstyle 的固定配色（Okabe-Ito 色盲友好色板）如下，正文里照抄这些颜色词：</p>
+<table>
+<thead>
+<tr>
+<th>用途</th>
+<th>figstyle 键</th>
+<th>颜色词</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入电压 <span class="math math-inline">\(V_i\)</span></td>
+<td><code>vin</code></td>
+<td>蓝色</td>
+</tr>
+<tr>
+<td>输出电压 <span class="math math-inline">\(V_o\)</span></td>
+<td><code>vout</code></td>
+<td>橙色</td>
+</tr>
+<tr>
+<td>第三条曲线</td>
+<td><code>third</code></td>
+<td>红紫色（点划线）</td>
+</tr>
+<tr>
+<td>反馈、基准电压</td>
+<td><code>fb</code></td>
+<td>蓝绿色（虚线）</td>
+</tr>
+<tr>
+<td>电流</td>
+<td><code>cur</code></td>
+<td>天蓝色</td>
+</tr>
+<tr>
+<td>故障、错误情形</td>
+<td><code>bad</code></td>
+<td>朱红色（带 × 标记）</td>
+</tr>
+<tr>
+<td>理想值</td>
+<td><code>good</code></td>
+<td>黑色虚线</td>
+</tr>
+<tr>
+<td>参考线、门限、0V、电源边界</td>
+<td><code>ref</code></td>
+<td>灰色点线</td>
+</tr>
+</tbody>
+</table>
+<p>page4 面包板图的导线图例和正文一律用简单色名（红、紫、绿、蓝、橙、黑），不用上表的「朱红、红紫、蓝绿」。</p>
+</li>
+<li>
+<p>坐标轴标签一律写成「量 / 单位」，例如「电压 / V」「时间 / ms」，用 <code>figstyle.axlabels(ax, &quot;时间&quot;, &quot;ms&quot;, &quot;电压&quot;, &quot;V&quot;)</code>。</p>
+</li>
+<li>
+<p>参考线（0V、 <span class="math math-inline">\(V_{CC}\)</span> 、门限、t = τ 等）用 <code>figstyle.ref_h</code> / <code>ref_v</code>，统一为灰色点线。</p>
+</li>
+<li>
+<p><strong>图上的每一个数字都必须由脚本打印到终端</strong>（<code>figstyle.mark</code> 会自动打印），正文引用的数值要与打印结果一致，不许凭估计写。</p>
+</li>
+<li>
+<p><strong>关键结论要用 <code>assert</code> 断言</strong>，例如 <code>assert abs(gain - (-10)) &lt; 0.05</code>，这样参数被改错时脚本会直接报错。</p>
+</li>
+<li>
+<p>正文只提本页的图号。<code>tools/check_figs.py</code> 会把「图 NN-pY-k」这种指向别的页的图号判为错误；要引用别页的图，写成链接加文字描述，例如「见 <a href="../01-inverting-amp/page2.html">01 反相放大 · 原理与实现篇</a> 的波形图」。</p>
+</li>
+<li>
+<p><strong>答案图放在揭晓之后</strong>：练习题的答案图只能出现在 <code>&lt;details&gt;</code> 里面，或者出现在正文揭晓答案的那句话之后。</p>
+</li>
+<li>
+<p>用法示例：</p>
+</li>
+</ul>
+<pre><code class="language-python"># 不运行（示意：figstyle 和 schem 的典型用法）
+import numpy as np, matplotlib.pyplot as plt
+import figstyle as fs                      # 配色、字体、保存
+import schem                               # schemdraw 设置 + 自定义元件
+import schemdraw.elements as elm
+
+t = np.linspace(0, 2e-3, 2000)             # 时间轴：0 到 2 ms
+vi = fs.sine(t, 1e3, amp=0.5)              # 1 kHz、幅值 0.5 V 的输入
+fig, ax = plt.subplots(figsize=fs.SIZE[&quot;single&quot;])
+ax.plot(t * 1e3, vi, **fs.LS[&quot;vin&quot;], label=&quot;$V_i$&quot;)
+fs.ref_h(ax, 0, &quot;0 V&quot;)                     # 灰色点线参考线
+fs.axlabels(ax, &quot;时间&quot;, &quot;ms&quot;, &quot;电压&quot;, &quot;V&quot;) # 轴标签「量 / 单位」
+fs.save(fig, &quot;01&quot;, &quot;01_p2_1_waveform.png&quot;) # 存到 01-inverting-amp/img/
+
+with schem.drawing() as d:                 # 电路图
+    d += elm.Resistor().label(&quot;$R_1$&quot;)
+    d += (op := elm.Opamp().anchor(&quot;in1&quot;))
+schem.save_schem(d, &quot;01&quot;, &quot;01_p1_1_circuit.png&quot;)
+</code></pre>
+<ul>
+<li>schemdraw 自带元件可以直接用：运放、二极管、稳压管、LED、整流桥、NPN/PNP 三极管、N/P 沟道 MOS 管、电阻、电容、电感、电位器、变压器、光耦、肖特基二极管、熔断器、开关、单刀双掷开关、按钮、继电器、正弦/方波/直流源、电池、灯、直流电机、地。继电-接触器控制图要用国标画法，请用 <code>schem.py</code> 里的自定义元件：<code>Coil</code>（线圈方框）、<code>ContactNO</code> / <code>ContactNC</code>（常开/常闭触点）、<code>PushNO</code> / <code>PushNC</code>（按钮）、<code>TimerNO</code> / <code>TimerNC</code>（时间继电器延时触点）、<code>ThermalHeater</code> / <code>ThermalNC</code>（热继电器）、<code>Motor3</code>（三相电机）、<code>LampX</code>（指示灯）。隔离电路用 <code>schem.barrier</code>（隔离带虚线）和 <code>schem.module</code>（带引脚名的模块方框）。运行 <code>python code/figs/schem.py --demo</code> 可以看到全部元件。</li>
+</ul>
+<h3 id="schemdraw-023-注意事项">schemdraw 0.23 注意事项</h3>
+<ul>
+<li>施密特反相器是 <code>schemdraw.logic.SchmittNot</code>（在 <code>logic</code> 模块里，<code>schemdraw.elements</code> 里没有）。</li>
+<li><code>elm.NFet</code> / <code>elm.PFet</code> 不画体二极管，需要时自己加一个 <code>elm.Diode</code>；而且一定要显式写方向 <code>.theta(…)</code>，否则它会沿用上一个元件的方向，画歪。</li>
+<li>横着串在电源线上的 MOS 管（比如 LDO 调整管、高边开关）用 <code>elm.NFet().theta(-90).reverse()</code>：源极在左、漏极在右、栅极朝上。</li>
+<li><code>schem.module(...)</code> 画方框模块时要接 <code>.theta(0)</code>，否则会沿用前一个元件的方向。</li>
+<li>读元件引脚坐标用 <code>.absanchors['gate']</code> 这类绝对坐标，不要用 <code>.anchors</code>（那是元件自身坐标系，旋转后就不对了）。</li>
+<li><code>elm.Opamp</code> 也会继承上一个元件的方向；放运放前先 <code>.theta(0)</code> 或者在 <code>d.add</code> 之前把方向调回来。</li>
+</ul>
+<h2 id="3-代码规则">3. 代码规则</h2>
+<ul>
+<li>一律 Python 3 + NumPy + matplotlib，必要时加 SciPy；用教程虚拟环境 <code>/workspace/circuits-venv</code> 运行。</li>
+<li>page2 里的仿真代码块必须<strong>最小、可直接复制运行</strong>，并且<strong>逐行加中文注释</strong>。代码块语言标为 <code>python</code>。</li>
+<li>需要保存图片时用 <code>figstyle.save(fig, &quot;NN&quot;, &quot;文件名.png&quot;)</code>，图片输出到 <code>NN-slug/img/</code>。</li>
+<li>代码块分三类：
+<ul>
+<li>正常代码块：<code>tools/run_blocks.py</code> 会真的运行它，必须通过。</li>
+<li>示意片段：第一行写 <code># 不运行</code>。</li>
+<li>学生填空：含 <code>____</code>，工具会自动跳过。</li>
+<li>确实无法运行的代码（例如需要硬件）：第一行写 <code># 未经运行验证</code>，正文里也要说明。</li>
+</ul>
+</li>
+<li>正文里引用的数值必须来自脚本打印的结果。</li>
+</ul>
+<h2 id="4-写作风格">4. 写作风格</h2>
+<ul>
+<li>读者只有高中电路水平。凡是用到他们「不会的」知识，必须先补最小必要知识或链接到前置节点。</li>
+<li>积分、微分从「面积」「斜率」讲起；频率响应不讲复数。</li>
+<li>符号严格按 00-design 第 4 节的符号表；每个符号在本页首次出现时用一句中文解释。</li>
+<li>每个公式：先说中文意思 → 写公式 → 代一组数算一遍。</li>
+<li>页面之间多用相对链接，例如 <code>[虚短](../P3-opamp-basics/page2.md)</code>。</li>
+</ul>
+<h3 id="加粗的标点规则">加粗的标点规则</h3>
+<ul>
+<li>句末标点（。，、；：！？）和全角括号放在 <code>**</code> 外面：写 <code>**例 1：给 LED 选限流电阻**。</code>、<code>**练习 1**：</code>，不写 <code>**……。**</code>、<code>**练习 1：**</code>。原因：闭合的 <code>**</code> 前面是标点、后面紧跟汉字时，GitHub 不认它是闭合符，页面上会露出 <code>**</code>（<code>**朱红色带×**的</code> 这种以符号结尾的也一样，要改写成以文字结尾）。</li>
+<li>闭合 <code>**</code> 前面不能有空格，开头 <code>**</code> 后面也不能有空格：写 <code>**重点**</code>，不写 <code>**重点 **</code>、<code>** 重点**</code>。</li>
+</ul>
+<h2 id="5-github-公式规则">5. GitHub 公式规则</h2>
+<p>md 要能直接在 <a href="http://github.com">github.com</a> 上正常显示公式：</p>
+<ul>
+<li>行内公式用 <code>$…$</code>，块公式用 <code>$$…$$</code>。</li>
+<li>开头的 <code>$</code> 紧跟中文、全角标点、字母或 <code>-</code> 时 GitHub 不渲染，前面要补一个空格（紧跟 <code>(</code> 或 <code>**</code> 时不用补）。<strong>全角标点后面也要补</strong>：写 <code>电压， $V_o$</code>，不写 <code>电压，$V_o$</code>。写完运行 <code>tools/fix_inline_math_spacing.py 文件…</code>（不带 <code>--check</code> 就是修复模式，直接改文件），再用 <code>--check</code> 确认没有遗漏。</li>
+<li>GitHub 会吃掉 Markdown 转义，要改成 KaTeX 和 MathJax 都认识的写法：
+<ul>
+<li><code>\,</code> <code>\!</code> <code>\;</code> <code>\:</code> 改成 <code>\thinspace</code> <code>\negthinspace</code> <code>\thickspace</code> <code>\medspace</code>；</li>
+<li><code>\{</code> <code>\}</code> 改成 <code>\lbrace</code> <code>\rbrace</code>，<code>\|</code> 改成 <code>\Vert</code>，矩阵里的 <code>\\</code> 改成 <code>\cr</code>；</li>
+<li><code>&lt;</code> <code>&gt;</code> <code>*</code> 改成 <code>\lt</code> <code>\gt</code> <code>\ast</code>；</li>
+<li>公式末尾的 <code>\%</code> 移到公式外面，写成 <code>$…$%</code>。</li>
+</ul>
+</li>
+<li>含 <code>\begin…</code> 的整行 <code>$$…$$</code> 要单独成段，前后各留一个空行。</li>
+<li>用 <code>tools/check_github_math.py</code> 检查：它会调用 GitHub 的渲染接口，统计源文件里的公式数和渲染出来的公式数，两者相等才算通过。加 <code>--fix</code> 会做上面那些等价替换。</li>
+<li>行内公式里的 <code>&lt;</code> <code>&gt;</code> 一律写成 <code>\lt</code> <code>\gt</code>，例如 <code>$R_f \lt 2R_g$</code>、<code>$V_i \gt 0$</code>（直接写 <code>&lt;</code> 会被当成 HTML 标签吞掉）。</li>
+<li><code>tools/check_github_math.py</code> 会直接判失败的写法：公式里的 <code>\%</code>、<code>\!</code>、<code>\,</code>（分别改成公式外的 <code>%</code>、<code>\negthinspace</code>、<code>\thinspace</code>），以及开头 <code>$</code> 前缺空格（包括紧跟全角标点的情况）。</li>
+<li><strong><code>check_github_math.py</code> 的三个坑</strong>（复核时反复踩到）：
+<ol>
+<li>行内公式里不写 <code>&lt;</code>：GitHub 会把 <code>$a&lt;b$</code> 里的 <code>&lt;b…</code> 当成 HTML 标签吞掉，公式数就对不上。一律写 <code>\lt</code>（<code>&gt;</code> 同样写 <code>\gt</code>）。</li>
+<li>不写 <code>\,</code>：GitHub 先做 Markdown 转义，<code>\,</code> 会变成 <code>,</code>，公式显示错位或整条不渲染。改成 <code>\thinspace</code>，或者干脆写普通空格。</li>
+<li><code>\%</code> 会把公式弄断：<code>$50\%$</code> 在 GitHub 上不渲染。把百分号移到公式外，写成 <code>$50$%</code>，或者整个数字不进公式。</li>
+</ol>
+</li>
+<li><code>&lt;details&gt;</code> 答案里不写 <code>$$…$$</code> 块公式（GitHub 在折叠块里渲染不稳定），改用行内 <code>$…$</code>，或者把式子拆成几行行内公式。</li>
+<li>图注里不写任何公式（<code>$…$</code> 都不要），公式放正文：图注只写「图 NN-pX-k　这张图是什么」，要讲的关系式写在图前引导句或图后讲解里。</li>
+<li>GitHub 手机 App 不渲染公式，这是平台限制，不用处理。</li>
+</ul>
+<h2 id="6-安全提醒">6. 安全提醒</h2>
+<p>涉及 220V/380V 市电的节点（06、09、17、18、19、20，以及扩展篇的 22、23、24）必须在 page1 开头和每个实验或接线环节放安全警示框：</p>
+<pre><code class="language-markdown">&gt; [!WARNING]
+&gt; **市电危险**：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。
+</code></pre>
+<p>警示框里要写清楚本节点具体的危险点，例如整流电路的滤波电容断电后仍然带电、星三角启动的两个接触器同时吸合会相间短路。</p>
+<h2 id="7-诚实规则">7. 诚实规则</h2>
+<ul>
+<li>链接和引文必须真实可访问：只引用自己实际打开过的网页或手册，写出完整 URL。无法确认时写「[待核实]」，<strong>禁止编造</strong>书名、页码、网址或数据。</li>
+<li>器件参数（例如某型号的耐压、 <span class="math math-inline">\(V_{GS(th)}\)</span> ）优先引用数据手册；拿不准就写「典型值」并标「[待核实]」。</li>
+<li>代码没有真正跑通的，必须标「未经运行验证」。</li>
+</ul>
+<h2 id="8-自查命令交稿前全部通过">8. 自查命令（交稿前全部通过）</h2>
+<p>在仓库根目录运行，把 <code>NN-slug</code> 换成你的文件夹：</p>
+<pre><code class="language-bash">PY=/workspace/circuits-venv/bin/python
+$PY code/figs/NN_figs.py                              # 重新生成本节点全部图片，检查 assert 和打印的数值
+$PY tools/count_cjk.py NN-slug/page*.md --min 500     # 每页正文汉字数 ≥ 500
+$PY tools/run_blocks.py NN-slug/page*.md              # 页面里的代码块逐块运行
+$PY tools/run_blocks.py --scripts code/NN_sim.py code/figs/NN_figs.py  # 本节点脚本逐个运行
+$PY tools/check_figs.py NN-slug/page*.md              # 图片存在、PNG、&lt; 200 KB，图号连续且被引用
+$PY tools/fix_inline_math_spacing.py NN-slug/page*.md # 修复模式：直接补公式前的空格
+$PY tools/fix_inline_math_spacing.py --check NN-slug/page*.md  # 确认没有遗漏
+$PY tools/check_github_math.py NN-slug/page*.md notes/NN-research.md  # GitHub 渲染公式数与源文件一致
+</code></pre>
+<ul>
+<li>画图脚本的路径是 <code>code/figs/NN_figs.py</code>（不是 <code>code/NN_figs.py</code>），仿真脚本是 <code>code/NN_sim.py</code>；P1–P3 的 NN 就写 <code>P1</code> <code>P2</code> <code>P3</code>。</li>
+<li>给工具传<strong>文件</strong>，不要传文件夹：写 <code>NN-slug/page*.md</code>，不写 <code>NN-slug/</code>。有的工具收到文件夹会去扫整个子目录甚至全仓库，有的直接不认。</li>
+<li>上面几个工具不检查加粗标点和跨节点链接格式，这两条（§4「加粗的标点规则」、§1 链接格式）交稿前自己搜一遍 <code>**</code> 和 <code>](../</code>。</li>
+</ul>
+<h2 id="9-提交规则">9. 提交规则</h2>
+<ul>
+<li><strong>作者不运行任何 git 命令</strong>（不 add、不 commit、不 push、不切分支）。写完、自查通过后，向总纲报告改动的文件清单和自查结果。</li>
+<li>总纲是唯一的提交者，负责复核、提交和推送。</li>
+<li>只修改自己负责的节点文件夹和对应的 <code>code/NN_*.py</code>、<code>code/figs/NN_figs.py</code>。需要改 <code>code/figs/</code> 里的共用模块或 <code>tools/</code> 时，先告诉总纲。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

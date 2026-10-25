@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>19 星三角降压启动 · SPICE 核对报告（审校 B）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/19.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="19-星三角降压启动--spice-核对报告审校-b">19 星三角降压启动 · SPICE 核对报告（审校 B）</h1>
+<p>运行：<code>python spice/19/run.py</code>（从仓库根目录运行，退出码 0）
+网表：<code>spice/19/stardelta.cir</code>（控制回路）、<code>spice/19/threephase.cir</code>（三相关系）</p>
+<h2 id="模型与来源">模型与来源</h2>
+<ul>
+<li><strong>没有用到厂商器件模型。</strong></li>
+<li>接触器 KM、KMY、KM△ 用的是 ngspice 内置 <code>SW</code> + RC 行为模型，跟 spice/18 相同：线圈 400 Ω（假设），吸合 20 ms、释放 10 ms 的设定方法和 18 一样。</li>
+<li>时间继电器 KT 是行为模型：线圈有电时用 1 A 给 1 F 电容充电，相当于 1 V/s，断电后立刻清零；电容电压达到 TSET 时，延时触点动作。</li>
+<li>上面这些时间参数都是从页面取值倒推来的，所以时序类的核对只能检验<strong>逻辑和接线</strong>，不能检验接触器本身的物理特性。</li>
+<li>三相关系：三只 ngspice 正弦源，彼此相差 120°。相电压取 <strong>12 V 有效值</strong>，即把 220 V 等比例缩小，不接市电。绕组阻抗用示意值 Z = 3 + j4 Ω。所有比值都与电压和 Z 无关。</li>
+<li><strong>跳过的内容</strong>：
+<ul>
+<li>380 V 主电路和电动机（属于市电）。</li>
+<li>页面的「示意电动机」标幺模型，包括 5.8/1.9/2.6/0.83 倍、转速、图 19-p3-1/2。页面自己说明这些参数是编出来的，SPICE 没有可对照的实体。</li>
+</ul>
+</li>
+</ul>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>核对项</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p2 §三 [时序]</td>
+<td>KM 吸合时刻</td>
+<td>0.52 s</td>
+<td>0.5201 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 [时序]</td>
+<td>KMY 吸合时刻（星形启动）</td>
+<td>0.52 s</td>
+<td>0.5201 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 [时序]</td>
+<td>KT 到时（KMY 线圈断电时刻）</td>
+<td>6.5 s</td>
+<td>6.502 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 [时序] 图19-p2-5</td>
+<td>KMY 释放时刻</td>
+<td>6.51 s</td>
+<td>6.512 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 [时序] 图19-p2-5</td>
+<td>KM△ 吸合时刻</td>
+<td>6.53 s</td>
+<td>6.532 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 [时序] 图19-p2-5</td>
+<td>切换空档</td>
+<td>20 ms</td>
+<td>20 ms</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 [时序]</td>
+<td>KT 线圈断电复位时刻</td>
+<td>6.53 s</td>
+<td>6.532 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 结论1</td>
+<td>KMY、KM△ 同时吸合时长</td>
+<td>0 ms</td>
+<td>0 ms</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 关键参数表</td>
+<td>切换空档 = KM△ 吸合时间（仿真里 20 ms）</td>
+<td>20 ms</td>
+<td>20 ms</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §五 步骤3</td>
+<td>按 SB1：三只全灭（SPICE：全灭）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §五 步骤3</td>
+<td>按 SB1 后 KT 线圈电压（复位）</td>
+<td>0 V</td>
+<td>3.2e-06 V</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §五 步骤3</td>
+<td>再按 SB2(8.5 s)：KMY 释放时刻 8.5+6+0.01</td>
+<td>14.51 s</td>
+<td>14.51 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §五 步骤3</td>
+<td>再按 SB2：KM△ 吸合时刻</td>
+<td>14.53 s</td>
+<td>14.53 s</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §五 步骤4</td>
+<td>短接 KMY 常闭（tpick 20 ms、tdrop 10 ms）：空档（同时吸合 0.0 ms：照页面的 20/10 ms 不会出现「一起亮」；只有吸合比释放快时才会重叠）</td>
+<td>— ms</td>
+<td>10 ms</td>
+<td>—</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>去掉 KMY 常闭：空档（负 = 重叠）（重叠 7.0 ms）</td>
+<td>-7 ms</td>
+<td>-7 ms</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>装回 KMY 常闭：空档 = KM△ 吸合时间</td>
+<td>12 ms</td>
+<td>12 ms</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图19-p1-1</td>
+<td>星形每段电压 / 线电压（页面 219/380）</td>
+<td>0.5763</td>
+<td>0.5774</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图19-p1-1</td>
+<td>三角形每段电压 / 线电压（页面 380/380）</td>
+<td>1</td>
+<td>1</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图19-p2-1</td>
+<td>相电压峰值 / 有效值（页面 311/220）</td>
+<td>1.414</td>
+<td>1.414</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图19-p2-1</td>
+<td>两相之差峰值 / 单相峰值（√3）</td>
+<td>1.732</td>
+<td>1.732</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图19-p2-1</td>
+<td>L2 比 L1 晚（50 Hz）</td>
+<td>6.67 ms</td>
+<td>6.667 ms</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 推导</td>
+<td>I_L,Y / I_L,Δ</td>
+<td>0.3333</td>
+<td>0.3333</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 推导</td>
+<td>I_L,Δ / I_ph,Δ</td>
+<td>1.732</td>
+<td>1.732</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例题1</td>
+<td>星形绕组电流 / 三角形绕组电流（页面 46.7/80.8≈0.577）</td>
+<td>0.577</td>
+<td>0.5773</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例题1</td>
+<td>按比例换算星形启动线电流（直接启动 140 A）</td>
+<td>46.7 A</td>
+<td>46.67 A</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例题2</td>
+<td>按比例换算星形启动线电流（直接启动 80 A）</td>
+<td>26.7 A</td>
+<td>26.67 A</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>按比例换算星形启动线电流（直接启动 180 A）</td>
+<td>60 A</td>
+<td>60 A</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习4</td>
+<td>Y 接法电机绕组额定电压 380/√3（按仿真比值）</td>
+<td>219 V</td>
+<td>219.4 V</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 关键参数表</td>
+<td>星形时间经验公式 2√13.2+4（算术）（纯算术，非 SPICE）</td>
+<td>11.3 s</td>
+<td>11.26 s</td>
+<td>-0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三/p1 图19-p1-2</td>
+<td>示意电动机的 5.8 倍/1.9 倍/2.6 倍/0.83 倍、转速 91% 等（未仿真：页面自己声明是参数编造的示意模型，且属于 380 V 电动机；1/3 比例已由上面的三相电路核对）</td>
+<td>—</td>
+<td>nan</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 图19-p3-1/19-p3-2</td>
+<td>T 扫描、空档扫描的尖峰倍数与转速（未仿真：同上，示意电动机模型）</td>
+<td>—</td>
+<td>nan</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+</tbody>
+</table>
+<p>统计：✅ 28　⚠️ 1　❌ 0　ℹ️ 2</p>
+<h2 id="需要修改的地方">需要修改的地方</h2>
+<p><strong>⚠️ page2 §五 动手实验第 4 步（短接 KMY 常闭）</strong></p>
+<p>按页面自己的时间（吸合 20 ms、释放 10 ms）仿真：短接后 KMY 在 6.510 s 断开，KM△ 在 6.520 s 闭合，空档仍有 +10 ms，<strong>两盏灯不会一起亮</strong>。只有像练习 2 那样「吸合比释放快」时才会重叠。学生照做大概率什么也看不到，可能误以为「短接也没事」。建议在第 4 步末尾补一句：</p>
+<blockquote>
+<p>看不到&quot;一起亮&quot;并不说明这根常闭可以省掉。去掉 KMY 常闭以后，空档就等于&quot;KM△ 的吸合时间减 KMY 的释放时间&quot;：按本页的 20 ms 和 10 ms 算还剩 +10 ms，所以灯不会一起亮；可是继电器线圈上反并了二极管，释放会变慢，换一只吸合更快的继电器，空档就可能变成负数（见参数篇练习 2 的 −7 ms）。能不能重叠全看两只继电器的快慢，这正是不能靠运气的原因。</p>
+</blockquote>
+<h2 id="结论">结论</h2>
+<ul>
+<li>控制回路的时序全部和代码输出一致，误差 ≤2 ms，只来自 0.2 ms 步长和 RC 门限：
+<ul>
+<li>KM 和 KMY 在 0.520 s 吸合</li>
+<li>KMY 在 6.510 s 释放</li>
+<li>KM△ 在 6.530 s 吸合</li>
+<li>空档 20 ms</li>
+<li>KT 在 6.530 s 复位</li>
+<li>KMY 和 KM△ 从未同时吸合</li>
+</ul>
+</li>
+<li>按 SB1 后全部复位，再按 SB2 能重复同样的顺序。</li>
+<li>练习 2 的 −7 ms 和 12 ms 都复现了。</li>
+<li>三相关系 √3、1/3、0.577、6.67 ms 全部吻合；各例题和练习按 SPICE 得到的比值换算，结果也一致。</li>
+</ul>
+<h2 id="面包板万用表读数page2-五12-v-继电器--延时模块">面包板万用表读数（page2 §五，12 V 继电器 + 延时模块）</h2>
+<table>
+<thead>
+<tr>
+<th>测量</th>
+<th>量程</th>
+<th>红表笔 → 黑表笔</th>
+<th>预期读数</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>电源</td>
+<td>DC 20 V</td>
+<td>12 V 正 → 负</td>
+<td>约 12 V</td>
+</tr>
+<tr>
+<td>按 SB2 后，「公共点」对负极</td>
+<td>DC 20 V</td>
+<td>KM 自锁触点出线端 → 电源负</td>
+<td>约 12 V（一直保持）</td>
+</tr>
+<tr>
+<td>星形阶段 KMY 线圈</td>
+<td>DC 20 V</td>
+<td>KMY 线圈正端 → 电源负</td>
+<td>约 12 V；KT 到时后变成 0 V</td>
+</tr>
+<tr>
+<td>星形阶段 KM△ 线圈</td>
+<td>DC 20 V</td>
+<td>KM△ 线圈正端 → 电源负</td>
+<td>0 V；KT 到时后约 12 V</td>
+</tr>
+<tr>
+<td>星形阶段 KM△ 支路里的 KMY 常闭两端</td>
+<td>DC 20 V</td>
+<td>常闭靠电源一侧 → 靠线圈一侧</td>
+<td>KT 到时前 0 V（KT 常开还没闭合，支路里没有电压），切换后 0 V（触点已闭合）</td>
+</tr>
+<tr>
+<td>三角形运行后 KT 线圈</td>
+<td>DC 20 V</td>
+<td>KT 模块 V+ → V−</td>
+<td>0 V（被 KM△ 常闭切断，KT 复位）</td>
+</tr>
+<tr>
+<td>每只线圈电流</td>
+<td>DC 200 mA，串在回路里</td>
+<td>电源正 → 线圈</td>
+<td>12 V ÷ 线圈电阻，按 400 Ω 算约 30 mA；稳态三角形时总电流约 60 mA 加上 LED</td>
+</tr>
+<tr>
+<td>空档长短</td>
+<td>万用表测不了，要用示波器</td>
+<td>CH1 接 KMY 灯、CH2 接 KM△ 灯，地接电源负</td>
+<td>两个通道之间的间隔 = 空档（页面取值下约 20 ms）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>本节点 ❌ 0 条；⚠️ 1 条已改（改 1、不改 0）。ℹ️ 2 条未改。报告未提及导航链接，未动。</p>
+<ol>
+<li><strong>⚠️ page2 §五 动手实验第 4 步（短接 KMY 常闭，按页面 20 / 10 ms 空档仍有 +10 ms，看不到一起亮）</strong>：已改。按建议在第 4 步末尾补一段：按本页时间大概率看不到&quot;一起亮&quot;，但不说明常闭可省；去掉后空档 = KM△ 吸合时间 − KMY 释放时间，20/10 ms 时 +10 ms（仿真 KMY 6.510 s 断开、KM△ 6.520 s 闭合）；线圈反并二极管使释放变慢、换吸合更快的继电器就可能变负，链接到 <a href="../../19-star-delta-start/page3.html">19 星三角降压启动 · 参数与调试篇</a> 练习 2 的 −7 ms。原文「只在 12 V 实验板上做」「做完马上断电」的安全提示保留在前；本次未改故障排查表，断电/请电工规则不受影响。</li>
+</ol>
+<p>改动文件：<code>19-star-delta-start/page2.md</code>、<code>review/spice/19.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（1959/3759/2594 字）、run_blocks（1 过）、run_blocks --scripts（19_sim.py、19_figs.py）、check_figs（3/5/2 张）、check_github_math（0/25/7）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

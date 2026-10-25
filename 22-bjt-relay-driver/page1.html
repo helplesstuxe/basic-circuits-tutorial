@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>22 三极管开关与继电器驱动 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/22-bjt-relay-driver/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="22-三极管开关与继电器驱动--直觉篇">22 三极管开关与继电器驱动 · 直觉篇</h1>
+<p><a href="../21-mosfet-switch/page4.html">上一页：21 MOS 管开关 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a>、<a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节点特有的危险点：① 继电器的<strong>触点侧</strong>常常直接切换 220 V 的灯、插座、水泵，单片机这边只有 5 V，不代表整块板子都安全；② 市面上的继电器模块，触点接线端子（螺丝端子）和板子背面的焊盘都<strong>带 220 V</strong>，通电时不要用手摸板子背面，也不要把模块直接放在金属桌面上；③ 低压侧和 220 V 侧之间要留足距离（见参数与调试篇），不能为了省地方把两边的走线挤在一起。</p>
+<p>说得再直白一点：<strong>在你取得电工资质之前，继电器的 220 V 一侧一律不要自己接</strong>，&quot;只是拧两颗螺丝&quot;也算接线；要用就用带绝缘外壳、有安全认证的成品，并请电工安装。本节点所有动手内容只碰 5 V 那一侧。</p>
+</blockquote>
+<h2 id="一痛点单片机拉不动继电器还会被它反咬一口">一、痛点：单片机&quot;拉不动&quot;继电器，还会被它反咬一口</h2>
+<p>很多小制作都想让单片机（比如 Arduino 用的 ATmega328P）去控制一盏 220 V 的灯或者一台水泵。单片机的引脚只能输出 5 V 或 0 V 的&quot;信号&quot;，不能直接去碰 220 V，于是大家会请一个中间人：<strong>继电器</strong>。<a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a> 里讲过，继电器是&quot;用小电流的线圈去控制大电流的触点&quot;：线圈通电，衔铁被吸下来，触点闭合，220 V 那边就通了。</p>
+<p>问题是，这个&quot;小电流&quot;其实也不小。看 图 22-p1-1：</p>
+<p><a class="img-link" href="img/22_p1_1_current.png"><img alt="四根柱子：单片机引脚 20 mA、40 mA，继电器线圈 71.4 mA、89.3 mA" src="img/22_p1_1_current.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-1　单片机引脚能给的电流和继电器线圈要的电流</em></p>
+<p>图 22-p1-1 左边两根柱子是单片机一个引脚的能力：数据手册里输出高电平的测试条件是 20 mA，绝对最大值是 40 mA，超过它就可能把引脚烧坏。右边两根是一只常见的 5 V 继电器（松乐 SRD-05VDC）线圈要的电流：高灵敏型 71.4 mA，标准型 89.3 mA，都比 40 mA 的上限高出一截。也就是说，<strong>直接拿引脚去推线圈，是让一个小学生去推汽车</strong>。这种&quot;直接接&quot;的错误做法如图 22-p1-4 所示：引脚输出 5 V，线圈一端接引脚、另一端接地。</p>
+<p><a class="img-link" href="img/22_p1_4_pin_direct.png"><img alt="错误示范：单片机引脚直接接继电器线圈，线圈另一端接地；线圈要 71.4 mA，超过引脚 40 mA 的绝对最大值" src="img/22_p1_4_pin_direct.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-4　错误示范：单片机引脚直接推继电器线圈</em></p>
+<p>更麻烦的是第二个问题：线圈是一个电感。P1 讲过，电感&quot;不让电流突变&quot;。线圈正通着几十毫安的电流，你突然把它断开，电感会拼命想让电流继续流，于是在断开的那一端&quot;挤&quot;出一个很高的电压，可以有几百甚至上千伏。这个尖峰会顺着线打回驱动它的器件（在图 22-p1-4 里就是直接打回单片机引脚），轻则让单片机莫名其妙复位，重则直接击穿。</p>
+<h2 id="二类比用水龙头开关大水管再给水管装一个回流阀">二、类比：用水龙头开关大水管，再给水管装一个&quot;回流阀&quot;</h2>
+<p>把三极管想象成一个<strong>水龙头</strong>：基极上的一点点小电流，就像用手指拧龙头的小把手；集电极到发射极之间，是大水管里哗哗流的水（P2 讲过的 <span class="math math-inline">\(I_C = \beta I_B\)</span> ）。单片机只要提供&quot;拧把手&quot;的那点力气——几毫安——就能让三极管放出七八十毫安去推线圈。</p>
+<p>但这个龙头<strong>只能拧到底或者关死</strong>，不能&quot;开一半&quot;。开一半的时候，水流不够，继电器的衔铁吸不上去；而龙头自己还要承受很大的水压，会发热。这个&quot;开到底&quot;的状态，就是 P2 里说的<strong>饱和区</strong>；&quot;开一半&quot;就是<strong>放大区</strong>。看 图 22-p1-2：</p>
+<p><a class="img-link" href="img/22_p1_2_states.png"><img alt="两组柱子：开到底时线圈拿到 96% 电压、三极管 13.7 mW；半开时线圈只有 60%、三极管 85.6 mW" src="img/22_p1_2_states.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-2　三极管开到底和半开的对比（β = 100）</em></p>
+<p>图 22-p1-2 左半边看线圈两端的电压：开到底时线圈拿到 96% 的额定电压，高过灰色点线标的 75% 吸合门限，衔铁稳稳吸合；半开时只有 60%，低于门限，继电器可能根本吸不上，或者&quot;咔哒咔哒&quot;地抖。右半边看三极管自己的发热：半开时是开到底的六倍多。所以<strong>三极管当开关用，一定要让它进饱和</strong>，办法是给足基极电流，这取决于基极电阻 <span class="math math-inline">\(R_B\)</span> 选多大。</p>
+<p>至于那个高压尖峰，可以想象水管里的<strong>水锤</strong>：水正在冲，你猛地把阀门关死，水的惯性会把管子撞得砰砰响。解决办法是在阀门旁边装一条&quot;回流支路&quot;，让冲过来的水绕一个小圈慢慢停下。电路里的回流支路就是一只反着并在线圈两端的二极管，叫<strong>续流二极管</strong>：平时它反向截止、不干活；三极管一关断，线圈电流就从它这里绕回线圈，慢慢衰减掉，电压被钳住，不再冲高。</p>
+<h2 id="三图一张完整的继电器驱动电路">三、图：一张完整的继电器驱动电路</h2>
+<p>把上面两个想法合起来，就得到 图 22-p1-3：</p>
+<p><a class="img-link" href="img/22_p1_3_driver.png"><img alt="单片机引脚经 R_B 接三极管 Q1 基极，集电极接继电器线圈到 +5 V，线圈两端反并二极管 D1；虚线右边是 220V 灯和继电器常开触点" src="img/22_p1_3_driver.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-3　三极管驱动继电器：左边低压，右边 220V</em></p>
+<p>图 22-p1-3 的左半边全是低压：单片机引脚输出 5 V 时，电流经基极电阻 <span class="math math-inline">\(R_B\)</span> 流进三极管 Q1 的基极，Q1 饱和导通，+5 V 经继电器线圈、Q1 流到地，线圈吸合。二极管 D1 的<strong>负极（有横杠的一端）接 +5 V</strong>，正极接集电极，平时不导通；Q1 关断的瞬间，线圈电流就经 D1 绕回来。中间的灰色虚线是隔离带：右边的继电器常开触点和灯接的是 220 V，它和左边只靠继电器内部的绝缘隔开，电路上没有任何一根线相连。</p>
+<p>有两个细节值得记住。第一，Q1 接在线圈的<strong>下面</strong>（线圈接电源、三极管接地），这种接法叫&quot;低边开关&quot;，NPN 三极管的发射极直接接地，最好驱动。第二，D1 的方向千万不能反，反了的话三极管一导通，电流就从 D1 直接短路过去，后果会在参数与调试篇里讲。</p>
+<h2 id="四一句话总结">四、一句话总结</h2>
+<p><strong>单片机只出&quot;拧把手&quot;的几毫安，让三极管开到底（饱和）去推几十毫安的线圈；线圈两端反并一只续流二极管，把断电时的高压尖峰&quot;放回&quot;线圈里；继电器触点那一侧是 220 V，和低压侧之间必须隔开</strong>。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Microchip，ATmega48A/88A/168A/328/328P 数据手册（I/O 引脚绝对最大 40 mA、 <span class="math math-inline">\(V_{OH}\)</span> 测试条件 20 mA）：<a href="https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf</a></li>
+<li>松乐 SRD 系列继电器数据手册（线圈 71.4 mA / 89.3 mA、吸合电压 75%）：<a href="https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html">https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html</a></li>
+<li>TE Connectivity，线圈抑制与继电器寿命（不加抑制时感应电压可达数百甚至上千伏）：<a href="https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html">https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

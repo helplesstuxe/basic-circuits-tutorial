@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 电压跟随器 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/03-voltage-follower/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="03-电压跟随器--直觉篇">03 电压跟随器 · 直觉篇</h1>
+<p><a href="../18-interlock/page4.html">上一页：18 互锁 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../02-noninverting-amp/page1.html">02 同相放大 · 直觉篇</a></p>
+<h2 id="痛点一接负载电压就掉">痛点：一接负载，电压就掉</h2>
+<p>用两个 10 kΩ 电阻把 10 V 分压，按 P1 的分压公式，中间点应该是 5 V。万用表一量，果然 5.00 V。可是把一个 1 kΩ 的负载（比如一个小模块的输入、一个 LED 驱动电路）接上去，电压一下子掉到不到 1 V。这就是&quot;信号源<strong>带不动</strong>负载&quot;。</p>
+<p>问题出在哪里？先看出问题的接法 图 03-p1-1。</p>
+<p><a class="img-link" href="img/03_p1_1_direct.png"><img alt="分压器：10 伏经两个 10 千欧电阻分压，分压点直接接一个 1 千欧负载到地" src="img/03_p1_1_direct.png" loading="lazy" /></a></p>
+<p><em>图 03-p1-1　分压器直接接负载</em></p>
+<p>图 03-p1-1 中，负载 <span class="math math-inline">\(R_L\)</span> （负载电阻，L 是英文 load 的首字母）1 kΩ 和下面那个 10 kΩ <strong>并联</strong>了。并联后的电阻约 0.91 kΩ，比上面的 10 kΩ 小得多，按分压公式，分压点只剩 10 V × 0.91 ÷ (10 + 0.91) ≈ 0.83 V。负载一接，就把分压器&quot;拉低&quot;了。根本原因是：<strong>负载要从分压点取电流，而分压器给不起</strong>。</p>
+<p>同样的事在很多地方出现：</p>
+<ul>
+<li><strong>传感器接长线和小电阻负载</strong>：一个内阻 20 kΩ 的温度传感器（内阻：把信号源看成理想电压源串一个电阻，这个电阻就是内阻，见 <a href="../P1-components-basics/page2.html">P1 元件速成 · 原理与实现篇</a> 第七节），直接接到输入电阻只有 10 kΩ 的电路上，读数只剩三分之一，看起来像&quot;温度变低了&quot;。</li>
+<li><strong>给模数转换器当基准</strong>：单片机的模数转换器每次采样都要从输入端&quot;吸&quot;一小口电流，分压器给的基准电压会跟着一跳一跳，读数抖动。</li>
+<li><strong>滤波器后面接负载</strong>：一个 RC 低通滤波器后面直接接小电阻，截止频率和衰减量全变了（<a href="../15-active-filter/page1.html">15 有源滤波 · 直觉篇</a> 会用到这一点）。</li>
+</ul>
+<p>这些问题有一个共同点：<strong>前级本身没坏，是后级把它&quot;拖垮&quot;了</strong>。好比一根细水管，本来出水压力正常，一下接上十个水龙头同时开，压力就掉了。我们要的不是换一根粗水管（换小电阻的分压器会白白耗电），而是在中间加一个&quot;增压泵&quot;。</p>
+<h2 id="一电路长什么样只有一根导线的放大器">一、电路长什么样：只有一根导线的&quot;放大器&quot;</h2>
+<p>解决办法是在中间加一个&quot;中间人&quot;：它从分压点<strong>几乎不取电流</strong>，却能向负载<strong>提供足够的电流</strong>，并且输出电压和输入<strong>完全一样</strong>。这就是<strong>电压跟随器</strong>，看 图 03-p1-2。</p>
+<p><a class="img-link" href="img/03_p1_2_circuit.png"><img alt="电压跟随器：输入接同相端，输出用一根导线直接接回反相端" src="img/03_p1_2_circuit.png" loading="lazy" /></a></p>
+<p><em>图 03-p1-2　电压跟随器</em></p>
+<p>图 03-p1-2 中没有任何电阻：输入 <span class="math math-inline">\(V_i\)</span> 接同相端，输出 <span class="math math-inline">\(V_o\)</span> 用一根导线直接接回反相端。它就是 <a href="../02-noninverting-amp/page1.html">02 同相放大 · 直觉篇</a> 在反馈电阻为 0、接地电阻断开时的特例：倍数 1 + 0 = 1。</p>
+<div class="math math-display">\[V_o = V_i\]</div>
+<p>代一组数：输入 5 V，输出 5 V；输入 −1.2 V，输出 −1.2 V。</p>
+<h2 id="二直觉一个传话的人">二、直觉：一个&quot;传话的人&quot;</h2>
+<p>为什么倍数为 1 还有用？把跟随器想成一个<strong>只负责传话、但嗓门很大的人</strong>。分压器是一个说话很小声的人（内阻大、给不起电流），负载是远处一大群听众（要电流）。直接喊，听众听不清；中间站一个人，他把耳朵贴到分压器嘴边（几乎不打扰它），再用自己的大嗓门（运放从电源取电流）把<strong>同样的话</strong>喊给听众。</p>
+<p>用 P3 的口诀说就是：<strong>虚断</strong>，同相端不取电流，所以分压器&quot;感觉不到&quot;后面接了东西，分压点仍是 5 V；<strong>虚短</strong>，有负反馈、且输出没有顶到电源时，反相端等于同相端，而反相端就是输出，所以输出也是 5 V。负载要的电流，由运放的输出级从电源&quot;搬&quot;过来。看 图 03-p1-3。</p>
+<p><a class="img-link" href="img/03_p1_3_buffered.png"><img alt="分压器的分压点接到跟随器的同相端，跟随器输出接 1 千欧负载" src="img/03_p1_3_buffered.png" loading="lazy" /></a></p>
+<p><em>图 03-p1-3　分压器经跟随器接负载</em></p>
+<p>图 03-p1-3 中，同样的分压器、同样 1 kΩ 的负载，中间多了一个跟随器。分压器只接在同相端上，相当于空载，分压点保持 5 V；跟随器输出 5 V，负载上也是 5 V，1 kΩ 负载需要的 5 mA 电流由运放提供。</p>
+<h2 id="三在示波器上会看到什么">三、在示波器上会看到什么</h2>
+<p>假设你在面包板上搭好了 图 03-p1-3 的电路，用双通道示波器（或者两块万用表）一步步测，会看到下面的现象：</p>
+<ol>
+<li><strong>先不接负载</strong>。通道 1 夹在分压点，通道 2 夹在跟随器输出。两条线都是一条平直的 5 V 横线，重合在一起。</li>
+<li><strong>把 1 kΩ 负载接到跟随器输出</strong>。两条线<strong>纹丝不动</strong>，仍是 5 V。如果再串一块电流表，会读到约 5 mA，这是运放从电源&quot;搬&quot;来的电流。</li>
+<li><strong>作为对照，把负载改接到分压点</strong>（也就是 图 03-p1-1 的接法）。通道 1 立刻从 5 V 掉到约 0.83 V，跟随器输出也跟着掉到 0.83 V，因为跟随器只是&quot;照抄&quot;它的输入。</li>
+<li><strong>把输入换成 1 kHz 的正弦波</strong>（比如信号源输出峰值 1 V）。两条正弦完全重合，波峰对波峰、过零对过零，既不放大也不反相。</li>
+</ol>
+<p>第 3 步很重要：跟随器只能保护<strong>它后面</strong>的电路，不能修复<strong>它前面</strong>已经被拖低的信号。所以跟随器要紧贴在&quot;娇气&quot;的信号源后面，所有负载都接在它的输出端。</p>
+<p>如果第 2 步看到输出明显低于 5 V，或者正弦波顶部被削平，多半是运放输出电流不够或输出到不了那么高，<a href="page3.html">03 电压跟随器 · 参数与调试篇</a> 会专门讲这些情况。</p>
+<h2 id="四两个专业名词">四、两个专业名词</h2>
+<p>用&quot;电阻&quot;来说，跟随器做了两件事：</p>
+<ol>
+<li><strong>输入电阻极大</strong>：从输入端看进去，几乎不取电流，好像是一个无穷大的电阻，不会&quot;拖累&quot;前级。</li>
+<li><strong>输出电阻极小</strong>：从输出端看进去，好像是一个理想电压源，负载变化时输出电压几乎不变。</li>
+</ol>
+<p>这叫&quot;阻抗变换&quot;或&quot;隔离缓冲&quot;，跟随器也常被叫做<strong>缓冲器</strong>。前级是一个&quot;娇气&quot;的信号源（分压器、高内阻传感器、RC 滤波器），后级是一个&quot;贪吃&quot;的负载时，中间就该放一个跟随器。</p>
+<h2 id="五新手常见误解">五、新手常见误解</h2>
+<ul>
+<li><strong>&quot;倍数为 1，等于没接&quot;</strong>：电压没变，但能提供的电流变了，这才是它的价值。</li>
+<li><strong>&quot;什么负载都能带&quot;</strong>：运放输出电流有限，一般只有几到几十毫安；接大电容、长电缆还可能振荡（<a href="page3.html">03 电压跟随器 · 参数与调试篇</a> 讲）。</li>
+<li><strong>&quot;输出能到电源电压&quot;</strong>：普通运放输出离电源轨有一段距离，单电源时尤其要注意。</li>
+</ul>
+<h2 id="一句话总结">一句话总结</h2>
+<p><strong>电压跟随器把输出直接接回反相端， <span class="math math-inline">\(V_o = V_i\)</span> ；它几乎不从前级取电流，却能给后级提供电流，用来隔离&quot;带不动负载&quot;的信号源</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

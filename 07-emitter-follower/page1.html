@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 射极跟随器 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/07-emitter-follower/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="07-射极跟随器--直觉篇">07 射极跟随器 · 直觉篇</h1>
+<p><a href="../13-differentiator/page4.html">上一页：13 微分电路 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a>、<a href="../03-voltage-follower/page1.html">03 电压跟随器 · 直觉篇</a></p>
+<h2 id="一痛点电压对了电流不够">一、痛点：电压对了，电流不够</h2>
+<p>在 <a href="../03-voltage-follower/page1.html">03 电压跟随器 · 直觉篇</a> 里，我们用运放把一个&quot;软&quot;的电压（比如分压器分出来的 5 V）变&quot;硬&quot;：后面接什么负载，输出都还是 5 V。可是那一节有个前提——负载要的电流不大。</p>
+<p>现在换一个负载：一个 50 Ω 的小喇叭、一段电热丝，或者一排 LED。按欧姆定律，5 V 加在 50 Ω 上要 100 mA。常见的运放 LM358，数据手册上写的输出拉电流典型只有 30 mA，最差的芯片只保证 20 mA。运放再&quot;聪明&quot;也变不出电流来：它会进入限流，输出电压被压到 1.5～2 V（限流值因芯片个体而异），负载根本带不动。</p>
+<p>有人会想两个&quot;省事&quot;的办法，都行不通。第一个：干脆不要运放，直接用电阻分压分出 5 V 去带负载。可 <a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a> 里说过，分压器的输出电压取决于下面那只电阻和负载并联后的大小，接上 50 Ω 以后电压会塌得一塌糊涂（见图 07-p1-4：朱红色的 50 Ω 负载和 <span class="math math-inline">\(R_2\)</span> 并联在分压点上）。第二个：换一只能出大电流的&quot;功率运放&quot;。这种芯片确实有，但价格贵、型号少，而且电源电压、散热都有讲究。更常见、更便宜的做法，是在普通运放后面加一只三极管，让&quot;会算的&quot;和&quot;能扛的&quot;各干各的活。</p>
+<p><a class="img-link" href="img/07_p1_4_divider_load.png"><img alt="电源经 R1、R2 分压，分压点空载时 5 V，朱红色的 50 Ω 负载直接并在 R2 上" src="img/07_p1_4_divider_load.png" loading="lazy" /></a></p>
+<p><em>图 07-p1-4　直接用分压器带 50 Ω 负载：负载和 R2 并联，分压点电压塌下去</em></p>
+<p>图 07-p1-1 左边就是这种&quot;运放直接带&quot;的接法，右边是本节的办法：在运放后面加一只 NPN 三极管，集电极接 12 V 电源，发射极接负载。</p>
+<p><a class="img-link" href="img/07_p1_1_compare.png"><img alt="左：运放跟随器直接接 50 Ω 负载；右：运放输出接 NPN 三极管基极，集电极接 +12 V，发射极接 50 Ω 负载" src="img/07_p1_1_compare.png" loading="lazy" /></a></p>
+<p><em>图 07-p1-1　运放直接带负载（左）与加一级射极跟随器（右）</em></p>
+<p>图 07-p1-1 右边这种接法，输出从三极管的<strong>发射极</strong>取出，所以叫&quot;射极跟随器&quot;（也叫共集电极电路）。负载要的 100 mA 改由 12 V 电源经三极管提供，运放只需要给基极一点点电流去&quot;拧阀门&quot;。</p>
+<p>差距有多大，看图 07-p1-2：</p>
+<p><a class="img-link" href="img/07_p1_2_current.png"><img alt="四根柱子：负载要 100 mA，LM358 典型 30 mA、最小 20 mA，加跟随器后运放只需给 1.7 mA" src="img/07_p1_2_current.png" loading="lazy" /></a></p>
+<p><em>图 07-p1-2　负载要的电流、运放能给的电流、加跟随器后运放要给的电流</em></p>
+<p>图 07-p1-2 里，橙色柱子（100 mA）远远高过运放能给的蓝色（30 mA）和朱红色（20 mA）。加了跟随器以后，运放只要出最右边那根很矮的蓝绿色柱子——约 1.7 mA。这个数是这样来的：三极管的电流放大倍数 β 这里按 50 估；发射极比基极低约 0.7 V（本页第二节会讲为什么），负载实际拿到 4.3 V，电流是 4.3 ÷ 50 = 86 mA；基极电流是发射极电流的 1/(β + 1)，即 86 ÷ 51 ≈ 1.7 mA。粗算时直接用 100 mA ÷ 50 = 2 mA 也可以，量级一样。三极管把电流放大了几十倍，这正是 <a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a> 里说的&quot;小电流控制大电流&quot;。</p>
+<h2 id="二类比小手拧大阀门水位总低一个台阶">二、类比：小手拧大阀门，水位总低一个台阶</h2>
+<p>P2 里把三极管比作&quot;用小水流推开大阀门的水龙头&quot;。射极跟随器就是这个水龙头的一种用法，见图 07-p1-3：</p>
+<p><a class="img-link" href="img/07_p1_3_analogy.png"><img alt="水塔经大阀门向房子供水，小手轻拧阀门，房子水位跟着手的指令走但低一个台阶" src="img/07_p1_3_analogy.png" loading="lazy" /></a></p>
+<p><em>图 07-p1-3　射极跟随器的水塔类比</em></p>
+<p>图 07-p1-3 中，水塔是 12 V 电源，房子是负载，阀门是三极管。运放是那只&quot;小手&quot;，只用很小的力（1.7 mA）就能控制 100 mA 级的大水流。有意思的是这个阀门的脾气：它总想让房子里的水位<strong>跟着手的指令走</strong>，但永远<strong>比指令低一个台阶</strong>。这个台阶就是三极管基极到发射极的压降 <span class="math math-inline">\(V_{BE}\)</span> （读作&quot;V-B-E&quot;，硅管大约 0.7 V）。你给基极 5 V，发射极大约只有 4.3 V。</p>
+<p>所以射极跟随器有两个关键特点：</p>
+<ul>
+<li>电流放大约 β 倍，电压放大约 1 倍——输出电压&quot;跟随&quot;输入，但不放大；</li>
+<li>输出比输入低约 0.7 V，而且这个差值几乎不随负载变化。</li>
+</ul>
+<p>为什么输出会&quot;自己跟着走&quot;？关键在于负载接在发射极上。假如负载突然要更多电流，发射极电压就会往下掉一点；基极电压是运放定死的，于是 <span class="math math-inline">\(V_{BE}\)</span> 变大，阀门开得更大，电流跟上去，发射极电压又被拉回来。反过来，发射极电压偏高时 <span class="math math-inline">\(V_{BE}\)</span> 变小，阀门关小一点。三极管自己就在做一种&quot;负反馈&quot;，所以输出总是稳稳地贴在&quot;输入减 0.7 V&quot;附近。</p>
+<p>这个阀门也有两个脾气要记住。第一，它只会&quot;往外放水&quot;：NPN 管只能把电流从电源推向负载，不能把负载上的电荷抽走，输出要往下走，全靠负载自己放电。第二，基极电压低于约 0.6 V 时阀门完全关死，输出就是 0 V。所以单电源供电时，输入要是一路降到 0 V，输出在最低那一段会被&quot;削平&quot;。</p>
+<h2 id="三看一眼它和-03-电压跟随器的区别">三、看一眼它和 03 电压跟随器的区别</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>03 运放电压跟随器</th>
+<th>07 射极跟随器</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出电压</td>
+<td>等于输入</td>
+<td>比输入低约 0.7 V</td>
+</tr>
+<tr>
+<td>能带的电流</td>
+<td>受运放限制（几十 mA）</td>
+<td>受三极管和电源限制（可到安培级）</td>
+</tr>
+<tr>
+<td>输入要的电流</td>
+<td>几乎为零</td>
+<td>负载电流的 1/(β + 1)，粗算约 1/β</td>
+</tr>
+<tr>
+<td>谁发热</td>
+<td>运放</td>
+<td>三极管（要算功耗）</td>
+</tr>
+</tbody>
+</table>
+<p>两者经常<strong>串起来用</strong>：运放负责&quot;电压准&quot;，三极管负责&quot;电流大&quot;。如果把运放的反馈从三极管发射极取回来，连那 0.7 V 的台阶也能被运放自动补上——这一招在原理篇会讲，到了后面的 <a href="../08-linear-regulator/page1.html">08 线性稳压 · 直觉篇</a> 里还会再见到。</p>
+<h2 id="四用万用表和示波器看一遍">四、用万用表和示波器看一遍</h2>
+<p>搭好电路以后，先用万用表量直流。按原理篇的低压实验（接法见图 07-p1-5）：9 V 电源，电位器把基极调到 5 V，发射极接 1 kΩ，发射极电压按模型约 4.36 V（这组估算按 2N3904 常见的 β = 100、电位器内阻约 247 Ω 算，原理篇有说明）；把负载换成 220 Ω，电流变成约 4.5 倍，发射极只降到约 4.28 V。再做个对比，拿掉三极管、把 220 Ω 直接挂在电位器滑片上，滑片电压会一下掉到约 2.36 V。同一个&quot;软&quot;电源，加不加三极管，差别一目了然。</p>
+<p><a class="img-link" href="img/07_p1_5_pot_experiment.png"><img alt="左：9 V 接 1 kΩ 电位器，滑片 5 V 接 2N3904 基极，集电极接 9 V，发射极经 1 kΩ 或 220 Ω 接地；右：拿掉三极管，220 Ω 直接接在滑片上" src="img/07_p1_5_pot_experiment.png" loading="lazy" /></a></p>
+<p><em>图 07-p1-5　低压实验的两种接法：(a) 滑片推 2N3904 基极；(b) 220 Ω 直接挂在滑片上</em></p>
+<p>再用示波器看交流。下面这一段是<strong>仿真</strong>里的场景（12 V 电源、50 Ω 负载），只在电脑上看，不要照着去搭：电路就是图 07-p1-1 右边那种接法，通道 1 接基极，通道 2 接发射极，输入一个 3 V 到 7 V 的正弦。你会看到两条波形形状一模一样，通道 2 只是整体往下平移了一截：输入峰值 7.00 V 时，输出约 6.28 V，差 0.72 V（这是仿真里理想模型的数字；真实的 2N3904 在这么大的电流下要差 0.8～0.9 V，TIP31 这类功率管约 0.6 V）。把两个通道调成同一挡位、叠在一起看，最容易看出&quot;平移而不缩小&quot;。如果把三极管拿掉、让运放直接推 50 Ω，通道 2 会变成一条贴在 1.5 V 附近的直线，波形完全没了。这个场景里三极管要发约 0.65 W 的热，已经超过 2N3904 的额定功耗（环境 25 °C 时 625 mW），按手册估算管子内部会升到 150 °C 以上，<strong>几秒内就能把手指烫伤，千万不要用手去摸</strong>。真动手时按原理篇第七节，负载用 220 Ω。这也是参数与调试篇要专门算功耗的原因。</p>
+<h2 id="五一句话总结">五、一句话总结</h2>
+<p><strong>射极跟随器 = 三极管当&quot;电流放大器&quot;：输出电压约等于输入减 0.7 V，电流却可以大几十倍</strong>；代价是那 0.7 V 的台阶和三极管自己的发热。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>ADI 大学课程 第 9 章 9.4 节，电压跟随器（射极跟随器的增益、 <span class="math math-inline">\(V_{BE}\)</span> 偏移、电流增益）：<a href="https://wiki.analog.com/university/courses/electronics/text/chapter-9">https://wiki.analog.com/university/courses/electronics/text/chapter-9</a></li>
+<li>TI，LM358 数据手册（输出拉电流典型 30 mA、最小 20 mA）：<a href="https://www.ti.com/lit/ds/symlink/lm358.pdf">https://www.ti.com/lit/ds/symlink/lm358.pdf</a></li>
+<li>Electronics Tutorials，共集电极放大器（输出比基极低约 0.7 V、同相）：<a href="https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html">https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

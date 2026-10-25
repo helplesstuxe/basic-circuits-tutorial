@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>跨章节审读（资深教师）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/cross-chapter.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="跨章节审读资深教师">跨章节审读（资深教师）</h1>
+<p>范围：全部 29 个节点，按 notes/00-design.md §5.3 的拓扑顺序审读。各节点内的具体问题见同目录下的 <code>NN.md</code>，这里只记录跨节点的问题。级别仍分 必改 / 建议。</p>
+<h2 id="一符号与术语">一、符号与术语</h2>
+<h3 id="11-首次使用时没有定义或定义得太晚的术语">1.1 首次使用时没有定义（或定义得太晚）的术语</h3>
+<p>下表按导航顺序列出&quot;第一次出现&quot;的位置和&quot;真正定义&quot;的位置。</p>
+<table>
+<thead>
+<tr>
+<th>术语</th>
+<th>首次出现（未定义）</th>
+<th>定义所在</th>
+<th>级别</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>二极管、续流二极管、0.7 V 压降</td>
+<td>P1 page1 L45、page2 L134</td>
+<td>P2</td>
+<td>必改（见 <a href="http://P1.md">P1.md</a> #2）</td>
+<td>在 P1 首次出现处括注&quot;单向阀门，P2 细讲&quot;并加链接</td>
+</tr>
+<tr>
+<td>三极管</td>
+<td>P3（导航中排在 P2 之前）</td>
+<td>P2</td>
+<td>建议</td>
+<td>见第四部分：把 P2 移到 P3 之前</td>
+</tr>
+<tr>
+<td>三相、线电压、相电压</td>
+<td>17 page1 L8、L12（随后 18、19、11 都在用）</td>
+<td>19 page2 才部分解释</td>
+<td>必改（见 <a href="http://17.md">17.md</a> #1、<a href="http://19.md">19.md</a> #1）</td>
+<td>17 加最小定义框；19 改正&quot;串了两段 → ÷√3&quot;的说法</td>
+</tr>
+<tr>
+<td>体二极管</td>
+<td>21 page3 L55；09、26 也在用</td>
+<td>25 page2 L11 定义得最好；26 page1 L58–60 当场解释</td>
+<td>必改（见 <a href="http://21.md">21.md</a> #1）</td>
+<td>在 21 page1 定义，09 和 26 链接到这里；可直接借用 25 page2 L11 的写法</td>
+</tr>
+<tr>
+<td>0.707（−3 dB）</td>
+<td>01 page3 L46–48</td>
+<td>15 page2 L25–38 才推导</td>
+<td>必改（见 <a href="http://01.md">01.md</a> #1）</td>
+<td>01 加一句&quot;0.707≈1/√2，功率减半&quot;，并链接 15</td>
+</tr>
+<tr>
+<td>闭环放大倍数</td>
+<td>P3 page2 L123</td>
+<td>无</td>
+<td>必改（见 <a href="http://P3.md">P3.md</a> #2）</td>
+<td>在 P3 page2 L50 给出定义</td>
+</tr>
+<tr>
+<td>占空比</td>
+<td>21 前已有使用</td>
+<td>21 page2 L49；09 page1、25 page1 又各定义一次</td>
+<td>建议</td>
+<td>以 21 为准，09 和 25 改成&quot;占空比（见 21 page2）&quot;一句话回顾</td>
+</tr>
+<tr>
+<td>纹波</td>
+<td>05</td>
+<td>06</td>
+<td>建议</td>
+<td>05 括注&quot;整流后电压上下起伏的部分，06 细讲&quot;</td>
+</tr>
+<tr>
+<td>去耦 / 旁路电容</td>
+<td>P3、03、22、14</td>
+<td>分散，没有统一定义</td>
+<td>建议</td>
+<td>P3 第一次出现时用两句话定义（芯片电源脚旁边就近储能、滤掉高频的小电容），以后统一称&quot;去耦电容&quot;</td>
+</tr>
+<tr>
+<td>模数转换器（ADC）</td>
+<td>01、02</td>
+<td>14</td>
+<td>建议</td>
+<td>01 括注&quot;把电压变成数字的芯片&quot;</td>
+</tr>
+<tr>
+<td>极点</td>
+<td>05、08</td>
+<td>无</td>
+<td>建议</td>
+<td>改写成&quot;频率响应开始下降的转折点&quot;，或删去</td>
+</tr>
+<tr>
+<td>肖特基二极管</td>
+<td>P2、05</td>
+<td>只给了压降，没有说明是什么</td>
+<td>建议</td>
+<td>P2 加一句：金属与半导体接触做成，压降约 0.3 V，速度快</td>
+</tr>
+<tr>
+<td>屏蔽、双绞线</td>
+<td>04、13、24</td>
+<td>无</td>
+<td>建议</td>
+<td>04 第一次出现时解释</td>
+</tr>
+<tr>
+<td>磁珠、达林顿</td>
+<td>07</td>
+<td>无</td>
+<td>建议</td>
+<td>见 <a href="http://07.md">07.md</a></td>
+</tr>
+<tr>
+<td>I²t</td>
+<td>11</td>
+<td>无</td>
+<td>建议</td>
+<td>见 <a href="http://11.md">11.md</a></td>
+</tr>
+<tr>
+<td>波特率、kbps/Mbps、SPI</td>
+<td>23、24</td>
+<td>无</td>
+<td>建议</td>
+<td>23 第一次出现时括注&quot;每秒传多少位&quot;</td>
+</tr>
+<tr>
+<td>自举</td>
+<td>21、25</td>
+<td>无</td>
+<td>建议</td>
+<td>25 解释一次，21 链接过去</td>
+</tr>
+<tr>
+<td>相线</td>
+<td>20 page1 L51</td>
+<td>20 page3 L20</td>
+<td>建议</td>
+<td>首次出现写&quot;相线（火线）&quot;</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-同一件事不同节点给的数值或模型不一致">1.2 同一件事，不同节点给的数值或模型不一致</h3>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>级别</th>
+<th>位置</th>
+<th>问题</th>
+<th>改法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>S1</td>
+<td>必改</td>
+<td>P2 page2 L37–39；10 page2 L14–18 与 page3 L18、L25；08、24 page3 L65–77 沿用同一类模型</td>
+<td>稳压管模型 V = V_Z + r_Z·I_Z 把手册上&quot;在 I_ZT 下测得&quot;的 5.1 V 当成了击穿起点，所以算出 49 mA 时为 5.44 V，与手册矛盾。10 page3 又说实际电压&quot;比 5.1 V 低&quot;，前后不一致。</td>
+<td>全书统一成 V = V_Z + r_Z(I_Z − I_ZT)（见 <a href="http://P2.md">P2.md</a> #1、<a href="http://10.md">10.md</a> #1）；08 和 24 的稳压管钳位改用同一模型，至少加一句说明。</td>
+</tr>
+<tr>
+<td>S2</td>
+<td>建议</td>
+<td>07 与 P2、22</td>
+<td>2N3904 的额定功耗写法不一（0.35 W / 625 mW），β 的取值也不一（100 mA 时 β 约 60）。</td>
+<td>全书统一采用同一份手册（onsemi 2N3904，TO-92 封装 625 mW，标明&quot;25 °C 环境下&quot;），07 的&quot;超额定一倍&quot;同步改。</td>
+</tr>
+<tr>
+<td>S3</td>
+<td>建议</td>
+<td>P2 与 21</td>
+<td>MOS 管栅极下拉电阻，P2 用 10 kΩ，21 用 1 MΩ，都没有说明为什么取这个值。</td>
+<td>以 21 为准，写明取值依据（关断速度与驱动电流的折中），P2 引用 21。</td>
+</tr>
+<tr>
+<td>S4</td>
+<td>建议</td>
+<td>各运放节点</td>
+<td>LM358 和 LM358B 混用，GBW、压摆率随型号不同。</td>
+<td>统一写&quot;LM358（以 TI LM358B 手册数据为准）&quot;，或在第一次使用时说明两者的差别。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="13-标签与颜色">1.3 标签与颜色</h3>
+<ul>
+<li>
+<p><strong>建议</strong>：迁移题的标签不统一。规范写法是&quot;变体迁移&quot;（AUTHOR_GUIDE L32、00-design L36），23 个节点的 page3 照此书写。不一致的有：</p>
+<ul>
+<li>15、16 写成&quot;变式迁移&quot;（page2 例 3 和 page3 练习 4）；</li>
+<li>20、24 的 page2 例 3 只写了&quot;变体&quot;；</li>
+<li>08、09、10、20、23、24 的 page3 没有任何带&quot;变体迁移&quot;标签的练习。</li>
+</ul>
+<p>建议全书统一为&quot;变体迁移&quot;。另外，AUTHOR_GUIDE 要求练习&quot;由易到难&quot;，但多数节点没有难度标签，26 page3 的练习 1 还比练习 2 难。建议加上&quot;易 / 中 / 难&quot;标签。</p>
+</li>
+<li>
+<p><strong>建议</strong>：正文用了约定以外的颜色词。涉及 18 page2 L210、12 page1 L36、19 page3 L30、11 的&quot;红色&quot;、23 page1 L22。应改用约定颜色名：朱红色带 ×、红紫色点划线等。</p>
+</li>
+<li>
+<p><strong>建议</strong>：25 page1 L52 的电流画成蓝色（vin），没有用 cur 天蓝色；25_sim.py L104 的 25% 曲线用的是 ref 灰色点线样式，而灰色点线全书都表示&quot;参考线&quot;，读者会误读。</p>
+</li>
+<li>
+<p>26 的&quot;浅蓝色带 / 浅黄底色&quot;和 24 的&quot;浅灰色背景&quot;经核对对应 figstyle 的 <code>fill</code> / <code>fill2</code> 填充色，属于正常用法，<strong>不算问题</strong>。</p>
+</li>
+</ul>
+<h2 id="二前后引用与前置知识">二、前后引用与前置知识</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>级别</th>
+<th>位置</th>
+<th>问题</th>
+<th>改法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>必改</td>
+<td>17 page2 L16</td>
+<td>写&quot;P1 讲过吸合时间&quot;，但 P1 没有讲过这一点，它出自 17 page1 L62。</td>
+<td>改为&quot;直觉篇讲过&quot;（见 <a href="http://17.md">17.md</a> #2）。</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>建议</td>
+<td>13</td>
+<td>GBW 链接指向 P3 page1，实际定义在 P3 page3 L19。</td>
+<td>改链接。</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>建议</td>
+<td>07、08</td>
+<td>&quot;下一节&quot;被误用来指不相邻的节点，导航顺序里它们并不紧挨着。</td>
+<td>改为&quot;见 NN 节&quot;加链接。</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>建议</td>
+<td>09 page2 L178</td>
+<td>光耦被推后到&quot;24 讲&quot;，但按导航 23 已经讲过光耦。</td>
+<td>改为&quot;见 23&quot;。</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>必改</td>
+<td>P3 page1 L9</td>
+<td>把 14 列入&quot;建立在虚短、虚断上的节点&quot;，而 14 恰恰是开环、不能用虚短的反例。</td>
+<td>见 <a href="http://P3.md">P3.md</a> #1。</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>建议</td>
+<td>26 page3 L112</td>
+<td>写&quot;本节是课程最后一个节点&quot;。如果按第四部分调整顺序，这句和 page3 L3 的导航都要同步改。</td>
+<td>由修改顺序的人一并改。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="三重复或矛盾的讲法">三、重复或矛盾的讲法</h2>
+<h3 id="31-有限开环增益">3.1 有限开环增益</h3>
+<ul>
+<li><strong>现状</strong>：闭环增益公式 A_v = A/(1+Aβ) 这类有限开环增益的修正，在 P3、01、03 中<strong>各推导了一遍</strong>，符号也不完全一致。</li>
+<li><strong>建议</strong>：只在 P3 page2 推导一次，作为&quot;为什么虚短只是近似&quot;的依据；01 和 03 改成&quot;代入 P3 page2 的公式&quot;，用一个数值例子回扣。这样可以减轻重复的认知负荷，也能起到提取练习的作用。</li>
+</ul>
+<h3 id="32-虚短的措辞">3.2 虚短的措辞</h3>
+<ul>
+<li><strong>现状</strong>：P3 写明&quot;虚短只在负反馈、输出未饱和时成立&quot;，但 02、03、04、13、07 引用虚短时<strong>省略了&quot;未饱和&quot;这一条件</strong>。13 的微分器恰好容易饱和，是最需要这个条件的地方。</li>
+<li><strong>建议（必改级别的提醒放在 <a href="http://P3.md">P3.md</a> #1）</strong>：各节第一次使用虚短时统一写成&quot;负反馈且输出未饱和时，虚短成立（见 P3 page1）&quot;。13 在讲输出被尖峰顶到电源轨时，应明确写&quot;此时虚短失效&quot;。</li>
+</ul>
+<h3 id="33-继电器线圈与续流二极管">3.3 继电器线圈与续流二极管</h3>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>情况</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>提到续流二极管，但读者此时还不知道二极管（见 1.1）</td>
+</tr>
+<tr>
+<td>21</td>
+<td>有续流二极管。page2 L153 把&quot;MOS 管关断时 D1 接过电流&quot;写成了&quot;D1 关断瞬间&quot;，<strong>必改</strong>（见 <a href="http://21.md">21.md</a> #2）</td>
+</tr>
+<tr>
+<td>22</td>
+<td>讲得最完整，有反向高压的仿真</td>
+</tr>
+<tr>
+<td>18、09、25</td>
+<td>有续流二极管</td>
+</tr>
+<tr>
+<td>19</td>
+<td>动手实验部分的继电器线圈<strong>没有画续流二极管</strong>，也没有提示（建议）</td>
+</tr>
+<tr>
+<td>17</td>
+<td>page2 L151 对释放电压的说法写反了，<strong>必改</strong>（见 <a href="http://17.md">17.md</a> #3）</td>
+</tr>
+</tbody>
+</table>
+<p><strong>建议</strong>：以 22 为&quot;标准讲法&quot;，其余节点一律写&quot;线圈两端反并联续流二极管（原理见 22 page2）&quot;，19 的动手实验补上。</p>
+<h3 id="34-其他矛盾">3.4 其他矛盾</h3>
+<ul>
+<li>06 page3 L36 在同一段里，纹波数值与所需电容的结论互相矛盾（必改，见 <a href="http://06.md">06.md</a>）。</li>
+<li>12 page3 L14 与 L36 对积分电阻 R_f 一个说&quot;尽量大&quot;，一个说&quot;尽量小&quot;，正好相反（必改，见 <a href="http://12.md">12.md</a>）。</li>
+</ul>
+<h2 id="四导航顺序">四、导航顺序</h2>
+<p>现行顺序（00-design §5.3）：</p>
+<blockquote>
+<p>P1 → P3 → P2 → 17 → 01 → 21 → 22 → 02 → 05 → 14 → 18 → 03 → 06 → 12 → 19 → 04 → 10 → 13 → 07 → 15 → 08 → 11 → 23 → 16 → 09 → 25 → 20 → 24 → 26</p>
+</blockquote>
+<p>这个顺序满足依赖关系，但它是按&quot;4 名作者并行写作&quot;的调度排出来的，<strong>对读者来说主题交错</strong>，例如运放 → 继电器 → MOS → 运放 → 互锁 → 跟随器 → 整流 → 星三角……读者每读一两节就要换一次脑子里的模型，提取练习的线索也断了。另外，P3 先于 P2，但 P3 已经提到三极管。</p>
+<p><strong>建议</strong>：README 增加一条&quot;按主题分组&quot;的推荐阅读顺序。下面这条顺序已逐条核对 §5.2 的 55 条边，全部满足依赖：</p>
+<blockquote>
+<p><strong>基础</strong>：P1 → P2 → P3
+<strong>运放主线</strong>：01 → 02 → 03 → 04 → 05 → 12 → 13 → 14 → 15 → 16
+<strong>电源主线</strong>：06 → 10 → 07 → 08 → 09
+<strong>开关与接口</strong>：21 → 22 → 23 → 24 → 25 → 26
+<strong>继电-接触器控制</strong>（市电）：17 → 18 → 19 → 20 → 11</p>
+</blockquote>
+<p>这样排的好处：</p>
+<ul>
+<li>P2 在 P3 之前，三极管不再&quot;先用后讲&quot;。</li>
+<li>体二极管（21）、续流（22）、光耦（23）在使用它们的 09 之后、24 和 25 之前集中讲完。顺带一提，这样排 09 仍在 23 之前，09 page2 L178 最好写成&quot;光耦见 23&quot;。</li>
+<li>市电节点 17–20 和 11 集中在最后，读者到这里已经熟悉继电器（22）和比较器（14），安全提示也可以集中强化。</li>
+<li>11 放到 17–19 之后，&quot;三相&quot;已经有了定义。</li>
+</ul>
+<p>代价是要改各页顶部的&quot;上一页 / 下一页&quot;链接和 26 page3 的&quot;最后一页&quot;说法。如果作者不想改现有链接，至少在 README 里把分组顺序作为&quot;推荐阅读顺序&quot;列出来，并在 P3 里给三极管加一个指向 P2 的链接。</p>
+<h2 id="五值得在全书推广的做法">五、值得在全书推广的做法</h2>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>做法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>13</td>
+<td>先讲误区：用&quot;微分器放大噪声&quot;开场</td>
+</tr>
+<tr>
+<td>04、06、22、09、23、24</td>
+<td>安全提示具体到本节特有的危险点。24 的&quot;功能隔离不能隔市电&quot;&quot;测试电压不等于工作电压&quot;讲得尤其好</td>
+</tr>
+<tr>
+<td>11</td>
+<td>打嗝式和锁死式两种保护的对比</td>
+</tr>
+<tr>
+<td>15</td>
+<td>0.707 的推导，可以作为 01 的回指目标</td>
+</tr>
+<tr>
+<td>25</td>
+<td>先定义体二极管再使用；&quot;IN1 占空比 70%&quot;误区题</td>
+</tr>
+<tr>
+<td>16</td>
+<td>用&quot;差距缩小一半&quot;推出 ln 2，由具体到抽象的好例子</td>
+</tr>
+<tr>
+<td>26</td>
+<td>每个公式都附&quot;中文意思&quot;，扫描结论可以直接读数</td>
+</tr>
+<tr>
+<td>20</td>
+<td>用低压 LED 复现&quot;开关接零线时灯头带电&quot;，并用万用表判断</td>
+</tr>
+</tbody>
+</table>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

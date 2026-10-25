@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>阶段 1：逆向教学设计</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/00-design.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="阶段-1逆向教学设计">阶段 1：逆向教学设计</h1>
+<p>本文件是整套教案的「总设计图」：先定学完以后要达到什么水平，再倒推每个知识点讲什么、按什么顺序讲、由谁来写。所有作者动笔前必须读完本文件和 <a href="AUTHOR_GUIDE.html">AUTHOR_GUIDE.md</a>。依赖关系的唯一数据源是 <a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/code/figs/00_figs.py">code/figs/00_figs.py</a>，本文件里的表格与它保持一致；改依赖时两边一起改，并重新运行脚本生成 <a href="../img/00_dag.png">依赖图</a>。</p>
+<p>任务原文见 <a href="../specs/task-spec.html">specs/task-spec.md</a>，原始附图见 <a href="../specs/source-20-circuits.jpg">specs/source-20-circuits.jpg</a>。</p>
+<h2 id="1-学习者画像">1. 学习者画像</h2>
+<p><strong>会的</strong>：欧姆定律、串联与并联、电功率，能看懂由电池、开关、灯泡组成的简单电路；可能听说过电容。会一点点 Python，至少能照着说明运行一个脚本。</p>
+<p><strong>不会的</strong>：电容充放电的定量规律、电感、交流电的相位、二极管和三极管、MOSFET、运放、反馈、复数与频率响应、微积分、继电器和接触器控制电路。</p>
+<p><strong>写作规则</strong>：</p>
+<ul>
+<li>凡是用到「不会的」知识，必须先补最小必要知识，补在前置节点 P1–P3 里，或者在本页用一个小框就地补上，并链接到前置节点。</li>
+<li>积分和微分一律从「面积」「斜率」的直觉讲起，不默认读者学过微积分。</li>
+<li>频率响应不讲复数，用「电容对快变化的信号更好通过」「容抗随频率下降」这样的直觉加仿真曲线来讲；需要公式时只给幅值公式。</li>
+<li>读者会被大段符号吓退。每个公式都先用一句中文说出它的意思，再给符号形式，然后马上代一组数算一遍。</li>
+</ul>
+<h2 id="2-终态验收学完全部节点后读者应当能做到">2. 终态验收（学完全部节点后，读者应当能做到）</h2>
+<p>对 20 个标准电路和 6 个扩展电路中的每一个，读者都能：</p>
+<ol>
+<li><strong>能看懂并画出</strong>：认出电路图里每个元件的符号和作用，能凭记忆画出电路的基本形态，并说清信号从哪里进、从哪里出。</li>
+<li><strong>能用公式估算参数</strong>：给定指标（例如增益 10 倍、输出 5V、截止频率 1kHz、延时 5s），能选出元件的数量级并算出具体值，再挑一个最接近的标准值。</li>
+<li><strong>能用仿真验证</strong>：能运行并修改教案里的 Python 脚本，改动一个参数后能预测波形会怎么变，再用仿真结果核对自己的预测。</li>
+<li><strong>能排查常见故障</strong>：看到「没有输出」「输出顶到电源」「发热」「继电器抖动」这类现象，能按「现象 → 原因 → 怎么查 → 怎么改」的思路定位问题。</li>
+<li><strong>能讲清安全要点</strong>：凡涉及 220V/380V 市电的电路，能说出危险点在哪里，知道哪些实验只能在低压下做，知道为什么必须断电操作、为什么要隔离和接地。</li>
+</ol>
+<h2 id="3-硬性标准每个知识点都必须满足">3. 硬性标准（每个知识点都必须满足）</h2>
+<ul>
+<li>3 个 md 页面，每页正文不少于 500 汉字（代码、公式、图注不计入）：
+<ul>
+<li>page1「直觉篇」：痛点引入、生活类比、示意图。</li>
+<li>page2「原理与实现篇」：推导，加一段逐行注释、可直接运行的最小 Python 仿真，输出 png。</li>
+<li>page3「参数与调试篇」：每个元件参数的物理含义和取值范围，改变参数后波形或效果怎么变；故障排查表（现象 → 原因 → 怎么查 → 怎么改）；练习题，答案放在 <code>&lt;details&gt;</code> 里。</li>
+</ul>
+</li>
+<li>教学闭环：痛点先行，直觉先于严谨；例题按「完整示例 → 关键步骤留空 → 变体迁移」三步渐隐。</li>
+<li>图：电路图用 schemdraw，波形和曲线用 matplotlib，全部是 PNG；禁止 ASCII 图和 Mermaid。图号写成「图 NN-pX-k」，每张图都有引导句、图注和图后讲解；答案图放在揭晓之后。</li>
+<li>代码：Python 3 + NumPy + matplotlib，必要时加 SciPy；必须真的跑通，否则标「未经运行验证」。</li>
+<li>公式必须能在 <a href="http://github.com">github.com</a> 上正常渲染（规则见 AUTHOR_GUIDE 第 5 节）。</li>
+<li>链接和引文必须真实可访问，否则标「[待核实]」，禁止编造。</li>
+<li><strong>安全</strong>：涉及市电（220V/380V）的节点（06、09、17、18、19、20，以及扩展篇的 22、23、24）必须写明安全警示，仿真和实验只建议在低压下做。</li>
+</ul>
+<h2 id="4-符号表全书统一首次出现必须解释">4. 符号表（全书统一，首次出现必须解释）</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(V_i\)</span> 或 <span class="math math-inline">\(V_{in}\)</span></td>
+<td>输入电压</td>
+<td>V</td>
+<td>同一页只用其中一种写法</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_o\)</span></td>
+<td>输出电压</td>
+<td>V</td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{CC}\)</span> 、 <span class="math math-inline">\(V_{EE}\)</span></td>
+<td>正电源、负电源</td>
+<td>V</td>
+<td>单电源电路里 <span class="math math-inline">\(V_{EE}\)</span> 就是地</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{ref}\)</span></td>
+<td>基准电压、门限电压</td>
+<td>V</td>
+<td>比较器、稳压器</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{BE}\)</span> 、 <span class="math math-inline">\(V_{GS}\)</span></td>
+<td>三极管基极–发射极电压、MOSFET 栅极–源极电压</td>
+<td>V</td>
+<td><span class="math math-inline">\(V_{BE}\)</span> 约 0.7V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_D\)</span> 、 <span class="math math-inline">\(V_Z\)</span></td>
+<td>二极管正向压降、稳压管击穿电压</td>
+<td>V</td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R\)</span> 、 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_f\)</span></td>
+<td>电阻、输入电阻、反馈电阻</td>
+<td>Ω</td>
+<td><span class="math math-inline">\(R_f\)</span> 专指运放反馈支路的电阻</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(C\)</span></td>
+<td>电容</td>
+<td>F</td>
+<td>常用 μF、nF</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(L\)</span></td>
+<td>电感</td>
+<td>H</td>
+<td>常用 mH、μH</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(I\)</span> 、 <span class="math math-inline">\(I_B\)</span> 、 <span class="math math-inline">\(I_C\)</span></td>
+<td>电流、基极电流、集电极电流</td>
+<td>A</td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(t\)</span></td>
+<td>时间</td>
+<td>s</td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(f\)</span> 、 <span class="math math-inline">\(f_c\)</span></td>
+<td>频率、截止频率</td>
+<td>Hz</td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(T\)</span></td>
+<td>周期</td>
+<td>s</td>
+<td><span class="math math-inline">\(T = 1/f\)</span></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\tau\)</span></td>
+<td>时间常数</td>
+<td>s</td>
+<td><span class="math math-inline">\(\tau = RC\)</span></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(A_v\)</span></td>
+<td>电压放大倍数</td>
+<td>无</td>
+<td><span class="math math-inline">\(A_v = V_o / V_i\)</span></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(D\)</span></td>
+<td>占空比</td>
+<td>无</td>
+<td>开关电源、PWM</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\beta\)</span></td>
+<td>三极管电流放大倍数</td>
+<td>无</td>
+<td></td>
+</tr>
+<tr>
+<td>CTR</td>
+<td>光耦电流传输比</td>
+<td>%</td>
+<td>只在 23、24 用</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-依赖图">5. 依赖图</h2>
+<p><a class="img-link" href="../img/00_dag.png"><img alt="图 00-1 知识点依赖图" src="../img/00_dag.png" loading="lazy" /></a></p>
+<p>图 00-1 由 <code>code/figs/00_figs.py</code> 生成。箭头从前置节点指向后继节点；列号等于从 P1 出发的最长前置链深度；填充色区分线索：黄色是前置知识，浅蓝色是运放与信号处理，浅橙色是半导体与电源，浅绿色是继电-接触器控制与照明，浅红紫色是扩展篇。跨 3 层以上的远程依赖画成灰色点线，避免图面过乱。</p>
+<h3 id="51-节点">5.1 节点</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>名称</th>
+<th>文件夹</th>
+<th>线索</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1</td>
+<td>元件速成</td>
+<td><a href="../P1-components-basics/page1.html">P1-components-basics</a></td>
+<td>前置</td>
+</tr>
+<tr>
+<td>P2</td>
+<td>半导体入门</td>
+<td><a href="../P2-semiconductor-basics/page1.html">P2-semiconductor-basics</a></td>
+<td>前置</td>
+</tr>
+<tr>
+<td>P3</td>
+<td>运放入门</td>
+<td><a href="../P3-opamp-basics/page1.html">P3-opamp-basics</a></td>
+<td>前置</td>
+</tr>
+<tr>
+<td>01</td>
+<td>反相放大</td>
+<td><a href="../01-inverting-amp/page1.html">01-inverting-amp</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>02</td>
+<td>同相放大</td>
+<td><a href="../02-noninverting-amp/page1.html">02-noninverting-amp</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>03</td>
+<td>电压跟随器</td>
+<td><a href="../03-voltage-follower/page1.html">03-voltage-follower</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>04</td>
+<td>差分放大</td>
+<td><a href="../04-differential-amp/page1.html">04-differential-amp</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>05</td>
+<td>精密整流</td>
+<td><a href="../05-precision-rectifier/page1.html">05-precision-rectifier</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>06</td>
+<td>桥式整流</td>
+<td><a href="../06-bridge-rectifier/page1.html">06-bridge-rectifier</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>07</td>
+<td>射极跟随器</td>
+<td><a href="../07-emitter-follower/page1.html">07-emitter-follower</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>08</td>
+<td>线性稳压</td>
+<td><a href="../08-linear-regulator/page1.html">08-linear-regulator</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>09</td>
+<td>开关电源</td>
+<td><a href="../09-switching-power-supply/page1.html">09-switching-power-supply</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>10</td>
+<td>稳压管稳压</td>
+<td><a href="../10-zener-regulator/page1.html">10-zener-regulator</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>11</td>
+<td>过载保护</td>
+<td><a href="../11-overload-protection/page1.html">11-overload-protection</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>12</td>
+<td>积分电路</td>
+<td><a href="../12-integrator/page1.html">12-integrator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>13</td>
+<td>微分电路</td>
+<td><a href="../13-differentiator/page1.html">13-differentiator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>14</td>
+<td>电压比较器</td>
+<td><a href="../14-voltage-comparator/page1.html">14-voltage-comparator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>15</td>
+<td>有源滤波</td>
+<td><a href="../15-active-filter/page1.html">15-active-filter</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>16</td>
+<td>振荡器</td>
+<td><a href="../16-oscillator/page1.html">16-oscillator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>17</td>
+<td>自锁</td>
+<td><a href="../17-self-locking/page1.html">17-self-locking</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>18</td>
+<td>互锁</td>
+<td><a href="../18-interlock/page1.html">18-interlock</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>19</td>
+<td>星三角降压启动</td>
+<td><a href="../19-star-delta-start/page1.html">19-star-delta-start</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>20</td>
+<td>双控开关</td>
+<td><a href="../20-two-way-switch/page1.html">20-two-way-switch</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>21</td>
+<td>MOS 管开关</td>
+<td><a href="../21-mosfet-switch/page1.html">21-mosfet-switch</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>22</td>
+<td>三极管开关与继电器驱动</td>
+<td><a href="../22-bjt-relay-driver/page1.html">22-bjt-relay-driver</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>23</td>
+<td>光耦隔离</td>
+<td><a href="../23-optocoupler/page1.html">23-optocoupler</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>24</td>
+<td>隔离电源与数字隔离器</td>
+<td><a href="../24-isolated-power/page1.html">24-isolated-power</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>25</td>
+<td>H 桥电机驱动</td>
+<td><a href="../25-h-bridge/page1.html">25-h-bridge</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>26</td>
+<td>上拉/下拉电阻与电平转换</td>
+<td><a href="../26-pullup-level-shift/page1.html">26-pullup-level-shift</a></td>
+<td>扩展</td>
+</tr>
+</tbody>
+</table>
+<h3 id="52-边共-55-条每条一句理由">5.2 边（共 55 条，每条一句理由）</h3>
+<table>
+<thead>
+<tr>
+<th>前置 → 后继</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>P1 → P2</td>
+<td>二极管限流、三极管基极电阻都要用到分压和限流计算</td>
+</tr>
+<tr>
+<td>P1 → P3</td>
+<td>运放电路的增益全由外部电阻网络决定</td>
+</tr>
+<tr>
+<td>P3 → 01</td>
+<td>反相放大是「虚短」「虚断」的第一个完整应用</td>
+</tr>
+<tr>
+<td>01 → 02</td>
+<td>同相放大与反相放大对照推导，读者只需看清差别</td>
+</tr>
+<tr>
+<td>02 → 03</td>
+<td>电压跟随器是同相放大在 <span class="math math-inline">\(R_f = 0\)</span> 、 <span class="math math-inline">\(R_1\)</span> 断开时的特例</td>
+</tr>
+<tr>
+<td>01 → 04</td>
+<td>差分放大的反相一侧就是反相放大</td>
+</tr>
+<tr>
+<td>02 → 04</td>
+<td>差分放大的同相一侧就是同相放大，两者叠加得结果</td>
+</tr>
+<tr>
+<td>01 → 05</td>
+<td>精密整流是把二极管放进反相放大的反馈支路</td>
+</tr>
+<tr>
+<td>P2 → 05</td>
+<td>要先知道二极管有约 0.7V 压降，才明白为什么需要「精密」</td>
+</tr>
+<tr>
+<td>P1 → 06</td>
+<td>整流后的滤波靠电容充放电</td>
+</tr>
+<tr>
+<td>P2 → 06</td>
+<td>二极管桥由 4 个二极管组成，要懂单向导通</td>
+</tr>
+<tr>
+<td>05 → 06</td>
+<td>运放版全波整流 = 精密半波整流 + 求和电路</td>
+</tr>
+<tr>
+<td>P2 → 07</td>
+<td>射极跟随器的输出比输入低一个 <span class="math math-inline">\(V_{BE}\)</span></td>
+</tr>
+<tr>
+<td>03 → 07</td>
+<td>射极跟随器是电压跟随器的三极管版本，对照讲最省力</td>
+</tr>
+<tr>
+<td>P2 → 10</td>
+<td>稳压管靠反向击穿工作</td>
+</tr>
+<tr>
+<td>06 → 10</td>
+<td>稳压管稳压的输入就是整流滤波后带纹波的直流</td>
+</tr>
+<tr>
+<td>07 → 08</td>
+<td>线性稳压的调整管就是一个射极跟随器</td>
+</tr>
+<tr>
+<td>10 → 08</td>
+<td>线性稳压的基准电压常由稳压管提供</td>
+</tr>
+<tr>
+<td>02 → 08</td>
+<td>误差放大器是同相放大， <span class="math math-inline">\(V_o = V_{ref}(1 + R_f/R_1)\)</span></td>
+</tr>
+<tr>
+<td>P1 → 09</td>
+<td>开关电源的储能元件是电感和电容</td>
+</tr>
+<tr>
+<td>P2 → 09</td>
+<td>开关管是 MOSFET，还要用续流二极管</td>
+</tr>
+<tr>
+<td>06 → 09</td>
+<td>第二种拓扑的副边输出级就是「整流 + 滤波」</td>
+</tr>
+<tr>
+<td>08 → 09</td>
+<td>先懂线性稳压的发热问题，才知道开关电源为什么效率高</td>
+</tr>
+<tr>
+<td>P1 → 11</td>
+<td>采样电阻把电流变成电压，再驱动继电器动作</td>
+</tr>
+<tr>
+<td>P2 → 11</td>
+<td>切断负载要用三极管或 MOSFET 驱动</td>
+</tr>
+<tr>
+<td>14 → 11</td>
+<td>判断「是否过载」就是一个门限比较</td>
+</tr>
+<tr>
+<td>P1 → 12</td>
+<td>电容电压等于电流的「累积面积」除以 <span class="math math-inline">\(C\)</span></td>
+</tr>
+<tr>
+<td>01 → 12</td>
+<td>积分电路就是把反相放大的 <span class="math math-inline">\(R_f\)</span> 换成电容</td>
+</tr>
+<tr>
+<td>P1 → 13</td>
+<td>电容电流正比于电压变化的「斜率」</td>
+</tr>
+<tr>
+<td>12 → 13</td>
+<td>微分与积分互为对偶，交换 R 和 C 的位置即可</td>
+</tr>
+<tr>
+<td>P3 → 14</td>
+<td>比较器是运放开环、输出饱和的用法</td>
+</tr>
+<tr>
+<td>P1 → 15</td>
+<td>滤波的截止频率由 RC 决定</td>
+</tr>
+<tr>
+<td>02 → 15</td>
+<td>有源滤波的放大部分是同相放大</td>
+</tr>
+<tr>
+<td>03 → 15</td>
+<td>Sallen-Key 结构里的运放接成跟随器</td>
+</tr>
+<tr>
+<td>14 → 16</td>
+<td>方波振荡器 = 施密特比较器 + RC 充放电</td>
+</tr>
+<tr>
+<td>15 → 16</td>
+<td>文氏桥正弦振荡器靠 RC 网络选频</td>
+</tr>
+<tr>
+<td>P1 → 17</td>
+<td>自锁电路由线圈和触点组成</td>
+</tr>
+<tr>
+<td>17 → 18</td>
+<td>互锁是在两套自锁电路里各串入对方的常闭触点</td>
+</tr>
+<tr>
+<td>P1 → 19</td>
+<td>星三角切换靠时间继电器延时</td>
+</tr>
+<tr>
+<td>18 → 19</td>
+<td>星形与三角形两个接触器必须互锁，否则相间短路</td>
+</tr>
+<tr>
+<td>P1 → 20</td>
+<td>双控开关就是两个单刀双掷开关</td>
+</tr>
+<tr>
+<td>P1 → 21</td>
+<td>栅极电阻、下拉电阻的取值和导通发热都靠电阻与功率计算</td>
+</tr>
+<tr>
+<td>P2 → 21</td>
+<td>要先有 MOSFET「电压控制的阀门」模型</td>
+</tr>
+<tr>
+<td>P1 → 22</td>
+<td>继电器线圈是电感，断电时产生反向高压</td>
+</tr>
+<tr>
+<td>P2 → 22</td>
+<td>三极管的饱和区和 <span class="math math-inline">\(I_C = \beta I_B\)</span> 在 P2 讲过</td>
+</tr>
+<tr>
+<td>P2 → 23</td>
+<td>光耦里面是一个 LED 加一个光敏三极管</td>
+</tr>
+<tr>
+<td>22 → 23</td>
+<td>光耦输出侧的三极管按开关来用，与 22 的基极电阻计算思路相同</td>
+</tr>
+<tr>
+<td>06 → 24</td>
+<td>变压器隔离电源的后级就是整流滤波</td>
+</tr>
+<tr>
+<td>09 → 24</td>
+<td>隔离 DC-DC 模块内部是带变压器的开关电源（反激）</td>
+</tr>
+<tr>
+<td>23 → 24</td>
+<td>先用光耦建立「为什么要隔离、地为什么要分开」的概念</td>
+</tr>
+<tr>
+<td>21 → 25</td>
+<td>H 桥由 4 个 MOS 管开关组成，高边驱动问题在 21 讲过</td>
+</tr>
+<tr>
+<td>22 → 25</td>
+<td>电机是感性负载，续流的道理与继电器线圈相同</td>
+</tr>
+<tr>
+<td>P1 → 26</td>
+<td>上拉、下拉就是电阻分压；去抖用 RC 时间常数</td>
+</tr>
+<tr>
+<td>14 → 26</td>
+<td>施密特门限可以消除按键抖动带来的反复翻转</td>
+</tr>
+<tr>
+<td>21 → 26</td>
+<td>双向电平转换电路的核心是一个 N 沟道 MOS 管</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-拓扑写作顺序">5.3 拓扑写作顺序</h3>
+<p>按依赖排出的一条线性顺序（任何节点都排在它的全部前置之后），读者顺着读不会遇到没学过的概念：</p>
+<p>P1 → P3 → P2 → 17 → 01 → 21 → 22 → 02 → 05 → 14 → 18 → 03 → 06 → 12 → 19 → 04 → 10 → 13 → 07 → 15 → 08 → 11 → 23 → 16 → 09 → 25 → 20 → 24 → 26</p>
+<p>最长前置链有 9 个节点：P1 → P3 → 01 → 02 → 03 → 07 → 08 → 09 → 24。</p>
+<h3 id="54-写作队列4-名作者每人一条串行队列">5.4 写作队列（4 名作者，每人一条串行队列）</h3>
+<p>每名作者按自己队列的顺序一个一个写；一个节点只有在它的全部前置节点都已完成以后才能开始写，因为后继页面要链接和引用前置页面里的图号与结论。以「写完一个节点」为 1 个时间段做调度模拟，4 人并行共需 9 个时间段，等于最长前置链的长度，已是下限。</p>
+<table>
+<thead>
+<tr>
+<th>作者</th>
+<th>队列（按顺序）</th>
+<th>个数</th>
+<th>时间段</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>作者 A</td>
+<td>P3 → 01 → 02 → 03 → 04 → 15 → 16</td>
+<td>7</td>
+<td>2–8</td>
+</tr>
+<tr>
+<td>作者 B</td>
+<td>P2 → 05 → 06 → 10 → 08 → 09 → 24</td>
+<td>7</td>
+<td>2,4–9</td>
+</tr>
+<tr>
+<td>作者 C</td>
+<td>21 → 14 → 12 → 13 → 11 → 25 → 26</td>
+<td>7</td>
+<td>3–9</td>
+</tr>
+<tr>
+<td>作者 D</td>
+<td>P1 → 17 → 22 → 18 → 19 → 07 → 23 → 20</td>
+<td>8</td>
+<td>1–8</td>
+</tr>
+</tbody>
+</table>
+<p>调度表（tN 表示第 N 个时间段，「—」表示等待前置）：</p>
+<table>
+<thead>
+<tr>
+<th>作者</th>
+<th>t1</th>
+<th>t2</th>
+<th>t3</th>
+<th>t4</th>
+<th>t5</th>
+<th>t6</th>
+<th>t7</th>
+<th>t8</th>
+<th>t9</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>作者 A</td>
+<td>—</td>
+<td>P3</td>
+<td>01</td>
+<td>02</td>
+<td>03</td>
+<td>04</td>
+<td>15</td>
+<td>16</td>
+<td>—</td>
+</tr>
+<tr>
+<td>作者 B</td>
+<td>—</td>
+<td>P2</td>
+<td>—</td>
+<td>05</td>
+<td>06</td>
+<td>10</td>
+<td>08</td>
+<td>09</td>
+<td>24</td>
+</tr>
+<tr>
+<td>作者 C</td>
+<td>—</td>
+<td>—</td>
+<td>21</td>
+<td>14</td>
+<td>12</td>
+<td>13</td>
+<td>11</td>
+<td>25</td>
+<td>26</td>
+</tr>
+<tr>
+<td>作者 D</td>
+<td>P1</td>
+<td>17</td>
+<td>22</td>
+<td>18</td>
+<td>19</td>
+<td>07</td>
+<td>23</td>
+<td>20</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>分工思路：作者 A 负责运放主线，作者 B 负责半导体与电源主线，作者 C 负责 MOS 管、比较器和信号处理，作者 D 负责元件基础、继电-接触器控制，以及与继电器相关的 22、23。</p>
+<h2 id="6-各节点内容提要">6. 各节点内容提要</h2>
+<p>每个节点列出：痛点、核心思想、要仿真什么、典型错误、需要讲的变体。</p>
+<h3 id="p1-元件速成">P1 元件速成</h3>
+<ul>
+<li>痛点：后面每个电路都离不开电阻分压、电容、电感和继电器，读者只会欧姆定律。</li>
+<li>核心思想：分压公式；电容像「水桶」，电压不能突变， <span class="math math-inline">\(\tau = RC\)</span> 决定充放电快慢（约 5τ 充满）；电感像「水管里的飞轮」，电流不能突变；开关、按钮、继电器、接触器的线圈与常开/常闭触点。</li>
+<li>仿真：RC 充放电曲线并标出 τ、5τ；方波激励下 RC 的输出；电感断电时的电压尖峰。</li>
+<li>典型错误：把电容当电阻算；以为电容瞬间充满；继电器触点和线圈画在同一回路里。</li>
+<li>变体：RL 电路；时间继电器（通电延时、断电延时）的触点符号。</li>
+</ul>
+<h3 id="p2-半导体入门">P2 半导体入门</h3>
+<ul>
+<li>痛点：二极管、三极管、MOSFET 的物理原理太深，读者只需要「会用」。</li>
+<li>核心思想：二极管是单向阀门，正向约 0.7V 压降；稳压管反向击穿后电压基本不变；三极管是「小电流控制大电流」的水龙头（放大区 <span class="math math-inline">\(I_C = \beta I_B\)</span> ，饱和区相当于闭合开关）；MOSFET 是「电压控制的阀门」，由 <span class="math math-inline">\(V_{GS}\)</span> 决定导通与否。</li>
+<li>仿真：二极管和稳压管的伏安特性曲线；三极管在截止、放大、饱和三个区的工作点。</li>
+<li>典型错误：忘记 0.7V 压降；三极管不加基极电阻；MOSFET 栅极悬空。</li>
+<li>变体：LED（压降约 2V）；PNP 和 P 沟道 MOS 管与 NPN/N 沟道的对照。</li>
+</ul>
+<h3 id="p3-运放入门">P3 运放入门</h3>
+<ul>
+<li>痛点：运放内部有几十个晶体管，但读者只需要两条规则。</li>
+<li>核心思想：理想运放（增益无穷大、输入电流为零）；负反馈把增益「拉回」可控值；负反馈下的「虚短」（ <span class="math math-inline">\(V_+ = V_-\)</span> ）和「虚断」（输入电流为零）；开环时输出顶到电源（饱和）。</li>
+<li>仿真：有限开环增益下，闭环增益随开环增益增大逼近 <span class="math math-inline">\(R_f/R_1\)</span> ；开环比较时输出饱和。</li>
+<li>典型错误：没有负反馈时乱用虚短；忘记输出摆幅受电源限制。</li>
+<li>变体：单电源与双电源供电。</li>
+</ul>
+<h3 id="01-反相放大">01 反相放大</h3>
+<ul>
+<li>痛点：传感器信号太小，需要放大，并且要能准确设定放大倍数。</li>
+<li>核心思想： <span class="math math-inline">\(V_o = -\dfrac{R_f}{R_1} V_i\)</span> ；反相端是「虚地」；输入电阻约等于 <span class="math math-inline">\(R_1\)</span> 。</li>
+<li>仿真：正弦输入与反相、放大后的输出叠画；输入过大时输出削顶。</li>
+<li>典型错误：忘记负号； <span class="math math-inline">\(R_1\)</span> 取得太小，把信号源拉低；输出超过电源电压而削波。</li>
+<li>变体：反相加法器（为 05、06 的求和电路做准备）。</li>
+</ul>
+<h3 id="02-同相放大">02 同相放大</h3>
+<ul>
+<li>痛点：反相放大输入电阻小、输出会反相，有时不能接受。</li>
+<li>核心思想： <span class="math math-inline">\(V_o = \left(1 + \dfrac{R_f}{R_1}\right) V_i\)</span> ；输入电阻极大；放大倍数不小于 1。</li>
+<li>仿真：与反相放大的输出对照画；改变 <span class="math math-inline">\(R_f\)</span> 看增益变化。</li>
+<li>典型错误：把 <span class="math math-inline">\(R_1\)</span> 接错位置；想用它做小于 1 的增益。</li>
+<li>变体：同相加法。</li>
+</ul>
+<h3 id="03-电压跟随器">03 电压跟随器</h3>
+<ul>
+<li>痛点：信号源「带不动」负载，一接负载电压就掉。</li>
+<li>核心思想： <span class="math math-inline">\(V_o = V_i\)</span> ；输入电阻极大、输出电阻极小，起「隔离缓冲」作用。</li>
+<li>仿真：分压电路直接接负载与经过跟随器接负载的对比。</li>
+<li>典型错误：以为增益为 1 就没用；电容性负载引起振荡。</li>
+<li>变体：作为基准电压的缓冲。</li>
+</ul>
+<h3 id="04-差分放大">04 差分放大</h3>
+<ul>
+<li>痛点：两根线上同时混入的干扰（共模）要去掉，只放大两线之差。</li>
+<li>核心思想：电阻匹配时 <span class="math math-inline">\(V_o = \dfrac{R_f}{R_1}(V_2 - V_1)\)</span> ；共模抑制靠电阻匹配。</li>
+<li>仿真：差分信号加共模干扰，输出只剩差分部分；电阻失配 1% 时共模泄漏。</li>
+<li>典型错误：四个电阻不成比例；忽视信号源内阻。</li>
+<li>变体：三运放仪表放大器（简介）。</li>
+</ul>
+<h3 id="05-精密整流">05 精密整流</h3>
+<ul>
+<li>痛点：普通二极管有 0.7V 压降，几十毫伏的小信号根本整流不出来。</li>
+<li>核心思想：把二极管放进运放反馈环里，运放自动「补上」二极管压降。</li>
+<li>仿真：小信号经普通二极管整流与精密半波整流的对比。</li>
+<li>典型错误：二极管方向接反；运放速度不够，过零点出现毛刺。</li>
+<li>变体：精密半波整流；为 06 的运放全波整流打基础。</li>
+</ul>
+<h3 id="06-桥式整流--市电">06 桥式整流 ⚠ 市电</h3>
+<ul>
+<li>痛点：电器需要直流电，墙上插座给的是交流电。</li>
+<li>核心思想：变体一是二极管桥，4 个二极管轮流导通，正负半周都变成正向，加电容滤波得到带纹波的直流，纹波约 <span class="math math-inline">\(\Delta V \approx \dfrac{I}{2 f C}\)</span> ；变体二是运放全波整流（精密半波整流 + 求和），用于小信号测量。</li>
+<li>仿真：桥式整流输出、加电容滤波后的波形与纹波；运放全波整流对小信号的输出。</li>
+<li>典型错误：二极管耐压不够；滤波电容极性接反；输出比峰值少两个二极管压降没算上。</li>
+<li>安全：变压器初级接 220V，必须写明安全警示，实验只用低压交流电源。</li>
+</ul>
+<h3 id="07-射极跟随器">07 射极跟随器</h3>
+<ul>
+<li>痛点：运放输出电流有限，带不动大负载。</li>
+<li>核心思想： <span class="math math-inline">\(V_o \approx V_i - V_{BE}\)</span> ；电流放大约 β 倍；电压增益约为 1。</li>
+<li>仿真：输入正弦与输出对比，可见约 0.7V 的偏移；负载变化时输出基本不变。</li>
+<li>典型错误：忘记 <span class="math math-inline">\(V_{BE}\)</span> ；三极管功耗过大。</li>
+<li>变体：推挽输出（简介）。</li>
+</ul>
+<h3 id="08-线性稳压">08 线性稳压</h3>
+<ul>
+<li>痛点：整流后的电压有纹波，负载变化时电压还会跟着变。</li>
+<li>核心思想：基准电压 + 误差放大（同相放大）+ 调整管（射极跟随器）， <span class="math math-inline">\(V_o = V_{ref}\left(1 + \dfrac{R_f}{R_1}\right)\)</span> ；调整管功耗为 <span class="math math-inline">\((V_{in} - V_o) I\)</span> 。</li>
+<li>仿真：带纹波的输入与稳定的输出；输入电压下降到压差以下时失去稳压。</li>
+<li>典型错误：压差不够；散热不足；输出不加电容引起振荡（只针对 LDO 和自己搭的分立调整管稳压电路，后者要用负载跳变实验确认；78xx、LM317 这类 NPN 调整管稳压器不加输出电容也稳定，输出电容只改善负载突变时的响应）。</li>
+<li>变体：三端稳压器（如 78xx 系列）的典型接法。</li>
+</ul>
+<h3 id="09-开关电源--市电">09 开关电源 ⚠ 市电</h3>
+<ul>
+<li>痛点：线性稳压在压差大时很烫、效率低。</li>
+<li>核心思想：开关快速通断，靠电感和电容储能平滑，降压比为 <span class="math math-inline">\(V_o \approx D \cdot V_{in}\)</span> ；效率可达 90% 左右。</li>
+<li>变体（两种拓扑，对应附图两格）：变体一是同步降压（Buck，上管、下管两个 MOSFET）；变体二是附图里「脉冲 → 串联二极管 → 稳压管 → 电容」的那一格，按隔离（反激）电源副边输出级讲，并用带续流二极管的异步降压作为过渡，同时说明附图是简化画法。</li>
+<li>仿真：降压电路的电感电流与输出电压；占空比与输出的关系；与线性稳压的效率对比曲线。</li>
+<li>典型错误：电感饱和；续流二极管太慢；PCB 走线回路太大。</li>
+<li>安全：离线式开关电源初级接市电，必须写明安全警示。</li>
+</ul>
+<h3 id="10-稳压管稳压">10 稳压管稳压</h3>
+<ul>
+<li>痛点：只需要一个小电流的稳定电压，用稳压芯片太贵。</li>
+<li>核心思想：限流电阻 + 稳压管，负载电压被钳在 <span class="math math-inline">\(V_Z\)</span> ；限流电阻的取值要兼顾最小负载与最大负载。</li>
+<li>仿真：输入变化与负载变化时的输出；限流电阻过大时失去稳压。</li>
+<li>典型错误：没有限流电阻；稳压管功耗超限。</li>
+<li>变体：稳压管加射极跟随器扩流（为 08 做准备）。</li>
+</ul>
+<h3 id="11-过载保护">11 过载保护</h3>
+<ul>
+<li>痛点：电机堵转或短路时电流猛增，会烧坏线路甚至起火。</li>
+<li>核心思想：采样电阻把电流变成电压，比较器（最好带施密特回差）判断是否超限，再由继电器或 MOSFET 切断负载。</li>
+<li>仿真：电流逐渐上升到门限时比较器翻转；有回差与无回差的对比。</li>
+<li>典型错误：采样电阻功耗过大；无回差导致反复通断；启动电流引起误动作。</li>
+<li>变体：热继电器（双金属片）与电子式保护的对比；保险丝。</li>
+</ul>
+<h3 id="12-积分电路">12 积分电路</h3>
+<ul>
+<li>痛点：需要把方波变成三角波，或者求「累积量」。</li>
+<li>核心思想：从「面积」讲积分； <span class="math math-inline">\(V_o = -\dfrac{1}{RC} \times\)</span> （输入曲线下的面积）。</li>
+<li>仿真：方波输入得到三角波输出；直流偏置导致输出慢慢漂到饱和。</li>
+<li>典型错误：不加并联电阻，导致输出漂移饱和；时间常数选错。</li>
+<li>变体：并联 <span class="math math-inline">\(R_f\)</span> 的实用积分器。</li>
+</ul>
+<h3 id="13-微分电路">13 微分电路</h3>
+<ul>
+<li>痛点：需要检测信号「变化有多快」。</li>
+<li>核心思想：从「斜率」讲微分；输出正比于输入的斜率。</li>
+<li>变体（对应附图两格）：变体一是理想微分器（输入串 C、反馈接 <span class="math math-inline">\(R_f\)</span> ）；变体二是实用微分器（输入串 <span class="math math-inline">\(R_1\)</span> 限制高频增益，反馈的 <span class="math math-inline">\(R_f\)</span> 旁并一个小电容 <span class="math math-inline">\(C_f\)</span> ）。附图有一格把电容画在反馈位置，作者要说明这种画法与积分器的区别。</li>
+<li>仿真：三角波输入得到方波输出；理想微分器对高频噪声的放大与实用版的对比。</li>
+<li>典型错误：理想微分器自激振荡；噪声被放大。</li>
+</ul>
+<h3 id="14-电压比较器">14 电压比较器</h3>
+<ul>
+<li>痛点：要判断「温度是否超过设定值」这类是或否的问题。</li>
+<li>核心思想：运放开环， <span class="math math-inline">\(V_+ \gt V_-\)</span> 时输出高，否则输出低；施密特触发器用正反馈得到回差，抗干扰。</li>
+<li>仿真：带噪声的输入经普通比较器与施密特比较器后的输出对比。</li>
+<li>典型错误：以为比较器也能用虚短；无回差时输出抖动。</li>
+<li>变体：窗口比较器（简介）。</li>
+</ul>
+<h3 id="15-有源滤波">15 有源滤波</h3>
+<ul>
+<li>痛点：信号里混有不需要的高频噪声或低频干扰。</li>
+<li>核心思想：RC 决定截止频率 <span class="math math-inline">\(f_c = \dfrac{1}{2 \pi R C}\)</span> ；运放提供增益并隔离负载。</li>
+<li>仿真：一阶有源低通、二阶 Sallen-Key 低通的频率响应曲线；方波通过低通滤波后的波形。</li>
+<li>典型错误：截止频率算错（漏了 2π）；运放带宽不够。</li>
+<li>变体：一阶有源低通、Sallen-Key 二阶低通，并提及高通。</li>
+</ul>
+<h3 id="16-振荡器">16 振荡器</h3>
+<ul>
+<li>痛点：电路需要一个自己产生的时钟或正弦信号。</li>
+<li>核心思想：振荡 = 正反馈 + 选频。</li>
+<li>变体（对应附图两格）：变体一是文氏桥正弦振荡器， <span class="math math-inline">\(f = \dfrac{1}{2 \pi R C}\)</span> ，放大倍数约为 3 时起振，附带正弦变方波整形；变体二是 RC 加施密特比较器的弛张方波振荡器。</li>
+<li>仿真：文氏桥起振过程；弛张振荡器电容电压与输出方波。</li>
+<li>典型错误：增益不足不起振、增益过大波形削顶；忘记加稳幅措施。</li>
+</ul>
+<h3 id="17-自锁--市电">17 自锁 ⚠ 市电</h3>
+<ul>
+<li>痛点：按一下启动按钮，手松开后电机还要继续转。</li>
+<li>核心思想：接触器的常开辅助触点并联在启动按钮两端，线圈得电后「自己锁住」；按停止按钮（常闭）解除。</li>
+<li>仿真：用状态时序图表示按钮、线圈、触点、电机的逻辑关系。</li>
+<li>典型错误：自锁触点并错位置；停止按钮用了常开。</li>
+<li>安全：主回路是 380V 三相电，控制回路常为 220V，必须写明安全警示。</li>
+</ul>
+<h3 id="18-互锁--市电">18 互锁 ⚠ 市电</h3>
+<ul>
+<li>痛点：电机正转和反转两个接触器同时吸合会造成相间短路。</li>
+<li>核心思想：在各自线圈回路中串入对方的常闭辅助触点（电气互锁），还可以加按钮互锁（机械互锁）。</li>
+<li>仿真：时序图展示同时按两个按钮时只有一个接触器吸合。</li>
+<li>典型错误：只做按钮互锁不做触点互锁；正反转换相接错。</li>
+<li>安全：同 17。</li>
+</ul>
+<h3 id="19-星三角降压启动--市电">19 星三角降压启动 ⚠ 市电</h3>
+<ul>
+<li>痛点：大电机直接启动时电流是额定值的 5 到 7 倍，会冲击电网。</li>
+<li>核心思想：先接成星形（每相电压为线电压的 <span class="math math-inline">\(1/\sqrt{3}\)</span> ，启动电流降到直接三角形启动的 1/3），由时间继电器延时后切换为三角形运行；星形接触器与三角形接触器必须互锁。</li>
+<li>仿真：启动电流随时间变化的对比曲线（示意）；时序图。</li>
+<li>典型错误：星、三角接触器没有互锁导致短路；延时设置不当。</li>
+<li>安全：同 17。</li>
+</ul>
+<h3 id="20-双控开关--市电">20 双控开关 ⚠ 市电</h3>
+<ul>
+<li>痛点：楼梯上下两头都要能开关同一盏灯。</li>
+<li>核心思想：两个单刀双掷开关通过两根「跨线」相连，任一开关拨动都会改变灯的状态（相当于异或）。</li>
+<li>仿真：真值表与状态图。</li>
+<li>典型错误：火线和零线接反（开关应断火线）；跨线接错。</li>
+<li>变体：三地控制（加一个中途开关）。</li>
+<li>安全：照明电路是 220V，必须写明安全警示。</li>
+</ul>
+<h3 id="21-mos-管开关扩展篇">21 MOS 管开关（扩展篇）</h3>
+<ul>
+<li>痛点：单片机引脚只能输出几毫安，却要控制几安的灯带或电机。</li>
+<li>核心思想：低边驱动（N 沟道 MOS 管在负载和地之间）与高边驱动（P 沟道 MOS 管或驱动芯片）；栅极电阻限制充放电电流、抑制振铃；栅极下拉电阻防止上电时悬空误导通；3.3V 单片机直接驱动时要选逻辑电平 MOS 管（看 <span class="math math-inline">\(V_{GS(th)}\)</span> 和指定 <span class="math math-inline">\(V_{GS}\)</span> 下的导通电阻）；发热由导通损耗 <span class="math math-inline">\(I^2 R_{DS(on)}\)</span> 和开关损耗组成。</li>
+<li>仿真：栅极 RC 充电与 <span class="math math-inline">\(V_{GS}\)</span> 上升过程；不同 <span class="math math-inline">\(V_{GS}\)</span> 下的导通电阻与发热估算；开关损耗随 PWM 频率的变化。</li>
+<li>典型错误：用 3.3V 驱动普通 MOS 管导致半开半关发烫；栅极悬空；高边用 N 管却没有自举驱动。</li>
+<li>变体：低边与高边；感性负载要加续流二极管。</li>
+</ul>
+<h3 id="22-三极管开关与继电器驱动扩展篇-市电负载">22 三极管开关与继电器驱动（扩展篇）⚠ 市电负载</h3>
+<ul>
+<li>痛点：继电器线圈要几十毫安，单片机引脚驱动不了，而且一断电就出现高压尖峰。</li>
+<li>核心思想：三极管工作在饱和区当开关；基极电阻按 <span class="math math-inline">\(I_B \gt I_C / \beta\)</span> 并留 2 到 5 倍裕量来算；线圈两端反并续流二极管吸收反向电动势。</li>
+<li>仿真：基极电阻取值不同时 <span class="math math-inline">\(V_{CE}\)</span> 是否进入饱和；有无续流二极管时线圈断电的电压尖峰。</li>
+<li>典型错误：基极电阻太大使三极管处在放大区而发热；续流二极管方向接反；继电器触点接 220V 时布线距离不够。</li>
+<li>变体：达林顿阵列（ULN2003 一类）驱动多路继电器。</li>
+<li>安全：继电器触点常用于切换 220V 负载，必须写明安全警示。</li>
+</ul>
+<h3 id="23-光耦隔离扩展篇-市电">23 光耦隔离（扩展篇）⚠ 市电</h3>
+<ul>
+<li>痛点：强电侧的干扰和高压会顺着地线窜进单片机。</li>
+<li>核心思想：信号用「光」过一道隔离带，两侧的地完全分开；电流传输比 <span class="math math-inline">\(\text{CTR} = I_C / I_F\)</span> ；输入侧电阻决定 LED 电流 <span class="math math-inline">\(I_F\)</span> ，输出侧上拉电阻要保证 <span class="math math-inline">\(I_C\)</span> 足够让输出拉低；速度受光敏三极管限制。</li>
+<li>仿真：CTR 与 <span class="math math-inline">\(I_F\)</span> 对输出低电平的影响；上拉电阻大小对上升沿速度的影响。</li>
+<li>典型错误：两侧地接在一起，隔离失效；输入电流太小，CTR 老化后失效；用普通光耦传高速信号。</li>
+<li>变体：晶体管输出光耦与高速光耦；光耦检测市电过零（简介）。</li>
+<li>安全：输入侧若接市电检测，必须写明安全警示。</li>
+</ul>
+<h3 id="24-隔离电源与数字隔离器扩展篇-市电">24 隔离电源与数字隔离器（扩展篇）⚠ 市电</h3>
+<ul>
+<li>痛点：光耦只隔离了信号，被隔离的那一侧仍然需要自己的电源。</li>
+<li>核心思想：变压器隔离（工频变压器 + 整流滤波）；隔离 DC-DC 模块（内部是带变压器的开关电源）；数字隔离器（电容或磁耦合，比光耦快）；「地」要分开，两侧分别标 GND1 和 GND2，不能随手连起来。</li>
+<li>仿真：变压器匝数比与输出电压；隔离 DC-DC 模块空载与满载时的输出电压变化示意；光耦与数字隔离器的传输延时对比示意。</li>
+<li>典型错误：两侧地被示波器探头或 USB 线意外连通；隔离模块轻载时输出电压偏高；忽视隔离耐压等级。</li>
+<li>变体：反激式隔离电源（与 09 的变体二呼应）。</li>
+<li>安全：工频变压器初级接 220V，必须写明安全警示。</li>
+</ul>
+<h3 id="25-h-桥电机驱动扩展篇">25 H 桥电机驱动（扩展篇）</h3>
+<ul>
+<li>痛点：直流电机要能正转、反转，还要能调速。</li>
+<li>核心思想：4 个开关组成「H」形，对角导通决定电流方向；同一侧上下管同时导通会造成直通短路，所以必须加死区时间；PWM 占空比控制平均电压，从而调速。</li>
+<li>仿真：正转、反转、刹车各状态下的电流路径和电压；PWM 占空比与电机平均电压；死区不足时的直通电流尖峰。</li>
+<li>典型错误：上下管同时导通烧管；没有续流路径；PWM 频率落在人耳可听范围产生啸叫。</li>
+<li>变体：分立 MOS 管 H 桥与集成 H 桥驱动芯片的对照。</li>
+</ul>
+<h3 id="26-上拉下拉电阻与电平转换扩展篇">26 上拉/下拉电阻与电平转换（扩展篇）</h3>
+<ul>
+<li>痛点：按键没按下时引脚读数乱跳；3.3V 和 5V 的芯片不能直接相连。</li>
+<li>核心思想：悬空输入会随干扰乱变，用上拉或下拉电阻给它一个确定电平；按键抖动用 RC 滤波加施密特门限或软件延时消除；N 沟道 MOS 管加两个上拉电阻可组成双向电平转换（I²C 常用）。</li>
+<li>仿真：按键抖动波形，以及经过 RC 和施密特门限后的波形；上拉电阻大小与上升沿时间、功耗的权衡。</li>
+<li>典型错误：上拉电阻太大导致上升沿太慢；太小导致耗电大；电平转换方向搞错。</li>
+<li>变体：开漏输出与线与；电阻分压做单向降压。</li>
+</ul>
+<h2 id="7-本设计的检查方法">7. 本设计的检查方法</h2>
+<pre><code class="language-bash">/workspace/circuits-venv/bin/python code/figs/00_figs.py      # 校验节点、边、队列，并重画 img/00_dag.png
+/workspace/circuits-venv/bin/python tools/check_github_math.py notes/00-design.md
+</code></pre>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

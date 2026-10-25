@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>26 上拉/下拉电阻与电平转换 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/26-pullup-level-shift/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="26-上拉下拉电阻与电平转换--直觉篇">26 上拉/下拉电阻与电平转换 · 直觉篇</h1>
+<p><a href="../24-isolated-power/page4.html">上一页：24 隔离电源与数字隔离器 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../P1-components-basics/page2.html">P1 元件速成 · 原理与实现篇</a> · <a href="../14-voltage-comparator/page2.html">14 电压比较器 · 原理与实现篇</a> · <a href="../21-mosfet-switch/page2.html">21 MOS 管开关 · 原理与实现篇</a></p>
+<h2 id="痛点按键没按单片机却说按了">痛点：按键没按，单片机却说「按了」</h2>
+<p>做一个最简单的实验：单片机的一个输入引脚接一只按键，按键另一端接地。按下时引脚接地，读到 0；松开时……读到什么？很多初学者以为松开就是 1，结果程序里的读数一会儿 0、一会儿 1，手靠近板子时乱得更厉害。</p>
+<p>第二个麻烦在按下那一刻。明明只按了一下，程序却数到三四次，菜单一下子跳过好几项。</p>
+<p>第三个麻烦出现在两种芯片之间：单片机用 3.3 V 供电，传感器用 5 V 供电，两根信号线能不能直接接在一起？直接接，5 V 会灌进 3.3 V 的引脚；就算没烧，3.3 V 的高电平送到 5 V 芯片那里，也可能不够「高」，对方认不出来。</p>
+<p>这三个问题看起来不相干，其实都和「引脚在没人驱动时该是什么电平」有关。解决它们靠的都是几只普通电阻，再加一个电容或一只小 MOS 管。</p>
+<h2 id="类比门上的弹簧">类比：门上的弹簧</h2>
+<p>把输入引脚想成一扇没装锁的门。没有人推它时，门在风里晃来晃去，你说不清它是开着还是关着，这就是<strong>悬空</strong>的引脚：它和电源、地都没有连接，电压由周围的电场、手的远近、空气湿度决定。</p>
+<p>给门装一根<strong>弹簧</strong>，没人推时门总被拉回「关」的位置；有人推门，人的力气比弹簧大，门就开了，松手后又被拉回来。电路里的弹簧就是一只接到电源的电阻，叫<strong>上拉电阻</strong>：没人驱动时，它把引脚拉到高电平；按键按下时，按键把引脚直接接地，按键「力气」大得多，引脚变成低电平。如果弹簧换个方向，平时把门推向「开」，就是接到地的<strong>下拉电阻</strong>，此时按键要接到电源那一端。</p>
+<p>三种接法画在一起就是图 26-p1-4：悬空时引脚只连着按键；上拉电阻从 5 V 接到引脚，按键从引脚接地；下拉电阻从引脚接地，按键改接到 5 V：</p>
+<p><a class="img-link" href="img/26_p1_4_pull_up_down.png"><img alt="三个电路并排：(a) 引脚只经按键接地，另一端什么都没接；(b) 5 V 经 10 kΩ 上拉电阻接到引脚，按键从引脚接地；(c) 引脚经 10 kΩ 下拉电阻接地，按键从 5 V 接到引脚" src="img/26_p1_4_pull_up_down.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-4　悬空、上拉、下拉三种接法：上拉时松开读 1、按下读 0，下拉时正好相反</em></p>
+<p>弹簧的软硬要合适：</p>
+<ul>
+<li>弹簧太硬（电阻太小），人推门很费劲，对应按下按键时有很大的电流白白流到地，费电；</li>
+<li>弹簧太软（电阻太大），门被风一吹还会晃，松手后也要很久才合上，对应抗干扰差、电平回升很慢。</li>
+</ul>
+<p>下面这张图比较了两种情况。没有上拉电阻时，引脚电压像无人看管的门一样乱飘；接上 10 kΩ 上拉以后，它稳稳地停在 5 V：</p>
+<p><a class="img-link" href="img/26_p1_1_floating.png"><img alt="悬空引脚与接了上拉电阻的引脚：悬空时电压在 1～3 V 之间随 50 Hz 干扰起伏，接 10 kΩ 上拉后稳定在 5 V，60～80 ms 按键按下时两者都为 0 V" src="img/26_p1_1_floating.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-1　悬空的引脚和接了上拉电阻的引脚（示意，干扰按人手靠近、0.5 pF 杂散电容估算）</em></p>
+<p>图 26-p1-1 里浅蓝色带是单片机「说不准」的区间：以 ATmega328P 为例，5 V 供电时低于 1.5 V 才保证读成 0，高于 3.0 V 才保证读成 1。朱红色带 × 的曲线是悬空引脚，大约一半时间落在这个区间，读数就是随机的。橙色曲线接了 10 kΩ 上拉，同样的干扰在它上面只剩几十微伏，可以忽略。两条线在按键按下的 60～80 ms 都是 0 V，区别只在没按的时候。</p>
+<h2 id="按一下跳七下按键抖动">按一下，跳七下：按键抖动</h2>
+<p>按键里面是两片金属。手指按下时，金属片撞在一起会弹开、再撞上、再弹开，持续零点几毫秒到几毫秒才停稳。Jack Ganssle 实测了 18 种开关（<a href="https://www.ganssle.com/debouncing.htm">A Guide to Debouncing</a>），大部分在几毫秒内停止抖动，个别的长达上百毫秒。单片机读一次引脚只要不到 1 μs，它把每一次弹跳都看得清清楚楚：</p>
+<p><a class="img-link" href="img/26_p1_2_bounce.png"><img alt="按键按下后约 2 ms 内引脚电压在 0 V 和 5 V 之间来回跳变 7 次，理想按键只跳一次" src="img/26_p1_2_bounce.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-2　按键按下后前 3 ms 的引脚电压（示意波形，抖动时长按实测平均值量级取 2 ms）</em></p>
+<p>图 26-p1-2 中黑色虚线是理想按键，只从 5 V 跳到 0 V 一次；朱红色带 × 的实际波形在 2 ms 里出现了 7 个下降沿（电压从高电平跳到低电平的那一下），程序如果「见到下降沿就计一次」，就会以为按了 7 次。办法有两类：一是在硬件上加一个电容，让电压变化慢下来，再交给带回差的施密特输入，这正是 <a href="../14-voltage-comparator/page1.html">14 电压比较器 · 直觉篇</a> 里用回差消除反复翻转的思路；二是在程序里等抖动结束再确认。下一页会把两种方法都算清楚。</p>
+<h2 id="33-v-和-5-v-之间一只-mos-管当翻译">3.3 V 和 5 V 之间：一只 MOS 管当「翻译」</h2>
+<p>很多芯片之间的信号线是<strong>开漏</strong>的：芯片只会把线「拉低」或「松手」，从不主动推高，高电平全靠上拉电阻。常见的 I²C 总线就是这样，两根线上挂着好几颗芯片，谁想发 0 就把线拉低。</p>
+<p>既然高电平是电阻给的，那么 3.3 V 那一边用电阻拉到 3.3 V，5 V 那一边用电阻拉到 5 V，中间再放一只 N 沟道 MOS 管，就能让两边「看见」对方的拉低动作，各自的高电平又互不干扰：</p>
+<p><a class="img-link" href="img/26_p1_3_shifter.png"><img alt="双向电平转换电路：BSS138 的栅极接 3.3 V，源极接 3.3 V 侧并经 10 kΩ 上拉到 3.3 V，漏极接 5 V 侧并经 10 kΩ 上拉到 5 V，管内体二极管从源极指向漏极" src="img/26_p1_3_shifter.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-3　单 MOS 管双向电平转换（按 NXP/Nexperia 应用笔记 AN10441 的电路画）</em></p>
+<p>图 26-p1-3 的道理可以分三种情况说：</p>
+<ol>
+<li><strong>两边都松手</strong>：Q1 的栅极 3.3 V，源极也被拉到 3.3 V，栅源电压为 0，Q1 关断。左边停在 3.3 V，右边停在 5 V，各管各的。</li>
+<li><strong>3.3 V 一侧拉低</strong>：源极变成接近 0 V，栅源电压约 3.3 V，超过门限，Q1 导通，右边也被拉低。</li>
+<li><strong>5 V 一侧拉低</strong>：漏极变低，管子里那只体二极管先导通，把源极也往下拉；源极一低，栅源电压就超过门限，Q1 跟着导通，左边被拉低。</li>
+</ol>
+<p>这和 <a href="../21-mosfet-switch/page1.html">21 MOS 管开关 · 直觉篇</a> 里「栅源电压够大就导通」是同一件事，只是这里栅极电压固定，靠源极电压的变化来开关。灰色画出来的体二极管是每只 MOS 管内部自带的（见 <a href="../21-mosfet-switch/page1.html">21 MOS 管开关 · 直觉篇</a> 的介绍），平时容易被忽略，在这里却是第三种情况能工作的关键。</p>
+<h2 id="一句话">一句话</h2>
+<p><strong>没人驱动的引脚要用上拉或下拉电阻给它一个确定的电平；按键抖动用 RC 放慢、再用施密特门限或程序延时滤掉；开漏总线跨电压时，一只栅极接低压电源的 N 沟道 MOS 管加两边各自的上拉电阻，就能双向转换电平</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17 自锁 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/17-self-locking/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="17-自锁--原理与实现篇">17 自锁 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+</blockquote>
+<h2 id="一最小知识触点就是是--否">一、最小知识：触点就是&quot;是 / 否&quot;</h2>
+<p>在控制回路里，每个触点只有两种状态：通（记作 1）或断（记作 0）。几个触点怎么连，就决定了整条路通不通：</p>
+<ul>
+<li><strong>串联 = &quot;并且&quot;</strong>：两个触点都通，整条路才通。</li>
+<li><strong>并联 = &quot;或者&quot;</strong>：两个触点只要有一个通，整条路就通。</li>
+<li><strong>常闭按钮 = &quot;不&quot;</strong>：按下按钮（按钮信号为 1）时，它反而断开（通断为 0）。</li>
+</ul>
+<p>我们约定：按钮按下记作 1，松开记作 0；接触器线圈吸合记作 1，释放记作 0。自锁触点是 KM 自己的常开辅助触点，所以<strong>它的通断就等于 KM 的状态</strong>。还要记住<a href="page1.html">直觉篇</a>第四节&quot;点动和自锁对比&quot;讲过的一点：线圈得电以后，衔铁要过一小段时间（十几到二十几毫秒）才吸合到位，触点才会动作。</p>
+<h2 id="二推导把电路图翻译成一行式子">二、推导：把电路图翻译成一行式子</h2>
+<p><strong>中文意思</strong>：KM 下一刻会不会吸合？看线圈回路通不通。回路通 = 停止按钮没有被按下，<strong>并且</strong>（启动按钮被按下，<strong>或者</strong>自锁触点已经闭合）。</p>
+<p><strong>写成公式</strong>：用 <span class="math math-inline">\(S_1\)</span> 表示停止按钮 SB1 是否按下， <span class="math math-inline">\(S_2\)</span> 表示启动按钮 SB2 是否按下， <span class="math math-inline">\(K\)</span> 表示 KM 现在的状态， <span class="math math-inline">\(K'\)</span> 表示下一刻的状态：</p>
+<div class="math math-display">\[K' = \overline{S_1} \cdot (S_2 + K)\]</div>
+<p>这里 <span class="math math-inline">\(\overline{S_1}\)</span> 读作&quot;非 <span class="math math-inline">\(S_1\)</span>&quot;，&quot;·&quot;是&quot;并且&quot;，&quot;+&quot;是&quot;或者&quot;。这套写法高中数学没有，但意思就是高中学过的&quot;且、或、非&quot;，和第一节的三条一一对应：</p>
+<table>
+<thead>
+<tr>
+<th>电路里</th>
+<th>逻辑词</th>
+<th>式子里的写法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>两个触点串联</td>
+<td>并且（且）</td>
+<td><span class="math math-inline">\(A \cdot B\)</span></td>
+</tr>
+<tr>
+<td>两个触点并联</td>
+<td>或者（或）</td>
+<td><span class="math math-inline">\(A + B\)</span></td>
+</tr>
+<tr>
+<td>常闭触点 / 常闭按钮</td>
+<td>不（非）</td>
+<td><span class="math math-inline">\(\overline{A}\)</span></td>
+</tr>
+</tbody>
+</table>
+<p>注意这里的 &quot;+&quot; 不是加法： <span class="math math-inline">\(1 + 1\)</span> 的结果还是 1，意思是&quot;两条路都通，整条路当然通&quot;。</p>
+<p><strong>代数推一推</strong>：分四种情况，把数代进去。</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th><span class="math math-inline">\(S_1\)</span></th>
+<th><span class="math math-inline">\(S_2\)</span></th>
+<th><span class="math math-inline">\(K\)</span></th>
+<th><span class="math math-inline">\(K'\)</span></th>
+<th>意思</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>停着，按启动</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td><span class="math math-inline">\(1\cdot(1+0)=1\)</span></td>
+<td>启动</td>
+</tr>
+<tr>
+<td>转着，松开启动</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td><span class="math math-inline">\(1\cdot(0+1)=1\)</span></td>
+<td>自己保持（自锁）</td>
+</tr>
+<tr>
+<td>转着，按停止</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+<td><span class="math math-inline">\(0\cdot(0+1)=0\)</span></td>
+<td>停止</td>
+</tr>
+<tr>
+<td>停着，松开停止</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td><span class="math math-inline">\(1\cdot(0+0)=0\)</span></td>
+<td>保持停</td>
+</tr>
+</tbody>
+</table>
+<p>第二行就是自锁的全部秘密： <span class="math math-inline">\(S_2\)</span> 已经变回 0，可是 <span class="math math-inline">\(K\)</span> 本身是 1，&quot;或者&quot;的结果仍然是 1，于是 KM 永远把自己留在吸合状态，直到 <span class="math math-inline">\(\overline{S_1}\)</span> 变成 0。最后一行说明停止按钮松开后不会自己再启动。还有一种情况：两个按钮同时按， <span class="math math-inline">\(S_1=1\)</span> ， <span class="math math-inline">\(K'\)</span> 一定是 0，所以<strong>停止优先</strong>。</p>
+<p>把这张表画成两个状态之间的跳转，就是 图 17-p2-1。</p>
+<p><a class="img-link" href="img/17_p2_1_states.png"><img alt="状态图：两个方框&quot;停&quot;和&quot;转&quot;，从停到转的箭头写着按下 SB2，从转到停的箭头写着按下 SB1、FR 过载断开或电压太低" src="img/17_p2_1_states.png" loading="lazy" /></a></p>
+<p><em>图 17-p2-1　自锁电路只有两个状态：停和转</em></p>
+<p>图 17-p2-1 告诉我们：自锁电路是一个有&quot;记忆&quot;的电路，它记住的就是自己当前在哪个方框里。只有上面那条箭头（按下启动按钮）能把它从&quot;停&quot;带到&quot;转&quot;；下面那条箭头有三种触发方式：按停止、热继电器 FR 过载断开、电源电压低到线圈吸不住。两个方框上方的文字说明：松开按钮、来电，都不会让它换方框。</p>
+<h2 id="三仿真逐毫秒推演一遍">三、仿真：逐毫秒推演一遍</h2>
+<p>下面的程序把 10 s 切成 1 ms 一段，每一段都套用上面那行式子，再加上两个真实接触器的特性：<strong>线圈电压到额定值的 85% 以上并坚持 20 ms 才吸合；吸合后电压降到 45% 以下才释放</strong>。这几个数取自接触器手册的典型范围（见参数篇）。程序还模拟了两次电源故障：5 s 时电压跌到 70%，6 s 时跌到 30%（相当于停电）。</p>
+<p>请在仓库根目录（能看到 <code>code/</code> 文件夹的那一层）运行这段代码；它最后会把 图 17-p2-2 重新画一遍，存回 <code>17-self-locking/img/</code>。想改参数做实验，先复制一份完整脚本再改，例如 <code>cp code/17_sim.py my_17.py</code>，并把最后一行的文件名改掉，免得覆盖教程原图。</p>
+<pre><code class="language-python"># 17 自锁电路的最小仿真：把时间切成 1 ms 一小段，每一段都按&quot;控制回路通不通 → 线圈电压够不够 → 衔铁吸没吸&quot;推一步。
+# 控制回路：电源 → SB1 停止按钮（常闭）→ [SB2 启动按钮（常开） 并联 KM 自锁触点（常开）] → KM 线圈 → 电源另一端
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import numpy as np                                 # 数组运算
+import matplotlib.pyplot as plt                    # 画图
+import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
+
+dt = 1e-3                                          # 每一小段 1 ms
+t = np.arange(0, 10, dt)                           # 一共仿真 10 s
+PICK, DROP = 0.85, 0.45                            # 吸合门限 85%、释放门限 45%（相对额定电压 Uc）
+T_PICK = 0.020                                     # 线圈电压够了以后，衔铁还要 20 ms 才能吸合到位
+
+def pressed(t0, t1):                               # 生成&quot;在 t0 到 t1 秒之间按住&quot;的按钮信号
+    return (t &gt;= t0) &amp; (t &lt; t1)
+
+sb2 = pressed(1.0, 1.3) | pressed(4.0, 4.3) | pressed(8.0, 8.3) | pressed(9.0, 9.3)  # 启动按钮被按下的时段
+sb1 = pressed(3.0, 3.3) | pressed(9.0, 9.3)                                          # 停止按钮被按下的时段（9 s 时两个一起按）
+supply = np.ones_like(t)                           # 电源电压，用额定值的倍数表示：1 就是 100%
+supply[pressed(5.0, 5.4)] = 0.70                   # 5.0 s：电压跌到 70%（还在释放门限以上）
+supply[pressed(6.0, 6.5)] = 0.30                   # 6.0 s：电压跌到 30%（低于释放门限，相当于&quot;停电&quot;）
+
+km = np.zeros_like(t, dtype=bool)                  # KM 衔铁状态：True = 吸合（主触点、自锁触点都闭合）
+timer = 0.0                                        # 记录&quot;线圈电压已经够了&quot;持续了多久
+for k in range(1, len(t)):
+    aux = km[k - 1]                                # 自锁触点跟着衔铁走：上一刻吸合，这一刻就是闭合的
+    path = (not sb1[k]) and (sb2[k] or aux)        # 回路通 = 停止按钮没被按 并且（启动按钮按着 或者 自锁触点闭合）
+    v_coil = supply[k] if path else 0.0            # 回路通，线圈就拿到电源电压；不通就是 0
+    if not km[k - 1]:                              # 原来没吸合：要电压 ≥ 85% 并且坚持 20 ms 才吸得上
+        timer = timer + dt if v_coil &gt;= PICK else 0.0
+        km[k] = timer &gt;= T_PICK
+    else:                                          # 原来已吸合：只要电压不低于 45% 就继续吸着（这就是&quot;回差&quot;）
+        km[k] = v_coil &gt;= DROP
+        timer = 0.0
+
+def km_at(x):                                      # 查表：t = x 秒时 KM 是否吸合
+    return bool(km[int(round(x / dt))])
+
+t_on = t[np.argmax(km)]                            # 第一次吸合的时刻
+print(f&quot;第一次吸合：t = {t_on:.3f} s（按下启动按钮后 {(t_on - 1.0) * 1e3:.0f} ms）&quot;)
+for x, want, why in [(2.0, True, &quot;松开启动按钮后仍吸合（自锁）&quot;), (3.5, False, &quot;按停止后释放&quot;),
+                     (5.2, True, &quot;电压跌到 70% 仍吸合&quot;), (6.2, False, &quot;电压跌到 30% 释放&quot;),
+                     (7.5, False, &quot;来电后不会自己再启动（失压保护）&quot;), (8.5, True, &quot;重新按启动&quot;),
+                     (9.5, False, &quot;启动、停止一起按：停止优先&quot;)]:
+    print(f&quot;t = {x:.1f} s：KM {'吸合' if km_at(x) else '释放'} —— {why}&quot;)
+    assert km_at(x) == want                        # 每条结论都断言一遍，参数改错会直接报错
+assert abs(t_on - 1.020) &lt; 0.002                   # 吸合比按下晚 20 ms
+
+fig, axs = plt.subplots(3, 1, figsize=(8, 5.2), sharex=True)
+axs[0].plot(t, supply * 100, **fs.LS[&quot;vin&quot;], label=&quot;电源电压&quot;)
+fs.ref_h(axs[0], PICK * 100, &quot;吸合门限 85%&quot;, x=0.995)
+fs.ref_h(axs[0], DROP * 100, &quot;释放门限 45%&quot;, x=0.995)
+axs[0].set_ylim(0, 120); axs[0].set_ylabel(&quot;电压 / %Uc&quot;); axs[0].legend(loc=&quot;lower left&quot;, fontsize=8)
+axs[1].plot(t, sb2 * 1.0 + 1.5, **fs.LS[&quot;fb&quot;], label=&quot;SB2 启动按钮（按下 = 高）&quot;)
+axs[1].plot(t, sb1 * 1.0, **fs.LS[&quot;third&quot;], label=&quot;SB1 停止按钮（按下 = 高）&quot;)
+axs[1].set_yticks([0.5, 2.0]); axs[1].set_yticklabels([&quot;SB1&quot;, &quot;SB2&quot;]); axs[1].set_ylim(-0.3, 3.9)
+axs[1].legend(loc=&quot;upper center&quot;, fontsize=8, ncol=2)
+axs[2].plot(t, km * 1.0, **fs.LS[&quot;vout&quot;], label=&quot;KM 吸合 = 电机运转&quot;)
+axs[2].set_yticks([0, 1]); axs[2].set_yticklabels([&quot;释放&quot;, &quot;吸合&quot;]); axs[2].set_ylim(-0.3, 1.5)
+axs[2].legend(loc=&quot;center right&quot;, fontsize=8)
+for x, s in [(1.0, &quot;①&quot;), (3.0, &quot;②&quot;), (4.0, &quot;③&quot;), (5.0, &quot;④&quot;), (6.0, &quot;⑤&quot;), (8.0, &quot;⑥&quot;), (9.0, &quot;⑦&quot;)]:
+    axs[2].text(x, 1.2, s, ha=&quot;center&quot;, fontsize=10)  # 七个事件的编号，正文逐一讲解
+fs.axlabels(axs[2], &quot;时间&quot;, &quot;s&quot;)
+fs.save(fig, &quot;17&quot;, &quot;17_p2_2_sim.png&quot;)
+</code></pre>
+<p>运行后打印：</p>
+<pre><code class="language-text">第一次吸合：t = 1.019 s（按下启动按钮后 19 ms）
+t = 2.0 s：KM 吸合 —— 松开启动按钮后仍吸合（自锁）
+t = 3.5 s：KM 释放 —— 按停止后释放
+t = 5.2 s：KM 吸合 —— 电压跌到 70% 仍吸合
+t = 6.2 s：KM 释放 —— 电压跌到 30% 释放
+t = 7.5 s：KM 释放 —— 来电后不会自己再启动（失压保护）
+t = 8.5 s：KM 吸合 —— 重新按启动
+t = 9.5 s：KM 释放 —— 启动、停止一起按：停止优先
+</code></pre>
+<p>设定的吸合时间是 20 ms，打印出来是 19 ms，只是因为程序按 1 ms 一格计数，第一格从按下后的下一毫秒开始算，差了一格，并不是物理现象。</p>
+<p>结果画在 图 17-p2-2 里。</p>
+<p><a class="img-link" href="img/17_p2_2_sim.png"><img alt="三行时序图：上面是电源电压百分比，中间是两个按钮，下面是 KM 状态，标有七个事件编号" src="img/17_p2_2_sim.png" loading="lazy" /></a></p>
+<p><em>图 17-p2-2　自锁电路逐毫秒仿真：电源电压、按钮和 KM 状态</em></p>
+<p>图 17-p2-2 最上面一行蓝色线是电源电压，两条灰色点线分别是吸合门限 85% 和释放门限 45%；中间一行蓝绿色虚线是 SB2，红紫色点划线是 SB1；最下面一行橙色线是 KM。按编号读：</p>
+<ul>
+<li>① 1 s 按启动，19 ms 后 KM 吸合；1.3 s 松手，KM 照样吸合——自锁生效。</li>
+<li>② 3 s 按停止，KM 立刻释放；松开停止后也不会再吸合。</li>
+<li>③ 4 s 再按启动，又转起来。</li>
+<li>④ 5 s 电压跌到 70%：低于吸合门限，但高于释放门限，已经吸合的 KM <strong>继续吸着</strong>。</li>
+<li>⑤ 6 s 电压跌到 30%：低于释放门限，KM 释放，自锁触点也断开。6.5 s 电压恢复，但没有人按启动，KM <strong>不会自己再吸合</strong>——这就是失压保护。</li>
+<li>⑥ 8 s 按启动，重新运行。</li>
+<li>⑦ 9 s 两个按钮一起按：停止优先，KM 释放。</li>
+</ul>
+<p>第 ④ 条和第 ⑤ 条放在一起看，就能明白为什么吸合门限比释放门限高：欧姆龙《<a href="https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf">通用继电器技术指南</a>》给出电磁铁吸力的近似式 <span class="math math-inline">\(F = \frac{\mu_0 S}{2}\left(\frac{NI}{g}\right)^2\)</span> （这里直接用结论，推导超出本教程），其中 <span class="math math-inline">\(\mu_0\)</span> 是一个固定的常数（真空磁导率），这里只需要看比例； <span class="math math-inline">\(N\)</span> 是线圈匝数， <span class="math math-inline">\(I\)</span> 是线圈电流， <span class="math math-inline">\(S\)</span> 是吸合面的面积， <span class="math math-inline">\(g\)</span> 是铁芯和衔铁之间的空气缝（气隙）。吸力和气隙的平方成反比：衔铁还没吸上时 <span class="math math-inline">\(g\)</span> 大，要很大的电流才拉得动；吸上以后 <span class="math math-inline">\(g\)</span> 变得很小，同样的吸力只需要小得多的电流。比如气隙缩小到原来的一半，维持同样吸力所需的电流也只要一半，线圈电压也就只要一半。所以维持吸合需要的电压比吸上它需要的低很多。同一份指南以 MY4 继电器为例：手册规定吸合电压<strong>不超过</strong>额定值的 80%（电压升到 80% 一定能吸上），释放电压<strong>不低于</strong>额定值的 10%（电压要降到 10% 附近才一定释放，在 10% 以上时它可能还吸着），两个门限差得很远。本节仿真用的 85% 和 45% 落在 TeSys D 手册给的范围里（吸合 0.85 Uc 以上、释放 0.3～0.6 Uc），参数篇有出处。这种&quot;上去和下来的门限不一样&quot;叫<strong>回差</strong>，参数篇会单独画出来。</p>
+<h2 id="四两种典型接错">四、两种典型接错</h2>
+<p>逻辑式还能帮我们一眼看出接错的后果，看 图 17-p2-3。</p>
+<p><a class="img-link" href="img/17_p2_3_wrong.png"><img alt="三种接法的时序：正确接法按停止就停；错误①自锁触点并到了 SB1 外面，按停止停不下来；错误②停止按钮用了常开，永远启动不了" src="img/17_p2_3_wrong.png" loading="lazy" /></a></p>
+<p><em>图 17-p2-3　正确接法与两种典型错误接法的对比</em></p>
+<p>图 17-p2-3 里黑色虚线是正确接法，两条朱红色带×的线是错误接法，它们同色同样式，靠左边的行名和线旁的朱红色文字区分：</p>
+<ul>
+<li><strong>错误①：自锁触点的并联点接错了位置</strong>，并到了&quot;SB1 和 SB2 串联&quot;的两端，绕过了停止按钮。式子变成 <span class="math math-inline">\(K' = \overline{S_1}\cdot S_2 + K\)</span> ：一旦 <span class="math math-inline">\(K=1\)</span> ，不管怎么按停止， <span class="math math-inline">\(K'\)</span> 都是 1。图中 3.5 s 按停止，它纹丝不动，只能拉闸。</li>
+<li><strong>错误②：停止按钮用了常开触点</strong>。式子变成 <span class="math math-inline">\(K' = S_1\cdot(S_2 + K)\)</span> ：平时 <span class="math math-inline">\(S_1=0\)</span> ，整条路永远是断的，按启动没有反应。</li>
+</ul>
+<p>三种接法画成控制回路，见图 17-p2-4。</p>
+<p><a class="img-link" href="img/17_p2_4_wrong_wiring.png"><img alt="三条控制回路上下排列：正确接法自锁触点只并在启动按钮 SB2 两端；错误①自锁触点从 SB1 之前并到 SB2 之后；错误②停止按钮 SB1 画成常开" src="img/17_p2_4_wrong_wiring.png" loading="lazy" /></a></p>
+<p><em>图 17-p2-4　（a）正确接法，（b）错误①：自锁触点并到 SB1 外面，（c）错误②：停止按钮用了常开</em></p>
+<p>图 17-p2-4 中朱红色是接错的地方。（b）的自锁触点从 L 一侧直接接到 SB2 之后，KM 一旦吸合，电流就绕过 SB1 走这条路，所以按停止没用；（c）的 SB1 平时是断开的，线圈回路一开始就不通。</p>
+<p>所以接完线，第一件事就是用逻辑式核对：停止按钮必须是常闭、必须串在最前面，自锁触点必须只并在启动按钮两端。</p>
+<h2 id="五渐隐例题">五、渐隐例题</h2>
+<p><strong>例 1（完整示范）</strong>：电机正在运转，这时热继电器 FR 因过载断开，过了一会儿 FR 冷却后自动复位。电机会怎样？</p>
+<p>解：FR 常闭触点和 SB1 串在一起，作用相当于又一个&quot;非&quot;。FR 断开那一刻，回路断了， <span class="math math-inline">\(K'=0\)</span> ，KM 释放，自锁触点断开。FR 复位后， <span class="math math-inline">\(S_2=0\)</span> 、 <span class="math math-inline">\(K=0\)</span> ，所以 <span class="math math-inline">\(K' = 1\cdot(0+0) = 0\)</span> ，电机<strong>不会</strong>自己重新启动，需要人检查原因后再按启动。这和失压保护是同一个道理。</p>
+<p><strong>例 2（留空）</strong>：如果误把自锁触点并在了&quot;SB1 + SB2&quot;整体的两端（错误①），写出逻辑式： <span class="math math-inline">\(K' =\)</span> ____。电机运转时按下停止按钮，代入 <span class="math math-inline">\(S_1=1\)</span> 、 <span class="math math-inline">\(S_2=0\)</span> 、 <span class="math math-inline">\(K=1\)</span> ，得 <span class="math math-inline">\(K' =\)</span> ____，所以电机 ____（会 / 不会）停下来。</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(K' = \overline{S_1}\cdot S_2 + K\)</span> ；代入得 <span class="math math-inline">\(0\cdot 0 + 1 = 1\)</span> ；电机<strong>不会</strong>停下来。</p>
+</details>
+<p><strong>例 3（变体迁移）</strong>：在 KM 线圈两端并联一盏运行指示灯 HL1，再用 KM 的一个<strong>常闭</strong>辅助触点串一盏停机指示灯 HL2 接在 L、N 之间。分别写出 HL1、HL2 亮不亮的逻辑式，并说明电机运转时哪盏灯亮。</p>
+<details><summary>答案</summary>
+<p>HL1 和线圈并联，线圈有电它就亮： <span class="math math-inline">\(HL_1 = K\)</span> 。HL2 串的是 KM 常闭触点，KM 释放时才接通： <span class="math math-inline">\(HL_2 = \overline{K}\)</span> 。电机运转时 <span class="math math-inline">\(K=1\)</span> ，HL1 亮、HL2 灭；停机时反过来。两盏灯永远一亮一灭，正好可以用来检查 KM 是否真的动作了。</p>
+<p>接法见图 17-p2-5。</p>
+<p><a class="img-link" href="img/17_p2_5_lamps.png"><img alt="自锁控制回路的 KM 线圈两端并联运行指示灯 HL1；下面另一条回路从 L 经 KM 常闭辅助触点和停机指示灯 HL2 到 N" src="img/17_p2_5_lamps.png" loading="lazy" /></a></p>
+<p><em>图 17-p2-5　例 3：运行指示灯 HL1 并在线圈两端，停机指示灯 HL2 串 KM 常闭辅助触点</em></p>
+<p>图 17-p2-5 中朱红色是新加的部分。HL1 跨在 KM 线圈两端，和线圈同时得电；HL2 自成一条从 L 到 N 的回路，只受 KM 常闭辅助触点控制。</p>
+</details>
+<h2 id="六低压动手实验">六、低压动手实验</h2>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本实验只用 <strong>12 V 直流电源（或电池组）+ 线圈 12 V 的小继电器</strong>，绝对不要把它接到插座上，也不要拿真接触器去试。</p>
+</blockquote>
+<p>器材：12 V 电源、一个线圈 12 V 且有两组常开触点的小继电器、一个常闭按钮（停止）、一个常开按钮（启动）、一个 LED 加 1 kΩ 电阻（代替电动机）、一只 1N4007 二极管反并在继电器线圈两端（电感断电会产生高压尖峰，波形对比见 <a href="../P1-components-basics/page2.html">P1 元件速成 · 原理与实现篇</a> 第五节；二极管的方向见 <a href="../22-bjt-relay-driver/page2.html">22 三极管开关与继电器驱动 · 原理与实现篇</a>）。</p>
+<p>接法：照着直觉篇里那张自锁控制回路图把控制回路接好，L 换成 12 V 正极，N 换成负极，FR 省略；继电器第一组常开触点并在启动按钮两端作自锁，第二组常开触点串 LED 和电阻接在电源上作&quot;电机&quot;。验证：按一下启动，LED 常亮；按一下停止，LED 灭；拔掉电源再插上，LED 不会自己亮。</p>
+<p>对应的低压原理图见图 17-p2-6。</p>
+<p><a class="img-link" href="img/17_p2_6_lowvolt.png"><img alt="12 伏低压实验原理图：正极经常闭停止按钮、常开启动按钮到继电器线圈再到负极，第一组常开触点并在启动按钮两端，1N4007 反并在线圈两端；下面第二组常开触点串 1 千欧电阻和 LED 接在正负极之间" src="img/17_p2_6_lowvolt.png" loading="lazy" /></a></p>
+<p><em>图 17-p2-6　12 V 低压自锁实验的原理图</em></p>
+<p>图 17-p2-6 上面一条就是直觉篇的自锁控制回路，只是 L、N 换成了 12 V 电源的正、负极，FR 省掉了。朱红色的 1N4007 反并在线圈两端：正常通电时它不导通，断电瞬间给线圈电流一条回路，吸收高压尖峰。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>自锁触点与启动按钮并联、停止优先：<a href="https://eepower.com/technical-articles/understanding-three-wire-control/">https://eepower.com/technical-articles/understanding-three-wire-control/</a></li>
+<li>自锁触点在手指离开按钮前已经闭合、失压保护：<a href="https://opentextbc.ca/basicmotorcontrol/chapter/manual-circuit/">https://opentextbc.ca/basicmotorcontrol/chapter/manual-circuit/</a></li>
+<li>欠压释放、失压（零压）保护：<a href="https://www.dgjs123.com/jcq/12029.htm">https://www.dgjs123.com/jcq/12029.htm</a></li>
+<li>停止按钮用常闭、串联的原因（导线断了也会让电机停，属于故障安全设计）：<a href="https://workforce.libretexts.org/Bookshelves/Electronics_Technology/Electric_Circuits_IV_-_Digital_Circuitry_(Kuphaldt)/06%3A_Ladder_Logic/6.05%3A_Fail-safe_Design">https://workforce.libretexts.org/Bookshelves/Electronics_Technology/Electric_Circuits_IV_-_Digital_Circuitry_(Kuphaldt)/06%3A_Ladder_Logic/6.05%3A_Fail-safe_Design</a></li>
+<li>电磁铁吸力与气隙的关系、MY4 吸合 80% / 释放 10%（欧姆龙《通用继电器技术指南》）：<a href="https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf">https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf</a></li>
+<li>接触器吸合 / 释放电压和吸合时间（施耐德 TeSys D 手册）：<a href="https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf">https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

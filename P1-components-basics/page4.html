@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>P1 元件速成 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/P1-components-basics/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="p1-元件速成--动手实验篇">P1 元件速成 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../P3-opamp-basics/page1.html">下一页：P3 运放入门 · 直觉篇</a> · 前置节点：无</p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>前三页的结论都是&quot;算&quot;出来的，这一页把它们搭出来、量出来。一共三个小实验，都用 5 V 电源：</p>
+<ol>
+<li><strong>分压器</strong>：两个 10 kΩ 电阻把 5 V 分成 2.5 V；一接负载，输出就被拉低。对应 <a href="page2.html">P1 元件速成 · 原理与实现篇</a> 第一节的分压公式和&quot;空载前提&quot;。</li>
+<li><strong>RC 充电</strong>：10 kΩ 和 100 μF 组成 τ = 1 s 的电路，1 s 时充到约 63%，5 s 时基本充满。对应 <a href="page2.html">P1 元件速成 · 原理与实现篇</a> 第二、三节的充电曲线。</li>
+<li><strong>继电器与续流二极管</strong>：按下按钮，线圈吸合，另一个回路里的 LED 点亮；松开时线圈电流从续流二极管绕回去。对应 <a href="page2.html">P1 元件速成 · 原理与实现篇</a> 第五节&quot;有无续流二极管&quot;的对比。</li>
+</ol>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>只用 12 V 及以下的直流电</strong>。本页全部用 5 V：USB 充电头经面包板电源模块供电，或者 4 节 5 号电池（约 6 V，读数要按实测电源电压重算）。不要接任何市电插座。</li>
+<li><strong>电解电容分正负极</strong>。100 μF 电容外壳上有一条印着&quot;−&quot;号的白色（或浅色）带子，那一脚是负极；新电容的长脚是正极。接反了会发热、鼓包，甚至喷出电解液。</li>
+<li><strong>电阻、三极管、稳压管可能发烫，不要用手摸</strong>。本页的电流都很小，正常情况下不会热；如果闻到焦味、看到冒烟，或者元件变色，马上断电查线，多半是把电源正负极短路了。</li>
+<li><strong>接线、改线之前先断电</strong>。先拔掉电源模块的 USB 线（或拨到 OFF），再插拔元件；插好、检查一遍再通电。</li>
+<li><strong>继电器线圈断电的那一瞬间会憋出高压</strong>。<a href="page2.html">P1 元件速成 · 原理与实现篇</a> 第五节算过：不加二极管时，线圈两端的尖峰可以比电源高一百倍。这个尖峰时间极短、能量很小，但足以击穿三极管，也会让手指&quot;麻一下&quot;。本页<strong>只讲道理，不让学生用手去碰</strong>：续流二极管 1N4007 一直装着，任何时候都不要在通电状态下用手捏线圈两脚或按钮两脚。想&quot;看见&quot;这股电流，用下文的 LED 演示；氖泡演示只由老师做。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>面包板</td>
+<td>400 孔或 830 孔，带上下两组电源轨</td>
+<td>1</td>
+<td>本页按 30 列画；830 孔的只用左边 30 列</td>
+</tr>
+<tr>
+<td>电源</td>
+<td>5 V 面包板电源模块 + USB 线</td>
+<td>1</td>
+<td>也可以用 4 节 5 号电池盒（约 6 V）</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>10 kΩ，1/4 W，±5%</td>
+<td>4</td>
+<td>R1、R2、RL（负载）和 RC 里的 R</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>100 kΩ，1/4 W</td>
+<td>1</td>
+<td>换下 RL 做&quot;轻负载&quot;；也可换下 R，把 τ 放大到 10 s</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>1 kΩ，1/4 W</td>
+<td>1</td>
+<td>触点一侧 LED 的限流电阻</td>
+</tr>
+<tr>
+<td>电解电容</td>
+<td>100 μF，耐压 16 V 或 25 V</td>
+<td>1</td>
+<td>耐压按 <a href="page3.html">P1 元件速成 · 参数与调试篇</a> 的&quot;电源电压 × 1.5&quot;选</td>
+</tr>
+<tr>
+<td>拨动开关</td>
+<td>单刀双掷（三脚，例如 SS12D00）</td>
+<td>1</td>
+<td>中间脚是公共端，两边分别接&quot;充&quot;&quot;放&quot;</td>
+</tr>
+<tr>
+<td>按钮</td>
+<td>两脚轻触按钮</td>
+<td>1</td>
+<td>四脚轻触按钮也行，跨槽插并用对角两脚</td>
+</tr>
+<tr>
+<td>继电器</td>
+<td>Omron G5V-1-DC5（5 V 线圈）</td>
+<td>1</td>
+<td>其他 5 V 小型信号继电器也可以，先量线圈电阻</td>
+</tr>
+<tr>
+<td>整流二极管</td>
+<td>1N4007</td>
+<td>1</td>
+<td>续流二极管，色环一端是阴极</td>
+</tr>
+<tr>
+<td>开关二极管</td>
+<td>1N4148</td>
+<td>1</td>
+<td>只在 LED 演示里用</td>
+</tr>
+<tr>
+<td>LED</td>
+<td>5 mm 红色</td>
+<td>2</td>
+<td>一只接触点，一只做续流演示；长脚是阳极</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>数字万用表，直流电压挡、电阻挡</td>
+<td>1</td>
+<td>直流电压挡输入电阻一般约 10 MΩ</td>
+</tr>
+<tr>
+<td>跳线</td>
+<td>红、黑两色杜邦线若干</td>
+<td>—</td>
+<td>红色只接 +5 V，黑色只接地</td>
+</tr>
+<tr>
+<td>秒表</td>
+<td>手机秒表即可</td>
+<td>1</td>
+<td>RC 实验每秒读一次数</td>
+</tr>
+</tbody>
+</table>
+<p>继电器的线圈参数来自 <a href="https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf">G5V-1 数据手册</a> 的线圈参数表：5 V 款额定电流 30 mA、线圈电阻 167 Ω（±10%），电感约 0.15 H（衔铁释放时）到 0.29 H（衔铁吸合时）。换了别的继电器，就用你自己量到的线圈电阻代替 167 Ω。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p>先熟悉面包板：图里横着数的是<strong>列号</strong> 1～30，竖着排的是<strong>行号</strong> a～j。同一列的 a～e 五个孔在板子里面是连通的，f～j 五个孔也是连通的，但上下两半被中间的隔离槽隔开。最上面和最下面各有两条长长的<strong>电源轨</strong>，整条连通。下文&quot;b3&quot;就是 b 行第 3 列那个孔。对照电路原理，可以先回看 <a href="page1.html">P1 元件速成 · 直觉篇</a> 的分压电路图、RC 充电电路图和继电器两个回路的图，以及 <a href="page2.html">P1 元件速成 · 原理与实现篇</a> 第一节那张接负载后的分压输出曲线。整块板子的接法见 图 P1-p4-1。</p>
+<p><a class="img-link" href="img/P1_p4_1_breadboard.png"><img alt="面包板俯视图：上半块左边是分压器、中间是 RC 充放电，下半块右边是继电器、续流二极管和触点一侧的 LED" src="img/P1_p4_1_breadboard.png" loading="lazy" /></a></p>
+<p><em>图 P1-p4-1　P1 动手实验的面包板接线图（5 V，三个实验共用一块板）</em></p>
+<p>看不懂面包板上的连线时，对照 图 P1-p4-3 的电路原理图：三个区一一对应，每根线旁边的灰色小字是它在面包板上的列号。</p>
+<p><a class="img-link" href="img/P1_p4_3_schem_lab.png"><img alt="电路原理图：A 区分压器、B 区 RC 充放电、C 区继电器的线圈回路和触点回路，标出面包板列号和测量点①②③" src="img/P1_p4_3_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 P1-p4-3　图 P1-p4-1 三个区对应的电路原理图（灰色小字是面包板列号，①②③是测量点）</em></p>
+<p><strong>对照看</strong>：面包板里面藏着金属簧片，同一列的 a～e 五个孔连成一个节点，f～j 五个孔连成另一个节点，中间的隔离槽把上下两半隔开；上下两组电源轨各自沿长边整条连通（本页的图按整条连通画，有些 830 孔板的电源轨在正中间断开，轨旁的色线会有缺口，要用跳线接上或用万用表量一下），再加上第 1、2 列的红黑跳线把上下两组轨接在一起，所以原理图里所有&quot;+5 V&quot;符号是同一根线，所有&quot;GND&quot;符号也是同一根线。原理图里一条线就代表一个节点，不管画多长、拐几个弯，线上各处电压都一样；两根线交叉时有实心圆点才算相连，没有圆点只是跨过去。A 区里 R1 跨在第 3、7 列，R2 跨在第 7、11 列，所以第 7 列就是原理图里 R1、R2 之间那个圆点（测量点①），RL 插在 e7–e11，就是从这个圆点并到地的那只虚线电阻。B 区里开关公共脚 c14 经过 e14–e18 的 R 接到第 18 列（测量点②），电容正极也插在第 18 列，负极在第 19 列经黑线接地；开关拨到&quot;充&quot;时公共脚接通第 13 列的 +5 V，拨到&quot;放&quot;时接通第 15 列的地。C 区里第 21 列这一个节点同时插着按钮的另一脚、线圈+和 1N4007 的阴极（测量点③），第 24 列同时插着线圈−、1N4007 的阳极和接地的黑线，所以原理图里二极管和线圈并在同样两个圆点之间；第 26～30 列的 COM → NO → LED → 1k → 地是另一个回路，和第 21、24 列之间没有任何导线，只靠线圈的磁力带动触点（图中的点线）。</p>
+<p>图 P1-p4-1 里红线一律接 +5 V，黑线一律接地，米色小方块是电阻，深蓝色方块是电解电容（&quot;+&quot;号一侧是正极），黑色三角加竖杠是二极管（竖杠一侧是阴极），红色三角是 LED。黄色圆圈①②③是后面测量表里的测量点。三个实验互不相连，可以一次全插好，也可以做一个插一个。</p>
+<p><strong>公共部分：电源轨</strong></p>
+<ol>
+<li>断电状态下，把电源模块插在面包板一端，跳线帽拨到 5 V。上面一组电源轨：靠外的一条是 +5 V，靠里的一条是 GND（地）。</li>
+<li>用一根红线把上下两条 +5 V 轨在第 1 列连起来，一根黑线把上下两条 GND 轨在第 2 列连起来（有的电源模块两组都供电，就不用接）。</li>
+</ol>
+<p><strong>A 区：分压器（上半块第 3～11 列）</strong></p>
+<ol start="3">
+<li>红线：上面 +5 V 轨第 3 列 → a3。</li>
+<li>R1（10 kΩ）：一脚插 b3，另一脚插 b7。</li>
+<li>R2（10 kΩ）：一脚插 c7，另一脚插 c11。</li>
+<li>黑线：a11 → 上面 GND 轨第 11 列。现在第 7 列就是分压器的输出端（测量点①）。</li>
+<li>负载 RL 先不插。量完空载以后，断电，把 RL（先用 10 kΩ，再换 100 kΩ）插在 e7 和 e11 之间：它跨在输出端和地之间，正好和 R2 并联。</li>
+</ol>
+<p><strong>B 区：RC 充放电（上半块第 13～19 列）</strong></p>
+<ol start="8">
+<li>拨动开关的三只脚插 c13、c14、c15，中间脚 c14 是公共端。</li>
+<li>红线：+5 V 轨第 13 列 → a13（开关拨到这一边叫&quot;充&quot;）。黑线：a15 → GND 轨第 15 列（开关拨到这一边叫&quot;放&quot;）。</li>
+<li>R（10 kΩ）：一脚插 e14，另一脚插 e18。</li>
+<li>电容 C（100 μF）：<strong>正极（长脚）插 b18，负极（有&quot;−&quot;带的一脚）插 b19</strong>。黑线：a19 → GND 轨第 19 列。第 18 列就是电容电压（测量点②）。</li>
+<li>开关先拨到&quot;放&quot;，让电容从 0 V 开始。</li>
+</ol>
+<p><strong>C 区：继电器（下半块第 18～30 列）</strong></p>
+<ol start="13">
+<li>红线：下面 +5 V 轨第 18 列 → j18。按钮 SB 的两脚插 i18 和 i21。</li>
+<li>继电器：先在断电时用电阻挡找出线圈的两脚（读数约 167 Ω 的那一对），再找出 COM（公共触点）和 NO（常开触点）。引脚以所买继电器手册的底视图为准。G5V-1 可以跨槽直接插，引脚对不上时用四根杜邦线把&quot;线圈+&quot;接 g21、&quot;线圈−&quot;接 g24、COM 接 g26、NO 接 g28。</li>
+<li>黑线：j24 → 下面 GND 轨第 24 列。线圈就接在第 21 列（按钮另一端）和地之间。</li>
+<li>续流二极管 1N4007：<strong>阴极（色环一端）插 f21，阳极插 f24</strong>。也就是阴极朝 +5 V 那一侧、阳极朝地。插反了会怎样，见思考题 2。</li>
+<li>触点一侧：红线 +5 V 轨第 26 列 → j26（COM 接 +5 V）；红色 LED 长脚插 i28、短脚插 i30；1 kΩ 电阻一脚插 j30，另一脚直接插进下面 GND 轨第 30 列。</li>
+<li>检查一遍：红线只碰 +5 V 轨，黑线只碰 GND 轨；电容、二极管、LED 方向都对。然后再通电。</li>
+</ol>
+<h2 id="测量表">测量表</h2>
+<p>万用表打到直流电压挡（20 V 挡或自动挡），<strong>黑表笔一直接地</strong>（插进任意一条 GND 轨）。电阻值要在断电、并且至少一端离开电路时量。下表&quot;应该读到&quot;的范围按 5% 电阻、20% 电容、10% 线圈电阻算出，数字由 <code>code/figs/P1_figs.py</code> 打印；RC 那两行和 <a href="../review/spice/P1.html">P1 的 SPICE 核对表</a> 的面包板读数一致。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>电源电压</td>
+<td>上面 +5 V 轨</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>4.75～5.25 V（USB 规定的范围）</td>
+<td>电源模块跳线帽是否拨到 5 V、开关是否打开</td>
+</tr>
+<tr>
+<td>1</td>
+<td>① 分压输出（空载）</td>
+<td>e7 旁边的第 7 列任一空孔</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>2.38～2.62 V（标称 2.50 V）</td>
+<td>R1、R2 是否真跨在 3–7 列和 7–11 列；有没有插错色环</td>
+</tr>
+<tr>
+<td>2</td>
+<td>① 接 RL = 10 kΩ</td>
+<td>第 7 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>1.56～1.78 V（标称 1.67 V）</td>
+<td>RL 是否插在 e7–e11（并在 R2 上），而不是串在 R1 上</td>
+</tr>
+<tr>
+<td>3</td>
+<td>① 接 RL = 100 kΩ</td>
+<td>第 7 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>2.26～2.51 V（标称 2.38 V）</td>
+<td>色环是不是 100 kΩ（棕黑黄）</td>
+</tr>
+<tr>
+<td>4</td>
+<td>② 拨到&quot;充&quot;后 1 s</td>
+<td>第 18 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>2.7～3.7 V（标称 3.16 V）</td>
+<td>秒表是否和拨开关同时开始；电容是不是 100 μF</td>
+</tr>
+<tr>
+<td>5</td>
+<td>② 拨到&quot;充&quot;后 10 s</td>
+<td>第 18 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>4.9～5.0 V</td>
+<td>电容是否接反（会一直充不满、还发热）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>② 拨到&quot;放&quot;后 1 s</td>
+<td>第 18 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 1.84 V（5 V 的 36.8%）</td>
+<td>放电也走 R，τ 同样是 1 s</td>
+</tr>
+<tr>
+<td>7</td>
+<td>线圈电阻（断电，拔下按钮）</td>
+<td>线圈+ 脚</td>
+<td>线圈− 脚</td>
+<td>电阻 2 kΩ 挡</td>
+<td>150～184 Ω（167 Ω ±10%）</td>
+<td>是否量到了触点脚；有没有拔掉 1N4007（它并在线圈上会影响读数）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>③ 按住按钮时线圈电压</td>
+<td>第 21 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约等于步骤 0 的电源电压</td>
+<td>按钮是否接在 18、21 列；&quot;咔哒&quot;声有没有</td>
+</tr>
+<tr>
+<td>9</td>
+<td>③ 松开按钮后</td>
+<td>第 21 列</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>0 V（尖峰只有几毫秒，万用表看不到）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>10</td>
+<td>触点侧 1 kΩ 两端（按住按钮）</td>
+<td>j30 一侧的电阻脚</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 3 V（5 V 减去 LED 约 2 V）</td>
+<td>LED 长短脚是否反了；COM、NO 是否找对</td>
+</tr>
+</tbody>
+</table>
+<p>一共 11 个测量点。第 6 行&quot;约 1.84 V&quot;是 5 × e^(−1) 算出来的标称值，公差范围和第 4 行一样宽（1 s 时剩下的电压在 1.3～2.3 V 之间都算正常）。第 9 行写 0 V 不是说没有尖峰，而是万用表每秒只刷新两三次，几毫秒的事件它根本来不及显示。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p><strong>RC 充电：用秒表 + 万用表</strong>。τ = 1 s 已经慢到能用眼睛跟上。开关拨到&quot;充&quot;的同时按下手机秒表，每过 1 s 念一次读数，让同伴记下来，记 10 个点就能画出 图 P1-p4-2 那样的曲线。</p>
+<p><a class="img-link" href="img/P1_p4_2_stopwatch.png"><img alt="每秒读一次万用表得到的 RC 充电读数，和标称曲线、元件公差范围对比" src="img/P1_p4_2_stopwatch.png" loading="lazy" /></a></p>
+<p><em>图 P1-p4-2　没有示波器时，用秒表每秒读一次电容电压（5 V、10 kΩ、100 μF）</em></p>
+<p>图 P1-p4-2 中黑色虚线是标称曲线，紫色圆点是每秒读一次应得到的读数，浅蓝色带子是元件公差允许的范围。1 s 时约 3.16 V，2 s 时约 4.32 V，5 s 以后几乎贴在 5 V 上。你的点只要落在浅蓝色带子里就算对；如果每个点都偏低一截，多半是电容实际容量偏大（电解电容 ±20% 很常见）。嫌 1 s 太快，就把 R 换成 100 kΩ，τ 变成 10 s，每 10 s 念一次。万用表约 10 MΩ 的输入电阻并在电容上，会让终值从 5 V 降到约 4.95 V，误差只有 1% 左右，可以不管。</p>
+<p><strong>继电器：用耳朵和 LED</strong>。按下按钮能听到&quot;咔哒&quot;一声，触点一侧的 LED 同时亮起；松开时又是一声，LED 熄灭。这就证明了 <a href="page1.html">P1 元件速成 · 直觉篇</a> 讲的&quot;线圈和触点在两个回路里，只靠磁力联系&quot;：你可以用万用表确认，第 21 列和第 26～30 列之间没有任何导线相连。</p>
+<p><strong>断电尖峰：只讲道理，用 LED 演示电流&quot;绕回去&quot;</strong>。线圈断电时到底冒出多高的电压，要用示波器才能看清，样子就是 <a href="page2.html">P1 元件速成 · 原理与实现篇</a> 第五节那张有无续流二极管的对比图：上排不加二极管时是一根又高又窄的红色尖峰，下排加了二极管以后，按钮两端最高只比电源高一个二极管压降。我们用一个安全的办法&quot;看见&quot;这股续流电流：</p>
+<ol>
+<li>断电。拔下 1N4007。</li>
+<li>1N4148 阴极（黑色环一端）插 f21、阳极插 f23；一只红色 LED 的长脚插 h24、短脚插 h23。这几个孔都在下半块（f～j），和线圈、按钮在同一半，第 21、24 列才和线圈两脚连通；插到上半块（a～e）就隔着中间的槽，什么也接不上。这样 LED 和 1N4148 串起来，代替 1N4007 接在线圈两端，方向和 1N4007 一样（阳极朝地）。线圈通电时这一串是反向接着的，LED 能承受的反向电压不高，串上 1N4148 让两只管子一起分担这 5 V，更保险。</li>
+<li>通电，关灯或用手遮光，按住按钮再松开。<strong>松开的一瞬间这只 LED 会闪一下</strong>：那就是线圈&quot;不肯停&quot;的电流，从地那一端出来，经过 LED 和 1N4148 绕回线圈另一端。</li>
+</ol>
+<p>按 G5V-1 的 0.29 H、167 Ω 估算，这股电流从 30 mA 降到 0 只要约 1.8 ms（只装 1N4007 时约 3.6 ms），所以只是很暗的一闪，暗处才看得清。这一闪说明：如果没有任何一条退路，这 30 mA 就会硬去&quot;击穿&quot;别的地方。</p>
+<p><strong>氖泡演示（只由老师做）</strong>：拔掉所有续流元件，把一只小氖泡（按说明串好它要求的限流电阻）跨接在线圈两脚上。小氖泡要几十伏以上才会起辉，而电源只有 5 V；松开按钮的瞬间氖泡闪亮，就证明线圈两端短时间冒出了远高于 5 V 的电压。演示时学生站在一臂以外，老师只碰按钮，不碰线圈、氖泡和按钮的金属脚；演示完立刻断电、把 1N4007 装回去。</p>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>把你量到的电源电压、电阻实际值和线圈电阻填进 <code>measured</code>，把各步读数填进 <code>readings</code>，运行后会打印&quot;应该读到&quot;的值和偏差，偏差超过 10% 的会给出提示。下面填的是一组示例。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import math
+
+# ① 你量到的元件和电源（断电后用电阻挡量；电容用标称值）
+measured = dict(Vs=5.08, R1=9.93e3, R2=10.05e3, RL10=9.88e3, RL100=99.1e3,
+                R=10.02e3, C=100e-6, Rcoil=171.0, Vled=2.0, Rled=0.99e3)
+# ② 你在各步读到的万用表读数（伏）
+readings = {&quot;1 分压空载&quot;: 2.55, &quot;2 接 10 kΩ&quot;: 1.70, &quot;3 接 100 kΩ&quot;: 2.41,
+            &quot;4 充电 1 s&quot;: 3.05, &quot;5 充电 10 s&quot;: 5.07, &quot;8 线圈电压&quot;: 5.05, &quot;10 触点侧电阻&quot;: 3.02}
+
+m = measured
+par = lambda a, b: a * b / (a + b)
+tau = m[&quot;R&quot;] * m[&quot;C&quot;]
+expect = {
+    &quot;1 分压空载&quot;: m[&quot;Vs&quot;] * m[&quot;R2&quot;] / (m[&quot;R1&quot;] + m[&quot;R2&quot;]),
+    &quot;2 接 10 kΩ&quot;: m[&quot;Vs&quot;] * par(m[&quot;R2&quot;], m[&quot;RL10&quot;]) / (m[&quot;R1&quot;] + par(m[&quot;R2&quot;], m[&quot;RL10&quot;])),
+    &quot;3 接 100 kΩ&quot;: m[&quot;Vs&quot;] * par(m[&quot;R2&quot;], m[&quot;RL100&quot;]) / (m[&quot;R1&quot;] + par(m[&quot;R2&quot;], m[&quot;RL100&quot;])),
+    &quot;4 充电 1 s&quot;: m[&quot;Vs&quot;] * (1 - math.exp(-1.0 / tau)),
+    &quot;5 充电 10 s&quot;: m[&quot;Vs&quot;] * (1 - math.exp(-10.0 / tau)),
+    &quot;8 线圈电压&quot;: m[&quot;Vs&quot;],
+    &quot;10 触点侧电阻&quot;: m[&quot;Vs&quot;] - m[&quot;Vled&quot;],
+}
+hint = {&quot;1 分压空载&quot;: &quot;R1、R2 是否插对列；电阻色环是否认错&quot;,
+        &quot;2 接 10 kΩ&quot;: &quot;RL 应并在 R2 上（e7–e11）&quot;,
+        &quot;3 接 100 kΩ&quot;: &quot;RL 是否换成了 100 kΩ&quot;,
+        &quot;4 充电 1 s&quot;: &quot;电解电容 ±20%，偏差大时再看秒表是否同步&quot;,
+        &quot;5 充电 10 s&quot;: &quot;电容是否接反、是否漏电&quot;,
+        &quot;8 线圈电压&quot;: &quot;按钮接触不良会让线圈电压偏低&quot;,
+        &quot;10 触点侧电阻&quot;: &quot;LED 压降可能不是 2 V，用二极管挡量一下 LED&quot;}
+print(f&quot;τ = R·C = {tau:.2f} s，线圈电流约 {m['Vs'] / m['Rcoil'] * 1e3:.0f} mA，触点侧 LED 电流约 {(m['Vs'] - m['Vled']) / m['Rled'] * 1e3:.1f} mA&quot;)
+for k, v in readings.items():
+    e = expect[k]
+    dev = (v - e) / e * 100
+    flag = &quot;&quot; if abs(dev) &lt;= 10 else f&quot;  ← 偏差超过 10%，先查：{hint[k]}&quot;
+    print(f&quot;{k:&lt;10} 实测 {v:5.2f} V  计算 {e:5.2f} V  偏差 {dev:+5.1f}%{flag}&quot;)
+</code></pre>
+<p>示例里的读数全部在 10% 以内。如果你那一行出现了提示，先按提示查，再对照上面测量表最后一列。注意第 4 步对秒表误差很敏感：晚读 0.2 s，读数就会高出好几个百分点。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>实测值</th>
+<th>计算值</th>
+<th>偏差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>电源电压</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>分压输出（空载）</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>分压输出（RL = 10 kΩ）</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>分压输出（RL = 100 kΩ）</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td>电容电压，充电 1 s</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>电容电压，充电 10 s</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>电容电压，放电 1 s</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td>线圈电阻</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>8</td>
+<td>按住按钮时线圈电压</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td>触点侧 1 kΩ 两端电压</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="思考题">思考题</h2>
+<p><strong>思考题 1</strong>：你量到的空载分压输出比 2.50 V 小了 3%，是不是万用表坏了？</p>
+<details><summary>答案</summary>
+<p>多半不是。先看电源：如果电源只有 4.85 V，输出就是 4.85 ÷ 2 ≈ 2.43 V，正好小 3%。再看电阻：R1 偏大 3%、R2 偏小 3% 也会让输出小约 3%。所以每次都要先量电源电压和电阻实际值，再把它们填进上面的 Python 重算。万用表约 10 MΩ 的输入电阻并在 R2 上，只会让输出低约 0.05%，可以忽略。</p>
+</details>
+<p><strong>思考题 2</strong>：如果把 1N4007 插反（阳极接第 21 列、阴极接地），按下按钮会发生什么？</p>
+<details><summary>答案</summary>
+<p>按下按钮时，1N4007 变成正向导通，直接把第 21 列接到地，等于把 5 V 电源经过按钮短路：继电器不吸合，二极管和电源模块会发热，有的电源模块会保护断电。这就是&quot;续流二极管必须反向并联&quot;的原因：平时它必须是截止的，只有断电时才导通。发现接反要立刻断电。</p>
+</details>
+<p><strong>思考题 3</strong>：LED 演示里，为什么 LED 是在<strong>松开</strong>按钮的瞬间闪，而不是按下时？</p>
+<details><summary>答案</summary>
+<p>按下时，第 21 列是 +5 V、第 24 列是地，LED 和 1N4148 被反向加了 5 V，不导通，电流只走线圈。松开时，电感要维持原来的电流，线圈两端电压反过来（第 21 列变得比地还低），LED 和 1N4148 变成正向导通，这股电流就绕着&quot;线圈 → 地那一端 → LED → 1N4148 → 线圈另一端&quot;转圈，直到能量耗完，所以只在松开的一瞬间闪。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>我能说出面包板哪些孔是连通的，并按&quot;b3–b7&quot;这种写法把电阻插到指定位置。</li>
+<li>我能用万用表量出分压器空载和接负载时的输出，并解释为什么接 10 kΩ 负载后掉了三分之一。</li>
+<li>我能用秒表和万用表测出 RC 电路的 τ，并判断读数是否落在公差范围内。</li>
+<li>我能正确插好续流二极管（阴极朝 +5 V），并说出插反的后果。</li>
+<li>我能解释松开按钮时线圈为什么会冒出高压，以及为什么不能用手去碰。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

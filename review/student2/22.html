@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>22 三极管开关与继电器驱动：模拟学生 2 试读记录（⚠ 市电节点）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/student2/22.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="22-三极管开关与继电器驱动模拟学生-2-试读记录-市电节点">22 三极管开关与继电器驱动：模拟学生 2 试读记录（⚠ 市电节点）</h1>
+<p>拓扑顺序中排第 3 个（17 → 21 → <strong>22</strong>）。前置：P1、P2 直觉篇。页面用到的 P2 三个区、 <span class="math math-inline">\(I_C=\beta I_B\)</span> 、饱和压降 0.2 V，以及 P1 的&quot;线圈是电感、断电冒尖峰&quot;，点链接复习后都够用。</p>
+<h2 id="代码运行">代码运行</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>结果</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page2 代码块</td>
+<td>PASS*（单独复制到空目录 FAIL：找不到 <code>figstyle</code>；存进 <code>code/</code> 目录后 PASS）</td>
+<td>输出与正文&quot;运行输出&quot;的 30 行逐行一致（我用脚本逐行比对过）。代码块与 <code>code/22_sim.py</code> 完全相同，正文也写了&quot;运行：python code/22_sim.py&quot;，所以照着做没有问题</td>
+</tr>
+<tr>
+<td>code/22_sim.py</td>
+<td>PASS</td>
+<td>退出码 0；重新生成的 3 张图与仓库中的图逐字节相同</td>
+</tr>
+</tbody>
+</table>
+<h2 id="练习">练习</h2>
+<table>
+<thead>
+<tr>
+<th>题</th>
+<th>我的答案</th>
+<th>对错</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p2 例 2</td>
+<td>2.6/470=5.53 mA，2.4 倍，在 2～5 倍之间</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p2 例 3（55 Ω）</td>
+<td>87.3 mA，最少 2.91 mA；680 Ω 只有 2.2 倍，偏紧，改 560 Ω（2.6 倍）</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p3 练习 1</td>
+<td>29.5 mA/60=0.49 mA，1.5 kΩ 给 1.73 mA，3.5 倍，够</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p3 练习 2</td>
+<td>I_C=43 mA，I_B=0.43 mA，β≈100；60% &lt; 75%，不可靠</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p3 练习 3</td>
+<td>错，接反后一导通就短路</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p3 练习 4（ULN2003）</td>
+<td>① 根据参数表的 0.9～1.1 V 压降，选 12 V 继电器（这一问对）；② COM 接哪里，我不知道；③ 要不要串电阻，我猜要串</td>
+<td>错（②③ 需要的信息正文里没有）</td>
+</tr>
+</tbody>
+</table>
+<p>合计 5/6。</p>
+<h2 id="卡住--吃力--小问题">卡住 / 吃力 / 小问题</h2>
+<ol>
+<li><strong>卡住</strong> · page3 练习 4（变体迁移）「要用一片 ULN2003 驱动两只继电器……② COM 引脚接哪里？③ 输入端还要不要串基极电阻？」。题目之前，ULN2003 只在参数表里出现过两行（500 mA/50 V、饱和压降），从来没讲过它里面每一路自带钳位二极管、COM 是这些二极管的公共阴极、输入端内部已经串了 2.7 kΩ。答案里还冒出&quot;达林顿结构&quot;这个没讲过的词。②③ 光靠推理做不出来，只能翻答案。建议在参数表里加一行&quot;ULN2003A：内部带续流二极管（公共端 COM）、输入内部串 2.7 kΩ&quot;，或者在题干里给出芯片的内部框图。</li>
+<li><strong>吃力</strong> · page2「图 22-p2-3 的横轴换成了<strong>毫秒</strong>……天蓝色那条按 <span class="math math-inline">\(\tau = 1.43\ \text{ms}\)</span> 慢慢衰减，2.17 ms 才降到释放电流……以下」。我用 P1 学的纯指数规律算：68.6 mA 降到 7.14 mA，需要 τ·ln(68.6/7.14)=1.43×2.26≈3.24 ms，跟书上的 2.17 ms 对不上。后来想到续流时回路里还有二极管的 0.7 V 也在&quot;帮忙&quot;让电流减小，按 <span class="math math-inline">\(i=(I_0+V_F/R)e^{-t/\tau}-V_F/R\)</span> 算出 2.18 ms，才对上。正文没有提二极管压降的影响，建议加一句&quot;因为二极管自己还有 0.7 V 压降，电流比纯 RL 衰减得快一些&quot;。</li>
+<li><strong>小问题</strong> · page2「一、最小知识」第 3 条「 <span class="math math-inline">\(v_L = L \dfrac{di}{dt}\)</span> 」。P1 用的写法是 <span class="math math-inline">\(\Delta I/\Delta t\)</span> ，这里突然换成微分记号，没学过微积分的人会愣一下。建议沿用 Δ 写法，或者注明&quot;di/dt 就是 P1 的 ΔI/Δt&quot;。</li>
+<li><strong>小问题</strong> · page2「<strong>最后代数</strong>：松乐 SRD 的数据手册没有给线圈电感……2N3904 的 <span class="math math-inline">\(V_{CEO}\)</span> 只有 40 V」。 <span class="math math-inline">\(V_{CEO}\)</span> 第一次出现时没解释，到 page3 参数表才写明是&quot;集电极-发射极耐压&quot;。</li>
+<li><strong>小问题</strong> · page2「五、看结果」里的「放大区里最坏情况的功耗是 <span class="math math-inline">\(V_{CC}^2 / (4R)\)</span> 」。式子是直接给出的，我自己用&quot;P=V_CE(V_CC−V_CE)/R，抛物线在中点取最大&quot;推了出来，但多数同学可能想不到。建议补一句推导。</li>
+<li><strong>小问题</strong> · page2「三、推导二」讲&quot;二极管上再串一只稳压管&quot;，正文和图都没有画这种接法，稳压管该朝哪个方向串，我不确定。建议补一张小电路图。</li>
+<li><strong>小问题</strong> · page3「二、220 V 侧的布线距离」。一段里一口气出现了电气间隙、爬电距离、EN 60335-1、加强绝缘、IEC 60664-1、过电压类别、污染等级、CTI，读下来只记住一句&quot;要隔开&quot;。对高中读者来说，直接说&quot;不要自己画 220 V 的板子，用带外壳、有认证的成品模块&quot;会更有用。</li>
+</ol>
+<p>计数：卡住 1，吃力 1，小问题 5。</p>
+<h2 id="市电安全提醒是否有效">市电安全提醒是否有效</h2>
+<p>基本有效，有一处缺口。</p>
+<ul>
+<li>有效的地方：三页都有 WARNING，而且点出了真实存在的坑：继电器模块的<strong>螺丝端子和背面焊盘都带 220 V</strong>，不要放在金属桌面上；动手实验明确&quot;触点只接 5 V + LED + 1 kΩ&quot;；p2 第 4 步明确&quot;不要做拆掉二极管看尖峰的实验&quot;；p3 故障排查要求&quot;先断开触点侧的 220 V&quot;。照着做，我不会碰到市电。</li>
+<li>缺口：page1 开头的&quot;痛点&quot;写的就是&quot;让单片机去控制一盏 220 V 的灯或者一台水泵&quot;，page3 又专门讲 220 V 走线怎么开槽、怎么画丝印隔离带，读起来像在默认读者会自己去接 220 V 侧。全页没有一句直接对学生说&quot;在你有资质之前，220 V 侧一律不要自己接；模块必须装进绝缘外壳&quot;。&quot;由持证电工完成&quot;只是通用口号，像我这样手里有一块继电器模块的学生，很可能觉得&quot;我只是拧两颗螺丝&quot;不算接线。建议在 page1 开头的 WARNING 里加这样一句。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

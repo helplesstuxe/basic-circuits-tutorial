@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 线性稳压：SPICE 复核报告</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/08.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="08-线性稳压spice-复核报告">08 线性稳压：SPICE 复核报告</h1>
+<ul>
+<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/08/.spiceinit</code> 设为 psa。</li>
+<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/08/run.py</code>，退出码 0，已实际运行，共 43 项。</li>
+<li><strong>本节没有强电</strong>：输入是 6～16 V 直流或带锯齿纹波的直流（相当于 06 节整流后的低压侧），全部逐点仿真。</li>
+</ul>
+<h2 id="网表">网表</h2>
+<table>
+<thead>
+<tr>
+<th>网表</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>t_dc14.cir</code> / <code>t_dc14l.cir</code></td>
+<td>图 08-p2-1：14 V 输入，0.5 A（17.66 Ω）和 0.01 A（882.9 Ω）负载</td>
+</tr>
+<tr>
+<td><code>t_dc13.cir</code> / <code>t_dc15.cir</code></td>
+<td>输入 13 V、15 V，0.5 A</td>
+</tr>
+<tr>
+<td><code>t_rip14.cir</code></td>
+<td>图 08-p1-2：平均 14 V、2 V 峰峰、100 Hz 锯齿</td>
+</tr>
+<tr>
+<td><code>t_rip115.cir</code></td>
+<td>图 08-p3-2：平均 11.5 V（10.5～12.5 V）</td>
+</tr>
+<tr>
+<td><code>t_rip12.cir</code></td>
+<td>练习 2：平均 12 V、2 V 峰峰</td>
+</tr>
+<tr>
+<td><code>t_ripRZ2k.cir</code></td>
+<td>练习 3：R_Z 改为 2 kΩ</td>
+</tr>
+<tr>
+<td><code>t_drop05.cir</code> / <code>t_drop005.cir</code></td>
+<td>图 08-p2-2：输入 16→6 V 慢扫描，0.5 A / 0.05 A</td>
+</tr>
+<tr>
+<td><code>t_ex1.cir</code> / <code>t_ex2.cir</code> / <code>t_p1.cir</code></td>
+<td>例 1（R_f 7.5 kΩ、16 V）、例 2（R_f 2.0 kΩ、12 V、0.3 A）、练习 1（16 V）</td>
+</tr>
+<tr>
+<td><code>t_lab180.cir</code> / <code>t_lab18.cir</code></td>
+<td>page3 §五 动手实验：14 V，180 Ω / 18 Ω</td>
+</tr>
+<tr>
+<td><code>t_stab_C10.cir</code></td>
+<td>图 08-p2-1 原样加上理想 10 µF 输出电容，0.5 A</td>
+</tr>
+<tr>
+<td><code>t_stab_esr1L.cir</code></td>
+<td>10 µF 串 1 Ω（ESR），0.05 A</td>
+</tr>
+<tr>
+<td><code>t_78xx_sub.cir</code></td>
+<td>例 3、练习 4 的 7805：<strong>替代模型</strong>（TI LM317 接成 5 V）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="模型与来源">模型与来源</h2>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LM358</td>
+<td>spice/models/LMx58_LM2904.lib（复用）</td>
+<td>TI：<a href="https://www.ti.com/lit/zip/snom268">https://www.ti.com/lit/zip/snom268</a></td>
+</tr>
+<tr>
+<td>TIP31（页面写 TIP31）</td>
+<td>spice/models/TIP31C_onsemi.lib（复用）</td>
+<td>onsemi：<a href="https://www.onsemi.com/pub/Collateral/TIP31C.LIB">https://www.onsemi.com/pub/Collateral/TIP31C.LIB</a> 。和 07 一样按同系列使用。</td>
+</tr>
+<tr>
+<td>1N4733A</td>
+<td>spice/models/1N47xxA_diodes_zener.lib（复用）</td>
+<td>Diodes Inc. 厂商模型，存于 LTspice Vendor List：<a href="https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt">https://ltwiki.org/files/LTspiceIV/Vendor List/Diodes Incorporated/Spice/spicemodels_zener_diodes.txt</a></td>
+</tr>
+<tr>
+<td>7805（<strong>替代</strong>）</td>
+<td>spice/models/LM317_TRANS.lib（复用），R1 240 Ω / R2 720 Ω 接成 5.0 V</td>
+<td>TI：<a href="https://www.ti.com/lit/zip/slvmc40">https://www.ti.com/lit/zip/slvmc40</a> 。TI 没有给 LM340/78xx 发布 SPICE 模型，所以用同为三端线性稳压器的 LM317 代替，只核对 V_o 和功耗，不判断 7805 的压差和纹波抑制。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="假设">假设</h2>
+<ol>
+<li>负载按电流给定：0.5 A 用 17.66 Ω，0.01 A 用 882.9 Ω（都按 V_o ≈ 8.83 V 换算）。</li>
+<li>输入纹波用 100 Hz 锯齿：1 ms 内升 2 V，然后 9 ms 内线性降回去，形状接近整流电容放电。</li>
+<li>图 08-p2-1 画了 C_o 10 µF。加上它以后，直流和纹波网表都会进入持续振荡（见下面的稳定性两行），数值就没法和页面比了。所以除了 <code>t_stab_*</code> 两个文件，其余网表<strong>都没有接 C_o</strong>，相当于页面那个纯直流和纹波的计算。</li>
+<li>运放由输入端供电。用 PWL 让输入从 0 慢慢升上来，绕开 .op 不收敛的问题。</li>
+<li>压差拐点定义为“输出比输入 12 V 时低 20 mV 的那个输入电压”。</li>
+</ol>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p2 §2 第 1 步：I_Z（14 V）</td>
+<td>9.18 mA</td>
+<td>9.00 mA</td>
+<td>−2.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §2 第 1 步：V_ref</td>
+<td>4.821 V</td>
+<td>5.001 V</td>
+<td>+3.7%</td>
+<td>✅ 在 1N4733A 的 ±5% 内；厂商模型在 9 mA 时约 5.0 V</td>
+</tr>
+<tr>
+<td>p2 §2 第 3 步 / p1 §三：V_o</td>
+<td>8.508 V</td>
+<td>8.828 V</td>
+<td>+3.8%</td>
+<td>✅ 偏差全部来自 V_ref；按 SPICE 的 V_ref 代公式得 8.825 V</td>
+</tr>
+<tr>
+<td>p2 §2 第 4 步：运放输出（0.5 A）</td>
+<td>9.26 V</td>
+<td>9.554 V</td>
+<td>+3.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §2 第 4 步：V_BE（0.5 A）</td>
+<td>0.755 V</td>
+<td>0.725 V</td>
+<td>−3.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 08-p1-3：从输入拿走的功率</td>
+<td>7.14 W</td>
+<td>7.143 W</td>
+<td>+0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 08-p1-3：负载得到的功率</td>
+<td>4.25 W</td>
+<td>4.413 W</td>
+<td>+3.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 08-p1-3：调整管发热</td>
+<td>2.75 W</td>
+<td>2.59 W</td>
+<td>−5.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 08-p1-3：基准、分压、运放</td>
+<td>0.14 W</td>
+<td>0.140 W</td>
+<td>−0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 §四：效率</td>
+<td>约 60%</td>
+<td>61.8%</td>
+<td>+3.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 §三、p2 §三 / §六：负载 0.01→0.5 A 时的输出变化</td>
+<td>1.8 µV（p1：“几微伏”）</td>
+<td>200 µV（0.20 mV）</td>
+<td>约 110 倍</td>
+<td>❌ 差两个数量级。LM358 输出变了 205 mV（页面设 V_BE 只变 0.1 V），等效 AK 约 1000，页面是 56667</td>
+</tr>
+<tr>
+<td>p2 §六：输入 13→15 V 时的输出变化</td>
+<td>24.5 mV</td>
+<td>20.1 mV</td>
+<td>−18%</td>
+<td>⚠️ 见修改 1</td>
+</tr>
+<tr>
+<td>p1 图 08-p1-2 / p2 §五：输出纹波</td>
+<td>24.5 mV</td>
+<td>20.25 mV</td>
+<td>−17%</td>
+<td>⚠️ 见修改 1。机理一致：输出纹波 ≈ 基准纹波 11.3 mV × 1.79</td>
+</tr>
+<tr>
+<td>p2 §五：纹波抑制</td>
+<td>约 80 倍 ≈ 38 dB</td>
+<td>99 倍 = 39.9 dB</td>
+<td>+5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：R_Z 2 kΩ 时的输出纹波</td>
+<td>12.3 mV</td>
+<td>19.7 mV</td>
+<td>+60%</td>
+<td>⚠️ 见修改 3。页面已说“改善不会有算的那么多”</td>
+</tr>
+<tr>
+<td>p3 练习 3：R_Z 2 kΩ 时的 I_Z</td>
+<td>4.6 mA</td>
+<td>4.52 mA</td>
+<td>−1.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：R_Z 2 kΩ 时的基准</td>
+<td>4.79 V</td>
+<td>4.966 V</td>
+<td>+3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：R_Z 2 kΩ 时的输出</td>
+<td>8.45 V</td>
+<td>8.767 V</td>
+<td>+3.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / p3 §一：最低输入（0.5 A）</td>
+<td>10.76 V</td>
+<td>10.90 V</td>
+<td>+1.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四：最低输入（0.05 A）</td>
+<td>10.70 V</td>
+<td>10.60 V</td>
+<td>−0.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §六：输入 12 V 时的 V_o</td>
+<td>8.48 V</td>
+<td>8.806 V</td>
+<td>+3.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §六：输入 11 V 时的 V_o</td>
+<td>8.47 V</td>
+<td>8.792 V</td>
+<td>+3.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / §六：输入 10 V 时的 V_o</td>
+<td>7.74 V</td>
+<td>7.913 V</td>
+<td>+2.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四：跟随区压差（输入 10 V）</td>
+<td>2.26 V</td>
+<td>2.087 V</td>
+<td>−7.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §三 图 08-p3-2：输出最低值</td>
+<td>8.24 V</td>
+<td>8.398 V</td>
+<td>+1.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §三 图 08-p3-2：输出纹波</td>
+<td>245 mV（“变大了 10 倍”）</td>
+<td>429 mV（约 21 倍）</td>
+<td>+75%</td>
+<td>⚠️ 见修改 2。结论的方向对，倍数低估了一半</td>
+</tr>
+<tr>
+<td>p3 练习 2：平均 12 V、谷底 11 V 时没有缺口</td>
+<td>无缺口</td>
+<td>25.7 mV，无缺口</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例 1：V_o（R_f 7.5 kΩ、16 V）</td>
+<td>11.91 V</td>
+<td>12.39 V</td>
+<td>+4.0%</td>
+<td>✅ 基准偏差</td>
+</tr>
+<tr>
+<td>p2 例 1：调整管功耗</td>
+<td>2.05 W</td>
+<td>1.81 W</td>
+<td>−12%</td>
+<td>✅ 由 V_o 高 0.48 V（基准公差）造成；页面值偏保守</td>
+</tr>
+<tr>
+<td>p2 例 2：V_o（R_f 2.0 kΩ、12 V）</td>
+<td>6.71 V</td>
+<td>6.947 V</td>
+<td>+3.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例 2：调整管功耗</td>
+<td>1.59 W</td>
+<td>1.52 W</td>
+<td>−4.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 1：16 V、0.5 A 时的调整管功耗</td>
+<td>3.75 W</td>
+<td>3.58 W</td>
+<td>−4.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §五 第 2 步：180 Ω 时的 V_ref</td>
+<td>约 4.82 V</td>
+<td>5.001 V</td>
+<td>+3.8%</td>
+<td>✅ 在 ±5% 内</td>
+</tr>
+<tr>
+<td>p3 §五 第 2 步：180 Ω 时的 V_o</td>
+<td>约 8.51 V</td>
+<td>8.829 V</td>
+<td>+3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §五 第 2 步：180 Ω 时的运放输出</td>
+<td>约 9.2 V</td>
+<td>9.41 V</td>
+<td>+2.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §五 第 3 步：换成 18 Ω 后输出“几乎不变”</td>
+<td>几乎不变</td>
+<td>−0.18 mV</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §五 第 3 步：换成 18 Ω 后运放输出</td>
+<td>升高“几十毫伏”</td>
+<td>升高 142 mV</td>
+<td>约 3 倍</td>
+<td>⚠️ 见修改 4</td>
+</tr>
+<tr>
+<td>p3 §五 第 4 步：输出开始下降时的输入</td>
+<td>10.7～10.8 V</td>
+<td>10.90 V</td>
+<td>+1.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图 08-p2-1：直接并 C_o 10 µF（理想电容），0.5 A</td>
+<td>图中没有振荡；p3 §四写“10 µF 只是示意值，要实验确认”</td>
+<td>持续振荡，0.86 V 峰峰，18.7 kHz</td>
+<td>—</td>
+<td>⚠️ 见修改 5。页面已经提醒必须实测，但电路图会让人照搭</td>
+</tr>
+<tr>
+<td>p3 §四：10 µF 串 1 Ω ESR，0.05 A</td>
+<td>—</td>
+<td>稳定（峰峰 2e-8 V）</td>
+<td>—</td>
+<td>✅ 补充：说明加串联电阻有效；0.5 A 时这个网表不收敛，未判断</td>
+</tr>
+<tr>
+<td>p2 例 3：7805，12 V→5 V、1 A 时的 V_o（<strong>替代 LM317</strong>）</td>
+<td>5 V</td>
+<td>5.005 V</td>
+<td>+0.1%</td>
+<td>✅ 替代模型</td>
+</tr>
+<tr>
+<td>p2 例 3：功耗（替代）</td>
+<td>7 W</td>
+<td>7.00 W</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 4：9 V→5 V、0.5 A 时的功耗（替代）</td>
+<td>2 W</td>
+<td>2.00 W</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p><strong>合计：✅ 36，⚠️ 6，❌ 1。</strong></p>
+<h2 id="️-和--的修改建议页面口吻可直接粘贴">⚠️ 和 ❌ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>❌ p2 §三（第 46 行附近），把“1.8 µV”那一段的结尾换成：</strong></p>
+<blockquote>
+<p>分子分母同时除以 <span class="math math-inline">\(AK\)</span> ：第一项接近 <span class="math math-inline">\(V_{ref}/K\)</span> ，就是上面的公式；第二项是 <span class="math math-inline">\(V_{BE}/(AK)\)</span> 。按 LM358 手册上 100 dB 的开环增益， <span class="math math-inline">\(AK\)</span> 能到几万，算出来输出只变几微伏。但这个增益是运放轻载、直流时的值。运放要给调整管供几毫安基极电流，输出级本身也有压降，真实电路里运放输出要多升 0.1～0.2 V，输出才跟着变<strong>零点几毫伏</strong>。用 TI 的 LM358 模型仿真，负载从 0.01 A 加到 0.5 A，输出变化约 0.2 mV。这已经比单独用稳压管（10 节）好得多，&quot;负载变化几乎不影响输出&quot;的结论不变，只是不要指望到微伏级。</p>
+</blockquote>
+<p><strong>同时修改 p1 §三 第 52 行</strong>：把“输出的变化更是小到只有几微伏（原理篇会算）”改成“输出的变化也只有零点几毫伏（原理篇会算）”。p2 第 118 行“输出只变 1.8 µV”后面补一句：“（这是理想运放模型的结果，换成真实 LM358 约 0.2 mV。）”</p>
+<p><strong>修改 1：p2 §五 纹波计算（第 72 行），以及 p2 §六 输入 13→15 V 那一项，在“和直觉篇的仿真一致”后面补一句：</strong></p>
+<blockquote>
+<p>这里用的 7 Ω 是手册上 49 mA 测试电流下的动态电阻。电路里稳压管只有 9 mA，不同厂家、不同批次的管子在这个电流下的动态电阻差别不小。用 Diodes 公司的 1N4733A 模型仿真，输出纹波约 20 mV，输入 13→15 V 时输出变化也约 20 mV。实测在 20～30 mV 之间都算正常，关键是数量级：2 V 被压到几十毫伏。</p>
+</blockquote>
+<p><strong>修改 2：p3 §三（第 49 行），把最后一句换成：</strong></p>
+<blockquote>
+<p>输出纹波一下从二十几毫伏变成四百多毫伏（用 LM358 和 TIP31 的厂商模型仿真约 0.43 V），变大了约 20 倍。原因是：只要输入跌到拐点以下，输出就不再&quot;稳&quot;，而是跟着输入一起往下掉。</p>
+</blockquote>
+<p>（图 08-p3-2 的说明文字里“245 mV”一并改为约 0.43 V。）</p>
+<p><strong>修改 3：p3 练习 3 答案（第 114 行），在“纹波改善不会有算的那么多”后面补一句：</strong></p>
+<blockquote>
+<p>用厂商模型仿真，R_Z 从 1 kΩ 改到 2 kΩ 后，输出纹波只从约 20 mV 降到约 19.7 mV，几乎没变：稳压管电流减半，它的动态电阻差不多翻倍，两者抵消了。想真正减小纹波，更有效的办法是先用一个小恒流源或 RC 滤波给稳压管供电。</p>
+</blockquote>
+<p><strong>修改 4：p3 §五 第 3 步（第 69 行），把“运放输出升高几十毫伏”改成：</strong></p>
+<blockquote>
+<p>运放输出升高约 0.1～0.15 V（TIP31 的 V_BE 随电流变大，运放还要多供几毫安基极电流）。</p>
+</blockquote>
+<p><strong>修改 5：p2 图 08-p2-1 的说明文字和 p3 §四（第 60 行）末尾，补一句：</strong></p>
+<blockquote>
+<p>注意：用 TI 的 LM358 模型仿真，把一只理想的 10 µF 电容直接并在输出端、负载 0.5 A 时，输出会以约 19 kHz、近 1 V 峰峰值持续振荡。电容串一只约 1 Ω 的电阻（或用 ESR 约 1 Ω 的电解电容）后，至少在轻载 0.05 A 时仿真是稳定的。所以第一次上电时，一定要按第五节第 5 步用示波器看一遍输出。</p>
+</blockquote>
+<h2 id="面包板万用表读数表page3-五-低压动手实验14-v不接-c_o">面包板万用表读数表（page3 §五 低压动手实验，14 V，不接 C_o）</h2>
+<p>黑表笔一律接电源负极（地）。</p>
+<table>
+<thead>
+<tr>
+<th>测什么</th>
+<th>红表笔放在哪里</th>
+<th>180 Ω（约 0.05 A）</th>
+<th>18 Ω（约 0.47 A）</th>
+<th>页面写的</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入</td>
+<td>电源正极，即 TIP31 集电极（中间脚 / 散热片）</td>
+<td>14.00 V</td>
+<td>14.00 V</td>
+<td>14 V</td>
+</tr>
+<tr>
+<td>V_ref</td>
+<td>1N4733A 的阴极（带色环那端），也就是 LM358 第 3 脚</td>
+<td>5.00 V</td>
+<td>5.00 V</td>
+<td>约 4.82 V</td>
+</tr>
+<tr>
+<td>反相端</td>
+<td>LM358 第 2 脚（R_f 3.9 kΩ 和 R_1 5.1 kΩ 的接点）</td>
+<td>5.00 V</td>
+<td>5.00 V</td>
+<td>等于 V_ref</td>
+</tr>
+<tr>
+<td>运放输出</td>
+<td>LM358 第 1 脚，即 TIP31 基极（左脚）</td>
+<td>9.41 V</td>
+<td>9.55 V</td>
+<td>约 9.2 V，“升高几十毫伏”</td>
+</tr>
+<tr>
+<td>V_o</td>
+<td>TIP31 发射极（右脚），也就是负载电阻上端</td>
+<td>8.829 V</td>
+<td>8.828 V</td>
+<td>约 8.51 V，“几乎不变”</td>
+</tr>
+<tr>
+<td>V_BE</td>
+<td>红表笔接基极、黑表笔接发射极</td>
+<td>0.58 V</td>
+<td>0.72 V</td>
+<td>—</td>
+</tr>
+<tr>
+<td>降压</td>
+<td>红表笔接集电极、黑表笔接发射极</td>
+<td>5.17 V</td>
+<td>5.17 V</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>稳压管的 V_ref 在 4.85～5.36 V 之间都属于正常公差（5.1 V ±5% 是 49 mA 时的值）。V_o 按 V_ref × 1.765 跟着变。</p>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>统计：❌ 1 条已改；⚠️ 6 条全部处理（6 条改、0 条不改）；ℹ️ 无改动。</p>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>处理</th>
+<th>改了哪里、怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>❌ p1 §三、p2 §三 / §六：负载 0.01→0.5 A 输出变化 1.8 µV</td>
+<td>已改</td>
+<td>page2 §三：保留 1.8 µV 的推导，紧接着说明 <span class="math math-inline">\(10^5\)</span> 是轻载直流增益，运放要供基极电流、输出级有压降，真实运放输出多升约 0.2 V，输出变零点几毫伏，TI LM358 模型仿真约 0.2 mV，仍比单用稳压管（10）好得多，结论不变；page1 §三「只有几微伏」改为「也只有零点几毫伏」；page2 代码块 print 改为注明「理想运放（A = 1e5）时 … µV（真实 LM358 约 0.2 mV，见正文）」，运行结果那句加括号「这是理想运放模型的结果，换成真实 LM358 约 0.2 mV」。1.8 µV 只来自页面代码块，code/08_sim.py 不打印这个数，不需改</td>
+</tr>
+<tr>
+<td>⚠️ p2 §五 / 图 08-p1-2：输出纹波 24.5 mV</td>
+<td>已改</td>
+<td>page2 §五原句「实际纹波会比 24.5 mV 大一些」（方向与 SPICE 相反）改为：1N4733A 厂家模型仿真约 20 mV，实测 20～30 mV 都正常，关键是数量级</td>
+</tr>
+<tr>
+<td>⚠️ p2 §六：13→15 V 输出变化 24.5 mV</td>
+<td>已改</td>
+<td>与上一条合并在同一句里（「输入 13→15 V 时输出变化也约 20 mV」）</td>
+</tr>
+<tr>
+<td>⚠️ p3 §三 图 08-p3-2：纹波 245 mV、「10 倍」</td>
+<td>已改</td>
+<td>245 mV 由 code/08_sim.py 打印、图上也标着，保留并注明「按本页的简化模型」；补一句厂家模型仿真约 0.43 V、约为正常时 20 倍，并解释原因（跌到拐点以下就跟着输入掉）</td>
+</tr>
+<tr>
+<td>⚠️ p3 练习 3：R_Z 2 kΩ 时 12.3 mV</td>
+<td>已改</td>
+<td>答案中「改善不会有算的那么多」后加括号：厂家模型只从约 20 mV 降到约 19.7 mV，电流减半动态电阻约翻倍互相抵消；建议改用小恒流源或 RC 滤波供电</td>
+</tr>
+<tr>
+<td>⚠️ p3 §五 第 3 步：运放输出升高「几十毫伏」</td>
+<td>已改</td>
+<td>改为「约 0.1～0.15 V（TIP31 的 <span class="math math-inline">\(V_{BE}\)</span> 随电流变大，运放还要多供几毫安基极电流）」</td>
+</tr>
+<tr>
+<td>⚠️ p2 图 08-p2-1：理想 10 µF 直接并输出会振荡</td>
+<td>已改</td>
+<td>page2 图 08-p2-1 图注后和 page3 §四末尾各加一段：LM358 模型下 0.5 A 时约 19 kHz、近 1 V 峰峰持续振荡；串约 1 Ω（或 ESR 约 1 Ω 的电解电容）后轻载 0.05 A 仿真稳定；第一次上电必须按 p3 §五第 5 步用示波器看输出</td>
+</tr>
+</tbody>
+</table>
+<p>脚本（code/08_sim.py、code/figs/08_figs.py）未改，打印值（24.5 mV、245 mV、8.51 V 等）不变，页面里这些数仍与脚本和图一致；SPICE 数值只出现在说明文字里，并注明来自厂家模型。</p>
+<p>改动文件：08-linear-regulator/page1.md、<a href="http://page2.md">page2.md</a>、<a href="http://page3.md">page3.md</a>、review/spice/08.md。</p>
+<p>检查：count_cjk（1577 / 2475 / 3174）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（11 / 69 / 24）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

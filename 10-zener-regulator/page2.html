@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 稳压管稳压 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/10-zener-regulator/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="10-稳压管稳压--原理与实现篇">10 稳压管稳压 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a>、<a href="../06-bridge-rectifier/page1.html">06 桥式整流 · 直觉篇</a></p>
+<blockquote class="alert alert-note">
+<p>本页电路只接低压直流。实际产品里它的输入往往来自 06 的变压器整流电源，变压器初级接 220 V 市电，相关危险见 <a href="../06-bridge-rectifier/page1.html">06 桥式整流 · 直觉篇</a> 开头；本页的实验都用可调直流电源代替。</p>
+</blockquote>
+<h2 id="本页要解决的问题">本页要解决的问题</h2>
+<p>直觉篇给出了几个结果：输入变 4 V、输出只变 146 mV；1 V 纹波变成 36.5 mV；负载超过约 29 mA 就失去稳压；输出比标称的 5.1 V 略低。这一页要回答：这些数字怎么算出来？限流电阻 R 的取值范围怎么定？负载要上百毫安时怎么办？</p>
+<h2 id="1-两个工具节点电流定律--稳压管模型">1. 两个工具：节点电流定律 + 稳压管模型</h2>
+<p>稳压管沿用 <a href="../P2-semiconductor-basics/page2.html">P2 半导体入门 · 原理与实现篇</a> 的折线模型。手册上的 <span class="math math-inline">\(V_Z\)</span> 是在测试电流 <span class="math math-inline">\(I_{ZT}\)</span> 下量出来的，击穿以后</p>
+<div class="math math-display">\[V_o = V_Z + r_Z \thinspace (I_Z - I_{ZT})\]</div>
+<p>1N4733A 取 <span class="math math-inline">\(V_Z\)</span> = 5.1 V（ <span class="math math-inline">\(I_{ZT}\)</span> = 49 mA）、 <span class="math math-inline">\(r_Z\)</span> = 7 Ω。为了好算，把两个常数合并：令 <span class="math math-inline">\(V_{Z0} = V_Z - r_Z I_{ZT}\)</span> = 5.1 − 7 × 0.049 ≈ 4.757 V，模型就变成</p>
+<div class="math math-display">\[V_o = V_{Z0} + r_Z I_Z\]</div>
+<p><span class="math math-inline">\(V_{Z0}\)</span> 是把折线延长到 <span class="math math-inline">\(I_Z\)</span> = 0 处的电压，可以把它当作「击穿起点」：反向电压没到 <span class="math math-inline">\(V_{Z0}\)</span> 时稳压管不导电。本节主例里 <span class="math math-inline">\(I_Z\)</span> 一直不超过 49 mA，所以输出总比 5.1 V 低一点，这正是直觉篇看到的 4.8–5.0 V。输出节点上的电流满足</p>
+<div class="math math-display">\[I_R = \frac{V_i - V_o}{R} = I_Z + I_L\]</div>
+<p>两个式子联立，就能算出任何输入、任何负载下的输出。这个折线模型没有画出拐点附近「变软」的那一段（<a href="../P2-semiconductor-basics/page2.html">P2 半导体入门 · 原理与实现篇</a> 讲过，电流很小时电压会明显低于 <span class="math math-inline">\(V_Z\)</span> ），所以 <span class="math math-inline">\(I_Z\)</span> 只有一两毫安时，算出来的结果偏乐观。设计时让 <span class="math math-inline">\(I_Z\)</span> 至少留 5 mA，就是为了离开这一段。</p>
+<h2 id="2-输入变化r-和-r_z-组成的分压器">2. 输入变化：R 和 r_Z 组成的分压器</h2>
+<p>先把负载当作一只电阻 <span class="math math-inline">\(R_L\)</span> 。稳压管击穿以后，按上面的模型可以看成「一只 <span class="math math-inline">\(V_{Z0}\)</span> 的电池串一只 <span class="math math-inline">\(r_Z\)</span> 」。输入变化了 <span class="math math-inline">\(\Delta V_i\)</span> ，电池那部分不变，变化量只在 R、 <span class="math math-inline">\(r_Z\)</span> 、 <span class="math math-inline">\(R_L\)</span> 组成的网络里分配（模型和变化量电路见图 10-p2-4）：</p>
+<div class="math math-display">\[\frac{\Delta V_o}{\Delta V_i} = \frac{r_Z \parallel R_L}{R + r_Z \parallel R_L}\]</div>
+<p>这里 <span class="math math-inline">\(r_Z \parallel R_L\)</span> 表示两只电阻并联。代入 <span class="math math-inline">\(r_Z\)</span> = 7 Ω、 <span class="math math-inline">\(R_L\)</span> = 255 Ω、R = 180 Ω：并联值约 6.81 Ω，比值约 6.81 ÷ 186.8 ≈ 0.0365。1 V 的纹波到输出只剩约 36.5 mV，和直觉篇纹波图的仿真一致。</p>
+<p><a class="img-link" href="img/10_p2_4_model.png"><img alt="两幅并排电路。左图：V_i 经 180 欧 R 接到节点，节点向下是 7 欧 r_Z 串 4.757 伏电池 V_Z0，旁边并 255 欧负载 R_L；右图：输入换成 ΔV_i，电池换成朱红色导线，只剩 R 与 r_Z、R_L 的并联分压" src="img/10_p2_4_model.png" loading="lazy" /></a></p>
+<p><em>图 10-p2-4　(a) 击穿后的稳压管模型；(b) 只看变化量时，电池换成导线</em></p>
+<p>为什么可以不管电池？设想把同一个电路算两次：一次输入 <span class="math math-inline">\(V_i\)</span> ，一次输入 <span class="math math-inline">\(V_i + \Delta V_i\)</span> 。两次的电池电压都是 4.757 V，电路里又只有电阻和电池（没有平方之类的弯曲关系），所以两次的节点方程相减时，电池那一项正好抵消，剩下的就是「只有 <span class="math math-inline">\(\Delta V_i\)</span> 、电池换成导线」的电路。前提是两次计算里稳压管都处在击穿状态，模型都是同一条直线。用数字验证：负载 255 Ω 时，输入 10 V 算得输出 4.8257 V，输入 11 V 算得 4.8622 V，差 36.5 mV，正好等于上面的比值 0.0365 乘 1 V（ <code>code/10_sim.py</code> 打印的「叠加验证」一行）。</p>
+<p>这些数都按 <span class="math math-inline">\(r_Z\)</span> = 7 Ω 算，而 7 Ω 是手册在 49 mA 测试电流下给的<strong>最大值</strong>。真实管子在 20～30 mA 时动态电阻往往只有两三欧，用 Diodes 公司的 1N4733A 模型仿真，1 V 纹波到输出约 16 mV，上面输入 10→11 V 的差约 26 mV，都比按 7 Ω 算的小。所以本页的估算是偏保守的最坏情况，按它设计不会出问题。</p>
+<p>要点是：<strong>R 越大、 <span class="math math-inline">\(r_Z\)</span> 越小，抑制纹波的能力越强</strong>。可是 R 又不能随便加大，第 4 节就会看到原因。顺带一提，ESP 的稳压电路文章里有一个类似的仿真：19.4 V 输入、300 mVpp 纹波，经稳压管后输出 15.1 V、纹波 16 mVpp。</p>
+<h2 id="3-负载变化电流在稳压管和负载之间搬家">3. 负载变化：电流在稳压管和负载之间「搬家」</h2>
+<p>再看负载变化。固定输入为最低的 10 V，把负载换成一个从 0 扫到 40 mA 的电流源，接法见图 10-p2-5：</p>
+<p><a class="img-link" href="img/10_p2_5_load_scan.png"><img alt="10 伏电源经 180 欧 R 接稳压管 1N4733A，负载换成朱红色的电流源 I_L，从 0 扫到 40 毫安" src="img/10_p2_5_load_scan.png" loading="lazy" /></a></p>
+<p><em>图 10-p2-5　负载扫描的接法：负载换成 0→40 mA 的电流源</em></p>
+<p>扫描结果见图 10-p2-1：</p>
+<p><a class="img-link" href="img/10_p2_1_load.png"><img alt="上图：橙色输出在负载 0 到 29.2 毫安之间从约 4.95 伏缓慢降到击穿起点 4.76 伏，过了 29.2 毫安的灰色点线后迅速下降；下图：蓝色限流电阻电流几乎是水平线，约 28 到 29 毫安，天蓝色稳压管电流从 28.0 毫安斜着降到 0，红紫色点划线负载电流从 0 斜着上升，三条线在 29.2 毫安处汇合" src="img/10_p2_1_load.png" loading="lazy" /></a></p>
+<p><em>图 10-p2-1　输入 10 V 时负载从 0 扫到 40 mA：输出（上）和三路电流（下）</em></p>
+<p>图 10-p2-1 的下图里，蓝色的 <span class="math math-inline">\(I_R\)</span> 几乎是一条水平线：因为输出电压基本不变，R 两端的电压也基本不变，所以 <span class="math math-inline">\(I_R\)</span> ≈ (10 − 4.8) ÷ 180 ≈ 29 mA 是个定值。负载拿走的电流（红紫色点划线）越多，留给稳压管的（天蓝色线）就越少，两者之和始终是 <span class="math math-inline">\(I_R\)</span> 。负载 20 mA 时稳压管还有 8.8 mA，输出 4.819 V；负载到 29.2 mA，稳压管电流降到 0，它退出了工作，输出就沿着 <span class="math math-inline">\(V_o = V_i - I_L R\)</span> 直线下降，40 mA 时只剩 2.80 V。</p>
+<p>负载从 0 加到 20 mA，稳压管电流从 28.0 mA 降到 8.8 mA，少了约 19 mA，输出也跟着降了 7 Ω × 19 mA ≈ 0.13 V（按 7 Ω 的最大值算；用厂商模型仿真只降约 0.07 V）。这就是 ESP 文章说「负载变化大时不推荐单用稳压管」的原因：负载的变化全部由稳压管来补偿，补偿量越大，输出动得越多。</p>
+<h2 id="4-限流电阻怎么取两个最坏情况">4. 限流电阻怎么取：两个最坏情况</h2>
+<p>从上面的分析可以直接写出取值规则。设输入在 <span class="math math-inline">\(V_{i,\min}\)</span> 到 <span class="math math-inline">\(V_{i,\max}\)</span> 之间变化，负载在 0 到 <span class="math math-inline">\(I_{L,\max}\)</span> 之间变化。</p>
+<p><strong>上限（保证稳压）</strong>：最坏情况是输入最低、负载最大，这时稳压管里也要至少留 <span class="math math-inline">\(I_{Z,\min}\)</span> ：</p>
+<div class="math math-display">\[R \le \frac{V_{i,\min} - V_Z}{I_{Z,\min} + I_{L,\max}}\]</div>
+<p>式子里直接用手册的 <span class="math math-inline">\(V_Z\)</span> 而不用更准的输出电压，是偏保守的：实际输出略低于 <span class="math math-inline">\(V_Z\)</span> ，R 两端的电压更大，能供的电流只会更多。</p>
+<p><strong>下限（保护稳压管）</strong>：最坏情况是输入最高、负载断开，全部电流流过稳压管，功耗 <span class="math math-inline">\(V_o I_Z\)</span> 不能超过额定功率的一半（<a href="../P2-semiconductor-basics/page3.html">P2 半导体入门 · 参数与调试篇</a> 的「留一半余量」）：</p>
+<div class="math math-display">\[I_Z \approx \frac{V_{i,\max} - V_{Z0}}{R + r_Z}, \qquad V_o I_Z \le \frac{P_Z}{2}\]</div>
+<p>这里要用击穿起点 <span class="math math-inline">\(V_{Z0}\)</span> ：它比 <span class="math math-inline">\(V_Z\)</span> 低，算出的电流更大，对「保护稳压管」这一边才是保守的。</p>
+<p>把主例代入：10–14 V 输入、负载 0–20 mA、 <span class="math math-inline">\(I_{Z,\min}\)</span> = 5 mA、 <span class="math math-inline">\(P_Z\)</span> = 1.3 W。上限 (10 − 5.1) ÷ 0.025 ≈ 196 Ω（用精确模型算，下一节的程序得 208 Ω，公式偏保守）。</p>
+<p>下限可以先粗估：忽略 <span class="math math-inline">\(r_Z\)</span> ，把稳压管电压当作 5.1 V，功耗不超过 0.65 W 就要求 <span class="math math-inline">\(I_Z\)</span> ≤ 0.65 ÷ 5.1 ≈ 127 mA，于是 R ≥ (14 − 5.1) ÷ 0.127 ≈ 70 Ω。再细一点：127 mA 时稳压管电压已经升到 4.757 + 7 × 0.127 ≈ 5.65 V，电流只能到 0.65 ÷ 5.65 ≈ 115 mA，R ≥ (14 − 4.757) ÷ 0.115 − 7 ≈ 73 Ω，和下一节程序的结果一致。粗估差了几欧，所以 R 不要贴着下限取。</p>
+<p>取常用值 180 Ω，靠近上限，这样稳压管平时不太热，纹波也压得更狠。最后还要核对 R 本身的功耗：输入 14 V、空载时输出约 5.10 V，R 上约 8.9 V，功耗约 8.9² ÷ 180 ≈ 0.44 W，按两倍余量选 1 W 的电阻。</p>
+<p>经验上，ESP 建议稳压管的工作电流取最大电流（额定功率除以 <span class="math math-inline">\(V_Z\)</span> ）的 10%–50%；维基百科的稳压管词条也写了同样的两个条件：R 要小到让稳压管在最大负载时仍击穿，又要大到让稳压管的功耗不超标。</p>
+<h2 id="5-仿真自己动手算一遍">5. 仿真：自己动手算一遍</h2>
+<p>下面的程序只用 Python 标准库，按上面的模型算出主例的关键数字，在仓库根目录运行即可。完整的绘图版本在 <code>code/10_sim.py</code>。</p>
+<pre><code class="language-python"># 在仓库根目录运行（只用标准库，不读写文件）
+VZ, IZT, RZ, R = 5.1, 0.049, 7.0, 180.0   # 1N4733A：49 mA 时 5.1 V，动态电阻 7 Ω（见 P2 page2）
+VZ0 = VZ - RZ * IZT                       # 击穿起点 ≈ 4.757 V
+
+def node(vin, r, il):
+    &quot;&quot;&quot;输入 vin 经电阻 r 供电，负载取恒定电流 il。返回 (输出电压, 稳压管电流)。&quot;&quot;&quot;
+    v_off = vin - il * r                      # 假设稳压管不导通
+    if v_off &lt;= VZ0:
+        return max(v_off, 0.0), 0.0
+    # 稳压管导通：节点方程 (vin − v)/r = (v − VZ0)/RZ + il，解出 v
+    v = (vin / r + VZ0 / RZ - il) / (1 / r + 1 / RZ)
+    return v, (v - VZ0) / RZ
+
+# 1) 两个最坏情况
+v, iz = node(10.0, R, 0.020)
+print(f&quot;输入 10 V、负载 20 mA：V_o = {v:.3f} V，I_Z = {iz*1e3:.1f} mA&quot;)
+v, iz = node(14.0, R, 0.0)
+print(f&quot;输入 14 V、空载：I_Z = {iz*1e3:.1f} mA，稳压管功耗 {v*iz:.2f} W（额定 1.3 W）&quot;)
+print(f&quot;R 的功耗 {(14.0 - v)**2 / R:.2f} W&quot;)
+
+# 2) R 的上限：从 100 Ω 往上找，直到最坏 I_Z 小于 5 mA
+r = 100
+while node(10.0, r, 0.020)[1] &gt;= 0.005:
+    r += 1
+print(f&quot;R 最大约 {r - 1} Ω&quot;)
+
+# 3) R 的下限：从 180 Ω 往下找，直到空载、14 V 时稳压管功耗超过 0.65 W
+r = 180
+while True:
+    v, iz = node(14.0, r - 1, 0.0)
+    if v * iz &gt; 0.65:
+        break
+    r -= 1
+print(f&quot;R 最小约 {r} Ω&quot;)
+
+# 4) 负载加到多少失去稳压
+il = 0.0
+while node(10.0, R, il)[1] &gt; 0:
+    il += 0.0001
+print(f&quot;输入 10 V 时，负载超过约 {il*1e3:.1f} mA 就失去稳压&quot;)
+</code></pre>
+<p>程序里 <code>node()</code> 的那一行公式，就是把节点电流方程 <span class="math math-inline">\((V_i - V)/R = (V - V_{Z0})/r_Z + I_L\)</span> 移项解出 V。运行结果应为：最坏 <span class="math math-inline">\(I_Z\)</span> 8.8 mA、输出 4.819 V；空载最坏功耗 0.25 W（ <span class="math math-inline">\(I_Z\)</span> 49.4 mA）；R 功耗 0.44 W；R 最大约 208 Ω、最小约 73 Ω；负载超过约 29.2 mA 失去稳压。这些数字和 <code>code/10_sim.py</code> 打印的一致。</p>
+<h2 id="6-变体加一只三极管扩大电流">6. 变体：加一只三极管扩大电流</h2>
+<p>单用稳压管，负载电流的上限就是 <span class="math math-inline">\(I_R\)</span> 。负载要 100 mA 怎么办？如果把 R 减小到能供 100 mA，空载时这 100 mA 全部压到稳压管上，又热又浪费。办法是让稳压管只管「定电压」，大电流交给一只三极管，电路如图 10-p2-2：</p>
+<p><a class="img-link" href="img/10_p2_2_follower_schem.png"><img alt="可调电源正端经 180 欧电阻接到稳压管阴极，稳压管阳极接地；稳压管阴极同时接 NPN 三极管的基极，集电极接电源正端，发射极接负载和输出端，输出约等于 V_Z 减 0.7 伏" src="img/10_p2_2_follower_schem.png" loading="lazy" /></a></p>
+<p><em>图 10-p2-2　稳压管 + 射极跟随器：稳压管定基极电压，三极管供负载电流</em></p>
+<p>分析图 10-p2-2 要用到 P2 讲过的三极管估算规则：导通时 <span class="math math-inline">\(V_{BE}\)</span> ≈ 0.7 V，集电极电流是基极电流的 β 倍。基极被稳压管钉在约 5 V，发射极就比它低约 0.7 V，输出约 4.2–4.4 V。负载电流 <span class="math math-inline">\(I_L\)</span> 从发射极流出，其中只有 <span class="math math-inline">\(I_L/(\beta+1)\)</span> 来自基极，其余都从集电极直接由电源提供。β 要按实际电流查手册：onsemi 的 <a href="https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf">2N3904 手册</a> 给出 <span class="math math-inline">\(I_C\)</span> = 100 mA 时 <span class="math math-inline">\(h_{FE}\)</span> （就是 β）最小只有 30，比小电流时低，所以这里按 β = 30 估算，负载 100 mA 时基极要 0.1 ÷ 31 ≈ 3.23 mA。对稳压管来说，负载变化被缩小了约 31 倍。这种「发射极跟着基极走」的接法叫<strong>射极跟随器</strong>，阅读顺序后面的 <a href="../07-emitter-follower/page1.html">07 射极跟随器 · 直觉篇</a> 会专门讲它。两种接法带负载的能力对比见图 10-p2-3。</p>
+<p><a class="img-link" href="img/10_p2_3_follower.png"><img alt="横轴为负载电流 0 到 100 毫安，朱红色带叉的线是只用稳压管时的输出，过了约 29 毫安就迅速下降到 0；橙色线是加三极管后的输出，几乎是水平线，100 毫安时标出 4.232 伏，略高于它的灰色点线是 4.4 伏参考线" src="img/10_p2_3_follower.png" loading="lazy" /></a></p>
+<p><em>图 10-p2-3　同一个 180 Ω、同样的 10 V 输入：加三极管后能带 100 mA</em></p>
+<p>图 10-p2-3 中，橙色线从空载的 4.253 V 到 100 mA 时的 4.232 V，只降了约 22 mV；稳压管电流从 28.0 mA 只降到 24.9 mA。对照朱红色带叉的线，单用稳压管时同样的电阻撑不过 29 mA。输出比灰色点线的 4.4 V 略低，是因为稳压管只有 25–28 mA，不到测试电流 49 mA，实际电压约 4.95 V，比 5.1 V 低约 0.15 V。这里把 <span class="math math-inline">\(V_{BE}\)</span> 当作固定的 0.7 V。真实三极管的 <span class="math math-inline">\(V_{BE}\)</span> 随电流增大会明显变大：用 onsemi 的 2N3904 模型仿真，负载从 1 mA 加到 100 mA， <span class="math math-inline">\(V_{BE}\)</span> 大约从 0.62 V 涨到 0.87 V，输出从约 4.44 V 降到约 4.18 V，降了 0.2～0.3 V，而不是 22 mV。跟随器「几乎是水平线」只是相对单用稳压管而言；要把输出真正稳住，还得靠 <a href="../08-linear-regulator/page2.html">08 线性稳压 · 原理与实现篇</a> 加的运放反馈。</p>
+<p>代价转移到了三极管身上：输入 12 V、负载 100 mA 时，三极管两端约 12 − 4.23 ≈ 7.8 V，功耗约 0.78 W，超过 2N3904 的额定 625 mW，小信号三极管扛不住，要换功率三极管并加散热片。怎样再加一个放大器把输出调得更准、怎样处理发热，就是后续节点 <a href="../08-linear-regulator/page1.html">08 线性稳压 · 直觉篇</a> 的内容。</p>
+<h2 id="7-例题从照着做到自己做">7. 例题：从照着做到自己做</h2>
+<p>例 1、例 2 的电路见图 10-p2-6；例 3 的电路就是图 10-p2-2，只是三极管换成功率管。</p>
+<p><a class="img-link" href="img/10_p2_6_examples.png"><img alt="两幅并排电路。左图例 1：10 到 14 伏输入，朱红色 R 标问号，1N4733A，负载 0 到 20 毫安，输出约 5 伏；右图例 2：18 到 24 伏输入，朱红色 R 标问号，1N4742A，负载 0 到 10 毫安，输出约 12 伏" src="img/10_p2_6_examples.png" loading="lazy" /></a></p>
+<p><em>图 10-p2-6　例 1 与例 2 的电路：求限流电阻 R</em></p>
+<p><strong>例 1（完整示例）</strong> 输入 10–14 V，要 5 V 左右、负载 0–20 mA，用标称 5.1 V 的 1N4733A。选 R。</p>
+<p>解：上限 R ≤ (10 − 5.1) ÷ (5 mA + 20 mA) = 196 Ω。取 180 Ω。下限核对：输入 14 V、空载时 <span class="math math-inline">\(I_Z\)</span> ≈ (14 − 4.757) ÷ (180 + 7) ≈ 49.4 mA，输出 4.757 + 7 × 0.0494 ≈ 5.10 V，功耗约 5.10 × 0.0494 ≈ 0.25 W，远小于 0.65 W，也远小于 <span class="math math-inline">\(I_{ZM}\)</span> = 178 mA。R 功耗约 0.44 W，选 1 W。</p>
+<p><strong>例 2（关键步骤留空）</strong> 输入 18–24 V，要 12 V、负载 0–10 mA，用 1N4742A（12 V 在测试电流 21 mA 下测得、1.3 W、 <span class="math math-inline">\(r_Z\)</span> 约 9 Ω、 <span class="math math-inline">\(I_{ZM}\)</span> 76 mA，击穿起点 <span class="math math-inline">\(V_{Z0}\)</span> = 12 − 9 × 0.021 ≈ 11.81 V）， <span class="math math-inline">\(I_{Z,\min}\)</span> 取 5 mA。</p>
+<p>解：上限 R ≤ (18 − 12) ÷ ( ____ ) = ____ Ω，取常用值 390 Ω。空载、24 V 时 <span class="math math-inline">\(I_Z\)</span> ≈ ____ mA，功耗约 ____ W，和 0.65 W 比较。R 的功耗约 ____ W。</p>
+<details><summary>答案</summary>
+<p>上限 R ≤ 6 ÷ (0.005 + 0.010) = 400 Ω，取 390 Ω。空载、24 V 时 <span class="math math-inline">\(I_Z\)</span> ≈ (24 − 11.81) ÷ (390 + 9) ≈ 30.5 mA，输出约 11.81 + 9 × 0.0305 ≈ 12.09 V，功耗约 12.09 × 0.0305 ≈ 0.37 W，小于 0.65 W，也小于 <span class="math math-inline">\(I_{ZM}\)</span> 76 mA。R 上约 11.9 V，功耗约 11.9² ÷ 390 ≈ 0.36 W，选 1 W。</p>
+</details>
+<p><strong>例 3（变体迁移）</strong> 还是 10–14 V 输入、1N4733A，但负载要 0–200 mA，于是加一只 NPN 功率三极管做射极跟随器，β 按 60 估算（假设所选功率管在 200 mA 时手册最小 β 为 60，实际要查手册）。R 取多大？三极管最大功耗多少？</p>
+<details><summary>答案</summary>
+<p>最大基极电流 0.2 ÷ 61 ≈ 3.3 mA。稳压管至少留 5 mA，所以 R ≤ (10 − 5.1) ÷ (5 + 3.3) mA ≈ 590 Ω，取 560 Ω。空载、14 V 时 <span class="math math-inline">\(I_Z\)</span> ≈ (14 − 4.757) ÷ 567 ≈ 16.3 mA，功耗约 0.08 W，稳压管几乎不热。三极管在输入 14 V、电流 200 mA 时，基极约 4.85 V，输出约 4.15 V，功耗约 (14 − 4.15) × 0.2 ≈ 1.97 W，必须用功率三极管加散热片。对比：单用稳压管带 200 mA，R 要小到约 24 Ω，空载时稳压管要吃 200 多毫安，早已超过 <span class="math math-inline">\(I_{ZM}\)</span> 。</p>
+</details>
+<h2 id="小结">小结</h2>
+<p>稳压管稳压的全部计算只靠两条式子：节点电流 <span class="math math-inline">\(I_R = I_Z + I_L\)</span> 和稳压管模型 <span class="math math-inline">\(V_o = V_Z + r_Z \thinspace (I_Z - I_{ZT})\)</span> （合并常数后写成 <span class="math math-inline">\(V_o = V_{Z0} + r_Z I_Z\)</span> ）。由此得到 R 的取值窗口：上限保证输入最低、负载最大时稳压管仍有电流，下限保证输入最高、空载时稳压管不过热。纹波按 R 与 <span class="math math-inline">\(r_Z\)</span> 的分压比缩小。负载大时加一只三极管，稳压管只负责定电压。下一页 <a href="page3.html">参数与调试篇</a> 会读数据手册、扫描 R 的取值窗口，并看看 R 选错时电路会出什么毛病。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

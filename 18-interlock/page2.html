@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18 互锁 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/18-interlock/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="18-互锁--原理与实现篇">18 互锁 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../17-self-locking/page1.html">17 自锁 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节点特有的危险点：① 正反转接触器同时吸合 = 380 V 相间短路，电弧可能伤人；② 互锁触点在控制回路里，控制回路常接 220 V 或 380 V，改互锁线同样要断电验电；③ 按停止只是让线圈断电，主电路仍带电，主触点熔焊时电机甚至停不下来。</p>
+</blockquote>
+<h2 id="一最小知识三件要先知道的事">一、最小知识：三件要先知道的事</h2>
+<ol>
+<li><strong>常闭辅助触点跟着衔铁走</strong>（P1、17）：接触器线圈通电、衔铁吸合，常开触点闭合，常闭触点<strong>断开</strong>；衔铁释放，二者复位。互锁用的就是对方的常闭辅助触点。</li>
+<li><strong>接触器动作要时间</strong>：从线圈通电到主触点闭合叫吸合时间，从线圈断电到主触点断开叫释放时间。施耐德 TeSys D 小型接触器的手册给出的闭合时间是 12 ms 到 22 ms，断开时间是 4 ms 到 19 ms。本页仿真取吸合 20 ms、释放 10 ms 这两个落在范围之内的示意值。</li>
+<li><strong>复合按钮</strong>：一个按钮里同时有一对常开触点和一对常闭触点，按下时常闭触点断开、常开触点闭合，二者由同一根推杆带动。把它的常闭触点串到对方回路里，就是<strong>按钮互锁</strong>。</li>
+</ol>
+<h2 id="二推导把互锁翻译成式子">二、推导：把互锁翻译成式子</h2>
+<p><strong>中文意思</strong>：KM1 下一刻会不会吸合？要同时满足三件事：停止按钮没被按；正转按钮按着，或者 KM1 自己已经吸着（这是 17 的自锁）；<strong>并且 KM2 没有吸合</strong>（这是新加的互锁）。KM2 同理。</p>
+<p><strong>写成公式</strong>：沿用 17 的记号，用 <span class="math math-inline">\(S_1\)</span> 、 <span class="math math-inline">\(S_2\)</span> 、 <span class="math math-inline">\(S_3\)</span> 表示停止、正转、反转按钮是否按下（按下 = 1），用 <span class="math math-inline">\(K_1\)</span> 、 <span class="math math-inline">\(K_2\)</span> 表示两只接触器现在的状态（吸合 = 1），带撇的表示下一刻：</p>
+<div class="math math-display">\[K_1' = \overline{S_1} \cdot (S_2 + K_1) \cdot \overline{K_2}\]</div>
+<div class="math math-display">\[K_2' = \overline{S_1} \cdot (S_3 + K_2) \cdot \overline{K_1}\]</div>
+<p>和 17 相比，每个式子只多了最后一个因子 <span class="math math-inline">\(\overline{K_2}\)</span> 或 <span class="math math-inline">\(\overline{K_1}\)</span> ，它就是串进去的那个&quot;对方的常闭辅助触点&quot;：对方吸合（等于 1）时，常闭触点断开（取反等于 0）。</p>
+<p><strong>代数推一推</strong>：</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th><span class="math math-inline">\(S_2\)</span></th>
+<th><span class="math math-inline">\(S_3\)</span></th>
+<th><span class="math math-inline">\(K_1\)</span></th>
+<th><span class="math math-inline">\(K_2\)</span></th>
+<th><span class="math math-inline">\(K_1'\)</span></th>
+<th><span class="math math-inline">\(K_2'\)</span></th>
+<th>意思</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>停着，按正转</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td><span class="math math-inline">\(1\cdot(1+0)\cdot 1=1\)</span></td>
+<td><span class="math math-inline">\(1\cdot(0+0)\cdot 1=0\)</span></td>
+<td>正转启动</td>
+</tr>
+<tr>
+<td>正转中，误按反转</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td><span class="math math-inline">\(1\cdot(0+1)\cdot 1=1\)</span></td>
+<td><span class="math math-inline">\(1\cdot(1+0)\cdot 0=0\)</span></td>
+<td>反转按钮无效</td>
+</tr>
+<tr>
+<td>停着，按反转</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td><span class="math math-inline">\(1\cdot(0+0)\cdot 1=0\)</span></td>
+<td><span class="math math-inline">\(1\cdot(1+0)\cdot 1=1\)</span></td>
+<td>反转启动</td>
+</tr>
+<tr>
+<td>停着，两个一起按</td>
+<td>1</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+<td><span class="math math-inline">\(1\)</span></td>
+<td><span class="math math-inline">\(1\)</span></td>
+<td>两个都想吸合！</td>
+</tr>
+</tbody>
+</table>
+<p>前三行说明：只要有一只已经吸合，另一只的式子里就乘上了 0，<strong>无论怎么按都吸不上</strong>。把两个式子相乘还能看得更清楚：如果此刻 <span class="math math-inline">\(K_1 = 1\)</span> ，那么 <span class="math math-inline">\(K_2'\)</span> 里的 <span class="math math-inline">\(\overline{K_1} = 0\)</span> ，乘积 <span class="math math-inline">\(K_1' \cdot K_2'\)</span> 必然是 0。</p>
+<p>最后一行是个漏洞：两只都没吸合时，两个按钮&quot;同时&quot;按下，两个式子都等于 1。好在真实的接触器吸合要十几毫秒，人的两根手指不可能精确到同一毫秒按下。先通电的那只先吸合到位，它的常闭触点一断开，后按的那只线圈立刻失电，衔铁还没走完就退了回去。下一节的仿真会把这个&quot;赛跑&quot;放大来看。</p>
+<p><strong>再加一重：按钮互锁</strong>。如果在 KM1 回路里再串入 SB3 的常闭触点、在 KM2 回路里串入 SB2 的常闭触点，式子变成</p>
+<div class="math math-display">\[K_1' = \overline{S_1} \cdot \overline{S_3} \cdot (S_2 + K_1) \cdot \overline{K_2}\]</div>
+<p>按反转按钮 <span class="math math-inline">\(S_3 = 1\)</span> 的那一刻，KM1 的回路先被切断；等 KM1 释放、 <span class="math math-inline">\(K_1\)</span> 变回 0，KM2 才通电。这样不用先按停止就能直接换向。接触器互锁加按钮互锁，叫<strong>双重互锁</strong>，接法见 图 18-p2-1：</p>
+<p><a class="img-link" href="img/18_p2_1_double.png"><img alt="双重互锁控制回路：上路依次是 SB3 常闭、SB2 正转与 KM1 自锁触点并联、KM2 常闭、KM1 线圈；下路依次是 SB2 常闭、SB3 反转与 KM2 自锁触点并联、KM1 常闭、KM2 线圈" src="img/18_p2_1_double.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-1　双重互锁：按钮的常闭触点和接触器的常闭触点各串一个</em></p>
+<p>图 18-p2-1 和直觉篇那张接触器互锁的回路相比，每一行最前面多了一个按钮常闭触点：上面一行是 SB3 常闭，下面一行是 SB2 常闭。SB2 正转按钮的常开触点在上面一行、常闭触点在下面一行，它们是同一个复合按钮的两对触点，一按同时动作；SB3 也一样。注意 SB3 常闭必须串在&quot;SB2 并联自锁触点&quot;这一组的外面，否则按反转切不断 KM1 的自锁。</p>
+<h2 id="三仿真三种接法跑同一套按键">三、仿真：三种接法跑同一套按键</h2>
+<p>下面的程序沿用 17 的逐毫秒推演，同时跑&quot;不互锁&quot;&quot;接触器互锁&quot;&quot;双重互锁&quot;三种接法。按键安排是：① 1 s 按正转；② 2 s 正转中按反转；③ 3 s 按停止；④ 4 s 按反转，4.6 s 停止；⑤ 5.000 s 按正转、5.005 s 按反转（相差 5 ms），7 s 停止。</p>
+<p>程序要在<strong>仓库根目录</strong>运行（第二行靠这个找到 <code>code/figs</code> 里的共享画图样式），它会重新生成 图 18-p2-2 和 图 18-p2-3。完整版是 <code>code/18_sim.py</code>，比下面多打印一行燃弧余量（参数与调试篇用到）。想改参数做实验，先复制一份：<code>cp code/18_sim.py my_18.py</code>，再改 <code>my_18.py</code>。</p>
+<pre><code class="language-python"># 18 正反转互锁的最小仿真：沿用 17 的写法，时间切成 1 ms 一小段，两只接触器 KM1（正转）、KM2（反转）各算各的。
+# KM1 回路：SB1 停止（常闭）→ [SB2 正转（常开） 并联 KM1 自锁触点] →（按钮互锁时串 SB3 常闭）→（接触器互锁时串 KM2 常闭辅助触点）→ KM1 线圈
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import numpy as np                                 # 数组运算
+import matplotlib.pyplot as plt                    # 画图
+import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
+
+dt = 1e-3                                          # 每一小段 1 ms
+t = np.arange(0, 9, dt)                            # 一共仿真 9 s
+T_PICK, T_DROP = 0.020, 0.010                      # 线圈通电后 20 ms 才吸合到位；断电后 10 ms 才释放到位
+
+def pressed(t0, t1):                               # 生成&quot;在 t0 到 t1 秒之间按住&quot;的按钮信号
+    return (t &gt;= t0) &amp; (t &lt; t1)                    # 返回一串 True/False
+
+sb2 = pressed(1.0, 1.3) | pressed(5.000, 5.300)    # SB2 正转按钮：1 s 按一次；5.000 s 和 SB3 几乎同时按
+sb3 = pressed(2.0, 2.3) | pressed(4.0, 4.3) | pressed(5.005, 5.305)  # SB3 反转按钮：2 s 在正转时按；4 s 停机后按；5.005 s 晚 5 ms 按
+sb1 = pressed(3.0, 3.3) | pressed(4.6, 4.9) | pressed(7.0, 7.3)       # SB1 停止按钮
+
+def run(mode):                                     # mode：&quot;none&quot; 不互锁、&quot;elec&quot; 接触器互锁、&quot;double&quot; 按钮 + 接触器双重互锁
+    km1 = np.zeros_like(t, dtype=bool)             # KM1 衔铁状态：True = 吸合（主触点闭合、常闭辅助触点断开）
+    km2 = np.zeros_like(t, dtype=bool)             # KM2 衔铁状态
+    coil1 = np.zeros_like(t, dtype=bool)           # KM1 线圈有没有通电（用来看&quot;白白通电&quot;的那十几毫秒）
+    coil2 = np.zeros_like(t, dtype=bool)           # KM2 线圈有没有通电
+    n1 = n2 = 0.0                                  # 两只线圈各自的计时器：通电（或断电）已经持续了多久
+    for k in range(1, len(t)):                     # 一小段一小段往前推
+        n1 = n1 + dt if coil1[k - 1] != km1[k - 1] else 0.0  # 第一步：衔铁跟着线圈走——&quot;线圈和衔铁不一致&quot;持续了多久
+        n2 = n2 + dt if coil2[k - 1] != km2[k - 1] else 0.0  # 同上，给 KM2
+        km1[k] = (not km1[k - 1] and n1 &gt;= T_PICK - 1e-9) or (km1[k - 1] and n1 &lt; T_DROP - 1e-9)  # 通电够 20 ms 才吸合；断电不到 10 ms 仍吸着
+        km2[k] = (not km2[k - 1] and n2 &gt;= T_PICK - 1e-9) or (km2[k - 1] and n2 &lt; T_DROP - 1e-9)  # 同上，给 KM2
+        a1, a2 = km1[k], km2[k]                    # 第二步：辅助触点跟着衔铁走，再判断两个线圈回路通不通
+        stop_ok = not sb1[k]                       # 停止按钮没被按，公共部分才通
+        p1 = stop_ok and (sb2[k] or a1)            # KM1 回路：启动按钮或自锁触点（和 17 一样）
+        p2 = stop_ok and (sb3[k] or a2)            # KM2 回路：同理
+        if mode == &quot;double&quot;:                       # 按钮互锁：复合按钮的常闭触点串在对方回路里
+            p1 = p1 and not sb3[k]                 # 按着 SB3 时，KM1 回路被 SB3 常闭断开
+            p2 = p2 and not sb2[k]                 # 按着 SB2 时，KM2 回路被 SB2 常闭断开
+        if mode in (&quot;elec&quot;, &quot;double&quot;):             # 接触器互锁：对方的常闭辅助触点串在自己回路里
+            p1 = p1 and not a2                     # KM2 吸着，KM2 常闭辅助触点就是断开的
+            p2 = p2 and not a1                     # KM1 吸着，KM1 常闭辅助触点就是断开的
+        coil1[k], coil2[k] = p1, p2                # 记下这一刻两只线圈有没有电
+    return km1, km2, coil1, coil2                  # 返回四条波形
+
+def at(x, arr):                                    # 查表：t = x 秒时 arr 的值
+    return bool(arr[int(round(x / dt))])           # 秒换成下标
+
+res = {m: run(m) for m in (&quot;none&quot;, &quot;elec&quot;, &quot;double&quot;)}  # 三种接法跑同一套按键
+for m, name in [(&quot;none&quot;, &quot;不互锁&quot;), (&quot;elec&quot;, &quot;接触器互锁&quot;), (&quot;double&quot;, &quot;双重互锁&quot;)]:
+    k1, k2, c1, c2 = res[m]                        # 取出这一种接法的结果
+    short = k1 &amp; k2                                # 两只同时吸合 = 两相被主触点直接接通 = 相间短路
+    print(f&quot;[{name}] 两只接触器同时吸合的总时长 {short.sum() * dt * 1e3:.0f} ms&quot;)  # 打印短路时长
+    for x in (1.5, 2.5, 3.5, 4.4, 5.5):            # 五个检查时刻
+        print(f&quot;   t = {x:.1f} s：KM1 {'吸' if at(x, k1) else '放'}  KM2 {'吸' if at(x, k2) else '放'}&quot;)  # 打印状态
+
+k1, k2, c1, c2 = res[&quot;elec&quot;]                       # 下面细看接触器互锁这一种
+assert not (k1 &amp; k2).any()                         # 结论 1：接触器互锁时，任何时刻都不会两只同时吸合
+assert at(2.5, k1) and not at(2.5, k2)             # 结论 2：正转时按反转，什么也不发生
+assert at(4.4, k2) and at(5.5, k1) and not at(5.5, k2)  # 结论 3：停机后能反转；两个按钮相差 5 ms 按下，只有先按的 KM1 吸合
+assert (res[&quot;none&quot;][0] &amp; res[&quot;none&quot;][1]).sum() &gt; 0 # 结论 4：不互锁时会出现同时吸合
+d1, d2 = res[&quot;double&quot;][0], res[&quot;double&quot;][1]        # 双重互锁的两条衔铁波形
+assert not (d1 &amp; d2).any() and at(2.5, d2) and not at(5.5, d1) and not at(5.5, d2)  # 结论 5：双重互锁能直接反转；两个一起按则谁也不吸
+
+on1 = np.argmax(k1[4900:]) + 4900                  # 5 s 附近 KM1 吸合的下标
+w2 = c2[5000:5100].sum()                           # 5.0~5.1 s 之间 KM2 线圈一共通电了几毫秒
+print(f&quot;[竞赛] SB2 在 5.000 s、SB3 在 5.005 s 按下：KM1 在 {t[on1]:.3f} s 吸合，KM2 线圈白白通电 {w2:.0f} ms 后被切断&quot;)  # 打印竞赛过程
+assert w2 == 15                                    # 20 ms − 5 ms = 15 ms
+sw = np.argmax(d2[2000:]) + 2000                   # 双重互锁：2 s 按 SB3 后 KM2 吸合的下标
+off = np.argmin(d1[2000:]) + 2000                  # 双重互锁：KM1 释放的下标
+print(f&quot;[双重互锁] 2.000 s 按 SB3：KM1 在 {t[off]:.3f} s 释放，KM2 在 {t[sw]:.3f} s 吸合，中间空档 {(t[sw] - t[off]) * 1e3:.0f} ms&quot;)  # 打印换向空档
+assert t[sw] &gt; t[off]                              # 先断后通
+
+fig, axs = plt.subplots(4, 1, figsize=(9.5, 5.6), sharex=True)  # 四行：按钮、不互锁、接触器互锁、双重互锁
+axs[0].plot(t, sb2 * 0.8 + 2.0, **fs.LS[&quot;fb&quot;], label=&quot;SB2 正转&quot;)       # 正转按钮
+axs[0].plot(t, sb3 * 0.8 + 1.0, **fs.LS[&quot;third&quot;], label=&quot;SB3 反转&quot;)    # 反转按钮
+axs[0].plot(t, sb1 * 0.8 + 0.0, color=&quot;0.3&quot;, lw=1.0, label=&quot;SB1 停止&quot;)  # 停止按钮（灰色细实线）
+axs[0].set_yticks([0.4, 1.4, 2.4]); axs[0].set_yticklabels([&quot;SB1&quot;, &quot;SB3&quot;, &quot;SB2&quot;]); axs[0].set_ylim(-0.2, 3.0)  # 纵轴标注
+axs[0].legend(loc=&quot;center left&quot;, bbox_to_anchor=(1.01, 0.5), fontsize=8)  # 图例放到图外右侧
+for ax, m, name in [(axs[1], &quot;none&quot;, &quot;不互锁&quot;), (axs[2], &quot;elec&quot;, &quot;接触器互锁&quot;), (axs[3], &quot;double&quot;, &quot;双重互锁&quot;)]:
+    a, b = res[m][0], res[m][1]                    # 这一种接法的 KM1、KM2
+    ax.plot(t, a * 0.8 + 1.0, **fs.LS[&quot;vout&quot;], label=&quot;KM1 正转&quot;)       # KM1 画在上面
+    ax.plot(t, b * 0.8 + 0.0, **fs.LS[&quot;vin&quot;], label=&quot;KM2 反转&quot;)        # KM2 画在下面
+    s = a &amp; b                                      # 同时吸合的时段
+    if s.any():                                    # 有短路就用朱红色 × 标出来
+        ax.fill_between(t, -0.2, 2.5, where=s, color=fs.C[&quot;bad&quot;], alpha=0.15, lw=0)  # 短路时段衬一层淡底色
+        ax.plot(t[s][::200], np.full(s.sum(), 2.1)[::200], color=fs.C[&quot;bad&quot;], ls=&quot;none&quot;, marker=&quot;x&quot;, label=&quot;同时吸合 = 相间短路&quot;)  # 朱红色 ×
+    ax.set_yticks([0.4, 1.4]); ax.set_yticklabels([&quot;KM2&quot;, &quot;KM1&quot;]); ax.set_ylim(-0.2, 2.5)  # 纵轴标注
+    ax.set_title(name, fontsize=9, loc=&quot;left&quot;)     # 子图标题
+    ax.legend(loc=&quot;center left&quot;, bbox_to_anchor=(1.01, 0.5), fontsize=8)  # 图例放到图外右侧
+for x, s in [(1.0, &quot;①&quot;), (2.0, &quot;②&quot;), (3.0, &quot;③&quot;), (4.0, &quot;④&quot;), (5.0, &quot;⑤&quot;)]:
+    axs[0].text(x, 2.85, s, ha=&quot;center&quot;, fontsize=9)  # 五个事件的编号，正文逐一讲解
+fs.axlabels(axs[3], &quot;时间&quot;, &quot;s&quot;)                    # 横轴
+fs.save(fig, &quot;18&quot;, &quot;18_p2_2_sim.png&quot;)              # 保存
+
+z = slice(4990, 5060)                              # 放大 4.990~5.060 s
+fig, ax = plt.subplots(figsize=fs.SIZE[&quot;tall&quot;])    # 竞赛放大图
+tm = (t[z] - 5.0) * 1e3                            # 横轴换成&quot;从 5.000 s 起的毫秒数&quot;
+ax.plot(tm, sb2[z] * 0.8 + 6, drawstyle=&quot;steps-post&quot;, **fs.LS[&quot;fb&quot;], label=&quot;SB2 正转按钮&quot;)       # 正转按钮
+ax.plot(tm, sb3[z] * 0.8 + 4.5, drawstyle=&quot;steps-post&quot;, **fs.LS[&quot;third&quot;], label=&quot;SB3 反转按钮&quot;)  # 反转按钮
+ax.plot(tm, c1[z] * 0.8 + 3, drawstyle=&quot;steps-post&quot;, **fs.LS[&quot;cur&quot;], label=&quot;KM1 线圈有电&quot;)      # KM1 线圈
+ax.plot(tm, k1[z] * 0.8 + 3, drawstyle=&quot;steps-post&quot;, **fs.LS[&quot;vout&quot;], label=&quot;KM1 衔铁吸合&quot;)     # KM1 衔铁
+ax.plot(tm, c2[z] * 0.8 + 1.5, drawstyle=&quot;steps-post&quot;, **{**fs.LS[&quot;cur&quot;], &quot;alpha&quot;: 0.6}, label=f&quot;KM2 线圈有电（{w2:.0f} ms）&quot;)       # KM2 线圈
+ax.plot(tm, k2[z] * 0.8 + 1.5, drawstyle=&quot;steps-post&quot;, **fs.LS[&quot;vin&quot;], label=&quot;KM2 衔铁（始终没吸合）&quot;)  # KM2 衔铁
+fs.ref_v(ax, 20, &quot;KM1 吸合到位，常闭辅助触点断开&quot;, y=0.25)                    # 20 ms 的竖线
+ax.set_yticks([1.9, 3.4, 4.9, 6.4]); ax.set_yticklabels([&quot;KM2&quot;, &quot;KM1&quot;, &quot;SB3&quot;, &quot;SB2&quot;])  # 纵轴
+ax.set_ylim(1.0, 8.4); fs.axlabels(ax, &quot;从 SB2 按下起的时间&quot;, &quot;ms&quot;)       # 坐标
+ax.legend(loc=&quot;upper right&quot;, fontsize=8, ncol=2)                          # 图例（右上角空着）
+fs.save(fig, &quot;18&quot;, &quot;18_p2_3_race.png&quot;)             # 保存
+</code></pre>
+<p>运行结果：</p>
+<pre><code class="language-text">[不互锁] 两只接触器同时吸合的总时长 2975 ms
+   t = 1.5 s：KM1 吸  KM2 放
+   t = 2.5 s：KM1 吸  KM2 吸
+   t = 3.5 s：KM1 放  KM2 放
+   t = 4.4 s：KM1 放  KM2 吸
+   t = 5.5 s：KM1 吸  KM2 吸
+[接触器互锁] 两只接触器同时吸合的总时长 0 ms
+   t = 1.5 s：KM1 吸  KM2 放
+   t = 2.5 s：KM1 吸  KM2 放
+   t = 3.5 s：KM1 放  KM2 放
+   t = 4.4 s：KM1 放  KM2 吸
+   t = 5.5 s：KM1 吸  KM2 放
+[双重互锁] 两只接触器同时吸合的总时长 0 ms
+   t = 1.5 s：KM1 吸  KM2 放
+   t = 2.5 s：KM1 放  KM2 吸
+   t = 3.5 s：KM1 放  KM2 放
+   t = 4.4 s：KM1 放  KM2 吸
+   t = 5.5 s：KM1 放  KM2 放
+[竞赛] SB2 在 5.000 s、SB3 在 5.005 s 按下：KM1 在 5.020 s 吸合，KM2 线圈白白通电 15 ms 后被切断
+[双重互锁] 2.000 s 按 SB3：KM1 在 2.010 s 释放，KM2 在 2.030 s 吸合，中间空档 20 ms
+</code></pre>
+<p>先看三种接法在 ①～⑤ 这五个事件后的状态，以及两只接触器同时吸合的总时长：</p>
+<ul>
+<li><strong>不互锁</strong>：同时吸合 2975 ms。② 正转中按反转，两只一起吸合；⑤ 两个按钮先后按下，也是两只一起吸合。真实电路里这两次都是相间短路。</li>
+<li><strong>接触器互锁</strong>：同时吸合 0 ms。② 按反转没有任何反应，KM1 照常吸着；④ 先停止再按反转，KM2 正常吸合；⑤ 先按下的 SB2 赢得&quot;赛跑&quot;，KM1 吸合、KM2 吸不上。</li>
+<li><strong>双重互锁</strong>：同时吸合 0 ms。② 不用先按停止，按反转就直接换成了反转；⑤ 两个按钮都按着时，各自的常闭触点把对方切断，结果两只都不吸合。</li>
+</ul>
+<p>这些状态画在 图 18-p2-2 里：</p>
+<p><a class="img-link" href="img/18_p2_2_sim.png"><img alt="四行时序图：第一行是三个按钮，蓝绿色虚线 SB2、红紫色点划线 SB3、灰色细实线 SB1；下面三行分别是不互锁、接触器互锁、双重互锁时 KM1（橙色）和 KM2（蓝色）的状态，同时吸合的时段用朱红色叉号标出，顶部标有事件编号一到五" src="img/18_p2_2_sim.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-2　三种接法跑同一套按键：只有不互锁会出现同时吸合</em></p>
+<p>图 18-p2-2 最上面一行是按键：蓝绿色虚线是正转按钮 SB2，红紫色点划线是反转按钮 SB3，灰色细实线是停止按钮 SB1。下面三行里橙色是 KM1，蓝色是 KM2；只有&quot;不互锁&quot;那一行出现了朱红色 × 号（下面还衬了一层很淡的底色），那就是两只同时吸合、主电路短路的时段。对比第三行和第二行在 ② 处的差别：双重互锁让 KM1 先掉、KM2 再吸，接触器互锁则干脆不理会反转按钮。</p>
+<p>事件 ⑤ 的两个按钮只差 5 ms，接触器互锁靠什么分出胜负？图 18-p2-3 把这一段放大到毫秒：</p>
+<p><a class="img-link" href="img/18_p2_3_race.png"><img alt="放大的时序图：横轴是 SB2 按下后的毫秒数，从负 10 到 60；天蓝色阶梯线是 KM1 线圈电流，从 0 ms 开始通电；浅天蓝色阶梯线是 KM2 线圈，从 5 ms 通电到 20 ms 被切断；橙色是 KM1 衔铁，20 ms 处吸合；灰色点线标在 20 ms" src="img/18_p2_3_race.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-3　两个按钮相差 5 ms：先通电的 KM1 先吸合到位，切断了 KM2</em></p>
+<p>图 18-p2-3 里，SB2 在 5.000 s 按下，KM1 线圈先通电；5 ms 后 SB3 按下，KM2 线圈也通了电，此时两只衔铁都在往下走。KM1 在 5.020 s 吸合到位，灰色点线处它的常闭辅助触点断开，KM2 线圈白白通电 15 ms 就被切断，衔铁还没走完 20 ms 的路程，于是退回原位。换句话说，接触器互锁&quot;谁先到谁赢&quot;，赢家一到位就关门。</p>
+<p>如果两个按钮<strong>一毫秒都不差</strong>呢？这个简化模型里两只线圈会同时走完 20 ms，同时吸合。现实中两只接触器的吸合时间不会完全相等，但&quot;恰好打平&quot;不能完全排除，触点粘连、按钮卡住也会让电气互锁失效。所以还需要最后一道防线，见下一节。</p>
+<h2 id="四机械互锁最后一道防线">四、机械互锁：最后一道防线</h2>
+<p>电气互锁靠的是触点，而触点会出故障：它可能被电弧烧粘、被异物卡住，或者接线松了。加拿大 BCcampus 的电机控制教材明确说，正反转电路<strong>电气互锁和机械互锁都必须有</strong>，机械互锁是&quot;最后的手段&quot;。</p>
+<p>机械互锁是一根装在两只接触器之间的杠杆：一只衔铁往下吸时，杠杆把另一只的衔铁顶住，让它在机械上吸不下去。即使两只线圈同时通电，也只有一只能吸合，另一只只会抖动、发出噪声。施耐德把这种零件做成套件：例如 LAD9R1 正反转接线套件里包含 LAD9V2 机械互锁装置和两组主电路连接排。</p>
+<p>和这一点相关的还有一个概念，叫<strong>镜像触点</strong>（IEC 60947-4-1 附录 F）。它规定接触器的常闭辅助触点和主触点之间要有可靠的机械联系：只要有一个主触点粘住没断开，常闭辅助触点就<strong>不能闭合</strong>。正是因为这条规定，&quot;KM1 主触点熔焊 → KM1 常闭触点保持断开 → KM2 吸不上&quot;这条保护才成立。参数与调试篇会用仿真演示这个场景。</p>
+<h2 id="五渐隐例题">五、渐隐例题</h2>
+<p><strong>例 1（完整示范）</strong>：接触器互锁电路，电动机正在正转（ <span class="math math-inline">\(K_1 = 1\)</span> ， <span class="math math-inline">\(K_2 = 0\)</span> ），有人按下反转按钮（ <span class="math math-inline">\(S_3 = 1\)</span> ），没按停止（ <span class="math math-inline">\(S_1 = 0\)</span> ）、没按正转（ <span class="math math-inline">\(S_2 = 0\)</span> ）。下一刻两只接触器的状态是什么？</p>
+<p>解：代入第二节的两个式子：</p>
+<div class="math math-display">\[K_1' = \overline{0} \cdot (0 + 1) \cdot \overline{0} = 1 \cdot 1 \cdot 1 = 1\]</div>
+<div class="math math-display">\[K_2' = \overline{0} \cdot (1 + 0) \cdot \overline{1} = 1 \cdot 1 \cdot 0 = 0\]</div>
+<p>KM1 继续吸合，KM2 不吸合，反转按钮无效。这和仿真里事件 ② 的&quot;接触器互锁&quot;一行完全一致。</p>
+<p><strong>例 2（填空）</strong>：把双重互锁电路里 KM2 的式子补完整（两个方框各填一个因子），并判断电动机正转时按下反转按钮的结果。</p>
+<div class="math math-display">\[K_2' = \overline{S_1} \cdot \square \cdot (S_3 + K_2) \cdot \square\]</div>
+<p>按下 SB3 的一瞬间，KM1 回路里的 <span class="math math-inline">\(\overline{S_3}\)</span> 等于 ____，KM1 释放后 <span class="math math-inline">\(\overline{K_1}\)</span> 等于 ____，于是 KM2 ____。</p>
+<details><summary>答案</summary>
+<p>两个方框分别是 <span class="math math-inline">\(\overline{S_2}\)</span> （SB2 的常闭触点）和 <span class="math math-inline">\(\overline{K_1}\)</span> （KM1 的常闭辅助触点）。按下 SB3 时 KM1 回路里 <span class="math math-inline">\(\overline{S_3} = 0\)</span> ，KM1 失电释放；释放后 <span class="math math-inline">\(\overline{K_1} = 1\)</span> ，KM2 的式子等于 <span class="math math-inline">\(1 \cdot 1 \cdot 1 \cdot 1 = 1\)</span> ，于是 KM2 吸合，电动机直接换成反转。仿真打印的时间是：KM1 在 2.010 s 释放，KM2 在 2.030 s 吸合，中间空档 20 ms。</p>
+</details>
+<p><strong>例 3（变体迁移）</strong>：双重互锁电路，电动机停着，SB2 和 SB3 被同时按住不放，会发生什么？如果先松开 SB2、几毫秒后再松开 SB3 呢？</p>
+<details><summary>答案</summary>
+<p>两个都按住时，KM1 回路里的 <span class="math math-inline">\(\overline{S_3} = 0\)</span> ，KM2 回路里的 <span class="math math-inline">\(\overline{S_2} = 0\)</span> ，两只线圈都没电，<strong>谁也不吸合</strong>，这比接触器互锁的&quot;谁先到谁赢&quot;更保守。先松开 SB2 后，KM2 回路的 <span class="math math-inline">\(\overline{S_2}\)</span> 变回 1，KM2 线圈短暂通电；但仿真事件 ⑤ 里这段时间只有 5 ms，不够 20 ms 的吸合时间，SB3 一松开它又断电了，所以 5.5 s 时 KM1、KM2 仍然都是&quot;放&quot;。如果手指在 SB3 上多停留 20 ms 以上，KM2 就会吸合并自锁。</p>
+</details>
+<h2 id="六低压动手实验">六、低压动手实验</h2>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节点特有的危险点：① 真实的正反转主电路是 380 V 三相，两只接触器同时吸合就是相间短路；② 真实的控制回路常接 220 V 或 380 V；③ 按停止不等于断电。本实验只用 <strong>12 V 直流电源 + 线圈 12 V 的小继电器</strong>，不接任何电动机，绝对不要接到插座上。</p>
+</blockquote>
+<p>器材：12 V 直流电源；两只线圈 12 V、带两组转换触点（每组有一对常开、一对常闭）的小继电器，分别当 KM1、KM2；一个常闭按钮当 SB1；两个常开按钮当 SB2、SB3；两只 LED 各串一个 1 kΩ 电阻，并在两只继电器线圈两端当&quot;指示灯&quot;；两只 1N4007 二极管，分别反并在两个线圈两端（线圈断电会产生高压尖峰，原理和二极管方向见 <a href="../22-bjt-relay-driver/page2.html">22 三极管开关与继电器驱动 · 原理与实现篇</a>）。</p>
+<p>接法：照着直觉篇里那张&quot;接触器互锁&quot;控制回路图接，L 换成 12 V 正极，N 换成负极，FR 省略。每只继电器的第一组常开触点并在自己的启动按钮两端作自锁，第二组的常闭触点串进<strong>对方</strong>的线圈回路作互锁。</p>
+<p>对应的低压原理图见图 18-p2-4。</p>
+<p><a class="img-link" href="img/18_p2_4_lowvolt.png"><img alt="12 伏低压互锁实验原理图：正极经常闭停止按钮 SB1 后分两路；上路是 SB2 与 KM1 第一组常开并联，再串 KM2 第二组常闭到 KM1 线圈；下路是 SB3 与 KM2 第一组常开并联，再串 KM1 第二组常闭到 KM2 线圈；每只线圈两端并着 1 千欧电阻串 LED，以及反并的 1N4007" src="img/18_p2_4_lowvolt.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-4　12 V 低压互锁实验的原理图</em></p>
+<p>图 18-p2-4 就是直觉篇的接触器互锁回路换成 12 V：L、N 换成正、负极，FR 省掉。每只继电器线圈两端并着两条朱红色支路：1 kΩ 串 LED 当指示灯，线圈有电它就亮；1N4007 阴极朝正极反并，吸收断电瞬间的高压尖峰。验证第 3 步的跳线，就是把图中两只「第二组常闭（互锁）」短接掉。</p>
+<p>验证：</p>
+<ol>
+<li>按 SB2，KM1 的灯亮并保持；再按 SB3，KM2 的灯不亮（接触器互锁有效）。</li>
+<li>按 SB1，灯灭；再按 SB3，KM2 的灯亮。</li>
+<li>先断开 12 V 电源，用一根跳线把<strong>两只</strong>继电器的互锁常闭触点都临时短接掉，再通电重复第 1 步，两盏灯会一起亮。这就是主电路里的&quot;短路&quot;，在低压上看到它没有危险，在 380 V 上就是事故。如果只短接其中一只（比如 KM2 回路里的 KM1 常闭），你会看到 KM1 被&quot;挤掉&quot;、KM2 接上，灯是一灭一亮；但两只交接时仍有一小段时间（取决于继电器的释放速度，几到十几毫秒）同时吸合，在 380 V 上这一小段就是相间短路，参数与调试篇的&quot;换向空档&quot;讲的正是它。<strong>这个短接实验只在 12 V 实验板上做，真实的接触器柜里绝对不要这样试</strong>。</li>
+<li>进阶：再找两个带常闭触点的复合按钮，照 图 18-p2-1 改成双重互锁，体验&quot;不按停止直接换向&quot;。</li>
+</ol>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>正反转需要电气互锁和机械互锁；机械互锁是最后的手段，只让一只衔铁吸合、另一只抖动：<a href="https://pressbooks.bccampus.ca/basicmotorcontrol/chapter/forward-reverse-control-circuits/">https://pressbooks.bccampus.ca/basicmotorcontrol/chapter/forward-reverse-control-circuits/</a></li>
+<li>接触器互锁、按钮互锁、双重互锁；同时按两个复合按钮时两只都不吸合：<a href="https://www.dgjs123.com/diandongji/1573.html">https://www.dgjs123.com/diandongji/1573.html</a></li>
+<li>只做按钮互锁时主触点熔焊造成相间短路；双重互锁安全但接线复杂：<a href="https://www.guifan.net/zhishi/2022/64180.html">https://www.guifan.net/zhishi/2022/64180.html</a></li>
+<li>施耐德 LAD9R1 套件包含 LAD9V2 机械互锁：<a href="https://www.se.com/uk/en/faqs/FA109542/">https://www.se.com/uk/en/faqs/FA109542/</a></li>
+<li>IEC 60947-4-1 附录 F 的镜像触点：<a href="https://www.gt-engineering.it/en/insights/electrical-hazard-and-arc-flash-mitigation/contactors-used-in-safety-applications/power-contactors/">https://www.gt-engineering.it/en/insights/electrical-hazard-and-arc-flash-mitigation/contactors-used-in-safety-applications/power-contactors/</a></li>
+<li>TeSys D 接触器闭合 / 断开时间：<a href="https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf">https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

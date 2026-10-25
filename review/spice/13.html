@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 微分电路 — ngspice 核对报告（审阅人 B）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/13.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="13-微分电路--ngspice-核对报告审阅人-b">13 微分电路 — ngspice 核对报告（审阅人 B）</h1>
+<p>运行：在仓库根目录 <code>/workspace/circuits-venv/bin/python spice/13/run.py</code>（退出码 0；结果同时写入 <code>spice/13/results.json</code>）。</p>
+<h2 id="使用的模型">使用的模型</h2>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LM358B（页面指定的运放）</td>
+<td><code>spice/models/LMx58B_LM2904B.lib</code>（子电路 <code>LMX58B_LM2904B</code>）</td>
+<td>TI 官方 PSpice 模型 SLOM472C，<a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a> （LM358B 产品页 <a href="https://www.ti.com/product/LM358B">https://www.ti.com/product/LM358B</a> ）</td>
+</tr>
+<tr>
+<td>理想运放（对照）</td>
+<td>网表内 <code>EU out 0 0 m 1e6</code>（增益 10⁶ 的受控源）</td>
+<td>ngspice 内置 E 元件，非厂家模型</td>
+</tr>
+<tr>
+<td>R、C</td>
+<td>ngspice 内置理想元件</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>说明：TI 模型是 PSpice 语法，<code>run.py</code> 在临时目录里放 <code>.spiceinit</code>（<code>set ngbehavior=psa</code>）后再调用 <code>ngspice -b</code>。供电一律 ±15 V（页面图 13-p1-2）。</p>
+<h2 id="网表">网表</h2>
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>对应页面位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>spice/13/diff_tri.cir</code></td>
+<td>page1 图 13-p1-3、page2 图 13-p2-3、page3 图 13-p3-1、练习 1（LM358B；R1、Cf、干扰幅度、三角波幅度/频率作参数）</td>
+</tr>
+<tr>
+<td><code>spice/13/diff_tri_idealop.cir</code></td>
+<td>同上的理想运放版，用于 page2 代码输出和 page3 R1 扫描表</td>
+</tr>
+<tr>
+<td><code>spice/13/ac_gain.cir</code></td>
+<td>page2 结论二（159 Hz/1.59 kHz/20 kHz 增益）、page1 示波器第 3 步、page3 练习 2</td>
+</tr>
+<tr>
+<td><code>spice/13/three_circuits.cir</code></td>
+<td>page1 图 13-p1-5（积分/微分/电容–电容三种接法）</td>
+</tr>
+<tr>
+<td><code>spice/13/capcap_drift.cir</code></td>
+<td>page1 附图第二格电容–电容接法的偏置电流漂移（120 s 瞬态）</td>
+</tr>
+</tbody>
+</table>
+<p>假设：</p>
+<ul>
+<li>干扰峰峰值按 <code>code/13_sim.py</code> 的 <code>noise_pp</code> 方法计算：同一电路分别跑「有干扰」和「无干扰」，两次结果相减后取 t &gt; 1 ms 的峰峰值。</li>
+<li>Cf 只有电容、没有直流通路的电路（电容–电容接法、积分器）在 t &lt; 0.4 ms 时用开关短接 Cf 复位，相当于「上电时电容是空的」。</li>
+<li>练习 1 的 LM358B 版本串了 R1 = 100 Ω，只是为了压住振铃、读出平顶和削顶电平。时间常数 R1·C = 10 µs，对 1 kHz 的平顶没有影响。</li>
+</ul>
+<h2 id="核对结果">核对结果</h2>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>核对项</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p1 图13-p1-3</td>
+<td>实用微分器 输入下降段输出</td>
+<td>1 V</td>
+<td>0.9912 V</td>
+<td>-0.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图13-p1-3</td>
+<td>实用微分器 输入上升段输出</td>
+<td>-1 V</td>
+<td>-0.9923 V</td>
+<td>+0.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>实用版输出 真有效值(参考)</td>
+<td>— V</td>
+<td>0.8244 V</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 图13-p3-1</td>
+<td>理想微分器拐角后过冲峰值（LM358B 宏模型）</td>
+<td>2.8 V</td>
+<td>4.281 V</td>
+<td>+52.9%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p3 图13-p3-1</td>
+<td>理想微分器振铃频率</td>
+<td>1.38e+04 Hz</td>
+<td>1.316e+04 Hz</td>
+<td>-4.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 示波器第1步</td>
+<td>理想版(无R1/Cf)平顶上叠加的振铃峰峰（页面说通道2是±1 V方波）</td>
+<td>0 V</td>
+<td>4.816 V</td>
+<td>—</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>p2 图13-p2-3</td>
+<td>理想微分器干扰峰峰(理想运放)</td>
+<td>2.51 V</td>
+<td>2.513 V</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图13-p2-3</td>
+<td>理想微分器干扰峰峰(LM358B)（20 kHz 靠近 14.6 kHz 谐振峰）</td>
+<td>2.51 V</td>
+<td>8.588 V</td>
+<td>+242.2%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 代码输出</td>
+<td>只串 R1=1k 干扰峰峰(理想运放)</td>
+<td>0.21 V</td>
+<td>0.1993 V</td>
+<td>-5.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出</td>
+<td>只串 R1=1k 干扰峰峰(LM358B)</td>
+<td>0.21 V</td>
+<td>0.2685 V</td>
+<td>+27.9%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 图13-p2-3</td>
+<td>实用微分器(R1+Cf)干扰峰峰(理想运放)</td>
+<td>0.016 V</td>
+<td>0.01581 V</td>
+<td>-1.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图13-p2-3</td>
+<td>实用微分器(R1+Cf)干扰峰峰(LM358B, 平顶段)</td>
+<td>0.016 V</td>
+<td>0.02559 V</td>
+<td>+59.9%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 图13-p2-3</td>
+<td>实用微分器(R1+Cf)干扰峰峰(LM358B, 含拐角)（拐角输出过零处交越失真）</td>
+<td>0.016 V</td>
+<td>0.1755 V</td>
+<td>+996.6%</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=100 干扰峰峰</td>
+<td>1573 mV</td>
+<td>1565 mV</td>
+<td>-0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=100 边沿 90% 用时</td>
+<td>0.02 ms</td>
+<td>0.02316 ms</td>
+<td>+15.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=300 干扰峰峰</td>
+<td>645 mV</td>
+<td>644.1 mV</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=300 边沿 90% 用时</td>
+<td>0.07 ms</td>
+<td>0.06916 ms</td>
+<td>-1.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=1k 干扰峰峰</td>
+<td>199 mV</td>
+<td>199.3 mV</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=1k 边沿 90% 用时</td>
+<td>0.23 ms</td>
+<td>0.2307 ms</td>
+<td>+0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=3k 干扰峰峰</td>
+<td>67 mV</td>
+<td>66.66 mV</td>
+<td>-0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 R1 扫描表</td>
+<td>R1=3k 边沿 90% 用时</td>
+<td>0.69 ms</td>
+<td>0.6807 ms</td>
+<td>-1.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 结论二</td>
+<td>理想微分器 159 Hz 增益</td>
+<td>1 倍</td>
+<td>1 倍</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 结论二</td>
+<td>理想微分器 1.59 kHz 增益</td>
+<td>10 倍</td>
+<td>10.12 倍</td>
+<td>+1.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 结论二</td>
+<td>理想微分器 20 kHz 增益（接近 LM358B 谐振峰）</td>
+<td>126 倍</td>
+<td>147.9 倍</td>
+<td>+17.4%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 结论二</td>
+<td>理想微分器 AC 增益峰值(谐振)（≈14.6 kHz 处）</td>
+<td>— 倍</td>
+<td>2.479e+04 倍</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p1 示波器第3步</td>
+<td>159 Hz 0.5 V 正弦输出幅度(理想版瞬态)（叠加了持续振铃）</td>
+<td>0.5 V</td>
+<td>0.5812 V</td>
+<td>+16.2%</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>p1 示波器第3步</td>
+<td>同上，实用版(R1+Cf)</td>
+<td>0.5 V</td>
+<td>0.4953 V</td>
+<td>-0.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>只串 R1=1k 时 50 kHz 增益(LM358B)（页面：封顶约 Rf/R1=10）</td>
+<td>10 倍</td>
+<td>9.467 倍</td>
+<td>-5.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>5 mV 50 kHz 干扰输出幅度(只串R1)（页面：不超过约 50 mV）</td>
+<td>50 mV</td>
+<td>47.34 mV</td>
+<td>-5.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图13-p1-5</td>
+<td>积分电路三角波峰峰</td>
+<td>0.45 V</td>
+<td>0.4502 V</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图13-p1-5</td>
+<td>微分电路边沿脉冲正峰(LM358B)（理想运放才是 5 V）</td>
+<td>5 V</td>
+<td>13.72 V</td>
+<td>+174.4%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p1 图13-p1-5</td>
+<td>微分电路边沿脉冲负峰(LM358B)</td>
+<td>-5 V</td>
+<td>-14.24 V</td>
+<td>-184.8%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p1 图13-p1-5</td>
+<td>电容–电容接法 高电平</td>
+<td>0 V</td>
+<td>0.03442 V</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图13-p1-5</td>
+<td>电容–电容接法 低电平</td>
+<td>-2 V</td>
+<td>-2.074 V</td>
+<td>-3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 附图第二格</td>
+<td>电容–电容接法漂移速度</td>
+<td>dVo/dt</td>
+<td>（页面 20 nA 示意值；TI 模型 Ib≈10 nA）</td>
+<td>0.4 V/s</td>
+<td>0.19 V/s</td>
+</tr>
+<tr>
+<td>p1 附图第二格</td>
+<td>漂到 13.5 V 用时</td>
+<td>34 s</td>
+<td>71.07 s</td>
+<td>+109.0%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p1 附图第二格</td>
+<td>最终饱和电压(负向)（LM358 输出可接近负轨）</td>
+<td>-13.5 V</td>
+<td>-14.98 V</td>
+<td>-10.9%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>±2 V 1 kHz：输出方波 +幅度(理想运放)</td>
+<td>8 V</td>
+<td>8 V</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>±2 V 1 kHz：输出方波 −幅度(理想运放)</td>
+<td>-8 V</td>
+<td>-8 V</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>±2 V 1 kHz：+幅度(LM358B, 加 R1=100Ω 抑振)（假设：R1=100Ω 仅为消除振铃）</td>
+<td>8 V</td>
+<td>8 V</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>±2 V 2 kHz：正向削顶电平(LM358B)</td>
+<td>13.5 V</td>
+<td>13.72 V</td>
+<td>+1.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>±2 V 2 kHz：负向削顶电平(LM358B)</td>
+<td>-13.5 V</td>
+<td>-14.24 V</td>
+<td>-5.5%</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<p>统计：✅ 27　⚠️ 10　❌ 2（两行是同一个问题：page1 示波器第 1～3 步）　ℹ️ 3（仅供参考）</p>
+<h3 id="要点">要点</h3>
+<ol>
+<li><strong>理想运放下的数值都对得上。</strong> 包括 ±1 V 方波、干扰峰峰 2.51 V / 16 mV / 0.21 V、R1 扫描表（误差 ≤ 1%，R1 = 100 Ω 的 0.02 ms 是 0.023 ms 四舍五入的结果）、159 Hz / 1.59 kHz 增益、练习 1 的 ±8 V，以及图 13-p1-5 的积分 0.45 V 和电容–电容接法 0/−2 V。</li>
+<li><strong>换成 TI 的 LM358B 模型后，「理想微分器」（只有 C 和 Rf）几乎就是一个振荡器。</strong> AC 增益在 14.6 kHz 有一个约 2.5 万倍的尖峰。三角波拐角后过冲到 4.3 V（页面 2.80 V），而且振铃每个拐角都会重新激发、始终不衰减，平顶上一直有约 4.8 V 峰峰的 13 kHz 振荡。页面振铃频率 13.8 kHz 与 SPICE 的 13.2 kHz 吻合（✅）。页面的单极点 GBW 模型低估了幅度，因为它没有计入 LM358B 的第二极点和相位余量。</li>
+<li><strong>实用微分器（R1 = 1 kΩ，Cf = 10 nF）在 LM358B 上同样稳定、干净</strong>：159 Hz 正弦输出 0.495 V，±1 V 方波误差约 1%。平顶段干扰峰峰 26 mV（页面 16 mV）：方向一致，大小略差，来自 LM358B 输出级。拐角输出过零处有约 0.1 V 的交越毛刺。</li>
+<li><strong>偏置电流漂移</strong>：TI 模型的 Ib 约 10 nA，漂移 0.19 V/s，约 71 s 到 13.5 V。页面按 20 nA 示意值给出 0.40 V/s、34 s，已注明是示意值，算 ⚠️。另外 LM358 的负向输出能接近负电源（约 −15 V），正向约 V+ − 1.3 V（13.7 V），并不对称。</li>
+</ol>
+<h2 id="️---修改建议按页面口吻">⚠️ / ❌ 修改建议（按页面口吻）</h2>
+<ul>
+<li><strong>❌ page1「在示波器上会看到什么」第 1～3 步</strong>（电路是图 13-p1-2，只有 C 和 Rf，用真实运放）：用 LM358B 搭这个电路，通道 2 不会是干净的 ±1 V 方波，平顶上会叠着峰峰好几伏、约 13 kHz 的振荡，而且一直不停。第 3 步的 159 Hz 正弦也会带着这层振荡（SPICE 峰值 +0.58 / −0.63 V）。照原文去搭，学生会以为自己接错了线。建议在第 1 步前加一句：
+<blockquote>
+<p>先提醒一句：只有 C 和 R_f 的「理想微分器」用真实运放（比如 LM358）搭出来，往往自己就会以十几 kHz 振起来。为了看清下面几步的现象，请先在输入电容前串一只 1 kΩ 电阻（R1），并在 R_f 两端并一只 10 nF 电容（C_f）。这就是第二页要讲的「实用微分器」，在几百 Hz 下它和理想微分器的输出几乎一样。去掉这两个元件会怎样，留到第 5 步再看。</p>
+</blockquote>
+</li>
+<li><strong>⚠️ page1 图 13-p1-5 第三行</strong>：±5 V 脉冲是理想运放的结果。建议在读图段末尾加：
+<blockquote>
+<p>（这一行按理想运放画。用 LM358 实际搭时，每个边沿后会跟着一串振铃，甚至顶到电源电压，原因见第三页。）</p>
+</blockquote>
+</li>
+<li><strong>⚠️ page1 电容–电容接法的漂移</strong>：建议改为
+<blockquote>
+<p>运放输入端那一点点偏置电流（LM358 典型约 10～20 nA）只能流进 C_f，输出会以每秒零点几伏的速度慢慢漂移（10 nA 时约 0.2 V/s，20 nA 时约 0.4 V/s），几十秒后撞到饱和电压。</p>
+</blockquote>
+</li>
+<li><strong>⚠️ page2 结论二「20 kHz 放大约 126 倍」</strong>：公式本身没错。可以补一句：
+<blockquote>
+<p>这是理想运放的结果；用 LM358 这类 1 MHz 级运放时，20 kHz 正好落在它的「共振峰」附近，实际放大倍数还要更大（仿真约 150 倍），这正是第三页说的振铃。</p>
+</blockquote>
+</li>
+<li><strong>⚠️ page2 图 13-p2-3 说明</strong>：建议补一句：
+<blockquote>
+<p>这张图按理想运放计算。换成 LM358 后，理想微分器的干扰会被 14 kHz 附近的共振峰再放大几倍（仿真峰峰约 8.6 V）；实用微分器的平顶干扰也会从 16 mV 增加到二三十 mV，但仍然小两个数量级。</p>
+</blockquote>
+</li>
+<li><strong>⚠️ page3 图 13-p3-1「冲到 2.80 V」</strong>：建议改为
+<blockquote>
+<p>冲到约 3 V 甚至更高（这张图用的是只考虑 1.2 MHz 增益带宽的简化运放；用 TI 的 LM358B 模型仿真，过冲约 4.3 V，振铃根本不衰减）。</p>
+</blockquote>
+</li>
+<li><strong>⚠️ page3 练习 1「最大输出约 ±13.5 V」</strong>：可补一句：
+<blockquote>
+<p>LM358 的输出并不对称：向上大约到 V+ − 1.3 V，向下可以接近 V−，所以削顶电平大约是 +13.7 V / −14.2 V。</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="面包板万用表读数15-v-供电按图-13-p1-2-加-r1--1-kωcf--10-nf-的实用版">面包板万用表读数（±15 V 供电，按图 13-p1-2 加 R1 = 1 kΩ、Cf = 10 nF 的实用版）</h2>
+<table>
+<thead>
+<tr>
+<th>测什么</th>
+<th>红表笔 → 黑表笔</th>
+<th>档位</th>
+<th>应读到</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>正电源</td>
+<td>LM358 第 8 脚 → GND</td>
+<td>DC 20 V</td>
+<td>+15.0 V</td>
+</tr>
+<tr>
+<td>负电源</td>
+<td>LM358 第 4 脚 → GND</td>
+<td>DC 20 V</td>
+<td>−15.0 V</td>
+</tr>
+<tr>
+<td>同相端</td>
+<td>第 3 脚 → GND</td>
+<td>DC 200 mV</td>
+<td>0 mV（直接接地）</td>
+</tr>
+<tr>
+<td>反相端（虚地）</td>
+<td>第 2 脚 → GND</td>
+<td>DC 200 mV</td>
+<td>几 mV 以内（失调电压 ≤ ±3 mV）</td>
+</tr>
+<tr>
+<td>无输入时输出直流</td>
+<td>第 1 脚 → GND（输入端接地）</td>
+<td>DC 200 mV</td>
+<td>几 mV（直流增益为 1，只放大失调）</td>
+</tr>
+<tr>
+<td>送 ±0.5 V、500 Hz 三角波时输出</td>
+<td>第 1 脚 → GND</td>
+<td>AC 2 V（真有效值表）</td>
+<td>约 0.82 V（SPICE；理想 ±1 V 方波应为 1.0 V，边沿被 R1、Cf 拉缓后变小；500 Hz 普通表也能测，但平均值型表读数会偏差）</td>
+</tr>
+<tr>
+<td>同上，直流档</td>
+<td>第 1 脚 → GND</td>
+<td>DC 2 V</td>
+<td>≈ 0 V（方波上下对称）</td>
+</tr>
+<tr>
+<td>电容–电容接法漂移（演示附图第二格，去掉 R1 和 Rf，输入接地）</td>
+<td>第 1 脚 → GND</td>
+<td>DC 20 V</td>
+<td>读数每秒变化约 0.2 V，约 1 分钟后停在约 −15 V 或 +13.7 V；用导线短接 Cf 后回到 0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>本节点 ❌ 2 条已改；⚠️ 10 条全部处理（改 10、不改 0），另顺手处理了 page3 练习 1 的削顶不对称（报告正文提到）。ℹ️ 未改。导航链接报告未提及，未动。</p>
+<ol>
+<li><strong>❌ page1「在示波器上会看到什么」第 1 步「干净的方波」</strong>：已改。按建议在示波器步骤前加了前提：先串 <span class="math math-inline">\(R_1\)</span> = 1 kΩ、并 <span class="math math-inline">\(C_f\)</span> = 10 nF（实用微分器），第 1～4 步读数都按 LM358B 模型重新仿真：第 1 步 ±0.99 V；第 2 步（1 kHz）每半周期末尾 +1.78 V / −1.79 V，并说明为什么还没到 ±2 V；第 4 步方波边沿脉冲 ±3.67 V，0.7～1.0 ms 后平顶 |Vo| ≤ 0.05 V。第 5 步改为「拆掉 <span class="math math-inline">\(R_1\)</span>、 <span class="math math-inline">\(C_f\)</span> 看振铃」。
+<ul>
+<li>同时在示波器一节之前新增一节「先打个预防针：真实运放搭的理想微分器会自己振」：用「运放反应慢 + 反馈路上 <span class="math math-inline">\(R_f\)</span> 给 C 充电又慢一道，两道延迟叠加，纠正过头」解释振铃，配洗澡调水温（长水管延迟）的类比；再讲串小电阻 <span class="math math-inline">\(R_1\)</span> 或并小电容 <span class="math math-inline">\(C_f\)</span> 为什么能压住（快变化走电阻分压 / 走 <span class="math math-inline">\(C_f\)</span> 近道，绕过慢充电环节）。</li>
+<li>新增图 13-p1-6 <code>13-differentiator/img/13_p1_6_ringing_fix.png</code>（ngspice + TI LM358B 模型，±15 V，±0.5 V 500 Hz 三角波，四行：只有 C 和 Rf / 只串 R1 / 只并 Cf / 两者都加）。打印：理想版拐角后最高 4.28 V、平顶后段峰峰 4.82 V、振铃约 13.2 kHz；只串 R1、只并 Cf、两者都加最高均为 1.00 V，平顶峰峰 2 mV / 1 mV / 13 mV（后者是边沿斜坡尚未爬完，不是振铃），均有 assert。图后讲解说明了第三行过 0 V 处的小台阶是 LM358 输出级交越失真。</li>
+</ul>
+</li>
+<li><strong>❌ page1 示波器第 3 步 159 Hz「0.5 V」</strong>：已改。实用版写为约 0.5 V（仿真 0.495 V）；第 5 步说明拆掉 R1、Cf 后正弦上叠着振铃，峰值 +0.57 V / −0.63 V（报告 meas 为 0.58 V，脚本取最大值 0.57 V，打印并断言）。</li>
+<li><strong>⚠️ page3 图 13-p3-1 过冲 2.80 V</strong>：已改。正文改为「冲到约 3 V（2.80 V）」，并写明这是只考虑 GBW 的简化模型；补充 LM358B 模型过冲约 4.3 V（4.28 V）、约 13.2 kHz、根本不衰减，链接到 page1 的四行对比图。图注加「简化运放」。图本身不变。</li>
+<li><strong>⚠️ page2 图 13-p2-3 理想版干扰 8.59 V</strong>：已改。page2 图后新增「💡 实际芯片会怎样」框：LM358B 下理想版干扰峰峰约 8.6 V（8.59 V），说明多出来的是电路自己在振。</li>
+<li><strong>⚠️ page2 代码只串 R1 0.21 V（LM358B 0.27 V）</strong>：已改，写入同一 💡 框。代码块不变（它用简化模型，页面已说明）。</li>
+<li><strong>⚠️ page2 实用版平顶干扰 16 mV（LM358B 26 mV）</strong>：已改，写入同一 💡 框（16 mV → 约 26 mV）。</li>
+<li><strong>⚠️ page2 结论二 20 kHz 放大 126 倍（SPICE 147.9 倍）</strong>：已改。原句后括注「理想运放下的数；20 kHz 靠近电路自己想振的频率，LM358B 仿真约 150 倍」，💡 框中写 147.9 倍及原因。
+8–9. <strong>⚠️ page1 图 13-p1-5 微分脉冲 ±5 V（LM358B +13.72 / −14.24 V）</strong>：已改。按建议在讲解后括注「这一行按理想运放画；用 LM358 实际搭时每个边沿后跟一串振铃，仿真甚至顶到 +13.7 V / −14.2 V，原因见下一节和图 13-p1-6」。图不变。
+10–12. <strong>⚠️ page1 电容–电容漂移（20 nA、0.40 V/s、34 s；TI 模型 Ib ≈ 10 nA、0.19 V/s、71 s、终值 −14.98 V）</strong>：已改。正文改为「LM358 典型约 10～20 nA；10 nA 时约 0.2 V/s，20 nA 时约 0.4 V/s，几十秒后撞到饱和；TI LM358B 模型约 71 s 漂过 13.5 V，最后停在约 −15 V；正向只能到约 +13.7 V」。<code>code/figs/13_figs.py</code> 的漂移打印改为 10 nA 和 20 nA 两行（0.20 V/s / 约 68 s，0.40 V/s / 约 34 s，均为恒流估算）；71 s、−14.98 V 来自本报告的 SPICE 结果。</li>
+<li><strong>（报告提到）page3 练习 1 削顶</strong>：答案补「±13.5 V 是粗略值，LM358 向上约 V+ − 1.3 V、向下接近 V−，削顶不对称，仿真约 +13.7 V / −14.2 V」。</li>
+</ol>
+<ul>
+<li>page1「一句话总结」补一句：真实运放上理想微分器会自己振，需串 <span class="math math-inline">\(R_1\)</span>、并 <span class="math math-inline">\(C_f\)</span>。</li>
+</ul>
+<p>改动文件：<code>13-differentiator/page1.md</code>、<code>13-differentiator/page2.md</code>、<code>13-differentiator/page3.md</code>、<code>code/13_sim.py</code>（新增 <code>lm358()</code>：在临时目录写网表、调用 ngspice 和 <code>spice/models/LMx58B_LM2904B.lib</code>，运行后删除临时目录；未改 spice/ 下任何文件）、<code>code/figs/13_figs.py</code>（新增图 13-p1-6、示波器读数打印与断言、漂移打印）、<code>13-differentiator/img/13_p1_6_ringing_fix.png</code>（新增）、<code>review/spice/13.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（3914/2354/2027 字）、run_blocks（1 过）、run_blocks --scripts（13_sim.py、13_figs.py）、check_figs（6/3/2 张）、check_github_math（48/54/70）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

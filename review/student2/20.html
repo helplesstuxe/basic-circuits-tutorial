@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20 双控开关：模拟学生 2 试读记录（市电节点）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/student2/20.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="20-双控开关模拟学生-2-试读记录市电节点">20 双控开关：模拟学生 2 试读记录（市电节点）</h1>
+<p>本节在拓扑顺序中排第 12。前置节点只有 P1，开关的&quot;通 / 断&quot;概念就是从 P1 来的。本节用到的单刀双掷开关在页内就讲清楚了，所以 <strong>P1 的链接够用</strong>。page2 实验第 2 步还引用了 P2 中&quot;LED 压降约 2 V&quot;，P2 也给到了。</p>
+<h2 id="代码运行">代码运行</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>结果</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page2 代码块</td>
+<td>PASS*</td>
+<td>单独复制出来运行会报 figstyle 缺失；按正文要求放进 code/ 后通过。它用 <code>__file__</code> 定位 figs，所以在交互式环境里粘贴运行会失败。A/B/C/D 四部分的输出与正文的&quot;运行结果&quot;逐行一致，所有 assert 都通过</td>
+</tr>
+<tr>
+<td>code/20_sim.py</td>
+<td>PASS</td>
+<td>输出同上，图与仓库中的版本逐字节相同</td>
+</tr>
+</tbody>
+</table>
+<h2 id="练习">练习</h2>
+<table>
+<thead>
+<tr>
+<th>题</th>
+<th>我的答案</th>
+<th>对错</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p2 例 2</td>
+<td>7 次，奇数，灯亮；s1 = 1，s2 = 0</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p2 例 3</td>
+<td>起始状态亮；拨 S1 后灭；功能正常，不必返工</td>
+<td>对（我没想到&quot;同或&quot;这个词，但结论一致）</td>
+</tr>
+<tr>
+<td>p3 练习 1</td>
+<td>2 只双控开关 + 3 只中途开关</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p3 练习 2</td>
+<td>拨了 3 次，奇数，灯亮；0⊕0⊕1 = 1</td>
+<td>对</td>
+</tr>
+<tr>
+<td>p3 练习 3</td>
+<td>不对。开关接在零线上时功能正常，但灯头带电；要请电工在灯灭时用验电器测灯头</td>
+<td>对（漏了&quot;螺口灯头的火线要接中间端子&quot;这一点）</td>
+</tr>
+</tbody>
+</table>
+<p>合计 5/5。p2 例 1 是完整示范，不计入。</p>
+<h2 id="卡住--吃力--小问题">卡住 / 吃力 / 小问题</h2>
+<ol>
+<li><strong>小问题</strong>：page1「灭了以后再拨任意一只……如果用 0 和 1 记两只开关&quot;有没有被拨过&quot;」。
+<ul>
+<li>图 20-p1-3 画的是灯亮的状态，紧接着又说&quot;都没拨……灯灭&quot;。我一开始以为图里画的就是&quot;都没拨&quot;的状态，结果对不上。</li>
+<li>page2 第一步才规定&quot;出厂位置&quot;，而且 S2 的 0 位接 B。</li>
+<li>建议在 page1 加一句&quot;图中是已经拨过一只的状态&quot;，或者把出厂位置的约定提前到 page1。</li>
+</ul>
+</li>
+<li><strong>小问题</strong>：术语问题。
+<ul>
+<li>&quot;异或&quot;和 <span class="math math-inline">\(\oplus\)</span> 在 page1 有中文解释，可以接受；但 page2 例 3 的答案里突然出现&quot;同或&quot;，没有定义。</li>
+<li>&quot;相线&quot;在 page1 和 page2 里引用国标原文时就出现了，要到 page3 的参数表里才写明&quot;相线（火线）&quot;。建议第一次出现时就注明&quot;相线 = 火线&quot;。</li>
+</ul>
+</li>
+<li><strong>小问题</strong>：page2「下面的程序把每只开关、每根导线都看成&quot;把两个点连起来&quot;，再用并查集」。
+<ul>
+<li>我只会一点 Python。<code>groups</code> 函数里嵌套定义了 <code>find</code>，最后把函数本身 <code>return</code> 出去，这个写法我是第一次见，靠注释才勉强看懂。</li>
+<li>好在整段代码的思路（连通就是同一组）讲得清楚，不影响理解结论。</li>
+</ul>
+</li>
+<li><strong>小问题</strong>：page2「六、低压动手实验」第 1 步「总是和另外某一个脚相通的那个，就是公共端」。
+<ul>
+<li>这句话容易误读：每个位置下都有一对脚相通。我想了一下才明白，意思是&quot;无论开关拨到哪边，它都参与相通的那一对&quot;。</li>
+<li>建议改成&quot;拨到两边各量一次，两次都出现在相通那一对里的脚就是公共端&quot;。</li>
+</ul>
+</li>
+<li><strong>小问题（安全相关）</strong>：page3 故障排查表里有两处&quot;怎么查&quot;写成了用户自己能做的动作，表内没有重复&quot;断电 / 电工&quot;的要求：
+<ul>
+<li>「介意的话把开关面板翻转安装」：要翻转面板就得拆墙上的开关。</li>
+<li>「先换灯」：如果开关正好接在零线上，换灯时灯头是带电的。</li>
+<li>表格上方虽然有一句&quot;所有检查都要……由电工进行&quot;，但读者照着表格某一行去操作时很容易忽略那句话。建议在这两格里直接加上&quot;（断开断路器后，由电工操作）&quot;。</li>
+</ul>
+</li>
+</ol>
+<p>计数：卡住 0，吃力 0，小问题 5。</p>
+<h2 id="图">图</h2>
+<p>20-p1-1/2/3、p2-1/2/3、p3-1/2 全部能读懂，替代文字写得很详细。</p>
+<ul>
+<li>图 20-p2-3 用朱红色框标出&quot;灯头带电&quot;，非常醒目。</li>
+<li>图 20-p3-2 中实线表示交叉、点线表示直通，图下有说明，与仿真 s2 = 1 的情况一致。</li>
+</ul>
+<h2 id="市电安全评估">市电安全评估</h2>
+<p><strong>有效。</strong></p>
+<ul>
+<li>三页的开头都有 WARNING，每页都列出了本节特有的危险点：灯灭时跨线仍可能带电、开关接零线时功能正常但灯头带电、只关墙上开关不等于断电。</li>
+<li>实验明确只用 9 V 电池，还写了&quot;<strong>不要</strong>拆墙上的开关来练手&quot;。</li>
+<li>page3 指出&quot;只用非接触式电笔不够&quot;。</li>
+<li>练习 3 专门纠正&quot;功能正常 = 接线安全&quot;这个误区。</li>
+</ul>
+<p>看完之后，我不会想去动家里墙上的开关。唯一的缺口是上面第 5 条：排查表中有两格看起来像是 DIY 操作指引。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

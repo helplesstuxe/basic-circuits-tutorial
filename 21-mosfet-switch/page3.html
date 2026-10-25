@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21 MOS 管开关 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/21-mosfet-switch/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="21-mos-管开关--参数与调试篇">21 MOS 管开关 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a> · <a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a></p>
+<h2 id="本页要解决的问题">本页要解决的问题</h2>
+<p>上一页算清了 MOS 管开关的两种发热：导通损耗 <span class="math math-inline">\(I_L^2 R_{DS(on)} D\)</span> 和开关损耗 <span class="math math-inline">\((E_{on}+E_{off}) f\)</span> 。这一页回答动手时最常问的问题：栅极电阻取多大？手头的管子能不能被 3.3 V / 5 V 单片机直接驱动？电路不正常时先查哪里？</p>
+<h2 id="1-参数含义与常见取值">1. 参数含义与常见取值</h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>含义</th>
+<th>常见范围 / 本教程取值</th>
+<th>怎么选</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(V_{DS}\)</span> 额定（耐压）</td>
+<td>漏源之间能承受的最高电压</td>
+<td>20 V–100 V 常见；IRLZ44N 为 55 V</td>
+<td>经验上取电源电压的 1.5–2 倍以上，感性负载还要考虑关断尖峰</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{GS(th)}\)</span></td>
+<td>刚开始导电的栅压（手册在 250 μA 这种极小电流下测）</td>
+<td>IRLZ44N 1.0–2.0 V</td>
+<td>只说明「从哪开始开」，<strong>不能</strong>用来判断能不能开到底</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_{DS(on)}\)</span> 及其测试 <span class="math math-inline">\(V_{GS}\)</span></td>
+<td>开到底后的导通电阻，手册会注明在哪个栅压下测</td>
+<td>几毫欧到几百毫欧</td>
+<td>你的驱动电压必须不低于手册标注的测试栅压，按最大值算发热</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{GS}\)</span> 极限</td>
+<td>栅源之间允许的最高电压</td>
+<td>IRLZ44N ±16 V，AO3400A ±12 V</td>
+<td>高边 P 沟道管要特别检查</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(Q_G\)</span> 、 <span class="math math-inline">\(Q_{GD}\)</span></td>
+<td>开通一次要搬的总电荷、平台电荷</td>
+<td>IRLZ44N 48 nC / 25 nC</td>
+<td>越小开关越快；PWM 频率高时优先看 <span class="math math-inline">\(Q_{GD}\)</span></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_G\)</span> 栅极电阻</td>
+<td>限制充放电电流，阻尼振荡</td>
+<td>几欧到几百欧；本教程 100 Ω</td>
+<td>大了开关慢、发热多；小了驱动电流大、可能振荡</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_{GS}\)</span> 下拉电阻</td>
+<td>保证栅极不悬空</td>
+<td>10 kΩ–100 kΩ；本教程 10 kΩ</td>
+<td>太大防误触发能力弱，太小会和 <span class="math math-inline">\(R_G\)</span> 分压，降低实际 <span class="math math-inline">\(V_{GS}\)</span></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_{\theta JA}\)</span></td>
+<td>每瓦发热让芯片比环境高几摄氏度</td>
+<td>TO-220 无散热片 62 °C/W</td>
+<td>发热 × 热阻 + 环境温度，要远低于最高结温（芯片内部允许的最高温度，IRLZ44N 为 175 °C）</td>
+</tr>
+<tr>
+<td>PWM 频率 <span class="math math-inline">\(f\)</span></td>
+<td>每秒开关次数</td>
+<td>几百赫兹到几十千赫兹</td>
+<td>单片机直驱时宜低；要静音或高频时换驱动芯片</td>
+</tr>
+</tbody>
+</table>
+<p><span class="math math-inline">\(R_{GS}\)</span> 和 <span class="math math-inline">\(R_G\)</span> 会分压：5 V 经 100 Ω 和 10 kΩ 分压后，稳态 <span class="math math-inline">\(V_{GS}\)</span> = 5 × 10000/10100 ≈ 4.95 V，只损失 1%；如果把下拉电阻换成 1 kΩ，就会损失约 9%。稳态时栅极不取电流，所以从驱动看过去只剩 <span class="math math-inline">\(R_G\)</span> 和 <span class="math math-inline">\(R_{GS}\)</span> 两只电阻串联，栅极正好是分压点，电路如图 21-p3-4 所示。</p>
+<p><a class="img-link" href="img/21_p3_4_gate_divider.png"><img alt="稳态栅极分压电路：5 V 驱动经 R_G 100 欧到栅极，栅极经 R_GS 接地；左图 R_GS 为 10 kΩ，栅压约 4.95 V，右图 R_GS 为 1 kΩ，栅压约 4.55 V" src="img/21_p3_4_gate_divider.png" loading="lazy" /></a></p>
+<p><em>图 21-p3-4　稳态时 R_G 与 R_GS 构成分压器：(a) R_GS = 10 kΩ；(b) R_GS 换成 1 kΩ（红紫色）</em></p>
+<h2 id="2-扫描一栅极电阻从-10-ω-到-1-kω">2. 扫描一：栅极电阻从 10 Ω 到 1 kΩ</h2>
+<p>用 <a href="page2.html">21 MOS 管开关 · 原理与实现篇</a> 同一个示意模型，只改变 <span class="math math-inline">\(R_G\)</span> ，看开通时的漏源电压，并算出 20 kHz 下的开关损耗。请看图 21-p3-1 左图三条曲线降到 0 的先后，以及右图柱子的高度（右图是对数坐标，每格差 10 倍）。</p>
+<p><a class="img-link" href="img/21_p3_1_rg_sweep.png"><img alt="图 21-p3-1 栅极电阻扫描" src="img/21_p3_1_rg_sweep.png" loading="lazy" /></a></p>
+<p><em>图 21-p3-1　栅极电阻对开通速度（左）和 20 kHz 开关损耗（右）的影响（示意模型，12 V / 3 A）</em></p>
+<p>图 21-p3-1 左图：蓝色 10 Ω 在 0.07 μs 就完成开通，橙色 100 Ω 用 0.74 μs，红紫色点划线 1 kΩ 要 7.43 μs，开关时间和 <span class="math math-inline">\(R_G\)</span> 基本成正比。右图：20 kHz 下开关损耗分别为 0.047 W、0.468 W、4.678 W。1 kΩ 时管子仅开关就要发热近 5 W，没有散热片会严重过热；所以 <strong>「栅极电阻越大越安全」是错的</strong>。这三个数是示意模型算的，偏保守：用 IRLZ44N SPICE 模型（电机负载）算是 0.022 W、0.176 W、1.73 W，大约是图上的 1/2～1/3，但「开关损耗和 <span class="math math-inline">\(R_G\)</span> 成正比」这个结论一样成立。</p>
+<p>那是不是越小越好？也不是。10 Ω 时栅极峰值电流是 5 V / 10 Ω = 500 mA，远超单片机引脚的能力；而且栅极回路里导线的寄生电感和栅极电容会构成谐振电路，电阻太小时栅极电压出现过冲和振荡。TI 的笔记指出，较小的栅极电阻会导致栅极电压过冲但开关更快，较大的电阻则拖长开关时间（<a href="https://www.ti.com/lit/pdf/slua618">TI SLUA618</a> 第 2.8 节）。单片机直驱时取几十到几百欧是常见的折中，本教程用 100 Ω；要更快就上专门的栅极驱动芯片。</p>
+<h2 id="3-扫描二驱动电压够不够查手册而不是查门限">3. 扫描二：驱动电压够不够，查手册而不是查门限</h2>
+<p>P2 参数与调试篇的「扫描二」用示意模型说明了「开了不等于开到底」。这里换成真实数据手册：按 3 A 负载、 <span class="math math-inline">\(R_{DS(on)}\)</span> <strong>最大值</strong>计算导通发热，看图 21-p3-2 每根柱子对应的驱动电压。</p>
+<p><a class="img-link" href="img/21_p3_2_heat_datasheet.png"><img alt="图 21-p3-2 不同型号与驱动电压下的导通发热" src="img/21_p3_2_heat_datasheet.png" loading="lazy" /></a></p>
+<p><em>图 21-p3-2　3 A 时的导通发热（按手册 R_DS(on) 最大值，25 °C）；最右为手册在该电压下不保证</em></p>
+<p>图 21-p3-2 数据来源：IRLZ44N 在 10 V、5 V、4 V 时最大 22、25、35 mΩ（<a href="https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf">Infineon IRLZ44N</a>）；AO3400A 在 4.5 V、2.5 V 时最大 32、48 mΩ（<a href="https://www.aosmd.com/sites/default/files/res/datasheets/AO3400A.pdf">AOS AO3400A</a>）；IRF540N 只给出 10 V 时的 44 mΩ，门限最大可达 4.0 V（<a href="https://www.infineon.com/assets/row/public/documents/24/49/infineon-irf540n-datasheet-en.pdf">Infineon IRF540N</a>）。</p>
+<p>图中蓝色的逻辑电平管从 0.20 W 到 0.43 W，驱动电压越低发热越大；蓝绿色的 IRF540N 即使用 10 V 驱动也有 0.40 W，而在 3.3 V 下（朱红色 ×）手册根本不保证它能导通——它的门限最大就有 4.0 V，有的样品可能完全不开，有的半开发烫。这就是论坛上常见的「同样的电路，换一批管子就不行了」。</p>
+<p>还要注意两点：一是这些数字是 25 °C 下的值，IRLZ44N 手册的图 4 显示导通电阻随结温升高而变大，管子热了发热还会再增加；二是 TO-220 管子不加散热片时热阻是 62 °C/W，0.4 W 就意味着约 25 °C 的温升。</p>
+<h2 id="4-故障排查表">4. 故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>负载不亮 / 电机不转</td>
+<td>管子用错（P 沟道当 N 沟道）或引脚 G、D、S 接错</td>
+<td>对照手册引脚图；断电后用万用表二极管档测体二极管（管内自带、阳极在 S 的那只二极管，见直觉篇的低边开关图；N 沟道管红表笔接 S、黑表笔接 D 应显示零点几伏，反过来不通）</td>
+<td>按手册重接；低边一定用 N 沟道</td>
+</tr>
+<tr>
+<td>能开但管子烫手、负载偏暗</td>
+<td>驱动电压低于手册 <span class="math math-inline">\(R_{DS(on)}\)</span> 测试栅压，管子半开</td>
+<td>导通时测 <span class="math math-inline">\(V_{DS}\)</span> ，算 <span class="math math-inline">\(V_{DS}/I_L\)</span> 和手册值比较</td>
+<td>换逻辑电平管，或用驱动芯片抬高栅压，见图 21-p3-2</td>
+</tr>
+<tr>
+<td>上电或单片机复位时负载闪一下、乱动</td>
+<td>栅极悬空，引脚尚未初始化</td>
+<td>拔掉单片机，看负载是否随手靠近栅极而变化</td>
+<td>栅源之间加 10 kΩ 下拉，且尽量靠近 MOS 管焊接</td>
+</tr>
+<tr>
+<td>低频正常，PWM 调高后管子越来越烫</td>
+<td>开关损耗随频率上升，或 <span class="math math-inline">\(R_G\)</span> 太大</td>
+<td>示波器看 <span class="math math-inline">\(V_{DS}\)</span> 的上升/下降时间，按 <span class="math math-inline">\((E_{on}+E_{off})f\)</span> 估算</td>
+<td>降低 PWM 频率、减小 <span class="math math-inline">\(R_G\)</span> ，或改用栅极驱动芯片，见 <a href="page2.html">21 MOS 管开关 · 原理与实现篇</a> 第 4 节</td>
+</tr>
+<tr>
+<td>开关电机后 MOS 管击穿（D、S 短路）</td>
+<td>没有续流二极管，关断尖峰超过耐压</td>
+<td>检查线圈两端是否有反并二极管、方向是否正确</td>
+<td>加续流二极管（阴极接正电源），额定电流不小于负载电流，见 <a href="page2.html">21 MOS 管开关 · 原理与实现篇</a> 第 5 节</td>
+</tr>
+<tr>
+<td>栅极波形有尖刺、振荡，附近电路受干扰</td>
+<td>栅极走线太长、 <span class="math math-inline">\(R_G\)</span> 太小</td>
+<td>示波器看 <span class="math math-inline">\(V_{GS}\)</span> 边沿是否有过冲</td>
+<td>缩短栅极回路，适当加大 <span class="math math-inline">\(R_G\)</span></td>
+</tr>
+<tr>
+<td>高边 N 沟道管始终开不足、发烫</td>
+<td>源极随负载升高， <span class="math math-inline">\(V_{GS}\)</span> 不够</td>
+<td>测源极对地电压和栅极对地电压之差</td>
+<td>改成 P 沟道高边（直觉篇的高边开关图）或用带自举电路的高边驱动芯片（自举：先给一个小电容充好电，开通时把它「叠」在源极电压上面，让栅极电压被抬到电源电压以上；<a href="../25-h-bridge/page2.html">25 H 桥电机驱动 · 原理与实现篇</a> 还会用到）</td>
+</tr>
+<tr>
+<td>高边 P 沟道管关不断</td>
+<td>栅极只被拉到 5 V，没回到电源电压</td>
+<td>关断状态下测 Q1 的 <span class="math math-inline">\(V_{GS}\)</span></td>
+<td>加小管子和上拉电阻，见直觉篇的高边开关图</td>
+</tr>
+<tr>
+<td>栅极击穿、管子莫名损坏</td>
+<td><span class="math math-inline">\(V_{GS}\)</span> 超过 ±16 V 或 ±12 V 之类的极限</td>
+<td>测栅源电压最大值，查手册极限</td>
+<td>电阻分压限压或栅源并联稳压管</td>
+</tr>
+</tbody>
+</table>
+<p>上表中「高边 N 沟道管需要把栅极驱动到电源电压以上」见 <a href="https://www.ti.com/lit/pdf/slua618">TI SLUA618</a> 第 5.2 节；栅极悬空导致误动作、需要下拉电阻，Espruino 的 MOS 管教程也提醒了栅极悬空的问题并建议加 10 kΩ 下拉（<a href="https://www.espruino.com/mosfets">Espruino MOSFETs</a>）。</p>
+<h2 id="5-练习">5. 练习</h2>
+<p><strong>练习 1（易）</strong>：3.3 V 单片机经 47 Ω 栅极电阻驱动 MOS 管，栅极峰值电流是多少？如果芯片手册说引脚最大只能输出 20 mA，栅极电阻至少要多大？</p>
+<details><summary>答案</summary>
+<p>峰值电流 3.3 V / 47 Ω ≈ 70 mA，超过 20 mA。要限制在 20 mA 以下， <span class="math math-inline">\(R_G \ge\)</span> 3.3 / 0.02 = 165 Ω，可选标准值 180 Ω 或 220 Ω。代价是开关变慢，PWM 频率要相应降低。</p>
+</details>
+<p><strong>练习 2（易）</strong>：用 5 V 单片机控制 24 V、2 A 的加热片（纯电阻负载，只开关不调速）。手头有 IRLZ44N 和 IRF540N，选哪个？导通发热多少？</p>
+<details><summary>答案</summary>
+<p>选 IRLZ44N。IRF540N 的导通电阻只在 10 V 下保证，门限最大 4.0 V，5 V 驱动可能只半开。IRLZ44N 耐压 55 V 大于 24 V 的两倍，5 V 时 <span class="math math-inline">\(R_{DS(on)}\)</span> 最大 25 mΩ，常开时发热 2² × 0.025 = 0.1 W，温升约 0.1 × 62 ≈ 6 °C，不用散热片。</p>
+</details>
+<p><strong>练习 3（中）</strong>：有人照着原理与实现篇的电机电路焊板子，却把续流二极管 D1 焊反了：阳极接 +12 V、阴极接漏极，见图 21-p3-3。请先找到 D1 的阳极和阴极分别连到哪里，再想一想：单片机输出高电平、MOS 管导通时会发生什么？</p>
+<p><a class="img-link" href="img/21_p3_3_flyback_reversed.png"><img alt="续流二极管 D1 接反的电机低边开关：D1 阳极接 +12 V，阴极接 MOS 管漏极，与电机并联" src="img/21_p3_3_flyback_reversed.png" loading="lazy" /></a></p>
+<p><em>图 21-p3-3　续流二极管接反：阳极接 +12 V，阴极接 MOS 管漏极</em></p>
+<p>图 21-p3-3 和原理与实现篇里的电机电路只差 D1 一个方向，乍一看很难发现。判断方法是看 MOS 管导通时二极管两端加的是正向电压还是反向电压。</p>
+<details><summary>答案</summary>
+<p>MOS 管导通时漏极被拉到接近 0 V，D1 的阳极是 +12 V、阴极接近 0 V，二极管正向导通。电流从 +12 V 经 D1、MOS 管直接流到地，中间只有二极管和导通电阻，相当于把电源短路：电流只受电源能力限制，可能有几十安，D1 或 MOS 管很快烧坏，电源也可能进入保护或损坏。MOS 管关断时，这只接反的二极管又起不到续流作用，线圈尖峰照样会打坏管子。所以续流二极管一定是<strong>阴极接正电源</strong>，平时承受反向电压、不导电。上电前先断电用万用表二极管档核对方向，比通电后再查安全得多。</p>
+</details>
+<p><strong>练习 4（中）</strong>：例 2 的灯带电路（20 kHz、50%）里，有人为了「保护单片机」把栅极电阻换成 1 kΩ。根据图 21-p3-1，MOS 管的总发热和温升会变成多少？会发生什么？</p>
+<details><summary>答案</summary>
+<p>开关损耗变成 4.678 W，加上导通损耗 0.113 W，共约 4.79 W；按示意模型，温升 4.79 × 62 ≈ 297 °C，远超 175 °C 的最高结温。示意模型偏保守，按厂家 IRLZ44N SPICE 模型估算，开关损耗约 1.73 W，合计约 1.85 W，温升约 114 °C，室温下芯片约 139 °C：虽然没到 175 °C，但烫得不能碰，寿命大减，环境温度一高就会超限，仍然是错误的做法。正确的做法是保持 100 Ω 左右，或者把 PWM 降到 1 kHz 左右（此时 1 kΩ 的开关损耗约 0.23 W，合计约 0.35 W）。</p>
+</details>
+<p><strong>练习 5（难，变体迁移）</strong>：把直觉篇的高边开关电路从 12 V 改到 24 V，Q1 换成一只栅源极限为 ±20 V 的 P 沟道管，其他不变，电路见图 21-p3-5。Q2 导通时 Q1 的 <span class="math math-inline">\(V_{GS}\)</span> 是多少？有什么问题？怎么改？</p>
+<p><a class="img-link" href="img/21_p3_5_high_side_24v.png"><img alt="练习 5 电路：P 沟道管 Q1 源极接 +24 V，漏极接负载到地，栅极经 10 kΩ 上拉到 +24 V，并由 N 沟道小管 Q2 拉低；Q2 由 3.3 V 单片机经 1 kΩ 驱动，栅源 10 kΩ 下拉" src="img/21_p3_5_high_side_24v.png" loading="lazy" /></a></p>
+<p><em>图 21-p3-5　练习 5：直觉篇的高边开关改到 24 V，Q1 的栅源极限 ±20 V</em></p>
+<details><summary>答案</summary>
+<p>Q2 导通把 Q1 栅极拉到约 0 V，Q1 源极接 24 V，所以 <span class="math math-inline">\(V_{GS}\)</span> ≈ −24 V，超过了 ±20 V 的极限，栅极可能被击穿。改法一：在 Q2 漏极和 Q1 栅极之间串一个 10 kΩ 电阻，和 10 kΩ 上拉电阻分压，Q2 导通时栅极约 12 V， <span class="math math-inline">\(V_{GS}\)</span> ≈ −12 V，足以导通又不超限（代价是关断变慢一些），改好的电路见图 21-p3-6。改法二：在 Q1 栅源之间并联一只约 12 V 的稳压管，同时串电阻限流，把 <span class="math math-inline">\(V_{GS}\)</span> 钳在 −12 V 左右。这和 <a href="../P2-semiconductor-basics/page3.html">P2 半导体入门 · 参数与调试篇</a> 练习 4 的思路一致：高边 P 沟道管既要能「拉低到导通」，又不能拉过头。</p>
+<p><a class="img-link" href="img/21_p3_6_high_side_fix.png"><img alt="练习 5 改法一：在 Q2 漏极与 Q1 栅极之间串入红紫色的 10 kΩ 电阻，与 10 kΩ 上拉电阻分压，Q2 导通时 Q1 栅极约 12 V" src="img/21_p3_6_high_side_fix.png" loading="lazy" /></a></p>
+<p><em>图 21-p3-6　练习 5 改法一：Q2 漏极与 Q1 栅极之间串 10 kΩ（红紫色），Q1 的 V_GS 约 −12 V</em></p>
+</details>
+<h2 id="小结与下一步">小结与下一步</h2>
+<p>MOS 管开关的设计可以浓缩为四步：按手册在<strong>你的驱动电压</strong>下查 <span class="math math-inline">\(R_{DS(on)}\)</span> 最大值，算导通发热；按 <span class="math math-inline">\(Q_{GD}\)</span> 、 <span class="math math-inline">\(R_G\)</span> 估算开关时间，再乘 PWM 频率算开关发热；用热阻检查温升；带线圈的负载加续流二极管，栅极加下拉电阻。下一个节点 <a href="../22-bjt-relay-driver/page1.html">22 三极管开关与继电器驱动 · 直觉篇</a> 用三极管驱动继电器线圈，续流二极管还会再次出场；后面的 <a href="../25-h-bridge/page1.html">25 H 桥电机驱动 · 直觉篇</a> 会把四只开关组合起来，让电机正反转。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

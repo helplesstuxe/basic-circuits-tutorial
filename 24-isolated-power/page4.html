@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>24 隔离电源与数字隔离器 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/24-isolated-power/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="24-隔离电源与数字隔离器--动手实验篇">24 隔离电源与数字隔离器 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../26-pullup-level-shift/page1.html">下一页：26 上拉/下拉电阻与电平转换 · 直觉篇</a> · 前置节点：<a href="../06-bridge-rectifier/page1.html">06 桥式整流 · 直觉篇</a>、<a href="../09-switching-power-supply/page1.html">09 开关电源 · 直觉篇</a>、<a href="../09-switching-power-supply/page2.html">09 开关电源 · 原理与实现篇</a>、<a href="../23-optocoupler/page1.html">23 光耦隔离 · 直觉篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>前三页讲了两种隔离电源：一种是接市电的工频变压器，另一种是 5 V 进、5 V 出的隔离 DC-DC 模块。本页只做第二种，用一只 B0505S（金升阳 B_S-1WR3 系列，5 V 输入、5 V 200 mA 输出、1 W、不稳压）和一个 5 V 电源，在面包板上亲手确认三件事：</p>
+<ol>
+<li><strong>两侧之间真的没有导电的路</strong>。模块不通电时，用万用表电阻挡量输入侧的 GND、+5 V 对隔离侧的 0V、+Vo，四种组合都应该是开路。</li>
+<li><strong>隔离侧确实有电，但只对它自己的 0V 才有意义</strong>。通电后，+Vo 对 0V 有 5 V 左右的电压；可是拿 +Vo 去对输入侧的 GND 量，读数没有确定的值。这就是 <a href="page1.html">24 隔离电源与数字隔离器 · 直觉篇</a> 第五节说的「两个地」。</li>
+<li><strong>不稳压模块的输出随负载变化</strong>。负载从 10% 加到满载，输出电压会往下走；负载低于 10% 时，手册不再保证输出电压。这正是 <a href="page2.html">24 隔离电源与数字隔离器 · 原理与实现篇</a> 第三节「关键的坑」和 <a href="page3.html">24 隔离电源与数字隔离器 · 参数与调试篇</a> 第四节「假负载」要解决的问题。</li>
+</ol>
+<p>前两页用的模块是 Murata NME0505SC，本页换成更常见、更便宜的 B0505S。两者都是 5 V 转 5 V、1 W、不稳压的同类模块，但具体参数不同，本页所有「应该读到」的数都按 B0505S 的手册来算，不照搬前两页的 NME0505SC 数字。</p>
+<p><strong>本页不能动手的部分</strong>：<a href="page2.html">24 隔离电源与数字隔离器 · 原理与实现篇</a> 第二节「方案一：工频变压器 + 整流滤波」的初级接 220 V 市电，连同保险丝、电源线，本页一律不做，也不建议在家里或教室里做。模块手册里的「1500 VDC 隔离耐压」是工厂用专门的耐压测试仪做的高压测试，同样不能自己做。</p>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>不要接 220 V</strong>。本页唯一的电源是 5 V 直流：USB 充电头加 USB 电源小板，或实验室稳压电源。不要把模块接到任何变压器、插座或市电设备上。前面讲到的工频变压器方案，市电部分请电工做，并选用有安全认证的成品电源。</li>
+<li><strong>只用 12 V 及以下的直流电</strong>。B0505S 的输入范围是 4.5～5.5 V，手册给的 1 秒以内浪涌上限是 9 V。不要用 9 V 电池或 12 V 适配器直接给它供电，那会超出它的工作范围。四节新的 AA 碱性电池串起来约 6 V，也超过 5.5 V，不要用。</li>
+<li><strong>注意极性</strong>。手册给的反向电压下限只有 −0.7 V，也就是说正负接反基本就会坏。1 脚是 GND，2 脚是 Vin，模块印字面朝你时最左边是 1 脚（外壳上通常有一个小圆点标在 1 脚这一侧）。两只电解电容的长脚是正极。</li>
+<li><strong>元件会发烫</strong>。满载那一步用的 25 Ω 电阻要消耗约 0.95 W，必须用 2 W 的电阻，而且会烫手，不要用手摸；51 Ω 那一步约 0.51 W，要用 1 W 电阻。模块自己在满载时也会温热（手册：25 ℃ 环境下外壳温升典型 25 ℃）。闻到焦味或看到电阻变色，马上断电。</li>
+<li><strong>接线、改线之前先断电</strong>。手册明确写着这只模块<strong>不支持热插拔</strong>：不要在通电时把模块插进面包板或拔出来，也不要通电换负载电阻。每一步都是先拔电源，改好，再插电源。</li>
+<li><strong>量电阻时一定要断电</strong>。电阻挡是万用表自己往外送一点电流来测的，在通电的电路上用电阻挡，读数没有意义，还可能损坏万用表。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>隔离 DC-DC 模块</td>
+<td>B0505S-1WR3（或同类 5 V 转 5 V、1 W 不稳压 SIP-4 模块）</td>
+<td>1</td>
+<td>4 只脚：1 GND、2 Vin、3 0V、4 +Vo，脚距 2.54 mm，可以直接插面包板</td>
+</tr>
+<tr>
+<td>5 V 电源</td>
+<td>USB 充电头 + USB 转面包板的电源小板，或实验室稳压电源</td>
+<td>1</td>
+<td>输出 4.5～5.5 V，能给 300 mA 以上</td>
+</tr>
+<tr>
+<td>电解电容</td>
+<td>4.7 μF，耐压 16 V</td>
+<td>1</td>
+<td>输入电容 <span class="math math-inline">\(C_{in}\)</span> ，手册推荐值</td>
+</tr>
+<tr>
+<td>电解电容</td>
+<td>10 μF，耐压 16 V</td>
+<td>1</td>
+<td>输出电容 <span class="math math-inline">\(C_{out}\)</span> ，手册推荐值</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>240 Ω，1/4 W</td>
+<td>1</td>
+<td>约 10% 负载（假负载）</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>51 Ω，1 W</td>
+<td>1</td>
+<td>约 50% 负载</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>25 Ω，2 W</td>
+<td>1</td>
+<td>约满载，会烫</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>830 孔（30 列以上）</td>
+<td>1</td>
+<td>上下各两条电源轨</td>
+</tr>
+<tr>
+<td>跳线</td>
+<td>杜邦线</td>
+<td>若干</td>
+<td>另备一根「故意短接」用的导线</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>带 20 V 直流挡、20 MΩ 电阻挡；电流挡选做</td>
+<td>1</td>
+<td>测满载输入电流要用 10 A（或 20 A）挡</td>
+</tr>
+<tr>
+<td>示波器</td>
+<td>任意</td>
+<td>选做</td>
+<td>只在隔离侧看纹波，注意接地问题</td>
+</tr>
+</tbody>
+</table>
+<p>如果买不到 25 Ω 2 W，可以用两只 51 Ω 1 W 并联（约 25.5 Ω），每只分担一半功率。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p>面包板上同一列的 a–e 五个孔连通，f–j 五个孔连通，中间凹槽把上下两半隔开；上下边缘的长条是电源轨，整条横向连通。很多同学搭别的电路时，习惯用两根线把上下两组电源轨连起来，<strong>本页一定不要连</strong>：上面两条轨属于输入侧，下面两条轨属于隔离侧，它们之间唯一的「通道」是模块里面的变压器。</p>
+<p>请看图 24-p4-1：红色线是输入侧的 +5 V，黑色线是输入侧的 GND，绿色线是隔离侧的 +Vo，紫色线是隔离侧的 0V。</p>
+<p><a class="img-link" href="img/24_p4_1_breadboard.png"><img alt="30 列面包板俯视图：B0505S 竖插在上半区第 8 到 11 列的 c 排，四只脚依次是 GND、Vin、0V、+Vo，一条灰色虚线从模块中间穿过表示隔离带；第 8、9 列用黑线、红色线接到上方的 GND 轨和 +5 V 轨，左上角是 5 V 电源；第 10、11 列用紫色和绿色线跨过中间凹槽，再接到下方的 0V 轨和 +Vo 轨；输入电容插在上方两条轨之间的第 4 列，输出电容和负载电阻插在下方两条轨之间的第 14 列和第 20 列；紫色圆圈标出 A、B、C、D 四个测量点" src="img/24_p4_1_breadboard.png" loading="lazy" /></a></p>
+<p><em>图 24-p4-1　B0505S 隔离模块实验的面包板接线（上两条轨是输入侧，下两条轨是隔离侧）</em></p>
+<p>把图 24-p4-1 的连线改画成原理图，就是图 24-p4-3。左边是输入侧，右边是隔离侧，中间的虚线是隔离带；B0505S 的四只脚都写上了引脚号和孔位，A、B、C、D 四个测量点和面包板图同名。</p>
+<p><a class="img-link" href="img/24_p4_3_schem_lab.png"><img alt="B0505S 隔离模块实验的原理图：左边输入侧，5 V 电源和 4.7 μF 输入电容并在 +5 V 轨和 GND 轨之间，+5 V 轨经红线 a9 接 2 脚 Vin（c9），1 脚 GND（c8）经黑线 a8 接 GND 轨，测量点 B 在 +5 V 轨、A 在 GND 轨；右边隔离侧，4 脚 +Vo（c11）经绿线接 +Vo 轨，3 脚 0V（c10）经紫线接 0V 轨，10 μF 输出电容（第 14 列）和负载电阻（第 20 列）并在这两条轨之间，测量点 D 在 +Vo 轨、C 在 0V 轨；一条竖虚线从模块中间穿过，表示隔离带，GND 轨和 0V 轨之间没有任何导线" src="img/24_p4_3_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 24-p4-3　与图 24-p4-1 对应的原理图（左：输入侧，地是 GND 轨；右：隔离侧，地是 0V 轨；中间虚线是模块里的隔离带）</em></p>
+<p><strong>对照看</strong>：面包板的连通规则见 <a href="../P1-components-basics/page4.html">P1 元件速成 · 动手实验篇</a>：同一列的 a–e 五个孔连通，所以 a9 的红线和 c9 的 Vin 脚是同一个节点，e10 的紫色短线和 c10 的 0V 脚是同一个节点；电源轨整条横向连通，所以第 4、14、20 列的元件只要两脚分别插在两条轨上，就是并在这两条轨之间。原理图里左右各有一条地线：左边黑色的 GND 轨只连 1 脚、5 V 电源负极和 <span class="math math-inline">\(C_{in}\)</span> ，右边紫色的 0V 轨只连 3 脚、 <span class="math math-inline">\(C_{out}\)</span> 和 <span class="math math-inline">\(R_L\)</span> ，两条线之间隔着隔离带，没有任何导线，所以断电时 A、B 对 C、D 都是开路。面包板上隔离侧的 +Vo 是最下面一条轨，0V 是它上面一条，原理图为了好看把 +Vo 画在上面，连接关系不变。这两个地的说法见 <a href="page1.html">24 隔离电源与数字隔离器 · 直觉篇</a> 「五、两个地：GND1 和 GND2」，模块本身的接法见 <a href="page2.html">24 隔离电源与数字隔离器 · 原理与实现篇</a> 「三、方案二：隔离 DC-DC 模块」。</p>
+<ol>
+<li><strong>插模块</strong>（断电状态）。B0505S 印字面朝你，四只脚从左到右插在 c8、c9、c10、c11，分别是 1 脚 GND、2 脚 Vin、3 脚 0V、4 脚 +Vo。插之前先认准 1 脚，插反了 Vin 和 GND 就对调了。</li>
+<li><strong>铺输入侧电源轨</strong>。5 V 电源正极接上方最外侧一条轨（+5 V），负极接它下面一条（GND）。先不要插 USB。</li>
+<li><strong>接输入侧</strong>。黑线从 a8 接 GND 轨，红色线从 a9 接 +5 V 轨。 <span class="math math-inline">\(C_{in}\)</span> （4.7 μF）直接插在上方两条轨之间的第 4 列，长脚插 +5 V 轨。</li>
+<li><strong>把隔离侧引到下面</strong>。紫色短线从 e10 跨过凹槽插 f10，再从 j10 接到下方里侧一条轨，这条轨就是隔离侧的 0V。绿色短线从 e11 跨过凹槽插 f11，再从 j11 接到下方最外侧一条轨，这条就是 +Vo。</li>
+<li><strong>插输出电容</strong>。 <span class="math math-inline">\(C_{out}\)</span> （10 μF）插在下方两条轨之间的第 14 列，长脚插 +Vo 轨。负载电阻 <span class="math math-inline">\(R_L\)</span> 的位置在第 20 列，现在先空着。</li>
+<li><strong>检查</strong>。对照图 24-p4-1 数一遍：上下两组电源轨之间<strong>没有任何导线</strong>；第 10、11 列的上半区除了模块的脚以外不接别的东西。</li>
+</ol>
+<p>图 24-p4-1 里紫色圆圈是下表笔的位置：A 是上方 GND 轨，B 是上方 +5 V 轨，C 是下方 0V 轨，D 是下方 +Vo 轨。四个点都在电源轨上，表笔插轨上任意一个空孔都可以。</p>
+<h2 id="测量表">测量表</h2>
+<p>仓库里没有 B0505S 的 SPICE 模型，所以本页「应该读到」一栏的数<strong>直接来自 B0505S 的数据手册</strong>（金升阳 B_S-1WR3 系列，2026.09.07-A/7 版），再用 <code>code/figs/24_figs.py</code> 计算：</p>
+<ul>
+<li>绝缘电阻：500 V 直流下不小于 1000 MΩ；隔离电容典型 20 pF。</li>
+<li>输入电流：满载典型 244 mA、最大 257 mA；空载典型 8 mA。满载效率最小 78%、典型 82%。</li>
+<li>输出调整曲线（手册 Fig.1）：负载 10% 时输出偏差典型 +5%（范围 0～+10%），满载时典型 −2.5%（范围 −7.5%～+2.5%），中间近似直线。低于 10% 负载手册不给数，只写「不在规定负载范围内工作时不保证各项参数」。</li>
+</ul>
+<p>脚本把这三条直线和负载电阻 <span class="math math-inline">\(R_L\)</span> 联立，求出每只电阻上的工作点，见图 24-p4-2：</p>
+<p><a class="img-link" href="img/24_p4_2_load.png"><img alt="横轴是输出电流 0 到 230 mA，纵轴是输出电压 4.3 到 5.8 V；浅橙色带是手册的最大到最小范围，中间橙色线是典型值，从 20 mA 处约 5.25 V 缓慢降到 200 mA 处约 4.88 V；最左边 0 到 20 mA 是灰色区域，写着低于 10% 负载手册不保证；三条点线是三只负载电阻的伏安线，和橙色线的交点分别是蓝色 240 Ω 5.25 V 22 mA、绿色 51 Ω 5.08 V 100 mA、紫色 25 Ω 4.88 V 195 mA；一条灰色点线标出 ISO7721 推荐上限 5.5 V" src="img/24_p4_2_load.png" loading="lazy" /></a></p>
+<p><em>图 24-p4-2　按手册曲线算出的 B0505S 输出电压和三只负载电阻的预期工作点</em></p>
+<p>图 24-p4-2 里，橙色典型线从左到右往下斜：负载越重，输出越低。三个圆点就是本页三只电阻的预期读数，蓝色的 240 Ω 正好落在 10% 负载的边上，所以它可以当「假负载」用；即使是最高的那条边，240 Ω 时也只有约 5.49 V，没有越过灰色的 5.5 V 线。灰色区域是手册不管的地方，空载那一步的读数只能记下来，不能拿来「判对错」。</p>
+<p>表中 A、B、C、D 见图 24-p4-1。表里的电压按输入正好 5.00 V 算；如果你的电源是 5.10 V，输出也会跟着高一点，手册给的线性调整率最大是输入每变 1%、输出变 1.2%，后面的 Python 程序会自动修正。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>断电：输入地对隔离侧地</td>
+<td>A</td>
+<td>C</td>
+<td>电阻 20 MΩ（或最大挡）</td>
+<td>超量程（OL），开路</td>
+<td>上下两组轨之间有没有习惯性接上的跨接线；模块是否插到了别的列</td>
+</tr>
+<tr>
+<td>2</td>
+<td>断电：输入地对隔离侧正</td>
+<td>A</td>
+<td>D</td>
+<td>电阻 20 MΩ</td>
+<td>OL</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>3</td>
+<td>断电：输入正对隔离侧地</td>
+<td>B</td>
+<td>C</td>
+<td>电阻 20 MΩ</td>
+<td>OL</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>4</td>
+<td>断电：输入正对隔离侧正</td>
+<td>B</td>
+<td>D</td>
+<td>电阻 20 MΩ</td>
+<td>OL</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>5</td>
+<td>断电：用一根导线把 GND 轨和 0V 轨连上，再量</td>
+<td>A</td>
+<td>C</td>
+<td>电阻 200 Ω</td>
+<td>接近 0 Ω（和两支表笔直接碰在一起时差不多）</td>
+<td>导线是否插紧。量完<strong>马上拔掉</strong>，再量一次应回到 OL</td>
+</tr>
+<tr>
+<td>6</td>
+<td>通电、空载：输入电压</td>
+<td>B</td>
+<td>A</td>
+<td>直流 20 V</td>
+<td>4.5～5.5 V 之间（手册输入范围），USB 电源一般在 5 V 左右</td>
+<td>USB 线、电源小板开关；读到负值说明表笔反了</td>
+</tr>
+<tr>
+<td>7</td>
+<td>通电、空载：输出电压</td>
+<td>D</td>
+<td>C</td>
+<td>直流 20 V</td>
+<td>手册不给这个数，如实记下即可；<strong>不要接任何芯片</strong></td>
+<td>读到 0：模块插反或第 10、11 列的跨线没接</td>
+</tr>
+<tr>
+<td>8</td>
+<td>选做：空载输入电流（拔下 +5 V 那根线，把电流表串进去）</td>
+<td>电源正极那头</td>
+<td>+5 V 轨</td>
+<td>直流 200 mA</td>
+<td>约 8 mA（手册典型值）</td>
+<td>表笔要插 mA 孔；读数几百毫安说明输出被短路</td>
+</tr>
+<tr>
+<td>9</td>
+<td>断电插 240 Ω 到第 20 列，再通电</td>
+<td>D</td>
+<td>C</td>
+<td>直流 20 V</td>
+<td>约 5.25 V（手册范围 5.00～5.49 V）</td>
+<td>电阻是否插在两条下方轨之间；色环是否读错</td>
+</tr>
+<tr>
+<td>10</td>
+<td>断电换 51 Ω 1 W，再通电</td>
+<td>D</td>
+<td>C</td>
+<td>直流 20 V</td>
+<td>约 5.08 V（4.84～5.32 V）</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>11</td>
+<td>断电换 25 Ω 2 W，再通电（电阻会烫）</td>
+<td>D</td>
+<td>C</td>
+<td>直流 20 V</td>
+<td>约 4.88 V（4.65～5.12 V）</td>
+<td>输入电压是否被拉低（同时量一下 B–A）；电源能不能给 300 mA</td>
+</tr>
+<tr>
+<td>12</td>
+<td>选做：25 Ω 时的输入电流</td>
+<td>电源正极那头</td>
+<td>+5 V 轨</td>
+<td>直流 10 A（红表笔插 10 A 孔）</td>
+<td>约 233～245 mA（效率 82%～78% 时），手册满载最大 257 mA</td>
+<td>200 mA 挡会烧保险丝；量完把红表笔插回电压孔</td>
+</tr>
+<tr>
+<td>13</td>
+<td>通电：隔离侧正对输入侧地（「浮地」）</td>
+<td>D</td>
+<td>A</td>
+<td>直流 20 V</td>
+<td>没有确定的值，可能飘动，可能接近 0</td>
+<td>如果稳稳读到和第 11 步一样的电压，说明两侧被连通了，回到第 1 步</td>
+</tr>
+<tr>
+<td>14</td>
+<td>通电：两侧地之间</td>
+<td>C</td>
+<td>A</td>
+<td>直流 20 V</td>
+<td>没有确定的值</td>
+<td>同上</td>
+</tr>
+</tbody>
+</table>
+<p>量第 1～4 步时，读数可能先跳几下再变成 OL，这是模块两侧之间那约 20 pF 的隔离电容被万用表充电，很快就充满了。只要最后停在 OL 就对。第 5 步是故意的「反面教材」：一根导线就能让两侧的地连在一起，模块里的隔离层再好也白费了。</p>
+<p>第 9、11 两步的差，就是这只模块的「负载调整」：按手册典型曲线约下降 0.36 V，手册给的最大负载调整率是 15%，也就是 5 V 的 0.75 V，只要你的差值不超过它就是正常的。第 13、14 步读到「没有确定的值」不是万用表坏了，而是这个问题本身没有答案：隔离侧的电压只相对它自己的 0V 才成立。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>本页的主要结论，靠一块万用表都能得出：开路、有电、两个地、随负载变化。但有几件事<strong>只有示波器能看到</strong>，本页不编数字，只说清楚它们是什么：</p>
+<ul>
+<li><strong>开关波形</strong>。手册写的开关频率是 270 kHz（5 V 输入、满载）。模块里的开关管每秒开关几十万次，万用表的直流挡只给出平均值，完全看不到这些方波。</li>
+<li><strong>输出纹波</strong>。手册给的纹波典型 30 mVp-p、最大 75 mVp-p（20 MHz 带宽）。这是叠在 5 V 上的一层细小的高频起伏。多数万用表的交流挡只对几百赫兹到几千赫兹的信号准（具体看你的万用表说明书），拿它去量 270 kHz 的纹波，读数没有参考价值。</li>
+<li><strong>上电过程</strong>。插上 USB 的一瞬间，输出是怎样升到 5 V 的，万用表的刷新太慢，看不到。</li>
+</ul>
+<p>没有示波器时能做的替代观察：</p>
+<ol>
+<li><strong>用手背感觉温度</strong>。满载跑一两分钟，断电后用手背轻触模块外壳：应该是温热的；25 Ω 电阻则可能烫手，不要碰。模块温热，说明效率不是 100%，约两成的功率变成了热，这和第 12 步算出的效率对得上。</li>
+<li><strong>用负载变化代替波形</strong>。第 9～11 步的三个读数，加上图 24-p4-2，就是这只模块最重要的「特性曲线」，比看纹波更能说明「不稳压」是什么意思。</li>
+</ol>
+<p>如果你有示波器，只在<strong>隔离侧</strong>测：探头夹 +Vo，地夹夹 0V。这时要注意 <a href="page3.html">24 隔离电源与数字隔离器 · 参数与调试篇</a> 第三节讲的问题：台式示波器的地夹通常经三孔插头接到插座地线，如果输入侧的 5 V 又来自插在电脑上的 USB 口，两侧的地就可能绕过模块连在一起。稳妥的办法是输入侧改用手机充电头供电，并且测完以后断电、拔掉示波器，再按第 1 步量一次 A–C，确认仍然是开路。</p>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>把你量到的数填进下面程序的第 1、2 部分（下面是示例值），在仓库根目录运行。程序按手册曲线算出每只电阻上的典型值和范围，读数和典型值相差超过 10% 就提醒你。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# 24 隔离电源 · 动手实验核对：填入实测值，和 B0505S 手册曲线比较
+import math
+
+# ---- 1. 断电时的电阻读数（OL 就写 math.inf）/ Ω ----
+R_ISO = {&quot;A–C&quot;: math.inf, &quot;A–D&quot;: math.inf, &quot;B–C&quot;: math.inf, &quot;B–D&quot;: math.inf}
+
+# ---- 2. 通电后的读数（示例值，换成你自己的）----
+V_IN = 5.08                                   # 步骤 6：B 对 A / V
+LOADS = {240: (238.0, 5.31), 51: (51.3, 5.12), 25: (24.8, 4.90)}   # 标称 / Ω : (实际阻值 / Ω, D 对 C / V)
+I_IN_FULL = 0.241                             # 步骤 12（选做）：接 25 Ω 时的输入电流 / A，没测就写 None
+
+# ---- 3. 手册 Fig.1 的三条直线：10% 负载和 100% 负载处的偏差 / % ----
+CURVE = dict(typ=(5.0, -2.5), max=(10.0, 2.5), min=(0.0, -7.5))
+I_MAX, LINE_REG = 0.200, 1.2                  # 额定 200 mA；线性调整率手册最大 1.2 %/%（这里拿来粗略修正）
+
+
+def v_expect(r, which):
+    a, b = CURVE[which]
+    k_in = 1 + LINE_REG * (V_IN - 5.0) / 5.0      # 输入每高 1%，输出按高 1.2% 修正
+    v = 5.0
+    for _ in range(60):
+        frac = v / r / I_MAX
+        v = 5.0 * (1 + (a + (b - a) * (frac - 0.1) / 0.9) / 100) * k_in
+    return v
+
+
+ok = True
+for k, r in R_ISO.items():
+    good = r &gt; 20e6
+    ok &amp;= good
+    print(f&quot;断电 {k}：{'开路 ✓' if good else f'{r:.0f} Ω ✗ 两侧被连通了，先找跨接线'}&quot;)
+print(f&quot;输入 {V_IN:.2f} V：{'在 4.5～5.5 V 内 ✓' if 4.5 &lt;= V_IN &lt;= 5.5 else '超出手册范围 ✗'}&quot;)
+print(f&quot;{'负载':&gt;6} {'电流/mA':&gt;8} {'实测/V':&gt;7} {'典型/V':&gt;7} {'范围/V':&gt;12} {'偏差':&gt;7}&quot;)
+for nom, (r, v) in LOADS.items():
+    vt, lo, hi = v_expect(r, &quot;typ&quot;), v_expect(r, &quot;min&quot;), v_expect(r, &quot;max&quot;)
+    dev = (v - vt) / vt
+    flag = &quot;&quot; if abs(dev) &lt;= 0.10 else &quot;  ⚠️ 偏差超过 10%&quot;
+    if not lo &lt;= v &lt;= hi:
+        flag += &quot;  （不在手册范围内）&quot;
+    ok &amp;= abs(dev) &lt;= 0.10
+    print(f&quot;{nom:&gt;4} Ω {v / r * 1e3:8.1f} {v:7.2f} {vt:7.2f} {lo:6.2f}～{hi:4.2f} {dev:+7.1%}{flag}&quot;)
+drop = LOADS[240][1] - LOADS[25][1]
+print(f&quot;负载调整：240 Ω → 25 Ω 下降 {drop:.2f} V（{drop / 5:.1%}），手册最大 15%&quot;
+      + (&quot; ✓&quot; if drop / 5 &lt;= 0.15 else &quot; ✗&quot;))
+if I_IN_FULL:
+    p_out = LOADS[25][1] ** 2 / LOADS[25][0]
+    eta = p_out / (V_IN * I_IN_FULL)
+    print(f&quot;效率 = {p_out:.3f} W / ({V_IN:.2f} V × {I_IN_FULL * 1e3:.0f} mA) = {eta:.0%}&quot;
+          + (&quot;（手册满载 78%～82% 附近 ✓）&quot; if 0.70 &lt;= eta &lt;= 0.90 else &quot;  ⚠️ 和手册差得多，先查电流表接法&quot;))
+print(&quot;全部在范围内&quot; if ok else &quot;有读数超出范围，按测量表最后一栏排查&quot;)
+</code></pre>
+<p>示例数据里，三个读数和典型值只差 0.7%～1.4%，都在手册范围内。注意示例的输入是 5.08 V，比 5.00 V 高 1.6%，程序已经把典型值按 1.2 %/% 往上修正了约 1.9%，所以 240 Ω 那一行的典型值是 5.35 V，不是表里的 5.25 V。效率算出来 79%，落在手册的 78%～82% 附近。这些示例值只用来演示判断方法，请换成你自己的读数。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>条件</th>
+<th>应该读到</th>
+<th>我的读数</th>
+<th>在范围内吗</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1～4</td>
+<td>断电，A、B 对 C、D</td>
+<td>OL</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>故意连上 GND 和 0V</td>
+<td>接近 0 Ω</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>输入电压 B–A</td>
+<td>4.5～5.5 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td>空载 D–C</td>
+<td>手册不给</td>
+<td></td>
+<td>（只记录）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>空载输入电流（选做）</td>
+<td>约 8 mA</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td>240 Ω，D–C</td>
+<td>5.00～5.49 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td>51 Ω，D–C</td>
+<td>4.84～5.32 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td>25 Ω，D–C</td>
+<td>4.65～5.12 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>12</td>
+<td>满载输入电流（选做）</td>
+<td>233～245 mA</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>13、14</td>
+<td>浮地 D–A、C–A</td>
+<td>没有确定的值</td>
+<td></td>
+<td>（只记录）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="思考题">思考题</h3>
+<ol>
+<li>第 1～4 步量出来都是开路，能不能说明这只模块可以挡住 1500 V？</li>
+</ol>
+<details>
+<summary>答案</summary>
+<p>不能。万用表电阻挡往外送的电压只有零点几伏到几伏，它只能说明「在低电压下两侧之间没有导电的路」。手册里的 1500 VDC 是工厂用耐压测试仪加 1 分钟高压、漏电流不超过 1 mA 的测试，绝缘电阻 1000 MΩ 也是在 500 V 下测的。这些高压测试只能由专业人员用专门的仪器做，本页不做，也不要自己尝试。</p>
+</details>
+<ol start="2">
+<li>第 7 步空载时，为什么不能把 ISO7721 之类的芯片接到 +Vo 上？接上 240 Ω 以后为什么就可以考虑了？</li>
+</ol>
+<details>
+<summary>答案</summary>
+<p>空载低于 10% 负载，B0505S 手册不保证输出电压，前两页的 NME0505SC 示意模型在轻载时甚至会升到 10 V 左右，而 ISO7721 的绝对最大电源电压只有 6 V。并上 240 Ω 以后负载约 22 mA，刚好超过 10%，按手册曲线输出在 5.00～5.49 V 之间，没有超过 ISO7721 推荐的上限 5.5 V。这就是假负载的作用；要求更严格时，应该换稳压型模块或在后面加一级 LDO。</p>
+</details>
+<ol start="3">
+<li>模块两侧之间有约 20 pF 的隔离电容。它对 50 Hz 和对 270 kHz 的「阻挡能力」各有多大？这说明什么？</li>
+</ol>
+<details>
+<summary>答案</summary>
+<p>电容的容抗是 <span class="math math-inline">\(X_C = 1/(2\pi f C)\)</span> 。代入 20 pF：50 Hz 时约 159 MΩ，几乎完全挡住；270 kHz 时只有约 29 kΩ，挡得就没那么好了。所以隔离电源对直流和工频隔得很好，但高频的开关噪声会经这只小电容「漏」到另一侧一点点。这也是数据手册里会推荐在两侧之间加 Y 电容、做 EMC 滤波的原因之一。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>[ ] 我能说出 B0505S 四只脚的名字，并且知道哪两只属于输入侧、哪两只属于隔离侧。</li>
+<li>[ ] 我能在断电时用电阻挡证明两侧之间是开路，也知道一根跨接线就能毁掉隔离。</li>
+<li>[ ] 我能解释为什么「隔离侧 +Vo 对输入侧 GND」的电压没有确定的值。</li>
+<li>[ ] 我能根据手册曲线说出 10% 负载和满载时输出大约是多少，并解释为什么要加假负载。</li>
+<li>[ ] 我能说清楚本页哪些部分不能动手：市电初级和高压耐压测试。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

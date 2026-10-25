@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 开关电源：SPICE 复核报告</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/09.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="09-开关电源spice-复核报告">09 开关电源：SPICE 复核报告</h1>
+<ul>
+<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/09/.spiceinit</code> 设为 psa。</li>
+<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/09/run.py</code>，退出码 0，已实际运行，共 33 项。</li>
+<li><strong>强电部分只看低压侧</strong>：page2 §八的反激电源初级接市电整流后约 311 V，<strong>不做逐点仿真</strong>。原因有两个：一是按任务规则，强电部分不仿真；二是页面本身对反激电源只做定性描述，没有给出数值。本报告只仿真 12 V（例题和练习里是 24 V）实验电源供电的降压电路，和页面的仿真、动手实验条件一致。</li>
+<li><strong>没有仿真的项目</strong>：page3 图 09-p3-1 的电感饱和。页面自己说明这是“示意的饱和模型”，只给了“饱和电流处电感量降到 70%，最低降到 20%”两个点，没有给出完整曲线，无法照搬建模，所以不评级。</li>
+</ul>
+<h2 id="网表">网表</h2>
+<table>
+<thead>
+<tr>
+<th>网表</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>b_async.cir</code></td>
+<td>图 09-p2-1 异步降压，12 V→5 V、5 Ω、200 kHz、47 µH（DCR 0.05 Ω）、47 µF，开环 D = 0.441</td>
+</tr>
+<tr>
+<td><code>b_async417.cir</code></td>
+<td>同上，D = 0.417（理想占空比）</td>
+</tr>
+<tr>
+<td><code>b_ideal01/05/09.cir</code></td>
+<td>图 09-p2-3 理想元件：上下管都是 1 mΩ 开关，D = 0.1 / 0.5 / 0.9</td>
+</tr>
+<tr>
+<td><code>b_loss01/05/09.cir</code></td>
+<td>图 09-p2-3 含损耗：同 <code>b_async.cir</code>，D = 0.1 / 0.5 / 0.9</td>
+</tr>
+<tr>
+<td><code>b_sync.cir</code></td>
+<td>图 09-p2-4 同步降压：上下管各 0.05 Ω，死区 20 ns，D = 0.425</td>
+</tr>
+<tr>
+<td><code>b_ex2.cir</code></td>
+<td>例 2：24 V，D = 5/24</td>
+</tr>
+<tr>
+<td><code>b_ex3d.cir</code> / <code>b_ex3s.cir</code></td>
+<td>例 3：12 V→3.3 V、2 A，分别用肖特基续流和同步整流</td>
+</tr>
+<tr>
+<td><code>b_p1si.cir</code></td>
+<td>练习 1：把续流管换成硅整流管 1N4007</td>
+</tr>
+<tr>
+<td><code>b_p3_47.cir</code> / <code>b_p3_375.cir</code></td>
+<td>练习 3：24 V→5 V、2 A、33 µH，C 分别取 47 µF 和 37.5 µF</td>
+</tr>
+</tbody>
+</table>
+<p>所有网表都仿真 4 ms，取最后一个开关周期的数据。LC 谐振（约 3.4 kHz）在 4 ms 内已经衰减完。</p>
+<h2 id="模型与来源">模型与来源</h2>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>肖特基二极管（页面写“肖特基，压降 0.4 V”，没给型号）</td>
+<td>spice/models/1N5822_vishay.lib（复用）</td>
+<td>Vishay：<a href="https://www.vishay.com/docs/88003/1n5822.txt">https://www.vishay.com/docs/88003/1n5822.txt</a> 。1N5822 是常见的 40 V / 3 A 肖特基，按页面描述选用。</td>
+</tr>
+<tr>
+<td>硅整流管（练习 1）</td>
+<td>spice/models/1N4007_diodes.lib（复用）</td>
+<td>Diodes Inc.：<a href="https://www.diodes.com/spice/download/396/1N4007.spice.txt">https://www.diodes.com/spice/download/396/1N4007.spice.txt</a></td>
+</tr>
+<tr>
+<td>上管、下管 MOSFET</td>
+<td><strong>通用模型</strong>：ngspice 自带的压控开关 <code>SW</code>，RON 取页面示意值 0.05 Ω</td>
+<td>页面只给 R_DS(on) = 0.05 Ω 示意值，没有型号，所以不用具体厂商的 MOSFET。</td>
+</tr>
+<tr>
+<td>同步方案的体二极管</td>
+<td>用 1N5822 代替</td>
+<td>页面原文：“很多电路还会在下管旁边再并一只肖特基二极管”。</td>
+</tr>
+<tr>
+<td>PWM 控制器</td>
+<td>不建模，固定开环占空比</td>
+<td>页面的仿真同样用固定 D。</td>
+</tr>
+</tbody>
+</table>
+<h2 id="假设">假设</h2>
+<ol>
+<li>开关的过渡时间取 20 ns，和 page3 §四“本节仿真里开关过渡取 20 ns”一致。压控开关在门限处是突变的，所以 SPICE 里几乎没有开关过渡损耗。控制芯片的耗电 SPICE 里也没有。这两项按页面的示意值 0.024 W 和 0.060 W 加回去，再和页面的总损耗、效率比较。</li>
+<li>例 3 没有给电感 DCR，取 0。占空比按“让输出约 3.3 V”来选：肖特基方案 0.304，同步方案 0.283。</li>
+<li>练习 1 维持 D = 0.441 不变，和肖特基方案在同样条件下比较。</li>
+</ol>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p1 图 09-p1-2 / p2 §六：V_o 平均（D = 0.441）</td>
+<td>5.01 V</td>
+<td>5.010 V</td>
+<td>0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 09-p1-2 / p2 §六：输出纹波</td>
+<td>4.3 mV（p1 写“约 4 mV”，公式 4.1 mV）</td>
+<td>4.30 mV</td>
+<td>0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 09-p1-2 / p2 §六：电感电流最小值</td>
+<td>0.84 A</td>
+<td>0.841 A</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 09-p1-2 / p3 表：电感电流峰值</td>
+<td>1.16 A</td>
+<td>1.164 A</td>
+<td>+0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图 09-p1-2：开关节点高电平</td>
+<td>约 12 V</td>
+<td>11.95 V</td>
+<td>−0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 §二 / p2 图 09-p2-2：开关节点低电平</td>
+<td>−0.4 V</td>
+<td>−0.372 V</td>
+<td>+7%</td>
+<td>✅ 1N5822 在 1 A 时的压降</td>
+</tr>
+<tr>
+<td>p2 §三：含损耗的上升斜率</td>
+<td>147 A/ms</td>
+<td>146.7 A/ms</td>
+<td>−0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三：含损耗的下降斜率</td>
+<td>116 A/ms</td>
+<td>115.7 A/ms</td>
+<td>−0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §六：一个周期的电流升降量</td>
+<td>0.324 A</td>
+<td>0.323 A</td>
+<td>−0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例 1：电感电流范围</td>
+<td>0.85～1.15 A</td>
+<td>0.84～1.16 A</td>
+<td>−1.1%</td>
+<td>✅ 页面用理想 D 计算，略小，属于正常</td>
+</tr>
+<tr>
+<td>p1 §四 / p2 §六：用理想 D = 0.417 时的 V_o</td>
+<td>4.71 V</td>
+<td>4.721 V</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图 09-p2-3：理想元件，D = 0.5</td>
+<td>6.00 V</td>
+<td>5.996 V</td>
+<td>−0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图 09-p2-3：理想元件，D = 0.9</td>
+<td>10.80 V</td>
+<td>10.797 V</td>
+<td>0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图 09-p2-3：含损耗，D = 0.5</td>
+<td>5.71 V</td>
+<td>5.723 V</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图 09-p2-3：含损耗时“整体低约 0.3 V”</td>
+<td>约 0.3 V</td>
+<td>D = 0.1 时低 0.27 V，D = 0.9 时低 0.24 V</td>
+<td>−9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §七 / p3 图 09-p3-2：肖特基续流损耗</td>
+<td>0.223 W（p2 写 0.22 W）</td>
+<td>0.215 W</td>
+<td>−3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 表：二极管平均电流</td>
+<td>0.56 A</td>
+<td>0.560 A</td>
+<td>−0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图 09-p3-2：上管导通损耗</td>
+<td>0.022 W</td>
+<td>0.0236 W</td>
+<td>+7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图 09-p3-2：电感铜损</td>
+<td>0.050 W</td>
+<td>0.0508 W</td>
+<td>+1.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图 09-p3-2：异步方案总损耗</td>
+<td>0.38 W</td>
+<td>0.373 W（SPICE 0.289 W + 页面示意的 0.084 W）</td>
+<td>−1.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 §三 / p3 §五：异步方案效率</td>
+<td>92.9%（p1 写约 93%）</td>
+<td>93.1%（只算 SPICE 导通损耗时 94.6%）</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §七 / p3 图 09-p3-2：同步方案下管损耗</td>
+<td>0.029 W</td>
+<td>0.033 W</td>
+<td>+14%</td>
+<td>✅ 多出的约 3 mW 是两段 20 ns 死区里体二极管的导通损耗，页面没有计入；纯 I²R 部分与页面一致</td>
+</tr>
+<tr>
+<td>p3 图 09-p3-2：同步方案总损耗</td>
+<td>0.18 W</td>
+<td>0.189 W</td>
+<td>+4.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §五：同步方案效率</td>
+<td>96.5%</td>
+<td>96.4%</td>
+<td>−0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例 2：24 V 时的 ΔI_L</td>
+<td>0.42 A</td>
+<td>0.4215 A</td>
+<td>+0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例 3：肖特基续流损耗</td>
+<td>0.58 W</td>
+<td>0.600 W</td>
+<td>+3.5%</td>
+<td>✅ 1N5822 在 2 A 时压降 0.42 V</td>
+</tr>
+<tr>
+<td>p2 例 3：同步下管损耗</td>
+<td>0.145 W</td>
+<td>0.152 W</td>
+<td>+4.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例 3：同步方案省下的损耗</td>
+<td>约 0.44 W</td>
+<td>0.449 W</td>
+<td>+2.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：ΔI_L</td>
+<td>0.6 A</td>
+<td>0.600 A</td>
+<td>0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：电感电流峰值</td>
+<td>2.3 A</td>
+<td>2.302 A</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：C = 37.5 µF 时的输出纹波</td>
+<td>10 mV</td>
+<td>10.05 mV</td>
+<td>+0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 3：取 47 µF 时纹波不超过 10 mV</td>
+<td>≤ 10 mV</td>
+<td>8.03 mV</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习 1：换成硅管后多出的损耗</td>
+<td>0.17 W（题设 0.7 V、关断足够快），“实际情况更糟”</td>
+<td>用 1N4007 模型多出 5.1 W；输入功率从 5.3 W 涨到 9.9 W，输出掉到 4.72 V，正向压降 0.87 V</td>
+<td>约 30 倍</td>
+<td>⚠️ 方向对，但“更糟”远没有说出量级，见修改 1</td>
+</tr>
+</tbody>
+</table>
+<p><strong>合计：✅ 32，⚠️ 1，❌ 0。</strong></p>
+<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>修改 1：p3 练习 1 答案（第 126 行），把第二句换成：</strong></p>
+<blockquote>
+<p>这是假设硅管&quot;关断足够快&quot;的结果。实际的普通整流管（比如 1N4007）在 200 kHz 下根本来不及关断：它的反向恢复时间以微秒计，和 5 µs 的开关周期差不多长。用 Diodes 公司的 1N4007 模型仿真，上管每次导通都要先经二极管&quot;短路&quot;一段时间，输入功率从 5.3 W 涨到约 9.9 W，多出的约 5 W 全部变成上管和二极管的热，输出也从 5.0 V 掉到 4.7 V。所以 06 节的整流管千万不能拿来续流。</p>
+</blockquote>
+<p>（这个仿真用的是 1N4007 模型里的简化电荷存储参数 TT，损耗的具体数字只能看量级，但“多出好几瓦、远不止 0.17 W”这个结论是可靠的。）</p>
+<h2 id="面包板万用表读数表page2-图-09-p2-1-异步降压12-v-实验电源5-ω-负载d--0441">面包板万用表读数表（page2 图 09-p2-1 异步降压，12 V 实验电源，5 Ω 负载，D = 0.441）</h2>
+<p>page3 §六的实验用的是现成降压模块，读数会受模块芯片影响。下表按原理篇电路的仿真结果给出。万用表放在直流档，读到的是平均值；黑表笔一律接 0 V（电源负极 / 输出电容负极）。</p>
+<table>
+<thead>
+<tr>
+<th>测什么</th>
+<th>表笔放在哪里</th>
+<th>SPICE 值</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入电压</td>
+<td>红表笔接输入电容正极</td>
+<td>12.00 V</td>
+<td>—</td>
+</tr>
+<tr>
+<td>输入电流</td>
+<td>万用表打到电流档，<strong>断电后</strong>串进电源正极和输入电容之间</td>
+<td>0.443 A</td>
+<td>Pin = 5.31 W</td>
+</tr>
+<tr>
+<td>输出电压</td>
+<td>红表笔接输出电容正极（负载电阻上端）</td>
+<td>5.01 V</td>
+<td>纹波 4.3 mV，万用表看不出来</td>
+</tr>
+<tr>
+<td>开关节点</td>
+<td>红表笔接 MOSFET 源极（也就是二极管阴极、电感左端）</td>
+<td>约 5.06 V</td>
+<td>这里其实是 12 V / −0.37 V 的方波，万用表读到的是平均值，约等于 V_o 加上电感线圈上的 0.05 V</td>
+</tr>
+<tr>
+<td>效率</td>
+<td>用 (V_o² / 5 Ω) ÷ (12 V × I_in) 计算</td>
+<td>94.6%</td>
+<td>原理篇电路不含控制芯片；用现成模块时，再扣掉芯片自己的耗电，大约 93%</td>
+</tr>
+</tbody>
+</table>
+<p>二极管压降（约 0.37 V）和电感电流的三角波（0.84～1.16 A）要用示波器看。万用表只能读平均值。</p>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>统计：❌ 0 条；⚠️ 1 条已处理（1 条改、0 条不改）；ℹ️ 无改动。</p>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>处理</th>
+<th>改了哪里、怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⚠️ p3 练习 1：换硅管多出 0.17 W，「实际情况更糟」</td>
+<td>已改</td>
+<td>保留 0.39 W / 0.17 W 的计算（题设「关断足够快」），把「实际上……情况更糟」换成修改 1 的说法：1N4007 反向恢复以微秒计，和 5 µs 周期相当；厂家模型仿真输入功率 5.3 W→约 9.9 W，多出约 5 W，输出 5.0→4.7 V；注明电荷存储参数简化、只看量级；结论：整流管不能拿来续流。原建议中的「06 节的整流管」改为「工频整流用的这类整流管」，避免不带链接的跨节点引用</td>
+</tr>
+</tbody>
+</table>
+<p>脚本（code/09_sim.py、code/figs/09_figs.py）未改，0.17 W 不来自脚本。</p>
+<p>改动文件：09-switching-power-supply/page3.md、review/spice/09.md。</p>
+<p>检查：count_cjk（2210 / 3109 / 3372）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（4 / 60 / 14）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>14 电压比较器 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/14-voltage-comparator/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="14-电压比较器--原理与实现篇">14 电压比较器 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../P3-opamp-basics/page1.html">P3 运放入门 · 直觉篇</a></p>
+<h2 id="先补一点最小知识">先补一点最小知识</h2>
+<p>这一页只用到三样东西：</p>
+<ol>
+<li><strong>欧姆定律</strong>：电阻上的电流 = 两端电压差 ÷ 电阻。</li>
+<li><strong>虚断</strong>：比较器（和运放一样）的输入端几乎不取电流。LM393 的输入偏置电流只有纳安级，相对于本节几十微安的电阻电流可以忽略。</li>
+<li><strong>开环会饱和</strong>：<a href="../P3-opamp-basics/page1.html">P3 运放入门 · 直觉篇</a> 讲过，两输入端稍有差别，输出就顶到头。</li>
+</ol>
+<p>注意第 2 条和第 3 条：<strong>虚断照样成立，虚短不成立</strong>。虚短要靠负反馈把两输入端「拉平」，比较器没有负反馈，两输入端可以差好几伏。这是本节最容易犯的错误，后面会用数字说明。</p>
+<h2 id="1-基本比较器只看谁大">1. 基本比较器：只看谁大</h2>
+<p>直觉篇的基本比较器电路里，反相端接 <span class="math math-inline">\(V_{ref}\)</span> = 2.5 V，同相端接 <span class="math math-inline">\(V_{in}\)</span> 。规则只有一条：</p>
+<div class="math math-display">\[V_{in} \gt V_{ref} \quad\Rightarrow\quad V_o \text{ 为高（约 5 V）}\]</div>
+<div class="math math-display">\[V_{in} \lt V_{ref} \quad\Rightarrow\quad V_o \text{ 为低（约 0 V）}\]</div>
+<p>中文意思：同相端电压比反相端高，输出就为高；反之为低。如果想反过来（温度低于设定值时输出高），把两个输入端对调即可。</p>
+<p>为什么输出高电平需要上拉电阻？<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">LM393 的手册</a> 写明它是<strong>开集电极输出</strong>：内部输出级是一只三极管，导通时把输出拉到地（输出低），截止时输出端「悬空」（高阻）。手册的应用说明里写道，输出为高阻时靠上拉电阻得到逻辑高电平，而且多个开集电极输出可以直接并在一起，实现「与」的功能（第三页的窗口比较器就用到这一点）。因此必须外接上拉电阻 <span class="math math-inline">\(R_3\)</span> ，并且它接到哪个电压，高电平就是多少。比如接到 3.3 V，就能直接给 3.3 V 的单片机用，这就是手册说的「电平转换」。</p>
+<h2 id="2-施密特比较器推出两个门限">2. 施密特比较器：推出两个门限</h2>
+<p>直觉篇的施密特比较器电路里，输入经 <span class="math math-inline">\(R_1\)</span> 接同相端， <span class="math math-inline">\(R_2\)</span> 从输出接回同相端。反相端仍是 <span class="math math-inline">\(V_{ref}\)</span> 。</p>
+<p>推门限时要分两种状态看 <span class="math math-inline">\(R_2\)</span> 的右端接到了哪里，见图 14-p2-3。</p>
+<p><a class="img-link" href="img/14_p2_3_two_states.png"><img alt="两个施密特比较器并排：左边输出管导通，输出点接地，电流从 Vin 经 R1、R2 流到地；右边输出管截止，输出点经 R3 2.2 kΩ 接 5 V，电流从 VCC 经 R3、R2 流向同相端" src="img/14_p2_3_two_states.png" loading="lazy" /></a></p>
+<p><em>图 14-p2-3　推门限的两个状态：输出管导通（左）与截止（右）</em></p>
+<p>LM393 的输出级在图 14-p2-3 里画成一只开关（朱红色）。（a）开关闭合，输出点被拉到地， <span class="math math-inline">\(R_2\)</span> 右端相当于接地，下面的「上门限」就在这个状态下算；（b）开关断开，输出点只经 <span class="math math-inline">\(R_3\)</span> 连到 <span class="math math-inline">\(V_{CC}\)</span> ，于是 <span class="math math-inline">\(R_2\)</span> 和 <span class="math math-inline">\(R_3\)</span> 串起来通到 5 V，下面的「下门限」就在这个状态下算。</p>
+<h3 id="同相端电压是多少">同相端电压是多少</h3>
+<p>同相端连着两只电阻：一边经 <span class="math math-inline">\(R_1\)</span> 通到 <span class="math math-inline">\(V_{in}\)</span> ，一边经 <span class="math math-inline">\(R_2\)</span> 通到 <span class="math math-inline">\(V_o\)</span> 。由虚断，流进同相端的电流为 0，所以流过 <span class="math math-inline">\(R_1\)</span> 的电流全部流过 <span class="math math-inline">\(R_2\)</span> ：</p>
+<div class="math math-display">\[\frac{V_{in} - V_+}{R_1} = \frac{V_+ - V_o}{R_2}\]</div>
+<p>中文意思：从输入流过来的电流，等于再流向输出的电流。解出 <span class="math math-inline">\(V_+\)</span> ：</p>
+<div class="math math-display">\[V_+ = \frac{V_{in} R_2 + V_o R_1}{R_1 + R_2}\]</div>
+<p>中文意思： <span class="math math-inline">\(V_+\)</span> 是 <span class="math math-inline">\(V_{in}\)</span> 和 <span class="math math-inline">\(V_o\)</span> 的「加权平均」，离谁的电阻小，就更靠近谁。 <span class="math math-inline">\(R_1\)</span> 远小于 <span class="math math-inline">\(R_2\)</span> ，所以 <span class="math math-inline">\(V_+\)</span> 主要跟着 <span class="math math-inline">\(V_{in}\)</span> 走，只被 <span class="math math-inline">\(V_o\)</span> 「拽」了一点点。</p>
+<h3 id="上门限输出为低时">上门限：输出为低时</h3>
+<p>输出为低，取 <span class="math math-inline">\(V_o \approx 0\)</span> 。输入慢慢升高，当 <span class="math math-inline">\(V_+\)</span> 刚好升到 <span class="math math-inline">\(V_{ref}\)</span> 时输出翻高：</p>
+<div class="math math-display">\[V_{ref} = \frac{V_H R_2}{R_1 + R_2} \quad\Rightarrow\quad V_H = V_{ref} \cdot \frac{R_1 + R_2}{R_2}\]</div>
+<p>中文意思：因为同相端被分走了一点，输入要比 <span class="math math-inline">\(V_{ref}\)</span> 高出 <span class="math math-inline">\(R_1/R_2\)</span> 这个比例才能翻转。</p>
+<h3 id="下门限输出为高时">下门限：输出为高时</h3>
+<p>输出为高，开集电极输出截止，同相端经 <span class="math math-inline">\(R_2\)</span> 、再经上拉电阻 <span class="math math-inline">\(R_3\)</span> 接到 <span class="math math-inline">\(V_{CC}\)</span> 。 <span class="math math-inline">\(R_3\)</span> 远小于 <span class="math math-inline">\(R_2\)</span> 时可以先忽略它，取 <span class="math math-inline">\(V_o \approx V_{CC}\)</span> 。输入慢慢降低，当 <span class="math math-inline">\(V_+\)</span> 降到 <span class="math math-inline">\(V_{ref}\)</span> 时输出翻低：</p>
+<div class="math math-display">\[V_{ref} = \frac{V_L R_2 + V_{CC} R_1}{R_1 + R_2} \quad\Rightarrow\quad V_L = \frac{V_{ref}(R_1 + R_2) - V_{CC} R_1}{R_2}\]</div>
+<p>两式相减就是回差：</p>
+<div class="math math-display">\[\Delta V = V_H - V_L = V_{CC} \cdot \frac{R_1}{R_2}\]</div>
+<p>中文意思：回差只由 <span class="math math-inline">\(R_1/R_2\)</span> 和输出摆幅决定， <span class="math math-inline">\(R_2\)</span> 越大，正反馈越弱，回差越小。TI 的设计笔记 <a href="https://www.ti.com/lit/an/sboa313a/sboa313a.pdf">SBOA313A《Non-Inverting Comparator with Hysteresis Circuit》</a>正是用这两步「输出低时求上门限；输出高时把 <span class="math math-inline">\(V_o\)</span> 当作 <span class="math math-inline">\(V_{CC}\)</span> ，同样列方程求下门限」来设计电阻的，它的例子用 3 V 电源、 <span class="math math-inline">\(R_1\)</span> = 273 kΩ、 <span class="math math-inline">\(R_2\)</span> = 2 MΩ 得到约 400 mV 回差，代进上式 3 × 273 / 2000 ≈ 0.41 V，对得上。</p>
+<h3 id="代数把数字代进去">代数：把数字代进去</h3>
+<p>取 <span class="math math-inline">\(V_{CC}\)</span> = 5 V， <span class="math math-inline">\(V_{ref}\)</span> = 2.5 V， <span class="math math-inline">\(R_1\)</span> = 10 kΩ， <span class="math math-inline">\(R_2\)</span> = 100 kΩ：</p>
+<ul>
+<li><span class="math math-inline">\(V_H\)</span> = 2.5 × 110 / 100 = 2.75 V，对应 27.5 °C。</li>
+<li><span class="math math-inline">\(V_L\)</span> = (2.5 × 110 − 5 × 10) / 100 = 2.25 V，对应 22.5 °C。</li>
+<li>回差 = 5 × 10 / 100 = 0.5 V，即 5 °C。</li>
+</ul>
+<p>如果把 <span class="math math-inline">\(R_3\)</span> = 2.2 kΩ 也算进去（输出高时 <span class="math math-inline">\(R_2\)</span> 那一路变成 102.2 kΩ），下门限是 2.255 V，回差 0.495 V，差别不到 1%，所以初算时忽略 <span class="math math-inline">\(R_3\)</span> 没问题。</p>
+<h3 id="为什么这里不能用虚短">为什么这里不能用虚短</h3>
+<p>假设有人照搬放大电路的套路，令 <span class="math math-inline">\(V_+ = V_-\)</span> = 2.5 V。可实际上，当 <span class="math math-inline">\(V_{in}\)</span> = 2.0 V、输出为低时， <span class="math math-inline">\(V_+\)</span> = 2.0 × 100 / 110 ≈ 1.82 V，和 <span class="math math-inline">\(V_-\)</span> 差了 0.68 V，根本不「短」。原因是 <span class="math math-inline">\(R_2\)</span> 接在同相端，是<strong>正反馈</strong>：输出一变高， <span class="math math-inline">\(V_+\)</span> 被托得更高，输出就更确定地保持为高，越推越远，直到饱和。负反馈是「偏了往回拉」，正反馈是「偏了再推一把」。所以比较器只能用「谁大谁小」来分析，不能用虚短。</p>
+<p>正反馈还有一个好处：一旦开始翻转，它会自己加速完成，输出边沿更陡，不会在中间停留。</p>
+<h2 id="3-回差曲线上去和下来走的不是一条路">3. 回差曲线：上去和下来走的不是一条路</h2>
+<p>把输入从 2.0 V 慢慢升到 3.0 V 再降回来，记录输出，就得到 图 14-p2-1。</p>
+<p><a class="img-link" href="img/14_p2_1_loop.png"><img alt="回差曲线：输入上升时在 2.75 V 由低翻高，下降时在 2.26 V 由高翻低，两条门限之间是 0.49 V 的回差；灰色点线是只有一个门限 2.5 V 的普通比较器" src="img/14_p2_1_loop.png" loading="lazy" /></a></p>
+<p><em>图 14-p2-1　施密特比较器的回差曲线（含 2.2 kΩ 上拉的影响）</em></p>
+<p>图 14-p2-1 里，蓝线（上升）一直贴着 0 V，到 2.75 V 才跳上去；橙线（下降）一直贴着 5 V，到 2.26 V 才跳下来。两条竖线之间的 0.49 V 就是回差。在这段区间里，输出是高还是低，取决于它「之前」是什么状态，所以施密特比较器带有一点「记忆」。灰色点线是普通比较器，上下都在 2.5 V，没有缓冲带。</p>
+<h2 id="4-仿真同一段噪声两种比较器">4. 仿真：同一段噪声，两种比较器</h2>
+<p>下面的程序请在仓库根目录运行（开头两行让 Python 找到 <code>code/figs/figstyle.py</code>，它负责全书统一的配色和中文字体）。程序生成一段 20 秒的传感器电压：从 2.0 V 线性升到 3.0 V 再降回 2.0 V（模拟升温再降温），每 10 ms 一个点，叠加标准差 40 mV 的随机噪声（固定随机种子，每次结果相同）。同一段电压分别送进普通比较器和施密特比较器，数输出翻转次数。</p>
+<pre><code class="language-python"># 14 电压比较器：普通比较器与施密特比较器的抗噪声对比
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import numpy as np                      # 数值计算
+import matplotlib                       # 画图库
+matplotlib.use(&quot;Agg&quot;)                   # 不弹窗口，直接存图
+import matplotlib.pyplot as plt
+import figstyle as fs                   # 全书统一的配色、线型和中文字体
+
+VCC, VREF = 5.0, 2.5                    # 电源 5 V，基准 2.5 V
+R1, R2, R3 = 10e3, 100e3, 2.2e3         # 输入电阻、正反馈电阻、上拉电阻（Ω）
+
+V_H = VREF * (R1 + R2) / R2             # 上门限：输出为低（0 V）时
+R2H = R2 + R3                           # 输出为高时，R2 经上拉电阻接到 5 V
+V_L = (VREF * (R1 + R2H) - VCC * R1) / R2H   # 下门限：输出为高时
+print(f&quot;上门限 {V_H:.3f} V，下门限 {V_L:.3f} V，回差 {V_H - V_L:.3f} V&quot;)
+
+t = np.arange(0, 20, 0.01)              # 0~20 s，每 10 ms 一个点
+clean = 2.0 + 1.0 * (1 - np.abs(t - 10) / 10)   # 三角形：2.0 V → 3.0 V → 2.0 V
+rng = np.random.default_rng(1)          # 固定随机种子，结果可重复
+vin = clean + 0.04 * rng.standard_normal(len(t))  # 加 40 mV 噪声
+
+plain = np.where(vin &gt; VREF, VCC, 0.0)  # 普通比较器：只看是否高于 2.5 V
+
+schmitt = np.zeros(len(t))              # 施密特比较器，从输出低开始
+high = False                            # 当前输出状态
+for k, v in enumerate(vin):
+    if not high and v &gt; V_H:            # 低 → 高：必须超过上门限
+        high = True
+    elif high and v &lt; V_L:              # 高 → 低：必须低于下门限
+        high = False
+    schmitt[k] = VCC if high else 0.0
+
+n1 = int(np.count_nonzero(np.diff(plain)))    # 数跳变次数
+n2 = int(np.count_nonzero(np.diff(schmitt)))
+print(f&quot;普通比较器翻转 {n1} 次，施密特比较器翻转 {n2} 次&quot;)
+assert n2 == 2                          # 一升一降，只翻两次
+
+fig, ax = plt.subplots(3, 1, figsize=(7, 5), sharex=True)
+ax[0].plot(t, vin, **fs.LS[&quot;vin&quot;])      # 输入：蓝色实线
+for y in (V_H, VREF, V_L):
+    fs.ref_h(ax[0], y)                  # 三条门限：灰色点线
+ax[0].set_ylabel(fs.qlabel(&quot;输入&quot;, &quot;V&quot;))
+ax[1].plot(t, plain, **fs.LS[&quot;bad&quot;])    # 普通比较器：朱红色（反面例子）
+ax[1].set_ylabel(fs.qlabel(&quot;普通&quot;, &quot;V&quot;))
+ax[2].plot(t, schmitt, **fs.LS[&quot;vout&quot;]) # 施密特输出：橙色实线
+ax[2].set_ylabel(fs.qlabel(&quot;施密特&quot;, &quot;V&quot;))
+ax[2].set_xlabel(fs.qlabel(&quot;时间&quot;, &quot;s&quot;))
+fig.savefig(&quot;comparator_noise.png&quot;, dpi=100)  # 存到当前目录
+print(&quot;已保存 comparator_noise.png&quot;)
+</code></pre>
+<p>运行后会打印上门限 2.750 V、下门限 2.255 V、回差 0.495 V，普通比较器翻转 98 次，施密特比较器翻转 2 次。代码里的线型都取自全书共用的 <code>figstyle</code>：输入用蓝色，门限用灰色点线，普通比较器作为「反面例子」用朱红色（带 × 标记），施密特输出用橙色。图 14-p2-2 是同一仿真由 <code>code/14_sim.py</code> 画出的版本，配色与这段代码一致。</p>
+<p><a class="img-link" href="img/14_p2_2_noise_compare.png"><img alt="三行图：上为带噪声的三角形输入和 2.75、2.5、2.26 V 三条门限；中为普通比较器输出，在 5 秒和 15 秒附近共翻转 98 次；下为施密特比较器输出，只在 7.08 秒翻高、16.67 秒翻低" src="img/14_p2_2_noise_compare.png" loading="lazy" /></a></p>
+<p><em>图 14-p2-2　同一段噪声输入：普通比较器翻转 98 次，施密特比较器只翻转 2 次</em></p>
+<h2 id="5-读懂仿真图">5. 读懂仿真图</h2>
+<p>看 图 14-p2-2 的中间一行：输入在 5 秒左右和 15 秒左右两次经过 2.5 V，每次都伴随一大串来回翻转，共 98 次。真实温度只过线两次（一升一降），多出来的 96 次全是噪声造成的。</p>
+<p>再看最下面一行：施密特比较器只在 7.08 秒翻高、16.67 秒翻低。无噪声时输入在 7.5 秒才到 2.75 V，这里提前了一点，是因为噪声的尖峰先碰到了上门限。一旦翻高，下门限立刻退到 2.26 V，后面几十毫伏的噪声再怎么抖也碰不到它。</p>
+<p>这张图还说明了回差的代价：输出不再精确地在 2.5 V 翻转，而是升温时晚一些（2.75 V）、降温时也晚一些（2.26 V）。对风扇这种「开、关不必太准，但不能乱跳」的场合，这个代价完全值得。</p>
+<h2 id="6-能不能拿普通运放当比较器">6. 能不能拿普通运放当比较器</h2>
+<p>能用，但有两个毛病：</p>
+<ol>
+<li><strong>输出到不了电源</strong>。P3 讲过，LM358 输出高电平大约比正电源低 1.5 V，5 V 供电时只有约 3.5 V，未必能被 5 V 逻辑可靠地认作高电平。</li>
+<li><strong>翻转慢，而且从饱和里「醒」多久说不准</strong>。TI 的应用笔记 <a href="https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/14/op-amp-vs-comparators.pdf">SLOA067《Op Amp and Comparators – Don't Confuse Them!》</a> 指出：比较器的输出级专为饱和工作优化，运放的输出管却是为输出模拟波形设计的线性管，开环使用时会在线性区停留很久，上升、下降沿都拖得很长；饱和后的恢复时间不可预测，不同批次可能从几微秒到几十毫秒，厂家也不保证运放开环工作的结果。作为对比，<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">LM393 手册</a> 给出的典型响应时间约 1.3 μs（B 版约 1 μs）。</li>
+</ol>
+<p>所以只是偶尔判断一下慢信号，用一个闲置的运放凑合可以；正式设计建议用专用比较器。</p>
+<h2 id="7-例题从照着做到自己做">7. 例题：从照着做到自己做</h2>
+<p><strong>例题一（完整解答）</strong>：在施密特比较器电路中， <span class="math math-inline">\(V_{CC}\)</span> = 5 V， <span class="math math-inline">\(V_{ref}\)</span> = 2.5 V， <span class="math math-inline">\(R_1\)</span> = 10 kΩ， <span class="math math-inline">\(R_2\)</span> = 100 kΩ，忽略上拉电阻，求两个门限对应的温度（0.1 V/°C）。</p>
+<p>解：第一步，输出低时 <span class="math math-inline">\(V_H\)</span> = 2.5 × 110 / 100 = 2.75 V。第二步，输出高时 <span class="math math-inline">\(V_L\)</span> = (275 − 50) / 100 = 2.25 V。第三步，换算温度：2.75 V 对应 27.5 °C，2.25 V 对应 22.5 °C，风扇在 27.5 °C 开、22.5 °C 关。</p>
+<p><strong>例题二（留空练习）</strong>：其他不变，把 <span class="math math-inline">\(R_2\)</span> 换成 200 kΩ。</p>
+<p><span class="math math-inline">\(V_H\)</span> = 2.5 × ____ / 200 = ____ V； <span class="math math-inline">\(V_L\)</span> = (2.5 × 210 − 5 × ____) / 200 = ____ V；回差 = ____ V，比原来变____了。</p>
+<details><summary>答案</summary>
+<p>210，2.625；10，2.375；0.25，小（ <span class="math math-inline">\(R_2\)</span> 加倍，回差减半）。</p>
+</details>
+<p><strong>例题三（变体迁移）</strong>：要求上门限 2.6 V、回差 0.2 V，电源仍为 5 V， <span class="math math-inline">\(R_1\)</span> 取 10 kΩ，求 <span class="math math-inline">\(R_2\)</span> 和 <span class="math math-inline">\(V_{ref}\)</span> 。</p>
+<p>提示：先用回差公式求 <span class="math math-inline">\(R_2\)</span> ，再用上门限公式反求 <span class="math math-inline">\(V_{ref}\)</span> 。</p>
+<details><summary>答案</summary>
+<p>由 0.2 = 5 × 10 kΩ / <span class="math math-inline">\(R_2\)</span> 得 <span class="math math-inline">\(R_2\)</span> = 250 kΩ（可用 240 kΩ 加 10 kΩ 串联，或取最接近的标准值后重算）。再由 2.6 = <span class="math math-inline">\(V_{ref}\)</span> × 260 / 250 得 <span class="math math-inline">\(V_{ref}\)</span> = 2.5 V，仍然可以用两只 10 kΩ 分压得到。验算下门限：(2.5 × 260 − 50) / 250 = 2.4 V，回差 0.2 V。</p>
+</details>
+<p>下一页我们把回差宽度和噪声大小放在一起扫一遍，看看回差至少要多宽；再给出排查表，并介绍能判断「在不在范围内」的窗口比较器。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>
