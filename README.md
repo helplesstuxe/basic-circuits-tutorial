@@ -1,5 +1,7 @@
 # 常见标准电路教案（高中电路基础起步）
 
+网页版（手机也能读，公式已渲染）：[https://helplesstuxe.github.io/basic-circuits-tutorial/](https://helplesstuxe.github.io/basic-circuits-tutorial/)
+
 这是一套面向**只有高中物理电路基础**的学习者的中文教案，用浅显但严谨的方式讲透 20 种常见标准电路，并扩展讲解 MOS 管开关、继电器驱动、光耦与隔离等常用功能电路；全部内容是 Markdown 加 Python 生成的图片。
 
 题目来源是一张「20种常见标准电路」图（[specs/source-20-circuits.jpg](specs/source-20-circuits.jpg)），任务说明见 [specs/task-spec.md](specs/task-spec.md)，教学设计见 [notes/00-design.md](notes/00-design.md)。
