@@ -242,9 +242,9 @@ def node_03():
         pc, pe = q.absanchors["collector"], q.absanchors["emitter"]
         xc = pc[0]
         lab(d, (xc + 0.5, yb + 0.15), "2N3904", fs_=10)
-        lab(d, (xn2 + 0.2, yb + 0.3), "B", fs_=8.5, color=GRAY)
-        lab(d, (xc + 0.15, pc[1] + 0.25), "C", fs_=8.5, color=GRAY)
-        lab(d, (xc + 0.15, pe[1] - 0.25), "E", fs_=8.5, color=GRAY)
+        lab(d, (xn2 + 0.1, yb + 0.3), "B 基极", fs_=8.5, color=GRAY)
+        lab(d, (xc + 0.15, pc[1] + 0.25), "C 集电极", fs_=8.5, color=GRAY)
+        lab(d, (xc + 0.15, pe[1] - 0.25), "E 发射极", fs_=8.5, color=GRAY)
         probe(d, (xn2, yb), "②", dx=0.0, dy=-1.0)
         colnote(d, (xn2 + 0.4, yb - 1.0), "第 17 列", "right", ofst=0.0)
         # 发射极 → GND（第 16 列）
@@ -318,6 +318,81 @@ def node_03():
     print("[图 03-p4-3] A：+5 V–1k–①(第 7 列)–1N4148–GND；B：蓝线(+5 V/GND)–RB 10k–②基极(第 17 列)，2N3904 E→GND，"
           "③集电极(第 18 列)–RC 220–LED–+5 V；电位器 +5 V/④滑动端(第 28 列)/GND；C：+9 V–R 560–⑤(第 24 列)–1N4733A(阴极朝上)–GND，RL 并联后插")
     save_schem(d, "03", "03_p4_3_schem_lab.png")
+    node_03_amp()
+
+
+# 03 实验二：共射放大（图 03-p4-4 → 图 03-p4-5），面包板连线依据 03_figs.py 的 p4_4_breadboard_amp()：
+#   B 区改接：+5 V→a22；RC 1k c18–c22；22k d22–d27；电位器 + c27、滑 c28、− c29（a29→GND）；
+#   蓝线 a13→b28；RB 10k b13–b17；2N3904 E d16 / B d17 / C d18；a16→GND；② 第 17 列、③ 第 18 列、④ 第 28 列
+def node_03_amp():
+    top, bot = 5.4, -1.8
+    cur = dict(color=C["cur"])
+    with drawing(fontsize=11) as d:
+        title(d, (4.6, top + 1.6), "实验二：共射放大（B 区改接后，第 13～29 列）")
+        # 电位器一列：+5 V（第 22 列）→ 22k → 电位器 +（第 27 列）… −（第 29 列）→ GND
+        xp = 0.0
+        d += elm.Vdd().at((xp, top)).label("+5 V")
+        colnote(d, (xp, top - 0.25), "第 22 列", "left")
+        y27 = 2.4
+        d += elm.Resistor().endpoints((xp, top), (xp, y27))
+        lab(d, (xp - 0.45, (top + y27) / 2), "22k\n（新加）", ha="right", fs_=10)
+        d += (pot := elm.Potentiometer().endpoints((xp, y27), (xp, bot + 0.6)))
+        d += elm.Line().at((xp, bot + 0.6)).to((xp, bot))
+        d += elm.Ground().at((xp, bot)).label("GND", "bottom")
+        lab(d, (xp - 0.45, (y27 + bot) / 2 + 0.3), "电位器\n10k", ha="right", fs_=10)
+        colnote(d, (xp, y27 - 0.2), "+ 第 27 列", "left")
+        colnote(d, (xp, bot + 0.45), "− 第 29 列", "left")
+        tp = pot.absanchors["tap"]
+        yb = tp[1]
+        n4 = (tp[0] + 1.0, yb)
+        d += elm.Line().at(tp).to(n4)
+        d += elm.Dot().at(n4)
+        probe(d, n4, "④", dx=0.0, dy=-1.0)
+        colnote(d, (n4[0] + 0.4, yb - 1.0), "滑 第 28 列", "right", ofst=0.0)
+        # 蓝线：第 28 列 → 第 13 列，再经 RB 10k 到基极 ②（第 17 列）
+        x13 = n4[0] + 2.4
+        d += elm.Line().at(n4).to((x13, yb)).color("#0072B2")
+        lab(d, ((n4[0] + x13) / 2, yb + 0.35), "蓝线", ha="center", fs_=9, color="#0072B2")
+        colnote(d, (x13, yb + 0.15), "第 13 列", "top", ofst=0.0)
+        xn2 = x13 + 3.0
+        d += elm.Resistor().at((x13, yb)).to((xn2, yb))
+        lab(d, ((x13 + xn2) / 2, yb + 0.6), "RB 10k", ha="center")
+        d += elm.Arrow().at((x13 + 0.6, yb - 0.45)).to((xn2 - 0.6, yb - 0.45)).color(C["cur"]).linewidth(1.2)
+        lab(d, ((x13 + xn2) / 2, yb - 0.8), "$I_B$ = (④ − ②) ÷ 10k", ha="center", fs_=9, **cur)
+        d += elm.Dot().at((xn2, yb))
+        d += (q := elm.BjtNpn(circle=True).theta(0).anchor("base").at((xn2 + 0.6, yb)))
+        d += elm.Line().at((xn2, yb)).to(q.absanchors["base"])
+        pc, pe = q.absanchors["collector"], q.absanchors["emitter"]
+        xc = pc[0]
+        lab(d, (xc + 0.5, yb + 0.15), "2N3904", fs_=10)
+        lab(d, (xn2 + 0.1, yb + 0.3), "B 基极", fs_=8.5, color=GRAY)
+        lab(d, (xc + 0.15, pc[1] + 0.25), "C 集电极", fs_=8.5, color=GRAY)
+        lab(d, (xc + 0.15, pe[1] - 0.25), "E 发射极", fs_=8.5, color=GRAY)
+        probe(d, (xn2, yb), "②", dx=0.0, dy=-1.6)
+        colnote(d, (xn2 + 0.4, yb - 1.6), "第 17 列", "right", ofst=0.0)
+        d += elm.Line().at(pe).to((xc, bot))
+        d += elm.Ground().at((xc, bot)).label("GND", "bottom")
+        colnote(d, (xc, bot + 0.35), "第 16 列", "right")
+        # 集电极 ③（第 18 列）→ RC 1k → +5 V（第 22 列）
+        y3 = pc[1] + 0.5
+        d += elm.Line().at(pc).to((xc, y3))
+        d += elm.Dot().at((xc, y3))
+        probe(d, (xc, y3), "③", dx=-1.0)
+        colnote(d, (xc - 1.3, y3 + 0.4), "第 18 列", "top", ofst=0.0)
+        d += elm.Resistor().endpoints((xc, top), (xc, y3))
+        lab(d, (xc - 0.45, (y3 + top) / 2), "RC 1k\n（换）", ha="right", fs_=10)
+        d += elm.Vdd().at((xc, top)).label("+5 V")
+        colnote(d, (xc, top - 0.25), "第 22 列", "right")
+        d += elm.Arrow().at((xc + 0.6, top - 0.6)).to((xc + 0.6, y3 + 0.4)).color(C["cur"]).linewidth(1.2)
+        lab(d, (xc + 0.8, (top + y3) / 2), "$I_C$ = (5 − ③) ÷ 1k", fs_=9, **cur)
+        for k, line in enumerate((
+                "读图：两个 +5 V 符号是同一个点（第 22 列），所以 RC 和 22k 的上端接在一起；黄色圆圈②③④ = 测量点（黑表笔接 GND）。",
+                "22k 串在电位器上面，把④的范围限制在 0～约 1.56 V：基极电流最多不到 0.1 mA，集电极电流最多不到 5 mA，管子不会过热。",
+                "放大的证据：④ 变 0.1 V，③ 反方向变约 1.1 V；同时② 只变几十 mV（基极–发射极之间像一只导通的二极管）。")):
+            note(d, (-2.4, bot - 1.6 - 0.6 * k), line)
+    print("[图 03-p4-5] +5 V(第 22 列)–22k–电位器(+第 27 列/④滑第 28 列/−第 29 列→GND)；④–蓝线–第 13 列–RB 10k–②基极(第 17 列)，"
+          "2N3904 E(第 16 列)→GND，③集电极(第 18 列)–RC 1k–+5 V(第 22 列)")
+    save_schem(d, "03", "03_p4_5_schem_lab.png")
 
 
 # ======================================================================================

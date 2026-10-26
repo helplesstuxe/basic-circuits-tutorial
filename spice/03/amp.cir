@@ -1,0 +1,39 @@
+* 03 共射放大（2N3904，onsemi 官方模型）
+* 对应：page1「三极管怎样放大」、page2 §3「放大是怎么发生的」图03-p2-9/10/11、page4 实验二图03-p4-5/6
+* 电路：VIN → RB 10k → 基极；5 V → RC 1k → 集电极；发射极接地
+* 页面理想模型（β=100，VBE=0.7 V）：Q 点 0.95 V → VC 2.5 V；0.85/1.05 V → 3.5/1.5 V；增益 −10
+* page4 实验二按真实 2N3904 给读数：VC=2.5 V 时 VIN≈0.851 V，±0.10 V → 3.57 / 1.38 V
+.include ../models/2N3904_onsemi.lib
+VCC vcc 0 5
+VIN in 0 0
+RB in b 10k
+RC vcc c 1k
+Q1 c b 0 Q2n3904
+.control
+dc VIN 0 1.6 0.001
+meas dc vq when v(c)=2.5 fall=1
+echo "RES vq $&vq"
+let p1 = vq - 0.1
+let p2 = vq + 0.1
+meas dc vc_lo find v(c) at=$&p1
+meas dc vc_hi find v(c) at=$&p2
+meas dc vb_lo find v(b) at=$&p1
+meas dc vb_hi find v(b) at=$&p2
+meas dc vb_q find v(b) at=$&vq
+meas dc vc_085 find v(c) at=0.85
+meas dc vc_095 find v(c) at=0.95
+meas dc vc_105 find v(c) at=1.05
+meas dc vc_060 find v(c) at=0.60
+meas dc vc_130 find v(c) at=1.30
+echo "RES vc_lo $&vc_lo"
+echo "RES vc_hi $&vc_hi"
+echo "RES vb_lo $&vb_lo"
+echo "RES vb_hi $&vb_hi"
+echo "RES vb_q $&vb_q"
+echo "RES vc_085 $&vc_085"
+echo "RES vc_095 $&vc_095"
+echo "RES vc_105 $&vc_105"
+echo "RES vc_060 $&vc_060"
+echo "RES vc_130 $&vc_130"
+.endc
+.end
