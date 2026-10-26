@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>01 反相放大：资深教师审读</title>
+<title>01 元件速成：资深教师审读</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -48,10 +48,11 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/01.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="01-反相放大资深教师审读">01 反相放大：资深教师审读</h1>
-<p>审读对象：<code>01-inverting-amp/page1–3.md</code> 及其图。</p>
+<h1 id="01-元件速成资深教师审读">01 元件速成：资深教师审读</h1>
+<p>审读对象：<code>01-components-basics/page1.md</code>、<code>page2.md</code>、<code>page3.md</code> 及其 12 张图。行号以 2026-10-23 审读时的文件为准。
+评级：<strong>必改</strong>是指读者会被误导、卡住或学错；<strong>建议</strong>是指能明显提升教学效果的改进。</p>
 <h2 id="总评">总评</h2>
-<p>本节的几个设计都很到位：跷跷板类比配合图 01-p1-2 的&quot;沿电阻走一遍电压&quot;，是一个很好的双重编码，把&quot;虚地 + 同一电流&quot;变成了看得见的直线；page1 §五 让读者&quot;先猜后看&quot;示波器，等于把预测和提取练习嵌进了正文；page2 先用口诀三步推导，再用有限 A 和有限频率验算&quot;虚地有多地&quot;，与 P3 呼应而不重复；例 3 迁移到加法器，选题恰当。数值已复核：−4.99945 V；1.2 kHz 时 −4.946 V；内阻造成的 9.09 倍；带宽 109 kHz、11.9 kHz；练习 2 中的 0.53 V、57 kHz，全部正确。</p>
+<p>这是全书写得最扎实的入口页之一。三页分工清楚：page1 讲类比，page2 用&quot;一小段一小段地算&quot;代替微积分，page3 给参数扫描、排查表和练习。&quot;电容电流正比于斜率、电压是面积&quot;这两句话为 14 积分电路、18 微分电路埋好了伏笔，&quot;线圈和触点画在两个回路&quot;也为 04、11、15 做好了准备。主要问题有三类：几处数字与引文的说法对不上；&quot;二极管&quot;在 03 之前就被使用；电感和二极管这两块缺少图示和练习。</p>
 <h2 id="逐条意见">逐条意见</h2>
 <table>
 <thead>
@@ -67,60 +68,91 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <tr>
 <td>1</td>
 <td>必改</td>
-<td>page3 L46–48</td>
-<td>&quot;带宽（倍数下降到低频值 0.707 倍时的频率）&quot;中，0.707 是第一次出现，没有任何来由。15 滤波器等后续节点还会反复使用这个数，读者只能死记。</td>
-<td>加一句：&quot;0.707 ≈ 1/√2；倍数降到 0.707 倍时，输出功率正好降到一半，所以工程上把这一点当作'带宽的边界'。&quot;</td>
+<td>page2 L25 与 L31</td>
+<td>L25 引 SLAA067 说&quot;负载比电阻大 10 倍，仍会有接近 10% 的误差&quot;，L31 却算出 10 倍负载时&quot;误差约 5%&quot;。读者会以为两处矛盾。SLAA067 原文是 &quot;can lead to a 10% error&quot;，这是最坏情况（上电阻远大于下电阻时，误差趋近 1/11，约 9%）。</td>
+<td>L25 改为：&quot;TI 的 SLAA067 提醒，很多人在负载比下电阻大 10 倍时就忽略负载，误差最多可达约 10%（上电阻远大于下电阻时）；本例两个电阻相等，误差约 5%，见图 01-p2-1。&quot;</td>
 </tr>
 <tr>
 <td>2</td>
-<td>建议</td>
-<td>page1 L23</td>
-<td>&quot;按符号表的约定，下标 f 是英文 feedback 的首字母&quot;。读者看不到任何&quot;符号表&quot;：README 和各页都没有符号表，只有 notes/00-design.md 里有，而那是写给作者的。</td>
-<td>删去&quot;按符号表的约定&quot;，或者在 README 增加一个读者可见的符号表并链接过去（见 <a href="http://cross-chapter.md">cross-chapter.md</a>）。</td>
+<td>必改</td>
+<td>page1 L45；page2 L134–140</td>
+<td>页面在讲二极管（03）之前就使用了&quot;续流二极管&quot;&quot;二极管压降 0.7 V&quot;，而读者在 01 时还不知道二极管是什么。</td>
+<td>在 page1 L45 第一次出现时加一句括注：&quot;二极管是只允许电流单向通过的元件，像单向阀门，03 半导体入门会细讲&quot;；在 page2 L134 前加一个链接，指向 <a href="../../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>。</td>
 </tr>
 <tr>
 <td>3</td>
-<td>建议</td>
-<td>page2 L37–45</td>
-<td>P3 page2 已经用同一个电路、同一组数据（10 kΩ/100 kΩ、0.5 V、A = 10 万 → −4.99945 V、50 μV）完整推导过有限 A 的公式。这里又重复了一遍。</td>
-<td>把 L39–43 缩成一句回顾，并链接到 <a href="../../P3-opamp-basics/page2.html">P3 原理与实现篇</a>。保留 L45 的&quot;频率升高后 A 只剩 1000&quot;这一新内容。这样减少冗余，也符合认知负荷原则中的冗余效应。</td>
+<td>必改</td>
+<td>page1 L55</td>
+<td>文字说&quot;常闭触点右端那根竖直的小挡头&quot;，但图 01-p1-3 里常闭触点的标志是<strong>下端向右伸出的一小段横线</strong>（图中常闭按钮、断开常闭的延时触点也是这样）。文字和图对不上。</td>
+<td>改为&quot;常闭触点下端向右伸出、被动触头压住的那一小段横线，就是它'平时压在一起'的标志&quot;。</td>
 </tr>
 <tr>
 <td>4</td>
-<td>建议</td>
-<td>page3 L60</td>
-<td>最后一句提到&quot;压摆率（LM358B 典型 0.5 V/μs）&quot;，但没有给出读者能用的判断方法，只是点名。</td>
-<td>补一个数例：&quot;峰值 10 V、频率 f 的正弦，最大变化速度约 2π·f·10 V；要求它 ≤ 0.5 V/μs，可得 f ≤ 约 8 kHz。所以大幅度时，带宽实际由压摆率决定。&quot;或者干脆删掉这句，避免提出不解释的概念。</td>
+<td>必改</td>
+<td>page1 L55</td>
+<td>&quot;时间继电器的两种延时触点&quot;会被读成&quot;通电延时和断电延时两种&quot;，但图里画的是<strong>通电延时</strong>型的常开触点和常闭触点（图中标注为&quot;通电延时闭合常开&quot;&quot;通电延时断开常闭&quot;）。page2 L150 也说&quot;直觉篇符号图里画的是通电延时型&quot;。</td>
+<td>改为&quot;以及通电延时型时间继电器的常开、常闭两种延时触点&quot;。</td>
 </tr>
 <tr>
 <td>5</td>
 <td>建议</td>
-<td>page3 练习 2(1)</td>
-<td>答案中 <span class="math math-inline">\(R_f\)</span> 取 1 MΩ 时&quot;倍数约 19.6&quot;没有计入 500 Ω 内阻。题目问的恰恰是内阻造成的误差，计入后约为 1 MΩ ÷ 51.5 kΩ ≈ 19.4。</td>
-<td>改为：&quot;（可用 1 MΩ，计入 500 Ω 内阻后倍数约 19.4，比 20 小约 3%，其中内阻贡献约 1%，电阻取整贡献约 2%）&quot;。</td>
+<td>page1 §三（L41–45）</td>
+<td>电感是 4 个主题里唯一没有图的，而电感断电尖峰恰恰是后面 25、06、07、26 反复用到的危险点。</td>
+<td>在 L45 后加一张示意图（线圈 + 开关 + 反并二极管，标出断开瞬间的电流路径），或者直接链接到 page2 的图 01-p2-4。</td>
 </tr>
 <tr>
 <td>6</td>
 <td>建议</td>
-<td>page3 练习</td>
-<td>3 道练习都是&quot;代公式&quot;，没有一道检测&quot;什么时候公式失效&quot;（饱和时虚短不成立）或&quot;误以为放大器不吃电流&quot;这个误区，而 page1 L57–59 正列出了这三个坑。</td>
-<td>增加一道诊断题：&quot;示波器上输出为平顶方波，量得反相端电压 0.3 V，问发生了什么、虚地为什么不再是 0 V。&quot;</td>
+<td>page1 L13</td>
+<td>&quot;后面 26 个节点&quot;不准确：后面还有 02–29，共 28 个节点。</td>
+<td>改为&quot;后面所有节点&quot;。</td>
 </tr>
 <tr>
 <td>7</td>
 <td>建议</td>
-<td>page1 L7</td>
-<td>&quot;功放&quot;没有解释。</td>
-<td>改为&quot;功率放大器（推动喇叭的放大器）&quot;。</td>
+<td>page2 L49</td>
+<td>直接给出 <span class="math math-inline">\(e^{-t/\tau}\)</span> 。高中学过指数函数，但未必熟悉 <span class="math math-inline">\(e\)</span> 。页面已经说明&quot;一小段一小段算下去&quot;，可以再补一句直觉。</td>
+<td>补一句：&quot;意思是每过 1 个 τ，离终点的差距就缩小到原来的约 37%&quot;，并用 L55 的表格验证（100% → 36.8% → 13.5% → 5.0% …）。这样把&quot;指数&quot;降维成&quot;按固定比例缩小&quot;。</td>
+</tr>
+<tr>
+<td>8</td>
+<td>建议</td>
+<td>page2 L132</td>
+<td>有&quot;RL 电路 τ = L/R&quot;，但没有说明 <span class="math math-inline">\(V_L = L \cdot \Delta I / \Delta t\)</span> 里的&quot;感应电压&quot;与高中学过的&quot;自感电动势&quot;是同一件事。</td>
+<td>加一句：&quot;这就是高中物理里的自感电动势&quot;，可以帮读者把新知识挂到已有的知识上。</td>
+</tr>
+<tr>
+<td>9</td>
+<td>建议</td>
+<td>page3 练习</td>
+<td>5 道练习覆盖了分压、τ、负载效应、两回路和 RL，但没有练习检测<strong>通电延时与断电延时</strong>的区别，也没有检测<strong>续流二极管怎么接</strong>，而这两点是 15 和 07 的直接前置。</td>
+<td>加一道题：&quot;线圈 2 s 通电、6 s 断电，设定 3 s：通电延时常开触点和断电延时常开触点各在何时闭合、何时断开？&quot;再加一道看图选择题：&quot;续流二极管的阴极应接线圈的哪一端？&quot;</td>
+</tr>
+<tr>
+<td>10</td>
+<td>建议</td>
+<td>page3 L11</td>
+<td>&quot;消抖约几 ms&quot;没有给出处，与 29 上拉/下拉电阻与电平转换里的消抖 τ 取值要一致。</td>
+<td>交叉核对 29 page3 的消抖 τ 取值，两处用同一个数量级，并互相链接。</td>
+</tr>
+<tr>
+<td>11</td>
+<td>建议</td>
+<td>page1 L57</td>
+<td>接触器的&quot;主触点 / 辅助触点&quot;只在这里提了一句，而 04 自锁大量使用&quot;辅助常开触点&quot;。</td>
+<td>给图 01-p1-3 或图 01-p1-4 补一句：&quot;接触器的主触点接电机，辅助触点只接控制回路，电流小&quot;。</td>
 </tr>
 </tbody>
 </table>
 <h2 id="图文与颜色核对">图文与颜色核对</h2>
-<p>page1 L41（红紫色点划线、蓝色圆点、黑色三角形、橙色圆点）、L53（蓝色、橙色），page2 L107（蓝色、橙色、灰色点线、黑色虚线）、L167（蓝色、红紫色点划线、橙色），page3 L30（黑色虚线、橙色、红紫色点划线）、L60（橙色、红紫色点划线、蓝绿色虚线、黑点），均与 PNG 一致。图 01-p1-1、01-p2-1、01-p2-3 是无彩色的原理图，正文里也没有使用颜色词，<strong>合格</strong>。</p>
+<ul>
+<li>图 01-p2-1、01-p2-2、01-p2-4、01-p2-5、01-p3-1、01-p3-2、01-p3-3：正文里的颜色词（黑色虚线、蓝色、橙色、红紫色点划线、天蓝色、朱红色、蓝绿色虚线）经像素检测，都能在对应 PNG 里找到同色像素，<strong>一致</strong>。</li>
+<li>图 01-p1-4 的&quot;灰色虚线&quot;实为灰色虚线，并附有&quot;磁力吸合（虚线≠导线）&quot;标注，<strong>一致</strong>，处理得很好。</li>
+</ul>
 <h2 id="安全">安全</h2>
-<p>本节点不涉及市电。</p>
+<p>01 不属于市电节点，page1 L65 和 page3 L52 仍放了警示框，<strong>合格</strong>。</p>
 <h2 id="计数">计数</h2>
-<p>必改 1，建议 6。</p>
+<p>必改 4，建议 7。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

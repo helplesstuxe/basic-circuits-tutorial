@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>03 电压跟随器：资深教师审读</title>
+<title>03 半导体入门：资深教师审读</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -37,16 +37,22 @@ mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;p
 mjx-container{max-width:100%}
 .footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
 </style>
-
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
 </head>
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/03.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="03-电压跟随器资深教师审读">03 电压跟随器：资深教师审读</h1>
-<p>审读对象：<code>03-voltage-follower/page1–3.md</code> 及其图。</p>
+<h1 id="03-半导体入门资深教师审读">03 半导体入门：资深教师审读</h1>
+<p>审读对象：<code>03-semiconductor-basics/page1–3.md</code> 和 10 张图。</p>
 <h2 id="总评">总评</h2>
-<p>开篇用&quot;分压器一接 1 kΩ 就掉到 0.83 V&quot;制造认知冲突，然后用&quot;小声的人 + 大嗓门传话人&quot;的类比，再用示波器四步现象（第 3 步专门说明&quot;跟随器修不了前级&quot;），由具体到抽象的顺序很好。page2 推导出 A/(1+A)，再说明&quot;一被拉低就推回&quot;为什么让输出电阻变小，因果链完整。page3 的容性负载、单电源禁区、压摆率三坑都选得准，R_o = 300 Ω 已注明出自 LM358B 数据手册。</p>
-<p>数值复核结果均正确：0.83 V、1/3、0.05 mV、4.76 V、0.77 V、1.7 mA、80/27 kHz，练习 1–4 也无误。</p>
+<p>本节用止回阀、溢流口、水龙头、按压阀四个类比，配一条&quot;最该看的参数表&quot;，再用两张扫描图打掉&quot;β 大就行&quot;&quot;过了门限就算开&quot;两个典型误区，结构非常适合初学者。数值都已逐一复核：二极管 0.655/0.714 V，三极管工作点 20 μA、2 mA、 <span class="math math-inline">\(V_{CE}\)</span> 3 V，1.18 V 分界，4.7 kΩ 时 <span class="math math-inline">\(V_{CE}\)</span> 1.68 V、功耗 55 mW，2N7000 的门限和导通电阻，练习 1–4，全部正确。
+唯一的实质错误在稳压管模型：页面说 <span class="math math-inline">\(V_Z\)</span> 是在 49 mA 下测得的，算出来的 49 mA 电压却是 5.443 V。</p>
 <h2 id="逐条意见">逐条意见</h2>
 <table>
 <thead>
@@ -61,40 +67,75 @@ mjx-container{max-width:100%}
 <tbody>
 <tr>
 <td>1</td>
-<td>建议</td>
-<td>page3 练习（L66–98）</td>
-<td>本页第一大坑&quot;容性负载振铃 / 隔离电阻&quot;在 4 道练习里都没有考到，练习 4 只在答案末尾顺带提了一句。</td>
-<td>加一道诊断题。例如：&quot;跟随器输出经 3 m 屏蔽线接到 ADC，示波器看到阶跃后振铃 60 μs 不停。最可能的原因是什么？先做哪一步？串多大电阻？压降多少（负载 0.5 mA）？&quot;</td>
+<td>必改</td>
+<td>page2 L37–39，图 03-p2-2</td>
+<td>页面说 1N4733A 的&quot; <span class="math math-inline">\(V_Z\)</span> = 5.1 V（在 49 mA 下测得）&quot;，随后用 <span class="math math-inline">\(V = V_Z + r_Z I_Z\)</span> 算出&quot;49 mA 时约 5.443 V&quot;，自相矛盾。按手册的定义，49 mA 时应正好是 5.1 V。page3 L15 也写着&quot; <span class="math math-inline">\(V_Z\)</span> 在测试电流 <span class="math math-inline">\(I_{ZT}\)</span> 下测得&quot;，与这里的算法相冲突。另外，手册里的 7 Ω 是<strong>最大值</strong>，用它算出来的是最坏变化量。</td>
+<td>方案 A：模型改成 <span class="math math-inline">\(V = V_Z + r_Z (I_Z - I_{ZT})\)</span> ，代数改为&quot;5 mA 时约 5.1 − 7 × 0.044 ≈ 4.79 V，49 mA 时 5.1 V，变化约 0.31 V（按 <span class="math math-inline">\(r_Z\)</span> 最大值估算）&quot;。方案 B：把式中的常数改记为 <span class="math math-inline">\(V_{Z0}\)</span> （&quot;拐点处外推电压&quot;），并说明它不等于手册上的 <span class="math math-inline">\(V_Z\)</span> 。图 03-p2-2 的击穿位置随方案同步调整（由作者改 <code>code/figs/03_figs.py</code>）。</td>
 </tr>
 <tr>
 <td>2</td>
 <td>建议</td>
-<td>page2 L142（本页小结）</td>
-<td>&quot;负载比信号源内阻小于 100 倍时就该用它&quot;，读起来像&quot;负载小于内阻&quot;，容易误读。</td>
-<td>改为&quot;负载电阻<strong>不到</strong>信号源内阻的 100 倍时，就该用它隔离&quot;。</td>
+<td>page3 L63（排查表最后一行）</td>
+<td>现象写的是&quot;输出等于电源电压&quot;，原因却并列了&quot;接反（正向只压降 0.7 V）&quot;。接反时输出约 0.7 V，并不等于电源电压，同一行里现象和原因对不上。</td>
+<td>拆成两行。一行是&quot;输出只有约 0.7 V → 稳压管接反（正向导通）&quot;；另一行是&quot;输出等于电源电压 → 稳压管开路或没焊上&quot;。</td>
 </tr>
 <tr>
 <td>3</td>
 <td>建议</td>
-<td>page1 L43</td>
-<td>&quot;<strong>虚短</strong>，反相端等于同相端&quot;，漏了前提&quot;有负反馈且输出未饱和&quot;。page2 L23 写得对。这是全书反复出现的措辞问题（见 <a href="http://cross-chapter.md">cross-chapter.md</a>）。</td>
-<td>加半句：&quot;（有负反馈、输出没有顶到电源时）反相端等于同相端&quot;。</td>
+<td>page3 L57</td>
+<td>&quot;改用肖特基二极管&quot;之前没有解释，这是本节点第一次出现。09、13、28 等节点也可能用到。</td>
+<td>加括注：&quot;肖特基二极管：一种正向压降只有约 0.2–0.4 V 的二极管，代价是反向漏电较大。&quot;</td>
 </tr>
 <tr>
 <td>4</td>
 <td>建议</td>
-<td>page3 L63–64</td>
-<td>&quot;去耦&quot;和&quot;偏置电流&quot;直接使用，没有解释。&quot;去耦&quot;全书都没有定义；&quot;偏置电流&quot;只在 14 page2 L10 顺带提过。</td>
-<td>括注两处：&quot;去耦：在芯片电源脚旁就近并一个 100 nF 电容，吸收电源上的高频毛刺&quot;；&quot;偏置电流：运放输入端实际仍有纳安级的微小电流，必须有直流路径流到地&quot;。</td>
+<td>page2 L141（例 2）</td>
+<td>&quot;数据手册里 50 mA 时 β 最小 60&quot;没有说明是哪个型号，读者无法去核对。</td>
+<td>改为&quot;2N3904 数据手册里 50 mA 时 <span class="math math-inline">\(h_{FE}\)</span> 最小 60&quot;，与 page3 L18 呼应。</td>
+</tr>
+<tr>
+<td>5</td>
+<td>建议</td>
+<td>page3 L50 与 L60</td>
+<td>栅极下拉电阻的范围前后不一：正文写&quot;10 kΩ 到 1 MΩ&quot;（引 TI），表格写&quot;10 kΩ–100 kΩ&quot;，page1 图中又用 100 kΩ。06 MOSFET 开关节点里还会再出现一次。</td>
+<td>统一为&quot;常用 10 kΩ–100 kΩ（TI 建议范围 10 kΩ–1 MΩ）&quot;，并在 06 中使用同一个说法（见 <a href="http://cross-chapter.md">cross-chapter.md</a>）。</td>
+</tr>
+<tr>
+<td>6</td>
+<td>建议</td>
+<td>page1 L7</td>
+<td>列举&quot;开关电源&quot;作为后续应用，但全书没有开关电源节点。读者会去找。</td>
+<td>删去&quot;开关电源&quot;，或改为&quot;电机驱动&quot;。</td>
+</tr>
+<tr>
+<td>7</td>
+<td>建议</td>
+<td>page1 L45–47，&quot;放大区&quot;</td>
+<td>三极管放大区只有一句话，后续节点（06、07）也只用开关状态，读者可能疑惑放大区还要不要掌握。</td>
+<td>在 page1 L47 末尾加一句：&quot;本书里三极管几乎只当开关用（截止 ↔ 饱和），放大区只需知道它存在、开关时要尽快穿过去。&quot;</td>
+</tr>
+<tr>
+<td>8</td>
+<td>建议</td>
+<td>page2 L19、L23、L25</td>
+<td>曲线描述中&quot;红紫色点划线（红色 LED）&quot;同一句话里同时出现 LED 的物理颜色和画线颜色，初学者容易误以为图中红色 LED 的线应该是红的。</td>
+<td>写成&quot;红紫色点划线（代表红光 LED）&quot;，用&quot;红光&quot;区分物理颜色与画线颜色。这一条不违反配色规范，属于可读性建议。</td>
+</tr>
+<tr>
+<td>9</td>
+<td>建议</td>
+<td>page3 练习</td>
+<td>4 道练习覆盖了二极管压降、稳压管功耗、三极管基极电阻和 P 沟道 MOS 管高边开关，但没有一道检测&quot;N 沟道 MOS 管栅极悬空 / 下拉电阻&quot;或&quot;逻辑电平 MOS 管选择&quot;，而这两点正是 06 的前置知识。</td>
+<td>增加一道：给出 3.3 V 单片机 + 2N7000 + 栅极悬空的电路，让读者找出两处问题（ <span class="math math-inline">\(V_{GS}\)</span> 不够、无下拉电阻）。</td>
 </tr>
 </tbody>
 </table>
 <h2 id="图文与颜色核对">图文与颜色核对</h2>
-<p>以下各处与 PNG 一致：page2 L96 的橙色、朱红色带 ×、灰色点线；page3 L19 的朱红色带 ×、红紫色点划线、橙色、灰色点线；page3 L33 的黑色虚线和橙色实线。</p>
+<p>page2 L19/L25（蓝色、红紫色点划线）、L41（红紫色点划线）、L71（天蓝色）、L122（橙色、天蓝色、灰色点线），page3 L31/L37（橙色、红紫色点划线、灰色点线）、L43（橙色），均与对应 PNG 一致。正文中的&quot;红色&quot;都指 LED 的物理颜色（page1 L41，page2 L19/L23/L25/L132），<strong>不违反配色规范</strong>，但见第 8 条建议。</p>
 <h2 id="安全">安全</h2>
-<p>不涉及市电。</p>
+<p>本节点不涉及市电，无需警示框。</p>
 <h2 id="计数">计数</h2>
-<p>必改 0，建议 4。</p>
+<p>必改 1，建议 8。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

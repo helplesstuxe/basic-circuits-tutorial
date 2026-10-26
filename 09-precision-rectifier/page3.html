@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 精密整流 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/09-precision-rectifier/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="09-精密整流--参数与调试篇">09 精密整流 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../05-inverting-amp/page1.html">05 反相放大 · 直觉篇</a> · 后续：<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a></p>
+<h2 id="本页要解决的问题">本页要解决的问题</h2>
+<p>原理与实现篇里的仿真都用 1 kHz 的信号，误差只有百分之几甚至更小。可是信号频率一高，精密整流就会变得「不精密」。这一页回答三个实际问题：<strong>挑运放看哪几个参数</strong>；频率升到多少时误差变得不可接受；电路搭好后输出不对，按什么顺序查。</p>
+<h2 id="1-数据手册里最该看的参数">1. 数据手册里最该看的参数</h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>对精密整流的影响</th>
+<th>怎么选（典型值）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>压摆率 SR</td>
+<td>基本型每个周期都要从负饱和爬回来，恢复时间至少是「饱和电压 + 0.7 V」除以 SR；改进型每次过零也要跳过约 1.4 V</td>
+<td>LM741 典型 0.5 V/μs；TL072 最小 8 V/μs、典型 20 V/μs；TI 的设计例子要求不低于 5 V/μs</td>
+</tr>
+<tr>
+<td>增益带宽积 GBW</td>
+<td>刚过零时输入只有几毫伏，运放的「推力」与 GBW 成正比，小信号的过零恢复主要由它决定</td>
+<td>TL072 为 3 MHz（部分封装）到 5.25 MHz；TI 的 50 kHz 设计例子要求不低于 10 MHz</td>
+</tr>
+<tr>
+<td>输出摆幅</td>
+<td>基本型负半周会撞到电源附近；改进型里它决定了能处理多大的信号</td>
+<td>LM741 在 ±15 V、负载 2 kΩ 以上时典型 ±13 V</td>
+</tr>
+<tr>
+<td>输入失调电压</td>
+<td>相当于在输入端串了一个小电池，直接加到被整流的信号上，毫伏级小信号受影响最大</td>
+<td>TL072 典型约 1 mV；要测更小的信号就选低失调运放</td>
+</tr>
+<tr>
+<td>二极管</td>
+<td>开关速度影响过零毛刺；反向漏电在负半周会「漏」一点信号出去</td>
+<td>小信号开关二极管（如 03 用过的 1N4148）；肖特基二极管（金属和半导体接触做成，压降约 0.3 V、开关快，见 <a href="../03-semiconductor-basics/page2.html">03 半导体入门 · 原理与实现篇</a>）更快，但漏电更大</td>
+</tr>
+<tr>
+<td>电阻公差</td>
+<td>改进型的增益是 <span class="math math-inline">\(R_f / R_1\)</span> ，两只 1% 电阻最坏会有约 2% 的增益误差</td>
+<td>改进型和全波整流都用 1% 或更好的电阻</td>
+</tr>
+<tr>
+<td>信号源内阻</td>
+<td>改进型的输入电阻只有 <span class="math math-inline">\(R_1\)</span> ，信号源内阻 <span class="math math-inline">\(R_s\)</span> 会串进 <span class="math math-inline">\(R_1\)</span> ，增益变小（见 <a href="../05-inverting-amp/page3.html">05 反相放大 · 参数与调试篇</a>；内阻的含义见 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a> 第七节（戴维南等效））</td>
+<td>按 <a href="../05-inverting-amp/page3.html">05 反相放大 · 参数与调试篇</a> 的经验， <span class="math math-inline">\(R_1\)</span> 至少取 <span class="math math-inline">\(R_s\)</span> 的 100 倍，否则在前面加一级跟随器</td>
+</tr>
+</tbody>
+</table>
+<p>数据来源：<a href="https://www.ti.com/lit/ds/symlink/lm741.pdf">LM741 数据手册</a>、<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">TL072 数据手册</a>、<a href="https://www.ti.com/lit/an/sboa227b/sboa227b.pdf">TI SBOA227B</a>、<a href="https://sound-au.com/appnotes/an001.htm">ESP AN001</a>。和 03 一样，<strong>按最坏值设计</strong>：仿真里的 TL072 级运放取的是手册里的最小压摆率 8 V/μs。</p>
+<h2 id="2-扫描一10-khz-时三种组合的波形">2. 扫描一：10 kHz 时三种组合的波形</h2>
+<p>把输入频率提高到 10 kHz（周期 100 μs），峰值仍是 0.2 V，比较三种组合：基本型配 741 级运放、基本型配 TL072 级运放（GBW 3 MHz、SR 8 V/μs）、改进型配 741 级运放。看图 09-p3-1，每个子图里黑色虚线都是理想整流。</p>
+<p><a class="img-link" href="img/09_p3_1_10k_wave.png"><img alt="三行波形：基本型加 741 在第二个正半周丢掉一大半；基本型加 TL072 只丢掉开头一小段；改进型加 741 几乎与理想重合，只在过零点有小毛刺" src="img/09_p3_1_10k_wave.png" loading="lazy" /></a></p>
+<p><em>图 09-p3-1　10 kHz、峰值 0.2 V 时三种组合的输出，图例里是平均值误差</em></p>
+<p>第一行朱红色带 × 的是基本型配 741 级：第一个正半周从 0 V 起步，看起来还行；第二个正半周开头，运放还在从 −13.5 V 往上爬，输出到 130 μs 左右才跳上来，差不多丢了一大半，平均值误差 −70.3%。换成 TI 官方的 741 模型做 SPICE 仿真，10 kHz 时第二个正半周已经完全没有输出（误差 −100%），简化模型的 −70% 还是乐观的。第二行橙色是换成 TL072 级以后：缺口缩短到十几微秒，误差 −11.8%。第三行红紫色点划线是改进型，用的还是那颗慢吞吞的 741 级，误差却只有 −5.3%：运放不再饱和，每次过零只需要跳 1.4 V。</p>
+<p>注意第三行在每次过零点附近有一个几十毫伏的小尖刺和小缺口，这就是直觉篇里说的「过零毛刺」：运放输出脚在 −0.7 V 和 +0.7 V 之间切换的那两三微秒里，两只二极管都不通，反馈暂时断开。运放越快，毛刺越窄。</p>
+<h2 id="3-扫描二误差随频率怎么变">3. 扫描二：误差随频率怎么变</h2>
+<p>从 1 kHz 扫到 20 kHz，把三种组合的平均值误差（取绝对值）画在对数坐标上，见图 09-p3-2。</p>
+<p><a class="img-link" href="img/09_p3_2_err_vs_f.png"><img alt="对数坐标下三条线都随频率上升；基本型加 741 最高，在 10 千赫约 70%；基本型加 TL072 约 12%；改进型加 741 最低约 5%；灰色点线标出 1%" src="img/09_p3_2_err_vs_f.png" loading="lazy" /></a></p>
+<p><em>图 09-p3-2　平均值误差随信号频率的变化（峰值 0.2 V）</em></p>
+<p>三条线差不多都是斜向上的直线：<strong>频率翻一倍，误差也大约翻一倍</strong>。原因很直观：每次过零丢掉的时间差不多是固定的几微秒到几十微秒，周期越短，丢掉的比例越大。朱红色带 × 的基本型配 741 级最差，到 20 kHz 已经完全没有输出（误差 −100%）；橙色的基本型配 TL072 级在 10 kHz 是 12%；红紫色的改进型配 741 级最好，在 10 kHz 约 5%。</p>
+<p>拿灰色点线 1% 当及格线，可以读出一个粗略的规律：输入峰值 0.2 V 时，基本型配 741 级在 1 kHz 就已经超过 3%，基本型配 TL072 级在 1 kHz 刚好碰线，改进型配 741 级大约到 2 kHz 才碰线（按厂家 741 模型，改进型的速度损失比这里小：10 kHz 约 1%，20 kHz 约 3%；在这个频段，失调反而是更大的误差来源）。要在几十千赫保持 1% 以内，就得选 GBW 10 MHz 以上、压摆率几十 V/μs 的快运放，再配改进型电路，这正是 TI 设计例子的选择。信号越小，过零附近运放的「推力」越弱，这些频率还要往下打折扣。</p>
+<p>再提醒一次：这里的运放模型只考虑了「增益随频率下降」（增益带宽积）和压摆率两种限制，真实运放从饱和中恢复时还有额外的延迟，实际误差往往更大。仿真用来比较方案、看趋势，具体指标以数据手册和示波器实测为准。</p>
+<h2 id="4-故障排查表">4. 故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出一直是 0</td>
+<td>反馈线接在二极管前面（运放输出脚上），二极管不在环内</td>
+<td>看反馈线从哪里取；测运放输出脚，正半周如果只等于输入、没有高出 0.7 V，就是接错了</td>
+<td>反馈线改从二极管后面（电路输出端）取</td>
+</tr>
+<tr>
+<td>输出变成了负半周</td>
+<td>二极管接反</td>
+<td>看二极管色环方向；测输出的极性</td>
+<td>二极管调头；改进型要两只一起调头</td>
+</tr>
+<tr>
+<td>正半周开头缺一块，频率越高输出越小</td>
+<td>基本型里运放从负饱和爬回来太慢</td>
+<td>用示波器看运放输出脚，负半周是否贴在负电源附近</td>
+<td>换高压摆率、高 GBW 的运放，或改用改进型</td>
+</tr>
+<tr>
+<td>过零点有尖刺或小台阶</td>
+<td>运放切换两个二极管压降需要时间；二极管恢复慢</td>
+<td>示波器放大过零点附近，看尖刺宽度随频率是否不变</td>
+<td>选更快的运放；用 1N4148 这类开关二极管，或换肖特基二极管</td>
+</tr>
+<tr>
+<td>改进型的输出幅度比计算值小一个固定比例</td>
+<td>信号源内阻串进了 <span class="math math-inline">\(R_1\)</span></td>
+<td>断开信号源测它的空载电压，再接上电路测一次，看是否变小</td>
+<td>降低信号源内阻，或在前面加一级跟随器</td>
+</tr>
+<tr>
+<td>没有输入时输出也有几毫伏直流</td>
+<td>运放输入失调电压被整流后留在输出</td>
+<td>输入端对地短接，测输出</td>
+<td>选低失调运放，或减小增益</td>
+</tr>
+<tr>
+<td>改进型增益和 <span class="math math-inline">\(R_f / R_1\)</span> 不符</td>
+<td>电阻公差大，或电阻焊错阻值</td>
+<td>断电后分别测 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_f\)</span></td>
+<td>用 1% 电阻；全波整流里要求更严</td>
+</tr>
+<tr>
+<td>负半周输出不是 0，而是有一点同形状的小信号</td>
+<td>二极管反向漏电（肖特基二极管、温度高时更明显）</td>
+<td>换一只普通硅二极管对比</td>
+<td>改用漏电小的硅二极管，或降低电阻阻值</td>
+</tr>
+<tr>
+<td>大信号时输出顶部被削平</td>
+<td>输入乘以增益后超过运放输出摆幅</td>
+<td>测运放输出脚是否贴近电源</td>
+<td>降低增益或输入幅度，或提高电源电压</td>
+</tr>
+</tbody>
+</table>
+<p>表中第 1 行（反馈线接在二极管前面）和第 5 行（信号源内阻串进 <span class="math math-inline">\(R_1\)</span> ）是两种具体的接法，画在图 09-p3-3 里，下面的练习 3 用到右图，练习 4 的答案就是左图。</p>
+<p><a class="img-link" href="img/09_p3_3_cases.png"><img alt="左图：基本型的反馈线从运放输出脚、也就是二极管前面接回反相端，用朱红色标出；右图：改进型的输入前面串着信号源内阻 Rs 1 千欧（朱红色），它和 R1 串联后才到虚地" src="img/09_p3_3_cases.png" loading="lazy" /></a></p>
+<p><em>图 09-p3-3　(a) 反馈线接在二极管前面（错误接法）；(b) 改进型前面串着信号源内阻 Rs</em></p>
+<h2 id="5-练习">5. 练习</h2>
+<p><strong>练习 1（易）</strong>：基本型精密整流用 741 级运放，±15 V 供电，负饱和约 −13.5 V，压摆率 0.5 V/μs。只按压摆率估算，运放输出脚从负饱和爬到 +0.7 V 要多久？一个宽 20 μs 的正脉冲能不能被整流出来？</p>
+<details><summary>答案</summary>
+<p>要爬 13.5 + 0.7 = 14.2 V，时间 14.2 V ÷ 0.5 V/μs = 28.4 μs。脉冲只有 20 μs，运放还没爬到二极管导通，脉冲就结束了，输出一直是 0。Fiore 的教材里用同样的例子算出约 26 μs（他按爬到 0 V 计算）。实际刚过零时输入很小，运放爬得更慢，<a href="page2.html">09 精密整流 · 原理与实现篇</a> 的仿真里是 60 μs。</p>
+</details>
+<p><strong>练习 2（易）</strong>：同一颗 741 级运放改用改进型电路，每次过零运放输出脚大约要跳多少伏、花多少时间？在 10 kHz 时，这段时间占半个周期的百分之几？</p>
+<details><summary>答案</summary>
+<p>运放输出脚在 −0.7 V 和 +0.7 V 左右之间切换，约 1.4 V，按压摆率要 1.4 ÷ 0.5 = 2.8 μs。10 kHz 的半个周期是 50 μs，2.8 μs 约占 5.6%，和扫描图里改进型在 10 kHz 的约 5% 误差是同一个量级。</p>
+</details>
+<p><strong>练习 3（中）</strong>：用改进型电路（见图 09-p3-3 右图）做一个「整流并放大 5 倍」的电路，要求输入电阻不小于 10 kΩ。 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_f\)</span> 怎么选？如果信号源内阻是 1 kΩ，实际增益是多少？</p>
+<details><summary>答案</summary>
+<p>输入电阻等于 <span class="math math-inline">\(R_1\)</span> ，取 <span class="math math-inline">\(R_1\)</span> = 10 kΩ；增益 <span class="math math-inline">\(R_f / R_1\)</span> = 5，取 <span class="math math-inline">\(R_f\)</span> = 50 kΩ（买不到时可用 51 kΩ，增益 5.1）。信号源内阻 1 kΩ 串进 <span class="math math-inline">\(R_1\)</span> 后，实际增益 = 50 ÷ (10 + 1) ≈ 4.55，比 5 小约 9%。补救时不能把 <span class="math math-inline">\(R_1\)</span> 减小来「抵掉」内阻，那样输入电阻就低于 10 kΩ，违反了题目要求。两种做法：保持 <span class="math math-inline">\(R_1\)</span> = 10 kΩ，把 <span class="math math-inline">\(R_f\)</span> 提高到 55 kΩ（标准值用 56 kΩ，增益 56 ÷ 11 ≈ 5.09）；或者在前面加一级跟随器，让信号源内阻不再串进 <span class="math math-inline">\(R_1\)</span> 。</p>
+</details>
+<p><strong>练习 4（中）</strong>：小李照着直觉篇搭了基本型精密整流，输入 0.2 V 直流时输出却是 0。用万用表测运放输出脚，正半周它正好等于 <span class="math math-inline">\(V_i\)</span> ，并没有比输出高出 0.7 V。问哪里接错了？如果把输入加到 2 V，输出大约是多少？</p>
+<details><summary>答案</summary>
+<p>反馈线接在了二极管前面（运放输出脚上），接法就是图 09-p3-3 左图，二极管不在反馈环里。这时运放只是一个跟随器：虚短让运放输出脚等于 <span class="math math-inline">\(V_i\)</span> = 0.2 V，二极管两端只有 0.2 V，推不开 0.7 V 的门槛，所以输出为 0。输入 2 V 时运放输出脚是 2 V，过了二极管剩约 1.3～1.5 V（电流只有一百多微安，压降不到 0.7 V；SPICE 用 1N4148 模型得到 1.49 V），和不用运放的普通二极管整流一模一样，运放什么也没替你交。改法：反馈线改从二极管后面（电路输出端 <span class="math math-inline">\(V_o\)</span> ）取，见排查表第 1 行。</p>
+</details>
+<p><strong>练习 5（难，变体迁移）</strong>：用精密整流做一个「交流电压表」：把整流后的电压求平均（比如用一个 RC 低通滤波：信号经电阻给一只接地的电容充电，电容电压跟不上快速的起伏，只留下平均值），平均值就和信号大小成正比。峰值 0.1 V 的正弦波经过理想的半波整流，平均值是多少？如果换成全波整流（输出是输入的绝对值），平均值又是多少？哪种更好用？电路接法见图 09-p3-4。</p>
+<p><a class="img-link" href="img/09_p3_4_average.png"><img alt="改进型精密整流的输出经滤波电阻 R 接到一只接地的电容 C，电容上的电压就是平均值，送到万用表" src="img/09_p3_4_average.png" loading="lazy" /></a></p>
+<p><em>图 09-p3-4　练习 5：精密整流后面接 RC 低通，电容电压就是整流输出的平均值</em></p>
+<details><summary>答案</summary>
+<p>正弦波一个正半周的平均值是峰值的 2/π ≈ 0.637 倍（ESP AN001 里给出的系数）。这个系数要用积分推，这里直接用结论，推导超出本教程；不会积分也可以用 Python 验证：「平均值」就是曲线下面那块面积除以时间，在一个周期里均匀取很多点求 <span class="math math-inline">\(\lvert \sin t \rvert\)</span> 的平均，<code>numpy.abs(numpy.sin(numpy.linspace(0, 2*numpy.pi, 100001))).mean()</code> 输出约 0.6366。半波整流只留一半的正半周，另一半时间是 0，所以平均值是峰值的 1/π ≈ 0.318 倍：0.1 V × 0.318 ≈ 31.8 mV。全波整流两个半周都留下，平均值 0.1 V × 0.637 ≈ 63.7 mV。</p>
+<p>全波整流的平均值是半波的 2 倍，整流后剩下的起伏（叫纹波，13 会详细讲）的频率也是 2 倍，后面的滤波更容易做平；而且正负半周不对称的信号也能被如实测量。所以测量电路里通常用全波。<a href="page2.html">09 精密整流 · 原理与实现篇</a> 例 3 已经给出了用反相加法器把半波变成全波的思路，13 会把它完整地实现出来。</p>
+</details>
+<h2 id="小结与下一步">小结与下一步</h2>
+<p>精密整流在低频时把二极管的 0.7 V 门槛消掉了，剩下的误差主要来自运放的输入失调（毫伏级）；在高频时由运放的速度决定：基本型要从负饱和爬回来，压摆率和 GBW 都会限制它，改进型不饱和，所以快得多。挑运放先看压摆率和 GBW，调试时先用示波器看运放输出脚，它会告诉你运放是否饱和、反馈是否接对。下一个节点 <a href="../10-voltage-comparator/page1.html">10 电压比较器 · 直觉篇</a> 专门研究本节里「运放开环、冲到电源」的那种状态，把它从毛病变成功能；<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a> 则会把本节的半波整流和 05 的加法器组合成全波整流。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

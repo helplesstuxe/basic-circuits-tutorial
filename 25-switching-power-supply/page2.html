@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>25 开关电源 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/25-switching-power-supply/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="25-开关电源--原理与实现篇">25 开关电源 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>、<a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a>、<a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节特有的危险：本页的降压电路只接 12 V 实验电源。第八部分讲的反激电源，初级（变压器原线圈一侧）接市电整流后约 311 V 的直流，大电解电容在拔掉插头后仍可能带着几百伏电；初级与市电没有隔离，示波器地夹不能夹到初级电路上。不要拆开或改装成品充电器、适配器。</p>
+</blockquote>
+<h2 id="这一页要回答什么">这一页要回答什么</h2>
+<p>直觉篇说&quot;输出约等于占空比乘以输入&quot;。这一页要把它推出来，并回答三个设计时一定会遇到的问题：</p>
+<ol>
+<li>电感电流的三角波有多大？</li>
+<li>输出电压的纹波有多大？</li>
+<li>续流二极管换成 MOSFET（同步降压）、加上变压器（反激）以后，电路怎么变？</li>
+</ol>
+<h2 id="一用到的旧知识">一、用到的旧知识</h2>
+<ul>
+<li><strong>电感</strong>：电压决定电流变化的快慢， <span class="math math-inline">\(V_L = L \cdot \frac{\Delta I}{\Delta t}\)</span> （见 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a>）。反过来写就是 <span class="math math-inline">\(\Delta I = \frac{V_L \cdot \Delta t}{L}\)</span> ：电感两端电压是正的，电流就往上爬；是负的，电流就往下滑。</li>
+<li><strong>电容</strong>：流进的净电流决定电压变化的快慢（见 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a>）。</li>
+<li><strong>MOSFET</strong>：栅极电压高于门限后，漏源之间像一只阻值为 <span class="math math-inline">\(R_{DS(on)}\)</span> 的小电阻（见 <a href="../03-semiconductor-basics/page2.html">03 半导体入门 · 原理与实现篇</a>）。</li>
+<li><strong>占空比</strong>：开关导通时间占整个周期的比例，记作 <span class="math math-inline">\(D\)</span> （见 <a href="../06-mosfet-switch/page2.html">06 MOS 管开关 · 原理与实现篇</a>）。</li>
+<li><strong>反馈</strong>：21 的运放一直比较输出和基准，自动调整（见 <a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a>）。开关电源的控制芯片做的是同样的事，只不过它调的是占空比。</li>
+</ul>
+<h2 id="二实际电路">二、实际电路</h2>
+<p>把直觉篇里的开关换成 N 沟道 MOSFET，就是一个完整的<strong>异步降压</strong>电路，见图 25-p2-1：</p>
+<p><a class="img-link" href="img/25_p2_1_async.png"><img alt="12 V 输入并联输入电容后接上管 MOSFET 的漏极，源极即开关节点；开关节点经肖特基二极管接地，经 47 µH 电感接到输出，输出并联 47 µF 电容和 5 Ω 负载；下方 PWM 控制器驱动 MOSFET 栅极，并用虚线反馈接到输出" src="img/25_p2_1_async.png" loading="lazy" /></a></p>
+<p><em>图 25-p2-1　异步降压电路：上管 MOSFET、肖特基续流二极管、电感和电容</em></p>
+<p>图 25-p2-1 中各元件的作用：</p>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>本例取值</th>
+<th>作用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入电容 <span class="math math-inline">\(C_{in}\)</span></td>
+<td>10 µF</td>
+<td>上管导通时电流突然很大，就近从它取电，避免输入线上出现大的电流跳变</td>
+</tr>
+<tr>
+<td>上管 MOSFET</td>
+<td><span class="math math-inline">\(R_{DS(on)}\)</span> 0.05 Ω（示意值）</td>
+<td>开关，由 PWM 控制器驱动</td>
+</tr>
+<tr>
+<td>肖特基二极管</td>
+<td>正向压降 0.4 V</td>
+<td>上管断开时给电感电流让路；选肖特基是因为它压降小、关断快</td>
+</tr>
+<tr>
+<td>电感 <span class="math math-inline">\(L\)</span></td>
+<td>47 µH</td>
+<td>储能、维持电流</td>
+</tr>
+<tr>
+<td>输出电容 <span class="math math-inline">\(C_o\)</span></td>
+<td>47 µF</td>
+<td>吸收电感电流里的三角波部分</td>
+</tr>
+<tr>
+<td>PWM 控制器</td>
+<td>200 kHz</td>
+<td>测量输出，自动调整占空比</td>
+</tr>
+</tbody>
+</table>
+<p>&quot;异步&quot;的意思是续流元件是二极管，它自己导通、自己截止，不需要控制器去管。</p>
+<h2 id="三伏秒平衡推出占空比公式">三、伏秒平衡：推出占空比公式</h2>
+<p>设开关周期为 <span class="math math-inline">\(T\)</span> （200 kHz 时 <span class="math math-inline">\(T = 5\ \mu\text{s}\)</span> ），上管导通的时间是 <span class="math math-inline">\(D \cdot T\)</span> ，断开的时间是 <span class="math math-inline">\((1 - D) \cdot T\)</span> 。先把二极管压降和各种电阻都当成 0。这样两个阶段的电路可以简化成图 25-p2-6：</p>
+<p><a class="img-link" href="img/25_p2_6_phases.png"><img alt="两幅等效电路。左图导通阶段：电源 V_in 直接接到电感左端，电感两端电压为 V_in − V_o，右端接 C_o 和负载；右图断开阶段：二极管导通、压降当 0，电感左端接地，两端电压为 −V_o" src="img/25_p2_6_phases.png" loading="lazy" /></a></p>
+<p><em>图 25-p2-6　伏秒平衡推导用的两个等效电路：导通阶段与断开阶段</em></p>
+<p><strong>第 1 步，导通阶段</strong>。电感左端是 <span class="math math-inline">\(V_{in}\)</span> ，右端是 <span class="math math-inline">\(V_o\)</span> ，电感两端电压是 <span class="math math-inline">\(V_{in} - V_o\)</span> 。电流上升了</p>
+<div class="math math-display">\[\Delta I_{上} = \frac{(V_{in} - V_o) \cdot D T}{L}\]</div>
+<p><strong>第 2 步，断开阶段</strong>。二极管导通，电感左端约为 0，右端仍是 <span class="math math-inline">\(V_o\)</span> ，电感两端电压是 <span class="math math-inline">\(-V_o\)</span> 。电流下降了</p>
+<div class="math math-display">\[\Delta I_{下} = \frac{V_o \cdot (1 - D) T}{L}\]</div>
+<p><strong>第 3 步，稳定的条件</strong>。电路稳定以后，每个周期结束时电流要回到起点，否则电流会一个周期比一个周期大（或小）。所以上升量等于下降量：</p>
+<div class="math math-display">\[(V_{in} - V_o) \cdot D = V_o \cdot (1 - D)\]</div>
+<p>展开整理，得到</p>
+<div class="math math-display">\[V_o = D \cdot V_{in}\]</div>
+<p>这个推导叫<strong>伏秒平衡</strong>：电感两端&quot;电压乘以时间&quot;在一个周期里正负抵消。它和直觉篇&quot;输出等于开关节点电压的平均值&quot;是同一件事。</p>
+<p>两个阶段的电流斜率见图 25-p2-2：</p>
+<p><a class="img-link" href="img/25_p2_2_slopes.png"><img alt="上排是开关节点电压，导通时约 12 V，断开时约 −0.4 V；下排是电感电流三角波，上升段斜率标为 149 A/ms，下降段标为 106 A/ms，在 2.21 µs 处有一条竖线" src="img/25_p2_2_slopes.png" loading="lazy" /></a></p>
+<p><em>图 25-p2-2　一个周期里的两个阶段：电流上升和下降的斜率</em></p>
+<p>图 25-p2-2 的下排里，上升段的斜率是 <span class="math math-inline">\((12 - 5)/47\ \mu\text{H} \approx 149\)</span> A/ms，下降段是 <span class="math math-inline">\(5/47\ \mu\text{H} \approx 106\)</span> A/ms（这两个数是按理想公式算的）。图里的时间却是按含损耗的占空比 0.441 画的：上升段 2.21 µs，下降段 2.79 µs。理想斜率配上这两个时间，一升一降并不相等（149 × 2.21 ≈ 0.33 A，106 × 2.79 ≈ 0.30 A），这是因为真实电路里还有损耗。把损耗算进去，导通时电感两端是 <span class="math math-inline">\(12 - 0.05 - 5 - 0.05 = 6.9\)</span> V（减去上管和电感线圈电阻上各 0.05 V），上升斜率约 6.9 / 47 µH ≈ 147 A/ms；断开时是 <span class="math math-inline">\(-(5 + 0.4 + 0.05) = -5.45\)</span> V，下降斜率约 5.45 / 47 µH ≈ 116 A/ms。这样上升 147 × 2.21 ≈ 0.32 A，下降 116 × 2.79 ≈ 0.32 A，一上一下正好抵消（下面程序会打印这两个斜率）。上排里断开阶段的电压是 −0.4 V 而不是 0：电流从地出发往上流过肖特基二极管，二极管压掉 0.4 V，它的上端就比地低 0.4 V。</p>
+<h2 id="四电感纹波和输出纹波">四、电感纹波和输出纹波</h2>
+<p>把 <span class="math math-inline">\(D = V_o / V_{in}\)</span> 代回第 1 步，电感电流的峰峰值是</p>
+<div class="math math-display">\[\Delta I_L = \frac{(V_{in} - V_o) \cdot D}{f \cdot L}\]</div>
+<p>本例 <span class="math math-inline">\(D = 5/12 \approx 0.417\)</span> ， <span class="math math-inline">\(\Delta I_L = 7 \times 0.417 / (200\ \text{kHz} \times 47\ \mu\text{H}) \approx 0.310\)</span> A，约为负载电流的 31%。TI 的降压设计应用笔记建议把它选在输出电流的 20%～40%，本例在这个范围里。</p>
+<p>电感电流 = 负载电流（直流）+ 三角波。三角波部分流进电容，电容电压于是小幅起伏。电容攒下的电荷可以按三角形面积算：三角波高出平均值的那一段持续半个周期 <span class="math math-inline">\(T/2\)</span> ，最高比平均值多 <span class="math math-inline">\(\Delta I_L / 2\)</span> ，这块三角形的面积就是电容多攒的电荷</p>
+<div class="math math-display">\[\Delta Q = \frac{1}{2} \cdot \frac{T}{2} \cdot \frac{\Delta I_L}{2} = \frac{\Delta I_L \cdot T}{8} = \frac{\Delta I_L}{8 f}\]</div>
+<p>再用电容的 <span class="math math-inline">\(\Delta V = \Delta Q / C\)</span> ，就得到输出纹波</p>
+<div class="math math-display">\[\Delta V_o = \frac{\Delta I_L}{8 f C}\]</div>
+<p>公式里的 8 就是这样来的：两个 1/2 来自三角形面积和&quot;高出一半&quot;，再一个 1/2 来自&quot;半个周期&quot;。本例 <span class="math math-inline">\(\Delta V_o = 0.310 / (8 \times 200\ \text{kHz} \times 47\ \mu\text{F}) \approx 4.1\)</span> mV。真实电容内部还相当于串着一只很小的电阻，叫等效串联电阻（ESR），它会再加一份纹波，在参数篇讨论。</p>
+<p>从两个式子看出：<strong>频率 <span class="math math-inline">\(f\)</span> 越高，电感和电容都可以越小</strong>。这正是开关电源能做得很小的原因；代价是每秒开关次数多了，切换损耗也跟着变大。</p>
+<h2 id="五占空比和输出的关系">五、占空比和输出的关系</h2>
+<p>把占空比从 0.1 扫到 0.9，每个点都仿真到稳定，结果见图 25-p2-3：</p>
+<p><a class="img-link" href="img/25_p2_3_duty.png"><img alt="横轴占空比 0 到 1，纵轴输出电压；黑色虚线是公式直线，橙色圆点是理想元件仿真，红紫色方块点划线是含损耗仿真，略低于直线；D = 0.44 处标出 5.0 V" src="img/25_p2_3_duty.png" loading="lazy" /></a></p>
+<p><em>图 25-p2-3　占空比与输出电压：公式、理想仿真、含损耗仿真</em></p>
+<p>图 25-p2-3 里，<strong>黑色虚线</strong>是公式 <span class="math math-inline">\(V_o = D \cdot V_{in}\)</span> ，<strong>橙色</strong>圆点是元件全部理想时的仿真，正好落在线上：D = 0.5 时 6.00 V，D = 0.9 时 10.80 V。<strong>红紫色点划线</strong>是加上二极管压降和电阻以后的仿真，整体低了约 0.3 V：D = 0.5 时只有 5.71 V。所以要得到 5 V，占空比要从 41.7% 提到约 44%（图中的竖线）。</p>
+<p>考虑损耗以后的占空比，还是用伏秒平衡推。记 <span class="math math-inline">\(R_{DCR}\)</span> 为电感线圈的电阻（DCR，直流电阻，注意不是负载电阻）， <span class="math math-inline">\(V_F\)</span> 为二极管压降，电感电流近似为 <span class="math math-inline">\(I_o\)</span> 。导通阶段电感两端是 <span class="math math-inline">\(V_{in} - I_o R_{DS(on)} - V_o - I_o R_{DCR}\)</span> ，断开阶段是 <span class="math math-inline">\(-(V_o + V_F + I_o R_{DCR})\)</span> 。让两段的&quot;电压乘以时间&quot;相等：</p>
+<div class="math math-display">\[(V_{in} - I_o R_{DS(on)} - V_o - I_o R_{DCR}) \cdot D = (V_o + V_F + I_o R_{DCR}) \cdot (1 - D)\]</div>
+<p>把含 <span class="math math-inline">\(D\)</span> 的项移到一边，整理得</p>
+<div class="math math-display">\[D \approx \frac{V_o + V_F + I_o \cdot R_{DCR}}{V_{in} + V_F - I_o \cdot R_{DS(on)}}\]</div>
+<p>本例 <span class="math math-inline">\(D \approx (5 + 0.4 + 0.05) / (12 + 0.4 - 0.05) = 5.45 / 12.35 \approx 0.441\)</span> 。实际芯片不需要你算准，反馈会自动找到这个值。</p>
+<h2 id="六用程序验证">六、用程序验证</h2>
+<p>下面的程序只用 Python 标准库，按 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a> 的办法一小段一小段地算：</p>
+<pre><code class="language-python"># 在仓库根目录运行（只用标准库，不需要 figstyle）
+VIN, VO_SET, R = 12.0, 5.0, 5.0        # 输入 12 V，目标 5 V，负载 5 Ω（1 A）
+F, L, C = 200e3, 47e-6, 47e-6          # 开关频率 200 kHz，电感 47 µH，电容 47 µF
+VF, RDS, DCR = 0.4, 0.05, 0.05         # 肖特基压降、上管导通电阻、电感线圈电阻（示意值）
+N = 1000                               # 每个周期切成 1000 小段（同 01 page2 的「一小段一小段地算」）
+T = 1 / F
+dt = T / N
+
+def run(D, periods=300):
+    &quot;&quot;&quot;异步降压的逐段仿真：返回最后一个周期的 V_o 平均值、V_o 峰峰值、i_L 最小值和最大值。&quot;&quot;&quot;
+    il, vc = VO_SET / R, D * VIN       # 从「差不多」的状态出发，省点时间
+    vs, ils = [], []
+    for k in range(periods * N):
+        on = (k % N) &lt; D * N
+        v_sw = VIN - il * RDS if on else -VF   # 开关节点电压：上管导通 or 二极管续流
+        il += (v_sw - vc - il * DCR) / L * dt  # 电感：ΔI = V_L·Δt / L
+        il = max(il, 0.0)                      # 二极管不让电流反向
+        vc += (il - vc / R) / C * dt           # 电容：ΔV = I·Δt / C
+        if k &gt;= (periods - 1) * N:
+            vs.append(vc); ils.append(il)
+    return sum(vs) / N, max(vs) - min(vs), min(ils), max(ils)
+
+D_ideal = VO_SET / VIN
+D_real = (VO_SET + 1 * DCR + VF) / (VIN - 1 * RDS + VF)
+dI = (VIN - VO_SET) * D_ideal / (F * L)
+print(f&quot;理想占空比 {D_ideal:.3f}，考虑损耗 {D_real:.3f}&quot;)
+print(f&quot;公式：ΔI_L = {dI:.3f} A，ΔV_o = {dI / (8 * F * C) * 1e3:.1f} mV&quot;)
+up, dn = (VIN - RDS - VO_SET - DCR) / L, (VO_SET + VF + DCR) / L   # 含损耗的斜率（按 1 A 估）
+print(f&quot;含损耗斜率：上升 {up / 1e3:.0f} A/ms，下降 {dn / 1e3:.0f} A/ms；&quot;
+      f&quot;升 {up * D_real * T:.3f} A，降 {dn * (1 - D_real) * T:.3f} A&quot;)
+vo, vpp, imin, imax = run(D_real)
+print(f&quot;仿真：V_o = {vo:.2f} V，纹波 {vpp * 1e3:.1f} mV，i_L 在 {imin:.2f}～{imax:.2f} A 之间&quot;)
+vo_i, *_ = run(D_ideal)
+print(f&quot;如果用理想占空比：V_o = {vo_i:.2f} V&quot;)
+assert abs(vo - VO_SET) &lt; 0.05 and vpp &lt; 0.01
+</code></pre>
+<p>运行结果应为：理想占空比 0.417，考虑损耗 0.441；公式算出 ΔI_L 为 0.310 A、输出纹波 4.1 mV；含损耗斜率上升 147 A/ms、下降 116 A/ms，升降都是 0.324 A；仿真得到输出 5.01 V，纹波 4.3 mV，电感电流在 0.84～1.16 A 之间；如果直接用理想占空比 0.417，输出只有 4.71 V。仿真的纹波比公式略大，是因为仿真用的占空比是 0.441，三角波也略大一些。</p>
+<h2 id="七变体一同步降压">七、变体一：同步降压</h2>
+<p>异步降压里，断开阶段 1 A 的电流全部流过肖特基二极管，二极管上的功率是 <span class="math math-inline">\(V_F \cdot I_o \cdot (1 - D) = 0.4 \times 1 \times 0.559 \approx 0.22\)</span> W，是整个电路里最大的一项损耗。输出电压越低，断开阶段越长，这一项越突出。</p>
+<p>办法是把二极管换成一只 MOSFET，称为<strong>下管</strong>，见图 25-p2-4：</p>
+<p><a class="img-link" href="img/25_p2_4_sync.png"><img alt="12 V 输入经上管 MOSFET 到开关节点，开关节点经下管 MOSFET 接地，再经电感到输出；两只管子的栅极分别标驱动 A 和驱动 B，图下方写着两管轮流导通、中间留死区" src="img/25_p2_4_sync.png" loading="lazy" /></a></p>
+<p><em>图 25-p2-4　同步降压：用下管 MOSFET 代替续流二极管</em></p>
+<p>图 25-p2-4 里，上管导通时下管关断；上管关断后，控制器让下管导通，电感电流从地经下管流向电感。下管导通时只相当于一只 0.05 Ω 的电阻，1 A 时压降只有 0.05 V，损耗约 <span class="math math-inline">\(0.05 \times 1^2 \times 0.559 \approx 0.03\)</span> W，比二极管小了七八倍。Wikipedia 举过一个更夸张的例子：5 V 降到 3.3 V、10 A 时，硅二极管续流损耗 2.38 W，换成 MOSFET 只有 0.51 W。</p>
+<p>同步降压多了一个危险：<strong>两只管子绝不能同时导通</strong>。如果上管还没完全关断，下管就打开了，输入电源会经两只管子直接短路到地，叫<strong>直通</strong>。所以控制器在两管切换之间都会留一小段两管都关的时间，叫<strong>死区</strong>。死区里电感电流靠下管的<strong>体二极管</strong>续流：它是功率 MOSFET 制造时在漏极和源极之间天然形成的一只二极管，N 沟道管里方向是从源极指向漏极，正好让电感电流从地往上流（见 <a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a>）。很多电路还会在下管旁边再并一只肖特基二极管帮忙（见 Wikipedia Buck converter）。</p>
+<h2 id="八变体二隔离反激电源的次级">八、变体二：隔离（反激）电源的次级</h2>
+<p>手机充电器里常见的是<strong>隔离型开关电源（反激电源）</strong>。变压器接市电的一侧叫<strong>初级</strong>（原线圈一侧），接输出的一侧叫<strong>次级</strong>（副线圈一侧）。很多资料把次级的输出级画成&quot;脉冲 → 串联二极管 → 稳压管 → 电容&quot;的简化形式，下面把它画完整，见图 25-p2-5：</p>
+<p><a class="img-link" href="img/25_p2_5_flyback.png"><img alt="左边一个方框写着初级接市电、整流后约 311 V 直流、加 MOSFET 开关，经变压器隔离到右边；次级是整流二极管串联、输出电容并联、稳压管并联，再到输出端" src="img/25_p2_5_flyback.png" loading="lazy" /></a></p>
+<p><em>图 25-p2-5　反激电源的次级输出级（补全后的画法）</em></p>
+<p>图 25-p2-5 可以从刚学的异步降压过渡过来理解：</p>
+<ul>
+<li>异步降压里，上管导通时电感&quot;吸能&quot;，断开时电感经续流二极管把能量放给电容和负载。</li>
+<li>反激电源把电感换成一个<strong>带两组线圈的变压器</strong>。初级的 MOSFET 导通时，能量存进变压器，次级的二极管反向截止，负载靠电容供电；MOSFET 断开时，次级二极管导通，存住的能量送到电容和负载（见 Wikipedia Flyback converter）。</li>
+<li>所以次级那一串&quot;二极管 + 电容&quot;的作用，和 13 里&quot;整流 + 滤波&quot;是同一回事（见 <a href="../13-bridge-rectifier/page2.html">13 桥式整流 · 原理与实现篇</a>），只是进来的是高频脉冲而不是 50 Hz 正弦，电容可以小得多。</li>
+</ul>
+<p>为什么要绕这一圈？因为初级接的是市电整流后约 311 V 的直流，变压器两组线圈之间没有导线相连，人摸到次级的 USB 口才是安全的。</p>
+<p>关于简化画法里那只稳压管：真实产品一般不靠它稳压。输出电压是在次级测量，再通过光耦送回初级控制器调占空比（见 Wikipedia Flyback converter）；稳压管至多当作过压保护。光耦已经在 <a href="../23-optocoupler/page1.html">23 光耦隔离 · 直觉篇</a> 讲过；把它用在电源反馈，以及更快的数字隔离器，留到 <a href="../28-isolated-power/page1.html">28 隔离电源与数字隔离器 · 直觉篇</a> 再讲。</p>
+<h2 id="九渐进例题">九、渐进例题</h2>
+<p>例 1、例 2 的电路就是图 25-p2-1 的异步降压；例 3 的同步方案是图 25-p2-4，对比的二极管方案仍是图 25-p2-1。</p>
+<p><strong>例 1（完整示范）</strong> 12 V 降到 5 V，负载 1 A，200 kHz，L = 47 µH，C = 47 µF。求理想占空比、电感纹波和输出纹波。</p>
+<ul>
+<li>占空比： <span class="math math-inline">\(D = 5/12 \approx 0.417\)</span> 。</li>
+<li>电感纹波： <span class="math math-inline">\(\Delta I_L = (12 - 5) \times 0.417 / (200\ \text{kHz} \times 47\ \mu\text{H}) \approx 0.310\)</span> A，电感电流在约 0.85 A 到 1.15 A 之间。</li>
+<li>输出纹波： <span class="math math-inline">\(\Delta V_o = 0.310 / (8 \times 200\ \text{kHz} \times 47\ \mu\text{F}) \approx 4.1\)</span> mV。</li>
+</ul>
+<p><strong>例 2（填空）</strong> 输入改成 24 V，其余不变。</p>
+<ul>
+<li>占空比： <span class="math math-inline">\(D = 5/24 \approx\)</span> ____。</li>
+<li>电感纹波： <span class="math math-inline">\(\Delta I_L = (24 - 5) \times\)</span> ____ <span class="math math-inline">\(/ (200\ \text{kHz} \times 47\ \mu\text{H}) \approx\)</span> ____ A。</li>
+<li>这个纹波占负载电流的 ____%，是否还在 20%～40% 里？</li>
+</ul>
+<details>
+<summary>答案</summary>
+<p>D ≈ 0.208；ΔI_L ≈ 19 × 0.208 / 9.4 ≈ 0.42 A；占 42%，略超出 40%，可以把电感加大到约 50 µH 以上，或者把频率提高一些。</p>
+</details>
+<p><strong>例 3（变体迁移）</strong> 同步降压，12 V 降到 3.3 V，负载 2 A。上管、下管的 <span class="math math-inline">\(R_{DS(on)}\)</span> 都是 0.05 Ω。如果改用压降 0.4 V 的肖特基二极管续流，续流元件的损耗分别是多少？</p>
+<details>
+<summary>答案</summary>
+<p>理想占空比 D = 3.3/12 = 0.275，断开时间占 1 − D = 0.725。二极管：0.4 × 2 × 0.725 = 0.58 W；下管：0.05 × 2² × 0.725 = 0.145 W。同步方案在这一项上省了约 0.44 W。</p>
+</details>
+<h2 id="小结">小结</h2>
+<ul>
+<li>伏秒平衡：稳定时电感电流一周期内升降相等，推出 <span class="math math-inline">\(V_o = D \cdot V_{in}\)</span> 。</li>
+<li>电感纹波 <span class="math math-inline">\(\Delta I_L = (V_{in} - V_o) D / (fL)\)</span> ，一般取输出电流的 20%～40%；输出纹波 <span class="math math-inline">\(\Delta V_o = \Delta I_L / (8fC)\)</span> 。</li>
+<li>损耗让实际占空比比理想值略大，反馈会自动补偿。</li>
+<li>同步降压用下管代替二极管，效率更高，但必须留死区防直通。</li>
+<li>反激电源的次级是&quot;二极管整流 + 电容滤波&quot;，简化画法中的稳压管不是真正的稳压手段，真实产品靠光耦反馈稳压。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Wikipedia，Buck converter（伏秒平衡、 <span class="math math-inline">\(D = V_o/V_{in}\)</span> 、输出纹波 <span class="math math-inline">\(\Delta I_L/(8fC)\)</span> 、同步整流的损耗对比与死区）：<a href="https://en.wikipedia.org/wiki/Buck_converter">https://en.wikipedia.org/wiki/Buck_converter</a></li>
+<li>TI，SLVA477B《Basic Calculation of a Buck Converter's Power Stage》（电感纹波公式、纹波取输出电流的 20%～40%、肖特基二极管损耗）：<a href="https://www.ti.com/lit/an/slva477b/slva477b.pdf">https://www.ti.com/lit/an/slva477b/slva477b.pdf</a></li>
+<li>Wikipedia，Flyback converter（反激电源两个阶段的能量传递、光耦反馈）：<a href="https://en.wikipedia.org/wiki/Flyback_converter">https://en.wikipedia.org/wiki/Flyback_converter</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

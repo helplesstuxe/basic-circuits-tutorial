@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>12 积分电路：SPICE 复核报告</title>
+<title>12 电压跟随器：SPICE 复核报告</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,59 +42,72 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/12.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="12-积分电路spice-复核报告">12 积分电路：SPICE 复核报告</h1>
+<h1 id="12-电压跟随器spice-复核报告">12 电压跟随器：SPICE 复核报告</h1>
 <ul>
-<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/12/.spiceinit</code> 设为 psa；网表统一用 <code>.options method=gear reltol=1e-4 rshunt=1e12</code>。</li>
-<li><strong>运行</strong>：在仓库根目录执行 <code>/workspace/circuits-venv/bin/python spice/12/run.py</code>，退出码 0，已实际运行，打印 52 项。核对表另有两行：例题 1“不会削顶”（用同一次仿真判定）和 TI 示例（ℹ️，没有仿真），共 54 行。9 个网表并行跑，全程约 12 分钟，最慢的是 <code>t_p4.cir</code>（3600 s 瞬态）和 <code>t_rfsweep.cir</code>。<a href="http://run.py">run.py</a> 只从 stdout 解析结果，不写数据文件。</li>
-<li><strong>强电</strong>：本节全部是 ±15 V 运放电路，没有市电部分，所以全部按页面电路仿真。</li>
-</ul>
-<h2 id="网表spice12">网表（spice/12/）</h2>
+<li>
+<p>工具：ngspice 44.2，batch 模式。<code>spice/12/.spiceinit</code> 里写了 <code>set ngbehavior=psa</code>，TI 的 PSpice 模型需要这一行。</p>
+</li>
+<li>
+<p>运行：在仓库根目录执行 <code>python spice/12/run.py</code>，退出码 0，已实际运行（51 个比对项，约 3 分钟）。</p>
+</li>
+<li>
+<p>网表：</p>
 <table>
 <thead>
 <tr>
-<th>网表</th>
+<th>文件</th>
 <th>内容</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>t_area.cir</code></td>
-<td>图 12-p1-1：+1 V 2 ms → 0 V 1 ms → −0.5 V 2 ms，RC 1 ms</td>
+<td><code>dc_div.cir</code></td>
+<td>分压器直接接负载 / 经跟随器接负载（page1、page2 仿真、例1、例2、练习2）</td>
 </tr>
 <tr>
-<td><code>t_square.cir</code></td>
-<td>图 12-p1-3、p1 第 1/2 步（500 / 250 / 5000 Hz）、p2 结论一/二、例题 1、例题 2、图 12-p3-2（C 5 nF / 1 μF）、练习 3（68 nF）</td>
+<td><code>dc_vin.cir</code></td>
+<td>跟随器基本输入输出、练习1</td>
+</tr>
+<tr>
+<td><code>t_cap.cir</code></td>
+<td>图 12-p3-1，0.1 µF 容性负载阶跃</td>
+</tr>
+<tr>
+<td><code>t_ss5.cir</code></td>
+<td>图 12-p3-2，5 V 单电源</td>
+</tr>
+<tr>
+<td><code>t_ex1ss.cir</code></td>
+<td>例1 第4步</td>
+</tr>
+<tr>
+<td><code>t_ex5.cir</code></td>
+<td>练习5</td>
+</tr>
+<tr>
+<td><code>t_sr.cir</code> / <code>t_step.cir</code></td>
+<td>压摆率、练习4、page1 第4步正弦</td>
 </tr>
 <tr>
 <td><code>ac.cir</code></td>
-<td>p1 第 3 步（159 Hz、318 Hz）、p3 §一 f_c 与 16 Hz、练习 1（R_f 318 kΩ）、两步法下限（R_f 31.8 kΩ）、参数表 GBW（同相 101 倍）</td>
+<td>带宽</td>
 </tr>
 <tr>
-<td><code>t_ramp.cir</code></td>
-<td>例题 3：恒定 −0.5 V 输入的斜坡、最高电压、最长计时</td>
-</tr>
-<tr>
-<td><code>t_drift.cir</code></td>
-<td>p1 第 4/5 步、p2 结论三、p2 代码输出与图 12-p2-3：±1 V 500 Hz + 20 mV，理想积分器与并 1 MΩ 对照</td>
-</tr>
-<tr>
-<td><code>t_rfsweep.cir</code></td>
-<td>图 12-p3-1：R_f = 10 k / 100 k / 1 M / 10 MΩ，(a) 带 20 mV 偏置的中心，(b) 无偏置的峰峰值</td>
-</tr>
-<tr>
-<td><code>t_p2.cir</code></td>
-<td>练习 2：R 10 kΩ、C 1 μF、5 mV 偏置，理想积分器与并 1 MΩ</td>
-</tr>
-<tr>
-<td><code>t_p4.cir</code></td>
-<td>练习 4：R 200 kΩ、C 1 μF，1 A×10 s；输入接地时加 +1 mV / −1 mV / 不加失调，连续 3600 s</td>
-</tr>
-<tr>
-<td><code>dmm.cir</code></td>
-<td>万用表读数表：并 1 MΩ 的实用积分器，输入接地 / +5 mV / +20 mV 时的直流工作点；另有 R_f 250 kΩ（两步法上限）</td>
+<td><code>t_ref.cir</code> / <code>t_ref2.cir</code></td>
+<td>例3 基准缓冲</td>
 </tr>
 </tbody>
 </table>
+</li>
+<li>
+<p>收敛说明：</p>
+<ul>
+<li>TI 模型直接做 op 常不收敛，所以直流值都用&quot;输入从 0 爬升的瞬态&quot;求稳态。</li>
+<li>单电源、V− 接 SPICE 全局地、输出带 ≤5 kΩ 负载时，模型会收敛到输出 ≈6.5 V（高于电源）的假解。遇到这种情况，把电路地放在 −2.5 V、V+ 放在 +2.5 V（电位差仍是 5 V），结果按相对电路地读。见 <code>t_ex1ss.cir</code> 和 <code>t_ref*.cir</code>。</li>
+<li>曾试过&quot;输出串 33 Ω + 1 µF&quot;的基准接法，模型同样锁进假状态，结果不可信，所以没有采用（见下文 ❌ 的修改建议）。</li>
+</ul>
+</li>
+</ul>
 <h2 id="模型与来源">模型与来源</h2>
 <table>
 <thead>
@@ -107,25 +120,46 @@ mjx-container{max-width:100%}
 <tbody>
 <tr>
 <td>LM358B</td>
-<td>spice/models/LMx58B_LM2904B.lib，子电路 <code>LMX58B_LM2904B</code>（复用，同事 B 下载）</td>
-<td>TI 官方 PSpice 模型：<a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a> （产品页 <a href="https://www.ti.com/product/LM358B%EF%BC%89">https://www.ti.com/product/LM358B）</a></td>
-</tr>
-<tr>
-<td>电阻、电容、清零开关</td>
-<td>理想元件；清零用 ngspice 内建 <code>SW</code>（导通 1 Ω、断开 1e15 Ω）</td>
-<td>—</td>
+<td>spice/models/LMx58B_LM2904B.lib（复用，子电路 LMX58B_LM2904B）</td>
+<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
 </tr>
 </tbody>
 </table>
-<p>本节没有用替代模型。页面明确写的是 LM358B（p3 参数表），和模型一致。</p>
+<p>没有用替代模型。</p>
 <h2 id="假设">假设</h2>
-<ol>
-<li><strong>“输出从 0 V 开始”</strong>：理想积分器没有直流工作点，SPICE 里在电容两端放一个开关，只在 t &lt; 50 μs 时闭合给电容清零，之后断开。所有时间都从 50 μs 算起。</li>
-<li><strong>三角波峰峰值</strong>：取每个方波边沿之前 2 μs 处的两个拐点相减（第 4 个周期；1 kHz 取第 11 个）。LM358B 在方波边沿上有一个小尖峰（见 ⚠️ 1），把尖峰也算进去的“示波器读数”单列一行。</li>
-<li><strong>159 Hz 正弦</strong>：理想积分器做不了 AC 分析（没有工作点），用并 1 MΩ 的实用积分器代替。R_f 在 159 Hz 处只引起约 0.6° 的相位差、0.01% 的幅度差。</li>
-<li><strong>漂移类的量</strong>：LM358B 模型自带约 0.29 mV 失调和约 10 nA 偏置电流，全部保留，不清零。练习 4 的“1 mV 失调”用“加 1 mV 和不加 1 mV 两次仿真相减”单独取出。</li>
-<li><strong>“中心”</strong>：一段时间内输出的平均值（例如 0.9～1 s）。</li>
-</ol>
+<ul>
+<li>
+<p>page1、page2 没有写运放电源，按前面节点的做法取 ±15 V。单电源的情况按页面写的 5 V / 12 V。</p>
+</li>
+<li>
+<p>电阻取标称值。</p>
+</li>
+<li>
+<p>例2 和练习2 的开路电压取 1 V，表中给的是比例。</p>
+</li>
+<li>
+<p>图 12-p3-1：</p>
+<ul>
+<li>阶跃在 5 µs 处，上升沿 10 ns；</li>
+<li>Riso 接在运放输出和电容之间，反馈取自运放输出脚。</li>
+<li>页面图是按&quot;固定 300 Ω 输出电阻&quot;的简化模型画的，这里用的是完整的官方模型。</li>
+</ul>
+</li>
+<li>
+<p>练习5：分压点电容取 10 µF，不接负载。</p>
+</li>
+<li>
+<p>例3：页面没有给模数转换器抽电流的数值，假设了两种脉冲：</p>
+<ul>
+<li>1 mA、上下沿 10 ns、宽 1 µs；</li>
+<li>0.1 mA、上下沿 100 ns、宽 1 µs。</li>
+</ul>
+<p>比较器门限端不取电流。对照组是同一脉冲直接从带 100 nF 的分压点抽取。</p>
+</li>
+<li>
+<p>带宽用 ac 分析的 −3 dB 点（取最后一次下穿 0.707 的位置）。</p>
+</li>
+</ul>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
@@ -139,520 +173,390 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>p1 图 12-p1-1 ①：2 ms 时输出</td>
-<td>−2.0 V</td>
-<td>−1.999 V</td>
+<td>page1 开头 10 V 两只 10k 分压，空载</td>
+<td>5.00 V</td>
+<td>5.000 V</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 图12-p1-1 1k 直接接分压点</td>
+<td>约 0.83 V（&quot;不到 1 V&quot;）</td>
+<td>0.833 V</td>
+<td>+0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 图12-p1-3 / 第2步 1k 接跟随器输出：分压点 / 负载</td>
+<td>5 V / 5 V</td>
+<td>5.000 / 5.000 V</td>
+<td>&lt;0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 第2步 负载电流</td>
+<td>约 5 mA</td>
+<td>5.00 mA</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 第3步 1k 改接分压点，跟随器输出</td>
+<td>0.83 V</td>
+<td>0.834 V</td>
+<td>+0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 第4步 1 kHz、1 V 峰正弦，两条线重合</td>
+<td>峰值 1 V</td>
+<td>1.000 V，与输入最大偏差 0.46 mV</td>
+<td>&lt;0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 代数 5 V→5 V，−1.2 V→−1.2 V</td>
+<td>5 / −1.2 V</td>
+<td>5.0004 / −1.1997 V</td>
+<td>&lt;0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 代数 2.5 V→2.5 V</td>
+<td>2.5 V</td>
+<td>2.5003 V</td>
+<td>+0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 A=10万：5 V 输入时输出少约 0.05 mV</td>
+<td>0.05 mV</td>
+<td>差 0.38 mV（主要来自失调 0.29 mV）</td>
+<td>×7.6</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page2 低频倍数 0.99999</td>
+<td>0.99999</td>
+<td>1.00002</td>
+<td>&lt;0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 仿真/图12-p2-2 直接接 1k / 10k / 100k</td>
+<td>0.83 / 3.33 / 4.76 V</td>
+<td>0.833 / 3.333 / 4.762 V</td>
+<td>&lt;0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例1 空载 / 直接接 2k / 经跟随器</td>
+<td>3.33 / 0.77 / 3.33 V</td>
+<td>3.333 / 0.769 / 3.334 V</td>
+<td>&lt;0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例1 模块电流</td>
+<td>约 1.7 mA</td>
+<td>1.667 mA</td>
+<td>−2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例1 第4步 5 V 单电源：带 2k 输出 / 上限 / 余量</td>
+<td>3.33 / 3.5 / 0.17 V</td>
+<td>3.334 / 3.500 / 0.166 V</td>
+<td>&lt;2.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例2 内阻 50k、后级 200k 直接接</td>
+<td>80%</td>
+<td>80.04%</td>
 <td>+0.05%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图 12-p1-1 ②：2～3 ms 输入为 0，输出停住</td>
-<td>−2.0 V</td>
-<td>−1.999 V</td>
-<td>+0.05%</td>
+<td>page2 例3 基准 2.5 V（缓冲后）</td>
+<td>2.5 V</td>
+<td>2.5003 V</td>
+<td>+0.01%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图 12-p1-1 ③：5 ms 时输出</td>
-<td>−1.0 V</td>
-<td>−0.999 V</td>
-<td>+0.1%</td>
+<td>page2 例3 &quot;负载突然抽电流时……基准电压几乎不跳&quot;</td>
+<td>几乎不跳</td>
+<td>见下面三个数</td>
+<td>—</td>
+<td>❌</td>
+</tr>
+<tr>
+<td>└ 1 mA 快脉冲，跟随器输出</td>
+<td>—</td>
+<td>先掉 0.62 V，再冲到 3.0 V</td>
+<td>—</td>
+<td>（同上）</td>
+</tr>
+<tr>
+<td>└ 0.1 mA 较缓脉冲，跟随器输出</td>
+<td>—</td>
+<td>跳 ±56 mV</td>
+<td>—</td>
+<td>（同上）</td>
+</tr>
+<tr>
+<td>└ 对照：1 mA 快脉冲直接从带 100 nF 的分压点抽</td>
+<td>—</td>
+<td>只掉 10 mV</td>
+<td>—</td>
+<td>（同上）</td>
+</tr>
+<tr>
+<td>page3 图12-p3-1 直接接 0.1 µF 最高</td>
+<td>0.190 V</td>
+<td>0.1955 V</td>
+<td>+2.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图 12-p1-3 / 第 1 步 / p2 结论二：±1 V 500 Hz 三角波峰峰值</td>
-<td>1 V</td>
-<td>0.995 V</td>
-<td>−0.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 图 12-p1-3 说明 / p2 结论一：斜率</td>
-<td>1 V/ms</td>
-<td>0.9997 V/ms</td>
-<td>−0.03%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 2 步：250 Hz 峰峰值</td>
-<td>2 V</td>
-<td>1.995 V</td>
-<td>−0.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 2 步：5 kHz 三角波峰峰值（拐点）</td>
-<td>0.1 V</td>
-<td>0.0952 V</td>
-<td>−4.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 2 步：5 kHz 时示波器读到的峰峰值（含边沿尖峰）</td>
-<td>0.1 V</td>
-<td>0.315 V</td>
-<td>+215%</td>
-<td>⚠️ 每个边沿有约 0.1 V 尖峰和约 6 μs 的台阶，理想运放没有</td>
-</tr>
-<tr>
-<td>p1 第 3 步：159 Hz 正弦，幅度和输入差不多</td>
-<td>1 倍</td>
-<td>0.9999 倍</td>
-<td>−0.01%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 3 步：错开四分之一周期</td>
-<td>90°</td>
-<td>90.6°</td>
-<td>+0.6%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 3 步：频率高一倍，输出小一半（318 Hz）</td>
-<td>0.5 倍</td>
-<td>0.500 倍</td>
-<td>−0.01%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 4 步：20 mV 偏置，约 0.6 s 撞到饱和</td>
-<td>约 0.6 s</td>
-<td>0.629 s</td>
-<td>+4.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 第 4 步 / p2 结论三 / 代码：饱和后贴住的电压</td>
-<td>−13.5 V</td>
-<td>−14.99 V</td>
-<td>−11%</td>
-<td>⚠️ LM358B 负向能摆到离 −15 V 只差几十毫伏</td>
-</tr>
-<tr>
-<td>p1 第 5 步：并 1 MΩ 后中心</td>
-<td>约 −2 V</td>
-<td>−1.982 V</td>
-<td>+0.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 结论三 / 读图 12-p2-3：漂移速度</td>
-<td>20 V/s</td>
-<td>19.78 V/s</td>
-<td>−1.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 代码输出 / 读图 12-p2-3：撞到 −13.5 V 的时刻</td>
-<td>0.627 s</td>
-<td>0.629 s</td>
-<td>+0.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 代码输出 / 读图 12-p2-3：实用积分器平均输出</td>
-<td>−2.00 V</td>
-<td>−1.982 V</td>
-<td>+0.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 读图 12-p2-3：实用积分器三角波峰峰值</td>
-<td>1.00 V</td>
-<td>0.995 V</td>
-<td>−0.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 读图 12-p2-3：约 0.2 s 内下沉到 −2 V 附近</td>
-<td>定性</td>
-<td>0.2 s 时中心 −1.78 V（终值的 90%）</td>
+<td>page3 图12-p3-1 直接接，60 µs 还在振荡</td>
+<td>仍在振</td>
+<td>55～65 µs 峰峰值 61 mV</td>
 <td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 读图 12-p2-3：下沉快慢由 R_fC = 0.1 s 决定</td>
-<td>0.1 s</td>
-<td>0.1002 s（由 0.1 s / 0.2 s 的中心值反算）</td>
-<td>+0.2%</td>
+<td>page3 图12-p3-1 串 10 Ω 最高（过冲 40%）</td>
+<td>0.140 V</td>
+<td>0.151 V（过冲 51%）</td>
+<td>+7.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例题 1：±2 V 250 Hz 峰峰值</td>
-<td>4 V</td>
-<td>3.99 V</td>
-<td>−0.3%</td>
+<td>page3 图12-p3-1 串 33 Ω 最高</td>
+<td>0.101 V</td>
+<td>0.108 V</td>
+<td>+7.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例题 1：不会削顶</td>
-<td>定性</td>
-<td>3.99 V，波形完整</td>
+<td>page3 图12-p3-1 串 33 Ω 过冲约 1%、约 8 µs 进入 ±2%</td>
+<td>1% / 8 µs</td>
+<td>8.0% / 21 µs</td>
+<td>×8 / ×2.6</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page3 §一 33 Ω × 1 mA 压降</td>
+<td>33 mV</td>
+<td>33 mV（欧姆定律）</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图12-p3-2 5 V 单电源输出上限 / 跟不上的输入</td>
+<td>3.5 V / 3.5 V</td>
+<td>3.500 V / 3.55 V</td>
+<td>&lt;1.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图12-p3-2 及小结 5 V 单电源输出下限&quot;约 0.1 V&quot;</td>
+<td>约 0.1 V</td>
+<td>0.024 V</td>
+<td>−76%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page3 §三 压摆率</td>
+<td>约 0.5 V/µs</td>
+<td>0.518 V/µs（上升和下降相同）</td>
+<td>+3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 §三 1 V 峰 80 kHz / 3 V 峰 27 kHz 是不失真边缘</td>
+<td>峰值 1 / 3 V</td>
+<td>1.005 / 3.002 V，最大斜率 0.505 / 0.509 V/µs（正好顶到压摆率）</td>
+<td>&lt;0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>（补充）3 V 峰 80 kHz 超过 fmax</td>
+<td>变三角波</td>
+<td>输出峰值只有 1.59 V，三角波</td>
 <td>—</td>
-<td>✅（已含在上一行）</td>
-</tr>
-<tr>
-<td>p2 例题 2：20 kΩ / 47 nF、±1 V 1 kHz 峰峰值</td>
-<td>0.53 V</td>
-<td>0.527 V</td>
-<td>−0.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例题 3：−0.5 V 输入，到 +10 V 的时间</td>
-<td>20 ms</td>
-<td>20.0 ms</td>
-<td>−0.02%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例题 3：输出最多升到约 +13.5 V</td>
-<td>13.5 V</td>
-<td>13.83 V</td>
-<td>+2.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例题 3：最长计时</td>
-<td>27 ms</td>
-<td>27.6 ms</td>
-<td>+2.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 §一 / 练习 1：f_c（R_f 1 MΩ、C 100 nF）</td>
-<td>1.6 Hz</td>
-<td>1.595 Hz</td>
-<td>−0.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 §一：可以放心积分 16 Hz 以上（16 Hz 时幅度 / 理想积分器）</td>
-<td>定性</td>
-<td>0.995，相位 95.7°（理想 90°）</td>
-<td>−0.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 1：直流放大倍数 R_f / R</td>
-<td>100 倍</td>
-<td>99.8 倍</td>
-<td>−0.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 1：R_f 318 kΩ 时 f_c（要求 ≤ 5 Hz）</td>
-<td>5 Hz</td>
-<td>5.007 Hz</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 §二 两步法①：R_f 31.8 kΩ 时 f_c（应为 50 Hz）</td>
-<td>50 Hz</td>
-<td>50.04 Hz</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 §二 两步法②：R_f 250 kΩ、20 mV 偏置时中心</td>
-<td>−0.5 V</td>
-<td>−0.495 V</td>
-<td>+1.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 参数表：LM358B 的 GBW</td>
+<td>page3 §三 末段 跟随器带宽</td>
 <td>约 1.2 MHz</td>
-<td>1.45 MHz（同相 101 倍的 −3 dB 频率 × 增益）</td>
-<td>+21%</td>
-<td>✅ 页面引用的是手册典型值，模型略快；与 P3 报告的结论一致</td>
+<td>2.76 MHz，并有 4.8 dB 尖峰</td>
+<td>+130%</td>
+<td>⚠️</td>
 </tr>
 <tr>
-<td>p3 图 12-p3-1 (a)：R_f 10 kΩ 中心</td>
-<td>−0.02 V</td>
-<td>−0.0196 V</td>
-<td>+1.9%</td>
+<td>page3 练习1 1.8 V、3.6k：输出 / 电流</td>
+<td>1.8 V / 0.5 mA</td>
+<td>1.8003 V / 0.5001 mA</td>
+<td>&lt;0.03%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图 12-p3-1 (a)：R_f 100 kΩ 中心（§二 取值 0.20 V）</td>
-<td>−0.20 V</td>
-<td>−0.198 V</td>
-<td>+0.9%</td>
+<td>page3 练习2 直接接 / 经跟随器</td>
+<td>1/2 / 约 100%</td>
+<td>50.01% / 100.05%</td>
+<td>&lt;0.05%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图 12-p3-1 (a)：R_f 1 MΩ 中心</td>
-<td>−2.00 V</td>
-<td>−1.982 V</td>
-<td>+0.9%</td>
+<td>page3 练习3 33 Ω × 0.5 mA</td>
+<td>16.5 mV</td>
+<td>16.5 mV（欧姆定律）</td>
+<td>0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图 12-p3-1 (a)：R_f 10 MΩ 中心</td>
-<td>−13.01 V</td>
-<td>−13.82 V</td>
-<td>−6.2%</td>
-<td>✅ 负向饱和在 −15 V 而不是 −13.5 V，削掉的少一些</td>
-</tr>
-<tr>
-<td>p3 图 12-p3-1 (b)：R_f 10 kΩ 峰峰值</td>
-<td>0.93 V</td>
-<td>0.922 V</td>
-<td>−0.9%</td>
+<td>page3 练习4 2 V 峰 40 kHz 不失真</td>
+<td>2 V</td>
+<td>2.003 V</td>
+<td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图 12-p3-1 (b)：R_f 100 kΩ 峰峰值</td>
-<td>1.00 V</td>
-<td>0.995 V</td>
-<td>−0.5%</td>
+<td>page3 练习4 100 kHz 峰值最多 0.8 V</td>
+<td>0.8 V</td>
+<td>0.806 V（斜率 0.506 V/µs）</td>
+<td>+0.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图 12-p3-1 (b)：R_f 1 MΩ 峰峰值</td>
-<td>1.00 V</td>
-<td>0.995 V</td>
-<td>−0.5%</td>
+<td>page3 练习5 12 V 单电源偏置 / 上限</td>
+<td>6 V / 10.5 V</td>
+<td>6.000 / 10.50 V</td>
+<td>&lt;0.01%</td>
 <td>✅</td>
-</tr>
-<tr>
-<td>p3 图 12-p3-2：C 5 nF 理论峰峰值</td>
-<td>20 V</td>
-<td>19.86 V（第一个半周，削平之前）</td>
-<td>−0.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 12-p3-2：C 5 nF 被削平的电压</td>
-<td>−13.5 V</td>
-<td>−14.22 V</td>
-<td>−5.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 12-p3-2：C 1 μF 峰峰值</td>
-<td>0.10 V</td>
-<td>0.0995 V（含边沿尖峰 0.315 V）</td>
-<td>−0.5%</td>
-<td>✅（尖峰见 ⚠️ 1）</td>
-</tr>
-<tr>
-<td>p3 练习 2：5 mV 偏置，漂到 −13.5 V 的时间</td>
-<td>27 s</td>
-<td>28.7 s</td>
-<td>+6.2%</td>
-<td>✅ 包含模型自带的失调和偏置电流</td>
-</tr>
-<tr>
-<td>p3 练习 2：并 1 MΩ 后最终偏移</td>
-<td>−0.5 V</td>
-<td>−0.479 V</td>
-<td>+4.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 3：68 nF 时峰峰值</td>
-<td>3.68 V</td>
-<td>3.64 V</td>
-<td>−1.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 4：1 A 持续 10 s，输出变化</td>
-<td>5 V（负也行）</td>
-<td>−5.10 V</td>
-<td>+2.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 4：1 mV 失调的漂移速度</td>
-<td>5 mV/s</td>
-<td>4.89 mV/s</td>
-<td>−2.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 4：1 小时累计</td>
-<td>18 V</td>
-<td>17.6 V（4.89 mV/s × 3600 s）</td>
-<td>−2.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 4：1 mV 与运放自身漂移同向，1 小时后“早已饱和”</td>
-<td>定性</td>
-<td>1074 s 时过 −13.5 V，1 h 时 −14.98 V</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习 4：LM358B 自身（不加 1 mV）的漂移</td>
-<td>—</td>
-<td>−7.85 mV/s</td>
-<td>—</td>
-<td>ℹ️ 约 10 nA 偏置电流流进 1 μF，比 1 mV 失调造成的 5 mV/s 还大</td>
-</tr>
-<tr>
-<td>p3 练习 4：不加 1 mV，1 小时后</td>
-<td>—</td>
-<td>−14.98 V（已饱和）</td>
-<td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p3 练习 4：加 +1 mV（与自身漂移反向），1 小时后</td>
-<td>—</td>
-<td>−9.69 V</td>
-<td>—</td>
-<td>ℹ️ 两项部分抵消，所以“会不会饱和”取决于失调的极性</td>
-</tr>
-<tr>
-<td>p3 §一：TI SBOA275B 示例（100 kΩ、1.59 nF、100 MΩ、TLV9002、−740 μV）</td>
-<td>—</td>
-<td>未仿真</td>
-<td>—</td>
-<td>ℹ️ 不是本节电路，库里没有 TLV9002 模型</td>
-</tr>
-<tr>
-<td><strong>合计</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td>✅ 48　⚠️ 2　❌ 0　ℹ️ 4</td>
 </tr>
 </tbody>
 </table>
-<p><strong>总的印象</strong>：凡是只取决于 R、C 的数（峰峰值、斜率、f_c、R_f/R 倍数、−2 V 中心），LM358B 模型和页面的理想推导吻合在 1～2% 以内。页面自带的 Python 仿真结果（0.627 s、−2.00 V）在 SPICE 里也能复现。偏差只出在页面有意简化的两处：输出极限按对称 ±13.5 V 处理，运放按无限快处理。</p>
-<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>⚠️ 1：p1 第 2 步（5 kHz）的示波器读数。</strong> 在“升到 5 kHz，只剩 0.1 V 峰峰。”后面加：</p>
-<blockquote>
-<p>这时三角波已经很小，你还会注意到，方波每次跳变的瞬间，三角波的拐角上都冒出一个约 0.1 V 的小尖刺，随后有几微秒的小台阶。这是运放来不及反应造成的：LM358B 不是无限快的运放，输出级在电流换方向时还要“愣”一下。理想积分器没有这个尖刺。示波器的自动测量如果显示峰峰值约 0.3 V，多出来的就是这两个尖刺；读三角波本身的高度，仍然是 0.1 V。频率越高、三角波越小（参数与调试篇里 C = 1 μF 那条也一样），尖刺就越显眼。</p>
-</blockquote>
-<p><strong>⚠️ 2：饱和电压“−13.5 V”。</strong> 涉及 p1 第 4 步、p2 结论三、页面代码的 VSAT、图 12-p2-3 的灰线。数字可以不改，在 p2 结论三括号里“输出极限约 ±13.5 V 估算，见 P3 运放入门 · 直觉篇”之后加一句：</p>
-<blockquote>
-<p>（这是为了好算取的对称值。真实的 LM358B 两边并不对称：正向最多到约 +13.8 V，负向几乎能贴到 −15 V，用 TI 的模型仿真是 −14.99 V，见 P3 运放入门。所以你在示波器上看到的饱和平线大约在 −14.9 V，不是 −13.5 V；撞线的时刻差不多，仍是 0.6 s 左右。）</p>
-</blockquote>
-<p>p1 第 4 步“整条线贴在 −13.5 V 附近不动了”可以改成“整条线贴在 −14～−15 V 附近不动了”。</p>
-<h2 id="补充说明不计入-️供作者参考">补充说明（不计入 ⚠️，供作者参考）</h2>
+<p><strong>统计：✅ 30　⚠️ 4　❌ 1</strong></p>
 <ul>
-<li>练习 4 的答案说“1 mV 失调，1 小时累计 18 V，早已饱和”，SPICE 完全支持。但 SPICE 还给出：在 R 200 kΩ、C 1 μF 时，<strong>LM358B 自己的偏置电流</strong>（约 10 nA）就能造成约 8 mV/s 的漂移，比题目设的 1 mV 失调还大。这正好可以给答案的改进思路①②补一句：“偏置电流也会被攒起来，R 越大越明显，所以长时间积分要选 CMOS 输入的运放”。p3 参数表里已经有这条，可以在练习里点一下。</li>
-<li>页面导航：page1 的“上一页”指向 06 节，page3 的“下一页”指向 19 节。这和数值无关，未核对是不是有意的阅读顺序。</li>
+<li>按表格行计数。例3 的三条&quot;└&quot;子行算在同一条 ❌ 里，不另计。</li>
+<li><a href="http://run.py">run.py</a> 共有 51 个比对项。</li>
 </ul>
+<h2 id="--️-的修改建议页面口吻可直接粘贴">❌ / ⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>❌ page2 例3 第134段（&quot;负载突然抽电流时，由运放的输出级及时补上，基准电压几乎不跳。&quot;）</strong></p>
+<p>把这句换成：</p>
+<blockquote>
+<p>负载慢慢变化或一直取电流时，由运放的输出级补上，基准电压稳稳不动；但模数转换器采样时抽的是极短的电流脉冲，LM358B 这种 1 MHz 级的慢运放来不及反应，跟随器输出反而会跳一下（用 TI 官方模型仿真：1 mA、1 µs 的快脉冲能让输出跳 0.6 V）。所以实际电路还要在模数转换器参考端就近并一个电容（按模数转换器手册推荐的数值），由电容先顶住瞬间的电流，跟随器负责把电容慢慢补满；电容大时，跟随器输出和电容之间要串几十欧的隔离电阻（见<a href="../../12-voltage-follower/page3.html">参数与调试篇</a>第一节）。</p>
+</blockquote>
+<p><strong>⚠️ page2 第37段（&quot;输出比 5 V 少约 0.05 mV&quot;）</strong></p>
+<p>在句末&quot;任何万用表都量不出来&quot;之后补：</p>
+<blockquote>
+<p>实际芯片还有失调电压（LM358B 典型零点几毫伏，最大 3 mV），它往往比这 0.05 mV 大得多，但同样小到万用表难以分辨。</p>
+</blockquote>
+<p><strong>⚠️ page3 图12-p3-1 说明（&quot;过冲约 1%，约 8 μs 就稳在……&quot;）</strong></p>
+<p>在&quot;真实芯片的振铃程度仍要以实测为准&quot;之后补：</p>
+<blockquote>
+<p>用 TI 官方模型仿真同一电路，直接接时最高 0.196 V、串 10 Ω 最高 0.151 V，和图中接近；串 33 Ω 时过冲约 8%，大约 20 μs 才进入 ±2%，比图中的简化模型慢。想要几乎不过冲，可以把隔离电阻加到 50 Ω 左右（仿真过冲不到 1%，约 14 μs 稳定）。</p>
+</blockquote>
+<p><strong>⚠️ page3 第二节&quot;输入接近 0 时，输出最低只到约 0.1 V&quot;及本页小结&quot;约 0.1～3.5 V&quot;</strong></p>
+<p>改为：</p>
+<blockquote>
+<p>输入接近 0 时，输出最低只能到几十毫伏（TI 模型约 0.02 V，带负载时会更高），到不了真正的 0 V。</p>
+</blockquote>
+<p>小结中的&quot;约 0.1～3.5 V&quot;改为&quot;约几十毫伏～3.5 V&quot;。</p>
+<p><strong>⚠️ page3 第三节末段（&quot;在这里最宽，约 1.2 MHz&quot;）</strong></p>
+<p>改为：</p>
+<blockquote>
+<p>在这里最宽，至少约 1.2 MHz（TI 官方模型仿真约 2.8 MHz，而且接近带宽处有约 5 dB 的抬高，这也说明跟随器的稳定余量最小）。</p>
+</blockquote>
 <h2 id="面包板万用表读数表">面包板万用表读数表</h2>
-<p>条件：图 12-p1-2 并 R_f = 1 MΩ（即 p1 第 5 步 / 图 12-p2-2 的实用积分器），R 10 kΩ，C 100 nF，LM358B，±15 V。LM358 引脚：1 脚输出 A，2 脚反相输入 A，3 脚同相输入 A，4 脚接 −15 V，8 脚接 +15 V。万用表用直流电压挡；方波输入时直流挡读到的就是平均值，也就是“中心”。数值来自 <code>dmm.cir</code>（直流工作点）和 <code>t_drift.cir</code>（方波）。</p>
+<p>条件：LM358B，±15 V 供电（第 8 脚 +15 V，第 4 脚 −15 V）。跟随器接法是第 1 脚接第 2 脚，输入接第 3 脚。电阻 ±5%。</p>
 <table>
 <thead>
 <tr>
-<th>测量点</th>
-<th>表笔位置</th>
-<th>输入接地</th>
-<th>输入 ±1 V 500 Hz + 20 mV 偏置</th>
-<th>页面值</th>
+<th>条件</th>
+<th>红笔 → 黑笔</th>
+<th>应读到</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>电源</td>
-<td>红笔接 8 脚，黑笔接地；再红笔接 4 脚</td>
-<td>+15.0 V / −15.0 V</td>
-<td>同左</td>
-<td>±15 V</td>
+<td>10 V 经两只 10k 分压，空载</td>
+<td>分压点 → GND</td>
+<td>4.75～5.25 V（典型 5.00 V）</td>
+<td>两只 5% 电阻</td>
 </tr>
 <tr>
-<td>同相端</td>
-<td>红笔接 3 脚，黑笔接地</td>
-<td>0 V</td>
-<td>0 V</td>
-<td>接地</td>
+<td>1k 接跟随器输出</td>
+<td>第 1 脚 → GND</td>
+<td>与分压点相同（差 &lt;3 mV）</td>
+<td></td>
 </tr>
 <tr>
-<td>反相端（虚地）</td>
-<td>红笔接 2 脚，黑笔接地</td>
-<td>+0.29 mV（运放失调，可能是 ±0.3 mV 到几毫伏）</td>
-<td>约 +0.3 mV（叠着极小的方波余量，直流挡看不出）</td>
-<td>约 0 V</td>
+<td>同上</td>
+<td>第 1 脚 → 第 3 脚</td>
+<td>−3～+3 mV（典型约 0.3 mV）</td>
+<td>失调电压</td>
 </tr>
 <tr>
-<td>输出直流（中心）</td>
-<td>红笔接 1 脚，黑笔接地</td>
-<td>+0.02 V</td>
-<td>−1.98 V</td>
-<td>−2 V</td>
+<td>同上，电流表串在第 1 脚和 1k 之间</td>
+<td>电流表</td>
+<td>约 5 mA</td>
+<td>运放供给</td>
 </tr>
 <tr>
-<td>输出交流</td>
-<td>交流电压挡，红笔接 1 脚，黑笔接地</td>
-<td>0</td>
-<td>三角波 0.995 V 峰峰：真有效值表约 0.29 V；平均值型表约 0.28 V（换算值，很多表在 500 Hz 已不准）</td>
-<td>峰峰 1 V</td>
+<td>1k 改接到分压点</td>
+<td>分压点 → GND；第 1 脚 → GND</td>
+<td>约 0.83 V；约 0.83 V</td>
+<td>对照组</td>
 </tr>
 <tr>
-<td>输入直流（偏置）</td>
-<td>红笔接 R 的输入端，黑笔接地</td>
-<td>0</td>
-<td>+20 mV</td>
-<td>20 mV</td>
+<td>例1：5 V 经 10k/20k 分压，2k 模块接在跟随器输出</td>
+<td>第 1 脚 → GND；模块两端</td>
+<td>3.33 V；3.33 V（模块电流 1.7 mA）</td>
+<td></td>
 </tr>
 <tr>
-<td>R_f 换 250 kΩ（两步法上限）</td>
-<td>红笔接 1 脚，黑笔接地</td>
-<td>—</td>
-<td>直流约 −0.49 V</td>
-<td>−0.5 V</td>
+<td>改用 5 V 单电源（第 4 脚接 GND），输入调到 4 V</td>
+<td>第 1 脚 → GND</td>
+<td>约 3.5 V</td>
+<td>共模上限 / 输出上限</td>
 </tr>
 <tr>
-<td>电源电流</td>
-<td>电流挡串在 +15 V 和 8 脚之间</td>
-<td>约 0.6 mA（模型每个运放单元 0.3 mA，LM358 一片两个单元）</td>
-<td>同左</td>
-<td>—</td>
+<td>5 V 单电源，输入接 GND</td>
+<td>第 1 脚 → GND</td>
+<td>几十毫伏以内</td>
+<td>到不了 0 V</td>
+</tr>
+<tr>
+<td>练习5：12 V 单电源，两只 10k 分压并 10 µF</td>
+<td>分压点 → GND；第 1 脚 → GND</td>
+<td>6.0 V；6.0 V</td>
+<td>接通约 0.5 s 后再读</td>
+</tr>
+<tr>
+<td>输出串 33 Ω、负载 1 mA</td>
+<td>33 Ω 两端</td>
+<td>约 33 mV</td>
+<td>隔离电阻的压降</td>
 </tr>
 </tbody>
 </table>
-<p>另外两点：</p>
-<ul>
-<li>输出直流读数会随这只运放的失调变化：失调 1 mV 就会让中心多偏 0.1 V（放大 100 倍）。实测在 −1.8～−2.2 V 之间都算正常。</li>
-<li><strong>去掉 1 MΩ</strong>（理想积分器）、输入接地时，红笔接 1 脚，读数几秒内就会走到电源附近停住。用这个模型是负方向，约 −15 V；换一只失调极性相反的运放，就会停在约 +13.8 V。这就是 p3 排查表第一行“把输入接地，看输出是否仍然单向漂移”的现象。</li>
-</ul>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>统计：❌ 0 条；⚠️ 2 条全部处理（2 条改、0 条不改）；ℹ️ 4 条按规定不改；导航链接核对后未改（理由见下）。</p>
-<table>
-<thead>
-<tr>
-<th>条目</th>
-<th>处理</th>
-<th>改了哪里、怎么改</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>⚠️ 1 p1 第 2 步：5 kHz 示波器读数 0.1 V（SPICE 含尖峰 0.315 V）</td>
-<td>已改</td>
-<td>page1 第 2 步「只剩 0.1 V 峰峰」那段后加：跳变瞬间约 0.1 V 尖刺和几微秒台阶，原因是 LM358B 输出级换向要「愣」一下；示波器自动测量可能显示约 0.3 V（TI 模型 0.315 V），三角波本身仍是 0.1 V。page3 图 12-p3-2 讨论里 C = 1 μF（0.10 V）处加括号指回这一条</td>
-</tr>
-<tr>
-<td>⚠️ 2 饱和电压 −13.5 V（SPICE −14.99 V）</td>
-<td>已改</td>
-<td>page2 结论三括号里补：±13.5 V 是好算的对称值，真实 LM358B 正向约 +13.8 V、负向贴近 −15 V（TI 模型 −14.99 V），示波器上饱和平线约 −14.9 V，撞线时刻仍约 0.6 s；page1 第 4 步改为「贴在 −14～−15 V 附近」并加括号说明下一页按 −13.5 V 估。页面代码块、code/12_sim.py 的 VSAT = 13.5、图 12-p2-3 / 12-p3-2 的灰线保持不变（简化模型，正文已注明），页面里 0.627 s、−13.5 V 仍与脚本和图一致</td>
-</tr>
-<tr>
-<td>ℹ️ 4 条（练习 4 的偏置电流漂移 3 行、TI SBOA275B 示例）</td>
-<td>不改</td>
-<td>按规定 ℹ️ 不改</td>
-</tr>
-<tr>
-<td>导航：page1 上一页 → 06 · 参数与调试篇，page3 下一页 → 19 · 直觉篇</td>
-<td>核对后未改</td>
-<td>README「怎么读」和 notes/00-design.md 第 170 行的阅读顺序是「… 03 → 06 → 12 → 19 → 04 …」，06 page3 的下一页指向 12、19 page1 的上一页指向 12，链接目标文件存在、标题与目标页一级标题一致，格式与其他节点相同。12 的导航和全书阅读顺序是对的，改了反而会让 06 / 19 两头断链（且那两个节点不归本人改）。报告原文也只说「未核对是不是有意的阅读顺序」。如果确实要换顺序，需要先改 README / 00-design 的阅读顺序，再同时改 06、12、19 三处</td>
-</tr>
-</tbody>
-</table>
-<p>脚本（code/12_sim.py、code/figs/12_figs.py）未改。</p>
-<p>改动文件：12-integrator/page1.md、<a href="http://page2.md">page2.md</a>、<a href="http://page3.md">page3.md</a>、review/spice/12.md。</p>
-<p>检查：count_cjk（2134 / 1878 / 2279）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（4 / 34 / 55）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件（没有残留 integrator_drift.png）。</p>
+<p>本节点 ❌ 1 条已改；⚠️ 4 条全部处理（改 4、不改 0）。数值全部取自本报告的 SPICE 结果。</p>
+<ol>
+<li><strong>❌ page2 例 3「负载突然抽电流时，由运放的输出级及时补上，基准电压几乎不跳」</strong>：已改。改成：慢变化/持续取电流时输出级补上、基准不动；但模数转换器采样的极短电流脉冲，LM358B 这种 1 MHz 级慢运放来不及反应，跟随器输出反而会跳（TI 模型：1 mA、1 µs 快脉冲先掉 0.62 V、再冲到 3.0 V；对照直接从并 100 nF 的分压点抽只掉 10 mV）；实际要在模数转换器参考端就近并电容（按 ADC 手册推荐值），电容大时跟随器输出与电容之间串几十欧隔离电阻，链接到 <a href="../../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 第一节。并注明图 12-p2-3 只画了跟随器部分。图 12-p2-3 是示意电路图，本身没有错误数值，不重画；报告里「33 Ω + 1 µF」接法仿真不可信，因此没有给出具体电容/电阻值。</li>
+<li><strong>⚠️ page2 代数「输出比 5 V 少约 0.05 mV」</strong>：已改。补一句失调电压（LM358B 典型零点几毫伏、最大 3 mV；SPICE 输出与输入差约 0.38 mV），比 0.05 mV 大但同样难用万用表分辨。</li>
+<li><strong>⚠️ page3 图 12-p3-1（33 Ω 过冲约 1%、约 8 μs）</strong>：已改文字，不改图（图和脚本是页面写明的简化模型）。在「真实芯片的振铃程度仍要以实测为准」后补 TI 模型结果：直接接 0.196 V、串 10 Ω 0.151 V，与图接近；串 33 Ω 过冲约 8%、约 21 μs 进入 ±2%；50 Ω 左右过冲不到 1%、约 14 μs 稳定。</li>
+<li><strong>⚠️ page3 第二节「输出最低只到约 0.1 V」/小结「约 0.1～3.5 V」</strong>：已改为「几十毫伏（TI 模型约 0.02 V，带负载时更高）」「约几十毫伏～3.5 V」（第二节末、本页小结两处）。为保持页/图/脚本一致，<code>code/figs/12_figs.py</code> 中图 12-p3-2 的下限 <code>V_LO</code> 由 0.1 改为 0.02（注释写明依据 SPICE 0.024 V），断言同步更新，图 12-p3-2 已重新生成（下限标注 0.02 V），图片替代文字同步改为「0.02 伏以下被托住」。</li>
+<li><strong>⚠️ page3 第三节「在这里最宽，约 1.2 MHz」</strong>：已改为「至少约 1.2 MHz（TI 官方模型 SPICE 仿真约 2.8 MHz，而且接近带宽处有约 5 dB 的抬高，这也说明跟随器的稳定余量最小）」（报告值 2.76 MHz / 4.8 dB 取约数）。</li>
+</ol>
+<p>改动文件：<code>12-voltage-follower/page2.md</code>、<code>12-voltage-follower/page3.md</code>、<code>code/figs/12_figs.py</code>、<code>12-voltage-follower/img/12_p3_2_single_supply.png</code>（重新生成；同脚本其余图重新输出但内容不变）、<code>review/spice/12.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（1652/1953/2636 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（12_sim.py、12_figs.py）、check_figs、check_github_math（5/16/20）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

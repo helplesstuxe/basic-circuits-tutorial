@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>02 同相放大：SPICE 复核报告</title>
+<title>02 运放入门：SPICE 复核报告</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,59 +42,39 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/02.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="02-同相放大spice-复核报告">02 同相放大：SPICE 复核报告</h1>
+<h1 id="02-运放入门spice-复核报告">02 运放入门：SPICE 复核报告</h1>
 <ul>
-<li>工具：ngspice 44.2 batch 模式；<code>spice/02/.spiceinit</code> 里 <code>set ngbehavior=psa</code>（TI PSpice 模型需要）</li>
-<li>运行：仓库根目录 <code>python spice/02/run.py</code>，退出码 0，已实际运行（47 项比对）</li>
-<li>网表：
-<ul>
-<li><code>dc_noninv.cir</code>：单运放 + <code>alter</code> 逐个换元件值做直流工作点。</li>
-<li><code>dc_ramp.cir</code>：Rf=0、例1、练习1 这三种接法直接 op 不收敛，改用&quot;输入从 0 慢慢升高&quot;的瞬态求稳态。</li>
-<li><code>dc_inv.cir</code>（反相对照）、<code>dc_sum.cir</code>（例3）、<code>dc_ol.cir</code>（拔掉 Rf）。</li>
-<li><code>ac.cir</code>：内阻对比、带宽、交流耦合。</li>
-<li><code>t_scope.cir</code>：示波器步骤。</li>
-<li><code>t_ss3.cir</code> / <code>t_ss2.cir</code>：单 5 V 削顶。</li>
-<li><code>t_cm.cir</code>：共模上限。</li>
-<li><code>t_ex3.cir</code>、<code>t_ex4g2.cir</code>、<code>t_ex4g1.cir</code>：练习3 和练习4。</li>
+<li>复核人：reviewer A；工具：ngspice 44.2（batch 模式，<code>spice/02/.spiceinit</code> 里 <code>set ngbehavior=psa</code> 打开 PSpice 兼容，TI 模型需要）</li>
+<li>运行：从仓库根目录执行 <code>python spice/02/run.py</code>（退出码 0，已实际运行，约 2 s）</li>
+<li>网表：<code>openloop.cir</code>（开环增益/GBW/摆幅/失调）、<code>slew.cir</code>（压摆率）、<code>invamp.cir</code>（图02-p2-1、有限 A 的 E 源核算、例2、例3）、<code>gainerr.cir</code>（图02-p3-2、练习3、GBW）、<code>sine_fb.cir</code>/<code>sine_ol.cir</code>（图02-p2-3）、<code>sine_ex2.cir</code>（练习2）、<code>clip15.cir</code>/<code>clip5.cir</code>/<code>clip5nl.cir</code>/<code>clipss.cir</code>（图02-p3-1）、<code>mid25.cir</code>/<code>mid18.cir</code>/<code>mid25b.cir</code>（练习4）</li>
 </ul>
-</li>
-<li>收敛说明：TI 模型多个实例放进同一网表时 op 会报 &quot;timestep too small&quot;，所以每个网表只放一个运放（或只做瞬态），结果不受影响。</li>
-</ul>
-<h2 id="模型与来源">模型与来源</h2>
+<h2 id="用到的器件模型">用到的器件模型</h2>
 <table>
 <thead>
 <tr>
 <th>器件</th>
 <th>模型文件</th>
 <th>来源</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>LM358B</td>
-<td>spice/models/LMx58B_LM2904B.lib（复用，子电路 LMX58B_LM2904B）</td>
-<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
+<td>spice/models/LMx58B_LM2904B.lib（子电路 LMX58B_LM2904B，同事 B 下载，复用）</td>
+<td><a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
+<td>TI 官方 PSpice 模型</td>
+</tr>
+<tr>
+<td>「开环增益为 A 的理想运放」</td>
+<td>网表里的 E 源（VCVS）</td>
+<td>—</td>
+<td>页面第二页按 A=10 万/100/1000/1 万 手算的数，用 E 源逐一核算</td>
 </tr>
 </tbody>
 </table>
-<p>无替代模型。</p>
-<h2 id="假设">假设</h2>
-<ul>
-<li>页面没给负载，输出只接反馈电阻。</li>
-<li>电阻按标称值。</li>
-<li>±15 V 供电，单电源时为 5 V。</li>
-<li>page1 §四 第4步的单电源 3 倍放大沿用图 02-p1-1 的 R1=10k、Rf=20k。</li>
-<li>图 02-p3-1 的 2 倍放大取 R1=Rf=10k。</li>
-<li>练习4 的元件值页面没有给全，取以下值：
-<ul>
-<li>偏置 2.5 V 由 5 V 经两只 10 kΩ 分压得到，对地接 10 µF；</li>
-<li>隔直电容 1 µF，同相端经 100 kΩ 接偏置点；</li>
-<li>2 倍时 R1=Rf=10k，R1 下端接偏置点；</li>
-<li>1 倍时接成跟随器。</li>
-</ul>
-</li>
-<li>带宽用 ac 分析求 −3 dB 点。</li>
-</ul>
+<p>对照的手册：TI LM358B 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> （本次下载核对：AOL 典型 140 V/mV、最小 70 V/mV；GBW 1.2 MHz；SR 0.5 V/µs；VOS 典型 ±0.3 mV、最大 ±3 mV；正摆幅余量 1.35 V@50 µA、1.4 V@1 mA、1.5 V@5 mA；<strong>负摆幅余量 100 mV@50 µA、0.75 V@1 mA</strong>；5 V 单电源负载接 V− 时 5 mV 典型）。</p>
+<p>假设：页面没写负载。图02-p3-1、练习4 按「10 kΩ 负载接地」仿真，同时给出无负载的对照；其余按无负载。</p>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
@@ -108,406 +88,325 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>page1 §二 10k/20k，0.5 V 输入</td>
-<td>1.5 V</td>
-<td>1.501 V</td>
-<td>+0.04%</td>
+<td>page1 §二 / page3 参数表 开环增益 A</td>
+<td>典型 14 万（最小 7 万）</td>
+<td>TI 模型 7.49 万（0.001 Hz）</td>
+<td>−47%，但在手册 7 万–14 万范围内</td>
+<td>✅（页面正确引用手册；TI 模型取值接近最小值）</td>
+</tr>
+<tr>
+<td>page3 参数表 GBW</td>
+<td>约 1.2 MHz</td>
+<td>1.44 MHz（10 kHz 处 |A|×f）；单位增益频率 1.70 MHz</td>
+<td>+20%</td>
+<td>✅（手册只给典型值，模型略快）</td>
+</tr>
+<tr>
+<td>page3 参数表 放大 100 倍时 12 kHz 附近倍数明显不足</td>
+<td>12 kHz</td>
+<td>−3 dB 点 14.4 kHz；12 kHz 时只剩 77 倍</td>
+<td>+20%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page1 §二 −0.2 V 输入</td>
-<td>−0.6 V</td>
-<td>−0.599 V</td>
-<td>+0.1%</td>
+<td>page3 参数表 压摆率</td>
+<td>约 0.5 V/µs</td>
+<td>0.33 V/µs（上升、下降相同）</td>
+<td>−34%</td>
+<td>✅（页面正确引用手册；TI 模型偏慢，实物以手册为准）</td>
+</tr>
+<tr>
+<td>page3 参数表 输出摆幅：比正电源低约 1.35～1.5 V</td>
+<td>1.35～1.5 V</td>
+<td>1.28 V（±15 V，10 kΩ 负载）；无负载 1.17 V</td>
+<td>−5%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §一 第二步 反相端 = 输出的 1/3</td>
-<td>0.500 V</td>
-<td>0.5003 V</td>
-<td>&lt;0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第2步 Rf=40 kΩ</td>
-<td>5 倍</td>
-<td>5.002 倍</td>
-<td>+0.04%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第2步 Rf=0（导线）</td>
-<td>1 倍</td>
-<td>1.001 倍</td>
-<td>+0.07%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第3步 串 100 kΩ 后输出几乎不变</td>
-<td>1.5 V</td>
-<td>1.504 V</td>
-<td>+0.24%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第3步 对照 01 反相串 100 kΩ 变成 10/110</td>
-<td>−0.4545 V</td>
-<td>−0.4549 V</td>
-<td>−0.09%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第5步 拔掉 Rf 输出贴到电源</td>
-<td>贴电源（定性）</td>
-<td>+13.83 V</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第1步 / 图02-p1-3 0.5 V 峰值 1 kHz</td>
-<td>峰值 ±1.5 V</td>
-<td>+1.501 / −1.499 V</td>
-<td>&lt;0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 图02-p1-3 输入、输出同时到顶</td>
-<td>同一时刻</td>
-<td>输出峰值出现在 1.2501 ms（输入 1.25 ms）</td>
-<td>0.01%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第2步 Rf=40k 输出峰值</td>
-<td>2.5 V</td>
-<td>2.501 V</td>
-<td>+0.04%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第4步 单 5 V、3 倍：输出到顶的电平</td>
-<td>约 3.5 V</td>
-<td>3.80 V</td>
-<td>+8.6%</td>
-<td>✅（手册：输出最高 V+ − 1.35～1.5 V，页面取保守值）</td>
-</tr>
-<tr>
-<td>page1 §四 第4步 单 5 V、3 倍：开始不动的输入</td>
-<td>约 1.17 V</td>
-<td>1.28 V</td>
-<td>+9.3%</td>
-<td>✅（同上）</td>
-</tr>
-<tr>
-<td>page2 仿真/图02-p2-2 内阻 1 kΩ 反相倍数</td>
-<td>1.82</td>
-<td>1.818</td>
-<td>−0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 仿真/图02-p2-2 内阻 100 kΩ 反相倍数</td>
-<td>0.18</td>
-<td>0.1818</td>
-<td>+1.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 图02-p2-2 内阻 100 Ω～1 MΩ 同相倍数</td>
-<td>3</td>
-<td>2.99994 / 2.99993</td>
-<td>&lt;0.01%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 图02-p2-3 同一对电阻：同相 3、反相 2</td>
-<td>3 / −2</td>
-<td>3.001 / −1.999</td>
-<td>&lt;0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例1 10k/91k 倍数</td>
-<td>10.1</td>
-<td>10.099</td>
-<td>−0.01%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例1 内阻 20k、0.5 V 输入</td>
-<td>约 5 V（5.05 V）</td>
-<td>5.054 V</td>
-<td>+0.07%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例1 第4步 带宽</td>
-<td>约 120 kHz</td>
-<td>164 kHz</td>
-<td>+37%</td>
-<td>✅（页面估算偏保守，只用于判断&quot;够不够&quot;）</td>
-</tr>
-<tr>
-<td>page2 例2 10k/30k，0.3 V</td>
-<td>1.2 V</td>
-<td>1.201 V</td>
-<td>+0.07%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例3 同相加法器 同相端</td>
-<td>0.35 V</td>
-<td>0.3500 V</td>
-<td>&lt;0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例3 输出</td>
-<td>0.7 V</td>
-<td>0.7006 V</td>
-<td>+0.08%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>（补充）内阻 1 MΩ、0.5 V 同相直流输出</td>
-<td>1.5 V</td>
-<td>1.531 V</td>
-<td>+2.0%</td>
-<td>✅（输入偏置电流流过 1 MΩ 的影响，页面未提，不需改）</td>
-</tr>
-<tr>
-<td>page3 §1 / 图02-p3-1 单 5 V 输出上限</td>
-<td>约 3.5 V</td>
-<td>3.79 V</td>
-<td>+8.3%</td>
-<td>✅（手册 V+ − 1.35～1.5 V）</td>
-</tr>
-<tr>
-<td>page3 §1 / 图02-p3-1 2 倍开始削顶的输入</td>
-<td>1.75 V</td>
-<td>1.91 V</td>
-<td>+9.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 §1 共模上限：5 V 跟随器输入不能超过约 3.5 V</td>
-<td>3.5 V</td>
-<td>输出最高 3.50 V，输入 3.55 V 时跟随误差达到 50 mV</td>
-<td>+1.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 §2 / 图02-p3-2 2 倍带宽</td>
-<td>600 kHz（降到 1.4）</td>
-<td>1.61 MHz</td>
-<td>+168%</td>
+<td>page3 参数表 输出摆幅：比负电源高约 0.1 V</td>
+<td>0.1 V</td>
+<td>输出几乎不吸电流时 0.02–0.1 V；±15 V 带 10 kΩ 接地负载（吸约 1.4 mA）时 0.76 V；±5 V 带 10 kΩ 时 0.66 V</td>
+<td>带载时偏差很大</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>page3 §2 / 图02-p3-2 10 倍带宽</td>
-<td>120 kHz（降到 7.1）</td>
-<td>166 kHz</td>
-<td>+39%</td>
-<td>✅（估算偏保守）</td>
+<td>page1 图02-p1-2 开环（A=10 万，±15 V）线性区 ±135 µV、上下限 ±13.5 V</td>
+<td>±135 µV、±13.5 V</td>
+<td>E 源按页面假设完全一致；LM358B 实际线性区约 ±0.19 mV 宽、中心偏在失调电压 −0.29 mV 处，上限 13.83 V、下限 −14.98 V</td>
+<td>上限 +2.5%</td>
+<td>✅（页面已说明负电源一侧差得少）</td>
 </tr>
 <tr>
-<td>page3 图02-p3-2 100 倍带宽</td>
-<td>12 kHz（降到 71）</td>
-<td>14.6 kHz</td>
-<td>+22%</td>
-<td>✅（估算偏保守）</td>
-</tr>
-<tr>
-<td>page3 §一.3 交流耦合 1 µF + 100 kΩ：1 kHz 倍数</td>
-<td>3</td>
-<td>2.99992</td>
-<td>&lt;0.01%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 §一.3 交流耦合 输入电阻约等于这个电阻</td>
-<td>约 100 kΩ</td>
-<td>100.0 kΩ</td>
+<td>page1 50 µV → 5 V；page3 练习1 20 µV → 2 V、1 mV → 13.5 V（A=10 万）</td>
+<td>5 V、2 V、13.5 V</td>
+<td>E 源：5 V、2 V、饱和于上限</td>
 <td>0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习1 2k/18k，0.25 V</td>
-<td>2.5 V</td>
-<td>2.502 V</td>
-<td>+0.1%</td>
+<td>page2 图02-p2-1 LM358B（10k/100k，0.5 V）Vo、Av</td>
+<td>−4.99945 V、−9.9989</td>
+<td>−4.99696 V、−9.9939</td>
+<td>+0.05%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习2 反相，内阻 50 kΩ</td>
-<td>约 −0.33 V</td>
-<td>−0.3331 V</td>
-<td>&lt;0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习2 同相，内阻 50 kΩ</td>
-<td>3 V</td>
-<td>3.002 V</td>
-<td>+0.07%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习3(1) 4 倍，0.8 V 输入</td>
-<td>约 3.2 V</td>
-<td>3.201 V</td>
-<td>+0.02%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习3(2) 削顶上限 / 余量</td>
-<td>3.5 V / 余量 0.3 V</td>
-<td>3.81 V / 余量 0.61 V</td>
-<td>+8.8%</td>
-<td>✅（结论&quot;不削顶&quot;不变，页面余量偏保守）</td>
-</tr>
-<tr>
-<td>page3 练习3(3) 4 倍带宽</td>
-<td>300 kHz</td>
-<td>611 kHz</td>
-<td>+104%</td>
+<td>page2 图02-p2-1 V−（虚短残差）</td>
+<td>50 µV</td>
+<td>362 µV（主要是 LM358B 的失调电压 0.29 mV）</td>
+<td>7 倍</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>page3 练习4 偏置点</td>
-<td>2.5 V</td>
-<td>2.497 V</td>
-<td>−0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习4 2 倍会削顶</td>
-<td>理想 4.5 V，被上限 3.5 V 挡住</td>
-<td>顶部削在 3.82 V</td>
-<td>+9.0%</td>
-<td>✅（结论&quot;会削顶&quot;成立）</td>
-</tr>
-<tr>
-<td>page3 练习4 2 倍最低</td>
-<td>0.5 V</td>
-<td>0.59 V</td>
-<td>+18%</td>
-<td>✅（页面是理想摆动范围；削顶时输入端经隔直电容略有下移，与结论无关）</td>
-</tr>
-<tr>
-<td>page3 练习4 同相端最高</td>
-<td>3.5 V</td>
-<td>3.499 V</td>
+<td>page2 E 源 A=10 万：Vo / V−</td>
+<td>−4.99945 V / 0.050 mV</td>
+<td>−4.99945 V / 0.04999 mV</td>
 <td>0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习4 改法 1 倍 输出范围</td>
-<td>1.5～3.5 V</td>
-<td>1.499～3.499 V</td>
+<td>page2 仿真打印 A=100：Av / V−</td>
+<td>−9.0090 / 45.045 mV</td>
+<td>−9.0090 / 45.045 mV</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 仿真打印 A=1000：Av / V−</td>
+<td>−9.8912 / 4.9456 mV</td>
+<td>−9.8912 / 4.9456 mV</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例2（A=1 万，10k/200k，0.1 V）Vo / V−</td>
+<td>−1.9958 V / 0.20 mV</td>
+<td>−1.9958 V / 0.1996 mV</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 图02-p2-3 有负反馈：反相、峰值 5.0 V 正弦</td>
+<td>±5.0 V</td>
+<td>+5.001 / −4.997 V</td>
 <td>&lt;0.1%</td>
-<td>✅（同相端正好贴着共模上限，余量为 0，与页面一致）</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 图02-p2-3 开环：冲到 13.5 V、掉到 −13.5 V 的方波</td>
+<td>±13.5 V</td>
+<td>+13.83 V / −14.98 V</td>
+<td>上 +2.5%，下 −11%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page2 例3 5 V 单电源：输出贴在约 0.1 V</td>
+<td>约 0.1 V</td>
+<td>0.024 V（手册：5 V、负载接地时典型 5 mV、最大 20 mV）</td>
+<td>绝对差 0.08 V</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page2 例3 V− ≈ 0.46 V，虚短不成立</td>
+<td>0.46 V</td>
+<td>0.457 V</td>
+<td>−0.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习2(b) 输出峰值</td>
+<td>1 V</td>
+<td>1.002 V</td>
+<td>+0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图02-p3-1 ±15 V：8 V 峰值装得下</td>
+<td>±8 V，不削</td>
+<td>+8.000 / −7.995 V</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图02-p3-1 ±5 V：正半周在 3.5 V 被削平</td>
+<td>3.5 V</td>
+<td>3.78 V（10 kΩ）/3.82 V（无负载）</td>
+<td>+8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图02-p3-1 ±5 V：负半周在 −4.9 V 被削平</td>
+<td>−4.9 V</td>
+<td>无外接负载 −4.98 V；10 kΩ 接地负载 −4.33 V</td>
+<td>−1.6%（无负载）</td>
+<td>✅（带载时见上面「负摆幅」⚠️）</td>
+</tr>
+<tr>
+<td>page3 图02-p3-1 5 V 单电源：上限 3.5 V</td>
+<td>3.5 V</td>
+<td>3.78 V</td>
+<td>+8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图02-p3-1 5 V 单电源：负半周消失，趴在约 0.1 V</td>
+<td>0.1 V</td>
+<td>0.024 V，负半周确实整个消失</td>
+<td>绝对差 0.08 V</td>
+<td>✅（现象一致；数值见例3 ⚠️）</td>
+</tr>
+<tr>
+<td>page3 图02-p3-2 G=1/10/100 误差（A=14 万）</td>
+<td>0.0014% / 0.0079% / 0.072%</td>
+<td>0.0033% / 0.0151% / 0.135%（模型 A=7.49 万）</td>
+<td>约 ×1.9，正好等于 14 万÷7.49 万</td>
+<td>✅（公式 (1+G)/A 与 SPICE 吻合，差别全来自模型 A 取值）</td>
+</tr>
+<tr>
+<td>page3 练习3 A 取最小 7 万时 G=100 误差</td>
+<td>0.14%</td>
+<td>0.135%</td>
+<td>−3.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4(1) 中点 2.5 V、输入峰值 0.10 V：不削顶</td>
+<td>输出 1.5～3.5 V</td>
+<td>1.502～3.502 V</td>
+<td>&lt;0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4(2) 中点 1.8 V、输入峰值 0.17 V：不削顶</td>
+<td>输出 0.1～3.5 V</td>
+<td>0.102～3.501 V；中点 2.5 V 时 0.17 V 输入则顶部被削在 3.78 V</td>
+<td>&lt;2.5%</td>
+<td>✅（按 SPICE 摆幅 0.024～3.78 V，最佳中点 1.90 V、最大峰值 0.19 V，页面的 0.1～3.5 V 是更保守的取法）</td>
 </tr>
 </tbody>
 </table>
-<p><strong>统计：✅ 41　⚠️ 2　❌ 0</strong>（按表格行计；<a href="http://run.py">run.py</a> 共 47 个比对项）</p>
-<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>⚠️ page3 §2 图 02-p3-2 说明（2 倍带宽 600 kHz）</strong>：在&quot;三处黑点都是 0.707 倍的位置。&quot;后补一句：</p>
+<p><strong>统计：✅ 24　⚠️ 4　❌ 0</strong></p>
+<h2 id="️-项的建议补充页面口吻可直接贴">⚠️ 项的建议补充（页面口吻，可直接贴）</h2>
+<ol>
+<li>
+<p><strong>page3 参数表「输出摆幅」一行</strong>，把「比负电源高约 0.1 V」改为：</p>
 <blockquote>
-<p>这几个数是按手册 GBW 典型值 1.2 MHz 估算的，可以当作&quot;至少有这么宽&quot;。倍数越小，实际带宽比估算宽得越多：用 TI 官方模型仿真，2 倍时约 1.6 MHz，10 倍约 166 kHz，100 倍约 15 kHz。</p>
+<p>比负电源高约 0.1 V（输出几乎不往里吸电流时；如果负载接在地上、输出又在负半周，运放要吸收 1 mA 电流时，余量会增大到约 0.75 V）</p>
 </blockquote>
-<p><strong>⚠️ page3 练习3(3) 答案（4 倍带宽 300 kHz）</strong>：把&quot;带宽约 300 kHz&quot;改为：</p>
+<p>并在图02-p3-1 说明后补一句：</p>
 <blockquote>
-<p>带宽至少约 1.2 MHz ÷ 4 = 300 kHz（官方模型仿真约 600 kHz），远大于 1 kHz，足够。</p>
+<p>这里的 −4.9 V 是输出几乎不带负载时的值；如果输出端再接一个 10 kΩ 电阻到地，负半周大约在 −4.3 V 就被削平了。LM358B 输出级往里吸电流的能力比往外推弱，负载越重，负侧离电源越远。</p>
 </blockquote>
-<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
-<p>（±15 V，R1=10 kΩ（第 2 脚到 GND），Rf=20 kΩ（第 1 脚到第 2 脚），±5% 电阻。信号接同相端第 3 脚，测直流时用直流电压代替信号发生器）</p>
+</li>
+<li>
+<p><strong>page2 图02-p2-1 后「V− ≈ 50 μV」</strong>，补一句：</p>
+<blockquote>
+<p>50 μV 是只考虑开环增益时的理论值。真实的 LM358B 两个输入端之间本来就有一个零点几毫伏的失调电压（手册典型 ±0.3 mV、最大 ±3 mV），所以用万用表量反相端，读到的是零点几毫伏甚至几毫伏，而不是 50 μV；它对 5 V 的输出影响只有千分之一左右，&quot;虚短&quot;照样好用。</p>
+</blockquote>
+</li>
+<li>
+<p><strong>page2 图02-p2-3 开环一段</strong>，把「稍微小于 0，就掉到 −13.5 V」后补一句：</p>
+<blockquote>
+<p>（这张图为了简单把上下限都画成 ±13.5 V；真实的 LM358B 负电源一侧只差约 0.1 V，方波下沿会在约 −14.9 V，上下并不对称，第三页会讲到。）</p>
+</blockquote>
+</li>
+<li>
+<p><strong>page2 例3 答案「这个最低点约 0.1 V」</strong>，改为：</p>
+<blockquote>
+<p>这个最低点只比 0 V 高一点：LM358B 手册给出，5 V 单电源、负载接地时输出最低典型只有约 5 mV，最大 20 mV；参数表里&quot;比负电源高约 0.1 V&quot;是更保守的估计，这里按 0.1 V 算，结论不变。</p>
+</blockquote>
+<p>（仿真按 0.02 V 代入，V− = 0.5 − 0.48×10/110 ≈ 0.456 V，仍约 0.46 V。）</p>
+</li>
+</ol>
+<h2 id="面包板实测时万用表应读到的值">面包板实测时万用表应读到的值</h2>
+<p>（LM358B，电阻 ±5%；直流测量把正弦输入换成同幅度的直流电压；「GND」指双电源的中点地或单电源的负极）</p>
 <table>
 <thead>
 <tr>
-<th>条件</th>
-<th>红笔 → 黑笔</th>
-<th>应读到</th>
+<th>电路</th>
+<th>测量点（红笔 → 黑笔）</th>
+<th>应读到的范围</th>
 <th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>输入 +0.5 V 直流</td>
-<td>运放输出（LM358B 第 1 脚）→ GND</td>
-<td>1.40～1.61 V（典型 1.50 V）</td>
-<td>范围来自两只 5% 电阻</td>
+<td>图02-p2-1 反相 ×10，±15 V，输入 +0.5 V 直流</td>
+<td>输出 → GND</td>
+<td>−4.5～−5.5 V（典型 −5.0 V）</td>
+<td>范围主要来自两只 5% 电阻的比值</td>
 </tr>
 <tr>
 <td>同上</td>
-<td>同相端（第 3 脚）→ GND</td>
-<td>0.50 V</td>
-<td>等于输入</td>
+<td>反相端 → GND</td>
+<td>−3～+3 mV，典型零点几毫伏</td>
+<td>由失调电压决定，不是 50 µV</td>
+</tr>
+<tr>
+<td>开环，±15 V，同相端 +0.5 V、反相端接地</td>
+<td>输出 → GND</td>
+<td>13.5～13.9 V</td>
+<td>同相端改 −0.5 V 时读 −14.85～−14.98 V</td>
+</tr>
+<tr>
+<td>例3 5 V 单电源，输入 +0.5 V</td>
+<td>输出 → GND</td>
+<td>0～0.03 V</td>
+<td>贴底</td>
 </tr>
 <tr>
 <td>同上</td>
-<td>反相端（第 2 脚）→ 第 3 脚</td>
-<td>−3～+3 mV（典型零点几毫伏）</td>
-<td>虚短，由失调电压决定</td>
+<td>反相端 → GND</td>
+<td>0.44～0.47 V</td>
+<td>虚短不成立</td>
 </tr>
 <tr>
-<td>同上</td>
-<td>第 1 脚 → 第 2 脚（跨 Rf）</td>
-<td>约 1.0 V</td>
-<td>Rf 上的电流 0.05 mA，与 R1 上相同</td>
+<td>图02-p3-1 ±5 V，输入 −0.8 V 直流（输出想到 +8 V）</td>
+<td>输出 → GND</td>
+<td>3.6～3.85 V</td>
+<td>被削在正电源下 1.2～1.4 V</td>
 </tr>
 <tr>
-<td>同上</td>
-<td>第 2 脚 → GND（跨 R1）</td>
-<td>约 0.5 V</td>
-<td>输出的 1/3</td>
+<td>图02-p3-1 ±5 V，输入 +0.8 V 直流（输出想到 −8 V）</td>
+<td>输出 → GND</td>
+<td>无负载 −4.85～−4.98 V；接 10 kΩ 到地 −4.2～−4.4 V</td>
+<td>负载越重负侧越早削</td>
 </tr>
 <tr>
-<td>输入 −0.2 V 直流</td>
-<td>第 1 脚 → GND</td>
-<td>−0.56～−0.64 V</td>
-<td></td>
+<td>练习4 中点 2.5 V，无输入信号</td>
+<td>输出 → GND</td>
+<td>2.45～2.55 V</td>
+<td>静态输出等于中点电压（失调×11 只有几毫伏）</td>
 </tr>
 <tr>
-<td>信号源串 100 kΩ 后</td>
-<td>第 1 脚 → GND</td>
-<td>仍约 1.50 V</td>
-<td>100 kΩ 两端电压只有零点几毫伏</td>
+<td>练习4 中点 1.8 V，无输入信号</td>
+<td>输出 → GND</td>
+<td>1.75～1.85 V</td>
+<td>中点用两只电阻分压时取决于电阻公差</td>
 </tr>
 <tr>
-<td>拔掉 Rf</td>
-<td>第 1 脚 → GND</td>
-<td>约 +13.6～+13.9 V</td>
-<td>开环正饱和</td>
-</tr>
-<tr>
-<td>单 5 V 供电（第 4 脚接 GND），3 倍，输入调大</td>
-<td>第 1 脚 → GND</td>
-<td>最高约 3.6～3.8 V 后不再上升</td>
-<td>手册保证至少 3.5 V</td>
-</tr>
-<tr>
-<td>单 5 V 跟随器，输入调到 4 V</td>
-<td>第 1 脚 → GND</td>
-<td>约 3.5 V</td>
-<td>共模上限</td>
-</tr>
-<tr>
-<td>练习4 2.5 V 偏置（无信号）</td>
-<td>偏置点 → GND；第 1 脚 → GND</td>
-<td>2.5 V；2.5 V</td>
-<td>偏置电容两端</td>
+<td>电源</td>
+<td>V+ 脚 → V− 脚</td>
+<td>30 V（±15 V）/ 10 V（±5 V）/ 5 V</td>
+<td>先确认运放真的上电了</td>
 </tr>
 </tbody>
 </table>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>本节点 ❌ 0 条；⚠️ 2 条全部处理（改 2、不改 0）。只改了页面文字，数值取自本报告；图 02-p3-2 和脚本用的是页面写明的「GBW ÷ 倍数」估算模型，结论（倍数大 10 倍、带宽小 10 倍）不变，所以不改图和脚本。</p>
+<p>本节点 ❌ 0 条；⚠️ 4 条全部处理（改 4、不改 0）。只改了页面文字，数值全部取自本报告；图和脚本画的是页面明说的「按手册典型值」理想边界，不需要改。</p>
 <ol>
-<li><strong>⚠️ page3 §2 图 02-p3-2（2 倍带宽 600 kHz）</strong>：已改。在「三处黑点都是 0.707 倍的位置。」后补一句：这些数按手册 GBW 典型值 1.2 MHz 估算，当作「至少有这么宽」；倍数越小实际带宽比估算宽得越多，TI 官方模型 SPICE：2 倍约 1.61 MHz、10 倍约 166 kHz、100 倍约 14.6 kHz（报告建议稿写的「约 15 kHz」改用表中实测 14.6 kHz）。</li>
-<li><strong>⚠️ page3 练习 3(3)（4 倍带宽 300 kHz）</strong>：已改为「带宽至少约 1.2 MHz ÷ 4 = 300 kHz（TI 官方模型 SPICE 仿真约 611 kHz），远大于 1 kHz，够用」。</li>
+<li><strong>⚠️ page3 参数表「输出摆幅：比负电源高约 0.1 V」</strong>：已改。
+<ul>
+<li>参数表该格补成「比负电源高约 0.1 V（输出几乎不往里吸电流时；负载接在地上、输出在负半周、要吸收约 1 mA 时，余量增大到约 0.75 V）」。</li>
+<li>第二节图 02-p3-1 讲解后加「💡 实际芯片会怎样」小框：SPICE 下 ±5 V 正半周削在约 3.8 V；负半周 −4.9 V 只在几乎无负载时成立（仿真 −4.98 V），接 10 kΩ 到地约 −4.3 V 就被削平，原因是输出级吸电流能力弱；5 V 单电源最低约 0.02 V，但负半周消失的现象不变。（框内顺带说明了 ±5 V 正侧 3.5 V vs 3.78 V 这条 ✅ 项的差别，同类合并，未另起段落。）</li>
+</ul>
+</li>
+<li><strong>⚠️ page2 图 02-p2-1「V− ≈ 50 μV」</strong>：已改。在第二节结论段后加「💡 实际芯片会怎样」小框：50 μV 是只算开环增益的理论值，LM358B 有失调电压（典型 ±0.3 mV、最大 ±3 mV），SPICE 反相端为 362 μV、输出 −4.99696 V；万用表会读到零点几毫伏；写明虚短条件（有负反馈、输出没饱和）。</li>
+<li><strong>⚠️ page2 图 02-p2-3 开环方波 ±13.5 V</strong>：已改。在「掉到 −13.5 V，正弦变成了方波」后补一句：图里为简单画成 ±13.5 V，SPICE 用 LM358B 模型时上沿约 13.8 V、下沿约 −15.0 V，上下不对称，并链接到 <a href="../../02-opamp-basics/page3.html">02 运放入门 · 参数与调试篇</a>。</li>
+<li><strong>⚠️ page2 例 3 答案「最低点约 0.1 V」</strong>：已改。改为「只比 0 V 高一点：手册 5 V 单电源、负载接地时典型约 5 mV、最大 20 mV（SPICE 约 0.024 V）；参数表的 0.1 V 是更保守的估计，这里按 0.1 V 算，结论不变（按 0.02 V 代入反相端约 0.456 V，仍约 0.46 V）」。</li>
 </ol>
-<p>改动文件：<code>02-noninverting-amp/page3.md</code>、<code>review/spice/02.md</code>。</p>
-<p>检查（仓库根目录）：count_cjk（1749/1614/2124 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（02_sim.py、02_figs.py）、check_figs、check_github_math（33/37/40）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+<p>改动文件：<code>02-opamp-basics/page2.md</code>、<code>02-opamp-basics/page3.md</code>、<code>review/spice/02.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（1898/2535/2881 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（02_sim.py、02_figs.py）、check_figs、check_github_math（12/74/8）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

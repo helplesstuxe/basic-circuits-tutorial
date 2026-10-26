@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>19 星三角降压启动 审读意见（资深教师）</title>
+<title>19 射极跟随器 · 资深教师审读</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,11 +42,10 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/19.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="19-星三角降压启动-审读意见资深教师">19 星三角降压启动 审读意见（资深教师）</h1>
-<p>审读范围：<code>19-star-delta-start/page1–3.md</code> 及其图。</p>
+<h1 id="19-射极跟随器--资深教师审读">19 射极跟随器 · 资深教师审读</h1>
 <h2 id="总评">总评</h2>
-<p>结构清楚，取舍讲得透。page2 先用中文讲 √3 × √3 = 3，再列公式、做代数，&quot;中文 → 公式 → 代数&quot;三层走得很规范。控制逻辑式沿用 18 的写法，推出 t_gap = t_pick,KM△，与 18 的双重互锁结论一致，前后呼应。page2 L227 引用西门子资料，说明残余电压和暂态电流系数，并主动讲清模型的局限，诚实度高。page3 对 T 和空档两个参数的扫描，直接支撑&quot;何时切换&quot;的工程判断。练习 4 讲&quot;Y 接法电动机不能装星三角&quot;，是优秀的反例迁移题。</p>
-<p>数值复核全部正确：5.8 ÷ 1.9 ≈ 3、1.12 → 0.37、0.45、例题 1–3、练习 1–4（−7 ms 与 18 一致）。按钮编号 SB1 为停止、SB2 为启动，与 17、18 一致。00-design §6 要求的&quot;星形启动电流为 1/3&quot;已满足。</p>
+<p>本节结构好：痛点是运放带不动 50 Ω（只能输出 1.5 V）；类比是&quot;小手拧大阀门，水位低一个台阶&quot;；page1 L44 用&quot;自己做负反馈&quot;解释&quot;为什么会跟随&quot;。page2 有四个推导，每个都按&quot;中文 → 公式 → 代数&quot;展开，并配了&quot;从两头看&quot;的 R_out ≈ 0.48 Ω、R_in ≈ (β+1)R_L 两项，讲得很透。page3 讲 β 不敏感、功耗抛物线、基极电阻的代价（0.79 V），以及推挽交越失真的迁移题，层次分明。</p>
+<p>数值复核：1.69 mA、4.36/4.28/2.355 V（电位器戴维南电阻约 247 Ω）、46→126 mA、ΔV_BE ≈ 26 mV、A_v ≈ 0.994、0.65 W、0.37 W、167 Ω、101 mV ≈ V_T·ln49、2550 Ω、5.71 V，例 1–3 的 0.348/0.510/0.693/0.198 W，β 表，0.71 W 与 41/44 °C，6.50/7.3 V，练习 1 的 2.73 W 与 170 °C，练习 2 的 2.9 V，全部正确。</p>
 <h2 id="逐条意见">逐条意见</h2>
 <table>
 <thead>
@@ -62,46 +61,81 @@ mjx-container{max-width:100%}
 <tr>
 <td>1</td>
 <td>必改</td>
-<td>page1 L28</td>
-<td>原文&quot;每段绕组其实是'两根电源线之间串了两段'，所以每段只分到 380 V 除以根号 3&quot;。高中生学过&quot;串联分压&quot;，读到&quot;串了两段&quot;会自然得出 380 ÷ 2 = 190 V，文中却跳到了 ÷√3，因果对不上，等于埋下一个新的误区。</td>
-<td>补一句真实原因：&quot;两段绕组上的电压不是同时达到最高，而是错开 1/3 个周期，所以不能简单对半分；按三相电的规律，每段分到的是线电压的 1/√3，约 220 V（家用插座的 220 V 正是这样来的）。&quot;或者去掉&quot;串了两段&quot;的说法，直接给出&quot;线电压 380 V、相电压 220 V&quot;这一规定，并链接到 page2 L12。</td>
+<td>page1 L63</td>
+<td>原文：&quot;最后用手指轻碰一下三极管：在 12 V 电源下带 50 Ω 负载时，它要发约 0.65 W 的热，2N3904 这种小管子很快就会烫手甚至过热。&quot;这是在叫读者去摸一只超过额定功耗将近一倍的管子，有烫伤风险。这段描述的&quot;运放 + 12 V + 50 Ω&quot;示波器场景也不在 page2 的动手实验里：那里用 9 V 和 1 kΩ/220 Ω，而且 page2 L231 明确说&quot;不要把负载换成几十欧&quot;。前后矛盾。</td>
+<td>改为：&quot;<strong>不要</strong>用手去摸：按 page2 的公式，12 V、50 Ω 时三极管要发约 0.65 W 的热，远超 2N3904 的 0.35 W，几秒内就会烫到能烫伤手指。这个场景只在仿真里看；动手实验按 page2 第七节用 220 Ω。&quot;示波器那一段也注明&quot;负载用 220 Ω&quot;或&quot;仅示意&quot;。</td>
 </tr>
 <tr>
 <td>2</td>
 <td>建议</td>
-<td>page3 L30</td>
-<td>原文&quot;深蓝色的星形电流&quot;。图中实际是 figstyle 的 <code>vin</code> 蓝色，&quot;深蓝色&quot;不在色板颜色词里。</td>
-<td>改为&quot;蓝色的星形电流&quot;。</td>
+<td>page1 L57；page2 L196；page2 L170</td>
+<td>page1 L57、page2 L196 写&quot;下一节的线性稳压&quot;&quot;下一节 [21 线性稳压]&quot;。按导航顺序，19 之后是 20，21 要到 20 之后才出现。page2 L170 的&quot;蓝绿色虚线是下一节要讲的'反馈取自发射极'的接法&quot;，指的其实是本页第五节，容易和节点混淆。</td>
+<td>前两处改为&quot;后面的 21 线性稳压&quot;；第三处改为&quot;本页第五节要讲的&quot;。</td>
 </tr>
 <tr>
 <td>3</td>
 <td>建议</td>
-<td>page2 L268（动手实验器材）</td>
-<td>三只 12 V 继电器线圈都没有提到反并续流二极管。18 的同类实验（page2 L275）明确要求接 1N4007，P1、21、22 也反复强调这一点。前后不一致，读者容易漏接。</td>
-<td>器材里加&quot;三只 1N4007，分别反并在三只继电器线圈两端（见 18、22）&quot;；KT 模块一般自带，可注明&quot;成品模块通常已内置&quot;。</td>
+<td>page2 L172、page3 L14</td>
+<td>本节取 2N3904 的功耗上限为 350 mW（Semelab）；07 page2 L232 取 625 mW（onsemi TO-92）。两节说法不同，读者会困惑。</td>
+<td>在本节加一句：&quot;不同厂家、封装的额定值不同（onsemi TO-92 为 625 mW），本节按更保守的 350 mW 算。&quot;07 那边也可以反向注明。</td>
 </tr>
 <tr>
 <td>4</td>
 <td>建议</td>
-<td>page1 L14、page2 L225、page3 L16–17</td>
-<td>以下术语超出高中范围，文中没有解释：鼠笼式电动机、同步转速、kVA、钳形电流表。&quot;转矩&quot;在高中叫&quot;力矩&quot;。</td>
-<td>各加一句括注：鼠笼式（转子像一个铝条做的笼子，最常见的三相电动机）；同步转速（旋转磁场的转速，转子总是略慢于它）；kVA（千伏安，变压器容量单位）；钳形电流表（钳住导线就能测电流，不用断线）；转矩（让转子转动的力矩）。</td>
+<td>page2 L211</td>
+<td>&quot;输出低、电源高，三极管上压降大，所以功耗比例 1 还大。&quot;句子不通，&quot;比例 1&quot;读起来像&quot;比例为 1&quot;。</td>
+<td>改为&quot;……所以管耗比例 1 的 0.348 W 还大&quot;。</td>
+</tr>
+<tr>
+<td>5</td>
+<td>建议</td>
+<td>page3 L43、L45</td>
+<td>&quot;磁珠&quot;&quot;达林顿&quot;在第一次出现时都没有解释。</td>
+<td>磁珠括注&quot;（套在导线上的小铁氧体，对高频呈现电阻，对直流几乎没有影响）&quot;；达林顿括注&quot;（两只三极管串成一级，β 相乘，可达数千）&quot;。</td>
 </tr>
 </tbody>
 </table>
 <h2 id="图文与颜色核对">图文与颜色核对</h2>
-<p>以下颜色描述与 PNG 一致：</p>
-<ul>
-<li>page2 L221 alt：橙色、蓝色；</li>
-<li>page2 L237：灰色空档；</li>
-<li>page3 L24、L28：天蓝色；</li>
-<li>page3 L38：朱红色区域。</li>
-</ul>
-<p>page3 L30 的&quot;深蓝色&quot;见第 2 条。图 19-p3-2 图内文字写&quot;三相短路&quot;，正文写&quot;相间短路&quot;，两者含义一致，可以接受。</p>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>正文颜色</th>
+<th>图中实际颜色</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page1 L27</td>
+<td>橙色 100 mA、蓝色 30 mA、朱红色 20 mA</td>
+<td>橙色、蓝色、朱红色；最右侧矮柱为蓝绿色，正文未写颜色</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page2 L162</td>
+<td>橙色、蓝色、朱红色带 ×</td>
+<td>三种颜色均在</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page2 L170</td>
+<td>朱红色、橙色、灰色点线、蓝绿色虚线</td>
+<td>均在</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 L29–33</td>
+<td>灰色点线</td>
+<td>有；曲线为橙色，正文未写颜色</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
 <h2 id="安全">安全</h2>
-<p>本节涉及市电。三页都有 <code>[!WARNING]</code>，并列出本节点特有的危险点：6 根出线接错、KMY 与 KM△ 同时吸合造成星点短路、调延时也要断电、首次试车先断开电动机。page2 动手实验前另有警告，并写明&quot;不接电动机、不接市电&quot;。<strong>合格</strong>（只差第 3 条的续流二极管）。</p>
+<p>不涉及市电。唯一的安全问题是第 1 条（烫伤），已列为必改。</p>
 <h2 id="计数">计数</h2>
-<p>必改 1，建议 3。</p>
+<p>必改 1，建议 4。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

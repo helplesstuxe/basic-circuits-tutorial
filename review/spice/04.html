@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>04 差分放大：SPICE 复核报告</title>
+<title>04 自锁 — ngspice 核对报告（审阅人 B）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,57 +42,73 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/04.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="04-差分放大spice-复核报告">04 差分放大：SPICE 复核报告</h1>
-<ul>
-<li><strong>工具</strong>：ngspice 44.2，batch 模式。<code>spice/04/.spiceinit</code> 设置了 <code>ngbehavior=psa</code>。</li>
-<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/04/run.py</code>，退出码 0，已实际运行，共 41 个比对项。</li>
-<li><strong>网表</strong>：
-<ul>
-<li><code>dc.cir</code>：四电阻差分的直流值。只用一个运放，用 alter 换输入和电阻；用&quot;输入从 0 爬升&quot;的瞬态求稳态。</li>
-<li><code>ac_cmrr.cir</code>：共模抑制，取 50 Hz 交流。</li>
-<li><code>t_mis.cir</code>：图 04-p2-2 的瞬态，以及输入短接的情况。</li>
-<li><code>dc_ina.cir</code>：三运放仪表放大器。</li>
-<li><code>t_ss5.cir</code>：例1 在 5 V 单电源下的情况。</li>
-</ul>
-</li>
-</ul>
-<h2 id="模型与来源">模型与来源</h2>
+<h1 id="04-自锁--ngspice-核对报告审阅人-b">04 自锁 — ngspice 核对报告（审阅人 B）</h1>
+<p>运行：在仓库根目录 <code>/workspace/circuits-venv/bin/python spice/04/run.py</code>，退出码 0。</p>
+<h2 id="仿真范围与跳过的部分">仿真范围与跳过的部分</h2>
 <table>
 <thead>
 <tr>
-<th>器件</th>
-<th>模型文件</th>
-<th>来源</th>
+<th>部分</th>
+<th>处理</th>
+<th>理由</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>LM358B</td>
-<td>spice/models/LMx58B_LM2904B.lib（复用）</td>
-<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
+<td>图 04-p1-3 主电路（380 V 三相、熔断器、KM 主触点、电动机）</td>
+<td><strong>不仿真</strong></td>
+<td>市电 / 电动机，按任务规则跳过</td>
+</tr>
+<tr>
+<td>图 04-p1-1/04-p1-2 控制回路（原为 220/380 V 线圈）</td>
+<td>改成 <strong>12 V 直流继电器</strong>低压版来仿真</td>
+<td>只验证逻辑和时序；按钮、触点的接法与页面完全相同</td>
+</tr>
+<tr>
+<td>page3 §2 的 220 V 控制线压降（691.4 Ω、400 m 处 98%）</td>
+<td>只做算术核对，不仿真</td>
+<td>市电</td>
+</tr>
+<tr>
+<td>page3 §2 的 24 V 控制线压降</td>
+<td>仿真（<code>wire.cir</code>，DC 扫导线电阻）</td>
+<td>低压</td>
+</tr>
+<tr>
+<td>图 04-p3-1 回差曲线</td>
+<td>不单独核对</td>
+<td>门限本身就是模型参数（85% / 45%），核对它只是循环论证</td>
 </tr>
 </tbody>
 </table>
-<p>本节没有用替代模型。</p>
-<h2 id="假设">假设</h2>
+<h2 id="使用的模型">使用的模型</h2>
+<p>这一节没有半导体器件，所以没有用厂家模型。所有元件都是 ngspice 内置元件：</p>
 <ul>
-<li><strong>电源</strong>：页面没写电源，按前面节点取 ±15 V。例1 第4步按页面写的 5 V 单电源。</li>
-<li><strong>电阻</strong>：取标称值。偏差情况按页面给的方向设定。最坏组合是 R1、R4 偏大，R2、R3 偏小。</li>
-<li><strong>信号源内阻</strong>：直接串进 R1。</li>
-<li><strong>共模/差分倍数</strong>：按页面 page3 §三 的约定计算。差分倍数 = 两路倍数的平均，共模倍数 = 两路倍数之和的模。</li>
-<li><strong>练习4</strong>：差分输入取 V1 = 12.0 V、V2 = 12.2 V。</li>
-<li><strong>仿真结果里的运放失调</strong>：
+<li>按钮、FR、触点：电压控制开关 <code>SW</code>。</li>
+<li>KM：行为模型，参数取自页面：
 <ul>
-<li>运放失调电压约 0.3 mV，乘以噪声增益 11，输出带约 3.3 mV 的直流偏移。</li>
-<li>这个偏移会使直流值偏大约 3%～5%，在器件公差内，表中记为 ✅。</li>
+<li>线圈 400 Ω。这是对 12 V 小继电器的典型值的<strong>假设</strong>，不影响逻辑。</li>
+<li>衔铁动作：线圈电压 ÷ 12 V 先经过 τ = 10.54 ms 的 RC 延时，再进入带回差的开关 <code>SW(VT=0.65, VH=0.2)</code>。效果是升到 0.85 吸合，降到 0.45 释放。</li>
+<li>τ 是这样定的：满电压时，τ·ln(1/0.15) = 20 ms，等于页面的吸合时间。这样释放时间约为 8.8 ms，正好落在页面参数表给出的 4～19 ms 范围内。</li>
 </ul>
 </li>
+<li>HL1 / HL2：12 V 小灯泡，用 240 Ω 电阻近似。</li>
 </ul>
-<h2 id="核对表">核对表</h2>
+<p>同一个网表 <code>spice/04/selflock.cir</code> 里有四套回路，共用同一组按钮信号：</p>
+<ul>
+<li>正确接法：K' = /S1·/FR·(S2+K)</li>
+<li>错误①：K' = /S1·S2 + K</li>
+<li>错误②：K' = S1·(S2+K)</li>
+<li>两地控制：K' = /S1·/S3·(S2+S4+K)</li>
+</ul>
+<p>按钮时序由 <a href="http://run.py">run.py</a> 生成 PWL 波形，page2 主仿真的时序和 code/04_sim.py 完全一样。</p>
+<h2 id="核对结果">核对结果</h2>
+<p>状态行的「SPICE 值」是衔铁节点电压：约 1 表示吸合，约 0 表示释放。</p>
 <table>
 <thead>
 <tr>
-<th>页面位置</th>
+<th>位置</th>
+<th>核对项</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
@@ -101,299 +117,322 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>page1 §二 2.01/2.00 V，10 倍</td>
-<td>0.1 V</td>
-<td>0.1039 V</td>
-<td>+3.9%（失调 3.3 mV）</td>
+<td>p2 代码输出 / p1 §吸合时间</td>
+<td>按下启动后多久吸合（模型的 τ 就是按 20 ms 定的，所以这一行只说明模型和页面一致）</td>
+<td>20 ms</td>
+<td>20.05 ms</td>
+<td>+0.2%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page1 §二 / page2 例1① 两输入同加 1 V（3.01/3.00 V）</td>
-<td>仍 0.1 V</td>
-<td>0.1042 V</td>
-<td>+4.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例1② 5.01/5.00 V（±15 V）</td>
-<td>0.1 V</td>
-<td>0.1049 V</td>
-<td>+4.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例1 第4步 同相端</td>
-<td>4.55 V</td>
-<td>4.555 V</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page2 例1 第4步 5 V 单电源&quot;共模上限约 3.5 V，就超了&quot;</td>
-<td>会出错</td>
-<td>输出 0.024 V（应为 0.1 V）；对照 3.01/3.00 V 时输出 0.1035 V，正常</td>
+<td>p2 图04-p2-2</td>
+<td>t=2.0 s ① 松开启动后仍吸合（自锁）（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
 <td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §一 V2 = 2.2 V 时同相端 / V1 = 2.1 V 时输出</td>
-<td>2.0 V / 1.0 V</td>
-<td>2.0001 V / 1.004 V</td>
-<td>&lt;0.4%</td>
+<td>p2 图04-p2-2</td>
+<td>t=3.5 s ② 按停止后释放（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 例2 20k/60k：同相端 / 输出</td>
-<td>1.125 V / 0.9 V</td>
-<td>1.125 V / 0.901 V</td>
-<td>&lt;0.2%</td>
+<td>p2 图04-p2-2</td>
+<td>t=4.5 s ③ 再按启动（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page1 平衡线：1.3 − (−0.7)</td>
-<td>2</td>
-<td>2.001 V（四只 10k 减法器）</td>
-<td>+0.03%</td>
+<td>p2 图04-p2-2</td>
+<td>t=5.2 s ④ 电压跌到 70% 仍吸合（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §一 R4 偏大 1%：共模倍数</td>
-<td>0.009</td>
-<td>0.00935</td>
-<td>+3.9%</td>
+<td>p2 图04-p2-2</td>
+<td>t=6.2 s ⑤ 电压跌到 30% 释放（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §一 R4 偏大 1%：共模 2 V 漏出</td>
-<td>约 18 mV</td>
-<td>18.7 mV</td>
-<td>+3.9%</td>
+<td>p2 图04-p2-2</td>
+<td>t=7.5 s ⑤ 来电后不会自己再启动（失压保护）（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §一 / page3 §一 R4 偏大 1%：CMRR</td>
-<td>约 61 dB</td>
-<td>60.6 dB</td>
-<td>−0.7%</td>
+<td>p2 图04-p2-2</td>
+<td>t=8.5 s ⑥ 重新按启动（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 图04-p2-2 匹配时输出峰值</td>
-<td>100 mV</td>
-<td>103.9 mV</td>
-<td>+3.9%（失调）</td>
+<td>p2 图04-p2-2</td>
+<td>t=9.5 s ⑦ 启动、停止一起按：停止优先（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 图04-p2-2 R4 偏大 1% 时输出峰值</td>
-<td>118 mV</td>
-<td>122.0 mV</td>
-<td>+3.4%</td>
+<td>p3 参数表</td>
+<td>按停止到释放的时间(模型)（落在手册的 4～19 ms 范围内）</td>
+<td>— ms</td>
+<td>8.833 ms</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p2 例3</td>
+<td>运转时(t=2 s) HL1 两端电压</td>
+<td>12 V</td>
+<td>12 V</td>
+<td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page1 §四 第4步 R4 偏大 1%，输入短接后 50 Hz 波纹</td>
-<td>约 18 mV（按 page2）</td>
-<td>幅度 18.7 mV</td>
-<td>+3.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page1 §四 第5步 匹配、输入短接，理想 0 V</td>
+<td>p2 例3</td>
+<td>运转时(t=2 s) HL2 两端电压</td>
 <td>0 V</td>
-<td>50 Hz 残留幅度 0.84 mV，另有 3.3 mV 直流（失调）</td>
+<td>2.88e-06 V</td>
 <td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 图04-p3-1 只有 R4 偏 0.1%</td>
-<td>约 81 dB</td>
-<td>78.0 dB</td>
-<td>−3.7%</td>
-<td>✅（运放自身 CMRR 约 87 dB，开始起作用）</td>
-</tr>
-<tr>
-<td>page3 图04-p3-1 四只 1% 最坏</td>
-<td>约 49 dB</td>
-<td>48.7 dB</td>
-<td>−0.6%</td>
+<td>p2 例3</td>
+<td>停机时(t=3.5 s) HL2 两端电压</td>
+<td>12 V</td>
+<td>12 V</td>
+<td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 图04-p3-1 四只 0.1% 最坏</td>
-<td>约 69 dB</td>
-<td>68.0 dB</td>
-<td>−1.4%</td>
+<td>p2 例3</td>
+<td>停机时(t=3.5 s) HL1 两端电压</td>
+<td>0 V</td>
+<td>3.6e-06 V</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 §二 TI 例（倍数 1）1% / 0.1% 最坏</td>
-<td>34 / 54 dB</td>
-<td>34.0 / 53.8 dB</td>
-<td>&lt;0.4%</td>
+<td>p2 图04-p2-3</td>
+<td>正确接法：按停止后停（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 图04-p3-2 内阻 100 Ω</td>
-<td>约 61 dB</td>
-<td>60.5 dB</td>
-<td>−0.8%</td>
+<td>p2 图04-p2-3</td>
+<td>错误①：按停止停不下来（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 图04-p3-2 内阻 1 kΩ：CMRR / 差分倍数</td>
-<td>41 dB / 9.13</td>
-<td>40.8 dB / 9.131</td>
-<td>&lt;0.5%</td>
+<td>p2 图04-p2-3</td>
+<td>错误②：停止按钮用常开，永远启动不了（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习1 5k/50k，0.82/0.80 V</td>
-<td>0.2 V</td>
-<td>0.2035 V</td>
-<td>+1.8%</td>
+<td>p2 例1</td>
+<td>FR 过载断开、复位后电机不会自己重启（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习3 内阻 200 Ω：差分倍数 / 共模倍数 / 残留</td>
-<td>9.81 / 0.018 / 36 mV</td>
-<td>9.811 / 0.0181 / 36.3 mV</td>
-<td>&lt;0.8%</td>
+<td>p3 练习1</td>
+<td>先按住停止再按启动：全过程 KM 最大状态（SPICE：KM 从未吸合）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习4 输出（±15 V）/ 同相端</td>
-<td>2 V / 约 10.9 V</td>
-<td>2.007 V / 11.09 V（V2 取 12.2 V）</td>
-<td>&lt;2%</td>
+<td>p3 练习2(a)</td>
+<td>电压 82% 时按启动（SPICE：KM 释放（低于 85% 吸合门限））</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习4 1% 最坏，12 V 共模残留</td>
-<td>约 0.43 V</td>
-<td>0.432 V</td>
-<td>+0.6%</td>
+<td>p3 练习2(b)</td>
+<td>运转中电压跌到 82%（SPICE：KM 吸合（高于 45% 释放门限））</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习4 0.1% 最坏：&quot;约 2800 倍，残留约 0.04 V&quot;</td>
-<td>2800 倍 / 0.04 V</td>
-<td>2520 倍 / 0.048 V</td>
-<td>−10% / +19%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>page2 例3 仪表放大器：A2 / A1 输出</td>
-<td>2.11 / 1.90 V</td>
-<td>2.1102 / 1.9003 V</td>
-<td>&lt;0.02%</td>
+<td>p3 练习4 图04-p3-3</td>
+<td>乙地 SB4 启动（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 例3 Rg 电流</td>
-<td>10 µA</td>
-<td>9.995 µA</td>
-<td>−0.05%</td>
+<td>p3 练习4 图04-p3-3</td>
+<td>乙地 SB3 停止（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 例3 输出（21 倍）</td>
-<td>0.21 V</td>
-<td>0.2106 V</td>
+<td>p3 练习4 图04-p3-3</td>
+<td>甲地 SB2 启动（SPICE：KM 吸合）</td>
+<td>—</td>
+<td>0.999</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习4 图04-p3-3</td>
+<td>甲地 SB1 停止（SPICE：KM 释放）</td>
+<td>—</td>
+<td>1e-06</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §2 图04-p3-2</td>
+<td>24 V 控制：线圈电压降到 85% 的距离(1 mm²)</td>
+<td>42 m</td>
+<td>41.97 m</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习3</td>
+<td>同上，1.5 mm² 导线</td>
+<td>63 m</td>
+<td>62.95 m</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §2</td>
+<td>24 V / 70 VA 等效线圈电阻(手算)（核对页面的 8.2 Ω）</td>
+<td>8.2 Ω</td>
+<td>8.229 Ω</td>
 <td>+0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §2</td>
+<td>220 V / 70 VA 等效线圈电阻(手算，不仿真)（市电：只做算术核对）</td>
+<td>691.4 Ω</td>
+<td>691.4 Ω</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §2</td>
+<td>220 V 400 m 处线圈电压比例(手算，不仿真)（市电：只做算术核对）</td>
+<td>98 %</td>
+<td>98.04 %</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 </tbody>
 </table>
-<p><strong>统计：✅ 28　⚠️ 1　❌ 0</strong>（按表格行计；<a href="http://run.py">run.py</a> 共 41 个比对项）</p>
-<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>⚠️ page3 练习4 答案</strong></p>
-<p>把&quot;所以至少要 0.1% 电阻（约 69 dB，约 2800 倍，残留约 0.04 V）&quot;改为：</p>
-<blockquote>
-<p>所以至少要 0.1% 电阻（约 69 dB，约 2800 倍，残留约 0.04 V；再算上运放自身的共模抑制比，实际约 0.05 V），或用集成的电流检测放大器。</p>
-</blockquote>
-<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
-<ul>
-<li>供电：±15 V。LM358B 第 8 脚接 +15 V，第 4 脚接 −15 V。</li>
-<li>R1 = 10 kΩ，从 V1 接到第 2 脚。</li>
-<li>R2 = 100 kΩ，从第 2 脚接到第 1 脚。</li>
-<li>R3 = 10 kΩ，从 V2 接到第 3 脚。</li>
-<li>R4 = 100 kΩ，从第 3 脚接到 GND。</li>
-<li>用直流电压代替信号源。</li>
-</ul>
+<p>统计：✅ 29　⚠️ 0　❌ 0　ℹ️ 1</p>
+<p>结论：逻辑式、七个事件、两种错误接法、例 1、例 3、练习 1、练习 2、练习 4，以及 24 V 导线压降，全部与页面一致。</p>
+<h2 id="面包板低压版12-v-继电器代替接触器万用表读数">面包板低压版（12 V 继电器代替接触器）万用表读数</h2>
+<p>搭法：12 V 直流电源 → 常闭按钮 SB1 → 常开按钮 SB2，SB2 旁边并联继电器的一对常开触点 → 12 V 继电器线圈 → 电源负极。线圈两端反并一只 1N4007 续流。HL1 用 12 V 小灯泡并在线圈上；HL2 用另一只 12 V 小灯泡，串继电器常闭触点后接到 12 V。</p>
 <table>
 <thead>
 <tr>
-<th>条件</th>
-<th>红笔 → 黑笔</th>
+<th>测什么</th>
+<th>红表笔 → 黑表笔</th>
+<th>档位</th>
 <th>应读到</th>
-<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>V2 = 2.01 V，V1 = 2.00 V</td>
-<td>V2 → V1</td>
-<td>10.0 mV</td>
-<td>先确认差值，要用 4 位半以上的表</td>
+<td>电源</td>
+<td>电源 + → 电源 −</td>
+<td>DC 20 V</td>
+<td>12 V</td>
 </tr>
 <tr>
+<td>停机时线圈电压</td>
+<td>线圈上端 → 电源 −</td>
+<td>DC 20 V</td>
+<td>0 V；此时 HL2 亮，两端 12 V</td>
+</tr>
+<tr>
+<td>按一下 SB2 再松开后的线圈电压</td>
+<td>线圈上端 → 电源 −</td>
+<td>DC 20 V</td>
+<td>约 12 V（自锁保持），HL1 亮，HL2 两端 0 V</td>
+</tr>
+<tr>
+<td>运转时 SB2 两端</td>
+<td>SB2 一端 → 另一端</td>
+<td>DC 200 mV</td>
+<td>≈ 0 mV（被自锁触点短接）</td>
+</tr>
+<tr>
+<td>运转时 SB1 两端</td>
+<td>SB1 一端 → 另一端</td>
+<td>DC 200 mV</td>
+<td>≈ 0 mV（常闭，导通）</td>
+</tr>
+<tr>
+<td>按住 SB1 时 SB1 两端</td>
 <td>同上</td>
-<td>第 1 脚 → GND</td>
-<td>约 0.10 V（0.07～0.13 V）</td>
-<td>失调最大 3 mV × 11 ≈ ±33 mV</td>
+<td>DC 20 V</td>
+<td>≈ 12 V，继电器释放</td>
 </tr>
 <tr>
-<td>同上</td>
-<td>第 3 脚 → GND</td>
-<td>1.827 V</td>
-<td>2.01 × 100/110</td>
+<td>断电后检查自锁触点</td>
+<td>触点两端</td>
+<td>蜂鸣档</td>
+<td>平时不响；用手压下继电器衔铁时响</td>
 </tr>
 <tr>
-<td>同上</td>
-<td>第 2 脚 → 第 3 脚</td>
-<td>−3～+3 mV</td>
-<td>虚短</td>
+<td>线圈电阻（断电）</td>
+<td>线圈两端</td>
+<td>Ω 2 kΩ</td>
+<td>按继电器规格，12 V 小继电器一般几百欧</td>
 </tr>
 <tr>
-<td>V2 = 2.2 V，V1 = 2.1 V</td>
-<td>第 3 脚 → GND；第 1 脚 → GND</td>
-<td>2.00 V；1.00 V</td>
-<td>page2 推导中的数字</td>
-</tr>
-<tr>
-<td>两输入短接到同一个 2 V</td>
-<td>第 1 脚 → GND</td>
-<td>只剩失调，几毫伏（最大约 ±33 mV）</td>
-<td>用 1% 电阻时，最坏还有 2 V × 0.036 ≈ ±72 mV</td>
-</tr>
-<tr>
-<td>仪表放大器（R = 10k，Rg = 1k），V1 = 2.00 V，V2 = 2.01 V</td>
-<td>A2 输出 → GND；A1 输出 → GND；A2 输出 → A1 输出</td>
-<td>2.11 V；1.90 V；0.21 V</td>
-<td></td>
-</tr>
-<tr>
-<td>同上</td>
-<td>Rg 两端</td>
-<td>10.0 mV</td>
-<td>Rg 中的电流为 10 µA</td>
-</tr>
-<tr>
-<td>同上</td>
-<td>最终输出 → GND</td>
-<td>约 0.21 V</td>
-<td></td>
+<td>失压保护演示：可调电源降到约 4 V（低于释放电压）再调回 12 V</td>
+<td>线圈上端 → 电源 −</td>
+<td>DC 20 V</td>
+<td>降压后为 0 V；调回 12 V 后仍为 0 V，不会自己吸合</td>
 </tr>
 </tbody>
 </table>
+<p>注意：小信号继电器的吸合、释放电压比例和接触器不同。很多 12 V 继电器的吸合电压不大于 75%，释放电压不小于 10%，以所用型号的数据手册为准。用它做「70% 仍吸合、30% 释放」的演示时，具体电压要按手册换算。</p>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>本节点 ❌ 0 条；⚠️ 1 条已处理（改 1、不改 0）。</p>
-<ol>
-<li><strong>⚠️ page3 练习 4 答案（0.1% 最坏「约 2800 倍，残留约 0.04 V」，SPICE 2520 倍 / 0.048 V）</strong>：已改。按报告建议在括号里补「再算上运放自身的共模抑制比，TI 官方模型 SPICE 仿真实际约 0.05 V」。原来的 2800 倍 / 0.04 V 是只算电阻的估算，脚本按此打印，保持不变，所以不改脚本和图。</li>
-</ol>
-<p>改动文件：<code>04-differential-amp/page3.md</code>、<code>review/spice/04.md</code>。</p>
-<p>检查（仓库根目录）：count_cjk（1679/1693/2251 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（04_sim.py、04_figs.py）、check_figs、check_github_math（25/72/52）五项全部通过；fix_inline_math_spacing --check 0 处；导航链接目标都存在；仓库根目录无多余文件。</p>
+<p>本节点 ❌ 0 条、⚠️ 0 条，没有需要修改的项。ℹ️ 1 条按规则不需改。报告未提及导航链接，未动。</p>
+<p>改动文件：仅 <code>review/spice/04.md</code>（本记录）。页面、脚本、图均未改。</p>
+<p>检查（仓库根目录）：count_cjk（1920/2669/2291 字）、run_blocks（1 过）、run_blocks --scripts（04_sim.py、04_figs.py）、check_figs（4/3/3 张）、check_github_math（0/51/7）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

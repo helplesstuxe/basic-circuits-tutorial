@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>22 三极管开关与继电器驱动：资深教师审读</title>
+<title>22 过载保护 · 资深教师审读</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,19 +42,28 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/22.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="22-三极管开关与继电器驱动资深教师审读">22 三极管开关与继电器驱动：资深教师审读</h1>
-<p>审读对象：<code>22-bjt-relay-driver/page1–3.md</code> 及其图。</p>
+<h1 id="22-过载保护--资深教师审读">22 过载保护 · 资深教师审读</h1>
 <h2 id="总评">总评</h2>
-<p>这是全书质量最高的节点之一。痛点从&quot;引脚 20/40 mA 对比线圈 71/89 mA&quot;这张柱状图开始，数字具体、一眼就懂。&quot;水龙头 + 水锤 + 回流支路&quot;的类比层次清楚。page2 每个推导都按&quot;先用中文说 → 再写公式 → 最后代数&quot;的顺序展开，和认知负荷理论里的&quot;分步呈现&quot;完全一致。例题从完整示范到留空再到变体迁移逐步渐隐，做得很规范。</p>
-<p>数值已复核：</p>
+<p>这是本书质量最高的节点之一。</p>
 <ul>
-<li>基极电流：68.6 mA、2.29 mA、376–941 Ω、6.32 mA（2.8 倍）、5.96 mA；</li>
-<li>尖峰：0.235 mJ、2173 V；</li>
-<li>续流：τ = 1.43 ms。计入 V_F 后 2.17 ms 降到 7.14 mA，串稳压管后 0.23 ms，相差 9.7 倍；</li>
-<li>图 22-p3-1 的 24.08/8.03/2.41 kΩ；</li>
-<li>练习 1–4、ULN2003A 参数。</li>
+<li><strong>page1</strong>：从&quot;小车卡住&quot;这个生活场景切入，用 I²R 说明电流 5 倍对应发热 25 倍。再用空气开关类比&quot;量 → 判 → 断&quot;，并提前点出&quot;打嗝&quot;问题。</li>
+<li><strong>page2</strong>：把等效电源、两条门限、反时限公式逐个推导，每一步都附有中文释义。</li>
+<li><strong>page3</strong>：闭环仿真对比三种情况：无回差（28803 次翻转）、打嗝、锁存，正好暴露了新手最容易忽视的&quot;切断后又恢复&quot;。τ 的取舍用&quot;反时限曲线 + 启动冲击&quot;两张图讲清。还比较了保险丝和热继电器，并给出出处。</li>
+<li><strong>练习</strong>：覆盖门限、跳闸时间、打嗝、τ、R_S 选型，最后一道练习迁移到保险丝，覆盖完整。</li>
 </ul>
-<p>以上全部正确。三页都有 <code>[!WARNING]</code>，而且写出了本页特有的危险点。动手实验明确限定&quot;触点只接 5 V + LED&quot;，并且明令&quot;不要拆二极管看尖峰&quot;。安全处理堪称示范。</p>
+<p>数值复核全部正确：</p>
+<ul>
+<li><strong>门限</strong>：0.147 V、0.971 kΩ、193/146 mV。</li>
+<li><strong>跳闸时间与功耗</strong>：26.5 ms、0.37 W。</li>
+<li><strong>例 1–3</strong>：62 ms、0.9 W；3.85/2.91 A、0.74 W；0.96/0.73 A、20 ms、0.19 W。</li>
+<li><strong>R_S 表</strong>：全部四行。</li>
+<li><strong>其他</strong>：2.5 mV、28 ms。</li>
+<li><strong>打嗝</strong>：开 14.2 ms，占空 34%。</li>
+<li><strong>反时限</strong>：2.6/0.50、12.4/2.35、26.4/5.0 ms。</li>
+<li><strong>启动峰值</strong>：τ = 10 ms 时 278 mV、τ = 47 ms 时 144 mV，按 0.1 + 0.4e^(−t/20 ms) 经 RC 滤波后自行推导复核。</li>
+<li><strong>练习</strong>：13 ms；5.84 A、1.13 W；0.32 A²s（= 16 × 0.02 s）、1.6 A²s。</li>
+</ul>
+<p>DRV8871（1.5 µs 去抖、3 ms 重试）、IRLZ44N（25 mΩ @ 5 V）、ABB 热继电器 Class 10 的数据也与原始资料一致。</p>
 <h2 id="逐条意见">逐条意见</h2>
 <table>
 <thead>
@@ -70,49 +79,67 @@ mjx-container{max-width:100%}
 <tr>
 <td>1</td>
 <td>建议</td>
-<td>page1 L20、page3 L21 对照 page2 L285</td>
-<td>标准型线圈写成&quot;55 Ω，89.3 mA，0.45 W&quot;，但 5 V / 55 Ω = 90.9 mA，89.3 mA 对应的是 56 Ω。这是数据手册自身的取整差异，但读者自己验算时会困惑。</td>
-<td>在 page3 表格中加注：&quot;手册原文如此（5 V ÷ 55 Ω 实为 90.9 mA，差异来自取整），本教程计算时用 55 Ω。&quot;</td>
+<td>page1 L15（图 22-p1-1 替代文字）、L19；page3 L41、L55</td>
+<td>正文写&quot;红色带叉的线&quot;&quot;第一行（红色，无回差）&quot;&quot;τ = 10 ms（红）&quot;。画图脚本用的是 <code>LS[&quot;bad&quot;]</code>，也就是规范里的<strong>朱红色</strong>（colors.json 中 22_p1_1、22_p3_1、22_p3_2 都只有朱红色，没有红色）。另外，page3 的两张图把标记关掉了（<code>&quot;marker&quot;: None</code>），图上并没有 ×。</td>
+<td>page1 两处改为&quot;朱红色带 × 的线&quot;。page3 L41 改为&quot;第一行（朱红色，无回差）&quot;，L55 改为&quot;τ = 10 ms（朱红色）&quot;，这两处不要写&quot;带 ×&quot;。</td>
 </tr>
 <tr>
 <td>2</td>
 <td>建议</td>
-<td>page2 L259（动手第 1 步）</td>
-<td>只写了&quot;续流二极管&quot;，没有写型号。图 22-p1-3 标的是 1N4148，读者在面包板上搭电路时需要知道型号。</td>
-<td>改为&quot;续流二极管 1N4148（或 1N4007），负极朝 +5 V&quot;，并补一句&quot;它的额定电流（1N4148 约 200 mA）要大于线圈电流 68.6 mA&quot;，呼应 21 中&quot;二极管额定电流不小于负载电流&quot;的规则。</td>
+<td>page3 L65、L69，练习 4 L108–114；page1 L57</td>
+<td>1. &quot;I²t&quot;&quot;熔化 I²t 额定值&quot;&quot;慢断型&quot;没有解释，练习 4 却要读者拿它们计算。<br>2. page1 L57 的&quot;三相电机&quot;同样没有定义（全书共性问题，见 <a href="http://cross-chapter.md">cross-chapter.md</a>）。</td>
+<td>1. 在 L69 首次出现处加一句：&quot;I²t 是电流平方乘以时间（脉冲电流要按时间累加），正比于这段时间里熔丝吸收的热量，单位 A²s。&quot;<br>2. &quot;慢断型&quot;括注：&quot;（熔丝对短时冲击反应慢，适合有启动电流的电机）&quot;。<br>3. &quot;三相电机&quot;可改为&quot;工厂里的大电机&quot;，或者链接到 15 节的定义。</td>
 </tr>
 <tr>
 <td>3</td>
 <td>建议</td>
-<td>page3 L39</td>
-<td>这一段一次性抛出&quot;电气间隙、爬电距离、加强绝缘、EN 60335-1、IEC 60664-1、过电压类别、污染等级、CTI&quot;八个新词，信息密度远超高中读者的工作记忆，而且结论只是&quot;本页不给毫米数&quot;。</td>
-<td>只保留电气间隙和爬电距离两个概念，以及&quot;继电器本体 6 mm/8 mm&quot;这个具体数字和&quot;开槽、画隔离带&quot;的做法。标准名称和 CTI 等术语移入脚注或参考资料。</td>
-</tr>
-<tr>
-<td>4</td>
-<td>建议</td>
-<td>page3 练习</td>
-<td>4 道练习覆盖了 R_B、β 反推、二极管方向和 ULN2003，但没有一道考 page2 第三节的尖峰估算或&quot;二极管 + 稳压管&quot;的取值。这是本节点与 P1、17、25 共享的核心概念。</td>
-<td>增加一题：&quot;给 12 V 继电器配 2N3904（V_CEO = 40 V），要串稳压管加快释放，稳压值最大取多少？&quot;答案为 V_Z &lt; 40 − 12 − 0.7 ≈ 27 V，留余量取 18–24 V。</td>
-</tr>
-<tr>
-<td>5</td>
-<td>建议</td>
-<td>page3 L48</td>
-<td>&quot;电源加去耦电容&quot;，&quot;去耦&quot;在本节点没有解释；P3 中也只是点名带过（见 <a href="http://P3.md">P3.md</a>）。</td>
-<td>括注&quot;去耦电容：紧贴芯片电源脚、对地接的 0.1 μF 小电容，吸收电源上的毛刺&quot;，或者链接到给出定义的节点（见 <a href="http://cross-chapter.md">cross-chapter.md</a>）。</td>
+<td>page3 练习 2 答案 L96</td>
+<td>答案只说&quot;不一定安全……可能超过 193 mV&quot;，读者无法判断到底会不会误跳。按本页的模型可以直接算出结果：启动冲击时间常数改成 50 ms、τ = 47 ms 时，滤波后峰值约 0.22 V（t ≈ 48 ms），<strong>一定</strong>超过 193 mV，会误跳。</td>
+<td>改为：&quot;会误跳：按同样的模型，峰值约 0.22 V（约 48 ms 时），高于 193 mV。应加大 τ（τ = 100 ms 时峰值约 0.16 V）或提高门限。&quot;把 TAU_START 改成 0.05 的验证建议保留下来，供读者自查。</td>
 </tr>
 </tbody>
 </table>
 <h2 id="图文与颜色核对">图文与颜色核对</h2>
-<ul>
-<li>page1 L34（灰色点线），page2 L36（蓝色、橙色、红紫色点划线、灰色点线）、L240（朱红色带 ×、灰色点线）、L248（天蓝色、红紫色点划线、灰色点线），page3 L35（蓝色、橙色、红紫色点划线、灰色点线），均与 PNG 一致。</li>
-<li>图 22-p1-3 中的&quot;灰色虚线&quot;隔离带在 PNG 中确实是灰色虚线。D1 的方向（阴极接 +5 V）与正文一致。</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>正文</th>
+<th>图（脚本样式 / 像素）</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page1 L19</td>
+<td>红色带叉、橙色、灰色点线</td>
+<td>bad（朱红色）、vout（橙色）</td>
+<td>✗ 颜色名，见第 1 条</td>
+</tr>
+<tr>
+<td>page2 L148</td>
+<td>蓝色细线、橙色粗线、灰色点线</td>
+<td>蓝色、橙色、朱红色（第二行）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 L41–43</td>
+<td>红色、橙色、黑色虚线</td>
+<td>bad、vout、good</td>
+<td>✗ &quot;红色&quot;，见第 1 条</td>
+</tr>
+<tr>
+<td>page3 L55–57</td>
+<td>红、橙、黑虚线、蓝色细线</td>
+<td>同上，加 vin</td>
+<td>✗ &quot;红&quot;，见第 1 条</td>
+</tr>
+</tbody>
+</table>
 <h2 id="安全">安全</h2>
-<p>市电节点。page1、page2（两处）、page3 均有 <code>[!WARNING]</code>，并逐页写出本页特有的危险点。<strong>合格，且是范例。</strong></p>
+<p>本节用 12 V 电机，不涉及市电。page3 L59 提醒真正的短路还要加保险丝作为最后一道防线，做得好。</p>
 <h2 id="计数">计数</h2>
-<p>必改 0，建议 5。</p>
+<p>必改 0，建议 3。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>16 振荡器 · 资深教师审读</title>
+<title>16 差分放大：审读意见（资深教师）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,19 +42,19 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/16.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="16-振荡器--资深教师审读">16 振荡器 · 资深教师审读</h1>
+<h1 id="16-差分放大审读意见资深教师">16 差分放大：审读意见（资深教师）</h1>
 <h2 id="总评">总评</h2>
-<p><strong>page1。</strong> 痛点用话筒啸叫这个&quot;意外振荡器&quot;引入，直觉部分用荡秋千讲两件事（&quot;顺着推&quot;和&quot;按节奏推&quot;），并回答了新手最常问的两个问题：&quot;第一下是谁推的&quot;&quot;为什么不会无限变大&quot;。</p>
-<p><strong>page2。</strong> 弛张振荡器的周期没有用对数公式硬套，而是用&quot;差距缩小一半&quot;推出 ln2，很适合高中读者。文氏桥部分用三种情况对照：倍数 2.9、3.2 削顶、二极管稳幅。00-design §6 要求的&quot;文氏桥增益 ≈ 3&quot;在 page1 L67、page2 L37–41、page2 L122 三处都有体现，并说明了&quot;略大于 3 起振、稳幅后自动回到 3&quot;。</p>
-<p><strong>page3。</strong> LM358 输出到不了正电源轨，导致占空比为 65%，这一点讲得很实在。练习带难度标注，最后一题是迁移题（1 Hz 闪灯），符合要求，只是标签写成了&quot;变式迁移&quot;（见 #3）。</p>
-<p><strong>数值复核</strong>（均正确）：</p>
+<p>这是全书写得最好的节点之一。</p>
 <ul>
-<li>page1：门限 3.33/1.67 V；周期 1.386 ms、频率 721 Hz；2.8 格；从 0 V 起步第一次充电约 1.1RC。</li>
-<li>page2：1592 Hz；10 倍频处 0.097；小信号倍数 3.2，二极管全导通时倍数 2.2；按包络增长率 (A−3)ω₀/2 ≈ 1000 /s 估算，约 4–5 ms 达到 ±4 V，与正文&quot;约 4 ms&quot;相符。</li>
-<li>page2 例题：13.9 ms/72 Hz；15.9 kΩ。</li>
-<li>page3 LM358 弛张：门限 1.70/2.83 V；高电平段 RC·ln(1.8/0.67) = 0.99 ms，低电平段 RC·ln(2.73/1.6) = 0.53 ms，合计 1.52 ms，占空比 65%。</li>
-<li>page3 速度：68 kHz、28 kHz、0.019 V/µs、约 7 µs。</li>
-<li>page3 练习：3386 Hz、860 kHz、0.50 V/µs、72 kΩ/1.04 s/1.15 s。</li>
+<li><strong>由浅入深</strong>：page1 用&quot;船上比身高&quot;&quot;天平&quot;两个类比建立直觉；page2 从三步推导走到共模倍数，再到仿真里电阻偏 1%；page3 讲 CMRR，以及电阻误差和信号源内阻两种退化。整条线是&quot;具体 → 抽象 → 定量&quot;。</li>
+<li><strong>先讲误区</strong>：page1 L61–65 列出三个新手误区，放在正文之前。</li>
+<li><strong>渐隐示例</strong>：例 1 完整示范，例 2 留空，例 3 迁移到仪表放大器，并&quot;用数字走一遍&quot;，做法规范。</li>
+</ul>
+<p>数值复核全部正确：</p>
+<ul>
+<li>page1：0.1 V。</li>
+<li>page2：1.0 V、0.009、18 mV、61 dB、4.55 V、0.9 V，以及仪表放大器的 21 倍和 2.11 V/1.90 V。</li>
+<li>page3：单电阻 81/61 dB；四电阻最坏 ≈(1+k)/(4ε)，算得 49/69 dB；TI 单位增益 34/54 dB；R_s = 100 Ω 时 61 dB，1 kΩ 时 41 dB、A_d = 9.13；练习 1–4（36 mV、0.43 V/0.04 V）。</li>
 </ul>
 <h2 id="逐条意见">逐条意见</h2>
 <table>
@@ -71,23 +71,23 @@ mjx-container{max-width:100%}
 <tr>
 <td>1</td>
 <td>建议</td>
-<td>page2 L17、L48、L128</td>
-<td>文氏桥没有交代电源。page1 的弛张振荡器用的是 5 V 单电源，但文氏桥的输出要在 ±4 V 之间摆动（L48），整形比较器的输出也是 ±4 V（L128），实际上需要正负双电源（例如 ±5 V），而正文一直没说。读者照 page1 的习惯接 5 V 单电源、R_g 接地，电路不会按图工作。</td>
-<td>在 L17 加一句：&quot;文氏桥和后面的比较器都用 ±5 V 双电源，输出在正负之间摆动；只用 5 V 单电源时，要把 R_g 和并联 RC 的'地'改接到 2.5 V 偏置点，见 03 的单电源偏置。&quot;</td>
+<td>page2 L25</td>
+<td>&quot;有负反馈（R₂ 接回反相端），所以 V₋ = V₊。&quot;这里漏了&quot;输出未饱和&quot;这个条件。全书对虚短的措辞不统一（见 <a href="http://cross-chapter.md">cross-chapter.md</a>）。本节 page3 L54 的故障表又恰好讲到&quot;输出削顶&quot;，正好可以前后呼应。</td>
+<td>改为&quot;有负反馈，并且输出没有顶到电源（未饱和），所以 V₋ = V₊&quot;。</td>
 </tr>
 <tr>
 <td>2</td>
 <td>建议</td>
-<td>page1 L67；page3 L11</td>
-<td>&quot;谐波&quot;（page1 L67：&quot;方波里有很多谐波&quot;）和&quot;均方根&quot;（page3 L11）都没有解释。</td>
-<td>&quot;谐波&quot;括注&quot;（频率是基本频率整数倍的正弦成分；方波可以看成很多个正弦叠起来）&quot;；&quot;均方根&quot;括注&quot;（即物理课里的'有效值'）&quot;。</td>
+<td>page3 L56</td>
+<td>故障表的改法写&quot;用双绞线或屏蔽线&quot;，但这两个词全书没有解释（18、28 也用了&quot;屏蔽&quot;）。</td>
+<td>括注：&quot;双绞线：两根线拧在一起，两根收到的干扰几乎一样，正好被差分放大减掉；屏蔽线：外面包一层接地的金属网，把干扰挡在外面。&quot;双绞线和本节的&quot;共模&quot;思路一脉相承，值得说一句。</td>
 </tr>
 <tr>
 <td>3</td>
 <td>建议</td>
-<td>page2 L184；page3 L87</td>
-<td>标签写的是&quot;变式迁移&quot;，AUTHOR_GUIDE L32 规定的写法是&quot;变体迁移&quot;，与其他节点不一致。</td>
-<td>两处都改成&quot;变体迁移&quot;。</td>
+<td>page1 L13</td>
+<td>&quot;接成电桥&quot;&quot;应变片&quot;直接使用，没有解释。部分高中教材在选修里讲过惠斯通电桥，但多数读者没见过。</td>
+<td>加半句：&quot;电桥：四只电阻接成一个菱形，两条对边中点之间的电压反映电阻的微小变化；应变片：受力拉长时电阻会变的薄片。&quot;</td>
 </tr>
 </tbody>
 </table>
@@ -96,52 +96,41 @@ mjx-container{max-width:100%}
 <thead>
 <tr>
 <th>位置</th>
-<th>正文</th>
-<th>PNG</th>
+<th>正文颜色描述</th>
+<th>PNG 实测</th>
 <th>结果</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>page1 L49、L53</td>
-<td>红紫色点划线 V_C、橙色 V_o、灰色点线</td>
-<td>红紫色、橙色</td>
+<td>page1 L27</td>
+<td>蓝色 V₁、红紫色点划线 V₂、橙色差值</td>
+<td>蓝色、红紫色、橙色</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page2 L33、L37</td>
-<td>蓝绿色虚线</td>
-<td>蓝绿色</td>
+<td>page2 L114</td>
+<td>橙色、朱红色带 ×、灰色点线</td>
+<td>橙色、朱红色</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page2 L116、L120</td>
-<td>朱红色带 ×、红紫色点划线、橙色、灰色点线</td>
-<td>三色都有</td>
+<td>page3 L25</td>
+<td>红紫色点划线、朱红色带 ×</td>
+<td>红紫色、朱红色</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page2 L128、L132</td>
-<td>蓝色、橙色、灰色点线</td>
-<td>蓝色、橙色</td>
-<td>✓</td>
-</tr>
-<tr>
-<td>page3 L13、L17</td>
-<td>朱红色带 ×、黑色虚线、橙色</td>
-<td>朱红色、橙色</td>
-<td>✓</td>
-</tr>
-<tr>
-<td>page3 L23–27</td>
-<td>正文不写颜色</td>
-<td>橙色、红紫色、朱红色</td>
+<td>page3 L35</td>
+<td>朱红色带叉、灰色点线</td>
+<td>朱红色</td>
 <td>✓</td>
 </tr>
 </tbody>
 </table>
+<p>颜色词全部属于规范色板。</p>
 <h2 id="安全">安全</h2>
-<p>本节只涉及低压电路，无需安全提示。</p>
+<p>不涉及市电，无需警告。</p>
 <h2 id="计数">计数</h2>
 <p>必改 0，建议 3。</p>
 

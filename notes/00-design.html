@@ -56,7 +56,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><strong>不会的</strong>：电容充放电的定量规律、电感、交流电的相位、二极管和三极管、MOSFET、运放、反馈、复数与频率响应、微积分、继电器和接触器控制电路。</p>
 <p><strong>写作规则</strong>：</p>
 <ul>
-<li>凡是用到「不会的」知识，必须先补最小必要知识，补在前置节点 P1–P3 里，或者在本页用一个小框就地补上，并链接到前置节点。</li>
+<li>凡是用到「不会的」知识，必须先补最小必要知识，补在前置节点 01–03 里，或者在本页用一个小框就地补上，并链接到前置节点。</li>
 <li>积分和微分一律从「面积」「斜率」的直觉讲起，不默认读者学过微积分。</li>
 <li>频率响应不讲复数，用「电容对快变化的信号更好通过」「容抗随频率下降」这样的直觉加仿真曲线来讲；需要公式时只给幅值公式。</li>
 <li>读者会被大段符号吓退。每个公式都先用一句中文说出它的意思，再给符号形式，然后马上代一组数算一遍。</li>
@@ -84,7 +84,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>代码：Python 3 + NumPy + matplotlib，必要时加 SciPy；必须真的跑通，否则标「未经运行验证」。</li>
 <li>公式必须能在 <a href="http://github.com">github.com</a> 上正常渲染（规则见 AUTHOR_GUIDE 第 5 节）。</li>
 <li>链接和引文必须真实可访问，否则标「[待核实]」，禁止编造。</li>
-<li><strong>安全</strong>：涉及市电（220V/380V）的节点（06、09、17、18、19、20，以及扩展篇的 22、23、24）必须写明安全警示，仿真和实验只建议在低压下做。</li>
+<li><strong>安全</strong>：涉及市电（220V/380V）的节点（13、25、04、11、15、27，以及扩展篇的 07、23、28）必须写明安全警示，仿真和实验只建议在低压下做。</li>
 </ul>
 <h2 id="4-符号表全书统一首次出现必须解释">4. 符号表（全书统一，首次出现必须解释）</h2>
 <table>
@@ -203,13 +203,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>CTR</td>
 <td>光耦电流传输比</td>
 <td>%</td>
-<td>只在 23、24 用</td>
+<td>只在 23、28 用</td>
 </tr>
 </tbody>
 </table>
 <h2 id="5-依赖图">5. 依赖图</h2>
 <p><a class="img-link" href="../img/00_dag.png"><img alt="图 00-1 知识点依赖图" src="../img/00_dag.png" loading="lazy" /></a></p>
-<p>图 00-1 由 <code>code/figs/00_figs.py</code> 生成。箭头从前置节点指向后继节点；列号等于从 P1 出发的最长前置链深度；填充色区分线索：黄色是前置知识，浅蓝色是运放与信号处理，浅橙色是半导体与电源，浅绿色是继电-接触器控制与照明，浅红紫色是扩展篇。跨 3 层以上的远程依赖画成灰色点线，避免图面过乱。</p>
+<p>图 00-1 由 <code>code/figs/00_figs.py</code> 生成。箭头从前置节点指向后继节点；列号等于从 01 出发的最长前置链深度；填充色区分线索：黄色是前置知识，浅蓝色是运放与信号处理，浅橙色是半导体与电源，浅绿色是继电-接触器控制与照明，浅红紫色是扩展篇。跨 3 层以上的远程依赖画成灰色点线，避免图面过乱。</p>
 <h3 id="51-节点">5.1 节点</h3>
 <table>
 <thead>
@@ -222,153 +222,153 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </thead>
 <tbody>
 <tr>
-<td>P1</td>
-<td>元件速成</td>
-<td><a href="../P1-components-basics/page1.html">P1-components-basics</a></td>
-<td>前置</td>
-</tr>
-<tr>
-<td>P2</td>
-<td>半导体入门</td>
-<td><a href="../P2-semiconductor-basics/page1.html">P2-semiconductor-basics</a></td>
-<td>前置</td>
-</tr>
-<tr>
-<td>P3</td>
-<td>运放入门</td>
-<td><a href="../P3-opamp-basics/page1.html">P3-opamp-basics</a></td>
-<td>前置</td>
-</tr>
-<tr>
 <td>01</td>
-<td>反相放大</td>
-<td><a href="../01-inverting-amp/page1.html">01-inverting-amp</a></td>
-<td>运放</td>
-</tr>
-<tr>
-<td>02</td>
-<td>同相放大</td>
-<td><a href="../02-noninverting-amp/page1.html">02-noninverting-amp</a></td>
-<td>运放</td>
+<td>元件速成</td>
+<td><a href="../01-components-basics/page1.html">01-components-basics</a></td>
+<td>前置</td>
 </tr>
 <tr>
 <td>03</td>
-<td>电压跟随器</td>
-<td><a href="../03-voltage-follower/page1.html">03-voltage-follower</a></td>
-<td>运放</td>
+<td>半导体入门</td>
+<td><a href="../03-semiconductor-basics/page1.html">03-semiconductor-basics</a></td>
+<td>前置</td>
 </tr>
 <tr>
-<td>04</td>
-<td>差分放大</td>
-<td><a href="../04-differential-amp/page1.html">04-differential-amp</a></td>
-<td>运放</td>
+<td>02</td>
+<td>运放入门</td>
+<td><a href="../02-opamp-basics/page1.html">02-opamp-basics</a></td>
+<td>前置</td>
 </tr>
 <tr>
 <td>05</td>
-<td>精密整流</td>
-<td><a href="../05-precision-rectifier/page1.html">05-precision-rectifier</a></td>
+<td>反相放大</td>
+<td><a href="../05-inverting-amp/page1.html">05-inverting-amp</a></td>
 <td>运放</td>
 </tr>
 <tr>
-<td>06</td>
-<td>桥式整流</td>
-<td><a href="../06-bridge-rectifier/page1.html">06-bridge-rectifier</a></td>
-<td>电源</td>
-</tr>
-<tr>
-<td>07</td>
-<td>射极跟随器</td>
-<td><a href="../07-emitter-follower/page1.html">07-emitter-follower</a></td>
-<td>电源</td>
-</tr>
-<tr>
 <td>08</td>
-<td>线性稳压</td>
-<td><a href="../08-linear-regulator/page1.html">08-linear-regulator</a></td>
-<td>电源</td>
-</tr>
-<tr>
-<td>09</td>
-<td>开关电源</td>
-<td><a href="../09-switching-power-supply/page1.html">09-switching-power-supply</a></td>
-<td>电源</td>
-</tr>
-<tr>
-<td>10</td>
-<td>稳压管稳压</td>
-<td><a href="../10-zener-regulator/page1.html">10-zener-regulator</a></td>
-<td>电源</td>
-</tr>
-<tr>
-<td>11</td>
-<td>过载保护</td>
-<td><a href="../11-overload-protection/page1.html">11-overload-protection</a></td>
+<td>同相放大</td>
+<td><a href="../08-noninverting-amp/page1.html">08-noninverting-amp</a></td>
 <td>运放</td>
 </tr>
 <tr>
 <td>12</td>
-<td>积分电路</td>
-<td><a href="../12-integrator/page1.html">12-integrator</a></td>
-<td>运放</td>
-</tr>
-<tr>
-<td>13</td>
-<td>微分电路</td>
-<td><a href="../13-differentiator/page1.html">13-differentiator</a></td>
-<td>运放</td>
-</tr>
-<tr>
-<td>14</td>
-<td>电压比较器</td>
-<td><a href="../14-voltage-comparator/page1.html">14-voltage-comparator</a></td>
-<td>运放</td>
-</tr>
-<tr>
-<td>15</td>
-<td>有源滤波</td>
-<td><a href="../15-active-filter/page1.html">15-active-filter</a></td>
+<td>电压跟随器</td>
+<td><a href="../12-voltage-follower/page1.html">12-voltage-follower</a></td>
 <td>运放</td>
 </tr>
 <tr>
 <td>16</td>
-<td>振荡器</td>
-<td><a href="../16-oscillator/page1.html">16-oscillator</a></td>
+<td>差分放大</td>
+<td><a href="../16-differential-amp/page1.html">16-differential-amp</a></td>
 <td>运放</td>
 </tr>
 <tr>
-<td>17</td>
-<td>自锁</td>
-<td><a href="../17-self-locking/page1.html">17-self-locking</a></td>
-<td>控制</td>
+<td>09</td>
+<td>精密整流</td>
+<td><a href="../09-precision-rectifier/page1.html">09-precision-rectifier</a></td>
+<td>运放</td>
 </tr>
 <tr>
-<td>18</td>
-<td>互锁</td>
-<td><a href="../18-interlock/page1.html">18-interlock</a></td>
-<td>控制</td>
+<td>13</td>
+<td>桥式整流</td>
+<td><a href="../13-bridge-rectifier/page1.html">13-bridge-rectifier</a></td>
+<td>电源</td>
 </tr>
 <tr>
 <td>19</td>
-<td>星三角降压启动</td>
-<td><a href="../19-star-delta-start/page1.html">19-star-delta-start</a></td>
-<td>控制</td>
-</tr>
-<tr>
-<td>20</td>
-<td>双控开关</td>
-<td><a href="../20-two-way-switch/page1.html">20-two-way-switch</a></td>
-<td>控制</td>
+<td>射极跟随器</td>
+<td><a href="../19-emitter-follower/page1.html">19-emitter-follower</a></td>
+<td>电源</td>
 </tr>
 <tr>
 <td>21</td>
-<td>MOS 管开关</td>
-<td><a href="../21-mosfet-switch/page1.html">21-mosfet-switch</a></td>
-<td>扩展</td>
+<td>线性稳压</td>
+<td><a href="../21-linear-regulator/page1.html">21-linear-regulator</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>25</td>
+<td>开关电源</td>
+<td><a href="../25-switching-power-supply/page1.html">25-switching-power-supply</a></td>
+<td>电源</td>
+</tr>
+<tr>
+<td>17</td>
+<td>稳压管稳压</td>
+<td><a href="../17-zener-regulator/page1.html">17-zener-regulator</a></td>
+<td>电源</td>
 </tr>
 <tr>
 <td>22</td>
+<td>过载保护</td>
+<td><a href="../22-overload-protection/page1.html">22-overload-protection</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>14</td>
+<td>积分电路</td>
+<td><a href="../14-integrator/page1.html">14-integrator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>18</td>
+<td>微分电路</td>
+<td><a href="../18-differentiator/page1.html">18-differentiator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>10</td>
+<td>电压比较器</td>
+<td><a href="../10-voltage-comparator/page1.html">10-voltage-comparator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>20</td>
+<td>有源滤波</td>
+<td><a href="../20-active-filter/page1.html">20-active-filter</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>24</td>
+<td>振荡器</td>
+<td><a href="../24-oscillator/page1.html">24-oscillator</a></td>
+<td>运放</td>
+</tr>
+<tr>
+<td>04</td>
+<td>自锁</td>
+<td><a href="../04-self-locking/page1.html">04-self-locking</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>11</td>
+<td>互锁</td>
+<td><a href="../11-interlock/page1.html">11-interlock</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>15</td>
+<td>星三角降压启动</td>
+<td><a href="../15-star-delta-start/page1.html">15-star-delta-start</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>27</td>
+<td>双控开关</td>
+<td><a href="../27-two-way-switch/page1.html">27-two-way-switch</a></td>
+<td>控制</td>
+</tr>
+<tr>
+<td>06</td>
+<td>MOS 管开关</td>
+<td><a href="../06-mosfet-switch/page1.html">06-mosfet-switch</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>07</td>
 <td>三极管开关与继电器驱动</td>
-<td><a href="../22-bjt-relay-driver/page1.html">22-bjt-relay-driver</a></td>
+<td><a href="../07-bjt-relay-driver/page1.html">07-bjt-relay-driver</a></td>
 <td>扩展</td>
 </tr>
 <tr>
@@ -378,21 +378,21 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>扩展</td>
 </tr>
 <tr>
-<td>24</td>
+<td>28</td>
 <td>隔离电源与数字隔离器</td>
-<td><a href="../24-isolated-power/page1.html">24-isolated-power</a></td>
-<td>扩展</td>
-</tr>
-<tr>
-<td>25</td>
-<td>H 桥电机驱动</td>
-<td><a href="../25-h-bridge/page1.html">25-h-bridge</a></td>
+<td><a href="../28-isolated-power/page1.html">28-isolated-power</a></td>
 <td>扩展</td>
 </tr>
 <tr>
 <td>26</td>
+<td>H 桥电机驱动</td>
+<td><a href="../26-h-bridge/page1.html">26-h-bridge</a></td>
+<td>扩展</td>
+</tr>
+<tr>
+<td>29</td>
 <td>上拉/下拉电阻与电平转换</td>
-<td><a href="../26-pullup-level-shift/page1.html">26-pullup-level-shift</a></td>
+<td><a href="../29-pullup-level-shift/page1.html">29-pullup-level-shift</a></td>
 <td>扩展</td>
 </tr>
 </tbody>
@@ -407,231 +407,231 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </thead>
 <tbody>
 <tr>
-<td>P1 → P2</td>
+<td>01 → 03</td>
 <td>二极管限流、三极管基极电阻都要用到分压和限流计算</td>
 </tr>
 <tr>
-<td>P1 → P3</td>
+<td>01 → 02</td>
 <td>运放电路的增益全由外部电阻网络决定</td>
 </tr>
 <tr>
-<td>P3 → 01</td>
+<td>02 → 05</td>
 <td>反相放大是「虚短」「虚断」的第一个完整应用</td>
 </tr>
 <tr>
-<td>01 → 02</td>
+<td>05 → 08</td>
 <td>同相放大与反相放大对照推导，读者只需看清差别</td>
 </tr>
 <tr>
-<td>02 → 03</td>
+<td>08 → 12</td>
 <td>电压跟随器是同相放大在 <span class="math math-inline">\(R_f = 0\)</span> 、 <span class="math math-inline">\(R_1\)</span> 断开时的特例</td>
 </tr>
 <tr>
-<td>01 → 04</td>
+<td>05 → 16</td>
 <td>差分放大的反相一侧就是反相放大</td>
 </tr>
 <tr>
-<td>02 → 04</td>
+<td>08 → 16</td>
 <td>差分放大的同相一侧就是同相放大，两者叠加得结果</td>
 </tr>
 <tr>
-<td>01 → 05</td>
+<td>05 → 09</td>
 <td>精密整流是把二极管放进反相放大的反馈支路</td>
 </tr>
 <tr>
-<td>P2 → 05</td>
+<td>03 → 09</td>
 <td>要先知道二极管有约 0.7V 压降，才明白为什么需要「精密」</td>
 </tr>
 <tr>
-<td>P1 → 06</td>
+<td>01 → 13</td>
 <td>整流后的滤波靠电容充放电</td>
 </tr>
 <tr>
-<td>P2 → 06</td>
+<td>03 → 13</td>
 <td>二极管桥由 4 个二极管组成，要懂单向导通</td>
 </tr>
 <tr>
-<td>05 → 06</td>
+<td>09 → 13</td>
 <td>运放版全波整流 = 精密半波整流 + 求和电路</td>
 </tr>
 <tr>
-<td>P2 → 07</td>
+<td>03 → 19</td>
 <td>射极跟随器的输出比输入低一个 <span class="math math-inline">\(V_{BE}\)</span></td>
 </tr>
 <tr>
-<td>03 → 07</td>
+<td>12 → 19</td>
 <td>射极跟随器是电压跟随器的三极管版本，对照讲最省力</td>
 </tr>
 <tr>
-<td>P2 → 10</td>
+<td>03 → 17</td>
 <td>稳压管靠反向击穿工作</td>
 </tr>
 <tr>
-<td>06 → 10</td>
+<td>13 → 17</td>
 <td>稳压管稳压的输入就是整流滤波后带纹波的直流</td>
 </tr>
 <tr>
-<td>07 → 08</td>
+<td>19 → 21</td>
 <td>线性稳压的调整管就是一个射极跟随器</td>
 </tr>
 <tr>
-<td>10 → 08</td>
+<td>17 → 21</td>
 <td>线性稳压的基准电压常由稳压管提供</td>
 </tr>
 <tr>
-<td>02 → 08</td>
+<td>08 → 21</td>
 <td>误差放大器是同相放大， <span class="math math-inline">\(V_o = V_{ref}(1 + R_f/R_1)\)</span></td>
 </tr>
 <tr>
-<td>P1 → 09</td>
+<td>01 → 25</td>
 <td>开关电源的储能元件是电感和电容</td>
 </tr>
 <tr>
-<td>P2 → 09</td>
+<td>03 → 25</td>
 <td>开关管是 MOSFET，还要用续流二极管</td>
 </tr>
 <tr>
-<td>06 → 09</td>
+<td>13 → 25</td>
 <td>第二种拓扑的副边输出级就是「整流 + 滤波」</td>
 </tr>
 <tr>
-<td>08 → 09</td>
+<td>21 → 25</td>
 <td>先懂线性稳压的发热问题，才知道开关电源为什么效率高</td>
 </tr>
 <tr>
-<td>P1 → 11</td>
+<td>01 → 22</td>
 <td>采样电阻把电流变成电压，再驱动继电器动作</td>
 </tr>
 <tr>
-<td>P2 → 11</td>
+<td>03 → 22</td>
 <td>切断负载要用三极管或 MOSFET 驱动</td>
 </tr>
 <tr>
-<td>14 → 11</td>
+<td>10 → 22</td>
 <td>判断「是否过载」就是一个门限比较</td>
 </tr>
 <tr>
-<td>P1 → 12</td>
+<td>01 → 14</td>
 <td>电容电压等于电流的「累积面积」除以 <span class="math math-inline">\(C\)</span></td>
 </tr>
 <tr>
-<td>01 → 12</td>
+<td>05 → 14</td>
 <td>积分电路就是把反相放大的 <span class="math math-inline">\(R_f\)</span> 换成电容</td>
 </tr>
 <tr>
-<td>P1 → 13</td>
+<td>01 → 18</td>
 <td>电容电流正比于电压变化的「斜率」</td>
 </tr>
 <tr>
-<td>12 → 13</td>
+<td>14 → 18</td>
 <td>微分与积分互为对偶，交换 R 和 C 的位置即可</td>
 </tr>
 <tr>
-<td>P3 → 14</td>
+<td>02 → 10</td>
 <td>比较器是运放开环、输出饱和的用法</td>
 </tr>
 <tr>
-<td>P1 → 15</td>
+<td>01 → 20</td>
 <td>滤波的截止频率由 RC 决定</td>
 </tr>
 <tr>
-<td>02 → 15</td>
+<td>08 → 20</td>
 <td>有源滤波的放大部分是同相放大</td>
 </tr>
 <tr>
-<td>03 → 15</td>
+<td>12 → 20</td>
 <td>Sallen-Key 结构里的运放接成跟随器</td>
 </tr>
 <tr>
-<td>14 → 16</td>
+<td>10 → 24</td>
 <td>方波振荡器 = 施密特比较器 + RC 充放电</td>
 </tr>
 <tr>
-<td>15 → 16</td>
+<td>20 → 24</td>
 <td>文氏桥正弦振荡器靠 RC 网络选频</td>
 </tr>
 <tr>
-<td>P1 → 17</td>
+<td>01 → 04</td>
 <td>自锁电路由线圈和触点组成</td>
 </tr>
 <tr>
-<td>17 → 18</td>
+<td>04 → 11</td>
 <td>互锁是在两套自锁电路里各串入对方的常闭触点</td>
 </tr>
 <tr>
-<td>P1 → 19</td>
+<td>01 → 15</td>
 <td>星三角切换靠时间继电器延时</td>
 </tr>
 <tr>
-<td>18 → 19</td>
+<td>11 → 15</td>
 <td>星形与三角形两个接触器必须互锁，否则相间短路</td>
 </tr>
 <tr>
-<td>P1 → 20</td>
+<td>01 → 27</td>
 <td>双控开关就是两个单刀双掷开关</td>
 </tr>
 <tr>
-<td>P1 → 21</td>
+<td>01 → 06</td>
 <td>栅极电阻、下拉电阻的取值和导通发热都靠电阻与功率计算</td>
 </tr>
 <tr>
-<td>P2 → 21</td>
+<td>03 → 06</td>
 <td>要先有 MOSFET「电压控制的阀门」模型</td>
 </tr>
 <tr>
-<td>P1 → 22</td>
+<td>01 → 07</td>
 <td>继电器线圈是电感，断电时产生反向高压</td>
 </tr>
 <tr>
-<td>P2 → 22</td>
-<td>三极管的饱和区和 <span class="math math-inline">\(I_C = \beta I_B\)</span> 在 P2 讲过</td>
+<td>03 → 07</td>
+<td>三极管的饱和区和 <span class="math math-inline">\(I_C = \beta I_B\)</span> 在 03 讲过</td>
 </tr>
 <tr>
-<td>P2 → 23</td>
+<td>03 → 23</td>
 <td>光耦里面是一个 LED 加一个光敏三极管</td>
 </tr>
 <tr>
-<td>22 → 23</td>
-<td>光耦输出侧的三极管按开关来用，与 22 的基极电阻计算思路相同</td>
+<td>07 → 23</td>
+<td>光耦输出侧的三极管按开关来用，与 07 的基极电阻计算思路相同</td>
 </tr>
 <tr>
-<td>06 → 24</td>
+<td>13 → 28</td>
 <td>变压器隔离电源的后级就是整流滤波</td>
 </tr>
 <tr>
-<td>09 → 24</td>
+<td>25 → 28</td>
 <td>隔离 DC-DC 模块内部是带变压器的开关电源（反激）</td>
 </tr>
 <tr>
-<td>23 → 24</td>
+<td>23 → 28</td>
 <td>先用光耦建立「为什么要隔离、地为什么要分开」的概念</td>
 </tr>
 <tr>
-<td>21 → 25</td>
-<td>H 桥由 4 个 MOS 管开关组成，高边驱动问题在 21 讲过</td>
+<td>06 → 26</td>
+<td>H 桥由 4 个 MOS 管开关组成，高边驱动问题在 06 讲过</td>
 </tr>
 <tr>
-<td>22 → 25</td>
+<td>07 → 26</td>
 <td>电机是感性负载，续流的道理与继电器线圈相同</td>
 </tr>
 <tr>
-<td>P1 → 26</td>
+<td>01 → 29</td>
 <td>上拉、下拉就是电阻分压；去抖用 RC 时间常数</td>
 </tr>
 <tr>
-<td>14 → 26</td>
+<td>10 → 29</td>
 <td>施密特门限可以消除按键抖动带来的反复翻转</td>
 </tr>
 <tr>
-<td>21 → 26</td>
+<td>06 → 29</td>
 <td>双向电平转换电路的核心是一个 N 沟道 MOS 管</td>
 </tr>
 </tbody>
 </table>
 <h3 id="53-拓扑写作顺序">5.3 拓扑写作顺序</h3>
 <p>按依赖排出的一条线性顺序（任何节点都排在它的全部前置之后），读者顺着读不会遇到没学过的概念：</p>
-<p>P1 → P3 → P2 → 17 → 01 → 21 → 22 → 02 → 05 → 14 → 18 → 03 → 06 → 12 → 19 → 04 → 10 → 13 → 07 → 15 → 08 → 11 → 23 → 16 → 09 → 25 → 20 → 24 → 26</p>
-<p>最长前置链有 9 个节点：P1 → P3 → 01 → 02 → 03 → 07 → 08 → 09 → 24。</p>
+<p>01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29</p>
+<p>最长前置链有 9 个节点：01 → 02 → 05 → 08 → 12 → 19 → 21 → 25 → 28。</p>
 <h3 id="54-写作队列4-名作者每人一条串行队列">5.4 写作队列（4 名作者，每人一条串行队列）</h3>
 <p>每名作者按自己队列的顺序一个一个写；一个节点只有在它的全部前置节点都已完成以后才能开始写，因为后继页面要链接和引用前置页面里的图号与结论。以「写完一个节点」为 1 个时间段做调度模拟，4 人并行共需 9 个时间段，等于最长前置链的长度，已是下限。</p>
 <table>
@@ -646,25 +646,25 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <tbody>
 <tr>
 <td>作者 A</td>
-<td>P3 → 01 → 02 → 03 → 04 → 15 → 16</td>
+<td>02 → 05 → 08 → 12 → 16 → 20 → 24</td>
 <td>7</td>
 <td>2–8</td>
 </tr>
 <tr>
 <td>作者 B</td>
-<td>P2 → 05 → 06 → 10 → 08 → 09 → 24</td>
+<td>03 → 09 → 13 → 17 → 21 → 25 → 28</td>
 <td>7</td>
 <td>2,4–9</td>
 </tr>
 <tr>
 <td>作者 C</td>
-<td>21 → 14 → 12 → 13 → 11 → 25 → 26</td>
+<td>06 → 10 → 14 → 18 → 22 → 26 → 29</td>
 <td>7</td>
 <td>3–9</td>
 </tr>
 <tr>
 <td>作者 D</td>
-<td>P1 → 17 → 22 → 18 → 19 → 07 → 23 → 20</td>
+<td>01 → 04 → 07 → 11 → 15 → 19 → 23 → 27</td>
 <td>8</td>
 <td>1–8</td>
 </tr>
@@ -690,57 +690,57 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <tr>
 <td>作者 A</td>
 <td>—</td>
-<td>P3</td>
-<td>01</td>
 <td>02</td>
-<td>03</td>
-<td>04</td>
-<td>15</td>
+<td>05</td>
+<td>08</td>
+<td>12</td>
 <td>16</td>
+<td>20</td>
+<td>24</td>
 <td>—</td>
 </tr>
 <tr>
 <td>作者 B</td>
 <td>—</td>
-<td>P2</td>
+<td>03</td>
 <td>—</td>
-<td>05</td>
-<td>06</td>
-<td>10</td>
-<td>08</td>
 <td>09</td>
-<td>24</td>
+<td>13</td>
+<td>17</td>
+<td>21</td>
+<td>25</td>
+<td>28</td>
 </tr>
 <tr>
 <td>作者 C</td>
 <td>—</td>
 <td>—</td>
-<td>21</td>
+<td>06</td>
+<td>10</td>
 <td>14</td>
-<td>12</td>
-<td>13</td>
-<td>11</td>
-<td>25</td>
+<td>18</td>
+<td>22</td>
 <td>26</td>
+<td>29</td>
 </tr>
 <tr>
 <td>作者 D</td>
-<td>P1</td>
-<td>17</td>
-<td>22</td>
-<td>18</td>
-<td>19</td>
+<td>01</td>
+<td>04</td>
 <td>07</td>
+<td>11</td>
+<td>15</td>
+<td>19</td>
 <td>23</td>
-<td>20</td>
+<td>27</td>
 <td>—</td>
 </tr>
 </tbody>
 </table>
-<p>分工思路：作者 A 负责运放主线，作者 B 负责半导体与电源主线，作者 C 负责 MOS 管、比较器和信号处理，作者 D 负责元件基础、继电-接触器控制，以及与继电器相关的 22、23。</p>
+<p>分工思路：作者 A 负责运放主线，作者 B 负责半导体与电源主线，作者 C 负责 MOS 管、比较器和信号处理，作者 D 负责元件基础、继电-接触器控制，以及与继电器相关的 07、23。</p>
 <h2 id="6-各节点内容提要">6. 各节点内容提要</h2>
 <p>每个节点列出：痛点、核心思想、要仿真什么、典型错误、需要讲的变体。</p>
-<h3 id="p1-元件速成">P1 元件速成</h3>
+<h3 id="01-元件速成">01 元件速成</h3>
 <ul>
 <li>痛点：后面每个电路都离不开电阻分压、电容、电感和继电器，读者只会欧姆定律。</li>
 <li>核心思想：分压公式；电容像「水桶」，电压不能突变， <span class="math math-inline">\(\tau = RC\)</span> 决定充放电快慢（约 5τ 充满）；电感像「水管里的飞轮」，电流不能突变；开关、按钮、继电器、接触器的线圈与常开/常闭触点。</li>
@@ -748,7 +748,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：把电容当电阻算；以为电容瞬间充满；继电器触点和线圈画在同一回路里。</li>
 <li>变体：RL 电路；时间继电器（通电延时、断电延时）的触点符号。</li>
 </ul>
-<h3 id="p2-半导体入门">P2 半导体入门</h3>
+<h3 id="03-半导体入门">03 半导体入门</h3>
 <ul>
 <li>痛点：二极管、三极管、MOSFET 的物理原理太深，读者只需要「会用」。</li>
 <li>核心思想：二极管是单向阀门，正向约 0.7V 压降；稳压管反向击穿后电压基本不变；三极管是「小电流控制大电流」的水龙头（放大区 <span class="math math-inline">\(I_C = \beta I_B\)</span> ，饱和区相当于闭合开关）；MOSFET 是「电压控制的阀门」，由 <span class="math math-inline">\(V_{GS}\)</span> 决定导通与否。</li>
@@ -756,7 +756,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：忘记 0.7V 压降；三极管不加基极电阻；MOSFET 栅极悬空。</li>
 <li>变体：LED（压降约 2V）；PNP 和 P 沟道 MOS 管与 NPN/N 沟道的对照。</li>
 </ul>
-<h3 id="p3-运放入门">P3 运放入门</h3>
+<h3 id="02-运放入门">02 运放入门</h3>
 <ul>
 <li>痛点：运放内部有几十个晶体管，但读者只需要两条规则。</li>
 <li>核心思想：理想运放（增益无穷大、输入电流为零）；负反馈把增益「拉回」可控值；负反馈下的「虚短」（ <span class="math math-inline">\(V_+ = V_-\)</span> ）和「虚断」（输入电流为零）；开环时输出顶到电源（饱和）。</li>
@@ -764,15 +764,15 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：没有负反馈时乱用虚短；忘记输出摆幅受电源限制。</li>
 <li>变体：单电源与双电源供电。</li>
 </ul>
-<h3 id="01-反相放大">01 反相放大</h3>
+<h3 id="05-反相放大">05 反相放大</h3>
 <ul>
 <li>痛点：传感器信号太小，需要放大，并且要能准确设定放大倍数。</li>
 <li>核心思想： <span class="math math-inline">\(V_o = -\dfrac{R_f}{R_1} V_i\)</span> ；反相端是「虚地」；输入电阻约等于 <span class="math math-inline">\(R_1\)</span> 。</li>
 <li>仿真：正弦输入与反相、放大后的输出叠画；输入过大时输出削顶。</li>
 <li>典型错误：忘记负号； <span class="math math-inline">\(R_1\)</span> 取得太小，把信号源拉低；输出超过电源电压而削波。</li>
-<li>变体：反相加法器（为 05、06 的求和电路做准备）。</li>
+<li>变体：反相加法器（为 09、13 的求和电路做准备）。</li>
 </ul>
-<h3 id="02-同相放大">02 同相放大</h3>
+<h3 id="08-同相放大">08 同相放大</h3>
 <ul>
 <li>痛点：反相放大输入电阻小、输出会反相，有时不能接受。</li>
 <li>核心思想： <span class="math math-inline">\(V_o = \left(1 + \dfrac{R_f}{R_1}\right) V_i\)</span> ；输入电阻极大；放大倍数不小于 1。</li>
@@ -780,7 +780,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：把 <span class="math math-inline">\(R_1\)</span> 接错位置；想用它做小于 1 的增益。</li>
 <li>变体：同相加法。</li>
 </ul>
-<h3 id="03-电压跟随器">03 电压跟随器</h3>
+<h3 id="12-电压跟随器">12 电压跟随器</h3>
 <ul>
 <li>痛点：信号源「带不动」负载，一接负载电压就掉。</li>
 <li>核心思想： <span class="math math-inline">\(V_o = V_i\)</span> ；输入电阻极大、输出电阻极小，起「隔离缓冲」作用。</li>
@@ -788,7 +788,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：以为增益为 1 就没用；电容性负载引起振荡。</li>
 <li>变体：作为基准电压的缓冲。</li>
 </ul>
-<h3 id="04-差分放大">04 差分放大</h3>
+<h3 id="16-差分放大">16 差分放大</h3>
 <ul>
 <li>痛点：两根线上同时混入的干扰（共模）要去掉，只放大两线之差。</li>
 <li>核心思想：电阻匹配时 <span class="math math-inline">\(V_o = \dfrac{R_f}{R_1}(V_2 - V_1)\)</span> ；共模抑制靠电阻匹配。</li>
@@ -796,15 +796,15 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：四个电阻不成比例；忽视信号源内阻。</li>
 <li>变体：三运放仪表放大器（简介）。</li>
 </ul>
-<h3 id="05-精密整流">05 精密整流</h3>
+<h3 id="09-精密整流">09 精密整流</h3>
 <ul>
 <li>痛点：普通二极管有 0.7V 压降，几十毫伏的小信号根本整流不出来。</li>
 <li>核心思想：把二极管放进运放反馈环里，运放自动「补上」二极管压降。</li>
 <li>仿真：小信号经普通二极管整流与精密半波整流的对比。</li>
 <li>典型错误：二极管方向接反；运放速度不够，过零点出现毛刺。</li>
-<li>变体：精密半波整流；为 06 的运放全波整流打基础。</li>
+<li>变体：精密半波整流；为 13 的运放全波整流打基础。</li>
 </ul>
-<h3 id="06-桥式整流--市电">06 桥式整流 ⚠ 市电</h3>
+<h3 id="13-桥式整流--市电">13 桥式整流 ⚠ 市电</h3>
 <ul>
 <li>痛点：电器需要直流电，墙上插座给的是交流电。</li>
 <li>核心思想：变体一是二极管桥，4 个二极管轮流导通，正负半周都变成正向，加电容滤波得到带纹波的直流，纹波约 <span class="math math-inline">\(\Delta V \approx \dfrac{I}{2 f C}\)</span> ；变体二是运放全波整流（精密半波整流 + 求和），用于小信号测量。</li>
@@ -812,7 +812,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：二极管耐压不够；滤波电容极性接反；输出比峰值少两个二极管压降没算上。</li>
 <li>安全：变压器初级接 220V，必须写明安全警示，实验只用低压交流电源。</li>
 </ul>
-<h3 id="07-射极跟随器">07 射极跟随器</h3>
+<h3 id="19-射极跟随器">19 射极跟随器</h3>
 <ul>
 <li>痛点：运放输出电流有限，带不动大负载。</li>
 <li>核心思想： <span class="math math-inline">\(V_o \approx V_i - V_{BE}\)</span> ；电流放大约 β 倍；电压增益约为 1。</li>
@@ -820,7 +820,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：忘记 <span class="math math-inline">\(V_{BE}\)</span> ；三极管功耗过大。</li>
 <li>变体：推挽输出（简介）。</li>
 </ul>
-<h3 id="08-线性稳压">08 线性稳压</h3>
+<h3 id="21-线性稳压">21 线性稳压</h3>
 <ul>
 <li>痛点：整流后的电压有纹波，负载变化时电压还会跟着变。</li>
 <li>核心思想：基准电压 + 误差放大（同相放大）+ 调整管（射极跟随器）， <span class="math math-inline">\(V_o = V_{ref}\left(1 + \dfrac{R_f}{R_1}\right)\)</span> ；调整管功耗为 <span class="math math-inline">\((V_{in} - V_o) I\)</span> 。</li>
@@ -828,7 +828,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：压差不够；散热不足；输出不加电容引起振荡（只针对 LDO 和自己搭的分立调整管稳压电路，后者要用负载跳变实验确认；78xx、LM317 这类 NPN 调整管稳压器不加输出电容也稳定，输出电容只改善负载突变时的响应）。</li>
 <li>变体：三端稳压器（如 78xx 系列）的典型接法。</li>
 </ul>
-<h3 id="09-开关电源--市电">09 开关电源 ⚠ 市电</h3>
+<h3 id="25-开关电源--市电">25 开关电源 ⚠ 市电</h3>
 <ul>
 <li>痛点：线性稳压在压差大时很烫、效率低。</li>
 <li>核心思想：开关快速通断，靠电感和电容储能平滑，降压比为 <span class="math math-inline">\(V_o \approx D \cdot V_{in}\)</span> ；效率可达 90% 左右。</li>
@@ -837,15 +837,15 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：电感饱和；续流二极管太慢；PCB 走线回路太大。</li>
 <li>安全：离线式开关电源初级接市电，必须写明安全警示。</li>
 </ul>
-<h3 id="10-稳压管稳压">10 稳压管稳压</h3>
+<h3 id="17-稳压管稳压">17 稳压管稳压</h3>
 <ul>
 <li>痛点：只需要一个小电流的稳定电压，用稳压芯片太贵。</li>
 <li>核心思想：限流电阻 + 稳压管，负载电压被钳在 <span class="math math-inline">\(V_Z\)</span> ；限流电阻的取值要兼顾最小负载与最大负载。</li>
 <li>仿真：输入变化与负载变化时的输出；限流电阻过大时失去稳压。</li>
 <li>典型错误：没有限流电阻；稳压管功耗超限。</li>
-<li>变体：稳压管加射极跟随器扩流（为 08 做准备）。</li>
+<li>变体：稳压管加射极跟随器扩流（为 21 做准备）。</li>
 </ul>
-<h3 id="11-过载保护">11 过载保护</h3>
+<h3 id="22-过载保护">22 过载保护</h3>
 <ul>
 <li>痛点：电机堵转或短路时电流猛增，会烧坏线路甚至起火。</li>
 <li>核心思想：采样电阻把电流变成电压，比较器（最好带施密特回差）判断是否超限，再由继电器或 MOSFET 切断负载。</li>
@@ -853,7 +853,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：采样电阻功耗过大；无回差导致反复通断；启动电流引起误动作。</li>
 <li>变体：热继电器（双金属片）与电子式保护的对比；保险丝。</li>
 </ul>
-<h3 id="12-积分电路">12 积分电路</h3>
+<h3 id="14-积分电路">14 积分电路</h3>
 <ul>
 <li>痛点：需要把方波变成三角波，或者求「累积量」。</li>
 <li>核心思想：从「面积」讲积分； <span class="math math-inline">\(V_o = -\dfrac{1}{RC} \times\)</span> （输入曲线下的面积）。</li>
@@ -861,7 +861,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：不加并联电阻，导致输出漂移饱和；时间常数选错。</li>
 <li>变体：并联 <span class="math math-inline">\(R_f\)</span> 的实用积分器。</li>
 </ul>
-<h3 id="13-微分电路">13 微分电路</h3>
+<h3 id="18-微分电路">18 微分电路</h3>
 <ul>
 <li>痛点：需要检测信号「变化有多快」。</li>
 <li>核心思想：从「斜率」讲微分；输出正比于输入的斜率。</li>
@@ -869,7 +869,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>仿真：三角波输入得到方波输出；理想微分器对高频噪声的放大与实用版的对比。</li>
 <li>典型错误：理想微分器自激振荡；噪声被放大。</li>
 </ul>
-<h3 id="14-电压比较器">14 电压比较器</h3>
+<h3 id="10-电压比较器">10 电压比较器</h3>
 <ul>
 <li>痛点：要判断「温度是否超过设定值」这类是或否的问题。</li>
 <li>核心思想：运放开环， <span class="math math-inline">\(V_+ \gt V_-\)</span> 时输出高，否则输出低；施密特触发器用正反馈得到回差，抗干扰。</li>
@@ -877,7 +877,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：以为比较器也能用虚短；无回差时输出抖动。</li>
 <li>变体：窗口比较器（简介）。</li>
 </ul>
-<h3 id="15-有源滤波">15 有源滤波</h3>
+<h3 id="20-有源滤波">20 有源滤波</h3>
 <ul>
 <li>痛点：信号里混有不需要的高频噪声或低频干扰。</li>
 <li>核心思想：RC 决定截止频率 <span class="math math-inline">\(f_c = \dfrac{1}{2 \pi R C}\)</span> ；运放提供增益并隔离负载。</li>
@@ -885,7 +885,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：截止频率算错（漏了 2π）；运放带宽不够。</li>
 <li>变体：一阶有源低通、Sallen-Key 二阶低通，并提及高通。</li>
 </ul>
-<h3 id="16-振荡器">16 振荡器</h3>
+<h3 id="24-振荡器">24 振荡器</h3>
 <ul>
 <li>痛点：电路需要一个自己产生的时钟或正弦信号。</li>
 <li>核心思想：振荡 = 正反馈 + 选频。</li>
@@ -893,7 +893,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>仿真：文氏桥起振过程；弛张振荡器电容电压与输出方波。</li>
 <li>典型错误：增益不足不起振、增益过大波形削顶；忘记加稳幅措施。</li>
 </ul>
-<h3 id="17-自锁--市电">17 自锁 ⚠ 市电</h3>
+<h3 id="04-自锁--市电">04 自锁 ⚠ 市电</h3>
 <ul>
 <li>痛点：按一下启动按钮，手松开后电机还要继续转。</li>
 <li>核心思想：接触器的常开辅助触点并联在启动按钮两端，线圈得电后「自己锁住」；按停止按钮（常闭）解除。</li>
@@ -901,23 +901,23 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：自锁触点并错位置；停止按钮用了常开。</li>
 <li>安全：主回路是 380V 三相电，控制回路常为 220V，必须写明安全警示。</li>
 </ul>
-<h3 id="18-互锁--市电">18 互锁 ⚠ 市电</h3>
+<h3 id="11-互锁--市电">11 互锁 ⚠ 市电</h3>
 <ul>
 <li>痛点：电机正转和反转两个接触器同时吸合会造成相间短路。</li>
 <li>核心思想：在各自线圈回路中串入对方的常闭辅助触点（电气互锁），还可以加按钮互锁（机械互锁）。</li>
 <li>仿真：时序图展示同时按两个按钮时只有一个接触器吸合。</li>
 <li>典型错误：只做按钮互锁不做触点互锁；正反转换相接错。</li>
-<li>安全：同 17。</li>
+<li>安全：同 04。</li>
 </ul>
-<h3 id="19-星三角降压启动--市电">19 星三角降压启动 ⚠ 市电</h3>
+<h3 id="15-星三角降压启动--市电">15 星三角降压启动 ⚠ 市电</h3>
 <ul>
 <li>痛点：大电机直接启动时电流是额定值的 5 到 7 倍，会冲击电网。</li>
 <li>核心思想：先接成星形（每相电压为线电压的 <span class="math math-inline">\(1/\sqrt{3}\)</span> ，启动电流降到直接三角形启动的 1/3），由时间继电器延时后切换为三角形运行；星形接触器与三角形接触器必须互锁。</li>
 <li>仿真：启动电流随时间变化的对比曲线（示意）；时序图。</li>
 <li>典型错误：星、三角接触器没有互锁导致短路；延时设置不当。</li>
-<li>安全：同 17。</li>
+<li>安全：同 04。</li>
 </ul>
-<h3 id="20-双控开关--市电">20 双控开关 ⚠ 市电</h3>
+<h3 id="27-双控开关--市电">27 双控开关 ⚠ 市电</h3>
 <ul>
 <li>痛点：楼梯上下两头都要能开关同一盏灯。</li>
 <li>核心思想：两个单刀双掷开关通过两根「跨线」相连，任一开关拨动都会改变灯的状态（相当于异或）。</li>
@@ -926,7 +926,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>变体：三地控制（加一个中途开关）。</li>
 <li>安全：照明电路是 220V，必须写明安全警示。</li>
 </ul>
-<h3 id="21-mos-管开关扩展篇">21 MOS 管开关（扩展篇）</h3>
+<h3 id="06-mos-管开关扩展篇">06 MOS 管开关（扩展篇）</h3>
 <ul>
 <li>痛点：单片机引脚只能输出几毫安，却要控制几安的灯带或电机。</li>
 <li>核心思想：低边驱动（N 沟道 MOS 管在负载和地之间）与高边驱动（P 沟道 MOS 管或驱动芯片）；栅极电阻限制充放电电流、抑制振铃；栅极下拉电阻防止上电时悬空误导通；3.3V 单片机直接驱动时要选逻辑电平 MOS 管（看 <span class="math math-inline">\(V_{GS(th)}\)</span> 和指定 <span class="math math-inline">\(V_{GS}\)</span> 下的导通电阻）；发热由导通损耗 <span class="math math-inline">\(I^2 R_{DS(on)}\)</span> 和开关损耗组成。</li>
@@ -934,7 +934,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：用 3.3V 驱动普通 MOS 管导致半开半关发烫；栅极悬空；高边用 N 管却没有自举驱动。</li>
 <li>变体：低边与高边；感性负载要加续流二极管。</li>
 </ul>
-<h3 id="22-三极管开关与继电器驱动扩展篇-市电负载">22 三极管开关与继电器驱动（扩展篇）⚠ 市电负载</h3>
+<h3 id="07-三极管开关与继电器驱动扩展篇-市电负载">07 三极管开关与继电器驱动（扩展篇）⚠ 市电负载</h3>
 <ul>
 <li>痛点：继电器线圈要几十毫安，单片机引脚驱动不了，而且一断电就出现高压尖峰。</li>
 <li>核心思想：三极管工作在饱和区当开关；基极电阻按 <span class="math math-inline">\(I_B \gt I_C / \beta\)</span> 并留 2 到 5 倍裕量来算；线圈两端反并续流二极管吸收反向电动势。</li>
@@ -952,16 +952,16 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>变体：晶体管输出光耦与高速光耦；光耦检测市电过零（简介）。</li>
 <li>安全：输入侧若接市电检测，必须写明安全警示。</li>
 </ul>
-<h3 id="24-隔离电源与数字隔离器扩展篇-市电">24 隔离电源与数字隔离器（扩展篇）⚠ 市电</h3>
+<h3 id="28-隔离电源与数字隔离器扩展篇-市电">28 隔离电源与数字隔离器（扩展篇）⚠ 市电</h3>
 <ul>
 <li>痛点：光耦只隔离了信号，被隔离的那一侧仍然需要自己的电源。</li>
 <li>核心思想：变压器隔离（工频变压器 + 整流滤波）；隔离 DC-DC 模块（内部是带变压器的开关电源）；数字隔离器（电容或磁耦合，比光耦快）；「地」要分开，两侧分别标 GND1 和 GND2，不能随手连起来。</li>
 <li>仿真：变压器匝数比与输出电压；隔离 DC-DC 模块空载与满载时的输出电压变化示意；光耦与数字隔离器的传输延时对比示意。</li>
 <li>典型错误：两侧地被示波器探头或 USB 线意外连通；隔离模块轻载时输出电压偏高；忽视隔离耐压等级。</li>
-<li>变体：反激式隔离电源（与 09 的变体二呼应）。</li>
+<li>变体：反激式隔离电源（与 25 的变体二呼应）。</li>
 <li>安全：工频变压器初级接 220V，必须写明安全警示。</li>
 </ul>
-<h3 id="25-h-桥电机驱动扩展篇">25 H 桥电机驱动（扩展篇）</h3>
+<h3 id="26-h-桥电机驱动扩展篇">26 H 桥电机驱动（扩展篇）</h3>
 <ul>
 <li>痛点：直流电机要能正转、反转，还要能调速。</li>
 <li>核心思想：4 个开关组成「H」形，对角导通决定电流方向；同一侧上下管同时导通会造成直通短路，所以必须加死区时间；PWM 占空比控制平均电压，从而调速。</li>
@@ -969,7 +969,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>典型错误：上下管同时导通烧管；没有续流路径；PWM 频率落在人耳可听范围产生啸叫。</li>
 <li>变体：分立 MOS 管 H 桥与集成 H 桥驱动芯片的对照。</li>
 </ul>
-<h3 id="26-上拉下拉电阻与电平转换扩展篇">26 上拉/下拉电阻与电平转换（扩展篇）</h3>
+<h3 id="29-上拉下拉电阻与电平转换扩展篇">29 上拉/下拉电阻与电平转换（扩展篇）</h3>
 <ul>
 <li>痛点：按键没按下时引脚读数乱跳；3.3V 和 5V 的芯片不能直接相连。</li>
 <li>核心思想：悬空输入会随干扰乱变，用上拉或下拉电阻给它一个确定电平；按键抖动用 RC 滤波加施密特门限或软件延时消除；N 沟道 MOS 管加两个上拉电阻可组成双向电平转换（I²C 常用）。</li>

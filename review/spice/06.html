@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>06 桥式整流：SPICE 复核报告（只仿低压次级）</title>
+<title>06 MOS 管开关 · SPICE 核对报告（审校 B）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,13 +42,8 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/06.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="06-桥式整流spice-复核报告只仿低压次级">06 桥式整流：SPICE 复核报告（只仿低压次级）</h1>
-<ul>
-<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/06/.spiceinit</code> 设为 psa。</li>
-<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/06/run.py</code>，退出码 0，已实际运行，共 36 项。</li>
-<li><strong>强电说明</strong>：本节输入来自 220 V 市电变压器。按任务规则，<strong>初级（220 V）不做仿真</strong>：市电侧没有可以拿来对照的页面数值，而且这一侧的安全问题（绝缘、保险丝、爬电距离）不是 SPICE 能验证的。所有网表都从变压器次级开始：12 Vrms（峰值 16.97 V）或 9 Vrms（峰值 12.73 V）的正弦源，串联 1 Ω 绕组电阻（假设）。图 06-p3-2 本来就是低压实验：信号发生器 5 V、50 Ω。</li>
-</ul>
-<h2 id="网表">网表</h2>
+<h1 id="06-mos-管开关--spice-核对报告审校-b">06 MOS 管开关 · SPICE 核对报告（审校 B）</h1>
+<p>运行：<code>python spice/06/run.py</code>（在仓库根目录，退出码 0）。网表在 <code>spice/06/</code> 下：</p>
 <table>
 <thead>
 <tr>
@@ -58,71 +53,57 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td><code>t_bridge.cir</code></td>
-<td>图 06-p1-2 / 06-p1-3 / 06-p2-2 / 06-p3-1：12 V 次级，桥 + 75 Ω。分别不加电容和加 2200 µF，测导通时间、尖峰电流、浪涌，再扫 470～10000 µF 的纹波</td>
+<td><code>lowside.cir</code></td>
+<td>低边开关，纯电阻 4 Ω 负载（12 V / 3 A 灯带），R_G 和 R_GS 可扫描</td>
 </tr>
 <tr>
-<td><code>t_examples.cir</code></td>
-<td>例 1（0.2 A 恒流负载，2200 µF）、例 2（9 V，6800 µF，0.5 A；绕组内阻取 1 Ω 和 0.5 Ω 各跑一次）</td>
+<td><code>inductive.cir</code></td>
+<td>1 mH 线圈负载，分三种情况：正接续流二极管、不接、接反</td>
 </tr>
 <tr>
-<td><code>t_half.cir</code></td>
-<td>例 3：半波整流，2200 µF，0.2 A</td>
+<td><code>rds.cir</code></td>
+<td>不同 V_GS 下的 R_DS(on)，以及用万用表二极管档测体二极管</td>
 </tr>
 <tr>
-<td><code>t_scope.cir</code></td>
-<td>图 06-p3-2：示波器地夹正确接法和接错（输出负端与发生器地相连）两种情况，1N4148 和 1N4001 各跑一次</td>
-</tr>
-<tr>
-<td><code>t_fw.cir</code></td>
-<td>图 06-p2-4 运放全波（绝对值）整流 + 同一信号送二极管桥的对照；练习 4</td>
-</tr>
-<tr>
-<td><code>t_bleed.cir</code></td>
-<td>练习 3：4.7 kΩ 泄放电阻</td>
+<td><code>highside.cir</code></td>
+<td>P 沟道高边开关的栅压</td>
 </tr>
 </tbody>
 </table>
 <h2 id="模型与来源">模型与来源</h2>
-<table>
-<thead>
-<tr>
-<th>器件</th>
-<th>模型文件</th>
-<th>来源</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>1N4001（页面器件）</td>
-<td>spice/models/1N4007_diodes.lib（复用），<code>.MODEL DI_1N4007</code></td>
-<td><strong>替代</strong>：Diodes Inc. 官方 1N4007 模型，<a href="https://www.diodes.com/spice/download/396/1N4007.spice.txt">https://www.diodes.com/spice/download/396/1N4007.spice.txt</a> 。1N4001～1N4007 是同一芯片系列，只是反向耐压分档不同，正向特性相同。Diodes 官网没有单独的 1N4001 模型，所以用它代替。</td>
-</tr>
-<tr>
-<td>1N4148</td>
-<td>spice/models/1N4148_nexperia.lib（复用）</td>
-<td>Nexperia：<a href="https://assets.nexperia.com/documents/spice-model/1N4148.txt">https://assets.nexperia.com/documents/spice-model/1N4148.txt</a></td>
-</tr>
-<tr>
-<td>运放（页面未指定）</td>
-<td>spice/models/TL072.lib（复用）</td>
-<td>TI：<a href="https://www.ti.com/lit/zip/sloj067">https://www.ti.com/lit/zip/sloj067</a></td>
-</tr>
-</tbody>
-</table>
+<ul>
+<li><strong>IRLZ44N</strong>：Infineon 官方模型，放在 <code>spice/models/IRLZ44N_infineon.lib</code>。
+<ul>
+<li>来源：<a href="https://www.infineon.com/dgdl/irlz44n.spi?fileId=5546d462533600a40153573f68cb3e76%EF%BC%88Symmetry">https://www.infineon.com/dgdl/irlz44n.spi?fileId=5546d462533600a40153573f68cb3e76（Symmetry</a> MODPEX 生成，原样未改）。</li>
+<li>模型的体二极管 BV = 55 V，所以能仿出雪崩钳位。</li>
+</ul>
+</li>
+<li><strong>续流二极管 D1</strong>：Vishay 1N5822（40 V / 3 A 肖特基）官方模型，放在 <code>spice/models/1N5822_vishay.lib</code>。
+<ul>
+<li>来源：<a href="https://www.vishay.com/docs/88003/1n5822.txt">https://www.vishay.com/docs/88003/1n5822.txt</a></li>
+<li>页面只说「常用肖特基」，没给型号。选 1N5822 是我的假设。</li>
+</ul>
+</li>
+<li><strong>高边开关的 Q2</strong>：页面没给型号，按 2N7000 假设，用 onsemi 官方模型（<code>spice/models/2N7000_onsemi.lib</code>，审校 A 已下载，这里复用）。
+<ul>
+<li>Q1（P 沟道）页面也没给型号。它的栅极直流不取电流，所以只核栅压，不放 Q1 的模型。</li>
+</ul>
+</li>
+<li><strong>AO3400A、IRF540N</strong>：没拿到厂家 SPICE 文件，<strong>不仿真</strong>，只复核页面的算术（没发现错误）。</li>
+</ul>
 <h2 id="假设">假设</h2>
-<ol>
-<li>页面没有给变压器绕组电阻。这里取 1 Ω。页面自己的仿真算出 15.4 V，比 15.57 V 低 0.2 V，说明它也带了一个小内阻，量级相同。</li>
-<li>主仿真的负载是 75 Ω（页面 §5：平均 14.34 V ÷ 75 Ω ≈ 191 mA，两数吻合）。例 1、例 2、例 3 按题意用恒流负载。</li>
-<li>导通时间按二极管电流 &gt; 5 mA 来计。真实二极管的电流是逐渐上升的，没有一个明确的“开始导通”时刻，所以这个数会随所取门限变化。</li>
-<li>图 06-p2-4：页面是静态计算（开环增益 10 万），这里改用 TL072，±15 V 供电，输入 50 Hz。二极管 1N4148。A1 的偏置负载取 100 kΩ。</li>
-<li>图 06-p3-2：“正确接法”下桥的负端经 1 GΩ 接地，这只是为了给 SPICE 一条直流通路。“接错”的情况把这个电阻改成 1 mΩ。</li>
-</ol>
+<ul>
+<li>驱动信号边沿 5 ns。</li>
+<li>线圈负载是 1 mH（页面示意值）串 4 Ω。4 Ω 是我加的，目的是让稳态电流等于 3 A。</li>
+<li>开关能量的积分判据与 <code>code/06_sim.py</code> 一致：只在 V_DS &gt; 0.15 V 且有电流的时段积分。</li>
+<li>「钳位感性」指电机加续流二极管的情况。这是最接近页面示意模型的工况：电流先升到 3 A，然后电压才下降。</li>
+</ul>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
 <tr>
-<th>页面位置</th>
+<th>位置</th>
+<th>核对项</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
@@ -131,410 +112,484 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>p1 图06-p1-2 无电容输出峰值</td>
-<td>15.4 V</td>
-<td>15.13 V</td>
-<td>−1.8%</td>
+<td>p2 §1</td>
+<td>栅极峰值电流 5 V/100 Ω（模型内含 2.4 Ω 内部栅阻）</td>
+<td>50 mA</td>
+<td>48.14 mA</td>
+<td>-3.7%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图06-p1-3 2200 µF 最高</td>
-<td>14.67 V</td>
-<td>14.30 V</td>
-<td>−2.5%</td>
+<td>p3 §1</td>
+<td>R_G/R_GS 分压后稳态 V_GS</td>
+<td>4.95 V</td>
+<td>4.95 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图06-p1-3 2200 µF 最低</td>
-<td>14.00 V</td>
-<td>13.67 V</td>
-<td>−2.4%</td>
+<td>p3 §1</td>
+<td>R_GS 换 1 kΩ 后稳态 V_GS（页面「损失约 9%」）</td>
+<td>4.545 V</td>
+<td>4.545 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1/p2 §5 纹波峰峰</td>
-<td>0.67 V</td>
-<td>0.634 V</td>
-<td>−5.4%</td>
+<td>p2 例1 第1步</td>
+<td>5 V 驱动（实际 4.95 V）3 A 时 R_DS(on)：页面用手册最大值 25 mΩ（SPICE 为典型值，低于手册最大值，页面按最大值估算偏安全）</td>
+<td>25 mΩ</td>
+<td>21.1 mΩ</td>
+<td>-15.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §5 平均输出</td>
-<td>14.34 V</td>
-<td>13.99 V</td>
-<td>−2.5%</td>
+<td>p2 例1 第1步</td>
+<td>导通损耗 P_cond（D=50%）（页面按最大值 25 mΩ，SPICE 典型值更低；方向偏安全）</td>
+<td>0.1125 W</td>
+<td>0.09495 W</td>
+<td>-15.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §5 负载电流</td>
-<td>191 mA</td>
-<td>186.5 mA</td>
-<td>−2.3%</td>
+<td>p2 §2 代数</td>
+<td>平台电压 V_pl（V_DS 降到 6 V 时的 V_GS，纯电阻负载）（页面为示意值；门限 1.0–2.0 V 的批次差异会让平台上下移动约 ±0.5 V）</td>
+<td>2.8 V</td>
+<td>2.384 V</td>
+<td>-14.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1/p2 图06-p2-2 每半周导通时间</td>
-<td>2.42 ms</td>
-<td>2.80 ms（门限 5 mA）</td>
-<td>+16%</td>
-<td>⚠️ 真实二极管是软导通，宽度跟所取门限有关</td>
-</tr>
-<tr>
-<td>p1/p2 二极管电流尖峰</td>
-<td>1.19～1.2 A</td>
-<td>1.10 A</td>
-<td>−7.6%</td>
+<td>p3 §2 图06-p3-1左</td>
+<td>R_G=10 Ω 开通完成时间（与 R_G 基本成正比 ✓；绝对值差异来自示意模型与门限批次差异）</td>
+<td>0.07 μs</td>
+<td>0.08016 μs</td>
+<td>+14.5%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §3 上电第一周期浪涌</td>
-<td>6.7 A</td>
-<td>6.33 A</td>
-<td>−5.5%</td>
+<td>p3 §2 图06-p3-1左</td>
+<td>R_G=100 Ω 开通完成时间（与 R_G 基本成正比 ✓；绝对值差异来自示意模型与门限批次差异）</td>
+<td>0.74 μs</td>
+<td>0.6293 μs</td>
+<td>-15.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 公式纹波 I/(2fC)</td>
-<td>0.87 V</td>
-<td>0.848 V（用 SPICE 电流代入）</td>
-<td>−2.6%</td>
-<td>✅ 公式比仿真大，与页面说法一致</td>
-</tr>
-<tr>
-<td>p3 图06-p3-1 470 µF 纹波</td>
-<td>2.89 V</td>
-<td>2.77 V</td>
-<td>−4.2%</td>
+<td>p3 §2 图06-p3-1左</td>
+<td>R_G=1000 Ω 开通完成时间（与 R_G 基本成正比 ✓；绝对值差异来自示意模型与门限批次差异）</td>
+<td>7.43 μs</td>
+<td>6.609 μs</td>
+<td>-11.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图06-p3-1 1000 µF 纹波</td>
-<td>1.45 V</td>
-<td>1.37 V</td>
-<td>−5.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图06-p3-1 4700 µF 纹波</td>
-<td>0.31 V</td>
-<td>0.298 V</td>
-<td>−4.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图06-p3-1 10000 µF 纹波</td>
-<td>0.15 V</td>
-<td>0.140 V</td>
-<td>−6.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例1 最高电压（估算）</td>
-<td>15.57 V</td>
-<td>14.26 V</td>
-<td>−8.4%</td>
-<td>✅ 页面在 §1 已经说明真实值更低</td>
-</tr>
-<tr>
-<td>p2 例1 纹波（公式）</td>
-<td>0.909 V</td>
-<td>0.675 V</td>
-<td>−26%</td>
-<td>✅ 公式是保守上限，页面 p3 有说明</td>
-</tr>
-<tr>
-<td>p2 例1 平均（估算）</td>
-<td>15.1 V</td>
-<td>13.93 V</td>
-<td>−7.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例2 电容最高电压（9 V，0.5 A，内阻 1 Ω）</td>
-<td>11.33 V</td>
-<td>9.03 V</td>
-<td>−20%</td>
-<td>⚠️ 大电流时二极管压降和绕组压降都变大</td>
-</tr>
-<tr>
-<td>p2 例2 同上（内阻 0.5 Ω）</td>
-<td>11.33 V</td>
-<td>9.76 V</td>
-<td>−14%</td>
+<td>p2 §3</td>
+<td>E_on（R_G=100 Ω，12 V/3 A 纯电阻）（纯电阻负载时电压、电流同时变化（发热≈V·I·t/6），而页面示意模型是「先电流到 3 A 再降电压」的感性钳位波形（≈V·I·t/2），且 12 V 下真实 Q_GD 更小；页面数值偏大、方向偏安全）</td>
+<td>12.6 μJ</td>
+<td>2.195 μJ</td>
+<td>-82.6%</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>p2 例2 6800 µF 纹波 ≤ 1 V</td>
-<td>≤ 1 V</td>
-<td>0.47 V</td>
-<td>满足</td>
+<td>p2 §3</td>
+<td>E_off（同上）（纯电阻负载时电压、电流同时变化（发热≈V·I·t/6），而页面示意模型是「先电流到 3 A 再降电压」的感性钳位波形（≈V·I·t/2），且 12 V 下真实 Q_GD 更小；页面数值偏大、方向偏安全）</td>
+<td>10.8 μJ</td>
+<td>2.423 μJ</td>
+<td>-77.6%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §3 / 例1 第2步</td>
+<td>E_on+E_off（R_G=100 Ω，3 A 电机 + 1N5822 续流，钳位感性）（官方模型约为页面的 1/2.7：页面 Q_GD=12 nC、平台 2.8 V 偏保守；方向偏安全，但「仿真得 23.4 μJ」宜注明是示意模型上限）</td>
+<td>23.4 μJ</td>
+<td>8.791 μJ</td>
+<td>-62.4%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §3 / 例1 第2步</td>
+<td>同上，纯电阻灯带（例 1 题面的负载）（纯电阻负载时电压、电流同时变化（发热≈V·I·t/6），而页面示意模型是「先电流到 3 A 再降电压」的感性钳位波形（≈V·I·t/2），且 12 V 下真实 Q_GD 更小；页面数值偏大、方向偏安全）</td>
+<td>23.4 μJ</td>
+<td>4.618 μJ</td>
+<td>-80.3%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §2 代数</td>
+<td>电流爬升时间 t_ri（10→90%，钳位感性开通）（SPICE 10→90% 时间按 /0.8 折算。真实管子跨导很大，V_GS 只需比门限高约 0.3 V 电流就到 3 A，所以电流几乎是「跳」上去的；页面「门限 1.5 V→平台 2.8 V 线性爬升」是示意）</td>
+<td>0.14 μs</td>
+<td>0.01749 μs</td>
+<td>-87.5%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §2 代数</td>
+<td>开通平台时间 t_pl,on（V_DS 90→10%）（官方模型 12 V 时的 Q_GD 小于页面取的 12 nC）</td>
+<td>0.55 μs</td>
+<td>0.3749 μs</td>
+<td>-31.8%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §5</td>
+<td>有续流二极管：关断后漏极电压（页面「约 12.7 V」）（D1 用 1N5822 肖特基，压降比硅管小；硅二极管约 12.7 V）</td>
+<td>12.7 V</td>
+<td>12.46 V</td>
+<td>-1.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例3 半波最高</td>
-<td>16.27 V</td>
-<td>14.75 V</td>
-<td>−9.4%</td>
-<td>✅ 方向和“比桥式多约 0.7 V”都对（桥式为 14.26 V）</td>
-</tr>
-<tr>
-<td>p2 例3 半波纹波（公式）</td>
-<td>1.82 V</td>
-<td>1.53 V</td>
-<td>−16%</td>
-<td>✅ 公式保守</td>
-</tr>
-<tr>
-<td>p2 例3 二极管反向电压</td>
-<td>≈33 V</td>
-<td>30.9 V</td>
-<td>−6.3%</td>
+<td>p2 §5</td>
+<td>关断瞬间 3 A 转到 D1（漏极电流降到 0，线圈电流 = 页面 3 A）</td>
+<td>3 A</td>
+<td>2.984 A</td>
+<td>-0.5%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图06-p3-2 正确接法平均</td>
-<td>2.93 V</td>
-<td>2.91 V（1N4001：2.95 V）</td>
-<td>−0.5%</td>
+<td>p3 §2 图06-p3-1右</td>
+<td>R_G=10 Ω、20 kHz 开关损耗（钳位感性 / 纯电阻 0.012 W）（官方模型约为页面的 1/2.5～1/5；页面偏保守，与 R_G 成正比的结论 ✓）</td>
+<td>0.047 W</td>
+<td>0.02167 W</td>
+<td>-53.9%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p3 §2 图06-p3-1右</td>
+<td>R_G=100 Ω、20 kHz 开关损耗（钳位感性 / 纯电阻 0.092 W）（官方模型约为页面的 1/2.5～1/5；页面偏保守，与 R_G 成正比的结论 ✓）</td>
+<td>0.468 W</td>
+<td>0.1758 W</td>
+<td>-62.4%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p3 §2 图06-p3-1右</td>
+<td>R_G=1000 Ω、20 kHz 开关损耗（钳位感性 / 纯电阻 0.902 W）（官方模型约为页面的 1/2.5～1/5；页面偏保守，与 R_G 成正比的结论 ✓）</td>
+<td>4.678 W</td>
+<td>1.732 W</td>
+<td>-63.0%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §4 图06-p2-2 / 例1、例2</td>
+<td>1 kHz 合计发热（导通按 25 mΩ 最大值 + SPICE 开关能量）（开关部分偏保守（见上）；1 kHz 时导通占主导，结论不变）</td>
+<td>0.136 W</td>
+<td>0.1213 W</td>
+<td>-10.8%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §4 图06-p2-2 / 例1、例2</td>
+<td>20 kHz 合计发热（导通按 25 mΩ 最大值 + SPICE 开关能量）（开关能量页面偏保守）</td>
+<td>0.58 W</td>
+<td>0.2883 W</td>
+<td>-50.3%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §4 图06-p2-2 / 例1、例2</td>
+<td>100 kHz 合计发热（导通按 25 mΩ 最大值 + SPICE 开关能量）（开关能量页面偏保守）</td>
+<td>2.45 W</td>
+<td>0.9916 W</td>
+<td>-59.5%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §4</td>
+<td>导通损耗与开关损耗相交频率（开关能量更小，交点右移）</td>
+<td>4.8 kHz</td>
+<td>12.8 kHz</td>
+<td>+166.6%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p3 练习4</td>
+<td>R_G=1 kΩ、20 kHz 温升（页面 297 °C →「很快烧坏」）（官方模型下结温约 25+114=139 °C：低于 175 °C 但已很烫，仍是坏设计；页面「很快烧坏」偏夸大，数值偏大）</td>
+<td>297 °C</td>
+<td>114.4 °C</td>
+<td>-61.5%</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>p2 §5</td>
+<td>无续流二极管：关断尖峰（页面理想计算 ≈16000 V，并说明实际在 55 V 以上雪崩）（模型体二极管 BV=55 V，尖峰被雪崩钳在约 55 V，与页面「55 V 以上某处被击穿」一致）</td>
+<td>55 V</td>
+<td>55.36 V</td>
+<td>+0.7%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图06-p3-2 正确接法纹波</td>
-<td>0.20 V</td>
-<td>0.186 V（1N4001：0.192 V）</td>
-<td>−6.8%</td>
+<td>p2 §5</td>
+<td>每次关断灌进 MOS 管的能量（页面 ½LI² = 4.5 mJ）（钳位期间电源还在继续送能量（≈ ½LI²·V_cl/(V_cl−12 V)），同时线圈串联电阻 4 Ω 也分走一部分；页面只算 ½LI²）</td>
+<td>4.5 mJ</td>
+<td>4.819 mJ</td>
+<td>+7.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图06-p3-2 接错时端口钳位</td>
-<td>−0.70 V</td>
-<td>−0.88 V（1N4148）/ −0.78 V（1N4001）</td>
-<td>−26% / −12%</td>
-<td>⚠️ 电流有 80 多 mA，二极管压降已超过 0.7 V</td>
-</tr>
-<tr>
-<td>p3 图06-p3-2 接错时短路电流</td>
-<td>≈86 mA</td>
-<td>82 mA</td>
-<td>−4.2%</td>
+<td>p3 练习3</td>
+<td>D1 接反、MOS 导通时电流（页面「可能有几十安」，理想电源）（电源无内阻时达到数十～近百安：等于短路，结论一致）</td>
+<td>— A</td>
+<td>89.8 A</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图06-p3-2 接错时平均</td>
-<td>3.17 V</td>
-<td>3.14 V（1N4001：3.16 V）</td>
-<td>−1.1%</td>
+<td>p3 §3 图06-p3-2</td>
+<td>V_GS=10 V、3 A 时 R_DS(on)（页面列手册最大值 22 mΩ）（SPICE 为典型值，低于最大值，页面按最大值算发热偏安全）</td>
+<td>22 mΩ</td>
+<td>17.74 mΩ</td>
+<td>-19.4%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图06-p3-2 接错时纹波</td>
-<td>0.50 V</td>
-<td>0.488 V（1N4001：0.494 V）</td>
-<td>−2.4%</td>
+<td>p3 §3 图06-p3-2</td>
+<td>V_GS=5 V、3 A 时 R_DS(on)（页面列手册最大值 25 mΩ）（SPICE 为典型值，低于最大值，页面按最大值算发热偏安全）</td>
+<td>25 mΩ</td>
+<td>21.01 mΩ</td>
+<td>-16.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图06-p2-4 运放全波输出峰值</td>
-<td>500.0 mV</td>
-<td>500.0 mV</td>
-<td>0.0%</td>
+<td>p3 §3 图06-p3-2</td>
+<td>V_GS=4 V、3 A 时 R_DS(on)（页面列手册最大值 35 mΩ）（SPICE 为典型值，低于最大值，页面按最大值算发热偏安全）</td>
+<td>35 mΩ</td>
+<td>23.79 mΩ</td>
+<td>-32.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图06-p2-4 运放全波平均</td>
-<td>318.0 mV</td>
-<td>318.3 mV</td>
+<td>p3 §3</td>
+<td>V_GS=3.3 V 时 R_DS(on)（手册未保证，仅供参考）（典型样品可用，但手册不保证）</td>
+<td>— mΩ</td>
+<td>28.66 mΩ</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 故障表</td>
+<td>万用表二极管档：红 S 黑 D 体二极管读数（页面「零点几伏」，1 mA 测试电流）（0.45 V，落在「零点几伏」内）</td>
+<td>— V</td>
+<td>0.4469 V</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图06-p1-2</td>
+<td>Q2 导通时 Q1 的 V_GS</td>
+<td>-12 V</td>
+<td>-11.99 V</td>
 <td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图06-p2-4 与 |Vi| 的最大误差</td>
-<td>40 µV</td>
-<td>峰值附近 10～120 µV；过零处有 5.5 mV 的毛刺</td>
-<td>量级相同（静态）</td>
-<td>✅ 页面已说明这是静态计算，过零毛刺属于“速度”问题</td>
-</tr>
-<tr>
-<td>p2 图06-p2-4 同信号进二极管桥</td>
-<td>0（始终为零）</td>
-<td>峰值 6.4 mV</td>
-<td>≈0</td>
+<td>p1 图06-p1-2</td>
+<td>Q2 关断时 Q1 的 V_GS（≈0）</td>
+<td>0 V</td>
+<td>-3.847e-06 V</td>
+<td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习4 峰值 0.3 V 时的平均</td>
-<td>0.191 V</td>
-<td>0.1909 V</td>
-<td>−0.0%</td>
+<td>p3 练习5</td>
+<td>24 V 时 Q2 导通的 Q1 V_GS</td>
+<td>-24 V</td>
+<td>-23.99 V</td>
+<td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习4 R/2 错装成 R</td>
-<td>≈0.095 V</td>
-<td>0.0955 V</td>
-<td>+0.5%</td>
+<td>p3 练习5 改法一</td>
+<td>串 10 kΩ 分压后 Q1 V_GS</td>
+<td>-12 V</td>
+<td>-12 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习3 10 s 后剩余比例</td>
-<td>≈37%</td>
-<td>38.0%</td>
-<td>+2.8%</td>
+<td>p3 练习1</td>
+<td>3.3 V / 47 Ω 栅极峰值电流（模型内部栅阻 2.4 Ω 使峰值略低）</td>
+<td>70 mA</td>
+<td>64.88 mA</td>
+<td>-7.3%</td>
 <td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>R_G=180 Ω 时峰值电流 ≤ 20 mA</td>
+<td>18.3 mA</td>
+<td>17.95 mA</td>
+<td>-1.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3 AO3400A</td>
+<td>无可用官方模型（AO3400A/IRF540N 未取得厂家 SPICE 文件），只核算术（页面算术已复核无误）</td>
+<td>—</td>
+<td>nan</td>
+<td>—</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 §3 IRF540N</td>
+<td>无可用官方模型（AO3400A/IRF540N 未取得厂家 SPICE 文件），只核算术（页面算术已复核无误）</td>
+<td>—</td>
+<td>nan</td>
+<td>—</td>
+<td>ℹ️</td>
 </tr>
 </tbody>
 </table>
-<p><strong>统计：✅ 32　⚠️ 4　❌ 0</strong></p>
-<h2 id="️---的修改建议页面口吻可直接粘贴">⚠️ / ❌ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>1. p1 §3 / p2 图06-p2-2 中“每个半周只在顶部导通 2.42 ms”</strong>，建议改成：</p>
-<blockquote>
-<p>二极管每个半周只在顶部导通大约 2.4～2.8 ms。真实二极管是慢慢“开门”的，电流从几毫安开始算还是从几十毫安开始算，量出来的宽度会差一点；但“很窄、尖峰很高”这个结论不变。</p>
-</blockquote>
-<p><strong>2. p2 例 2 答案中“峰值 12.73 V，减 1.4 V 后约 11.33 V”</strong>，建议在这句后面加：</p>
-<blockquote>
-<p>要注意，11.33 V 是空载时的估算。负载有 0.5 A 时，尖峰电流接近 2 A：每只 1N4001 的压降接近 1 V，变压器绕组电阻上也要掉 1～2 V。所以实际电容上最高大约只有 9～10 V，平均还要再低约 0.2 V。如果后面接的稳压器需要 ≥ 8 V 的输入，余量就很紧了，应该换 10 V 或 12 V 的变压器。</p>
-</blockquote>
-<p><strong>3. p3 §3 图06-p3-2 中“端口电压被钳在 −0.70 V”</strong>，建议改成：</p>
-<blockquote>
-<p>端口电压被钳在约 −0.8 V（1N4148 约 −0.88 V，1N4001 约 −0.78 V）。这时二极管里有 80 多 mA 的电流，压降比平时估算用的 0.7 V 要大一些。短路电流约 (5 − 0.8) ÷ 50 ≈ 84 mA，全靠发生器的 50 Ω 内阻限流。</p>
-</blockquote>
-<h2 id="面包板万用表读数表只限低压次级--低压实验">面包板万用表读数表（只限低压次级 / 低压实验）</h2>
-<blockquote>
-<p>安全：只在变压器<strong>次级</strong>测量，或者直接用信号发生器做低压实验。不要用表笔碰初级和插头。</p>
-</blockquote>
+<p>计数：✅ 24　⚠️ 14　❌ 0　ℹ️ 3</p>
+<h2 id="结论">结论</h2>
+<p><strong>逻辑和栅压都对。</strong></p>
+<ul>
+<li>栅极峰值电流与页面一致。</li>
+<li>R_G / R_GS 的分压与页面一致。</li>
+<li>R_DS(on) 都在手册最大值以内。页面按最大值估算，偏安全。</li>
+<li>续流二极管的钳位与页面一致。</li>
+<li>不接二极管时，模型显示漏极被雪崩钳在 55 V 附近，与页面说法一致。灌进管子的能量约 4.8 mJ，页面写 4.5 mJ。</li>
+<li>二极管接反时会短路，与页面一致。</li>
+<li>高边开关的 V_GS 是 −12 V、0 V、−24 V、−12 V，与页面一致。</li>
+<li>练习 1 的栅极电流（3.3 V / 47 Ω 及 180 Ω 两种情况）与页面一致。</li>
+</ul>
+<p><strong>⚠️ 共 14 项，根源是同一件事。</strong> 页面示意模型取 Q_GD = 12 nC、平台 2.8 V，电流从门限到平台按线性爬升。用 IRLZ44N 官方模型算出来的开关能量要小得多：</p>
 <table>
 <thead>
 <tr>
-<th>测什么</th>
+<th>负载</th>
+<th>页面 E_on+E_off</th>
+<th>SPICE</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>电机 + 续流二极管</td>
+<td>23.4 μJ</td>
+<td>8.8 μJ，约为页面的 1/2.7</td>
+</tr>
+<tr>
+<td>例 1 题面里的纯电阻灯带</td>
+<td>23.4 μJ</td>
+<td>4.6 μJ，约为页面的 1/5</td>
+</tr>
+</tbody>
+</table>
+<p>由此带来的连锁差异：</p>
+<ul>
+<li>20 kHz 时合计发热：页面 0.58 W，SPICE 0.29 W。</li>
+<li>导通损耗与开关损耗的交点：页面 4.8 kHz，SPICE 约 13 kHz。</li>
+<li>练习 4 的温升：页面 297 °C，SPICE 约 114 °C。</li>
+</ul>
+<p>这些偏差的方向都偏安全：学生照着做，管子只会比页面说的凉，不会出事。所以不算 ❌。但页面写的是「仿真得 23.4 μJ」，容易被当成真实值，建议注明这是示意模型给出的偏保守的上限。</p>
+<p><strong>建议补充的说明（用页面口吻）：</strong></p>
+<ol>
+<li><strong>page2 §3 末尾，「运行后会打印…」之后：</strong>
+「注意：这个示意模型故意取得偏保守。用厂家给的 IRLZ44N SPICE 模型在 12 V / 3 A 下仿真，带续流二极管的电机负载开关一次约 9 μJ，纯电阻灯带只有约 5 μJ，都比这里的 23.4 μJ 小。原因是真实管子在 12 V 下要搬的 Q_GD 更少，而且纯电阻负载的电压和电流是同时变化的（三角形面积变成了更小的『尖角』）。所以下面用 23.4 μJ 估出来的发热是『最多这么热』，实测往往更凉。」</li>
+<li><strong>page2 §2 「t_ri」段之后：</strong>
+「真实管子的跨导很大，V_GS 只要比门限高零点几伏，电流就能升到 3 A，所以电流其实是几乎『跳』上去的。这里按 1.5 V→2.8 V 线性爬升来算，只是为了好算。」</li>
+<li><strong>page2 §4 图 06-p2-2 说明之后：</strong>
+「交点 4.8 kHz 是按示意模型算的；换成真实管子，开关损耗更小，交点会右移到 10 kHz 以上。结论不变：频率越高，开关损耗越占大头。」</li>
+<li><strong>page3 练习 4 答案：</strong>
+把「管子会很快烧坏」改为「按示意模型约 297 °C，远超 175 °C 的最高结温；即使按厂家模型（开关损耗约 1.7 W）估算，结温也有 130 多摄氏度，管子烫得不能碰、寿命大减，仍然是错误的做法」。</li>
+<li><strong>page2 §3 / page3 §2 图 06-p3-1 的平台电压和开通时间（2.38 V vs 2.8 V，0.63 μs vs 0.74 μs）：</strong>
+偏差在 15% 左右，落在门限 1.0–2.0 V 的批次差异范围内，记为 ✅，不用改。</li>
+</ol>
+<h2 id="面包板--实物万用表读数">面包板 / 实物万用表读数</h2>
+<p>面包板走不了 3 A。下面的读数按页面的灯带电路（12 V、3 A、导线连接）给出。</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>量什么</th>
+<th>万用表档位</th>
 <th>红表笔</th>
 <th>黑表笔</th>
-<th>档位</th>
-<th>预期读数（SPICE）</th>
+<th>预期读数</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>次级电压</td>
-<td>变压器次级一端</td>
-<td>次级另一端</td>
-<td>AC V</td>
-<td>≈12 Vrms（空载会略高）</td>
+<td>单片机输出 5 V（导通）</td>
+<td>V_GS</td>
+<td>DC 20 V</td>
+<td>Q1 栅极 G</td>
+<td>Q1 源极 S（地）</td>
+<td>约 4.95 V</td>
 </tr>
 <tr>
-<td>桥输出（不接电容，75 Ω）</td>
-<td>桥 + 端</td>
-<td>桥 − 端</td>
-<td>DC V</td>
-<td>平均约 9.5 V（按 0.637 × 峰值粗估，没有单独仿真）；峰值 15.1 V 要用示波器才能看到</td>
+<td>单片机输出 5 V（导通）</td>
+<td>V_DS</td>
+<td>DC 200 mV</td>
+<td>漏极 D</td>
+<td>源极 S</td>
+<td>约 63 mV（典型值；按手册最大值算 ≤ 75 mV）</td>
 </tr>
 <tr>
-<td>桥输出（2200 µF + 75 Ω）</td>
-<td>电容 + 极</td>
-<td>电容 − 极</td>
-<td>DC V</td>
-<td>≈14.0 V</td>
+<td>单片机输出 5 V（导通）</td>
+<td>负载电压</td>
+<td>DC 20 V</td>
+<td>+12 V</td>
+<td>漏极 D</td>
+<td>约 11.94 V</td>
 </tr>
 <tr>
-<td>纹波</td>
-<td>电容 + 极</td>
-<td>电容 − 极</td>
-<td>AC V（或 DC 档加隔直）</td>
-<td>≈0.63 Vpp（三角波，AC 档有效值约 0.18 V）</td>
+<td>单片机输出 0 V（关断）</td>
+<td>V_DS</td>
+<td>DC 20 V</td>
+<td>漏极 D</td>
+<td>源极 S</td>
+<td>约 12.0 V</td>
 </tr>
 <tr>
-<td>负载电流</td>
-<td>串在桥 + 端和负载之间</td>
-<td>—</td>
-<td>DC A</td>
-<td>≈187 mA</td>
+<td>单片机输出 0 V（关断）</td>
+<td>V_GS</td>
+<td>DC 20 V</td>
+<td>G</td>
+<td>S</td>
+<td>0 V</td>
 </tr>
 <tr>
-<td>单只二极管压降（导通时的平均值）</td>
-<td>二极管阳极</td>
-<td>阴极</td>
-<td>DC V</td>
-<td>约 0.6～0.7 V（尖峰时接近 1 V，表头看不到）</td>
+<td>断电后测体二极管</td>
+<td>体二极管压降</td>
+<td>二极管档</td>
+<td>S</td>
+<td>D</td>
+<td>约 0.45 V（模型值）；反接显示 OL</td>
 </tr>
 <tr>
-<td>例2（9 V，6800 µF，0.5 A）</td>
-<td>电容 + 极</td>
-<td>电容 − 极</td>
-<td>DC V</td>
-<td>≈8.8～9.6 V（取决于变压器内阻）</td>
+<td>高边开关，单片机输出高</td>
+<td>Q1 的 V_GS</td>
+<td>DC 20 V</td>
+<td>Q1 栅极</td>
+<td>Q1 源极（+12 V）</td>
+<td>约 −12.0 V</td>
 </tr>
 <tr>
-<td>图06-p3-2 正确接法（5 V 发生器，100 µF，1 kΩ）</td>
-<td>电容 + 极</td>
-<td>电容 − 极</td>
-<td>DC V</td>
-<td>≈2.9 V</td>
-</tr>
-<tr>
-<td>图06-p3-2 接错（− 端与发生器地相连）</td>
-<td>电容 + 极</td>
-<td>电容 − 极</td>
-<td>DC V</td>
-<td>≈3.1～3.2 V，纹波约 0.49 Vpp</td>
-</tr>
-<tr>
-<td>运放全波（±15 V，0.5 V 峰值输入）</td>
-<td>A2 输出</td>
-<td>0 V 地</td>
-<td>DC V</td>
-<td>≈0.318 V</td>
-</tr>
-<tr>
-<td>练习4（0.3 V 峰值输入）</td>
-<td>A2 输出</td>
-<td>0 V 地</td>
-<td>DC V</td>
-<td>≈0.191 V；R/2 装成 R 时 ≈0.095 V</td>
-</tr>
-<tr>
-<td>练习3 泄放（断电后 10 s）</td>
-<td>电容 + 极</td>
-<td>电容 − 极</td>
-<td>DC V</td>
-<td>从 ≈15.6 V 降到约 5.9 V（38%）</td>
+<td>高边开关，单片机输出低</td>
+<td>Q1 的 V_GS</td>
+<td>DC 20 V</td>
+<td>Q1 栅极</td>
+<td>Q1 源极（+12 V）</td>
+<td>约 0 V</td>
 </tr>
 </tbody>
 </table>
+<p>电机电路关断后，漏极对地的直流读数约为 12 V。约 12.5 V 的续流钳位尖峰，以及不接二极管时约 55 V 的雪崩尖峰，都只持续微秒到几十微秒，万用表看不到，要用示波器看。</p>
+<p>**附注：**核对时我在仓库根目录运行过一次 <code>code/06_sim.py</code>。它重新生成了 <code>06-mosfet-switch/img/06_p2_1_gate_charge.png</code>。新文件的 git blob 哈希已经存在于仓库对象库中，也就是说内容和仓库里的版本相同，只是修改时间变了。</p>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>统计：❌ 0 条；⚠️ 4 条全部处理（4 条改、0 条不改）；ℹ️ 无。</p>
-<table>
-<thead>
-<tr>
-<th>条目</th>
-<th>处理</th>
-<th>改了哪里、怎么改</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>⚠️ p1/p2 图06-p2-2：每半周导通 2.42 ms（SPICE 2.80 ms）</td>
-<td>已改</td>
-<td>2.42 ms 是 code/06_sim.py 的打印值，页面、图、脚本保留不变。page1 加括号「真实二极管是慢慢开门的，实测约 2.4～2.8 ms」；page2 图06-p2-2 讲解末尾补一句：宽度随所取门限变化，1N4007 厂家模型按 5 mA 算起为 2.80 ms，「很窄、尖峰很高」的结论不变</td>
-</tr>
-<tr>
-<td>⚠️ p2 例2：电容最高电压 11.33 V（内阻 1 Ω 时 SPICE 9.03 V）</td>
-<td>已改</td>
-<td>答案末尾补一段：11.33 V 是空载估算；0.5 A 时尖峰近 2 A，1N4001 压降近 1 V，绕组再掉 1～2 V，SPICE 得 9.0～9.8 V；后级要 8 V 以上时余量紧，应换 10 V 或 12 V 变压器</td>
-</tr>
-<tr>
-<td>⚠️ p2 例2：同上（内阻 0.5 Ω，SPICE 9.76 V）</td>
-<td>已改</td>
-<td>与上条合在同一段（9.0～9.8 V 覆盖两种内阻）</td>
-</tr>
-<tr>
-<td>⚠️ p3 图06-p3-2：接错时端口钳位 −0.70 V</td>
-<td>已改</td>
-<td>−0.70 V 是脚本打印值并标在图上，保留；在其后加括号说明这是 0.7 V 模型的结果，80 多 mA 时实际压降更大，厂家模型 1N4148 约 −0.88 V、1N4001 约 −0.78 V</td>
-</tr>
-</tbody>
-</table>
-<p>本轮没有改脚本和图：所有 ⚠️ 都是「简化模型 vs 真实器件」的差别，处理方式是保留脚本数值、在页面补说明，页面、图和脚本打印仍一致。</p>
-<p>改动文件：06-bridge-rectifier/page1.md、<a href="http://page2.md">page2.md</a>、<a href="http://page3.md">page3.md</a>、review/spice/06.md。图片由脚本重新生成（内容不变）。</p>
-<p>检查：count_cjk（1897 / 3318 / 3017）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（9 / 44 / 23）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
+<p>改动文件：<code>06-mosfet-switch/page2.md</code>、<code>06-mosfet-switch/page3.md</code>。没有 ❌，脚本和图不用改（示意模型本身保留，只补说明；检查时运行脚本重新生成了本节点的图，内容不变）。</p>
+<p><strong>⚠️ 14 项（根源相同：示意模型 Q_GD、平台、线性爬升偏保守）全部用说明处理，数值取自本报告：</strong></p>
+<ul>
+<li>page2 §2 末尾：加一段说明电流「线性爬升」只是为了好算，真实管子跨导大，电流几乎是跳上去的；SPICE 爬升约 0.02 μs、平台约 0.37 μs（对应 t_ri 0.14→0.0175 μs、t_pl,on 0.55→0.375 μs 两项）。</li>
+<li>page2 §3「运行后会打印…」后：加「💡 实际芯片会怎样」框：电机 + 续流 8.8 μJ（约 1/2.7）、纯电阻灯带 4.6 μJ（开通约 2.2、关断约 2.4 μJ，约 1/5），解释纯电阻负载电压电流同时变化，交叠面积小；结论「23.4 μJ 是偏保守的上限」（对应 E_on、E_off、两项合计共 4 项）。</li>
+<li>page2 §4：引用 23.4 μJ 处注明「示意模型、偏保守上限」；图 06-p2-2 说明后加一段：SPICE 交点约 13 kHz，1 kHz 约 0.12 W、20 kHz 约 0.29 W、100 kHz 约 0.99 W，结论不变（对应交点和 3 个频率的合计共 4 项）。例 1 第 2 步注明「示意模型仿真、偏保守的上限」。</li>
+<li>page3 §2 图 06-p3-1 说明：补 SPICE 0.022/0.176/1.73 W（约为图上的 1/2～1/3），「很快就会烧毁」改「会严重过热」（对应 3 项）。</li>
+<li>page3 练习 4 答案：保留示意模型 297 °C，补「SPICE 模型合计约 1.85 W、温升约 114 °C、芯片约 139 °C，仍是错误做法」。</li>
+</ul>
+<p><strong>ℹ️</strong>：未改。导航链接：报告未指出错误链接。</p>
+<p>检查：count_cjk、run_blocks（页面 + <code>code/06_sim.py</code>、<code>code/figs/06_figs.py</code>）、check_figs、check_github_math 全部通过；fix_inline_math_spacing --check 为 0；仓库根目录没有新文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

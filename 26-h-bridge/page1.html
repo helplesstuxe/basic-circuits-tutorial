@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>26 H 桥电机驱动 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/26-h-bridge/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="26-h-桥电机驱动--直觉篇">26 H 桥电机驱动 · 直觉篇</h1>
+<p><a href="../25-switching-power-supply/page4.html">上一页：25 开关电源 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a> · <a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a></p>
+<h2 id="痛点电机要会正转反转还要能调速">痛点：电机要会正转、反转，还要能调速</h2>
+<p>在 <a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a> 里，我们用一只 MOS 管控制了一台直流电机：管子导通，电机转；管子关断，电机停。可是做一辆小车，光会「转」和「停」远远不够：</p>
+<ul>
+<li>小车要能<strong>后退</strong>，电机就得反着转；</li>
+<li>小车要能<strong>慢慢开</strong>，电机转速就得能调；</li>
+<li>遇到障碍要<strong>马上停</strong>，不能靠惯性再滑出去半米。</li>
+</ul>
+<p>直流电机反转的办法很简单：把它两根线对调，电流反着流，它就反着转。问题是，你总不能让单片机伸出手去拔线。我们需要一个电路，能用几个控制信号决定「电流从电机的哪一头流进去」。这个电路就是 <strong>H 桥</strong>。</p>
+<h2 id="类比一座有四道闸门的h形水渠">类比：一座有四道闸门的「H」形水渠</h2>
+<p>把电源想成山上的水库（+12 V），地是山脚的河（0 V），电机是一个水车，装在一条横着的水渠中间。水车左端叫 A，右端叫 B。</p>
+<ul>
+<li>A 端往上有一道闸门 S1 通水库，往下有一道闸门 S3 通河；</li>
+<li>B 端也一样，往上 S2，往下 S4。</li>
+</ul>
+<p>四道闸门和中间那条横渠连起来，正好是一个字母「H」，这就是名字的来历。</p>
+<p>想让水车正着转：打开 S1 和 S4，水从水库经 S1 流到 A，冲过水车到 B，再经 S4 流进河里。想让它反着转：换成 S2 和 S3，水从 B 冲向 A。<strong>永远是一上一下、一左一右，斜着成对打开</strong>。</p>
+<p>下面的图 26-p1-1 把两种情况画了出来，橙色是电流走过的路线，灰色是断开的开关。</p>
+<p><a class="img-link" href="img/26_p1_1_paths.png"><img alt="图 26-p1-1 H 桥的正转与反转：左图 S1、S4 闭合，橙色电流从左上经电机 A 到 B 再到右下；右图 S2、S3 闭合，橙色电流反向从 B 到 A；断开的开关画成灰色" src="img/26_p1_1_paths.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-1　H 桥的两种驱动状态：S1、S4 闭合时电流从 A 流向 B（正转）；S2、S3 闭合时电流从 B 流向 A（反转）</em></p>
+<p>对比图 26-p1-1 的左右两半，电机本身一根线都没动，只是换了一对闭合的开关，流过电机的电流就掉了个头。电机两端的电压在左图是 A 正 B 负，在右图是 B 正 A 负。</p>
+<h2 id="另外两种状态刹车以及绝对不能出现的直通">另外两种状态：刹车，以及绝对不能出现的「直通」</h2>
+<p>四个开关一共有 16 种组合，真正有用的除了正转、反转，还有两种需要特别认识。下面的图 26-p1-2 左边是「刹车」，右边是「直通」。</p>
+<p><a class="img-link" href="img/26_p1_2_brake_short.png"><img alt="图 26-p1-2 刹车与直通：左图下面两个开关闭合，电机两端被短接，电流在电机和两个下开关之间打转；右图左侧上下两个开关同时闭合，朱红色路径从电源直接到地" src="img/26_p1_2_brake_short.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-2　左：两个下面的开关 S3、S4 闭合，电机两端被短接，转动的电机变成发电机，自己产生的电流让它很快停下（刹车）；右：同一侧的 S1、S3 同时闭合，电源经两个开关直接短路（直通），必须禁止</em></p>
+<p>图 26-p1-2 左边的刹车状态很有意思：电机在惯性下继续转，就像一台发电机，会产生电压（这个电压叫<strong>反电动势</strong>）。两端被短接以后，它发出的电流在自己身上产生阻碍转动的力，于是越转越慢。这比「四个开关全断开、让它自己滑行」停得快得多。</p>
+<p>右边朱红色的情况叫<strong>直通</strong>：同一侧上下两个开关同时闭合，电源正极经 S1、S3 直接连到地，中间没有任何负载限流。电流可以在一瞬间达到几十安，开关管会被烧毁。实际电路里，开关是 MOS 管，从「通」变到「断」需要一点时间；如果控制信号让上管刚开始关、下管就开始开，两者会短暂地同时导通。所以 H 桥的控制规则里一定有一条：<strong>同一侧的上管和下管之间，切换时要留一小段「两个都断开」的空档</strong>。这段空档叫<strong>死区时间</strong>，参数与调试篇会算它要留多长。</p>
+<h2 id="让电机按顺序做几件事">让电机按顺序做几件事</h2>
+<p>把这几种状态串起来，看看电机的反应。下面的图 26-p1-3 是仿真结果：一台 12 V 小电机先正转，再「滑行」（四个开关全断开），再正转，然后「刹车」，最后直接反转。</p>
+<p><a class="img-link" href="img/26_p1_3_sequence.png"><img alt="图 26-p1-3 正转、滑行、刹车、反转的转速与电流：上图橙色转速在正转时升到约 5400 rpm，滑行时缓慢下降，刹车时很快降到 0，反转时变成负值；下图天蓝色电流在起动和刹车时出现尖峰" src="img/26_p1_3_sequence.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-3　同一台电机依次经历正转、滑行、正转、刹车、反转（灰色底为滑行和刹车）：上图为转速，橙色；下图为电流，天蓝色，A 流向 B 为正</em></p>
+<p>从图 26-p1-3 能读出三件事：</p>
+<ol>
+<li>正转约 0.25 s 后转速稳定在 5377 rpm。刚起动时电流冲到 4.56 A，因为电机还没转起来、没有反电动势，只剩线圈电阻限流。</li>
+<li>滑行 0.3 s，转速只从 5377 rpm 降到 3988 rpm；刹车 0.2 s，转速就从 5377 rpm 降到 184 rpm。刹车时电流变成 −4.36 A，方向反了，说明电机在「发电」，正是这股电流把它拽住。</li>
+<li>从刹车直接切到反转，电流又冲到 −4.71 A，转速最终稳定在 −5383 rpm，即反方向全速。</li>
+</ol>
+<h2 id="调速开关飞快地开合">调速：开关飞快地开合</h2>
+<p>转速怎么调？最直接的想法是给电机一个较低的电压，但电源是固定的 12 V。H 桥的办法是：让 S1 以每秒两万次的速度开、合（S4 一直闭合）。电机里有线圈（电感），电流来不及跟着跳，它「感受到」的只是平均电压。闭合的时间占一半，平均就是 6 V；占四分之三，就是 9 V。这种方法叫 <strong>PWM</strong>（脉冲宽度调制），闭合时间所占的比例叫<strong>占空比</strong>（这两个词在 <a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a> 已经介绍过，这里是同一个意思）。原理与实现篇会推导它，并回答「为什么常选 20 kHz」。</p>
+<p>四个开关此时的状态画在下面的图 26-p1-4 里：S1 红紫色，表示它在飞快地开合；S4 一直闭合；S2、S3 断开。</p>
+<p><a class="img-link" href="img/26_p1_4_pwm.png"><img alt="图 26-p1-4 调速时的 H 桥：S1 以 20 kHz 开合，S4 一直闭合，S2 和 S3 断开，橙色为 S1 闭合时的电流路径" src="img/26_p1_4_pwm.png" loading="lazy" /></a></p>
+<p><em>图 26-p1-4　调速：S1 每秒开合两万次（PWM），S4 一直闭合；S1 闭合时电流沿橙色路径从 A 流向 B</em></p>
+<p>可以把它想成推秋千：你不必一直用力推，只要每次在同一个节奏里推一小下，秋千就稳定地荡到某个高度；每次推的时间长一点，荡得就高一点。电机的转子很「沉」，开关每秒开合两万次，它根本来不及跟着一开一合加速、减速，只会按「平均推了多少」转到一个稳定的速度。电脑风扇、遥控小车、电动车的调速把手，用的都是这个办法。</p>
+<h2 id="一句话">一句话</h2>
+<p><strong>H 桥用四个开关斜着成对导通来决定电流方向：S1、S4 正转，S2、S3 反转，两个下管同时导通是刹车，同一侧上下管同时导通是必须禁止的直通；再用 PWM 快速开合，就能用平均电压调速</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

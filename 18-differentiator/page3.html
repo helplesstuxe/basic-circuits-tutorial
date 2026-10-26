@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18 微分电路 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/18-differentiator/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="18-微分电路--参数与调试篇">18 微分电路 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：18 微分电路 · 动手实验篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> · <a href="../14-integrator/page1.html">14 积分电路 · 直觉篇</a></p>
+<h2 id="参数表每个元件管什么">参数表：每个元件管什么</h2>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>作用</th>
+<th>本教程取值</th>
+<th>TI 设计示例（SBOA276C）</th>
+<th>取值思路</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(R_f\)</span> （TI 记作 R2）</td>
+<td>把电容电流变成电压；和 C 一起决定「斜率换电压」的比例</td>
+<td>10 kΩ</td>
+<td>499 kΩ</td>
+<td>TI 建议取大一些，这样 C 不必很大</td>
+</tr>
+<tr>
+<td>C（TI 记作 C1）</td>
+<td>把输入斜率变成电流</td>
+<td>100 nF</td>
+<td>15 nF</td>
+<td>由 <span class="math math-inline">\(R_f C\)</span> 和工作频率下限定</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_1\)</span></td>
+<td>限制高频增益（上限约 <span class="math math-inline">\(R_f/R_1\)</span> ），帮助稳定</td>
+<td>1 kΩ</td>
+<td>1 kΩ</td>
+<td>上限频率 <span class="math math-inline">\(\dfrac{1}{2\pi R_1 C}\)</span> 至少比最高工作频率高约 3.5 倍（TI 的取法，略大于半个数量级 <span class="math math-inline">\(\sqrt{10}\)</span> ≈ 3.16 倍）</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(C_f\)</span></td>
+<td>与 <span class="math math-inline">\(R_f\)</span> 并联，滤掉高频噪声</td>
+<td>10 nF</td>
+<td>示例电路未用，设计说明中提到</td>
+<td>截止频率 <span class="math math-inline">\(f_c = \dfrac{1}{2\pi R_f C_f}\)</span> ；本教程让它与 <span class="math math-inline">\(R_1 C\)</span> 对齐</td>
+</tr>
+<tr>
+<td>运放增益带宽积 GBW</td>
+<td>运放够不够快，决定电路能否稳定</td>
+<td>LM358B 约 1.2 MHz（见 <a href="../02-opamp-basics/page3.html">02 运放入门 · 参数与调试篇</a>）</td>
+<td>TLV9061，10 MHz</td>
+<td>TI 给出的稳定条件（来自 TI 手册，本书不推导）： <span class="math math-inline">\(GBW \gt \dfrac{R_1 + R_f}{2\pi R_1^2 C}\)</span></td>
+</tr>
+<tr>
+<td>同相端参考电压</td>
+<td>单电源时把输出「抬」到电源中点</td>
+<td>双电源，接地</td>
+<td>5 V 单电源，R3 = R4 = 100 kΩ 分压出 2.5 V</td>
+<td>输出围绕参考电压上下摆动</td>
+</tr>
+</tbody>
+</table>
+<p>这些设计规则都出自 TI 的应用手册《Differentiator Circuit》（<a href="https://www.ti.com/lit/an/sboa276c/sboa276c.pdf">SBOA276C</a>）。它的示例电路工作在 100 Hz～2.5 kHz，设计步骤如下：先把 R2 取为较大的标准值 499 kΩ；按「最低微分频率比最低工作频率至少低半个数量级」（手册实际按 3.5 倍计算，下同）算出 C1 ≥ 11.1 nF，取 15 nF；按「上限截止频率比最高工作频率至少高半个数量级」算出 R1 ≤ 1.2 kΩ，取 1 kΩ；再验算 GBW 要大于 5.3 MHz，所选 10 MHz 的 TLV9061 满足要求。手册还提醒：并联在 R2 上的电容从其截止频率往下约 3.5 倍（手册称之为半个数量级）的地方就开始削弱微分作用；输出应保持在运放的线性摆幅以内。</p>
+<p>表里两套取值对应的电路画在图 18-p3-3 里。</p>
+<p><a class="img-link" href="img/18_p3_3_supply_variants.png"><img alt="左：本教程的实用微分器，±15 V 双电源，Vi 经 1 kΩ 的 R1 和 100 nF 的 C 接反相端，10 kΩ 的 Rf 与 10 nF 的 Cf 并联在反相端和输出之间，同相端接地；右：TI SBOA276C 示例，5 V 单电源，Vi 经 R1 1 kΩ 和 C1 15 nF 接反相端，反馈只有 499 kΩ 的 R2，同相端接 R3、R4 两只 100 kΩ 从 +5 V 分压得到的 2.5 V" src="img/18_p3_3_supply_variants.png" loading="lazy" /></a></p>
+<p><em>图 18-p3-3　本教程双电源实用微分器（a）与 TI SBOA276C 单电源示例（b）</em></p>
+<p>图 18-p3-3 的两个电路结构相同：输入都是「小电阻串电容」再接反相端。区别有两处：（b）的反馈支路只有 R2，没有并 <span class="math math-inline">\(C_f\)</span> ；（b）的同相端不接地，而是接在 R3、R4 从 +5 V 分出的 2.5 V 上（朱红色部分），所以输出围绕 2.5 V 上下摆动。单电源时如果同相端仍接地，就会出现排查表最后一行的削波。</p>
+<p>把同样的稳定条件套到本教程的参数上： <span class="math math-inline">\(\dfrac{1\text{ kΩ} + 10\text{ kΩ}}{2\pi \times (1\text{ kΩ})^2 \times 100\text{ nF}}\)</span> ≈ 17.5 kHz，LM358B 的 1.2 MHz 远远够用。要说明的是，本教程的取值是为了让波形好读（ <span class="math math-inline">\(R_f C\)</span> = 1 ms，三角波换成 ±1 V 方波），并没有完整走一遍 TI 的「半个数量级」流程；做正式设计时应按上面的步骤来。</p>
+<h2 id="扫描图一为什么理想微分器自己会振">扫描图一：为什么理想微分器「自己会振」</h2>
+<p>下面把运放换成增益带宽积 1.2 MHz 的真实模型，分别接理想微分器和实用微分器，输入同样的三角波，看 1 ms 处三角波拐角之后的输出。</p>
+<p><a class="img-link" href="img/18_p3_1_ringing.png"><img alt="振铃对比" src="img/18_p3_1_ringing.png" loading="lazy" /></a></p>
+<p><em>图 18-p3-1　同一只 1.2 MHz 简化运放：理想微分器在拐角后冲到 2.80 V 并以 13.8 kHz 振铃，实用微分器平稳爬到 1.00 V</em></p>
+<p>图 18-p3-1 中，理想微分器在三角波拐弯的地方本该从 −1 V 干净地跳到 +1 V，结果却冲到约 3 V（2.80 V），然后以约 13.8 kHz 的频率来回摆动，过了 1 ms 都还没停下来。原因可以这样理解：真实运放在高频时自身就像一个「积分器」（放大能力随频率下降），外面的微分网络又是一个「储能元件」，两者凑在一起就像弹簧挂着重物，被拐角「踢一脚」就上下弹个不停。振铃频率可以用下面的估算式（这里直接用结论，推导超出本教程） <span class="math math-inline">\(f \approx \sqrt{\dfrac{GBW}{2\pi R_f C}}\)</span> 估算： <span class="math math-inline">\(\sqrt{1.2\text{ MHz} \div (2\pi \times 1\text{ ms})}\)</span> ≈ 13.8 kHz，和仿真一致。这个简化模型只考虑了增益带宽积，振荡会慢慢衰减；真实运放内部还有更多延迟，常常干脆变成停不下来的持续振荡。用 TI 的 LM358B 仿真模型算同一个电路，拐角后的过冲约 4.3 V（4.28 V），振铃频率约 13.2 kHz，而且根本不衰减，一直振到下一个拐角又被重新激发（见 <a href="page1.html">18 微分电路 · 直觉篇</a>「先打个预防针」一节的四行对比图）。加了 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(C_f\)</span> 的实用版则完全没有振铃，最高 1.00 V——这正是 TI 手册所说「理想微分器从根本上不稳定，必须加输入电阻、反馈电容或两者」的直观样子。</p>
+<h2 id="扫描图二-r_1-的取舍">扫描图二： <span class="math math-inline">\(R_1\)</span> 的取舍</h2>
+<p><span class="math math-inline">\(R_1\)</span> 越大，高频被压得越狠，但方波的边沿也越慢。下面在理想运放、不加 <span class="math math-inline">\(C_f\)</span> 的条件下扫描 <span class="math math-inline">\(R_1\)</span> ：</p>
+<p><a class="img-link" href="img/18_p3_2_r1_sweep.png"><img alt="R1 扫描" src="img/18_p3_2_r1_sweep.png" loading="lazy" /></a></p>
+<p><em>图 18-p3-2　(a) R1 从 100 Ω 增大到 3 kΩ，20 kHz 干扰在输出的峰峰值从 1573 mV 降到 67 mV；(b) R1 = 300 Ω、1 kΩ、3 kΩ 三条曲线，边沿到达 90% 的时间从 0.07 ms 拉长到 0.69 ms（100 Ω 时只有 0.02 ms，见下表）</em></p>
+<p>图 18-p3-2 的数据整理成表：</p>
+<table>
+<thead>
+<tr>
+<th><span class="math math-inline">\(R_1\)</span></th>
+<th><span class="math math-inline">\(R_1 C\)</span></th>
+<th>干扰峰峰值</th>
+<th>边沿 90% 用时</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100 Ω</td>
+<td>0.01 ms</td>
+<td>1573 mV</td>
+<td>0.02 ms</td>
+</tr>
+<tr>
+<td>300 Ω</td>
+<td>0.03 ms</td>
+<td>645 mV</td>
+<td>0.07 ms</td>
+</tr>
+<tr>
+<td>1 kΩ</td>
+<td>0.10 ms</td>
+<td>199 mV</td>
+<td>0.23 ms</td>
+</tr>
+<tr>
+<td>3 kΩ</td>
+<td>0.30 ms</td>
+<td>67 mV</td>
+<td>0.69 ms</td>
+</tr>
+<tr>
+<td>不加（理想）</td>
+<td>0</td>
+<td>2513 mV</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<p>规律很清楚：边沿 90% 用时大约是 <span class="math math-inline">\(2.3 R_1 C\)</span> ，干扰大致与 <span class="math math-inline">\(R_1\)</span> 成反比。<strong>抗干扰和响应速度是一对矛盾</strong>，选 <span class="math math-inline">\(R_1\)</span> 时要先问：信号里最快的有用变化有多快？干扰在什么频率？让上限频率夹在两者之间。再并上 <span class="math math-inline">\(C_f\)</span> （原理与实现篇的仿真里， <span class="math math-inline">\(R_1\)</span> = 1 kΩ 加 <span class="math math-inline">\(C_f\)</span> = 10 nF，干扰降到约 16 mV），可以在不额外拖慢边沿太多的情况下进一步压噪声。</p>
+<h2 id="排查表">排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输入什么都不接，输出仍有几十 kHz 的正弦振荡</td>
+<td>理想微分器没有 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(C_f\)</span> ，与运放内部延迟构成振荡</td>
+<td>示波器看输出，频率接近 <span class="math math-inline">\(\sqrt{GBW/(2\pi R_f C)}\)</span></td>
+<td>串 <span class="math math-inline">\(R_1\)</span> 、并 <span class="math math-inline">\(C_f\)</span> ；按 <span class="math math-inline">\(GBW \gt (R_1+R_f)/(2\pi R_1^2 C)\)</span> 验算运放</td>
+</tr>
+<tr>
+<td>方波平顶上布满毛刺</td>
+<td>高频干扰被放大 <span class="math math-inline">\(2\pi f R_f C\)</span> 倍</td>
+<td>看毛刺频率；把输入短路到地，毛刺是否消失</td>
+<td>加大 <span class="math math-inline">\(R_1\)</span> 或并 <span class="math math-inline">\(C_f\)</span> ；缩短输入走线、做好接地和屏蔽</td>
+</tr>
+<tr>
+<td>输出顶在电源附近不动</td>
+<td>斜率 × <span class="math math-inline">\(R_f C\)</span> 超过运放摆幅，或输入有阶跃跳变</td>
+<td>估算最大斜率 × <span class="math math-inline">\(R_f C\)</span> ，和电源电压比较</td>
+<td>减小 <span class="math math-inline">\(R_f\)</span> 或 C；用 <span class="math math-inline">\(R_1\)</span> 限制跳变时的峰值</td>
+</tr>
+<tr>
+<td>方波边沿圆钝、变成「梯形」</td>
+<td><span class="math math-inline">\(R_1 C\)</span> 或 <span class="math math-inline">\(R_f C_f\)</span> 太大，上限频率太低</td>
+<td>量边沿 90% 用时，约等于 <span class="math math-inline">\(2.3 R_1 C\)</span></td>
+<td>减小 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(C_f\)</span> （同时接受更多噪声）</td>
+</tr>
+<tr>
+<td>输出波形像三角波，而不是方波</td>
+<td>R 与 C 位置接反，成了积分器</td>
+<td>对照电路：电容应串在输入端，反馈支路主元件是电阻</td>
+<td>交换 R、C 位置</td>
+</tr>
+<tr>
+<td>输出只是输入的反相放大复制（方波进、方波出），过几十秒还慢慢漂到电源</td>
+<td>反馈支路只焊了电容 <span class="math math-inline">\(C_f\)</span> ，漏了 <span class="math math-inline">\(R_f\)</span> ，成了电容–电容接法</td>
+<td>看反馈支路有没有电阻；量 <span class="math math-inline">\(V_o\)</span> 在几十秒内是否单向漂移</td>
+<td>在 <span class="math math-inline">\(C_f\)</span> 两端并上 <span class="math math-inline">\(R_f\)</span> ；方波平顶回到 0 V 才对</td>
+</tr>
+<tr>
+<td>单电源供电，输出一半波形被削掉</td>
+<td>同相端接地，输出无法低于 0 V</td>
+<td>量同相端电压和输出直流电平</td>
+<td>同相端接电源中点分压（如 2.5 V）作参考，接法见图 18-p3-3（b）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="练习">练习</h2>
+<p><strong>练习 1（易）</strong>： <span class="math math-inline">\(R_f C\)</span> = 1 ms，运放用 ±15 V 供电（最大输出约 ±13.5 V）。输入 ±2 V、1 kHz 三角波时输出多大？换成 ±2 V、2 kHz 呢？</p>
+<details><summary>答案</summary>
+<p>1 kHz：半周期 0.5 ms 内变化 4 V，斜率 8 V/ms，输出 ±8 V 方波，在摆幅之内。2 kHz：斜率 16 V/ms，理论输出 ±16 V，超过 ±13.5 V，方波被削顶，输出不再正比于斜率。题目里的「±13.5 V」是粗略值；LM358 的输出向上大约只能到 V+ − 1.3 V，向下却可以接近 V−，所以削顶并不对称，用 LM358B 模型仿真约为 +13.7 V / −14.2 V。削顶时运放已经饱和，虚地不再成立，前面「输出 = −R_f C × 斜率」的推导也就不适用了。</p>
+</details>
+<p><strong>练习 2（中）</strong>：理想微分器 <span class="math math-inline">\(R_f C\)</span> = 1 ms，输入中混有 5 mV、50 kHz 的干扰，输出端干扰幅度是多少？换成 <span class="math math-inline">\(R_1\)</span> = 1 kΩ、 <span class="math math-inline">\(R_f\)</span> = 10 kΩ 的实用版，高频增益大约被限制在多少倍？</p>
+<details><summary>答案</summary>
+<p>理想版： <span class="math math-inline">\(2\pi \times 50\text{ kHz} \times 1\text{ ms} \times 5\text{ mV}\)</span> ≈ 1.57 V（峰峰约 3.14 V）。实用版高频增益约封顶在 <span class="math math-inline">\(R_f/R_1\)</span> = 10 倍，干扰幅度不超过约 50 mV；再并 <span class="math math-inline">\(C_f\)</span> 后还会更小。</p>
+</details>
+<p><strong>练习 3（中）</strong>：C = 100 nF， <span class="math math-inline">\(R_f\)</span> = 10 kΩ，希望上限频率约 2 kHz。求 <span class="math math-inline">\(R_1\)</span> （取标准值）和与之对齐的 <span class="math math-inline">\(C_f\)</span> ，并用 TI 的条件验算 LM358B 是否够快。</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(R_1 = \dfrac{1}{2\pi \times 100\text{ nF} \times 2\text{ kHz}}\)</span> ≈ 796 Ω，取 820 Ω（实际上限约 1.94 kHz）。 <span class="math math-inline">\(C_f = R_1 C / R_f\)</span> = 820 Ω × 100 nF ÷ 10 kΩ = 8.2 nF。GBW 条件： <span class="math math-inline">\((820 + 10000) \div (2\pi \times 820^2 \times 100\text{ nF})\)</span> ≈ 25.6 kHz，LM358B 的 1.2 MHz 足够。</p>
+</details>
+<p><strong>练习 4（难，变体迁移：测速度）</strong>：直线导轨上的电位器输出 50 mV/mm（位置 0～100 mm 对应 0～5 V）。想用微分器得到「速度信号」，要求滑块以 100 mm/s 运动时输出幅度为 1 V。 <span class="math math-inline">\(R_f C\)</span> 应取多少？给出一组元件值，并说出至少一个实际要注意的问题。</p>
+<details><summary>答案</summary>
+<p>100 mm/s × 50 mV/mm = 5 V/s，这就是输入斜率。要输出 1 V， <span class="math math-inline">\(R_f C\)</span> = 1 V ÷ 5 V/s = 0.2 s，例如 <span class="math math-inline">\(R_f\)</span> = 200 kΩ、C = 1 μF（输出为 −1 V，方向由负号决定）。要注意：① 电位器滑动时的接触噪声会被强烈放大，必须加 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(C_f\)</span> 把上限频率压到几十赫兹；② 单电源时同相端要接参考电压，才能同时表示正、负两个方向的速度；③ 1 μF 应选漏电小的薄膜电容。</p>
+</details>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

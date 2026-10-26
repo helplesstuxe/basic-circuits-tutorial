@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>22 过载保护 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/22-overload-protection/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="22-过载保护--直觉篇">22 过载保护 · 直觉篇</h1>
+<p><a href="../21-linear-regulator/page4.html">上一页：21 线性稳压 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> · <a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a> · <a href="../10-voltage-comparator/page1.html">10 电压比较器 · 直觉篇</a></p>
+<h2 id="痛点电机卡住的那一刻电流会猛涨">痛点：电机卡住的那一刻，电流会猛涨</h2>
+<p>做过小车或者小风扇的同学大概都遇到过：轮子被卡住，或者扇叶被手指挡住，电机不转了，可是电源还在给它供电。这时候电机就像一根很粗的电阻丝，电流一下子涨到正常值的好几倍。我们这一节用的例子是一台 12 V、正常电流 1 A 的直流电机，卡住（专业叫法是<strong>堵转</strong>）时电流约 5 A。</p>
+<p>电流涨 5 倍，发热涨多少？导线和电机线圈的发热功率是 <span class="math math-inline">\(P = I^2 R\)</span> （见 <a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>），电流变成 5 倍，发热就变成 25 倍。几秒钟之内，细导线的绝缘皮会变软、冒烟；电机线圈的漆包线绝缘也可能被烤坏；最坏的情况是引起火灾。电源被短路时更严重，电流可以达到几十安。</p>
+<p>所以，凡是带电机、带大电流负载的电路，都需要一个「看门人」：电流正常时什么也不做，电流超标时立刻把电路断开。这就是<strong>过载保护</strong>。断开的动作，电工里常叫<strong>跳闸</strong>。</p>
+<p>先看看有没有保护的区别。下图是仿真结果，横轴是时间，纵轴是电机电流，0.5 s 时电机被卡住：</p>
+<p><a class="img-link" href="img/22_p1_1_stall.png"><img alt="两条曲线：朱红色带 × 的线在堵转后一直停在 5 A；橙色线在堵转后 26 ms 掉到 0" src="img/22_p1_1_stall.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-1　电机在 0.5 s 堵转：没有保护时一直流过 5 A，有保护时 26 ms 后被切断</em></p>
+<p>在图 22-p1-1 里，朱红色带 × 的线是没有保护的情况，电流跳到 5 A 后一直保持，导线一直在以 25 倍的功率发热。橙色线是加了过载保护的情况：电流同样跳到 5 A，但只持续了 26 ms 就被切到 0。灰色点线是保护门限 1.93 A，电流超过它一段时间后，保护电路就动手了。26 ms 的大电流只会让导线稍微热一点，完全安全。</p>
+<h2 id="类比家里的电表箱空气开关和门卫">类比：家里的「电表箱空气开关」和「门卫」</h2>
+<p>家里的电表箱里有一排空气开关。你同时开电暖器、电热水壶、空调，电流太大，「啪」的一声跳闸，全屋断电。它做的事情分三步：</p>
+<ol>
+<li><strong>量</strong>：时时刻刻知道电流有多大。</li>
+<li><strong>判</strong>：拿电流和一个「最大允许值」比，看有没有超。</li>
+<li><strong>断</strong>：超了就断开开关。</li>
+</ol>
+<p>我们要做的电子式过载保护，也是这三步，只是每一步都换成了你学过的元件：</p>
+<ul>
+<li><strong>量</strong>：在电流的路上串一个很小的电阻，叫<strong>采样电阻</strong>。电流流过它，两端就有电压 <span class="math math-inline">\(V = I \cdot R_S\)</span> （欧姆定律）。电流越大，电压越大，电流就被「翻译」成了电压。</li>
+<li><strong>判</strong>：电压可以交给 <a href="../10-voltage-comparator/page1.html">10 电压比较器 · 直觉篇</a> 去判断，超过门限就翻转输出。</li>
+<li><strong>断</strong>：比较器的输出去控制一个开关，比如 <a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a> 里的 N 沟道 MOS 管，或者一个继电器（见 <a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a> 里三极管、MOS 管当开关的用法）。</li>
+</ul>
+<p>三步连起来就是图 22-p1-3：电机、开关和采样电阻串在 12 V 和地之间，电流 <span class="math math-inline">\(I\)</span> 从上往下流过它们；采样电阻上端对地的电压 <span class="math math-inline">\(V = I \cdot R_S\)</span> 引出去交给比较器。</p>
+<p><a class="img-link" href="img/22_p1_3_sense.png"><img alt="简化电路：+12 V 经电机 M、开关（MOS 管）、朱红色的采样电阻 R_S 0.1 Ω 到地，采样电阻上端引出一根线，标注 V = I·R_S，送比较器判断" src="img/22_p1_3_sense.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-3　量的接法：采样电阻串在电流路上，电流在它上面变成电压送去比较</em></p>
+<p>图 22-p1-3 里朱红色的就是新加的采样电阻，只有 0.1 Ω，电机几乎感觉不到它的存在。</p>
+<p>还有两个细节，像门卫的「经验」：</p>
+<ul>
+<li><strong>别被吓一跳</strong>：电机刚启动时，电流本来就会冲得很高，过几十毫秒才回落。好门卫不会一看到人跑就拦，而是观察一小会儿。电路里用一个 RC 电路「延时」来做到这一点。</li>
+<li><strong>别反复开关门</strong>：电流在门限附近抖来抖去时，比较器会一会儿开一会儿关。10 节学过的<strong>回差</strong>（施密特比较器）就是治这个病的。</li>
+</ul>
+<h2 id="看图一条量--判--断的链">看图：一条「量 → 判 → 断」的链</h2>
+<p>把上面的步骤画成方框，就是下面这张图：</p>
+<p><a class="img-link" href="img/22_p1_2_blocks.png"><img alt="方框图：负载电流 → 采样电阻 → RC 延时 → 比较器（带回差）→ 开关切断，开关再箭头回到负载电流" src="img/22_p1_2_blocks.png" loading="lazy" /></a></p>
+<p><em>图 22-p1-2　过载保护的信号链：量（采样电阻）→ 滤（RC 延时）→ 判（比较器）→ 断（开关）</em></p>
+<p>沿着图 22-p1-2 从左往右看：负载电流流过采样电阻，变成一个很小的电压（1 A 对应 0.1 V）；这个电压先经过 RC 延时，把启动时短暂的冲击「抹平」；再送进带回差的比较器，跟门限比较；超了，比较器就让开关断开。</p>
+<p>注意最下面那条往回走的箭头：开关一断，电流立刻变成 0，于是采样电压也变成 0，比较器会觉得「电流正常了」，又把开关合上……这样就会一断一合地「打嗝」。是让它打嗝重试，还是断开以后就锁住、等人检查后再复位，是设计保护电路时必须做的选择。这个问题在原理与实现篇和参数与调试篇里会用仿真讲清楚，它和 <a href="../04-self-locking/page1.html">04 自锁 · 直觉篇</a> 里「按一下就保持」的思想是相通的。</p>
+<h2 id="还有哪些过载保护">还有哪些过载保护？</h2>
+<p>电子式保护不是唯一的办法，生活里还有两种常见的：</p>
+<ul>
+<li><strong>保险丝</strong>：一段特意做得很细的金属丝，电流太大时自己熔断。便宜、可靠，但断了要换新的。它熔断靠的是发热，而发热和电流的平方成正比，所以电流大一倍，熔丝升温就快大约四倍；短时间的小冲击它扛得住，持续的大电流才会把它烧断。</li>
+<li><strong>热继电器</strong>：里面有一片双金属片，电机电流让它发热弯曲，弯到一定程度就顶开触点。工厂里的大电机（多用三相交流电供电，什么是三相见 <a href="../04-self-locking/page1.html">04 自锁控制电路 · 直觉篇</a> 的小知识框）几乎都配它，04 节控制回路里的 FR 就是它。</li>
+</ul>
+<p>这三种保护有一个共同点：电流超得越多，断得越快；只超一点点，就多等一会儿。参数与调试篇会把它们放在一起比较。</p>
+<h2 id="一句话">一句话</h2>
+<p><strong>过载保护 = 采样电阻把电流变成电压 + RC 延时躲开启动冲击 + 带回差的比较器判断 + 开关切断负载；还要决定切断后是锁住还是重试</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

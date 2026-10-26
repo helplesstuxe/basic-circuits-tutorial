@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>16 振荡器 — ngspice 核对报告（审阅人 B）</title>
+<title>16 差分放大：SPICE 复核报告</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,67 +42,57 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/16.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="16-振荡器--ngspice-核对报告审阅人-b">16 振荡器 — ngspice 核对报告（审阅人 B）</h1>
-<p>运行：在仓库根目录 <code>/workspace/circuits-venv/bin/python spice/16/run.py</code>，退出码 0，约 2 分钟。</p>
-<h2 id="使用的模型">使用的模型</h2>
+<h1 id="16-差分放大spice-复核报告">16 差分放大：SPICE 复核报告</h1>
+<ul>
+<li><strong>工具</strong>：ngspice 44.2，batch 模式。<code>spice/16/.spiceinit</code> 设置了 <code>ngbehavior=psa</code>。</li>
+<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/16/run.py</code>，退出码 0，已实际运行，共 41 个比对项。</li>
+<li><strong>网表</strong>：
+<ul>
+<li><code>dc.cir</code>：四电阻差分的直流值。只用一个运放，用 alter 换输入和电阻；用&quot;输入从 0 爬升&quot;的瞬态求稳态。</li>
+<li><code>ac_cmrr.cir</code>：共模抑制，取 50 Hz 交流。</li>
+<li><code>t_mis.cir</code>：图 16-p2-2 的瞬态，以及输入短接的情况。</li>
+<li><code>dc_ina.cir</code>：三运放仪表放大器。</li>
+<li><code>t_ss5.cir</code>：例1 在 5 V 单电源下的情况。</li>
+</ul>
+</li>
+</ul>
+<h2 id="模型与来源">模型与来源</h2>
 <table>
 <thead>
 <tr>
 <th>器件</th>
-<th>文件</th>
+<th>模型文件</th>
 <th>来源</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td>LM358B</td>
-<td><code>spice/models/LMx58B_LM2904B.lib</code></td>
-<td>TI 官方 PSpice 模型，<a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
-</tr>
-<tr>
-<td>稳幅二极管 1N4148</td>
-<td><code>spice/models/1N4148_nexperia.lib</code>（审阅人 A 已下载，直接复用）</td>
-<td>Nexperia 官方，<a href="https://assets.nexperia.com/documents/spice-model/1N4148.txt">https://assets.nexperia.com/documents/spice-model/1N4148.txt</a></td>
-</tr>
-<tr>
-<td>「理想运放」（图 16-p1-2、例 2、练习 4 的理想值）</td>
-<td>行为源 <code>B = 2.5 + 2.5·tanh(2000·(V+ − V−))</code>，输出 0～5 V</td>
-<td>ngspice 内置 B 源，用来代表页面的理想假设</td>
+<td>spice/models/LMx58B_LM2904B.lib（复用）</td>
+<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
 </tr>
 </tbody>
 </table>
-<h2 id="网表与假设">网表与假设</h2>
-<table>
-<thead>
-<tr>
-<th>文件</th>
-<th>对应页面位置</th>
-<th>假设</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>spice/16/relax.cir</code></td>
-<td>page1 图 16-p1-1/16-p1-2 和示波器步骤，page2 周期推导与例 2，page3 图 16-p3-2 与练习 4</td>
-<td>同一网表里同时放了理想版和 LM358B 版，都是 5 V 单电源，三只门限电阻都是 10 kΩ，电容初值 0 V</td>
-</tr>
-<tr>
-<td><code>spice/16/wien.cir</code></td>
-<td>page2 图 16-p2-1/16-p2-3，page3 图 16-p3-1 与练习 1、2</td>
-<td>±5 V；并联电容初值 10 mV（对应代码里的 10 mV 扰动）；稳幅支路是 12 kΩ 串联「10 kΩ 并联一对反向并联的 1N4148」</td>
-</tr>
-</tbody>
-</table>
+<p>本节没有用替代模型。</p>
+<h2 id="假设">假设</h2>
 <ul>
-<li>「偏离正弦」按 page3 的定义计算：差值均方根 ÷ 正弦均方根。参考正弦用最小二乘拟合的同频正弦；按同峰值正弦算的结果另列在 ℹ️ 行。</li>
-<li>没有仿真的内容：page2 图 16-p2-4 的比较器整形。页面没有指定比较器型号，只用了理想的 ±4 V 输出，这部分和 14 节的内容重复。</li>
+<li><strong>电源</strong>：页面没写电源，按前面节点取 ±15 V。例1 第4步按页面写的 5 V 单电源。</li>
+<li><strong>电阻</strong>：取标称值。偏差情况按页面给的方向设定。最坏组合是 R1、R4 偏大，R2、R3 偏小。</li>
+<li><strong>信号源内阻</strong>：直接串进 R1。</li>
+<li><strong>共模/差分倍数</strong>：按页面 page3 §三 的约定计算。差分倍数 = 两路倍数的平均，共模倍数 = 两路倍数之和的模。</li>
+<li><strong>练习4</strong>：差分输入取 V1 = 12.0 V、V2 = 12.2 V。</li>
+<li><strong>仿真结果里的运放失调</strong>：
+<ul>
+<li>运放失调电压约 0.3 mV，乘以噪声增益 11，输出带约 3.3 mV 的直流偏移。</li>
+<li>这个偏移会使直流值偏大约 3%～5%，在器件公差内，表中记为 ✅。</li>
 </ul>
-<h2 id="核对结果">核对结果</h2>
+</li>
+</ul>
+<h2 id="核对表">核对表</h2>
 <table>
 <thead>
 <tr>
-<th>位置</th>
-<th>核对项</th>
+<th>页面位置</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
@@ -111,400 +101,299 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>p1 图16-p1-2</td>
-<td>理想运放：上门限(电容最高)</td>
-<td>3.33 V</td>
-<td>3.339 V</td>
-<td>+0.3%</td>
+<td>page1 §二 2.01/2.00 V，10 倍</td>
+<td>0.1 V</td>
+<td>0.1039 V</td>
+<td>+3.9%（失调 3.3 mV）</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图16-p1-2</td>
-<td>理想运放：下门限(电容最低)</td>
-<td>1.67 V</td>
-<td>1.669 V</td>
-<td>-0.0%</td>
+<td>page1 §二 / page2 例1① 两输入同加 1 V（3.01/3.00 V）</td>
+<td>仍 0.1 V</td>
+<td>0.1042 V</td>
+<td>+4.2%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1/p2 代数</td>
-<td>理想运放：周期 T≈1.39RC</td>
-<td>1.39 ms</td>
-<td>1.386 ms</td>
-<td>-0.3%</td>
+<td>page2 例1② 5.01/5.00 V（±15 V）</td>
+<td>0.1 V</td>
+<td>0.1049 V</td>
+<td>+4.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图16-p1-2</td>
-<td>理想运放：频率</td>
-<td>721 Hz</td>
-<td>721.3 Hz</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 图16-p1-2</td>
-<td>理想运放：高电平占比</td>
-<td>50 %</td>
-<td>50.06 %</td>
+<td>page2 例1 第4步 同相端</td>
+<td>4.55 V</td>
+<td>4.555 V</td>
 <td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 示波器第1步</td>
-<td>第一次翻转时刻(从 0 V 充到 3.33 V，RC·ln3)（比稳定后的半周期 0.69 ms 长，与页面描述一致）</td>
-<td>— ms</td>
-<td>1.1 ms</td>
+<td>page2 例1 第4步 5 V 单电源&quot;共模上限约 3.5 V，就超了&quot;</td>
+<td>会出错</td>
+<td>输出 0.024 V（应为 0.1 V）；对照 3.01/3.00 V 时输出 0.1035 V，正常</td>
 <td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p1 示波器第5步 / p3 §LM358B</td>
-<td>LM358B 5 V 单电源：输出高电平</td>
-<td>3.5 V</td>
-<td>3.79 V</td>
-<td>+8.3%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 §LM358B</td>
-<td>LM358B：输出低电平（输出要吸收约 0.3 mA(电容放电 + 门限电阻)，LM358B 吸电流超过几十 µA 时低电平停在约 0.6 V）</td>
-<td>0.1 V</td>
-<td>0.6308 V</td>
-<td>+530.8%</td>
+<td>page2 §一 V2 = 2.2 V 时同相端 / V1 = 2.1 V 时输出</td>
+<td>2.0 V / 1.0 V</td>
+<td>2.0001 V / 1.004 V</td>
+<td>&lt;0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 例2 20k/60k：同相端 / 输出</td>
+<td>1.125 V / 0.9 V</td>
+<td>1.125 V / 0.901 V</td>
+<td>&lt;0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 平衡线：1.3 − (−0.7)</td>
+<td>2</td>
+<td>2.001 V（四只 10k 减法器）</td>
+<td>+0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 §一 R4 偏大 1%：共模倍数</td>
+<td>0.009</td>
+<td>0.00935</td>
+<td>+3.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 §一 R4 偏大 1%：共模 2 V 漏出</td>
+<td>约 18 mV</td>
+<td>18.7 mV</td>
+<td>+3.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 §一 / page3 §一 R4 偏大 1%：CMRR</td>
+<td>约 61 dB</td>
+<td>60.6 dB</td>
+<td>−0.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 图16-p2-2 匹配时输出峰值</td>
+<td>100 mV</td>
+<td>103.9 mV</td>
+<td>+3.9%（失调）</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 图16-p2-2 R4 偏大 1% 时输出峰值</td>
+<td>118 mV</td>
+<td>122.0 mV</td>
+<td>+3.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §四 第4步 R4 偏大 1%，输入短接后 50 Hz 波纹</td>
+<td>约 18 mV（按 page2）</td>
+<td>幅度 18.7 mV</td>
+<td>+3.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §四 第5步 匹配、输入短接，理想 0 V</td>
+<td>0 V</td>
+<td>50 Hz 残留幅度 0.84 mV，另有 3.3 mV 直流（失调）</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图16-p3-1 只有 R4 偏 0.1%</td>
+<td>约 81 dB</td>
+<td>78.0 dB</td>
+<td>−3.7%</td>
+<td>✅（运放自身 CMRR 约 87 dB，开始起作用）</td>
+</tr>
+<tr>
+<td>page3 图16-p3-1 四只 1% 最坏</td>
+<td>约 49 dB</td>
+<td>48.7 dB</td>
+<td>−0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图16-p3-1 四只 0.1% 最坏</td>
+<td>约 69 dB</td>
+<td>68.0 dB</td>
+<td>−1.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 §二 TI 例（倍数 1）1% / 0.1% 最坏</td>
+<td>34 / 54 dB</td>
+<td>34.0 / 53.8 dB</td>
+<td>&lt;0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图16-p3-2 内阻 100 Ω</td>
+<td>约 61 dB</td>
+<td>60.5 dB</td>
+<td>−0.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图16-p3-2 内阻 1 kΩ：CMRR / 差分倍数</td>
+<td>41 dB / 9.13</td>
+<td>40.8 dB / 9.131</td>
+<td>&lt;0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习1 5k/50k，0.82/0.80 V</td>
+<td>0.2 V</td>
+<td>0.2035 V</td>
+<td>+1.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习3 内阻 200 Ω：差分倍数 / 共模倍数 / 残留</td>
+<td>9.81 / 0.018 / 36 mV</td>
+<td>9.811 / 0.0181 / 36.3 mV</td>
+<td>&lt;0.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4 输出（±15 V）/ 同相端</td>
+<td>2 V / 约 10.9 V</td>
+<td>2.007 V / 11.09 V（V2 取 12.2 V）</td>
+<td>&lt;2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4 1% 最坏，12 V 共模残留</td>
+<td>约 0.43 V</td>
+<td>0.432 V</td>
+<td>+0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习4 0.1% 最坏：&quot;约 2800 倍，残留约 0.04 V&quot;</td>
+<td>2800 倍 / 0.04 V</td>
+<td>2520 倍 / 0.048 V</td>
+<td>−10% / +19%</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>p3 §LM358B</td>
-<td>LM358B：上门限</td>
-<td>2.83 V</td>
-<td>2.946 V</td>
-<td>+4.1%</td>
+<td>page2 例3 仪表放大器：A2 / A1 输出</td>
+<td>2.11 / 1.90 V</td>
+<td>2.1102 / 1.9003 V</td>
+<td>&lt;0.02%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 §LM358B</td>
-<td>LM358B：下门限</td>
-<td>1.7 V</td>
-<td>1.857 V</td>
-<td>+9.2%</td>
+<td>page2 例3 Rg 电流</td>
+<td>10 µA</td>
+<td>9.995 µA</td>
+<td>−0.05%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图16-p3-2</td>
-<td>LM358B：周期</td>
-<td>1.53 ms</td>
-<td>1.484 ms</td>
-<td>-3.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图16-p3-2</td>
-<td>LM358B：高电平占比（低电平不是 0.1 V 而是约 0.6 V，放电变慢，占空比只偏到约 57%；方向正确）</td>
-<td>65 %</td>
-<td>56.54 %</td>
-<td>-13.0%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p1 示波器第3步</td>
-<td>R 换 20k：周期(理想运放)</td>
-<td>2.8 ms</td>
-<td>2.77 ms</td>
-<td>-1.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 示波器第3步</td>
-<td>R 换 20k：周期(LM358B)（仍约为 10k 时的 2 倍）</td>
-<td>— ms</td>
-<td>2.919 ms</td>
-<td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p2 例2</td>
-<td>R=10k C=1µF 周期(理想)</td>
-<td>13.9 ms</td>
-<td>13.85 ms</td>
-<td>-0.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例2</td>
-<td>R=10k C=1µF 频率(理想)</td>
-<td>72 Hz</td>
-<td>72.2 Hz</td>
+<td>page2 例3 输出（21 倍）</td>
+<td>0.21 V</td>
+<td>0.2106 V</td>
 <td>+0.3%</td>
 <td>✅</td>
 </tr>
-<tr>
-<td>p3 练习4</td>
-<td>R=75k C=10µF 周期(理想)</td>
-<td>1.04 s</td>
-<td>1.039 s</td>
-<td>-0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习4</td>
-<td>同上，LM358B 周期</td>
-<td>1.15 s</td>
-<td>1.061 s</td>
-<td>-7.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习4</td>
-<td>同上，LM358B LED 亮的时间占比（同图16-p3-2）</td>
-<td>65 %</td>
-<td>56.57 %</td>
-<td>-13.0%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 代码输出</td>
-<td>Rf=19k(倍数 2.9)：最后 5 ms 峰值（只剩约 1 mV 失调直流）</td>
-<td>0 V</td>
-<td>0.0009041 V</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图16-p2-3 第2行</td>
-<td>Rf=22k：削顶正峰</td>
-<td>4 V</td>
-<td>3.789 V</td>
-<td>-5.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图16-p2-3 第2行</td>
-<td>Rf=22k：削顶负峰</td>
-<td>-4 V</td>
-<td>-4.373 V</td>
-<td>-9.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 代码输出 / 图16-p2-3 第3行</td>
-<td>二极管稳幅：稳定峰值（页面用 0.6·tanh 近似二极管；真实 1N4148 在约 0.5 V 就开始导通，幅度更小）</td>
-<td>1.85 V</td>
-<td>1.646 V</td>
-<td>-11.0%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 代码输出</td>
-<td>二极管稳幅：振荡频率(理论 1592 Hz，仿真约 1600)</td>
-<td>1592 Hz</td>
-<td>1562 Hz</td>
-<td>-1.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图16-p3-1 左</td>
-<td>无稳幅削顶：频率</td>
-<td>1562 Hz</td>
-<td>1459 Hz</td>
-<td>-6.6%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图16-p3-1 左</td>
-<td>无稳幅削顶：偏离正弦(最小二乘拟合正弦)（LM358B ±5 V 下削顶不对称(+3.8/−4.4 V)，比 ±4 V 对称削顶更难看；趋势与页面一致）</td>
-<td>8.6 %</td>
-<td>19.66 %</td>
-<td>+128.7%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p3 图16-p3-1 左</td>
-<td>无稳幅削顶：偏离正弦(同峰值正弦)</td>
-<td>— %</td>
-<td>24.02 %</td>
-<td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p3 图16-p3-1 右</td>
-<td>二极管稳幅：偏离正弦(最小二乘拟合正弦)（真实二极管 + LM358B 交越失真；仍比削顶小约 4 倍）</td>
-<td>2.9 %</td>
-<td>5.254 %</td>
-<td>+81.2%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p3 图16-p3-1 右</td>
-<td>二极管稳幅：偏离正弦(同峰值正弦)</td>
-<td>— %</td>
-<td>5.63 %</td>
-<td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p3 图16-p3-1 右</td>
-<td>二极管稳幅：频率</td>
-<td>1589 Hz</td>
-<td>1562 Hz</td>
-<td>-1.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图16-p2-3 第2行</td>
-<td>Rf=22k：长到削顶所需时间（页面写「大约 4 ms」）</td>
-<td>4 ms</td>
-<td>4.521 ms</td>
-<td>+13.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>Rf=18k(倍数 2.8)：最后 5 ms 峰值（不起振）</td>
-<td>0 V</td>
-<td>0.0008762 V</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习1</td>
-<td>R=4.7k：频率(二极管稳幅版)（公式值正确；LM358B 相位延迟使实际频率偏低近 10%，页面练习 3 已提到此现象）</td>
-<td>3386 Hz</td>
-<td>3057 Hz</td>
-<td>-9.7%</td>
-<td>✅</td>
-</tr>
 </tbody>
 </table>
-<p>统计：✅ 23　⚠️ 6　❌ 0　ℹ️ 4</p>
-<h2 id="️-修改建议用页面的口吻">⚠️ 修改建议（用页面的口吻）</h2>
-<p><strong>1. page3 §LM358B 段，以及图 16-p3-2 的说明（输出低电平 0.1 V、占空比 65%）</strong></p>
-<p>SPICE 结果：低电平 0.63 V，上门限 2.95 V，下门限 1.86 V，周期 1.48 ms，高电平占 57%。原因是 LM358B 的输出级吸收电流的能力很弱。这里输出低电平时要吸收电容放电电流和门限电阻电流，共约 0.3 mA，于是低电平停在约 0.6 V，不是空载时的几十 mV。占空比偏离 50% 的方向和页面说的一致，只是幅度小得多。</p>
-<p>建议改写为：</p>
+<p><strong>统计：✅ 28　⚠️ 1　❌ 0</strong>（按表格行计；<a href="http://run.py">run.py</a> 共 41 个比对项）</p>
+<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>⚠️ page3 练习4 答案</strong></p>
+<p>把&quot;所以至少要 0.1% 电阻（约 69 dB，约 2800 倍，残留约 0.04 V）&quot;改为：</p>
 <blockquote>
-<p>常用的 LM358B 用 5 V 单电源时，输出高电平只有约 3.5～3.8 V；低电平也不是 0 V。这个电路里输出要「吸收」电容放电的电流，LM358B 吸电流的本领很弱，低电平会停在约 0.6 V。门限变成约 (5 + 0.6)/3 ≈ 1.9 V 和 (5 + 3.8)/3 ≈ 2.9 V。实测周期约 1.5 ms，高电平约占 55%～60%（把输出电平代入三电阻平均值就能算出来）。</p>
+<p>所以至少要 0.1% 电阻（约 69 dB，约 2800 倍，残留约 0.04 V；再算上运放自身的共模抑制比，实际约 0.05 V），或用集成的电流检测放大器。</p>
 </blockquote>
-<p>练习 4 的答案相应改为：</p>
-<blockquote>
-<p>……周期约 1.06～1.15 s，LED 亮的时间约占 55%～65%，不再是一半亮一半灭。</p>
-</blockquote>
-<p>图 16-p3-2 右图如果是按 0.1 V / 3.5 V 画的，图注里要说明「低电平按 0.1 V 估算，实际约 0.6 V」。</p>
-<p><strong>2. page2 代码输出说明与图 16-p2-3 第 3 行（稳幅峰值 1.85 V）</strong></p>
-<p>用真实 1N4148 仿真，稳幅峰值是 1.65 V。页面本身已经说明程序用 0.6·tanh 近似，所以只需补一句：</p>
-<blockquote>
-<p>用真实的 1N4148 做实验，二极管在约 0.5 V 就开始导通，峰值会更小一些，约 1.6～1.7 V。这个幅度和二极管的型号、温度都有关。</p>
-</blockquote>
-<p><strong>3. page3 图 16-p3-1（偏离正弦：削顶 8.6%，稳幅 2.9%）</strong></p>
-<p>LM358B 在 ±5 V 下的输出极限不对称，是 +3.8 V / −4.4 V，不是理想的 ±4 V。所以削顶波形偏离约 20%，稳幅波形偏离约 5%（还有真实二极管和交越失真的影响）。「稳幅比削顶好约 4 倍」这个趋势不变。</p>
-<p>建议在图后加一句：</p>
-<blockquote>
-<p>这两个百分比来自理想化的程序（运放输出对称限在 ±4 V、二极管用 tanh 近似）。用真实 LM358B 和 1N4148 搭，削顶波形的偏离约 20%，稳幅约 5%，后者仍明显更好。</p>
-</blockquote>
-<h2 id="面包板万用表读数">面包板万用表读数</h2>
-<p><strong>弛张振荡器</strong>（5 V 单电源，LM358B，R = 10 kΩ，C = 100 nF）</p>
-<p>万用表的直流档在方波上读到的是平均值。</p>
+<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
+<ul>
+<li>供电：±15 V。LM358B 第 8 脚接 +15 V，第 4 脚接 −15 V。</li>
+<li>R1 = 10 kΩ，从 V1 接到第 2 脚。</li>
+<li>R2 = 100 kΩ，从第 2 脚接到第 1 脚。</li>
+<li>R3 = 10 kΩ，从 V2 接到第 3 脚。</li>
+<li>R4 = 100 kΩ，从第 3 脚接到 GND。</li>
+<li>用直流电压代替信号源。</li>
+</ul>
 <table>
 <thead>
 <tr>
-<th>测什么</th>
-<th>红表笔 → 黑表笔</th>
-<th>档位</th>
+<th>条件</th>
+<th>红笔 → 黑笔</th>
 <th>应读到</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>电源</td>
-<td>8 脚 → 4 脚</td>
-<td>DC 20 V</td>
-<td>5.0 V</td>
+<td>V2 = 2.01 V，V1 = 2.00 V</td>
+<td>V2 → V1</td>
+<td>10.0 mV</td>
+<td>先确认差值，要用 4 位半以上的表</td>
 </tr>
 <tr>
-<td>输出平均值</td>
-<td>1 脚 → 4 脚(GND)</td>
-<td>DC 20 V</td>
-<td>约 2.4 V（57% × 3.79 + 43% × 0.63）；理想 50% 时应为 2.5 V</td>
+<td>同上</td>
+<td>第 1 脚 → GND</td>
+<td>约 0.10 V（0.07～0.13 V）</td>
+<td>失调最大 3 mV × 11 ≈ ±33 mV</td>
 </tr>
 <tr>
-<td>电容平均电压</td>
-<td>2 脚(反相端) → GND</td>
-<td>DC 20 V</td>
-<td>约 2.4 V（在 1.86～2.95 V 之间来回）</td>
+<td>同上</td>
+<td>第 3 脚 → GND</td>
+<td>1.827 V</td>
+<td>2.01 × 100/110</td>
 </tr>
 <tr>
-<td>同相端平均电压</td>
-<td>3 脚 → GND</td>
-<td>DC 20 V</td>
-<td>约 2.4 V</td>
+<td>同上</td>
+<td>第 2 脚 → 第 3 脚</td>
+<td>−3～+3 mV</td>
+<td>虚短</td>
 </tr>
 <tr>
-<td>频率（表有 Hz 档时）</td>
-<td>1 脚 → GND</td>
-<td>Hz 档</td>
-<td>约 670 Hz（周期 1.48 ms）；理想值 721 Hz</td>
+<td>V2 = 2.2 V，V1 = 2.1 V</td>
+<td>第 3 脚 → GND；第 1 脚 → GND</td>
+<td>2.00 V；1.00 V</td>
+<td>page2 推导中的数字</td>
 </tr>
 <tr>
-<td>练习 4 慢速版（75 kΩ / 10 µF）</td>
-<td>1 脚 → GND</td>
-<td>DC 20 V</td>
-<td>读数在约 3.8 V 和 0.6 V 之间跳，约 1 s 一个来回</td>
-</tr>
-</tbody>
-</table>
-<p><strong>文氏桥</strong>（±5 V，二极管稳幅）</p>
-<table>
-<thead>
-<tr>
-<th>测什么</th>
-<th>红表笔 → 黑表笔</th>
-<th>档位</th>
-<th>应读到</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>正电源 / 负电源</td>
-<td>8 脚 → GND / 4 脚 → GND</td>
-<td>DC 20 V</td>
-<td>+5 V / −5 V</td>
+<td>两输入短接到同一个 2 V</td>
+<td>第 1 脚 → GND</td>
+<td>只剩失调，几毫伏（最大约 ±33 mV）</td>
+<td>用 1% 电阻时，最坏还有 2 V × 0.036 ≈ ±72 mV</td>
 </tr>
 <tr>
-<td>输出直流</td>
-<td>1 脚 → GND</td>
-<td>DC 2 V</td>
-<td>≈ 0 V（几 mV）</td>
+<td>仪表放大器（R = 10k，Rg = 1k），V1 = 2.00 V，V2 = 2.01 V</td>
+<td>A2 输出 → GND；A1 输出 → GND；A2 输出 → A1 输出</td>
+<td>2.11 V；1.90 V；0.21 V</td>
+<td></td>
 </tr>
 <tr>
-<td>输出交流有效值</td>
-<td>1 脚 → GND</td>
-<td>AC 2 V</td>
-<td>约 1.16 V（1.65 V ÷ √2）。1.56 kHz 超出很多万用表的交流频响，读数可能偏低，用示波器更可靠</td>
+<td>同上</td>
+<td>Rg 两端</td>
+<td>10.0 mV</td>
+<td>Rg 中的电流为 10 µA</td>
 </tr>
 <tr>
-<td>同相端交流有效值</td>
-<td>3 脚 → GND</td>
-<td>AC 2 V</td>
-<td>约 0.39 V（输出的 1/3）</td>
-</tr>
-<tr>
-<td>把 Rf 换成 18 kΩ</td>
-<td>1 脚 → GND</td>
-<td>AC 2 V</td>
-<td>≈ 0 V（不起振）</td>
+<td>同上</td>
+<td>最终输出 → GND</td>
+<td>约 0.21 V</td>
+<td></td>
 </tr>
 </tbody>
 </table>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>本节点 ❌ 0 条；⚠️ 6 条全部处理（改 6、不改 0）。ℹ️ 4 条未改。报告未提及导航链接，未动。图和脚本均未改（图是理想化/简化模型，页面已加文字说明实际芯片的数值）。</p>
+<p>本节点 ❌ 0 条；⚠️ 1 条已处理（改 1、不改 0）。</p>
 <ol>
-<li><strong>⚠️ page3 §二 LM358B 输出低电平 0.1 V（SPICE 0.63 V）</strong>：已改。图 16-p3-2 讲解后加「💡 实际芯片会怎样」框：0.1 V 是几乎不带负载时的数；本电路低电平要吸收约 0.3 mA，LM358B 吸电流能力弱，低电平约 0.6 V（仿真 0.63 V），门限约 1.9 V / 2.9 V（仿真 1.86 / 2.95 V，高电平 3.79 V）。</li>
-<li><strong>⚠️ page3 图 16-p3-2 高电平占比 65%（SPICE 56.5%）</strong>：已改，写入同一 💡 框：周期约 1.5 ms（仿真 1.48 ms），高电平约占 55%～60%（仿真 57%），方向与图一致。图注补「右图低电平按 0.1 V 估算，实际约 0.6 V」。</li>
-<li><strong>⚠️ page3 练习 4 LED 亮的时间占比 65%（SPICE 56.6%）</strong>：已改。答案末尾补：考虑约 0.6 V 低电平，实际周期约 1.06～1.15 s（仿真 1.06 s），亮的时间约占 55%～65%（仿真 57%）。</li>
-<li><strong>⚠️ page2 代码输出 / 图 16-p2-3 第 3 行稳幅峰值 1.85 V（SPICE 1.646 V）</strong>：已改。page2 例 1 讲解「它和二极管的特性有关」后补：程序用 0.6·tanh 近似；真实 1N4148 约 0.5 V 开始导通，峰值约 1.6～1.7 V（LM358B + 1N4148 仿真 1.65 V），与型号、温度有关。
-5–6. <strong>⚠️ page3 图 16-p3-1 偏离正弦 8.6% / 2.9%（SPICE 19.7% / 5.3%）</strong>：已改。图后讲解补：这两个百分比来自理想化程序（对称 ±4 V 限幅、tanh 二极管）；真实 LM358B ±5 V 下输出极限不对称（约 +3.8 / −4.4 V），加上真实二极管和交越失真，削顶约 20%、稳幅约 5%，「稳幅比削顶好约 4 倍」不变。</li>
+<li><strong>⚠️ page3 练习 4 答案（0.1% 最坏「约 2800 倍，残留约 0.04 V」，SPICE 2520 倍 / 0.048 V）</strong>：已改。按报告建议在括号里补「再算上运放自身的共模抑制比，TI 官方模型 SPICE 仿真实际约 0.05 V」。原来的 2800 倍 / 0.04 V 是只算电阻的估算，脚本按此打印，保持不变，所以不改脚本和图。</li>
 </ol>
-<p>改动文件：<code>16-oscillator/page2.md</code>、<code>16-oscillator/page3.md</code>、<code>review/spice/16.md</code>。</p>
-<p>检查（仓库根目录）：count_cjk（1624/2051/2505 字）、run_blocks（1 过）、run_blocks --scripts（16_sim.py、16_figs.py）、check_figs（2/4/2 张）、check_github_math（17/68/37）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+<p>改动文件：<code>16-differential-amp/page3.md</code>、<code>review/spice/16.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（1679/1693/2251 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（16_sim.py、16_figs.py）、check_figs、check_github_math（25/72/52）五项全部通过；fix_inline_math_spacing --check 0 处；导航链接目标都存在；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

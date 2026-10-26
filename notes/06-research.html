@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>06 桥式整流 · 调研笔记</title>
+<title>06 MOS 管开关 · 调研笔记（作者 C）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,59 +42,37 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/06-research.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="06-桥式整流--调研笔记">06 桥式整流 · 调研笔记</h1>
-<p>只记结论和出处；所有链接都已实际打开（2026-10-22）。</p>
-<h2 id="器件参数">器件参数</h2>
+<h1 id="06-mos-管开关--调研笔记作者-c">06 MOS 管开关 · 调研笔记（作者 C）</h1>
+<h2 id="理论">理论</h2>
 <ul>
-<li>Vishay 1N4001–1N4007 数据手册（Doc 88503，Rev 29-Apr-2020）：<a href="https://www.vishay.com/docs/88503/1n4001.pdf">https://www.vishay.com/docs/88503/1n4001.pdf</a>
+<li>TI SLUA618《Fundamentals of MOSFET and IGBT Gate Driver Circuits》 <a href="https://www.ti.com/lit/pdf/slua618">https://www.ti.com/lit/pdf/slua618</a>
 <ul>
-<li>最大重复峰值反向电压 V_RRM：1N4001 50 V、1N4002 100 V、1N4003 200 V、1N4004 400 V、1N4005 600 V、1N4006 800 V、1N4007 1000 V。</li>
-<li>平均正向整流电流 I_F(AV) 1.0 A；峰值正向浪涌电流 I_FSM 30 A（8.3 ms 单个半正弦）。</li>
-<li>最大正向压降 V_F 1.1 V（1.0 A）。</li>
+<li>2.5/2.6 开通、关断四段；米勒平台；2.7 式 (9) P_GATE = V_DRV·Q_G·f，式 (11)–(14) 开关损耗线性近似 P_SW = V·I/2·(t2+t3)/T。</li>
+<li>2.8 源极寄生电感与 C_ISS 谐振；R_GATE 小→过冲但快，大→拖慢开关。</li>
+<li>5.1 P 沟道高边；5.2 高边 N 沟道需把栅极驱动到电源以上（自举等）。</li>
 </ul>
 </li>
 </ul>
-<h2 id="原理与设计经验">原理与设计经验</h2>
+<h2 id="器件数据均已打开核对">器件数据（均已打开核对）</h2>
 <ul>
-<li>Rod Elliott（ESP）「Linear Power Supply Design」：<a href="https://sound-au.com/power-supplies.htm">https://sound-au.com/power-supplies.htm</a>
-<ul>
-<li>桥式整流里，每个半周有两只二极管串联导通；二极管反向耐压只要超过交流峰值即可。</li>
-<li>每只二极管压降约 0.7–0.9 V，两只串联，合计约 1.8 V 要从峰值里扣掉。</li>
-<li>二极管只在峰值附近很短的时间里导通，峰值电流可以超过直流输出电流的 5 倍。</li>
-<li>直流输出要从滤波电容的两端引出，而不是从整流桥引出。</li>
-<li>经验公式 C = (I/ΔV)·k·1000 µF，100 Hz 纹波时 k = 7；对 2 Vpp 纹波约为每安培 3500 µF。电容加倍，纹波减半。</li>
-<li>上电浪涌电流可能很大（文中给出浪涌电流表，实测市电内阻约 0.8 Ω）；市电电压有 ±10% 的波动，设计要留余量。</li>
-<li>泄放电阻：让电容在约 10 s 内放到约 37%（一个时间常数）。</li>
-<li>滤波电容是电源头号故障源：纹波电流、温度、ESR。</li>
+<li>IRLZ44N <a href="https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf">https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf</a> ：55 V；R_DS(on) max 22/25/35 mΩ @10/5/4 V；V_GS(th) 1.0–2.0 V；Qg 48 nC、Qgs 8.6 nC、Qgd 25 nC（V_DS 44 V、V_GS 5 V）；±16 V；RθJA 62 °C/W；T_J max 175 °C；图 4 导通电阻随温度上升。</li>
+<li>IRF540N <a href="https://www.infineon.com/assets/row/public/documents/24/49/infineon-irf540n-datasheet-en.pdf">https://www.infineon.com/assets/row/public/documents/24/49/infineon-irf540n-datasheet-en.pdf</a> ：100 V；44 mΩ 仅 @10 V；V_GS(th) 2.0–4.0 V。</li>
+<li>AO3400A <a href="https://www.aosmd.com/sites/default/files/res/datasheets/AO3400A.pdf">https://www.aosmd.com/sites/default/files/res/datasheets/AO3400A.pdf</a> ：30 V；R_DS(on) max 26.5/32/48 mΩ @10/4.5/2.5 V；Qg 6 nC、Qgd 1.8 nC；±12 V；RθJA 稳态 100 典型 / 125 最大 °C/W（1 in² 铜皮）。</li>
 </ul>
-</li>
-<li>Wikipedia「Diode bridge」：<a href="https://en.wikipedia.org/wiki/Diode_bridge">https://en.wikipedia.org/wiki/Diode_bridge</a>
+<h2 id="实践代码--教程">实践代码 / 教程</h2>
 <ul>
-<li>四只二极管组成的桥，把交流的两个半周都变成同一极性；也可用作直流输入的反接保护。</li>
+<li>Espruino MOSFETs <a href="https://www.espruino.com/mosfets">https://www.espruino.com/mosfets</a> ：栅极悬空、10 kΩ 下拉、门限≠完全导通、续流二极管。</li>
 </ul>
-</li>
-<li>Wikipedia「Ripple (electrical)」：<a href="https://en.wikipedia.org/wiki/Ripple_(electrical)">https://en.wikipedia.org/wiki/Ripple_(electrical)</a>
+<h2 id="常见误区写进-page3-排查表">常见误区（写进 page3 排查表）</h2>
 <ul>
-<li>全波整流加电容滤波，峰峰纹波 V_pp ≈ I/(2fC)（半波为 I/(fC)）。</li>
+<li>以门限电压判断能否开到底（应看 R_DS(on) 的测试栅压）。</li>
+<li>栅极电阻越大越安全（实际开关损耗成倍上升）。</li>
+<li>PWM 频率随意调高（开关损耗正比于 f）。</li>
+<li>感性负载不加续流二极管；高边用 N 沟道却没有自举驱动。</li>
 </ul>
-</li>
-<li>Wikipedia「Aluminum electrolytic capacitor」：<a href="https://en.wikipedia.org/wiki/Aluminum_electrolytic_capacitor">https://en.wikipedia.org/wiki/Aluminum_electrolytic_capacitor</a>
+<h2 id="模型说明">模型说明</h2>
 <ul>
-<li>极性接反或加交流电压会使介质层损坏、内部短路，可能烧毁或爆裂（页面有炸开的电容照片）。</li>
-</ul>
-</li>
-</ul>
-<h2 id="运放全波整流">运放全波整流</h2>
-<ul>
-<li>Fiore《Operational Amplifiers and Linear Integrated Circuits》7.2.2 Precision Full-Wave Rectifier（LibreTexts，链接同 notes/05-research.md）
-<ul>
-<li>又叫绝对值电路；由反相精密半波整流和加权加法器组成，用两只运放；除一只外所有电阻取同一个值（那一只是 R/2）。</li>
-</ul>
-</li>
-</ul>
-<h2 id="未采用">未采用</h2>
-<ul>
-<li>electronics-tutorials 的整流页面下载失败（HTTP 000），未引用。</li>
+<li>code/06_sim.py 为栅极电荷示意模型：V_TH 1.5 V、平台 2.8 V、Q_GS 8.6 nC、Q_GD 12 nC（只切换 12 V，小于手册 44 V 条件下的 25 nC，示意取值）。</li>
 </ul>
 
 </main>

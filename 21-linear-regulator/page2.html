@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>21 线性稳压 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/21-linear-regulator/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="21-线性稳压--原理与实现篇">21 线性稳压 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../19-emitter-follower/page1.html">19 射极跟随器 · 直觉篇</a>、<a href="../17-zener-regulator/page1.html">17 稳压管稳压 · 直觉篇</a></p>
+<blockquote class="alert alert-note">
+<p>本页电路工作在 20 V 以下的低压直流上。如果输入来自 13 的变压器整流电源，变压器初级接着 220 V 市电，<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a> 开头的安全提示全部适用；做实验时请用可调直流电源代替。</p>
+</blockquote>
+<h2 id="这一页要回答什么">这一页要回答什么</h2>
+<p>直觉篇说：输出约 8.5 V，2 V 的纹波只剩 24.5 mV，输入不能低于约 10.8 V。这一页把这些数一个个推出来，最后看看把同样的结构做进一颗芯片的 7805。</p>
+<h2 id="一用到的旧知识">一、用到的旧知识</h2>
+<ul>
+<li><strong>稳压管基准</strong>（见 <a href="../17-zener-regulator/page2.html">17 稳压管稳压 · 原理与实现篇</a>）：手册说 1N4733A 在测试电流 <span class="math math-inline">\(I_{ZT}\)</span> = 49 mA 时是 5.1 V，动态电阻 <span class="math math-inline">\(r_Z\)</span> = 7 Ω。和 17 节一样，把它看成一节 <span class="math math-inline">\(V_{Z0}\)</span> 的电池串一只 7 Ω 的小电阻，电压 <span class="math math-inline">\(V_{Z0} + r_Z I_Z\)</span> ，其中击穿起点 <span class="math math-inline">\(V_{Z0}\)</span> = 5.1 − 7 × 0.049 ≈ 4.757 V，这样 49 mA 时正好回到手册的 5.1 V。电流比 49 mA 小，电压就比 5.1 V 低。</li>
+<li><strong>同相放大</strong>（见 <a href="../08-noninverting-amp/page2.html">08 同相放大 · 原理与实现篇</a>）：只要运放接成负反馈、输出又没有顶到电源（没有饱和），&quot;虚短&quot;就让两个输入端电压相等，&quot;虚断&quot;让输入端不取电流，于是 <span class="math math-inline">\(V_o = (1 + R_f/R_1) V_i\)</span> 。</li>
+<li><strong>射极跟随器</strong>（见 <a href="../19-emitter-follower/page2.html">19 射极跟随器 · 原理与实现篇</a>）：发射极电压比基极低一个 <span class="math math-inline">\(V_{BE}\)</span> （约 0.7 V），基极电流只有发射极电流的 <span class="math math-inline">\(1/(\beta + 1)\)</span> ；放进运放的反馈环里， <span class="math math-inline">\(V_{BE}\)</span> 会被运放自动补上。</li>
+</ul>
+<h2 id="二输出电压公式">二、输出电压公式</h2>
+<p>把电路完整画出来，元件取值都标在图上，见图 21-p2-1：</p>
+<p><a class="img-link" href="img/21_p2_1_detail.png"><img alt="完整电路：输入 14 V 经 R_Z 1 kΩ 接稳压管 1N4733A 得到 V_ref 4.82 V，接 LM358 同相端；LM358 由输入供电，输出 9.26 V 接 TIP31 基极；TIP31 集电极接输入，发射极为输出 8.51 V，接 R_f 3.9 kΩ 和 R_1 5.1 kΩ 分压到反相端，并接输出电容 C_o 10 µF 和 0.5 A 负载" src="img/21_p2_1_detail.png" loading="lazy" /></a></p>
+<p><em>图 21-p2-1　分立元件线性稳压电路（输入 14 V、负载 0.5 A）</em></p>
+<p>注意：用 TI 的 LM358 模型仿真，把一只理想的 10 µF 电容直接并在输出端、负载 0.5 A 时，输出会以约 19 kHz、近 1 V 峰峰值持续振荡。电容串一只约 1 Ω 的电阻（或用 ESR 约 1 Ω 的电解电容）后，至少在轻载 0.05 A 时仿真是稳定的。所以图中的 <span class="math math-inline">\(C_o\)</span> 只是示意值，照图搭好后第一次上电，一定要按 <a href="page3.html">21 线性稳压 · 参数与调试篇</a> 第五节第 5 步用示波器看一遍输出。</p>
+<p>按图 21-p2-1 从左往右推：</p>
+<p><strong>第 1 步，基准</strong>。 <span class="math math-inline">\(R_Z\)</span> 上的电流就是稳压管电流： <span class="math math-inline">\(I_Z = (14 - 4.757) / (1000 + 7)\)</span> ≈ 9.18 mA，所以 <span class="math math-inline">\(V_{ref} = 4.757 + 7 \times 0.00918\)</span> ≈ 4.821 V。运放同相端不取电流（虚断），这 9.18 mA 全部流进稳压管。</p>
+<p><strong>第 2 步，虚短</strong>。电路是负反馈（输出经分压送回反相端），只要运放没有饱和（输出没顶到电源，第四节会看到顶到头的情况），它就让反相端电压也等于 <span class="math math-inline">\(V_{ref}\)</span> 。</p>
+<p><strong>第 3 步，分压</strong>。反相端是 <span class="math math-inline">\(R_f\)</span> 和 <span class="math math-inline">\(R_1\)</span> 的中点，电压为 <span class="math math-inline">\(V_o \cdot R_1/(R_1 + R_f)\)</span> 。令它等于 <span class="math math-inline">\(V_{ref}\)</span> ，得到</p>
+<div class="math math-display">\[V_o = V_{ref}\left(1 + \frac{R_f}{R_1}\right)\]</div>
+<p>代入：4.821 × (1 + 3.9 ÷ 5.1) = 4.821 × 1.765 ≈ 8.508 V。这和 08 的同相放大公式一模一样，只是&quot;输入&quot;换成了固定不变的基准。所以输出是 8.51 V 而不是整数：基准是 17 节那只稳压管在 9 mA 下的电压 4.82 V，比手册上 49 mA 时的 5.1 V 低。</p>
+<p><strong>第 4 步，运放要给多少</strong>。调整管发射极是 8.51 V，负载 0.5 A 时 <span class="math math-inline">\(V_{BE}\)</span> ≈ 0.755 V，所以运放输出要到 8.51 + 0.755 ≈ 9.26 V；基极电流 <span class="math math-inline">\(I_B\)</span> = 0.5 ÷ 51 ≈ 9.8 mA（ <span class="math math-inline">\(\beta\)</span> = 50），没有超过 LM358 最少 20 mA 的输出能力（见 <a href="../19-emitter-follower/page1.html">19 射极跟随器 · 直觉篇</a>）。</p>
+<h2 id="三为什么-v_be-不影响输出">三、为什么 <span class="math math-inline">\(V_{BE}\)</span> 不影响输出</h2>
+<p>第 4 步里 <span class="math math-inline">\(V_{BE}\)</span> 明明出现了，为什么第 3 步的公式里没有它？把运放看成放大倍数为 <span class="math math-inline">\(A\)</span> 的放大器（这里取 <span class="math math-inline">\(10^5\)</span> ，只是示意值），设 <span class="math math-inline">\(K = R_1/(R_1 + R_f)\)</span> ≈ 0.567。运放输出 <span class="math math-inline">\(A(V_{ref} - K V_o)\)</span> ，再减去 <span class="math math-inline">\(V_{BE}\)</span> 就是 <span class="math math-inline">\(V_o\)</span> ：</p>
+<div class="math math-display">\[V_o = \frac{A V_{ref} - V_{BE}}{1 + A K}\]</div>
+<p>分子分母同时除以 <span class="math math-inline">\(AK\)</span> ：第一项接近 <span class="math math-inline">\(V_{ref}/K\)</span> ，就是上面的公式；第二项是 <span class="math math-inline">\(V_{BE}/(AK)\)</span> ， <span class="math math-inline">\(AK\)</span> ≈ 56667，所以 <span class="math math-inline">\(V_{BE}\)</span> 变化 0.1 V，输出只变 0.1 ÷ 56667 ≈ 1.8 µV。但 <span class="math math-inline">\(10^5\)</span> 这个增益是运放轻载、直流时的值。运放要给调整管供几毫安基极电流，输出级本身也有压降，真实电路里负载从 0.01 A 加到 0.5 A 时，运放输出要多升约 0.2 V，输出才跟着变<strong>零点几毫伏</strong>。用 TI 的 LM358 模型做 SPICE 仿真，这个变化约 0.2 mV（200 µV），是 1.8 µV 的一百多倍。这已经比单独用稳压管（<a href="../17-zener-regulator/page2.html">17 稳压管稳压 · 原理与实现篇</a>）好得多，直觉篇说的&quot;负载变化几乎不影响输出&quot;仍然成立，只是不要指望到微伏级。</p>
+<p>一句话：<strong>误差被缩小了 <span class="math math-inline">\(AK\)</span> 倍</strong>。<a href="../19-emitter-follower/page2.html">19 射极跟随器 · 原理与实现篇</a> 已经见过同样的道理，这里只是把它用在了电源上。</p>
+<h2 id="四压差输入最低能到多少">四、压差：输入最低能到多少</h2>
+<p>运放的输出不可能比自己的电源还高。LM358 由输入 <span class="math math-inline">\(V_i\)</span> 供电，输出最高约 <span class="math math-inline">\(V_i - 1.5\)</span> V。这里沿用 <a href="../19-emitter-follower/page2.html">19 射极跟随器 · 原理与实现篇</a> 的估算；<a href="../19-emitter-follower/page3.html">19 射极跟随器 · 参数与调试篇</a> 引的 LM358B 手册典型值是差 1.4 V，取 1.5 V 是多留 0.1 V 余量，算出的最低输入偏保守。它要给出 <span class="math math-inline">\(V_o + V_{BE}\)</span> ，所以</p>
+<div class="math math-display">\[V_i \ge V_o + 1.5 + V_{BE}\]</div>
+<p>负载 0.5 A 时压差 1.5 + 0.755 = 2.255 V，输入最低约 8.51 + 2.255 ≈ 10.76 V。输入再低，运放顶到头，输出就只能跟着输入往下掉，见图 21-p2-2：</p>
+<p><a class="img-link" href="img/21_p2_2_dropout.png"><img alt="横轴输入 6 到 16 V。蓝色斜线是输入本身；橙色 0.5 A 曲线在 10.76 V 以上是 8.51 V 的水平线，以下沿斜线下降，输入 10 V 时为 7.74 V；红紫色点划线是 0.05 A，拐点稍靠左；10.76 V 以下有灰色阴影" src="img/21_p2_2_dropout.png" loading="lazy" /></a></p>
+<p><em>图 21-p2-2　输出电压随输入电压变化（两种负载）</em></p>
+<p>图 21-p2-2 里，橙色曲线（0.5 A）在拐点右边是水平的，这段叫&quot;稳压区&quot;；灰色阴影区里它和蓝色输入线平行，始终比输入低 2.26 V，这段叫&quot;跟随区&quot;，输入 10 V 时输出只有 7.74 V。红紫色点划线是 0.05 A 负载，此时 <span class="math math-inline">\(V_{BE}\)</span> 约 0.696 V，拐点左移到 10.70 V，相差不大：压差主要是运放的 1.5 V 决定的。</p>
+<p>运放的电源就是带纹波的 <span class="math math-inline">\(V_i\)</span> ，为什么电源上的 2 V 起伏不会直接出现在输出上？因为运放的输出由两个输入端的电压差决定，只要电源始终够高、输出没顶到头，电源电压的起伏对输出影响很小（手册里把这种能力叫&quot;电源抑制比&quot;，这里直接用结论）。所以真正漏到输出的纹波走的是下一节说的另一条路。</p>
+<h2 id="五纹波是怎么被压下去的">五、纹波是怎么被压下去的</h2>
+<p>既然 <span class="math math-inline">\(V_{BE}\)</span> 的变化被缩小了几万倍，输入的纹波又从哪里漏到输出？答案是<strong>基准</strong>。输入纹波 <span class="math math-inline">\(\Delta V_i\)</span> 经过 <span class="math math-inline">\(R_Z\)</span> 和 <span class="math math-inline">\(r_Z\)</span> 分压，漏到 <span class="math math-inline">\(V_{ref}\)</span> 上（只看纹波这条路，见图 21-p2-4）：</p>
+<div class="math math-display">\[\Delta V_{ref} = \Delta V_i \cdot \frac{r_Z}{R_Z + r_Z}\]</div>
+<p>2 V × 7 ÷ 1007 ≈ 13.9 mV。运放把基准原样放大 1.765 倍，所以输出纹波 ≈ 13.9 × 1.765 ≈ 24.5 mV，和直觉篇的仿真一致。2 V 变成 24.5 mV，缩小了约 80 倍。工程上常用&quot;分贝&quot;（dB）表示这种倍数：20 dB 是 10 倍，40 dB 是 100 倍，80 倍约为 38 dB。这个指标叫<strong>纹波抑制比</strong>。</p>
+<p><a class="img-link" href="img/21_p2_4_ripple_path.png"><img alt="纹波源 ΔV_i 2 V 峰峰经 R_Z 1 kΩ 接到稳压管模型：朱红色 r_Z 7 Ω 串电池 V_Z0 4.757 V；中点 ΔV_ref 约 13.9 mV，经同相放大 1.765 倍后输出纹波约 24.5 mV" src="img/21_p2_4_ripple_path.png" loading="lazy" /></a></p>
+<p><em>图 21-p2-4　纹波漏到输出的路：RZ 与 rZ 分压，再被同相放大 1.765 倍</em></p>
+<p>要提醒一句：7 Ω 是手册在 49 mA 测试电流下给的动态电阻（见 <a href="../17-zener-regulator/page3.html">17 稳压管稳压 · 参数与调试篇</a> 的参数表），本例稳压管只有 9.18 mA，不同厂家、不同批次的管子在这个电流下的动态电阻差别不小。用 Diodes 公司的 1N4733A 模型做 SPICE 仿真，输出纹波约 20 mV，输入 13→15 V 时输出变化也约 20 mV。实测在 20～30 mV 之间都算正常，关键是数量级：2 V 被压到几十毫伏。</p>
+<p>想再好一些，就要让基准更干净，比如把 <span class="math math-inline">\(R_Z\)</span> 换成恒流源（不管两端电压怎么变，都送出固定电流的电路；电流不随 <span class="math math-inline">\(V_i\)</span> 变， <span class="math math-inline">\(V_{ref}\)</span> 也就不跟着纹波晃），或者在稳压管上并一只电容。7805 的典型纹波抑制比是 78 dB（约 8000 倍），靠的就是芯片内部更讲究的基准。</p>
+<h2 id="六用程序验证">六、用程序验证</h2>
+<p>下面的程序只用 Python 标准库，把上面的推导算一遍，在仓库根目录运行即可。完整的绘图版本在 <code>code/21_sim.py</code>。</p>
+<pre><code class="language-python"># 在仓库根目录运行（只用标准库，不读写文件）
+import math
+
+VZ, IZT, RZ_DYN, R_Z = 5.1, 0.049, 7.0, 1000.0   # 1N4733A：49 mA 时 5.1 V，r_Z 7 Ω（见 17 page2）
+VZ0 = VZ - RZ_DYN * IZT              # 击穿起点 ≈ 4.757 V
+R1, RF = 5100.0, 3900.0               # 同相放大的两个电阻（见 08 page2）
+A = 1e5                               # 运放开环增益（示意值）
+HEAD = 1.5                            # 运放输出最高只到 V_i − 1.5 V（与 19 相同的估算）
+VT, IS, BETA = 0.02585, 1e-13, 50.0   # 三极管模型（与 19 相同）
+K = R1 / (R1 + RF)                    # 输出被分压后送回反相端的比例
+
+def vref(vi):
+    iz = (vi - VZ0) / (R_Z + RZ_DYN)  # 稳压管电流
+    return VZ0 + RZ_DYN * iz
+
+def vbe(il):
+    return VT * math.log(il * BETA / (BETA + 1) / IS + 1)
+
+def reg(vi, il):
+    &quot;&quot;&quot;返回输出电压 V_o：先按闭环公式算，再看运放够不够得着。&quot;&quot;&quot;
+    vb = vbe(il)
+    vo_set = (A * vref(vi) - vb) / (1 + A * K)   # 闭环：V_B = A(V_ref − K·V_o)，V_o = V_B − V_BE
+    vo_max = vi - HEAD - vb                      # 运放顶到头时最多能给的输出
+    return min(vo_set, vo_max)
+
+vo = reg(14.0, 0.5)
+print(f&quot;V_ref = {vref(14.0):.3f} V，公式 V_ref(1 + R_f/R_1) = {vref(14.0) * (1 + RF / R1):.3f} V，仿真 V_o = {vo:.3f} V&quot;)
+print(f&quot;负载从 0.01 A 加到 0.5 A：理想运放（A = 1e5）时 V_o 只变 {(reg(14.0, 0.01) - vo) * 1e6:.1f} µV（真实 LM358 约 0.2 mV，见正文）&quot;)
+print(f&quot;输入从 13 V 变到 15 V：V_o 变 {(reg(15.0, 0.5) - reg(13.0, 0.5)) * 1e3:.1f} mV&quot;)
+print(f&quot;压差 = {HEAD + vbe(0.5):.3f} V，最低输入 = {vo + HEAD + vbe(0.5):.2f} V&quot;)
+for vi in (12.0, 11.0, 10.0):
+    print(f&quot;输入 {vi:.0f} V → V_o = {reg(vi, 0.5):.2f} V&quot;)
+print(f&quot;调整管功耗 (14 − V_o) × 0.5 A = {(14.0 - vo) * 0.5:.2f} W&quot;)
+</code></pre>
+<p>运行结果应为：V_ref 4.821 V，公式和仿真都是 8.508 V；负载从 0.01 A 加到 0.5 A，输出只变 1.8 µV（这是理想运放模型的结果，换成真实 LM358 约 0.2 mV，见第三节）；输入从 13 V 变到 15 V，输出变 24.5 mV；压差 2.255 V，最低输入 10.76 V；输入 12 V 时仍为 8.48 V，11 V 时 8.47 V（都还在稳压区，只是基准随输入略降），10 V 时掉到 7.74 V；调整管功耗 2.75 W。</p>
+<h2 id="七现成的芯片三端稳压器-7805">七、现成的芯片：三端稳压器 7805</h2>
+<p>自己搭要一只运放、一只三极管、一只稳压管和几只电阻。实际产品里更常用<strong>三端稳压器</strong>：基准、误差放大、调整管，外加过热和短路保护，全做在一颗只有三个引脚的芯片里。最常见的 78xx 系列，&quot;05&quot;表示输出 5 V。接法见图 21-p2-3：</p>
+<p><a class="img-link" href="img/21_p2_3_7805.png"><img alt="7805 三个引脚：IN 接 7 到 25 V 输入和 0.33 µF 电容，GND 接地，OUT 输出 5 V 并接 0.1 µF 电容；图中写着两只电容都要贴着芯片引脚焊" src="img/21_p2_3_7805.png" loading="lazy" /></a></p>
+<p><em>图 21-p2-3　7805 三端稳压器的典型接法</em></p>
+<p>图 21-p2-3 的几个数都来自 TI 的 uA78xx 数据手册（SLVS056P）：</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>7805 的数值</th>
+<th>和本页分立电路对比</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出电压</td>
+<td>4.8–5.2 V（25 °C）</td>
+<td>8.51 V，由电阻决定</td>
+</tr>
+<tr>
+<td>推荐输入</td>
+<td>7–25 V</td>
+<td>10.76 V 以上</td>
+</tr>
+<tr>
+<td>压差</td>
+<td>典型 2 V（1 A 时）</td>
+<td>2.26 V（0.5 A 时）</td>
+</tr>
+<tr>
+<td>纹波抑制</td>
+<td>最小 62 dB，典型 78 dB</td>
+<td>约 38 dB</td>
+</tr>
+<tr>
+<td>最大输出电流</td>
+<td>1.5 A，内部有过热、短路保护</td>
+<td>无保护</td>
+</tr>
+</tbody>
+</table>
+<p>手册的测试电路在输入接 0.33 µF、输出接 0.1 µF，并说明输出电容&quot;不是稳定所必需的&quot;，它用来改善负载突变时的响应；输入电容则要尽量靠近芯片，特别是芯片离整流滤波电容较远时。</p>
+<p>想要可调的输出，可以用 LM317，接法见图 21-p2-5： <span class="math math-inline">\(R_1\)</span> 接在 OUT 和 ADJ 之间， <span class="math math-inline">\(R_2\)</span> 接在 ADJ 和地之间。它的手册给出 <span class="math math-inline">\(V_o = 1.25(1 + R_2/R_1) + I_{ADJ} R_2\)</span> ：除去很小的 <span class="math math-inline">\(I_{ADJ}\)</span> 一项，正是本页第二节的公式，只是基准换成了 1.25 V。</p>
+<p><a class="img-link" href="img/21_p2_5_lm317.png"><img alt="LM317：IN 接 V_i，OUT 接 V_o；R_1 接在 OUT 与 ADJ 之间，两端是 V_REF 1.25 V；R_2 接在 ADJ 与地之间，ADJ 引脚流出 I_ADJ" src="img/21_p2_5_lm317.png" loading="lazy" /></a></p>
+<p><em>图 21-p2-5　LM317 可调稳压的接法</em></p>
+<h2 id="八渐进例题">八、渐进例题</h2>
+<p>例 1、例 2 的电路都和图 21-p2-1 一样，只换 <span class="math math-inline">\(R_f\)</span> 和负载；例 3 的接法同图 21-p2-3。</p>
+<p><strong>例 1（完整）</strong> 基准按 4.82 V 算（输入升到 16 V 时， <span class="math math-inline">\(I_Z\)</span> 增大到约 11.2 mA，基准只升高约 14 mV，先忽略）， <span class="math math-inline">\(R_1\)</span> 仍为 5.1 kΩ，想输出约 12 V，负载 0.5 A，输入 16 V。</p>
+<ol>
+<li>由公式反推 <span class="math math-inline">\(R_f = R_1(V_o/V_{ref} - 1)\)</span> = 5.1 × (12 ÷ 4.82 − 1) ≈ 7.60 kΩ，取标准值 7.5 kΩ。</li>
+<li>实际输出 4.82 × (1 + 7.5 ÷ 5.1) ≈ 11.91 V。</li>
+<li>最低输入 11.91 + 2.255 ≈ 14.16 V，16 V 够用。</li>
+<li>调整管功耗 (16 − 11.91) × 0.5 ≈ 2.05 W。</li>
+</ol>
+<p><strong>例 2（填空）</strong> 基准取 4.82 V， <span class="math math-inline">\(R_f\)</span> = 2.0 kΩ， <span class="math math-inline">\(R_1\)</span> = 5.1 kΩ，负载 0.3 A，输入 12 V。</p>
+<ol>
+<li>输出 <span class="math math-inline">\(V_o\)</span> = 4.82 × (1 + ____) ≈ ____ V。</li>
+<li>0.3 A 时 <span class="math math-inline">\(V_{BE}\)</span> ≈ 0.742 V，最低输入 = <span class="math math-inline">\(V_o\)</span> + 1.5 + 0.742 ≈ ____ V。</li>
+<li>调整管功耗 = (12 − <span class="math math-inline">\(V_o\)</span>) × 0.3 ≈ ____ W。</li>
+</ol>
+<details>
+<summary>例 2 答案</summary>
+<ol>
+<li>2.0 ÷ 5.1 ≈ 0.392，输出 ≈ 4.82 × 1.392 ≈ 6.71 V。</li>
+<li>6.71 + 2.242 ≈ 8.95 V，12 V 满足要求。</li>
+<li>(12 − 6.71) × 0.3 ≈ 1.59 W。</li>
+</ol>
+</details>
+<p><strong>例 3（变体迁移）</strong> 用 7805 从 12 V 得到 5 V，负载 1 A。</p>
+<ul>
+<li>压差够吗？7805 需要至少 7 V 输入，12 V 足够。</li>
+<li>发热多少？(12 − 5) × 1 = 7 W，比本页主例的 2.75 W 大得多。7805 的 TO-220 封装不加散热片时热阻约 19 °C/W，7 W 会让芯片升温约 133 °C，加上室温就超过结温上限 150 °C，芯片会触发过热保护，输出时断时续。参数与调试篇会讲怎么选散热片。</li>
+</ul>
+<h2 id="小结">小结</h2>
+<p>线性稳压的核心公式 <span class="math math-inline">\(V_o = V_{ref}(1 + R_f/R_1)\)</span> 就是同相放大；调整管的 <span class="math math-inline">\(V_{BE}\)</span> 被反馈缩小了几万倍；输入纹波主要通过基准漏到输出；输入至少要比输出高一个压差（运放余量加 <span class="math math-inline">\(V_{BE}\)</span> ）。7805、LM317 把同样的结构做成了芯片。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>TI，uA78xx 系列数据手册 SLVS056P（输出电压、推荐输入、压差、纹波抑制、测试电容、&quot;输出电容不是稳定所必需&quot;）：<a href="https://www.ti.com/lit/ds/symlink/ua78.pdf">https://www.ti.com/lit/ds/symlink/ua78.pdf</a></li>
+<li>TI，LM317 数据手册 SLVS044Z（ <span class="math math-inline">\(V_o = V_{REF}(1 + R_2/R_1) + I_{ADJ} R_2\)</span> ， <span class="math math-inline">\(V_{REF}\)</span> 典型 1.25 V）：<a href="https://www.ti.com/lit/ds/symlink/lm317.pdf">https://www.ti.com/lit/ds/symlink/lm317.pdf</a></li>
+<li>Wikipedia，Linear regulator（调整元件功耗、7805 的约 2 V 压差）：<a href="https://en.wikipedia.org/wiki/Linear_regulator">https://en.wikipedia.org/wiki/Linear_regulator</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

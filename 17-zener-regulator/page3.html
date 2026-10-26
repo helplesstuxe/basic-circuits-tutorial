@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>17 稳压管稳压 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/17-zener-regulator/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="17-稳压管稳压--参数与调试篇">17 稳压管稳压 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a> · 后续：<a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a></p>
+<blockquote class="alert alert-note">
+<p>本页的实验全部用可调直流电源（不超过 15 V）完成，不要直接接 13 那样由市电变压器供电的整流电源去做「故障实验」。如果实际电路的输入来自市电变压器，<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a> 开头的安全提示全部适用。</p>
+</blockquote>
+<h2 id="本页要解决的问题">本页要解决的问题</h2>
+<p>原理与实现篇推出了 R 的取值公式。真正动手时还会遇到这些问题：数据手册上的哪些数字要用？R 偏离窗口会怎样？稳压管发烫、输出偏低、输出跟着输入跑，各是什么原因？</p>
+<h2 id="1-数据手册里最该看的参数">1. 数据手册里最该看的参数</h2>
+<p>下表摘自 Vishay 的 1N4728A–1N4761A 系列数据手册，以本节用的 1N4733A 为例：</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>1N4733A 的值</th>
+<th>怎么用</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>稳压值 <span class="math math-inline">\(V_Z\)</span></td>
+<td>5.1 V，容差 ±5%（在测试电流 49 mA 下测得）</td>
+<td>同一型号实际在 4.85–5.36 V 之间；要更准就要挑管或改用基准芯片</td>
+</tr>
+<tr>
+<td>动态电阻 <span class="math math-inline">\(Z_{ZT}\)</span></td>
+<td>7 Ω（49 mA 时）</td>
+<td>就是 <span class="math math-inline">\(r_Z\)</span> ，决定纹波抑制和负载调整</td>
+</tr>
+<tr>
+<td>拐点动态电阻 <span class="math math-inline">\(Z_{ZK}\)</span></td>
+<td>550 Ω（1 mA 时）</td>
+<td>电流很小时电压「软」得多，所以 <span class="math math-inline">\(I_Z\)</span> 要留几毫安以上</td>
+</tr>
+<tr>
+<td>最大稳压电流 <span class="math math-inline">\(I_{ZM}\)</span></td>
+<td>178 mA</td>
+<td>空载最坏情况的 <span class="math math-inline">\(I_Z\)</span> 要远小于它</td>
+</tr>
+<tr>
+<td>额定功率 <span class="math math-inline">\(P_{tot}\)</span></td>
+<td>1.3 W</td>
+<td>实际功耗留一半余量（见 <a href="../03-semiconductor-basics/page3.html">03 半导体入门 · 参数与调试篇</a>）</td>
+</tr>
+<tr>
+<td>热阻 <span class="math math-inline">\(R_{thJA}\)</span></td>
+<td>110 K/W</td>
+<td>功耗乘热阻就是管芯比环境高出的温度。K/W 读作「开每瓦」：每消耗 1 W，温度升高多少开尔文（温差 1 K 就是 1 °C）</td>
+</tr>
+</tbody>
+</table>
+<p>两点提醒。第一， <span class="math math-inline">\(V_Z\)</span> 是在 49 mA 测出来的，本节主例平时只有约 9–49 mA，实际电压会比 5.1 V 低一些（直觉篇看到的 4.8–5.0 V 就是这个原因），拐点附近更低。第二，热阻 110 K/W 意味着主例空载最坏情况的 0.25 W 会让管芯升温约 0.25 × 110 ≈ 28 °C；如果 R 取到下限 73 Ω，功耗 0.65 W，升温约 72 °C，摸上去已经烫手。</p>
+<p><strong>温度系数</strong>也值得知道（维基百科稳压管词条）：大约 5.6 V 以下的稳压管，温度升高电压略降；5.6 V 以上的，温度升高电压略升；5.6 V 附近两者接近抵消。4.7 V 的稳压管约 −2 mV/°C，和三极管的 <span class="math math-inline">\(V_{BE}\)</span> 差不多，所以「4.7 V 稳压管 + 射极跟随器」的输出温漂会互相抵消一部分。</p>
+<h2 id="2-扫描r-的取值窗口">2. 扫描：R 的取值窗口</h2>
+<p>把 R 从 40 Ω 扫到 400 Ω，分别看两个最坏情况，结果见图 17-p3-1：</p>
+<p><a class="img-link" href="img/17_p3_1_window.png"><img alt="左图：天蓝色曲线是输入 10 伏、负载 20 毫安时的稳压管电流，随 R 增大而下降，在约 208 欧处穿过 5 毫安的灰色点线；右图：橙色曲线是输入 14 伏、空载时的稳压管功耗，随 R 增大而下降，在 73 欧处穿过 0.65 瓦的灰色点线；两图中 73 到 208 欧的范围用灰色阴影标出，180 欧处有一条竖直的灰色点线" src="img/17_p3_1_window.png" loading="lazy" /></a></p>
+<p><em>图 17-p3-1　限流电阻的取值窗口：左图定上限，右图定下限</em></p>
+<p>图 17-p3-1 的灰色阴影就是可用的窗口，73–208 Ω。窗口左边，稳压管在空载、高输入时功耗超过 0.65 W，R = 40 Ω 时已达 1.21 W，接近额定的 1.3 W；这时电流约 200 mA 以上（按线性模型算约 197 mA，厂商模型约 220 mA），也已经超过最大稳压电流 178 mA。窗口右边，输入低、负载重时稳压管电流不足 5 mA，到 263 Ω 左右完全断流。180 Ω 靠近右边界：平时稳压管凉快，纹波抑制也好；但如果市电比设计假设的还低，它会最先失去稳压。</p>
+<p>窗口的宽窄取决于输入范围和负载范围。输入变化越大、负载变化越大，窗口越窄；窗口消失（上限比下限还小）时，说明单用稳压管已经不合适了，要换成原理与实现篇的三极管扩流电路或 21 的线性稳压。</p>
+<h2 id="3-r-太大市电一低纹波就漏出来">3. R 太大：市电一低，纹波就漏出来</h2>
+<p>把 R 从 180 Ω 换成 270 Ω，输入降到市电偏低时的 10–11 V（带 1 V 纹波），负载 20 mA，结果见图 17-p3-2：</p>
+<p><a class="img-link" href="img/17_p3_2_r_too_big.png"><img alt="横轴为 0 到 30 毫秒，蓝色锯齿是输入减去 5 伏后的曲线；橙色线基本平直，停在约 4.84 伏；朱红色带叉的线在每个纹波谷底跟着输入往下掉，最低标出 4.60 伏" src="img/17_p3_2_r_too_big.png" loading="lazy" /></a></p>
+<p><em>图 17-p3-2　R = 180 Ω（橙色）和 R = 270 Ω（朱红色）在输入偏低时的输出</em></p>
+<p>图 17-p3-2 中，R = 180 Ω 时输出纹波仍只有 37 mV（按 7 Ω 的最大值算；厂商模型仿真约 27 mV）。R = 270 Ω 时，输出至少要在击穿起点 4.76 V 以上稳压管才导通，所以输入 10 V 时 R 最多只能供 (10 − 4.76) ÷ 270 ≈ 19.4 mA，比负载要的 20 mA 还少。于是在每个纹波谷底，稳压管断流，输出跟着输入往下掉，最低到 4.60 V，纹波变成约 0.2～0.3 V（线性模型算得 178 mV，厂商模型仿真约 0.34 V），是 180 Ω 时的 5 倍以上（厂商模型约 12 倍）。示波器上看到的现象是：<strong>平时好好的，市电一低（或负载一重）输出就带上了 100 Hz 的锯齿</strong>。</p>
+<h2 id="4-动手实验用可调电源验证窗口">4. 动手实验：用可调电源验证窗口</h2>
+<blockquote class="alert alert-note">
+<p>只用可调直流电源，电压不超过 15 V，电源限流设到 100 mA。接线、改线前先关掉电源输出。稳压管和电阻工作时可能发烫，不要用手指直接按住测温。</p>
+</blockquote>
+<p>准备：1N4733A、180 Ω 1 W 电阻、一只 270 Ω 电阻、几只负载电阻（1 kΩ、510 Ω、255 Ω 可以用 240 Ω 加 15 Ω 串联代替）、万用表两只。</p>
+<p><a class="img-link" href="img/17_p3_3_lab.png"><img alt="可调直流电源 8 到 14 伏、限流 100 毫安，经 180 欧 1 瓦电阻（第 3 步换 270 欧）接 1N4733A；稳压管下面串一只朱红色电流表测 I_Z；输出并电压表测 V_o；负载经开关接 1 千欧、510 欧或 255 欧" src="img/17_p3_3_lab.png" loading="lazy" /></a></p>
+<p><em>图 17-p3-3　验证窗口的接法：电流表串在稳压管支路，电压表测输出</em></p>
+<ol>
+<li>按图 17-p3-3 接好 180 Ω 和稳压管（就是直觉篇的主电路），先不接负载。电源从 8 V 慢慢调到 14 V，记录输出。空载时输入一过约 4.8 V 稳压管就击穿，应能看到输出从这里开始基本不动，只随电流略涨。</li>
+<li>电源调到 10 V，依次接 1 kΩ、510 Ω、255 Ω 负载，一只表测输出，另一只表串在稳压管支路上测 <span class="math math-inline">\(I_Z\)</span> 。负载电流加大时 <span class="math math-inline">\(I_Z\)</span> 应等量减小。</li>
+<li>把 R 换成 270 Ω，重复第 2 步。接 255 Ω 时 <span class="math math-inline">\(I_Z\)</span> 只剩不到 1 mA（几百微安，具体数值和管子的拐点有关；远不到 5 mA，已在拐点附近），输出比第 2 步低；再把电源调到 9.5 V，输出就跟着降到约 4.6 V。</li>
+<li>电源调到 14 V，断开负载，用万用表测稳压管电流，算功耗 <span class="math math-inline">\(V_o I_Z\)</span> ，和 0.65 W 比较。</li>
+</ol>
+<p>实测数字会和仿真有出入：稳压管的实际 <span class="math math-inline">\(V_Z\)</span> 有 ±5% 的容差，电流小时拐点更软，温度升高后电压也会漂。</p>
+<h2 id="5-故障排查表">5. 故障排查表</h2>
+<p>表中前两行是最常见的两种接线错误，画出来见图 17-p3-4：</p>
+<p><a class="img-link" href="img/17_p3_4_mistakes.png"><img alt="两幅并排电路。左图：12 伏经 180 欧接一只朱红色、方向接反的稳压管和负载，输出约 0.7 伏；右图：12 伏不经电阻（朱红色导线）直接接 1N4733A，电流约 1 安" src="img/17_p3_4_mistakes.png" loading="lazy" /></a></p>
+<p><em>图 17-p3-4　两种接线错误：(a) 稳压管接反；(b) 没串限流电阻</em></p>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>检查方法</th>
+<th>解决</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出约 0.7 V</td>
+<td>稳压管接反，工作在正向导通</td>
+<td>看阴极色环是否朝向正电源</td>
+<td>调转稳压管</td>
+</tr>
+<tr>
+<td>稳压管冒烟或很快烧坏</td>
+<td>没有串限流电阻，稳压管直接接在电源上</td>
+<td>看电路，量 R 是否被短路</td>
+<td>一定要串 R；12 V 直接加在 1N4733A 上，电流只受 <span class="math math-inline">\(r_Z\)</span> 和电源内阻（见 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a> 第七节）限制，可达约 (12 − 4.76) ÷ 7 ≈ 1 A，远超 <span class="math math-inline">\(I_{ZM}\)</span></td>
+</tr>
+<tr>
+<td>空载时稳压管烫手</td>
+<td>R 太小，或者输入比设计值高</td>
+<td>测空载时的 <span class="math math-inline">\(I_Z\)</span> ，算 <span class="math math-inline">\(V_o I_Z\)</span></td>
+<td>按窗口下限加大 R；或换功率更大的稳压管</td>
+</tr>
+<tr>
+<td>输出偏低，且随负载加重明显下降</td>
+<td>R 太大，或负载电流超出设计值</td>
+<td>测输入最低时的 <span class="math math-inline">\(I_Z\)</span> 是否还有几毫安</td>
+<td>减小 R（在窗口内）；负载太大就加三极管扩流</td>
+</tr>
+<tr>
+<td>输出带明显的 100 Hz 锯齿</td>
+<td>纹波谷底失去稳压（见图 17-p3-2），或前级滤波电容太小</td>
+<td>示波器看谷底处输出是否跟着输入掉</td>
+<td>加大前级电容（见 <a href="../13-bridge-rectifier/page3.html">13 桥式整流 · 参数与调试篇</a>）或减小 R</td>
+</tr>
+<tr>
+<td>输出比按模型算出的值（主例约 4.8–5.0 V）还低零点几伏</td>
+<td>稳压管工作电流太小，处于拐点附近；或容差</td>
+<td>测 <span class="math math-inline">\(I_Z\)</span></td>
+<td>把 <span class="math math-inline">\(I_Z\)</span> 提到几毫安以上；需要精确值时换基准芯片</td>
+</tr>
+<tr>
+<td>输出随温度慢慢漂</td>
+<td>稳压管发热，温度系数造成</td>
+<td>冷机和热机各测一次</td>
+<td>降低功耗；选 5.6 V 左右的稳压管</td>
+</tr>
+<tr>
+<td>输出上有高频噪声</td>
+<td>稳压管击穿本身会产生噪声，输出端没有电容</td>
+<td>示波器用交流耦合（AC 档：只显示电压的变化部分，把直流平均值去掉，小噪声就能放大来看）看输出</td>
+<td>输出端并一只电容（ESP 文章认为必不可少）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="6-练习">6. 练习</h2>
+<p>练习 1 就是主例电路，练习 3 是原理与实现篇的射极跟随器；练习 2 和练习 4 的电路见图 17-p3-5：</p>
+<p><a class="img-link" href="img/17_p3_5_exercises.png"><img alt="两幅并排电路。左图练习 2：14 伏经朱红色 47 欧电阻直接接 1N4733A，不接负载；右图练习 4：带 1 伏纹波的输入经 390 欧接 1N4742A（r_Z 9 欧），并 1.2 千欧负载，输出约 12 伏" src="img/17_p3_5_exercises.png" loading="lazy" /></a></p>
+<p><em>图 17-p3-5　练习 2 与练习 4 的电路</em></p>
+<p><strong>练习 1（易）</strong> 主例（10–14 V、0–20 mA、R = 180 Ω）的负载最大值改成 30 mA，R 的上限变成多少？180 Ω 还能用吗？</p>
+<details><summary>答案</summary>
+<p>上限 R ≤ (10 − 5.1) ÷ (0.005 + 0.030) = 140 Ω，180 Ω 超出上限，不能用。由原理与实现篇的负载扫描图也能看出，180 Ω 在输入 10 V 时只能撑到约 29.2 mA。改用 120 Ω：空载、14 V 时 <span class="math math-inline">\(I_Z\)</span> ≈ (14 − 4.757) ÷ 127 ≈ 72.8 mA，输出约 4.757 + 7 × 0.0728 ≈ 5.27 V，功耗约 5.27 × 0.0728 ≈ 0.38 W，仍小于 0.65 W，可以用。</p>
+</details>
+<p><strong>练习 2（易）</strong> 一个同学用 1N4733A 和 47 Ω 电阻接在 14 V 上，没接负载。估算稳压管的电流和功耗，会出什么问题？</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(I_Z\)</span> ≈ (14 − 4.757) ÷ (47 + 7) ≈ 171 mA，输出约 4.757 + 7 × 0.171 ≈ 5.96 V（线性模型在这么大的电流下会高估，厂商模型仿真约 5.2 V），功耗约 5.96 × 0.171 ≈ 1.02 W。电流已经到了 <span class="math math-inline">\(I_{ZM}\)</span> 178 mA 附近，厂商模型仿真得 187 mA，已经超过；功耗没超过 1.3 W，但远超一半余量 0.65 W；按热阻 110 K/W 估算，管芯升温约 112 °C，长期这样用寿命会很短。R 至少要取到窗口下限约 73 Ω。</p>
+</details>
+<p><strong>练习 3（中）</strong> 用 5.6 V 和 4.7 V 两种稳压管各做一个「稳压管 + 射极跟随器」，哪一种输出的温漂更小？为什么？</p>
+<details><summary>答案</summary>
+<p>4.7 V 那一种。射极跟随器的输出是 <span class="math math-inline">\(V_Z - V_{BE}\)</span> 。 <span class="math math-inline">\(V_{BE}\)</span> 约 −2 mV/°C，温度升高时它变小，输出就上升；4.7 V 稳压管也约 −2 mV/°C，温度升高时 <span class="math math-inline">\(V_Z\)</span> 变小，输出下降。两者互相抵消。5.6 V 稳压管自身温漂接近 0，但 <span class="math math-inline">\(V_{BE}\)</span> 的漂移就没有东西去抵消了。</p>
+</details>
+<p><strong>练习 4（中，变体迁移）</strong> 把主例换成 12 V 的电路：1N4742A（ <span class="math math-inline">\(r_Z\)</span> 约 9 Ω）、R = 390 Ω、负载电阻 1.2 kΩ，输入带 1 V（峰峰）纹波。输出纹波约多少？如果想把它压到 10 mV 以下，R 至少要多大（假设输入足够高，R 加大后稳压管仍有足够电流）？</p>
+<details><summary>答案</summary>
+<p>还是原理与实现篇的分压比，只是数字换了： <span class="math math-inline">\(r_Z \parallel R_L\)</span> = 9 × 1200 ÷ (9 + 1200) ≈ 8.93 Ω，比值 8.93 ÷ (390 + 8.93) ≈ 0.0224，输出纹波约 22 mV（峰峰）。要压到 10 mV 以下，比值要小于 0.01，即 R ≥ 8.93 ÷ 0.01 − 8.93 ≈ 884 Ω，取常用值 910 Ω。代价是 R 加大以后能供的电流变少，输入最低时稳压管可能断流，所以还要按上限公式重新核对；实际电路里更常见的做法是在稳压管前面先多加一级电阻和电容组成的滤波，或者直接换 <a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a> 的电路。数字由 <code>code/17_sim.py</code> 打印的「练习 4」一行核对。</p>
+<p>9 Ω 也是手册上的最大值。用 Diodes 公司的 1N4742A 模型仿真，390 Ω 时输出纹波只有约 4 mV，已经低于 10 mV。所以 910 Ω 是按最坏情况设计的结果，偏稳妥。</p>
+</details>
+<h2 id="小结与下一步">小结与下一步</h2>
+<p>稳压管稳压是最便宜的稳压方法：读手册时抓住 <span class="math math-inline">\(V_Z\)</span> 及其容差、动态电阻、拐点、最大电流和功率；设计时先画出 R 的取值窗口，再在窗口内取值；调试时记住三种典型故障：接反输出 0.7 V，R 太小稳压管过热，R 太大输入一低就失去稳压。这个电路给出的「稳定电压」常常被当作更精密电路的<strong>基准</strong>：后续节点 <a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a> 会把稳压管、三极管和运放组合起来，做成能带大电流、输出可调的稳压电源。按阅读顺序，下一个节点是 <a href="../18-differentiator/page1.html">18 微分电路 · 直觉篇</a>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

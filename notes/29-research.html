@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>29 上拉/下拉电阻与电平转换 · 调研笔记（作者 C）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/29-research.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="29-上拉下拉电阻与电平转换--调研笔记作者-c">29 上拉/下拉电阻与电平转换 · 调研笔记（作者 C）</h1>
+<h2 id="已打开并引用的资料">已打开并引用的资料</h2>
+<ul>
+<li>TI SLVA689A <a href="https://www.ti.com/lit/an/slva689/slva689.pdf">https://www.ti.com/lit/an/slva689/slva689.pdf</a> （本地 /workspace/authorC/refs/slva689.pdf.txt）：Rp(min) = (VCC − VOL(max)) / IOL；tr = 0.8473·Rp·Cb（0.3→0.7 VCC）；Rp(max) = tr / (0.8473·Cb)；标准/快速/快速+ 的 tr 1000/300/120 ns，Cb 400/400/550 pF，VOL 0.4 V @ 3 mA；例：快速模式、200 pF、3.3 V → Rp 966.7 Ω～1.77 kΩ。</li>
+<li>Nexperia AN10441 Rev. 2 <a href="https://assets.nexperia.com/documents/application-note/AN10441.pdf">https://assets.nexperia.com/documents/application-note/AN10441.pdf</a> （WebFetch 打开；<a href="http://nxp.com">nxp.com</a> 旧地址 404）：单 N 沟道 MOS 管双向电平转换，栅极接 VDD1（低压）、源极接低压侧、漏极接高压侧，两侧各自上拉；三种状态（无人拉低 / 低压侧拉低 / 高压侧拉低经漏-衬底二极管）；支持线与；适用标准和快速模式。</li>
+<li>onsemi BSS138 <a href="https://www.onsemi.com/pdf/datasheet/bss138-d.pdf">https://www.onsemi.com/pdf/datasheet/bss138-d.pdf</a> ：50 V、0.22 A；VGS(th) 0.8/1.3/1.5 V；RDS(on) 4.5 V 时 1.0/6.0 Ω；Ciss 27 pF；体二极管 VSD 典型 0.8 V。</li>
+<li>TI SN74HC14 <a href="https://www.ti.com/lit/ds/symlink/sn74hc14.pdf">https://www.ti.com/lit/ds/symlink/sn74hc14.pdf</a> （本地 sn74hc14.txt）：4.5 V 时 VT+ 1.55/2.5/3.13 V，VT− 0.9/1.6/2.45 V，ΔVT 0.4/0.9/2.1 V；II ±1 µA。</li>
+<li>Microchip ATmega328P 汽车级数据手册 7810D <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf</a> （本地 atmega328p.txt）：VIL ≤ 0.3 VCC，VIH ≥ 0.6 VCC，RPU 20–50 kΩ，漏电 1 µA；§13.2.6 未用引脚建议开内部上拉。</li>
+<li>Ganssle 第 1 部分 <a href="https://www.ganssle.com/debouncing.htm">https://www.ganssle.com/debouncing.htm</a> ：18 种开关，去掉两个异常值后平均 1557 µs、最长 6200 µs；开关 E 断开时抖 157 ms；建议留余量。</li>
+<li>Ganssle 第 2 部分 <a href="https://www.ganssle.com/debouncing-pt2.htm">https://www.ganssle.com/debouncing-pt2.htm</a> ：R1/R2/C + 施密特去抖电路；「Never run the cap directly to the input on a microprocessor」；按 20 ms 设计；50 ms 感觉不到、100 ms 明显；电容误差 +80/−20%（电解）、±30%（陶瓷）；不要把未去抖开关接中断/触发器时钟；软件每 1–5 ms 采样。</li>
+</ul>
+<h2 id="设计取值">设计取值</h2>
+<ul>
+<li>去抖：R1 = R2 = 10 kΩ，C = 1 µF，74HC14 门限按 4.5 V 典型值 <s>2.5 / 1.6 V（5 V 系统近似）</s> → 按 4.5 V / 6 V 两栏插值到 5 V：2.77 / 1.73 V（第 7 轮 SPICE 更正）。</li>
+<li>电平转换：BSS138 门限 <s>1.3 V，K 由 RDS(on) = 1 Ω @ 4.5 V 反推（0.3125 A/V²）</s> → 取 Diodes 官方 SPICE 模型 VTO = 1 V、KP = 0.395 A/V²（第 7 轮 SPICE 更正）；体二极管 0.6 V + 50 Ω（示意）；两侧 10 kΩ、50 pF；开漏驱动 100 Ω。</li>
+<li>I²C 扫描：3.3 V、200 pF、400 kHz；1.5 / 4.7 / 10 kΩ。</li>
+<li>悬空引脚示意：20 V 50 Hz 人体感应、0.5 pF 耦合、10 pF 输入电容（全部为示意值）。</li>
+</ul>
+<h2 id="仿真结果code29_simpycodefigs29_figspy-打印">仿真结果（code/29_sim.py、code/figs/29_figs.py 打印）</h2>
+<ul>
+<li>去抖：只上拉翻转 22 次；RC + 施密特 2 次；按下 <s>12.3 ms</s> → 11.5 ms（公式 <s>11.4 ms</s> → 10.6 ms）、松开 <s>13.2 ms</s> → 15.5 ms（公式 <s>13.9 ms</s> → 16.1 ms）（第 7 轮 SPICE 更正）；SPICE（TI SN74HC14 模型，5 V）为 11.36 / 15.66 ms。</li>
+<li>抖动示意：一次按下 7 个下降沿。</li>
+<li>悬空：耦合幅度 0.95 V，50% 时间在 1.5～3.0 V；10 kΩ 上拉时 31 µV。</li>
+<li>电平转换：正确接法两侧拉低均约 0.08 V；松手后约 <s>2.02 V（+328 ns）</s> → 2.31 V（+404 ns）分开（第 7 轮 SPICE 更正）；SPICE（Diodes 模型，含结电容）为 2.32 V、+767 ns；接反时空闲 3.85 / 4.45 V。</li>
+<li>I²C：Rp min 967 Ω，快速模式 max 1770 Ω，标准模式 max 5901 Ω；tr 254 / 796 / 1695 ns，半周期末 3.25 / 2.43 / 1.53 V。</li>
+<li>τ 扫描（20 次按键、抖动 0.5–6.2 ms 示意）：施密特多翻次数 <s>12.5 / 7.5 / 3.5 / 0.6</s> → 11.8 / 6.6 / 2.6 / 0.3（第 7 轮 SPICE 更正） / 0 …（τ ≥ 2.2 ms 为 0）；单门限 + 20 mV 低通噪声最低 2.2（τ = 1 ms），47 ms 时 76.9；最长延迟 10 ms → <s>17.5 ms</s> 19.8 ms，22 ms → 39.0 ms，47 ms → <s>66.9 ms</s> 77.7 ms（第 7 轮 SPICE 更正）。</li>
+</ul>
+<h2 id="未用待核实">未用·待核实</h2>
+<ul>
+<li>74HC14 没有 5 V 一行数据，正文 <s>明确写了按 4.5 V 典型值估算</s> → 已改为按 4.5 V / 6 V 两栏线性插值到 5 V（第 7 轮 SPICE 更正）。</li>
+<li>练习 2 的 220 mAh 电池容量标为示意值。</li>
+<li>正文无 [待核实]。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>11 过载保护：SPICE 复核报告</title>
+<title>11 互锁 · SPICE 核对报告（审校 B）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,671 +42,402 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/11.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="11-过载保护spice-复核报告">11 过载保护：SPICE 复核报告</h1>
-<ul>
-<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/11/.spiceinit</code> 设为 psa；闭环网表用 <code>.options method=gear</code>、步长 10 μs。</li>
-<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/11/run.py</code>，退出码 0，已实际运行，共 50 项。<a href="http://run.py">run.py</a> 会先按页面代码（种子 3）生成 <code>spice/11/noise_pwl.inc</code>，再从 wrdata 输出里数翻转次数。</li>
-<li><strong>强电</strong>：本节是 12 V 电机加 5 V 比较器，全部是低压，按页面电路完整仿真。</li>
-</ul>
-<h2 id="网表spice11">网表（spice/11/）</h2>
-<table>
-<thead>
-<tr>
-<th>网表</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>th_sweep.cir</code></td>
-<td>推导一：比较器加门限网络，三角波慢扫采样电压，测 V_H / V_L；另接一路 R_F = 1 Ω 的对照，看偏置电流压降</td>
-</tr>
-<tr>
-<td><code>inv_time.cir</code></td>
-<td>推导二、图 11-p3-2 (a)、例 3：电流源阶跃流过 R_S，τ = 10 / 47 / 100 ms，电流 5 / 20 A；以及 R_S 0.2 Ω、0.5→3 A</td>
-</tr>
-<tr>
-<td><code>start_filter.cir</code></td>
-<td>图 11-p3-2 (b)、练习 2、练习 4：启动冲击 1 + 4e^(−t/20 ms)（或 50 ms）经 RC 滤波的峰值（开环），以及 I²t 积分</td>
-</tr>
-<tr>
-<td><code>n_hyst.cir</code> / <code>n_nohyst.cir</code></td>
-<td>图 11-p2-2：页面代码生成的负载，有回差 / 无回差比较器，只数翻转、不切断</td>
-</tr>
-<tr>
-<td><code>cl_stall.cir</code></td>
-<td>图 11-p1-1、图 11-p3-1 第二行：完整闭环，0.1 s 堵转，打嗝</td>
-</tr>
-<tr>
-<td><code>cl_stall47.cir</code></td>
-<td>练习 1：C_F 4.7 μF</td>
-</tr>
-<tr>
-<td><code>cl_3a.cir</code></td>
-<td>例 1 (2)：1 A 突变到 3 A</td>
-</tr>
-<tr>
-<td><code>cl_nohyst.cir</code></td>
-<td>图 11-p3-1 第一行：无回差闭环（写出 nohyst_vg.txt 用来数翻转）</td>
-</tr>
-<tr>
-<td><code>cl_start10.cir</code> / <code>cl_start47.cir</code></td>
-<td>图 11-p3-2 (b) 的闭环版：电机从静止启动，τ = 10 / 47 ms</td>
-</tr>
-<tr>
-<td><code>dmm.cir</code></td>
-<td>万用表读数表：正常 1 A 和堵转跳闸后断开期间各点电压</td>
-</tr>
-</tbody>
-</table>
+<h1 id="11-互锁--spice-核对报告审校-b">11 互锁 · SPICE 核对报告（审校 B）</h1>
+<p>运行：<code>python spice/11/run.py</code>（仓库根目录，退出码 0）。网表：<code>spice/11/interlock.cir</code>。</p>
 <h2 id="模型与来源">模型与来源</h2>
-<table>
-<thead>
-<tr>
-<th>器件</th>
-<th>模型文件</th>
-<th>来源</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>LM393</td>
-<td><strong>替代</strong>：spice/models/LM393A.lib，子电路 <code>LM393A</code>（复用，同事 B 下载）</td>
-<td>TI LM393A PSpice 模型：<a href="https://www.ti.com/lit/zip/slcj017">https://www.ti.com/lit/zip/slcj017</a> 。TI 没有单独的老 LM393 模型，用 A 档代替，引脚和功能相同</td>
-</tr>
-<tr>
-<td>IRLZ44N</td>
-<td>spice/models/IRLZ44N_infineon.lib（复用）</td>
-<td>Infineon：<a href="https://www.infineon.com/dgdl/irlz44n.spi?fileId=5546d462533600a40153573f68cb3e76">https://www.infineon.com/dgdl/irlz44n.spi?fileId=5546d462533600a40153573f68cb3e76</a></td>
-</tr>
-<tr>
-<td>续流二极管 D1</td>
-<td><strong>替代</strong>：spice/models/1N5822_vishay.lib（复用）</td>
-<td>Vishay：<a href="https://www.vishay.com/docs/88003/1n5822.txt">https://www.vishay.com/docs/88003/1n5822.txt</a> 。页面只说“与 21 节相同”，没有给型号</td>
-</tr>
-<tr>
-<td>电阻、电容、电机</td>
-<td>理想元件</td>
-<td>—</td>
-</tr>
-</tbody>
-</table>
-<h2 id="假设">假设</h2>
-<ol>
-<li><strong>电机</strong>：页面只给了 12 V、正常 1 A、堵转约 5 A。这里建成反电动势 9.6 V + 线圈电阻 2.28 Ω + 电感 1 mH。电感是假设的；堵转时反电动势变为 0。启动时反电动势按 9.6·(1−e^(−t/20 ms)) 上升，这样冲击电流约为 1 + 4e^(−t/20 ms)，与页面一致。</li>
-<li><strong>无回差</strong>：页面写“两条门限都取 193 mV”，网表里去掉 R_H，把 R_B 改成 1.325 kΩ，使门限为 193 mV。</li>
-<li><strong>反时限曲线和图 11-p3-2 (b)</strong>：页面的定义是只看“判”、不切断，所以用电流源加开环比较器或纯 RC 来仿。</li>
-<li><strong>打嗝和无回差的平均电流</strong>：取 0.2～0.5 s 的平均。无回差一项量的是流过 R_S 的电流（MOS 管电流），因为页面说的是被“钉”在门限上的采样电流。</li>
-</ol>
+<ul>
+<li>本节点没有半导体器件参与逻辑，<strong>没有使用厂商模型</strong>。</li>
+<li>接触器/继电器：ngspice 内置电压控制开关 <code>SW</code> 加 RC 的行为模型（跟节点 04 是同一套思路）：
+<ul>
+<li>线圈按 400 Ω 假设。</li>
+<li>线圈电压÷12 V 经过 τ = 10 ms 的 RC，再进入带回差的开关。</li>
+<li>吸合门限 VP = 1 − e^(−tp/τ)，释放门限 VD = e^(−td/τ)，所以吸合时间 tp、释放时间 td 正好等于页面取值。</li>
+<li>默认 tp = 20 ms、td = 10 ms，得到 VP = 0.865、VD = 0.368，落在 page3 表格给的「85% 以上吸合、0.3～0.6 倍释放」范围内。</li>
+</ul>
+</li>
+<li><strong>说明</strong>：吸合、释放时间是从页面参数倒推出来的，所以时间类数值属于「同参数复算」，验证的是逻辑和接线，不是接触器本身的物理特性。</li>
+<li>按钮：PWL 控制的 <code>SW</code>。常闭触点用 <code>1−v(ctrl)</code> 控制。熔焊用 <code>max(衔铁, WELD)</code> 表示，KM1 的辅助触点按镜像触点跟主触点一起粘住。</li>
+<li><strong>跳过</strong>：380 V 三相主电路和电动机（市电）。「相间短路」改用「KM1、KM2 同时吸合的时长」来表示。</li>
+</ul>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
 <tr>
-<th>页面位置</th>
-<th>项目</th>
+<th>位置</th>
+<th>核对项</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
 <th>结论</th>
-<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>p1 图11-p1-1</td>
-<td>堵转电流（电机建模前提）</td>
-<td>5 A</td>
-<td>4.995 A</td>
-<td>-0.1%</td>
-<td>✅（建模前提）</td>
-<td>电机模型按 5 A 堵转标定</td>
-</tr>
-<tr>
-<td>p1 图11-p1-1</td>
-<td>堵转后切断时间</td>
-<td>26 ms</td>
-<td>26.68 ms</td>
-<td>+2.6%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>不互锁 t=1.5 s KM1/KM2 页面「吸/放」（SPICE：吸/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td>闭环全电路</td>
 </tr>
 <tr>
-<td>p1 §三 图11-p1-2 说明</td>
-<td>1 A 时采样电压</td>
-<td>0.1 V</td>
-<td>0.09995 V</td>
-<td>-0.1%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>不互锁 t=2.5 s KM1/KM2 页面「吸/吸」（SPICE：吸/吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td>闭环电路正常运行</td>
 </tr>
 <tr>
-<td>p2 前置知识</td>
-<td>IRLZ44N 导通电阻（栅 5 V，最大）</td>
-<td>25 mΩ</td>
-<td>21.32 mΩ</td>
-<td>-14.7%</td>
-<td>✅ 在最大值以内</td>
-<td>1 A 时 V_DS ÷ 1 A；页面给的是最大值</td>
-</tr>
-<tr>
-<td>p2 推导一</td>
-<td>跳闸门限 V_H</td>
-<td>193 mV</td>
-<td>192.4 mV</td>
-<td>-0.3%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>不互锁 t=3.5 s KM1/KM2 页面「放/放」（SPICE：放/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td>三角波慢扫</td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>恢复门限 V_L</td>
-<td>146 mV</td>
-<td>147.8 mV</td>
-<td>+1.2%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>不互锁 t=4.4 s KM1/KM2 页面「放/吸」（SPICE：放/吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td>LM393 输出低 85 mV 抬高了 V_L</td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>回差</td>
-<td>47 mV</td>
-<td>44.67 mV</td>
-<td>-5.0%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>不互锁 t=5.5 s KM1/KM2 页面「吸/吸」（SPICE：吸/吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>跳闸电流 V_H/0.1Ω</td>
-<td>1.93 A</td>
-<td>1.924 A</td>
-<td>-0.3%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>接触器互锁 t=1.5 s KM1/KM2 页面「吸/放」（SPICE：吸/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>恢复电流 V_L/0.1Ω</td>
-<td>1.46 A</td>
-<td>1.478 A</td>
-<td>+1.2%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>接触器互锁 t=2.5 s KM1/KM2 页面「吸/放」（SPICE：吸/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p2 推导二</td>
-<td>堵转 5 A 切断时间（τ=0.1 s）</td>
-<td>26 ms</td>
-<td>26.21 ms</td>
-<td>+0.8%</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>接触器互锁 t=3.5 s KM1/KM2 页面「放/放」（SPICE：放/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td>电流源阶跃，开环判</td>
 </tr>
 <tr>
-<td>p2 图11-p2-2</td>
-<td>无回差翻转次数</td>
-<td>10 次</td>
-<td>10 次</td>
+<td>p2 代码输出 图11-p2-2</td>
+<td>接触器互锁 t=4.4 s KM1/KM2 页面「放/吸」（SPICE：放/吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出 图11-p2-2</td>
+<td>接触器互锁 t=5.5 s KM1/KM2 页面「吸/放」（SPICE：吸/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出 图11-p2-2</td>
+<td>双重互锁 t=1.5 s KM1/KM2 页面「吸/放」（SPICE：吸/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出 图11-p2-2</td>
+<td>双重互锁 t=2.5 s KM1/KM2 页面「放/吸」（SPICE：放/吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出 图11-p2-2</td>
+<td>双重互锁 t=3.5 s KM1/KM2 页面「放/放」（SPICE：放/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出 图11-p2-2</td>
+<td>双重互锁 t=4.4 s KM1/KM2 页面「放/吸」（SPICE：放/吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出 图11-p2-2</td>
+<td>双重互锁 t=5.5 s KM1/KM2 页面「放/放」（SPICE：放/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出</td>
+<td>不互锁：两只同时吸合总时长</td>
+<td>2975 ms</td>
+<td>2975 ms</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出</td>
+<td>接触器互锁：同时吸合总时长</td>
+<td>0 ms</td>
+<td>0 ms</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 代码输出</td>
+<td>双重互锁：同时吸合总时长</td>
+<td>0 ms</td>
+<td>0 ms</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图11-p2-3</td>
+<td>竞赛：KM1 吸合时刻</td>
+<td>5.02 s</td>
+<td>5.02 s</td>
 <td>+0.0%</td>
 <td>✅</td>
-<td>翻转时刻 3.95 4.04 4.05 4.06 4.06 4.11 4.12 8.12 8.12 8.19</td>
 </tr>
 <tr>
-<td>p2 图11-p2-2</td>
-<td>有回差翻转次数</td>
-<td>2 次</td>
-<td>2 次</td>
+<td>p2 图11-p2-3</td>
+<td>竞赛：KM2 线圈白白通电时长</td>
+<td>15 ms</td>
+<td>15.07 ms</td>
+<td>+0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §双重互锁</td>
+<td>2 s 按 SB3：KM1 释放时刻</td>
+<td>2.01 s</td>
+<td>2.01 s</td>
 <td>+0.0%</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p2 图11-p2-2</td>
-<td>有回差跳低时刻</td>
-<td>3.95 s</td>
-<td>3.941 s</td>
-<td>-0.2%</td>
+<td>p2 §双重互锁</td>
+<td>KM2 吸合时刻</td>
+<td>2.03 s</td>
+<td>2.03 s</td>
+<td>+0.0%</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p2 图11-p2-2</td>
-<td>有回差恢复时刻</td>
-<td>9.65 s</td>
-<td>9.407 s</td>
-<td>-2.5%</td>
-<td>✅</td>
-<td>对 V_L 很敏感：V_L 高 2 mV → 提前 0.24 s</td>
-</tr>
-<tr>
-<td>p2 例题1(2)</td>
-<td>1 A→3 A 跳闸时间</td>
-<td>62 ms</td>
-<td>62.4 ms</td>
-<td>+0.6%</td>
-<td>✅</td>
-<td>闭环，3 A 实测 3.00 A</td>
-</tr>
-<tr>
-<td>p2 例题2</td>
-<td>R_S 0.05 Ω 跳闸电流</td>
-<td>3.86 A</td>
-<td>3.849 A</td>
-<td>-0.3%</td>
-<td>✅</td>
-<td>SPICE 门限 ÷ R_S</td>
-</tr>
-<tr>
-<td>p2 例题2</td>
-<td>R_S 0.05 Ω 恢复电流</td>
-<td>2.92 A</td>
-<td>2.955 A</td>
-<td>+1.2%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p2 例题3</td>
-<td>R_S 0.2 Ω 跳闸电流</td>
-<td>0.96 A</td>
-<td>0.9622 A</td>
-<td>+0.2%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p2 例题3</td>
-<td>R_S 0.2 Ω 恢复电流</td>
-<td>0.73 A</td>
-<td>0.7388 A</td>
-<td>+1.2%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p2 例题3</td>
-<td>0.5 A→3 A 切断时间</td>
+<td>p2 §双重互锁</td>
+<td>换向空档</td>
 <td>20 ms</td>
-<td>20.39 ms</td>
-<td>+1.9%</td>
-<td>✅</td>
-<td>R_S 0.2 Ω，电流源阶跃</td>
-</tr>
-<tr>
-<td>p3 §一 读表</td>
-<td>R_F 10k 上偏置电流压降（最大）</td>
-<td>2.5 mV</td>
-<td>0.25 mV</td>
-<td>-90.0%</td>
-<td>✅ 页面给的是最大值，典型值小一个量级</td>
-<td>模型为典型偏置（总 70 nA）；页面写的是最大值</td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第一行</td>
-<td>无回差首次切断</td>
-<td>26 ms</td>
-<td>26.81 ms</td>
-<td>+3.1%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第一行</td>
-<td>0.4 s 内翻转次数</td>
-<td>2.88e+04 次</td>
-<td>6268 次</td>
-<td>-78.2%</td>
-<td>⚠️ 数量是仿真步长的产物；真实约 8 kHz，且 MOS 管半开半关</td>
-<td>栅极在 0.38～3.35 V 间摆动</td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第一行</td>
-<td>平均（采样）电流</td>
-<td>1.93 A</td>
-<td>1.916 A</td>
-<td>-0.7%</td>
-<td>✅</td>
-<td>电机电流含续流 2.82 A</td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第一行</td>
-<td>MOS 管平均功耗</td>
-<td>— W</td>
-<td>3.912 W</td>
-<td>—</td>
-<td>✅ 定性一致（发热），见修改建议</td>
-<td>页面只说“发热”</td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>打嗝断开时间</td>
-<td>28 ms</td>
-<td>26.43 ms</td>
-<td>-5.6%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>打嗝导通时间</td>
-<td>14 ms</td>
-<td>14.17 ms</td>
-<td>+1.2%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>打嗝周期</td>
-<td>42 ms</td>
-<td>40.61 ms</td>
-<td>-3.3%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>导通占比</td>
-<td>34 %</td>
-<td>34.91 %</td>
-<td>+2.7%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>平均电流</td>
-<td>1.73 A</td>
-<td>1.741 A</td>
-<td>+0.6%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>打嗝中滤波电压上沿</td>
-<td>193 mV</td>
-<td>192.7 mV</td>
-<td>-0.2%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-1 第二行</td>
-<td>打嗝中滤波电压下沿</td>
-<td>146 mV</td>
-<td>147.9 mV</td>
-<td>+1.3%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(a)</td>
-<td>τ=10 ms 5 A 切断</td>
-<td>2.6 ms</td>
-<td>2.621 ms</td>
-<td>+0.8%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(a)</td>
-<td>τ=10 ms 20 A 切断</td>
-<td>0.5 ms</td>
-<td>0.4975 ms</td>
-<td>-0.5%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(a)</td>
-<td>τ=47 ms 5 A 切断</td>
-<td>12.4 ms</td>
-<td>12.32 ms</td>
-<td>-0.7%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(a)</td>
-<td>τ=47 ms 20 A 切断</td>
-<td>2.35 ms</td>
-<td>2.338 ms</td>
-<td>-0.5%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(a)</td>
-<td>τ=100 ms 5 A 切断</td>
-<td>26.4 ms</td>
-<td>26.21 ms</td>
-<td>-0.7%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(a)</td>
-<td>τ=100 ms 20 A 切断</td>
-<td>5 ms</td>
-<td>4.975 ms</td>
-<td>-0.5%</td>
-<td>✅</td>
-<td></td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(b)</td>
-<td>未滤波尖峰</td>
-<td>500 mV</td>
-<td>500 mV</td>
+<td>20 ms</td>
 <td>+0.0%</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 图11-p3-2(b)</td>
-<td>τ=10 ms 滤波峰值</td>
-<td>278 mV</td>
-<td>277.8 mV</td>
-<td>-0.1%</td>
+<td>p2 例1</td>
+<td>正转中按反转(接触器互锁)：KM1/KM2（SPICE：吸/放）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 图11-p3-2(b)</td>
-<td>τ=47 ms 滤波峰值</td>
-<td>144 mV</td>
-<td>144.1 mV</td>
-<td>+0.1%</td>
+<td>p3 图11-p3-1</td>
+<td>按钮互锁：KM2 吸合 12 ms、KM1 释放 19 ms 的空档（两只同时闭合 7.0 ms）</td>
+<td>-7 ms</td>
+<td>-7 ms</td>
+<td>-0.0%</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 图11-p3-2(b)</td>
-<td>τ=100 ms 滤波峰值</td>
-<td>100 mV</td>
-<td>100 mV</td>
+<td>p3 图11-p3-1</td>
+<td>按钮互锁：KM2 吸合 17 ms、KM1 释放 19 ms 的空档（两只同时闭合 2.0 ms）</td>
+<td>-2 ms</td>
+<td>-2 ms</td>
 <td>+0.0%</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 图11-p3-2(b) 闭环</td>
-<td>τ=10 ms 启动误跳（栅极最低）</td>
-<td>— V</td>
-<td>0.08646 V</td>
-<td>—</td>
-<td>✅ 和页面“误跳闸”一致</td>
-<td>会跳闸，滤波电压被切在 193 mV</td>
-</tr>
-<tr>
-<td>p3 图11-p3-2(b) 闭环</td>
-<td>τ=47 ms 启动峰值</td>
-<td>144 mV</td>
-<td>146.1 mV</td>
-<td>+1.4%</td>
+<td>p3 图11-p3-1</td>
+<td>按钮互锁：KM2 吸合 22 ms、KM1 释放 4 ms 的空档（两只同时闭合 0.0 ms）</td>
+<td>18 ms</td>
+<td>18 ms</td>
+<td>+0.0%</td>
 <td>✅</td>
-<td>不跳，栅极最低 4.90 V</td>
 </tr>
 <tr>
 <td>p3 练习1</td>
-<td>τ=47 ms 打嗝断开时间</td>
-<td>13 ms</td>
-<td>12.44 ms</td>
-<td>-4.3%</td>
+<td>按钮互锁：KM2 吸合 15 ms、KM1 释放 18 ms 的空档（两只同时闭合 3.0 ms）</td>
+<td>-3 ms</td>
+<td>-3 ms</td>
+<td>-0.0%</td>
 <td>✅</td>
-<td>周期 19.4 ms</td>
 </tr>
 <tr>
-<td>p3 练习2</td>
-<td>τ=47 ms 峰值（50 ms 衰减）</td>
-<td>220 mV</td>
-<td>220.2 mV</td>
-<td>+0.1%</td>
+<td>p3 练习1</td>
+<td>改成双重互锁后的空档(=KM2 吸合时间)</td>
+<td>15 ms</td>
+<td>15 ms</td>
+<td>+0.0%</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 练习2</td>
-<td>峰值出现时刻</td>
-<td>60 ms</td>
-<td>60.13 ms</td>
-<td>+0.2%</td>
+<td>p3 图11-p3-2</td>
+<td>按钮互锁：熔焊后按反转，KM2 是否吸合(页面：吸合，短路)（SPICE：KM2 吸合，同时闭合 0.88 s）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 练习2</td>
-<td>τ=100 ms 峰值</td>
-<td>156 mV</td>
-<td>156.2 mV</td>
-<td>+0.2%</td>
+<td>p3 图11-p3-2</td>
+<td>双重互锁：熔焊后按反转，KM2 是否吸合(页面：一直断开)（SPICE：KM2 释放）</td>
+<td>—</td>
+<td>0</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
-<td>p3 练习3</td>
-<td>R_S 0.033 Ω 跳闸电流</td>
-<td>5.84 A</td>
-<td>5.831 A</td>
-<td>-0.1%</td>
+<td>p3 图11-p3-2</td>
+<td>松开停止后 KM1 线圈重新通电(自锁触点也粘住)（SPICE：重新通电）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
 <td>✅</td>
-<td></td>
 </tr>
 <tr>
 <td>p3 练习4</td>
-<td>启动冲击多出的 I²t</td>
-<td>0.32 A²s</td>
-<td>0.32 A²s</td>
-<td>+0.0%</td>
-<td>✅</td>
-<td>ngspice 积分</td>
-</tr>
-<tr>
-<td><strong>合计</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td></td>
-<td>✅49 ⚠️1 ❌0</td>
-<td></td>
-</tr>
-</tbody>
-</table>
-<p>评级标准：✅ 表示偏差在 10% 以内，或页面给的是最大值且 SPICE 没有超过；⚠️ 表示有明显出入；❌ 表示方向错、数量级错或会误导。</p>
-<p><strong>几点说明</strong></p>
-<ul>
-<li>V_L 比页面高约 2 mV，原因是 LM393 输出低电平不是 0 V。它拉着 2.2 kΩ 上拉，约有 85 mV，抬高了 V_L。所以回差是 44.7 mV，不是 47 mV；有回差时的恢复时刻也因此从 9.65 s 提前到 9.41 s。这些都在 10% 以内。</li>
-<li>图 11-p2-2 的 10 次和 2 次翻转都能在 SPICE 里精确复现，翻转时刻也对得上。</li>
-</ul>
-<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>p3 图 11-p3-1 第一行（无回差）</strong>。原句：</p>
-<blockquote>
-<p>每个仿真步长（10 μs）都在翻转，0.4 s 里翻转了 28803 次。平均电流被「钉」在门限 1.93 A，MOS 管在高速开关中发热，电机一直在受冲击。</p>
-</blockquote>
-<p>建议改为：</p>
-<blockquote>
-<p>在我们的简化仿真里，比较器每个仿真步长（10 μs）都翻转一次，0.4 s 翻转了 28803 次。这个次数只是仿真步长的产物；真实电路翻得多快，由比较器和 MOS 管自身的速度决定。用厂商模型仿真大约是每秒 8000 次上下，0.4 s 里约 6000 次。更糟的是，比较器来不及把栅极完全拉高或拉低，栅极电压停在 0.4～3.3 V 之间，MOS 管长时间处于「半开半关」状态，平均发热约 4 W，没有散热片的 TO-220 很快就会烫手。流过采样电阻的平均电流确实被「钉」在门限 1.93 A 附近；但电机线圈里还有经续流二极管循环的电流，电机本身的平均电流约 2.8 A，电机一直在受冲击。这是最糟糕的情况。</p>
-</blockquote>
-<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
-<p>条件：图 11-p2-1 完整电路，12 V 电机电源，5 V 比较器电源；数值来自 <code>dmm.cir</code>。断开期间的电压一直在变（电容在放电），万用表只能看到大致数值，看清楚要用示波器。</p>
-<table>
-<thead>
-<tr>
-<th>测量点</th>
-<th>表笔位置</th>
-<th>正常运行 1 A</th>
-<th>堵转跳闸后断开期间（跳闸后约 5 ms）</th>
-<th>页面值</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>采样点</td>
-<td>红笔接 MOS 管源极（R_S 上端），黑笔接 R_S 下端的地</td>
-<td>0.100 V</td>
-<td>≈0 V</td>
-<td>1 A 对应 0.1 V；5 A 对应 0.5 V</td>
-</tr>
-<tr>
-<td>反相端（−）</td>
-<td>红笔接 C_F 上端（LM393 的 2 脚），黑笔接地</td>
-<td>0.100 V</td>
-<td>约 0.18 V，正从 193 mV 往 146 mV 放电</td>
-<td>正常时低于门限</td>
-</tr>
-<tr>
-<td>同相端（+）</td>
-<td>红笔接 LM393 的 3 脚（R_A / R_B 交点），黑笔接地</td>
-<td>0.193 V</td>
-<td>0.147 V</td>
-<td>193 mV / 146 mV</td>
-</tr>
-<tr>
-<td>比较器输出（栅极）</td>
-<td>红笔接 LM393 的 1 脚（MOS 管栅极），黑笔接地</td>
-<td>4.90 V</td>
-<td>0.09 V</td>
-<td>高（5 V）/ 接近 0 V</td>
-</tr>
-<tr>
-<td>MOS 管漏极</td>
-<td>红笔接漏极（电机下端），黑笔接地</td>
-<td>0.121 V（V_DS ≈ 21 mV）</td>
-<td>12 V</td>
+<td>KM1 未吸合时按 M2 启动：KM2 不吸（SPICE：KM2 放）</td>
 <td>—</td>
+<td>0</td>
+<td>—</td>
+<td>✅</td>
 </tr>
 <tr>
-<td>电机电流</td>
-<td>电流挡串在 +12 V 和电机之间</td>
-<td>1.00 A</td>
+<td>p3 练习4</td>
+<td>M1 启动后 M2 仍停（需再按 SB4）（SPICE：KM2 放）</td>
+<td>—</td>
 <td>0</td>
-<td>1 A / 0</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习4</td>
+<td>M1 运行中按 SB4：KM2 吸合（SPICE：KM2 吸）</td>
+<td>—</td>
+<td>1</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习4</td>
+<td>M1 停止：M2 跟着停（SPICE：KM2 放）</td>
+<td>—</td>
+<td>0</td>
+<td>—</td>
+<td>✅</td>
 </tr>
 </tbody>
 </table>
-<p>万用表测打嗝时，读数会在两种状态之间跳。用电流挡测堵转平均电流，约 1.7 A（页面 1.73 A）。</p>
-<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>统计：❌ 0 条；⚠️ 1 条已处理（1 条改、0 条不改）；ℹ️ 无改动。</p>
+<p>统计：✅ 36　⚠️ 0　❌ 0</p>
+<h2 id="结论">结论</h2>
+<ul>
+<li>page2 代码输出的 15 个状态点和 3 个「同时吸合总时长」（2975 / 0 / 0 ms）全部吻合。</li>
+<li>「赛跑」图 11-p2-3：KM1 5.020 s 吸合，KM2 线圈白白通电 15 ms，跟页面一致。</li>
+<li>双重互锁换向空档 20 ms 跟页面一致。</li>
+<li>page3 的空档公式 t_gap = t_pick − t_drop 核对结果：−7、−2、−3 ms 三个负空档都复现了，同时闭合时长分别是 7、2、3 ms。图上那个正空档点（22 − 4 = 18 ms）是我自己按公式补算的，页面没有直接写出这个数。</li>
+<li>熔焊场景：
+<ul>
+<li>只做按钮互锁时，KM2 吸合，两只同时闭合 0.88 s，跟页面一致。</li>
+<li>双重互锁时 KM2 一直不吸合。</li>
+<li>松开停止按钮后，KM1 线圈重新通电。</li>
+</ul>
+</li>
+<li>练习 4 的顺序控制逻辑正确。</li>
+<li>没有需要修改的地方。</li>
+<li>没有仿真的项目：
+<ul>
+<li>练习 2（自己的常闭锁自己导致抖动）、练习 3（三相相序）属于定性内容或主电路内容。</li>
+<li>动手实验第 3 步「只短接一只」的结论按逻辑推演是成立的（KM2 吸合后它的常闭断开 KM1），没有单独做仿真。</li>
+</ul>
+</li>
+</ul>
+<h2 id="面包板万用表读数page2-动手实验12-v-继电器版">面包板万用表读数（page2 动手实验，12 V 继电器版）</h2>
 <table>
 <thead>
 <tr>
-<th>条目</th>
-<th>处理</th>
-<th>改了哪里、怎么改</th>
+<th>测量</th>
+<th>量程</th>
+<th>红表笔 → 黑表笔</th>
+<th>预期读数</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>⚠️ p3 图 11-p3-1 第一行：0.4 s 翻转 2.88 万次</td>
-<td>已改</td>
-<td>按建议改写该条：28803 次注明是简化仿真「每个步长翻一次」的产物；厂商模型约每秒 8000 次、0.4 s 约 6000 次；栅极停在 0.4～3.3 V，MOS 管半开半关，平均发热约 4 W，TO-220 无散热片很快烫手；采样电阻平均电流约 1.93 A，但电机电流含续流约 2.8 A。28803 次是脚本/图的数，保留</td>
+<td>电源</td>
+<td>DC 20 V</td>
+<td>12 V 正极 → 负极</td>
+<td>约 12.0 V</td>
+</tr>
+<tr>
+<td>按 SB2 后 KM1 线圈电压（保持）</td>
+<td>DC 20 V</td>
+<td>KM1 线圈正端 → 电源负极</td>
+<td>约 12 V（触点和导线压降小于 0.1 V）</td>
+</tr>
+<tr>
+<td>此时 KM2 线圈电压（接触器互锁有效）</td>
+<td>DC 20 V</td>
+<td>KM2 线圈正端 → 电源负极</td>
+<td>0 V，即使按住 SB3 也是 0 V</td>
+</tr>
+<tr>
+<td>KM1 吸合时 KM2 回路里的 KM1 常闭触点两端</td>
+<td>DC 20 V</td>
+<td>常闭触点靠电源一侧 → 靠线圈一侧</td>
+<td>按住 SB3 时约 12 V（触点断开，电压全部落在触点上）</td>
+</tr>
+<tr>
+<td>线圈电阻（断电）</td>
+<td>Ω 2 kΩ 档</td>
+<td>线圈两端</td>
+<td>继电器标称值，例如 12 V/30 mA 的继电器约 400 Ω（本仿真的假设值）</td>
+</tr>
+<tr>
+<td>线圈电流</td>
+<td>DC 200 mA，串在线圈回路里</td>
+<td>电源正极 → 线圈</td>
+<td>约 12 V ÷ 线圈电阻。按 400 Ω 算约 30 mA；并联的 LED 再加约 10 mA</td>
 </tr>
 </tbody>
 </table>
-<p>脚本（code/11_sim.py、code/figs/11_figs.py）未改。</p>
-<p>改动文件：11-overload-protection/page3.md、review/spice/11.md。</p>
-<p>检查：count_cjk（1512 / 2252 / 2800）、run_blocks（页面 2 块、脚本 2 个）、check_figs、check_github_math（2 / 54 / 40）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>本节点 ❌ 0 条、⚠️ 0 条，没有需要修改的项。报告未提及导航链接，未动。</p>
+<p>改动文件：仅 <code>review/spice/11.md</code>（本记录）。页面、脚本、图均未改。</p>
+<p>检查（仓库根目录）：count_cjk（1845/3279/2596 字）、run_blocks（1 过）、run_blocks --scripts（11_sim.py、11_figs.py）、check_figs（3/3/2 张）、check_github_math（0/48/10）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

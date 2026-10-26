@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>18 微分电路 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/18-differentiator/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="18-微分电路--原理与实现篇">18 微分电路 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> · <a href="../14-integrator/page1.html">14 积分电路 · 直觉篇</a></p>
+<h2 id="先补一点最小知识">先补一点最小知识</h2>
+<ol>
+<li><strong>虚地和虚断</strong>：和 <a href="../14-integrator/page1.html">14 积分电路 · 直觉篇</a> 一样，同相端接地、加了负反馈，<strong>只要输出没有顶到电源</strong>（运放没有饱和），反相端就是约 0 V 的「虚地」（这是虚短的一种，成立条件见 <a href="../02-opamp-basics/page1.html">02 运放入门 · 直觉篇</a>）；输出一旦被顶到电源轨，虚地就失效，本页例题 3 和参数与调试篇练习 1 都会遇到这种情形。同时，运放输入端不取电流。</li>
+<li><strong>电容的电流公式</strong>：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> 讲过 <span class="math math-inline">\(I = C \cdot \Delta V / \Delta t\)</span> 。中文意思：<strong>流过电容的电流 = 电容量 × 电容电压变化的快慢</strong>。电压不变，电流为 0；电压变得越快，电流越大。</li>
+<li><strong>斜率的记号</strong>：数学上用 <span class="math math-inline">\(\dfrac{dV_i}{dt}\)</span> 表示「 <span class="math math-inline">\(V_i\)</span> 在这一时刻的变化快慢」，也就是曲线在这一点的斜率，单位是 V/s。你只要把它读成「斜率」就行。</li>
+</ol>
+<h2 id="推导三步得到输出公式">推导：三步得到输出公式</h2>
+<p>请对照下面的推导图，它就是直觉篇的微分器，只是把电流和虚地标了出来。</p>
+<p><a class="img-link" href="img/18_p2_1_analysis.png"><img alt="推导用微分器" src="img/18_p2_1_analysis.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-1　微分器中的电流 I：流过输入电容 C，再全部流过反馈电阻 Rf</em></p>
+<p><strong>第一步：输入电容上的电流</strong>。在图 18-p2-1 中，电容左端是 <span class="math math-inline">\(V_i\)</span> ，右端是虚地 0 V，电容两端的电压就是 <span class="math math-inline">\(V_i\)</span> 本身，所以</p>
+<div class="math math-display">\[I = C \frac{dV_i}{dt}\]</div>
+<p>中文意思：<strong>输入变化得越快，流过电容的电流越大；输入不变，电流为 0</strong>。这一步把「斜率」翻译成了「电流」。</p>
+<p><strong>第二步：电流全部流过 <span class="math math-inline">\(R_f\)</span></strong>。运放反相端不取电流，电流 I 只能继续流过 <span class="math math-inline">\(R_f\)</span> ，流向输出端。</p>
+<p><strong>第三步：读出输出</strong>。 <span class="math math-inline">\(R_f\)</span> 左端是虚地 0 V，电流从左往右流，右端（输出）就比 0 V 低 <span class="math math-inline">\(I R_f\)</span> ：</p>
+<div class="math math-display">\[V_o = -R_f I = -R_f C \frac{dV_i}{dt}\]</div>
+<p>中文意思：<strong>输出 = −（输入的斜率）× <span class="math math-inline">\(R_f C\)</span></strong>。 <span class="math math-inline">\(R_f C\)</span> 单位是秒（10 kΩ × 100 nF = 1 ms），它决定「多大的斜率换多大的电压」。和积分器一比就清楚了：积分器是「面积 ÷ RC」，微分器是「斜率 × RC」，两者互为逆运算；电路上，就是把 R 和 C 的位置对调。</p>
+<h2 id="代数两个结论一个隐患">代数：两个结论，一个隐患</h2>
+<p><strong>结论一：直线输入得到恒定输出</strong>。输入是一条斜率为 k 的直线时，输出恒为 <span class="math math-inline">\(-R_f C \cdot k\)</span> 。三角波斜率是 <span class="math math-inline">\(\pm 4V_m f\)</span> （ <span class="math math-inline">\(V_m\)</span> 是幅度、f 是频率，一个周期里上升 <span class="math math-inline">\(2V_m\)</span> 用半个周期），所以输出是幅度为 <span class="math math-inline">\(4V_m f R_f C\)</span> 的方波。±0.5 V、500 Hz 的三角波斜率为 ±1 V/ms，输出 ±1 V。</p>
+<p><strong>结论二：越快的信号，被放得越大</strong>。幅度为 A、频率为 f 的正弦波，最陡的地方斜率是 <span class="math math-inline">\(2\pi f A\)</span> 。直觉上可以这样想：正弦波可以看成一个点沿半径为 A 的圆匀速转圈时的高度，一圈走 <span class="math math-inline">\(2\pi A\)</span> 的路程、用时 <span class="math math-inline">\(1/f\)</span> ，速度是 <span class="math math-inline">\(2\pi f A\)</span> ；点在过零的位置正好竖直运动，高度变化最快，斜率就等于这个速度。所以经过微分器后幅度变成</p>
+<div class="math math-display">\[A_{out} = 2\pi f R_f C \cdot A\]</div>
+<p>中文意思：<strong>微分器的「放大倍数」随频率成正比增长</strong>。对 <span class="math math-inline">\(R_f C\)</span> = 1 ms 的电路，159 Hz 的正弦波放大 1 倍，1.59 kHz 放大 10 倍，20 kHz 放大约 126 倍（这是理想运放下的数；用真实运放搭，20 kHz 已经靠近电路自己想振的频率，实际放大倍数还要更大，LM358B 模型仿真约 150 倍，见本页末尾的「💡 实际芯片会怎样」）。</p>
+<p><strong>隐患：高频噪声被放大，而且电路容易「自己振起来」</strong>。真实信号里总有又小又快的干扰（开关电源的纹波、无线电的耦合）。一个只有 10 mV 的 20 kHz 干扰，按上式会变成约 1.26 V 的输出波动，比我们想要的 ±1 V 方波还大。更麻烦的是，真实运放在高频时自身的放大能力会下降（增益带宽积 GBW：运放的「放大倍数 × 频率」有个上限，LM358B 约 1.2 MHz，频率越高能给的倍数越小，见 <a href="../02-opamp-basics/page3.html">02 运放入门 · 参数与调试篇</a>），它和外面的微分网络凑在一起，会在某个频率上来回「倒腾能量」，表现为<strong>振铃</strong>（输出在跳变之后像敲过的铃一样来回摆几下才慢慢停下）甚至持续振荡。TI 的微分器设计手册直接写道：理想微分器从根本上就是不稳定的，必须加入输入电阻、反馈电容或两者，电路才能稳定；而这些元件同时也限制了微分功能的工作频率范围（<a href="https://www.ti.com/lit/an/sboa276c/sboa276c.pdf">TI SBOA276C</a>）。</p>
+<p>于是有了<strong>实用微分器</strong>：</p>
+<p><a class="img-link" href="img/18_p2_2_practical.png"><img alt="实用微分器" src="img/18_p2_2_practical.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-2　实用微分器：输入在 C 前再串一个 R1，反馈电阻 Rf 旁并一个小电容 Cf</em></p>
+<p>图 18-p2-2 里两个新元件的作用都是「只管高频」：</p>
+<ul>
+<li><strong><span class="math math-inline">\(R_1\)</span></strong>：电容对正弦信号的「阻碍」叫容抗，大小是 <span class="math math-inline">\(1/(2\pi f C)\)</span> ，频率越高越小（见 <a href="../14-integrator/page1.html">14 积分电路 · 直觉篇</a> 示波器第 3 步和 <a href="../20-active-filter/page2.html">20 有源滤波 · 原理与实现篇</a>；这里直接用这个结论，推导超出本教程）。频率低时，容抗很大， <span class="math math-inline">\(R_1\)</span> 可以忽略，电路照常微分；频率很高时，电容几乎相当于短路，输入电流被 <span class="math math-inline">\(R_1\)</span> 限住，电路退化成放大倍数为 <span class="math math-inline">\(-R_f/R_1\)</span> 的反相放大（<a href="../05-inverting-amp/page1.html">05 反相放大 · 直觉篇</a>），不再随频率无限增长。本例 <span class="math math-inline">\(R_f/R_1\)</span> = 10，高频放大被封顶在 10 倍左右。</li>
+<li><strong><span class="math math-inline">\(C_f\)</span></strong>：频率高时它把 <span class="math math-inline">\(R_f\)</span> 短路掉一部分，让高频的放大倍数进一步下降。本例取 <span class="math math-inline">\(R_f C_f = R_1 C\)</span> = 0.1 ms，两者在同一个频率附近开始起作用。</li>
+</ul>
+<p>这两个元件共同决定了一个「上限频率」 <span class="math math-inline">\(f_H = \dfrac{1}{2\pi R_1 C}\)</span> （本例约 1.59 kHz）。它就是容抗 <span class="math math-inline">\(1/(2\pi f C)\)</span> 正好等于 <span class="math math-inline">\(R_1\)</span> 的那个频率：比它低，电容说了算；比它高， <span class="math math-inline">\(R_1\)</span> 说了算。远低于它的信号被正常微分，远高于它的干扰被压住。</p>
+<h2 id="仿真理想微分器-vs-实用微分器">仿真：理想微分器 vs 实用微分器</h2>
+<p>下面的代码给三角波叠加 10 mV、20 kHz 的干扰，比较理想微分器（直接按公式求斜率）和只串了 <span class="math math-inline">\(R_1\)</span> 的实用版。实用版用「一小段一小段往前推」的办法计算：电容电压每一步的变化 = 电流 × 时间 ÷ C。这段代码不依赖本教程的其他文件，图上只用英文标签，复制到任何目录都能运行；为了和其他节点一致，建议在仓库根目录运行，图片 differentiator_noise.png 会存在当前目录。</p>
+<pre><code class="language-python">import numpy as np                      # 数值计算
+import matplotlib                       # 画图库
+matplotlib.use(&quot;Agg&quot;)                   # 不弹窗口，直接存图
+import matplotlib.pyplot as plt
+
+C, RF, R1 = 100e-9, 10e3, 1e3           # 输入电容 100 nF，反馈 10 kΩ，串联 1 kΩ
+dt = 1e-7                               # 每一小段 0.1 μs
+t = np.arange(0, 4e-3, dt)              # 仿真 4 ms
+ph = (t * 500) % 1                      # 500 Hz 三角波的相位（0～1）
+tri = np.where(ph &lt; 0.5, -0.5 + 2 * ph, 1.5 - 2 * ph)   # ±0.5 V 三角波，斜率 ±1 V/ms
+vin = tri + 0.01 * np.sin(2 * np.pi * 20e3 * t)          # 叠加 10 mV、20 kHz 干扰
+
+vo_ideal = -RF * C * np.gradient(vin, dt)  # 理想微分器：输出 = −斜率 × R_f·C
+
+vo_r1 = np.empty_like(vin)              # 只串 R1 的实用微分器
+q = vin[0]                              # 电容电压初值（假设电路早已稳定）
+for k in range(len(t)):
+    i = (vin[k] - q) / R1               # 流过 R1 和 C 的电流（右端是虚地 0 V）
+    vo_r1[k] = -RF * i                  # 电流全部流过 R_f，输出 = −R_f × 电流
+    q += i * dt / C                     # 电容电压变化 = 电流 × 时间 ÷ C
+
+flat = (t &gt; 1.5e-3) &amp; (t &lt; 2e-3)        # 方波平顶的后半段（避开边沿），只看干扰造成的波动
+print(f&quot;理想微分器平顶波动 {np.ptp(vo_ideal[flat]):.2f} V&quot;)
+print(f&quot;串 R1 后平顶波动 {np.ptp(vo_r1[flat]):.2f} V&quot;)
+
+fig, ax = plt.subplots(2, 1, figsize=(7, 5), sharex=True)   # 上下两张子图
+ax[0].plot(t * 1e3, vo_ideal)           # 理想微分器输出
+ax[0].set_ylabel(&quot;ideal Vo / V&quot;)
+ax[1].plot(t * 1e3, vo_r1)              # 串 R1 的输出
+ax[1].set_ylabel(&quot;with R1  Vo / V&quot;)
+ax[1].set_xlabel(&quot;t / ms&quot;)
+fig.savefig(&quot;differentiator_noise.png&quot;, dpi=120)   # 存到当前目录
+</code></pre>
+<p>运行后终端打印两行：理想微分器的平顶波动约 2.51 V，串了 <span class="math math-inline">\(R_1\)</span> 以后降到约 0.21 V（与参数与调试篇扫描中 R1 = 1 kΩ 的 199 mV 基本一致）。教程配图由 <code>code/18_sim.py</code> 生成，其中实用版同时串了 <span class="math math-inline">\(R_1\)</span> 、并了 <span class="math math-inline">\(C_f\)</span> ：</p>
+<p><a class="img-link" href="img/18_p2_3_noise.png"><img alt="噪声对比" src="img/18_p2_3_noise.png" loading="lazy" /></a></p>
+<p><em>图 18-p2-3　上：输入三角波，10 mV 干扰几乎看不出；中：理想微分器把干扰放大到峰峰 2.51 V；下：实用微分器的干扰只剩约 16 mV</em></p>
+<p>读图 18-p2-3：第一行的输入里，10 mV 的干扰只是三角波上一层细细的「毛边」。第二行理想微分器的输出中，方波的平顶被一片峰峰值 2.51 V 的锯齿淹没，和公式 <span class="math math-inline">\(2 \times 2\pi f R_f C \cdot A\)</span> = 2 × 2π × 20 kHz × 1 ms × 10 mV ≈ 2.51 V 完全一致——<strong>一个肉眼看不见的干扰，在输出端比有用信号还大</strong>。第三行的实用微分器方波干净得多，干扰只剩约 16 mV；代价是方波的边沿不再是笔直的竖线，而是用大约 0.2 ms 才「爬」到位，这是 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(C_f\)</span> 削掉高频的必然结果。参数与调试篇会把这个取舍讲清楚。</p>
+<blockquote>
+<p><strong>💡 实际芯片会怎样</strong></p>
+<p>上面的代码和图 18-p2-3 用的是简化的运放模型。换成 TI 的 LM358B 仿真模型（ngspice 仿真，±15 V 供电）重算同一组电路，数字会变大一些，但结论不变：</p>
+<ul>
+<li>20 kHz 处理想微分器的放大倍数约 148 倍（仿真 147.9 倍），比公式算的 126 倍还大，因为这个频率已经靠近电路自己的振铃频率（约 13 kHz）。</li>
+<li>理想微分器输出上的干扰峰峰值约 8.6 V（仿真 8.59 V），比 2.51 V 大得多：干扰之外，电路本身也在振。</li>
+<li>只串 <span class="math math-inline">\(R_1\)</span> 时平顶波动约 0.27 V（代码里是 0.21 V）；实用微分器的平顶干扰从 16 mV 增加到约 26 mV，仍然很小。</li>
+</ul>
+<p>理想微分器在 LM358 上为什么会自己振、加 <span class="math math-inline">\(R_1\)</span> 或 <span class="math math-inline">\(C_f\)</span> 为什么能压住，见 <a href="page1.html">18 微分电路 · 直觉篇</a>「先打个预防针」一节的四行对比图。</p>
+</blockquote>
+<h2 id="例题">例题</h2>
+<p><strong>例题 1（完整示范）</strong>： <span class="math math-inline">\(R_f\)</span> = 10 kΩ，C = 100 nF，输入是 ±2 V、250 Hz 的三角波。求输出方波的幅度。</p>
+<ul>
+<li>第一步， <span class="math math-inline">\(R_f C\)</span> = 10 kΩ × 100 nF = 1 ms。</li>
+<li>第二步，三角波半个周期是 2 ms，从 −2 V 升到 +2 V 共 4 V，斜率 = 4 V ÷ 2 ms = 2 V/ms。</li>
+<li>第三步，输出 = −1 ms × (±2 V/ms) = ∓2 V，即 ±2 V 方波（输入上升时为 −2 V）。</li>
+</ul>
+<p><strong>例题 2（留空练习）</strong>： <span class="math math-inline">\(R_f\)</span> = 47 kΩ，C = 22 nF，输入 ±1 V、1 kHz 三角波。</p>
+<p><span class="math math-inline">\(R_f C\)</span> = ____ ms；三角波斜率 = ____ V/ms；输出方波幅度 = ____ V。</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(R_f C\)</span> = 47 kΩ × 22 nF ≈ 1.03 ms；半周期 0.5 ms 内升 2 V，斜率 4 V/ms；输出幅度约 1.03 × 4 ≈ 4.1 V。</p>
+</details>
+<p><strong>例题 3（变体迁移：边沿检测）</strong>：把一个 0 V → 5 V 的方波（边沿用 10 μs 完成跳变）送进 <span class="math math-inline">\(R_f C\)</span> = 1 ms 的<strong>理想</strong>微分器，输出会是什么样子？这对「边沿检测」意味着什么？实际电路里会怎样？</p>
+<details><summary>答案</summary>
+<p>方波的平顶斜率为 0，输出为 0；只有在跳变的那 10 μs 里斜率很大：5 V ÷ 10 μs = 500 V/ms，理想输出应为 −500 V。实际运放输出不可能超过电源，此时运放饱和、虚地不再成立，于是在上升沿处输出一个顶到负饱和的窄脉冲，下降沿处一个顶到正饱和的窄脉冲。这正是「边沿检测」：只在信号跳变时给出脉冲。实际做边沿检测时，常常不用运放，而直接用「串联电容 + 对地电阻」的无源 RC 电路，再接比较器或逻辑门整形；如果用运放微分器，必须加 <span class="math math-inline">\(R_1\)</span> 限制峰值电流、让输出不至于硬撞电源轨。</p>
+</details>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

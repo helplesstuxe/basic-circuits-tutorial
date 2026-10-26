@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>26 上拉电阻与电平转换 · SPICE 核对报告（审校 B）</title>
+<title>26 H 桥电机驱动 · SPICE 核对报告（审校 B）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,16 +42,14 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/26.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="26-上拉电阻与电平转换--spice-核对报告审校-b">26 上拉电阻与电平转换 · SPICE 核对报告（审校 B）</h1>
-<p>运行：<code>python spice/26/run.py</code>（在仓库根目录，退出码 0，约 45 s）。网表：</p>
+<h1 id="26-h-桥电机驱动--spice-核对报告审校-b">26 H 桥电机驱动 · SPICE 核对报告（审校 B）</h1>
+<p>运行：<code>python spice/26/run.py</code>（在仓库根目录，退出码 0）。网表：</p>
 <ul>
-<li><code>spice/26/pullup.cir</code>：图 26-p1-1 / 推导一。10 kΩ 上拉加 1 µA 漏电流，以及页面的 50 Hz 耦合示意源（20 V 经 0.5 pF）。</li>
-<li><code>spice/26/press.cir</code>：按下时流过上拉电阻的电流（推导一、例 1、练习 1、练习 2）。</li>
-<li><code>spice/26/i2crise.cir</code>：开漏释放后 Rp 给 Cb 充电。测 30%→70% 上升时间和 1.25 µs 时的电压（推导二、图 26-p3-1、例 1、练习 2）。</li>
-<li><code>spice/26/rpmin.cir</code>：Rp(min) 时灌 3 mA，看 VOL 是否为 0.4 V。</li>
-<li><code>spice/26/divider.cir</code>：练习 4 的 10k/20k 分压，加 10 pF 输入电容。</li>
-<li><code>spice/26/debounce.cir</code>：图 26-p2-1 的 RC 去抖，接 TI SN74HC14 行为模型（推导三、仿真一、例 2、练习 3）。按键可以是干净的一次按下，也可以是 <a href="http://run.py">run.py</a> 按页面 <code>bounce_state(seed=3)</code> 算法生成的同一段抖动（PWL）。</li>
-<li><code>spice/26/shifter.cir</code>：AN10441 接法的 BSS138 双向电平转换，参数与页面仿真二完全一致（SWAP=1 时源漏接反）。</li>
+<li><code>spice/26/seq.cir</code>：图 26-p1-3 的正转 → 滑行 → 正转 → 刹车 → 反转序列。</li>
+<li><code>spice/26/pwm.cir</code>：「驱动—刹车」PWM（图 26-p2-2、例 1/2、扫描二的频率表）。</li>
+<li><code>spice/26/stop.cir</code>：全速后刹车 / 滑行（图 26-p2-3、推导三）。</li>
+<li><code>spice/26/shoot.cir</code>：扫描一的死区示意模型。</li>
+<li><code>spice/26/halfbr.cir</code>：用 IRLZ44N 官方模型搭的真实半桥，核对「死区要留到 1 µs 量级」。</li>
 </ul>
 <h2 id="模型与来源">模型与来源</h2>
 <table>
@@ -65,39 +63,45 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>BSS138</td>
-<td><code>spice/models/BSS138_diodes.lib</code>（新建）</td>
-<td>Diodes Inc.（Zetex）官方：<a href="https://www.diodes.com/spice/download/1838/BSS138.spice.txt%EF%BC%88%E5%B7%B2%E5%AE%9E%E9%99%85%E4%B8%8B%E8%BD%BD%EF%BC%89">https://www.diodes.com/spice/download/1838/BSS138.spice.txt（已实际下载）</a></td>
-<td><strong>替代</strong>：页面引用的是 onsemi BSS138。onsemi 的模型地址 <a href="https://www.onsemi.com/download/models/lib/bss138.lib">https://www.onsemi.com/download/models/lib/bss138.lib</a> 对本机返回 Access Denied，所以改用同型号的 Diodes 模型。模型 VTO = 1 V，页面取 onsemi 典型 1.3 V。子电路名 <code>BSS138/ZTX</code> 原样保留，ngspice 能正常读入</td>
+<td>DRV8871</td>
+<td>无</td>
+<td>TI 的 DRV8871 / DRV8871-Q1 产品页没有本芯片的模型。DRV8871-Q1 页只挂了「DRV8876-Q1 PSpice Transient Simulation」，即 SLVMCQ2A（<a href="https://www.ti.com/lit/zip/slvmcq2">https://www.ti.com/lit/zip/slvmcq2</a> 已下载查看）。</td>
+<td>DRV8876 是另一颗芯片（导通电阻、限流方式都不同），<strong>没有采用</strong>，也没有放进 spice/models/</td>
 </tr>
 <tr>
-<td>SN74HC14</td>
-<td><code>spice/models/SN74HC14_TI.lib</code>（新建）</td>
-<td>TI 官方 SN74HC14 Behavioral SPICE Model，SCLM222：<a href="https://www.ti.com/lit/zip/sclm222%EF%BC%88%E5%B7%B2%E4%B8%8B%E8%BD%BD%E8%A7%A3%E5%8E%8B%EF%BC%8C%E5%86%85%E5%90%AB">https://www.ti.com/lit/zip/sclm222（已下载解压，内含</a> SN74HC14.cir）</td>
-<td>行为模型，门限按 VCC 查表插值：4.5 V 时 2.5 / 1.6 V，6 V 时 3.3 / 2.0 V，5 V 时约 2.77 / 1.73 V</td>
-</tr>
-<tr>
-<td>按键 / 开漏输出管</td>
+<td>桥臂四只开关</td>
 <td>网表内 <code>.model SW</code></td>
 <td>ngspice 内建理想开关</td>
-<td>按键 RON 0.1 Ω；开漏驱动 RON 100 Ω（页面值）</td>
+<td>导通电阻取页面给出的 DRV8871 典型值：高边 0.307 Ω，低边 0.258 Ω</td>
 </tr>
 <tr>
-<td>ATmega328P 输入</td>
-<td>无模型</td>
-<td>—</td>
-<td>用 1 µA 恒流（手册漏电上限）加 10 pF（页面示意）代替</td>
+<td>体二极管</td>
+<td>网表内 <code>.model DB D(IS=1e-9 N=1.6)</code></td>
+<td>ngspice 内建二极管，<strong>通用参数，是本报告的假设</strong></td>
+<td>0.3 A 时压降约 0.8 V，对应页面 V_D ≈ 0.8 V 的假设</td>
+</tr>
+<tr>
+<td>电机</td>
+<td>网表内等效电路</td>
+<td>页面参数：R = 2 Ω，L = 1 mH，Ke = 0.02，J = 1e-5，b = 1e-5</td>
+<td>机械部分画成电路：节点电压代表角速度，电容 = J，电阻 = 1/b，转矩 Ke·i 当作电流源</td>
+</tr>
+<tr>
+<td>IRLZ44N</td>
+<td><code>spice/models/IRLZ44N_infineon.lib</code></td>
+<td>Infineon 官方，节点 06 已建，复用</td>
+<td>只在 halfbr.cir 中使用。上管驱动以 A 点为参考，相当于理想自举（假设）</td>
 </tr>
 </tbody>
 </table>
 <p>说明：</p>
 <ul>
-<li>上拉、I²C 上升时间、分压这几项本来就是 RC 问题。SPICE 的 ✅ 说明页面公式和算出的数字没错。</li>
-<li>去抖和电平转换用了厂家模型，能看出示意模型漏掉的东西，见下面的 ⚠️。</li>
-<li>图 26-p2-2 的抖动是随机波形。我把页面的 <code>bounce_state</code> 算法原样抄进 <code>spice/26/run.py</code>（seed = 3，dt = 2 µs），生成同一段触点开合，再作为 PWL 喂给 SPICE。没有运行 code/ 下的脚本。</li>
-<li>扫描（图 26-p3-2）是 20 次随机按键的统计结果，SPICE 没有逐个复现，记 ℹ️。单次抖动已经在仿真一里核对过。</li>
+<li>页面的电机和桥都是示意参数，所以 seq / pwm / stop 三个网表的 ✅ 只表示<strong>页面用 Python 欧拉法算出的数字，ngspice 用同样参数独立算也能得到</strong>。它们不代表 DRV8871 实测。</li>
+<li>SPICE 比页面多算进一点：电流大时，体二极管会和导通的下管并联分流，所以刹车电流大约 2%。</li>
+<li>死区扫描的 shoot.cir 原样采用页面的示意模型（200 ns 线性过渡、25 mΩ、20 nH）。</li>
+<li>真实器件的情况见 halfbr.cir：用 IRLZ44N 官方模型、100 Ω 栅极电阻，死区 0 / 0.5 / 1.0 / 1.5 µs 时直通峰值为 74 / 26 / 5.5 / 0.46 A。页面说「死区要留到 1 µs 量级」成立。</li>
 </ul>
-<p><strong>跳过</strong>：本节没有市电或高压部分。图 26-p1-1 的「人体 20 V / 50 Hz 感应」只是 0.5 pF 耦合的示意源，按页面参数仿真，不涉及市电。</p>
+<p><strong>跳过</strong>：无市电、无高压部分。DRV8871 手册参数（VM 范围、Ipeak、tDEAD、ILIM、IOCP）没有模型可仿，记为 ℹ️。</p>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
@@ -112,657 +116,558 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>p2 推导一</td>
-<td>10k 上拉 + 1 µA 漏电：引脚电压</td>
-<td>4.99 V</td>
-<td>4.99 V</td>
+<td>p1 图26-p1-3 第1条</td>
+<td>正转稳定转速（理想开关 + 通用体二极管（无 DRV8871 模型），电机参数同页面）</td>
+<td>5377 rpm</td>
+<td>5377 rpm</td>
 <td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>50k 上拉 + 1 µA 漏电：压降</td>
-<td>0.05 V</td>
-<td>0.05 V</td>
+<td>p1 图26-p1-3 第1条</td>
+<td>起动电流峰值</td>
+<td>4.56 A</td>
+<td>4.561 A</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图26-p1-3 第1条</td>
+<td>约 0.25 s 后稳定（升到 98%）（SPICE 0.23 s 到 98%，“约 0.25 s”合理）</td>
+<td>0.25 s</td>
+<td>0.2311 s</td>
+<td>-7.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图26-p1-3 第2条</td>
+<td>滑行 0.3 s 后转速</td>
+<td>3988 rpm</td>
+<td>3988 rpm</td>
 <td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图26-p1-1</td>
-<td>10k 上拉时 50 Hz 耦合幅度(示意源)（页面写「几十微伏」；20 V/0.5 pF 为页面示意参数）</td>
-<td>31 µV</td>
-<td>30 µV</td>
-<td>-3.2%</td>
+<td>p1 图26-p1-3 第2条</td>
+<td>刹车 0.2 s 后转速</td>
+<td>184 rpm</td>
+<td>182.7 rpm</td>
+<td>-0.7%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>按下电流 Rp=10k</td>
-<td>0.5 mA</td>
-<td>0.5 mA</td>
-<td>+0.0%</td>
+<td>p1 图26-p1-3 第2条</td>
+<td>刹车电流（SPICE 里电流大时体二极管和下管并联分流，回路电阻略小，电流大 2%）</td>
+<td>-4.36 A</td>
+<td>-4.464 A</td>
+<td>-2.4%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 推导一</td>
-<td>按下电流 Rp=1k</td>
-<td>5 mA</td>
-<td>5 mA</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习1</td>
-<td>门磁闭合电流 Rp=10k，3 V</td>
-<td>0.3 mA</td>
-<td>0.3 mA</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习1</td>
-<td>220 mAh 可用天数 Rp=10k（页面取整）</td>
-<td>30 天</td>
-<td>30.56 天</td>
-<td>+1.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习1</td>
-<td>门磁闭合电流 Rp=1Meg，3 V</td>
-<td>0.003 mA</td>
-<td>0.003 mA</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习1</td>
-<td>220 mAh 可用天数 Rp=1Meg（页面取整）</td>
-<td>3000 天</td>
-<td>3056 天</td>
-<td>+1.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图26-p3-1</td>
-<td>3.3 V/200 pF Rp=1.5k：tr</td>
-<td>254 ns</td>
-<td>254.2 ns</td>
+<td>p1 图26-p1-3 第3条</td>
+<td>刹车后反转的电流峰值</td>
+<td>-4.71 A</td>
+<td>-4.704 A</td>
 <td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图26-p3-1</td>
-<td>Rp=1.5k：1.25 µs 半周期末电压</td>
-<td>3.25 V</td>
-<td>3.249 V</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图26-p3-1</td>
-<td>3.3 V/200 pF Rp=4.7k：tr</td>
-<td>796 ns</td>
-<td>796.5 ns</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图26-p3-1</td>
-<td>Rp=4.7k：1.25 µs 半周期末电压</td>
-<td>2.43 V</td>
-<td>2.429 V</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图26-p3-1</td>
-<td>3.3 V/200 pF Rp=10k：tr</td>
-<td>1695 ns</td>
-<td>1695 ns</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图26-p3-1</td>
-<td>Rp=10k：1.25 µs 半周期末电压</td>
-<td>1.53 V</td>
-<td>1.535 V</td>
-<td>+0.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 推导二</td>
-<td>Rp(max)=1.77k 时 tr（快速模式上限 300 ns）</td>
-<td>300 ns</td>
-<td>299.9 ns</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图26-p3-1</td>
-<td>Rp=5.9k 时 tr（标准模式上限 1000 ns）</td>
-<td>1000 ns</td>
-<td>999.8 ns</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 推导二/例1</td>
-<td>Rp(min)=967、3.3 V、灌 3 mA：VOL</td>
-<td>0.4 V</td>
-<td>0.399 V</td>
-<td>-0.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 推导二/例1</td>
-<td>Rp(min)=1.53k、5 V、灌 3 mA：VOL</td>
-<td>0.4 V</td>
-<td>0.41 V</td>
-<td>+2.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例1</td>
-<td>5 V/150 pF Rp(max)=7.87k：tr</td>
-<td>1000 ns</td>
-<td>1000 ns</td>
+<td>p1 图26-p1-3 第3条</td>
+<td>反转最终转速</td>
+<td>-5383 rpm</td>
+<td>-5383 rpm</td>
 <td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例1</td>
-<td>5 V/150 pF Rp=4.7k：tr</td>
-<td>597 ns</td>
-<td>597.4 ns</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例1</td>
-<td>4.7k 线被拉低时电流</td>
-<td>1.06 mA</td>
-<td>1.064 mA</td>
-<td>+0.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>5 V/300 pF Rp=3.93k：tr</td>
-<td>1000 ns</td>
-<td>999 ns</td>
+<td>p2 图26-p2-2 第1条</td>
+<td>20 kHz、占空比 25% 稳定转速（理想开关 + 通用体二极管（无 DRV8871 模型），电机参数同页面）</td>
+<td>1346 rpm</td>
+<td>1345 rpm</td>
 <td>-0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习2</td>
-<td>5 V/300 pF Rp=3.3k：tr</td>
-<td>839 ns</td>
-<td>838.8 ns</td>
+<td>p2 图26-p2-2 / 推导二</td>
+<td>占空比 25% 电流纹波（峰峰）</td>
+<td>0.113 A</td>
+<td>0.1127 A</td>
+<td>-0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图26-p2-2 第1条</td>
+<td>20 kHz、占空比 50% 稳定转速（理想开关 + 通用体二极管（无 DRV8871 模型），电机参数同页面）</td>
+<td>2690 rpm</td>
+<td>2690 rpm</td>
 <td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习2</td>
-<td>5 V/300 pF Rp=2.2k：tr</td>
-<td>559 ns</td>
-<td>559.2 ns</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>2.2k 低电平电流</td>
-<td>2.3 mA</td>
-<td>2.273 mA</td>
-<td>-1.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习4</td>
-<td>10k/20k 分压高电平</td>
-<td>3.33 V</td>
-<td>3.333 V</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习4</td>
-<td>上升沿时间常数（到 63%）</td>
-<td>67 ns</td>
-<td>67.15 ns</td>
+<td>p2 图26-p2-2 / 推导二</td>
+<td>占空比 50% 电流纹波（峰峰）</td>
+<td>0.15 A</td>
+<td>0.1504 A</td>
 <td>+0.2%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 推导三</td>
-<td>按下判定 R1=R2=10k C=1µF（74HC14 接 5 V）（模型 5 V 下 VT−≈1.73 V）</td>
-<td>11.4 ms</td>
-<td>10.44 ms</td>
-<td>-8.4%</td>
+<td>p2 图26-p2-2 第1条</td>
+<td>20 kHz、占空比 75% 稳定转速（理想开关 + 通用体二极管（无 DRV8871 模型），电机参数同页面）</td>
+<td>4034 rpm</td>
+<td>4034 rpm</td>
+<td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 推导三</td>
-<td>松开判定（74HC14 接 5 V）（模型 5 V 下 VT+≈2.77 V；页面用的是 4.5 V 的门限）</td>
-<td>13.9 ms</td>
-<td>16.29 ms</td>
-<td>+17.2%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 推导三</td>
-<td>按下判定（门限对齐页面：74HC14 接 4.5 V）（核对公式本身）</td>
-<td>11.4 ms</td>
-<td>11.27 ms</td>
-<td>-1.2%</td>
+<td>p2 图26-p2-2 / 推导二</td>
+<td>占空比 75% 电流纹波（峰峰）</td>
+<td>0.113 A</td>
+<td>0.1131 A</td>
+<td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 推导三</td>
-<td>松开判定（门限对齐页面：74HC14 接 4.5 V）（核对公式本身）</td>
-<td>13.9 ms</td>
-<td>13.99 ms</td>
-<td>+0.7%</td>
+<td>p2 图26-p2-2 第1条</td>
+<td>平均模型 25%（对照 SPICE PWM 结果）（SPICE 逐周期开关的结果和页面平均模型差 0.2% 以内）</td>
+<td>1347 rpm</td>
+<td>1345 rpm</td>
+<td>-0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 仿真一</td>
-<td>只接上拉：引脚翻转次数</td>
-<td>22 次</td>
-<td>22 次</td>
-<td>+0.0%</td>
+<td>p2 图26-p2-2 第1条</td>
+<td>平均模型 50%（对照 SPICE PWM 结果）（SPICE 逐周期开关的结果和页面平均模型差 0.2% 以内）</td>
+<td>2694 rpm</td>
+<td>2690 rpm</td>
+<td>-0.2%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 仿真一</td>
-<td>RC + 74HC14：输出翻转次数</td>
-<td>2 次</td>
-<td>2 次</td>
-<td>+0.0%</td>
+<td>p2 图26-p2-2 第1条</td>
+<td>平均模型 75%（对照 SPICE PWM 结果）（SPICE 逐周期开关的结果和页面平均模型差 0.2% 以内）</td>
+<td>4039 rpm</td>
+<td>4034 rpm</td>
+<td>-0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 仿真一</td>
-<td>抖动按下后认出按下（页面用 4.5 V 门限 1.6 V）</td>
-<td>12.3 ms</td>
-<td>11.36 ms</td>
-<td>-7.7%</td>
+<td>p2 推导二 / 例1</td>
+<td>50% 时电机两端平均电压（A−B）（SPICE 量的是 A、B 两点，含一点开关导通压降；电机反电动势平均值和页面一致）</td>
+<td>6 V</td>
+<td>5.922 V</td>
+<td>-1.3%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 仿真一</td>
-<td>抖动松开后认出松开（5 V 下 VT+ 更高，松开更慢）</td>
-<td>13.2 ms</td>
-<td>15.66 ms</td>
-<td>+18.6%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 仿真一</td>
-<td>松开前电容电压最低值（页面「约 0.25 V」）</td>
-<td>0.25 V</td>
-<td>0.2638 V</td>
-<td>+5.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真一</td>
-<td>抖动按下（门限对齐页面 4.5 V）</td>
-<td>12.3 ms</td>
-<td>12.18 ms</td>
-<td>-1.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真一</td>
-<td>抖动松开（门限对齐页面 4.5 V）</td>
-<td>13.2 ms</td>
-<td>13.35 ms</td>
-<td>+1.1%</td>
+<td>p2 例1</td>
+<td>50% 时稳定电流</td>
+<td>0.144 A</td>
+<td>0.1439 A</td>
+<td>-0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
 <td>p2 例2</td>
-<td>C=0.47µF 按下判定（5 V）</td>
-<td>5.4 ms</td>
-<td>4.89 ms</td>
-<td>-9.4%</td>
+<td>75% 时平均电压</td>
+<td>9 V</td>
+<td>8.88 V</td>
+<td>-1.3%</td>
 <td>✅</td>
 </tr>
 <tr>
 <td>p2 例2</td>
-<td>C=0.47µF 松开判定（5 V）（同推导三：5 V 门限更高）</td>
-<td>6.5 ms</td>
-<td>7.659 ms</td>
-<td>+17.8%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p3 练习3</td>
-<td>R2=18k 按下判定（5 V）</td>
-<td>20.5 ms</td>
-<td>18.65 ms</td>
-<td>-9.0%</td>
+<td>75% 时稳定电流（0.216 A）</td>
+<td>0.216 A</td>
+<td>0.2159 A</td>
+<td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习3</td>
-<td>R1=R2=18k 松开判定（5 V）（仍远小于 50 ms 上限，结论不变）</td>
-<td>25 ms</td>
-<td>29.47 ms</td>
-<td>+17.9%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p3 练习3</td>
-<td>R2=18k 按下（门限对齐页面 4.5 V）</td>
-<td>20.5 ms</td>
-<td>20.12 ms</td>
-<td>-1.9%</td>
+<td>p2 推导一</td>
+<td>12 V 全速约 563 rad/s</td>
+<td>563 rad/s</td>
+<td>563.1 rad/s</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习3</td>
-<td>R1=R2=18k 松开（门限对齐页面 4.5 V）</td>
-<td>25 ms</td>
-<td>25.24 ms</td>
-<td>+1.0%</td>
+<td>p2 图26-p2-3</td>
+<td>全速初值（页面平均模型 D=1，SPICE 以此为初值）</td>
+<td>5384 rpm</td>
+<td>5384 rpm</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习3</td>
-<td>VT−=2.45 V 时按下判定（RC 波形）</td>
-<td>12.8 ms</td>
-<td>12.53 ms</td>
-<td>-2.1%</td>
+<td>p2 推导三 / 图26-p2-3</td>
+<td>刹车降到 10% 的时间</td>
+<td>136 ms</td>
+<td>135.5 ms</td>
+<td>-0.4%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 τ扫描</td>
-<td>Schmitt 多翻次数/最长延迟（随机统计）（20 次随机抖动统计，SPICE 未逐一复现；单次抖动已由仿真一核对）</td>
+<td>p2 推导三</td>
+<td>刹车时间常数 τ（= 降到 10% 时间 / 2.3）</td>
+<td>59 ms</td>
+<td>58.83 ms</td>
+<td>-0.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图26-p2-3</td>
+<td>刹车电流峰值（同 p1：体二极管分流，大 2%）</td>
+<td>-4.36 A</td>
+<td>-4.465 A</td>
+<td>-2.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图26-p2-3</td>
+<td>刹车电流约 2 ms 达到峰值</td>
+<td>2 ms</td>
+<td>2.126 ms</td>
+<td>+6.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图26-p2-3</td>
+<td>滑行 2 s 后剩余转速比例</td>
+<td>14 %</td>
+<td>13.53 %</td>
+<td>-3.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 推导三 / 图26-p2-3</td>
+<td>滑行时电流经体二极管降到 0（快衰减）（通用二极管电流变小时压降低于 0.8 V，下降略慢；页面写“约”，数量级正确）</td>
+<td>11 µs</td>
+<td>12.29 µs</td>
+<td>+11.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>0.5 kHz、50% 电流纹波</td>
+<td>4.06 A</td>
+<td>4.035 A</td>
+<td>-0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>1 kHz、50% 电流纹波</td>
+<td>2.67 A</td>
+<td>2.653 A</td>
+<td>-0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图26-p3-2 第1条</td>
+<td>1 kHz 电流最低点</td>
+<td>-1.2 A</td>
+<td>-1.193 A</td>
+<td>+0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图26-p3-2 第1条</td>
+<td>1 kHz 电流最高点</td>
+<td>1.5 A</td>
+<td>1.46 A</td>
+<td>-2.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图26-p3-2 第1条</td>
+<td>1 kHz 平均电流</td>
+<td>0.14 A</td>
+<td>0.1364 A</td>
+<td>-2.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>2 kHz、50% 电流纹波</td>
+<td>1.46 A</td>
+<td>1.451 A</td>
+<td>-0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>5 kHz、50% 电流纹波</td>
+<td>0.6 A</td>
+<td>0.5965 A</td>
+<td>-0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>10 kHz、50% 电流纹波</td>
+<td>0.3 A</td>
+<td>0.2994 A</td>
+<td>-0.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>20 kHz、50% 电流纹波</td>
+<td>0.15 A</td>
+<td>0.1499 A</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描二 频率表</td>
+<td>50 kHz、50% 电流纹波</td>
+<td>0.06 A</td>
+<td>0.05997 A</td>
+<td>-0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 0 ns 直通峰值（页面示意模型（200 ns 线性过渡、25 mΩ、20 nH）原样搬进 SPICE，只核对页面算得对不对）</td>
+<td>59.7 A</td>
+<td>59.72 A</td>
+<td>+0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 0 ns 每次能量</td>
+<td>91.5 µJ</td>
+<td>91.14 µJ</td>
+<td>-0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表 / 练习2</td>
+<td>死区 0 ns、20 kHz 每半桥功率</td>
+<td>3.66 W</td>
+<td>3.646 W</td>
+<td>-0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 50 ns 直通峰值（页面示意模型（200 ns 线性过渡、25 mΩ、20 nH）原样搬进 SPICE，只核对页面算得对不对）</td>
+<td>45.2 A</td>
+<td>45.17 A</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 50 ns 每次能量</td>
+<td>51.9 µJ</td>
+<td>51.6 µJ</td>
+<td>-0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表 / 练习2</td>
+<td>死区 50 ns、20 kHz 每半桥功率</td>
+<td>2.08 W</td>
+<td>2.064 W</td>
+<td>-0.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 100 ns 直通峰值（页面示意模型（200 ns 线性过渡、25 mΩ、20 nH）原样搬进 SPICE，只核对页面算得对不对）</td>
+<td>30.4 A</td>
+<td>30.37 A</td>
+<td>-0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 100 ns 每次能量</td>
+<td>23.3 µJ</td>
+<td>23.08 µJ</td>
+<td>-0.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表 / 练习2</td>
+<td>死区 100 ns、20 kHz 每半桥功率</td>
+<td>0.93 W</td>
+<td>0.9233 W</td>
+<td>-0.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 150 ns 直通峰值（页面示意模型（200 ns 线性过渡、25 mΩ、20 nH）原样搬进 SPICE，只核对页面算得对不对）</td>
+<td>15.3 A</td>
+<td>15.32 A</td>
+<td>+0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表</td>
+<td>死区 150 ns 每次能量</td>
+<td>5.95 µJ</td>
+<td>5.808 µJ</td>
+<td>-2.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表 / 练习2</td>
+<td>死区 150 ns、20 kHz 每半桥功率</td>
+<td>0.24 W</td>
+<td>0.2323 W</td>
+<td>-3.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表 / 练习2</td>
+<td>死区 200 ns 直通峰值</td>
+<td>0 A</td>
+<td>1.2e-06 A</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 死区表 / 练习2</td>
+<td>死区 250 ns 直通峰值</td>
+<td>0 A</td>
+<td>1.2e-06 A</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 扫描一 文字</td>
+<td>IRLZ44N 半桥、100 Ω 栅阻：死区 1 µs 时直通峰值（官方模型：死区 0 / 0.5 / 1.0 / 1.5 µs 时峰值 74 / 26.3 / 5.5 / 0.46 A；“死区要留到 1 µs 量级”成立（要到约 1.5 µs 才基本消失））</td>
+<td>— A</td>
+<td>5.451 A</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 限流电阻</td>
+<td>起动电流 12/2.565（算术；SPICE 起动峰值 4.56 A（电感限制了上升））</td>
+<td>4.7 A</td>
+<td>4.678 A</td>
+<td>-0.5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 参数表</td>
+<td>DRV8871 VM、Ipeak、tDEAD、ILIM、IOCP 等手册值（无 DRV8871 SPICE 模型，手册数值不仿真）</td>
 <td>—</td>
 <td>nan</td>
 <td>—</td>
 <td>ℹ️</td>
 </tr>
 <tr>
-<td>p2 仿真二</td>
-<td>3.3 V 侧拉低时 3.3 V 侧电压</td>
-<td>0.08 V</td>
-<td>0.08136 V</td>
-<td>+1.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二</td>
-<td>3.3 V 侧拉低时 5 V 侧电压</td>
-<td>0.08 V</td>
-<td>0.0827 V</td>
-<td>+3.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二</td>
-<td>5 V 侧拉低时 3.3 V 侧电压</td>
-<td>0.08 V</td>
-<td>0.08224 V</td>
-<td>+2.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二</td>
-<td>5 V 侧拉低时 5 V 侧电压</td>
-<td>0.08 V</td>
-<td>0.08136 V</td>
-<td>+1.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二</td>
-<td>空闲 3.3 V 侧</td>
-<td>3.3 V</td>
-<td>3.303 V</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二</td>
-<td>空闲 5 V 侧</td>
-<td>5 V</td>
-<td>4.997 V</td>
-<td>-0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二 (b)</td>
-<td>松手后两线分开时的电压（Diodes 模型 VTO=1 V，页面取 onsemi 典型 1.3 V）</td>
-<td>2.02 V</td>
-<td>2.319 V</td>
-<td>+14.8%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 推导四</td>
-<td>导通条件「低于约 2.0 V」（同上）</td>
-<td>2 V</td>
-<td>2.319 V</td>
-<td>+15.9%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 仿真二 (b)</td>
-<td>松手到分开的时间（取决于分开电压和低 VGS 下的导通电阻）</td>
-<td>328 ns</td>
-<td>767.3 ns</td>
-<td>+133.9%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p2 仿真二 (c)</td>
-<td>源漏接反：空闲 3.3 V 侧被抬到</td>
-<td>3.85 V</td>
-<td>3.92 V</td>
-<td>+1.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 仿真二 (c)</td>
-<td>源漏接反：空闲 5 V 侧（页面未给；被拉低到约 4.45 V）</td>
-<td>— V</td>
-<td>4.446 V</td>
+<td>p3 限流表 / 练习1</td>
+<td>R_ILIM = 64 kV / I_TRIP 各列（纯算术（15k→4.27 A … 43k→1.49 A，核算无误））</td>
+<td>—</td>
+<td>nan</td>
 <td>—</td>
 <td>ℹ️</td>
 </tr>
 <tr>
-<td>p2 仿真二 (c)</td>
-<td>源漏接反：拉低功能（3.3 V 侧拉低时 5 V 侧）（「看起来照常」）</td>
-<td>0.08 V</td>
-<td>0.0827 V</td>
-<td>+3.4%</td>
-<td>✅</td>
+<td>p3 练习3</td>
+<td>0.5 mH、0.2 A 纹波所需频率 30 kHz（纯算术）</td>
+<td>— kHz</td>
+<td>30 kHz</td>
+<td>—</td>
+<td>ℹ️</td>
 </tr>
 </tbody>
 </table>
-<p>计数：✅ 50，⚠️ 7，❌ 0，ℹ️ 2。</p>
-<h2 id="结论说明">结论说明</h2>
-<ol>
-<li><strong>74HC14 门限（⚠️ ×4：推导三松开、仿真一松开、例 2 松开、练习 3 松开）</strong>
+<h2 id="结论">结论</h2>
 <ul>
-<li>页面的电路接 5 V，用的却是手册 4.5 V 一栏的典型门限 2.5 / 1.6 V。</li>
-<li>TI 模型在 5 V 下的门限约为 2.77 / 1.73 V。上门限高了，电容要充得更高才认出松开，所以松开判定时间多出约 17%（例如 13.9 → 16.3 ms）。按下判定只短了 8～9%，仍记 ✅。</li>
-<li>把模型电源改成 4.5 V，让门限和页面一致，按下、松开时间都在 ±2% 以内。这说明公式没错，差别只来自门限取值。</li>
-<li>所有结论（比抖动长、在 50 ms 以内）都不变，所以记 ⚠️，不记 ❌。</li>
+<li><strong>✅ 55　⚠️ 0　❌ 0　ℹ️ 3</strong></li>
+<li>三张仿真图的全部读数，ngspice 独立重算后都在 3% 以内：图 26-p1-3、图 26-p2-2、图 26-p2-3。只有两项例外：
+<ul>
+<li>「约 0.25 s 稳定」：SPICE 0.23 s 升到 98%。</li>
+<li>「11 µs 快衰减」：SPICE 12.3 µs。原因是通用二极管在电流变小时压降低于 0.8 V，页面写的是「约」，判 ✅。</li>
 </ul>
 </li>
-<li><strong>BSS138 分开电压和时间（⚠️ ×3：仿真二 (b) 的 2.02 V 和 328 ns，推导四的「约 2.0 V」）</strong>
+<li>「驱动—刹车」PWM 的转速和纹波与页面一致：
 <ul>
-<li>用 Diodes 模型（VTO = 1 V）算，两线约 767 ns 后在 2.32 V 处分开。</li>
-<li>页面的示意模型门限是 1.3 V，导通电阻取 4.5 V 下的 1 Ω。所以分开的电压偏低，时间偏短。</li>
-<li>原理（低于 V_DD1 − V_th 才导通、拉低时两边都是 0.08 V、接反后 3.3 V 侧被抬高）全部成立，记 ⚠️。</li>
+<li>转速 1 : 2 : 3。</li>
+<li>0.5 kHz 到 50 kHz 的纹波表误差都在 1% 以内。</li>
+<li>1 kHz 时电流过零（−1.19 A 到 +1.46 A），页面的描述正确。</li>
 </ul>
 </li>
-<li><strong>源漏接反</strong>：SPICE 得到空闲时 3.3 V 侧为 3.92 V（页面 3.85 V，+1.8%），✅。SPICE 还显示此时 5 V 侧被拖到约 4.45 V，页面没有提到（ℹ️），可以选择补充。</li>
-</ol>
-<h2 id="修改建议用页面口吻">修改建议（用页面口吻）</h2>
-<p><strong>page2 推导三之后（「两者都比常见的几毫秒抖动长」一句之后）新增：</strong></p>
-<blockquote>
-<p>这里的 2.5 V / 1.6 V 是 74HC14 手册里 4.5 V 一栏的典型值。电路接的是 5 V，门限会略高一点：按 4.5 V 和 6 V 两栏插值，大约是 2.8 V / 1.7 V。用 TI 的 SN74HC14 模型仿真，按下判定约 10.4 ms，松开判定约 16.3 ms，和上面的估算相差一两毫秒。门限本身的离散更大（上门限 1.55～3.13 V），所以这些时间只当估算用，留出余量就行。</p>
-</blockquote>
-<p><strong>page2 仿真一结尾（「说明推导的公式可以直接用来选元件」之后）新增：</strong></p>
-<blockquote>
-<p>这段仿真的门限按 2.5 V / 1.6 V 取值。换成 5 V 供电下更接近实际的 2.8 V / 1.7 V，按下约 11.4 ms、松开约 15.7 ms 认出，仍然只翻转 2 次。</p>
-</blockquote>
-<p><strong>page2 例 2 答案和 page3 练习 3 答案，各加一句：</strong></p>
-<blockquote>
-<p>（5 V 供电时上门限约 2.8 V，松开判定会再长约 15%，例 2 约 7.7 ms，练习 3 约 29 ms，仍在 50 ms 以内。）</p>
-</blockquote>
-<p><strong>page2 仿真二 (b) 条目后新增：</strong></p>
-<blockquote>
-<p>328 ns、2.02 V 是按门限 1.3 V 的简化模型算出来的。用 Diodes 公司给的 BSS138 SPICE 模型（门限参数约 1 V，并考虑了 V_GS 只有 3.3 V 时导通电阻更大）重算，两条线大约 0.77 µs 后在 2.3 V 处分开。分开的电压就是 3.3 V 减去这只管子的门限，所以换一只管子会有几百毫伏的差别。但「先一起升、到 V_DD1 − V_th 附近分开」这个过程不变。</p>
-</blockquote>
-<p><strong>page2 推导四表格「低于约 2.0 V」一格，改为：</strong></p>
-<blockquote>
-<p>低于约 2.0 V（3.3 V − 门限；门限随管子不同，常见 2～2.3 V）</p>
-</blockquote>
-<h2 id="面包板万用表读数全部低压dc-20-v-档黑表笔接-gnd">面包板万用表读数（全部低压，DC 20 V 档，黑表笔接 GND）</h2>
+<li>死区表：页面示意模型在 SPICE 里重现，峰值误差 0.1% 以内，能量误差 2.4% 以内。功率一栏是能量 × 2 × 20 kHz，同样吻合。</li>
+<li><strong>没有需要修改的数值。</strong></li>
+</ul>
+<h2 id="修改建议按页面口吻">修改建议（按页面口吻）</h2>
+<p>本节没有 ⚠️ 或 ❌，以下只是可选补充。</p>
+<ul>
+<li>page2「刹车与滑行的对比」末尾可加一句：「实际芯片里，刹车电流大时，下管自带的体二极管也会分走一部分电流，所以实测刹车电流可能比仿真再大一点。」</li>
+<li>page3 扫描一第 3 段「那样的电路死区要留到 1 µs 量级」后面可加：「用 IRLZ44N 官方模型仿真：100 Ω 栅极电阻、死区 1 µs 时仍有约 5 A 的直通尖峰，1.5 µs 时才基本消失。」</li>
+</ul>
+<h2 id="面包板万用表读数drv8871-模块12-v-电机电源低压直流">面包板万用表读数（DRV8871 模块，12 V 电机电源，低压直流）</h2>
+<p>数值按页面的示意电机计算；真实电机的电流会不同。</p>
 <table>
 <thead>
 <tr>
-<th>测什么</th>
-<th>红表笔</th>
-<th>黑表笔</th>
+<th>状态（IN1, IN2）</th>
+<th>量什么</th>
 <th>档位</th>
+<th>红表笔 → 黑表笔</th>
 <th>预期读数</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>按键未按，10 kΩ 上拉的引脚</td>
-<td>单片机引脚（上拉电阻下端）</td>
-<td>GND</td>
+<td>任意</td>
+<td>电机电源</td>
 <td>DC 20 V</td>
-<td>约 4.99 V（1 µA 漏电只掉 0.01 V）</td>
+<td>VM 引脚 → GND</td>
+<td>12 V</td>
 </tr>
 <tr>
-<td>按键按住</td>
+<td>(1, 0) 全速正转</td>
+<td>电机两端</td>
+<td>DC 20 V</td>
+<td>OUT1 → OUT2</td>
+<td>约 11.8 V（空载 0.28 A × 0.565 Ω 的压降）</td>
+</tr>
+<tr>
+<td>(0, 1) 全速反转</td>
+<td>电机两端</td>
+<td>DC 20 V</td>
+<td>OUT1 → OUT2</td>
+<td>约 −11.8 V</td>
+</tr>
+<tr>
+<td>IN1 = 1，IN2 为 20 kHz、50% PWM（「驱动—刹车」，与 page2 一致）</td>
+<td>电机两端平均电压</td>
+<td>DC 20 V</td>
+<td>OUT1 → OUT2</td>
+<td>约 5.9 V。万用表直流档显示的是平均值，读数可能轻微跳动</td>
+</tr>
+<tr>
 <td>同上</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>0.00 V</td>
+<td>电机电流</td>
+<td>DC 10 A（或 200 mA 档；起动前先用 10 A 档）</td>
+<td>表串在 OUT1 与电机之间：红表笔接 OUT1，黑表笔接电机</td>
+<td>约 0.14 A</td>
 </tr>
 <tr>
-<td>按住时上拉电阻两端（换算电流）</td>
-<td>上拉电阻上端（5 V）</td>
-<td>上拉电阻下端</td>
+<td>(1, 1) 刹车，电机已停</td>
+<td>电机两端</td>
 <td>DC 20 V</td>
-<td>5.0 V，即 5 V / 10 kΩ = 0.5 mA；用 2 mA 档串在上拉电阻和 5 V 之间直接测，读 0.50 mA</td>
-</tr>
-<tr>
-<td>去抖电容（未按 / 按住 1 s 以上）</td>
-<td>电容正端（74HC14 输入）</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>5.0 V / 0.00 V（按下瞬间电压慢慢下降，表头能看到下降过程）</td>
-</tr>
-<tr>
-<td>74HC14 输出（未按 / 按住）</td>
-<td>74HC14 第 2 脚</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>约 0 V / 约 5 V（反相器：按下时输出为高）</td>
-</tr>
-<tr>
-<td>电平转换空闲，3.3 V 侧</td>
-<td>BSS138 源极一侧的线</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>3.30 V</td>
-</tr>
-<tr>
-<td>电平转换空闲，5 V 侧</td>
-<td>BSS138 漏极一侧的线</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>5.00 V</td>
-</tr>
-<tr>
-<td>用导线把 3.3 V 侧接地</td>
-<td>5 V 侧的线</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>约 0.00 V（SPICE 1.4 mV）</td>
-</tr>
-<tr>
-<td>用导线把 5 V 侧接地</td>
-<td>3.3 V 侧的线</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>约 0.00 V（SPICE 1 mV）</td>
-</tr>
-<tr>
-<td>接错：源漏反接，空闲</td>
-<td>3.3 V 侧的线</td>
-<td>GND</td>
-<td>DC 20 V</td>
-<td>约 3.9 V（高于 3.3 V 就说明接反了）；5 V 侧约 4.45 V</td>
+<td>OUT1 → OUT2</td>
+<td>约 0 V</td>
 </tr>
 </tbody>
 </table>
+<p>注意：起动瞬间电流可达 4.5 A，会超过 DRV8871 的 3.6 A。<strong>先按 page3 选好 R_ILIM</strong>，再上电测量。</p>
+<p>若改成 IN1 做 PWM、IN2 = 0，就变成「驱动—滑行」（快衰减），平均电压和电流会和上表不同，不能直接对照。</p>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>改动文件：<code>26-pullup-level-shift/page2.md</code>、<code>page3.md</code>、<code>code/26_sim.py</code>、<code>code/figs/26_figs.py</code>，并重新生成 <code>26-pullup-level-shift/img/</code> 下的图（26_p2_2、26_p2_3、26_p3_2 的内容有变化）。❌ 0；⚠️ 7 项全部改正，正文里直接写对，没有另加说明框。</p>
-<p><strong>74HC14 门限（⚠️ ×4）</strong>：TI 手册只有 4.5 V 和 6 V 两栏。按这两栏线性插值到 5 V：典型 VT+ = 2.77 V、VT− = 1.73 V，与 TI 模型一致；范围为上门限 1.73～3.49 V、下门限 1.00～2.70 V。全节改用这组 5 V 值，并重新计算：</p>
-<table>
-<thead>
-<tr>
-<th>位置</th>
-<th>改后</th>
-<th>SPICE（本报告）</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>推导三：按下 / 松开</td>
-<td>10.6 / 16.1 ms</td>
-<td>10.44 / 16.29 ms</td>
-</tr>
-<tr>
-<td>仿真一：按下 / 松开（页面代码块和 <code>26_sim.py</code> 实际运行）</td>
-<td>11.5 / 15.5 ms</td>
-<td>11.36 / 15.66 ms</td>
-</tr>
-<tr>
-<td>例 2：按下 / 松开</td>
-<td>5.0 / 7.6 ms</td>
-<td>4.89 / 7.66 ms</td>
-</tr>
-</tbody>
-</table>
-<ul>
-<li>页面里 SPICE 数值的写法：推导三给的是 10.4 / 16.3 ms，仿真一给的是 11.4 / 15.7 ms，例 2 给的是 4.9 / 7.7 ms。</li>
-<li>页面代码块和 <code>VT_P</code>/<code>VT_M</code> 都改为 2.77 / 1.73。图 26-p2-2 的门限标签、alt 文字和正文同步更新。</li>
-<li>练习 3 重新求解：
-<ul>
-<li>R2 ≈ 18.9 kΩ，取 20 kΩ，按下 21.2 ms。</li>
-<li>R1 + R2 ≤ 62 kΩ；取 R1 = 20 kΩ，松开 32 ms。</li>
-<li>用本轮在 scratch 里实际运行的 <code>spice/26/debounce.cir</code>（R1 = R2 = 20k，网表未改）验证：按下 20.68 ms、松开 32.71 ms，已写入答案。</li>
-<li>用下门限最大值 2.70 V 核算，按下为 12.3 ms；要保证 20 ms，R2 约需 33 kΩ。</li>
-</ul>
-</li>
-<li>page3 参数表和「门限分散」说明改为 5 V 的范围。</li>
-<li>扫描图 26-p3-2 用新门限重新运行。施密特多翻次数改为 11.8 次（0.1 ms）、0.3 次（1 ms）；最长延迟改为 19.8 ms（10 ms）、39.0 ms（22 ms）、77.7 ms（47 ms）。结论不变：10 ms 时不多翻，延迟也在 50 ms 以内。</li>
-<li><code>26_sim.py</code> 加了 assert：仿真一与 SPICE 的 11.36 / 15.66 ms 相差都在 0.6 / 0.8 ms 以内。</li>
-</ul>
-<p><strong>BSS138 分开点（⚠️ ×3）</strong>：<code>level_shifter</code> 的沟道参数改为 Diodes 官方模型（与 SPICE 相同）的 VTO = 1 V、KP = 0.395 A/V²。改后：</p>
-<ul>
-<li>仿真分开点为 2.31 V（SPICE 2.32 V），时刻 404 ns。</li>
-<li>在 scratch 里用同一网表、把模型结电容置零跑 ngspice，得到 405 ns、2.313 V。这说明 SPICE 的 767 ns 主要来自管子自身的结电容（几十 pF，与 50 pF 线电容同一量级），不是因为低 V_GS 下导通电阻更大。page2 仿真二 (b) 写明了这一点和 0.77 µs 的数值。</li>
-<li>推导四改为一般式 V_L &lt; 3.3 V − V_GS(th)：按模型门限 1 V 是 2.3 V，按 onsemi 典型 1.3 V 是 2.0 V。代数小结表和 page3 参数表同步更新。</li>
-<li>两个脚本都加了 assert：分开点与 2.32 V 相差在 0.05 V 以内。接反时 3.85 / 4.45 V 不变。</li>
-</ul>
-<p><strong>ℹ️</strong>：不改。导航链接：报告未指出错误链接。另外，<code>notes/26-research.md</code> 里还留着旧数字（12.3 / 13.2 ms、328 ns、2.02 V 等）；它不在本人可改的范围内，没有动。</p>
-<p>检查：fix_inline_math_spacing --check 为 0；count_cjk（1610 / 2658 / 3012）、run_blocks（页面 + 两个脚本）、check_figs、check_github_math 全部通过；仓库根目录没有多余文件。</p>
+<p>没有改动页面、脚本或图。本节点 ❌ 0、⚠️ 0；ℹ️ 3 项按要求不改。报告里的两条「可选补充」不是错误，本轮没有加，免得在不需要改的节点上动页面。导航链接：报告未指出错误链接。</p>
+<p>检查（未改动，复跑确认）：count_cjk、run_blocks（页面 + <code>code/26_sim.py</code>、<code>code/figs/26_figs.py</code>）、check_figs、check_github_math 全部通过；fix_inline_math_spacing --check 为 0。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

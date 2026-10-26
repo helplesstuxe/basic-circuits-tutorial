@@ -49,13 +49,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/23-optocoupler/page1.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="23-光耦隔离--直觉篇">23 光耦隔离 · 直觉篇</h1>
-<p><a href="../11-overload-protection/page4.html">上一页：11 过载保护 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a>、<a href="../22-bjt-relay-driver/page1.html">22 三极管开关与继电器驱动 · 直觉篇</a></p>
+<p><a href="../22-overload-protection/page4.html">上一页：22 过载保护 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a></p>
 <blockquote class="alert alert-warning">
 <p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
 <p>本节点特有的危险点：① 光耦的<strong>输入侧</strong>如果用来检测市电（过零检测、有无电压检测），那一侧的电阻、焊盘、引脚全部带 220 V，单片机这边是 5 V 不代表整块板子安全；② 光耦只有在两侧的地<strong>真的分开</strong>时才起隔离作用，一根跳线、一个示波器探头的地夹就可能把 220 V 引到单片机和你手上；③ 光耦本体的引脚间距是有限的，板子上两侧走线之间也要留足距离，不能为了省地方挤在一起。</p>
 </blockquote>
 <h2 id="一痛点强电那边一出事单片机跟着遭殃">一、痛点：强电那边一出事，单片机跟着遭殃</h2>
-<p>在 <a href="../22-bjt-relay-driver/page1.html">22 三极管开关与继电器驱动 · 直觉篇</a> 里，单片机通过三极管去<strong>控制</strong>继电器。现在反过来：单片机要<strong>读</strong>强电那边的状态——一台 24 V 的工业传感器有没有信号、电机控制柜里某个 12 V 继电器有没有吸合，甚至 220 V 插座上有没有电。</p>
+<p>在 <a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a> 里，单片机通过三极管去<strong>控制</strong>继电器。现在反过来：单片机要<strong>读</strong>强电那边的状态——一台 24 V 的工业传感器有没有信号、电机控制柜里某个 12 V 继电器有没有吸合，甚至 220 V 插座上有没有电。</p>
 <p>最直接的办法是拉一根信号线过来，再把两边的地连在一起，好让电压有个共同的&quot;零点&quot;。问题就出在这根地线上。电机启动、继电器断开时，强电侧的地线里有很大的电流在跳动，这根共用的地线会把干扰一起送进单片机，轻则读数乱跳、程序跑飞，重则一旦强电侧绝缘损坏，高压会顺着地线直接打到单片机，甚至打到摸着 USB 线的你。</p>
 <p>图 23-p1-1 上半部分就是这种&quot;直接连线&quot;的情形，下半部分是本节的办法：</p>
 <p><a class="img-link" href="img/23_p1_1_problem.png"><img alt="上：强电侧与单片机之间有信号线和共用地线，干扰沿地线窜入；下：强电侧→LED→光→光敏三极管→单片机，中间隔离带没有导线穿过，两侧分别是 GND1 和 GND2" src="img/23_p1_1_problem.png" loading="lazy" /></a></p>
@@ -65,8 +65,8 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>想象两栋楼之间隔着一条马路，你想告诉对面的人&quot;现在有信号&quot;。拉一根绳子过去最直接，可是绳子也会把对面的晃动、甚至危险传过来。换个办法：你打开手电，对面的人看到光就知道了。两栋楼之间什么都不连，对面楼里再怎么折腾，也传不到你这边。</p>
 <p>光耦就是这样：</p>
 <ul>
-<li>输入侧的 LED 是&quot;手电&quot;，电流越大越亮。P2 讲过，LED 也是二极管，必须串限流电阻；光耦里用的是红外 LED，导通压降比常见的红光 LED 低，PC817 典型约 1.2 V；</li>
-<li>输出侧的光敏三极管是&quot;看光的人&quot;。它和 <a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a> 里的普通三极管一样有集电极和发射极，只是基极电流不是靠导线送进来，而是靠光&quot;照&quot;出来的；</li>
+<li>输入侧的 LED 是&quot;手电&quot;，电流越大越亮。03 讲过，LED 也是二极管，必须串限流电阻；光耦里用的是红外 LED，导通压降比常见的红光 LED 低，PC817 典型约 1.2 V；</li>
+<li>输出侧的光敏三极管是&quot;看光的人&quot;。它和 <a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a> 里的普通三极管一样有集电极和发射极，只是基极电流不是靠导线送进来，而是靠光&quot;照&quot;出来的；</li>
 <li>&quot;手电多亮、对面能看清多少&quot;用一个比值描述，叫<strong>电流传输比</strong> CTR：输出侧三极管能导通的电流 <span class="math math-inline">\(I_C\)</span> 与 LED 电流 <span class="math math-inline">\(I_F\)</span> 之比。CTR 为 100% 时，LED 走 5 mA，三极管最多能流 5 mA。</li>
 </ul>
 <h2 id="三看一张完整的电路">三、看一张完整的电路</h2>
@@ -75,8 +75,8 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><em>图 23-p1-2　用光耦读取 12 V 信号的电路</em></p>
 <p>图 23-p1-2 里要记住两颗电阻：</p>
 <ul>
-<li><strong>输入电阻</strong> <span class="math math-inline">\(R_{in}\)</span> （这里 2.2 kΩ）决定 LED 电流 <span class="math math-inline">\(I_F\)</span> 。12 V 减去 LED 的 1.2 V，再除以 2.2 kΩ，约 4.9 mA。它的作用和 22 节的基极电阻一样：电流给少了，后面推不动。</li>
-<li><strong>上拉电阻</strong> <span class="math math-inline">\(R_L\)</span> （这里 4.7 kΩ）接在 5 V 和三极管集电极之间。三极管不导通时，输出被它拉到 5 V；三极管导通时，输出被拉到接近 0 V。这里的三极管只当开关用，和 22 节一样，要么截止、要么饱和。</li>
+<li><strong>输入电阻</strong> <span class="math math-inline">\(R_{in}\)</span> （这里 2.2 kΩ）决定 LED 电流 <span class="math math-inline">\(I_F\)</span> 。12 V 减去 LED 的 1.2 V，再除以 2.2 kΩ，约 4.9 mA。它的作用和 07 节的基极电阻一样：电流给少了，后面推不动。</li>
+<li><strong>上拉电阻</strong> <span class="math math-inline">\(R_L\)</span> （这里 4.7 kΩ）接在 5 V 和三极管集电极之间。三极管不导通时，输出被它拉到 5 V；三极管导通时，输出被拉到接近 0 V。这里的三极管只当开关用，和 07 节一样，要么截止、要么饱和。</li>
 </ul>
 <p>注意输出是<strong>反相</strong>的。图 23-p1-3 把三个量放在一起看：</p>
 <p><a class="img-link" href="img/23_p1_3_timing.png"><img alt="三行波形：输入 12 V 方波；LED 电流 4.91 mA 方波；输出在输入高时为 0.2 V、输入低时为 5 V" src="img/23_p1_3_timing.png" loading="lazy" /></a></p>

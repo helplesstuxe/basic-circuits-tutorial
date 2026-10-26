@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>01 反相放大 · 研究笔记（作者 A）</title>
+<title>01 元件速成 · 调研笔记（作者 D）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,27 +42,63 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/01-research.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="01-反相放大--研究笔记作者-a">01 反相放大 · 研究笔记（作者 A）</h1>
-<h2 id="理论">理论</h2>
+<h1 id="01-元件速成--调研笔记作者-d">01 元件速成 · 调研笔记（作者 D）</h1>
+<h2 id="原理出处都已打开核对">原理出处（都已打开核对）</h2>
 <ul>
-<li>TI SBOA270 反相放大电路手册 <a href="https://www.ti.com/lit/pdf/sboa270">https://www.ti.com/lit/pdf/sboa270</a> ：设计例 −2 V/V（R1=10 kΩ、R2=20 kΩ）；输入阻抗由 R1 决定，应远大于信号源内阻；避免直接驱动容性负载。</li>
-<li>TI SBOA272 反相加法器电路手册 <a href="https://www.ti.com/lit/pdf/sboa272">https://www.ti.com/lit/pdf/sboa272</a> ：多路输入各经电阻接到虚地，输出为加权和取负。</li>
-<li>TI SLAA068B <a href="https://www.ti.com/lit/an/slaa068b/slaa068b.pdf">https://www.ti.com/lit/an/slaa068b/slaa068b.pdf</a> ：理想运放假设（与 P3 一致）。</li>
-<li>TI LM358B 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm358.pdf">https://www.ti.com/lit/ds/symlink/lm358.pdf</a> ：GBW 1.2 MHz、SR 0.5 V/μs、输出摆幅（正 −1.35~1.5 V，负 +0.1 V）。</li>
+<li>TI SLAA067《Understanding Basic Analog — Circuit Equations》（Ron Mancini）：<a href="https://www.ti.com/lit/an/slaa067/slaa067.pdf">https://www.ti.com/lit/an/slaa067/slaa067.pdf</a>
+<ul>
+<li>分压公式只在输出端「不接负载」时成立；接了负载要把负载和下电阻并联后再算。</li>
+<li>常见错误：以为负载比电阻大 10 倍就可以忽略，结果仍有约 10% 的误差。</li>
+<li>戴维南等效：分压器的输出电阻 = R1∥R2。</li>
 </ul>
-<h2 id="实战代码">实战代码</h2>
+</li>
+<li>ADI StudentZone 2018-04（ADALM1000 Topic 4：RC 电路）：<a href="https://www.analog.com/en/resources/analog-dialogue/studentzone/studentzone-april-2018.html">https://www.analog.com/en/resources/analog-dialogue/studentzone/studentzone-april-2018.html</a>
 <ul>
-<li>本节仿真直接用 numpy：V_o = clip(−Rf/R1·V_i, 下限, 上限)，见 code/01_sim.py。</li>
-<li>带宽曲线只用幅值公式 |A_v|/√(1+(f/f_c)²)、f_c ≈ GBW/(1+|A_v|)（一阶近似，与 GBW 定义一致；不讲复数）。</li>
-<li>PySpice 运放示例（参考，未采用）<a href="https://pyspice.fabrice-salvaire.fr/releases/v1.5/examples/operational-amplifier/operational-amplifier.html">https://pyspice.fabrice-salvaire.fr/releases/v1.5/examples/operational-amplifier/operational-amplifier.html</a></li>
+<li>充电百分比表：τ 63.2%、2τ 86.5%、3τ 95.0%、4τ 98.2%、5τ 99.3%；理论上永远到不了 100%，工程上 5τ 视为充满。</li>
+<li>方波激励：脉宽远大于 τ 时输出接近方波，脉宽等于 τ 时输出变成「锯齿状」的指数段。</li>
 </ul>
-<h2 id="常见误区">常见误区</h2>
+</li>
+<li>UBC Okanagan（J. Bobowski）Python ODE 教程：<a href="https://cmps-people.ok.ubc.ca/jbobowsk/Python/html/Jupyter%20ODEs.html">https://cmps-people.ok.ubc.ca/jbobowsk/Python/html/Jupyter ODEs.html</a>
 <ul>
-<li>忘了输出反相（示波器上看着「不对」）。</li>
-<li>以为输入电阻很大：反相放大的输入电阻 ≈ R1，信号源内阻会吃掉增益（图 01-p3-1）。</li>
-<li>输出削顶：倍数 × 输入超过摆幅。</li>
-<li>增益设得太大导致高频不够（GBW）。</li>
-<li>同相端浮空或单电源未偏置。</li>
+<li>用 dq/dt = V0/R − q/(RC) 数值求解电容充电，并验证 V_C + V_R = V0（基尔霍夫电压定律）。本节点改用更直白的逐步（欧拉）算法，并与公式对照。</li>
+</ul>
+</li>
+<li>TE Connectivity《Relay Coil Suppression with DC Relays》：<a href="https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/relay-coil-suppression-dc-relays.html">https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/relay-coil-suppression-dc-relays.html</a>
+<ul>
+<li>12 V 直流继电器线圈断电时可能产生 1000–1500 V 的反向尖峰。</li>
+<li>抑制办法：二极管、二极管+稳压管、电阻、压敏电阻、TVS；只并二极管会让释放变慢，可能导致触点粘连。</li>
+</ul>
+</li>
+<li>Omron 定时器分类说明：<a href="https://www.ia.omron.com/support/guide/13/classifications.html">https://www.ia.omron.com/support/guide/13/classifications.html</a>
+<ul>
+<li>通电延时（ON-delay）：通电后经过设定时间才动作；断电延时（OFF-delay）：断电后经过设定时间才复位。</li>
+</ul>
+</li>
+<li>Schneider Electric FAQ FA142452：<a href="https://www.se.com/uk/en/faqs/FA142452/">https://www.se.com/uk/en/faqs/FA142452/</a>
+<ul>
+<li>接触器由主触点（极）、辅助触点、线圈组成；线圈电压常与主触点电压不同。</li>
+</ul>
+</li>
+<li>电工天下《时间继电器通电延时与断电延时的触点图形符号》：<a href="https://dgjs123.com/jdq/19870.htm">https://dgjs123.com/jdq/19870.htm</a>
+<ul>
+<li>规则：延时触点上半圆弧的「开口方向」就是触点延时动作的方向；时间继电器文字符号 KT。</li>
+</ul>
+</li>
+</ul>
+<h2 id="典型错误写进正文">典型错误（写进正文）</h2>
+<ol>
+<li>把电容当电阻算（用 V = IR 去算电容，或以为电容&quot;有一个固定阻值&quot;）。</li>
+<li>以为电容瞬间充满（实际 1τ 只到 63%，5τ 才到 99%）。</li>
+<li>继电器触点和线圈画在同一个回路里（线圈与触点之间只有磁力/机械联系，没有电线相连）。</li>
+<li>分压器接了负载还用空载公式（SLAA067）。</li>
+<li>电感（继电器线圈）断电不加续流二极管（TE 白皮书）。</li>
+</ol>
+<h2 id="未能核实">未能核实</h2>
+<ul>
+<li>（本轮已解决）铝电解电容容差 ±20%：Nichicon UVR 系列手册 <a href="https://www.nichicon.co.jp/english/series_items/catalog_pdf/e-uvr.pdf">https://www.nichicon.co.jp/english/series_items/catalog_pdf/e-uvr.pdf</a> （已下载打开）&quot;Capacitance Tolerance ±20% at 120Hz, 20˚C&quot;；额定电压挡 6.3/10/16/25/35/50… V。</li>
+<li>（本轮已解决）耐压 1.5 倍：没有厂家把 1.5 倍写成规定，正文改为&quot;经验余量&quot;并给出理由。CDE 铝电解电容应用指南 <a href="https://www.cde.com/resources/catalogs/AEappGuide.pdf">https://www.cde.com/resources/catalogs/AEappGuide.pdf</a> （已打开）：Rated DC Voltage 是&quot;包括纹波在内可长期施加的最高峰值电压&quot;；寿命电压乘数 Mv = 4.3 − 3.3·VA/VR（降额 10% 时 Mv = 1.33）。按 1.5 倍选时 VA/VR = 2/3，Mv ≈ 2.1。</li>
+<li>（本轮已解决）继电器线圈电感：Omron G5V-1 数据手册 <a href="https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf">https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf</a> （已打开，备用 <a href="https://app.mectronic.com/dsheet/G5V12DC12_Omron.pdf">https://app.mectronic.com/dsheet/G5V12DC12_Omron.pdf</a> ）线圈电感参考值：3 V 0.05/0.11 H，12 V 0.85/1.63 H（960 Ω），24 V 3.48/6.61 H（衔铁 OFF/ON）。12 V 款 τ = 0.89～1.70 ms。</li>
+<li>以上数字均由 code/figs/01_figs.py 的 p3_datasheet_numbers() 打印并断言。</li>
 </ul>
 
 </main>

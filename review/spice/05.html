@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>05 精密整流：SPICE 复核报告</title>
+<title>05 反相放大：SPICE 复核报告</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -48,58 +48,12 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/05.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="05-精密整流spice-复核报告">05 精密整流：SPICE 复核报告</h1>
+<h1 id="05-反相放大spice-复核报告">05 反相放大：SPICE 复核报告</h1>
 <ul>
-<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/05/.spiceinit</code> 设为 psa。</li>
-<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/05/run.py</code>，退出码 0，已实际运行，共 39 项。</li>
+<li>工具：ngspice 44.2 batch 模式；<code>spice/05/.spiceinit</code> 里 <code>set ngbehavior=psa</code>（TI PSpice 模型需要）</li>
+<li>运行：仓库根目录 <code>python spice/05/run.py</code>，退出码 0，已实际运行（49 项比对）</li>
+<li>网表：<code>dc.cir</code>（各直流例题）、<code>ac.cir</code>（内阻、带宽、1.2 kHz 验算、练习2）、<code>t_sine.cir</code>、<code>t_ramp.cir</code>（削顶起点）、<code>t_clip.cir</code>、<code>t_offs.cir</code>、<code>t_sum.cir</code>、<code>t_ex3.cir</code>、<code>t_ex2.cir</code>、<code>t_sr.cir</code>、<code>t_ss.cir</code></li>
 </ul>
-<h2 id="网表">网表</h2>
-<table>
-<thead>
-<tr>
-<th>网表</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>t_passive.cir</code></td>
-<td>普通二极管整流</td>
-</tr>
-<tr>
-<td><code>dc_basic.cir</code></td>
-<td>基本型，直流</td>
-</tr>
-<tr>
-<td><code>dc_wrong.cir</code></td>
-<td>练习4，反馈接错</td>
-</tr>
-<tr>
-<td><code>t_basic741.cir</code></td>
-<td>基本型 + LM741，在 1/2/5/10/20 kHz 下仿真</td>
-</tr>
-<tr>
-<td><code>t_basicTL.cir</code></td>
-<td>基本型 + TL072，同样的频率扫描</td>
-</tr>
-<tr>
-<td><code>t_imp741.cir</code></td>
-<td>改进型 + LM741，同样的频率扫描</td>
-</tr>
-<tr>
-<td><code>dc_imp.cir</code></td>
-<td>例2、练习3</td>
-</tr>
-<tr>
-<td><code>t_pulse.cir</code></td>
-<td>练习1</td>
-</tr>
-<tr>
-<td><code>t_x5.cir</code></td>
-<td>练习5</td>
-</tr>
-</tbody>
-</table>
 <h2 id="模型与来源">模型与来源</h2>
 <table>
 <thead>
@@ -111,41 +65,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </thead>
 <tbody>
 <tr>
-<td>LM741</td>
-<td>spice/models/LM741_TI.lib（本次新增，内容原样）</td>
-<td>TI 官方 PSpice 模型：<a href="https://www.ti.com/lit/zip/snom211%EF%BC%88SNOM211B%EF%BC%8C%E6%96%87%E4%BB%B6">https://www.ti.com/lit/zip/snom211（SNOM211B，文件</a> lm741.lib）。产品页：<a href="https://www.ti.com/product/LM741">https://www.ti.com/product/LM741</a></td>
-</tr>
-<tr>
-<td>TL072</td>
-<td>spice/models/TL072.lib（复用）</td>
-<td>TI：<a href="https://www.ti.com/lit/zip/sloj067">https://www.ti.com/lit/zip/sloj067</a></td>
-</tr>
-<tr>
-<td>1N4148</td>
-<td>spice/models/1N4148_nexperia.lib（复用）</td>
-<td>Nexperia：<a href="https://assets.nexperia.com/documents/spice-model/1N4148.txt">https://assets.nexperia.com/documents/spice-model/1N4148.txt</a></td>
+<td>LM358B</td>
+<td>spice/models/LMx58B_LM2904B.lib（复用，子电路 LMX58B_LM2904B）</td>
+<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
 </tr>
 </tbody>
 </table>
-<p>本节没有使用替代模型。</p>
-<p>页面自带的仿真用的是两种简化：</p>
-<ul>
-<li>运放：只考虑 GBW 和压摆率的模型；</li>
-<li>二极管：0.7 V 加 10 Ω 的折线模型。</li>
-</ul>
-<p>SPICE 用的是官方器件模型。下文的偏差有两个主要来源：</p>
-<ul>
-<li><strong>小电流下二极管压降低</strong>：1N4148 在 10～20 µA 时压降只有约 0.4 V，而不是 0.7 V。</li>
-<li><strong>运放失调</strong>：LM741 模型带约 1 mV 的失调电压，还有约 80 nA 的偏置电流。</li>
-</ul>
-<h2 id="假设">假设</h2>
-<ul>
-<li>电源 ±15 V，三只电阻都取 10 kΩ，与页面代码一致。二极管用 1N4148，是 page3 推荐的型号。</li>
-<li>改进型中两只二极管的方向按页面文字接：D2 阳极接反相端，D1 从运放脚指向输出。</li>
-<li>平均值误差的算法与页面代码相同：第二个周期的平均值 ÷ (0.2/π) − 1。</li>
-<li>练习1：先让输入 −0.2 V 保持 1 ms，使运放进入负饱和，再给一个 +0.2 V、宽 20 µs 的脉冲。</li>
-<li>练习5：用 100 Hz。</li>
-</ul>
+<p>假设：页面没给负载，输出只接反馈电阻（示波器 1 MΩ 输入忽略）；电阻用标称值；±15 V 供电，练习2 用 ±12 V。</p>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
@@ -159,206 +85,296 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </thead>
 <tbody>
 <tr>
-<td>page1 §一 / 图05-p1-1：普通二极管，峰值 0.2 V</td>
-<td>输出始终 0 V</td>
-<td>峰值 2.4 mV</td>
-<td>约为 0</td>
+<td>page1 §一 0.5 V 输入</td>
+<td>−5 V</td>
+<td>−4.997 V</td>
+<td>+0.06%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page1 §一：普通二极管，峰值 10 V</td>
-<td>约 9.3 V</td>
-<td>9.39 V</td>
-<td>+1.0%</td>
+<td>page1 §一 −0.2 V 输入</td>
+<td>+2 V</td>
+<td>+2.002 V</td>
+<td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §1：基本型，Vi = 0.1 V 时 Vo</td>
-<td>约 0.1 V</td>
-<td>0.1010 V</td>
-<td>+1.0%</td>
+<td>page1 图05-p1-3 电阻比 2，0.25 ms 时输出</td>
+<td>−1.0 V</td>
+<td>−0.999 V</td>
+<td>0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 §1 / 例1：误差</td>
-<td>0.1 V 时约 8 µV；50 mV 时 7.5 µV（0.015%）；门槛 7 µV</td>
-<td>约 1.0 mV（0.1 V 时 1.0%，50 mV 时 2.0%），来自运放失调</td>
-<td>大了约 130 倍</td>
+<td>page1 §五 第1步 0.5 V 峰值 1 kHz：输出峰值、0.25 ms 时在最低点</td>
+<td>5 V / −5 V</td>
+<td>5.001 V / −4.997 V</td>
+<td>&lt;0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §五 第2步 Rf=47 kΩ 输出峰值</td>
+<td>2.35 V（−4.7 倍）</td>
+<td>2.351 V（−4.697 倍）</td>
+<td>0.06%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §五 第2步 Rf=10 kΩ 倍数</td>
+<td>−1</td>
+<td>−0.999</td>
+<td>0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §五 第3步 正半周开始削平</td>
+<td>输入约 1.35 V，削在 13.5 V</td>
+<td>输入 1.365 V，削在 13.80 V</td>
+<td>+1.1% / +2.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §五 第3步 负半周开始削平</td>
+<td>输入约 1.49 V，削在 −14.9 V</td>
+<td>输入 1.425 V，削在 −14.39 V</td>
+<td>−4.3% / 3.4%</td>
+<td>✅（输出要经 Rf 吸约 0.15 mA，负侧余量从 0.1 V 增大到约 0.6 V）</td>
+</tr>
+<tr>
+<td>page1 §五 第4步 叠加 0.2 V 直流</td>
+<td>+3 V ～ −7 V</td>
+<td>+3.002 V ～ −6.996 V</td>
+<td>0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 §五 第5步 反相端对地</td>
+<td>零点几毫伏</td>
+<td>0.36 mV</td>
+<td>—</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 §一 第二步 电流 I</td>
+<td>0.05 mA</td>
+<td>0.04996 mA</td>
+<td>−0.07%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 §一 验算（引用 02）输出</td>
+<td>−4.99945 V</td>
+<td>−4.99696 V</td>
+<td>+0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 §一 验算（引用 02）反相端</td>
+<td>约 50 µV</td>
+<td>0.36 mV（失调电压主导）</td>
+<td>7 倍</td>
+<td>⚠️</td>
+</tr>
+<tr>
+<td>page2 §一 1.2 kHz 时运放自身 A</td>
+<td>约 1000</td>
+<td>1203</td>
+<td>+20%</td>
+<td>✅（按手册 GBW 1.2 MHz 估算，TI 模型略快）</td>
+</tr>
+<tr>
+<td>page2 §一 1.2 kHz 时输出与误差</td>
+<td>−4.946 V，误差约 1.1%</td>
+<td>幅度 4.999 V，误差 0.021%（其中 0.015% 来自低频 A）</td>
+<td>误差高估约 50 倍</td>
 <td>❌</td>
 </tr>
 <tr>
-<td>page2 §1 / 例1 / 图05-p2-2：基本型运放脚电压</td>
-<td>0.8 V / 0.75 V / 正半周 0.9 V</td>
-<td>0.48 V / 0.40 V / 0.62 V</td>
-<td>−30%～−47%</td>
-<td>⚠️</td>
+<td>page2 §一 1.2 kHz 时反相端</td>
+<td>约 5 mV</td>
+<td>4.18 mV</td>
+<td>−16%</td>
+<td>✅（与 A 的估算一致）</td>
 </tr>
 <tr>
-<td>补充：Vi = 10 mV 直流</td>
-<td>—</td>
-<td>Vo = 11.0 mV，能整流，误差是失调</td>
-<td>—</td>
+<td>page2 §二 仿真 1.5 V 输入</td>
+<td>最高 13.50 V、最低 −14.90 V</td>
+<td>13.80 V / −14.39 V</td>
+<td>+2.2% / 3.4%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 练习4：反馈接错，输入 0.2 V</td>
-<td>输出 0，运放脚 0.2 V</td>
-<td>2.4 mV，0.201 V</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习4：反馈接错，输入 2 V</td>
-<td>约 1.3 V</td>
-<td>1.49 V</td>
-<td>+14%</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>page2 图05-p2-2：基本型 + 741，1 kHz</td>
-<td>平均值误差 −3.5%；过零后 60 µs 才超过 10 mV</td>
-<td>−7.5%；71 µs</td>
-<td>误差约 2 倍</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>page2 图05-p2-2 / page3 练习1：负饱和</td>
-<td>−13.5 V</td>
-<td>−14.03 V（空载 10k）</td>
-<td>−3.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 图05-p3-1：基本型 + 741，10 kHz</td>
-<td>−70.3%（第二个正半周丢一大半）</td>
-<td>−100%，第二个周期完全没有输出</td>
-<td>页面偏乐观</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>page3 图05-p3-2：基本型 + 741，20 kHz</td>
-<td>−100%</td>
-<td>−100%</td>
+<td>page2 §二 先被削的是正半周</td>
+<td>正半周先削</td>
+<td>正半周在输入 1.365 V 削，负半周在 1.425 V 削</td>
 <td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 §3：基本型 + TL072，1 kHz</td>
-<td>刚好碰 1% 线</td>
-<td>−1.14%</td>
-<td>—</td>
+<td>page2 例1 −2 倍，1 V 输入</td>
+<td>−2 V，0.1 mA</td>
+<td>−1.999 V，0.09997 mA</td>
+<td>&lt;0.05%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page3 图05-p3-1：基本型 + TL072，10 kHz</td>
-<td>−11.8%</td>
-<td>−11.5%</td>
-<td>+2.5%</td>
+<td>page2 例2 20k/100k，0.3 V</td>
+<td>−1.5 V</td>
+<td>−1.499 V</td>
+<td>0.06%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>page2 图05-p2-4：改进型 + 741，1 kHz</td>
-<td>−0.5%</td>
-<td>+2.6%，其中失调 ×2 约贡献 +1.6%</td>
-<td>符号相反</td>
+<td>page2 例3 / 图05-p2-4 加法器</td>
+<td>−0.7 V；最高 0.70 V</td>
+<td>−0.699 V；0.7007 V</td>
+<td>0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图05-p3-1 内阻 1 kΩ（R1=10k / 1k）</td>
+<td>9.09 / 5.00</td>
+<td>9.089 / 4.999</td>
+<td>0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图05-p3-1 内阻 100 Ω（R1=1k / 10k）</td>
+<td>9.09 / 9.90</td>
+<td>9.089 / 9.899</td>
+<td>0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 §一.3 倍数 10 最大输入峰值</td>
+<td>1.35 V</td>
+<td>1.365 V</td>
+<td>+1.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 图05-p3-2 倍数 1 的带宽</td>
+<td>约 600 kHz</td>
+<td>1.25 MHz（600 kHz 时还有 0.97）</td>
+<td>+108%</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>page2 图05-p2-4 / 例2：改进型运放脚电压</td>
-<td>−0.70～+0.90 V；例2：0.9 V / −0.7 V</td>
-<td>−0.41～+0.65 V；例2：0.64 V / −0.38 V</td>
-<td>−27%～−46%</td>
+<td>page3 图05-p3-2 / §一.4 倍数 10 的带宽</td>
+<td>约 109 kHz</td>
+<td>145 kHz</td>
+<td>+33%</td>
+<td>✅（页面按手册 GBW 典型值估算；TI 模型 GBW 约 1.44 MHz，页面值偏保守、方向正确）</td>
+</tr>
+<tr>
+<td>page3 图05-p3-2 倍数 100 的带宽</td>
+<td>约 11.9 kHz</td>
+<td>14.5 kHz</td>
+<td>+22%</td>
+<td>✅（同上）</td>
+</tr>
+<tr>
+<td>page3 §一.4 压摆率：10 V 峰值时 f ≤ 约 8 kHz</td>
+<td>8 kHz 处需要 0.50 V/µs</td>
+<td>8 kHz、10 V 峰值输出 19.97 Vpp 未变形，最大斜率 0.52 V/µs</td>
+<td>+3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 故障排查表 单电源负半周平在约 0.1 V</td>
+<td>约 0.1 V</td>
+<td>0.024 V（与 02 同一问题）</td>
+<td>绝对差 0.08 V</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>page3 §3 / 图05-p3-1：改进型 + 741 的速度</td>
-<td>约 2 kHz 碰 1% 线；10 kHz 时 −5.3%</td>
-<td>2 kHz 时速度损失还看不出（读数 +2.4%，主要是失调）；10 kHz 时 +0.5%，扣掉失调约 −1%；20 kHz 时 −2.8%</td>
-<td>页面偏保守，约 4 倍以上</td>
+<td>page3 练习1</td>
+<td>+2 V，输入电阻 4.7 kΩ</td>
+<td>+2.002 V</td>
+<td>0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习2(1) 含 500 Ω 内阻倍数</td>
+<td>约 19.4</td>
+<td>19.41</td>
+<td>0.06%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习2 ±12 V 输出摆幅</td>
+<td>10.5 V / −11.9 V</td>
+<td>10.83 V / −11.98 V</td>
+<td>+3% / −0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习2(2) 最大输入峰值</td>
+<td>约 0.53 V</td>
+<td>0.56 V</td>
+<td>+5%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习2(3) 带宽</td>
+<td>约 57 kHz</td>
+<td>79 kHz</td>
+<td>+39%</td>
+<td>✅（同带宽说明，页面估算偏保守）</td>
+</tr>
+<tr>
+<td>page3 练习3(1) 削平电平</td>
+<td>−14.9 V ～ 13.5 V</td>
+<td>−14.39 V ～ 13.80 V</td>
+<td>3.4% / 2.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page3 练习3(2) 输入 +2 V 瞬间反相端</td>
+<td>约 0.46 V</td>
+<td>0.51 V</td>
+<td>+11%</td>
 <td>⚠️</td>
 </tr>
 <tr>
-<td>page2 例2：Vi = −0.1 V 时 Vo；Vi = +0.1 V 时 Vo</td>
-<td>0.2 V；0</td>
-<td>0.2049 V；0.3 mV</td>
-<td>+2.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习3：Rf = 50k、Rs = 1k 时增益；Rf = 56k 时增益</td>
-<td>4.55；5.09</td>
-<td>4.65；5.21（有/无 Rs 的增益比 0.910，页面 0.909）</td>
-<td>+2.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习1：20 µs 正脉冲</td>
-<td>整流不出来；爬升至少 28.4 µs，实际更慢</td>
-<td>输出最大 5.8 mV；阶跃后 43.8 µs 输出才超过 10 mV</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>page3 练习5：峰值 0.1 V，半波平均</td>
-<td>31.8 mV</td>
-<td>33.6 mV（改进型实测，含失调）</td>
-<td>+5.6%</td>
+<td>page3 练习4 混音器</td>
+<td>−0.8 V</td>
+<td>−0.798 V</td>
+<td>0.2%</td>
 <td>✅</td>
 </tr>
 </tbody>
 </table>
-<p><strong>统计：✅ 13　⚠️ 7　❌ 1</strong>（按表格行计）</p>
-<h2 id="️---的修改建议页面口吻可直接粘贴">⚠️ / ❌ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>❌ page2 §1 误差&quot;几微伏&quot;（例1 同理）</strong></p>
-<p>在&quot;代数： <span class="math math-inline">\(V_i\)</span> = 0.1 V 时……误差约 0.8 V ÷ 100000 = 8 μV&quot;之后补一句：</p>
+<p><strong>统计：✅ 32　⚠️ 4　❌ 1</strong></p>
+<h2 id="--️-的修改建议页面口吻可直接粘贴">❌ / ⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>❌ page2 §一「所以到 1.2 kHz 左右 A 就只剩约 1000。代进同一个式子：修正系数 1 ÷ (1 + 11/1000)，输出 −4.946 V，误差升到约 1.1%，反相端也有约 5 mV 了。」</strong> 改为：</p>
 <blockquote>
-<p>这 8 μV 只是开环增益带来的那一份。真实运放还有<strong>输入失调电压</strong>（741 典型 1 mV、最大 5 mV 左右），它直接加在输入上，所以万用表上看到的误差通常是<strong>一毫伏到几毫伏</strong>，比 8 μV 大一百倍以上。门槛也一样：实际能整流的最小信号由失调决定，而不是 7 μV。精密整流&quot;精密&quot;的是二极管那 0.7 V 被消掉了，毫伏以下的精度要靠低失调运放。</p>
+<p>所以到 1.2 kHz 左右 A 就只剩约 1000，反相端的电压也从几十微伏涨到约 5 mV（5 V ÷ 1000）。不过输出幅度并没有小 1.1%：频率升高以后，运放自身的输出比输入落后约四分之一个周期（相位差 90°），这时的 A 不能当普通数字直接代进上面的式子，&quot;1&quot; 和 &quot;11/1000&quot; 要像直角三角形的两条直角边那样合成，结果是 √(1² + 0.011²) ≈ 1.00006，幅度误差只有万分之一左右，输出仍约 −5.00 V，只是比输入多落后了约 0.6°。真正让倍数明显下降的是更高的频率：按第三页的带宽公式，这个 10 倍电路的带宽约 109 kHz，到 50 kHz 时倍数约 9.1，降了约 9%。所以<strong>倍数越大、信号频率越接近带宽，&quot;只看电阻比&quot;就越不准</strong>；要在几十 kHz 上放大很多倍，就得换增益带宽积更大的运放，或者把倍数分到两级去做。</p>
 </blockquote>
-<p>例1 的末句改为：</p>
+<p>（SPICE：1.2 kHz 时 |Vo| = 4.999 V，A=1203；50 kHz 时 TI 模型给 9.46 倍，按手册 GBW 估 9.09 倍。）</p>
+<p><strong>⚠️ page2 §一「反相端只有约 50 µV」</strong> 后补一句：</p>
 <blockquote>
-<p>误差 = <span class="math math-inline">\(V_{oa}/A\)</span> ≈ 7.5 μV（只算开环增益）；加上运放约 1 mV 的失调，实际相对误差约 2%，仍远好于普通二极管的 100%。</p>
+<p>这是只考虑开环增益的理论值。真实的 LM358B 两个输入端之间还有零点几毫伏的失调电压（手册典型 ±0.3 mV、最大 ±3 mV），所以第一页用万用表量到的是零点几毫伏，而不是 50 µV；它对 5 V 输出的影响只有千分之一左右。</p>
 </blockquote>
-<p>本页小结里&quot;几微伏量级&quot;改为：</p>
+<p><strong>⚠️ page3 图05-p3-2 说明「倍数为 1 时带宽是 600 kHz 而不是 1.2 MHz，是因为反相接法的分母是 1+|Av|=2」</strong> 后补一句：</p>
 <blockquote>
-<p>只算开环增益是几微伏量级，实际由运放失调决定，约在毫伏级。</p>
+<p>这是按手册 GBW 典型值做的估算。LM358B 的单位增益频率实际比 1.2 MHz 略高，倍数很小时还有第二个转折点帮忙，用 TI 官方模型仿真，倍数 1 的反相器带宽约 1.2 MHz，倍数 10、100 时分别约 145 kHz、14.5 kHz。所以这几个数当作&quot;至少有这么宽&quot;来用就好；倍数越大，估算越接近实际。</p>
 </blockquote>
-<p><strong>⚠️ 运放脚电压（page2 §1 / 例1 / 图05-p2-2 / 图05-p2-4 / 例2，page3 练习4）</strong></p>
-<p>在 page2 开头&quot;二极管导通压降记作 <span class="math math-inline">\(V_D\)</span> ，按 P2 的 0.7 V 规则取 0.7 V&quot;之后补：</p>
+<p><strong>⚠️ page3 故障排查表「看输出负半周是否平在约 0.1 V」</strong> 改为：</p>
 <blockquote>
-<p>这里电流只有十几微安，1N4148 这样的小信号二极管实际压降只有 0.4～0.5 V。所以面包板上量到的运放脚电压会比本页算出的低两三百毫伏：例如 0.1 V 输入时约 0.5 V，而不是 0.8 V；改进型运放脚在约 −0.4～+0.65 V 之间。这并不影响输出，运放会自己补上实际压降。</p>
+<p>看输出负半周是否平在 0 V 附近（LM358B 单电源时最低只有几到几十毫伏）</p>
 </blockquote>
-<p>练习4 答案中&quot;过了二极管剩约 2 − 0.7 = 1.3 V&quot;改为：</p>
+<p><strong>⚠️ page3 练习3(2) 答案</strong> 改为：</p>
 <blockquote>
-<p>过了二极管剩约 1.3～1.5 V（电流只有一百多微安，压降不到 0.7 V）</p>
+<p>这一瞬间输出卡在负侧的下限不动。注意这时输出要通过 <span class="math math-inline">\(R_f\)</span> 往里吸约 0.15 mA 电流，LM358B 吸电流时负侧余量会变大，所以下限不是空载时的 −14.9 V，而是约 −14.4 V。反相端只连着两个电阻，它的电压由两端的 +2 V 和 −14.4 V 按电阻分压决定：两端相差 16.4 V，在 <span class="math math-inline">\(R_1\)</span> 上降掉 16.4 × 10/110 ≈ 1.49 V，所以反相端约 2 − 1.49 ≈ 0.5 V（按 −14.9 V 粗算是 0.46 V，结论一样）。它不再是 0 V，因为输出已经饱和……（后文不变）</p>
 </blockquote>
-<p><strong>⚠️ 图05-p2-2 的 1 kHz 结果，以及 page3 图05-p3-1 的 10 kHz 基本型 + 741</strong></p>
-<p>在图05-p2-2 说明段末尾补：</p>
-<blockquote>
-<p>用 TI 官方的 LM741 模型再仿一遍，1 kHz 的平均值误差约 −7.5%，过零后约 70 μs 输出才跟上，比这里的简化模型还差一倍。</p>
-</blockquote>
-<p>在 page3 扫描一第一行的描述后补：</p>
-<blockquote>
-<p>换成厂家的 741 模型，10 kHz 时第二个正半周已经完全没有输出（误差 −100%），简化模型的 −70% 还是乐观的。</p>
-</blockquote>
-<p><strong>⚠️ 改进型的误差数字（图05-p2-4、page3 扫描）</strong></p>
-<p>在图05-p2-4 说明后补：</p>
-<blockquote>
-<p>实测时 1 kHz 下的误差往往不是这 −0.5%，而是由失调决定的正负一两个百分点：失调在改进型里乘以 <span class="math math-inline">\((1 + R_f/R_1)\)</span> = 2，再被整流成一个直流偏置。</p>
-</blockquote>
-<p>在 page3 扫描二&quot;改进型配 741 级大约到 2 kHz 才碰线&quot;之后补：</p>
-<blockquote>
-<p>（按厂家 741 模型，改进型的速度损失比这里小：10 kHz 约 1%，20 kHz 约 3%；在这个频段，失调反而是更大的误差来源。）</p>
-</blockquote>
+<p>同理，page1 §五 第3步、page2 图05-p2-2 的 &quot;−14.9 V&quot; 可加注：&quot;负载很轻时；本电路里输出要经反馈电阻吸电流，实测约 −14.4 V&quot;（偏差 3.4%，属 ✅，可选修改）。</p>
 <h2 id="面包板万用表读数表">面包板万用表读数表</h2>
-<ul>
-<li>供电 ±15 V；LM741 的 7 脚接 +15 V，4 脚接 −15 V。</li>
-<li>二极管用 1N4148，所有电阻 10 kΩ。</li>
-<li>直流输入用电位器从 ±1.5 V 电池分压得到。</li>
-</ul>
+<p>（±15 V，R1=10 kΩ，Rf=100 kΩ，±5% 电阻；直流测量时把信号发生器换成直流电压或 Offset）</p>
 <table>
 <thead>
 <tr>
-<th>电路 / 条件</th>
+<th>条件</th>
 <th>红笔 → 黑笔</th>
 <th>应读到</th>
 <th>说明</th>
@@ -366,135 +382,89 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </thead>
 <tbody>
 <tr>
-<td>基本型，Vi = +0.10 V</td>
-<td>输出（RL 上端）→ GND</td>
-<td>0.100 V ± 几 mV</td>
-<td>与 Vi 之差就是失调，不是 8 µV</td>
+<td>输入 +0.5 V 直流</td>
+<td>运放输出脚（LM358B 第 1 脚）→ GND</td>
+<td>−4.5 ～ −5.5 V（典型 −5.0 V）</td>
+<td>范围来自两只 5% 电阻</td>
 </tr>
 <tr>
 <td>同上</td>
-<td>运放 6 脚 → GND</td>
-<td>约 0.48 V</td>
-<td>比输出高一个小电流压降（约 0.38 V）</td>
+<td>反相端（第 2 脚）→ GND</td>
+<td>−3 ～ +3 mV（典型零点几毫伏）</td>
+<td>虚地；失调电压决定</td>
 </tr>
 <tr>
 <td>同上</td>
-<td>6 脚 → 输出</td>
-<td>约 0.38 V</td>
-<td>二极管两端</td>
-</tr>
-<tr>
-<td>基本型，Vi = −0.10 V</td>
-<td>输出 → GND</td>
-<td>约 0 V</td>
-<td>二极管截止</td>
+<td>同相端（第 3 脚）→ GND</td>
+<td>0 V</td>
+<td>必须可靠接地</td>
 </tr>
 <tr>
 <td>同上</td>
-<td>6 脚 → GND</td>
-<td>约 −14 V</td>
-<td>负饱和</td>
+<td>输入端 → 第 2 脚（跨 R1）</td>
+<td>约 0.5 V</td>
+<td>电流 0.05 mA</td>
 </tr>
 <tr>
-<td>反馈接错（2 脚接 6 脚），Vi = 0.2 V</td>
-<td>输出 → GND；6 脚 → GND</td>
-<td>约 0 V；0.20 V</td>
-<td>练习4 的症状</td>
+<td>同上</td>
+<td>第 2 脚 → 第 1 脚（跨 Rf）</td>
+<td>约 5 V</td>
+<td>同一电流流过 100 kΩ</td>
 </tr>
 <tr>
-<td>改进型（10k/20k），Vi = −0.10 V</td>
-<td>输出 → GND</td>
-<td>约 0.20 V</td>
+<td>输入 −0.2 V 直流</td>
+<td>第 1 脚 → GND</td>
+<td>+1.8 ～ +2.2 V</td>
 <td></td>
 </tr>
 <tr>
-<td>同上</td>
-<td>6 脚 → GND</td>
-<td>约 0.64 V</td>
-<td></td>
+<td>输入 −2 V 直流（正向饱和）</td>
+<td>第 1 脚 → GND</td>
+<td>13.6 ～ 13.9 V</td>
+<td>比 +15 V 低 1.1～1.4 V</td>
 </tr>
 <tr>
-<td>改进型（10k/20k），Vi = +0.10 V</td>
-<td>6 脚 → GND</td>
-<td>约 −0.38 V</td>
-<td>D2 导通</td>
-</tr>
-<tr>
-<td>同上</td>
-<td>输出 → GND</td>
-<td>约 0 V（&lt; 1 mV）</td>
-<td></td>
+<td>输入 +2 V 直流（负向饱和）</td>
+<td>第 1 脚 → GND</td>
+<td>约 −14.3 ～ −14.5 V</td>
+<td>输出经 Rf 吸电流</td>
 </tr>
 <tr>
 <td>同上</td>
-<td>2 脚 → GND</td>
-<td>约 0 V</td>
-<td>虚地</td>
+<td>第 2 脚 → GND</td>
+<td>约 0.5 V</td>
+<td>虚短失效</td>
 </tr>
 <tr>
-<td>改进型，1 kHz、峰值 0.2 V 正弦</td>
-<td>输出 → GND（DC 档）</td>
-<td>约 64～66 mV</td>
-<td>平均值 = 0.2/π，示波器看过零点</td>
+<td>5 V 单电源、输入 +0.2 V</td>
+<td>第 1 脚 → GND</td>
+<td>0 ～ 0.03 V</td>
+<td>贴底</td>
+</tr>
+<tr>
+<td>电源</td>
+<td>第 8 脚 → 第 4 脚</td>
+<td>30 V</td>
+<td>先确认上电</td>
 </tr>
 </tbody>
 </table>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>统计：❌ 1 条已改；⚠️ 7 条全部处理（7 条改、0 条不改）；ℹ️ 无。</p>
-<table>
-<thead>
-<tr>
-<th>条目</th>
-<th>处理</th>
-<th>改了哪里、怎么改</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>❌ page2 §1 / 例1：误差约 8 µV、7.5 µV（0.015%）、门槛 7 µV</td>
-<td>已改</td>
-<td>page2 §1 标题由「正半周的误差只有几微伏」改为「二极管的门槛被缩小 A 倍」；§1 门槛那段后加一段：8 μV 只是开环增益那一份，真实运放有输入失调（741 典型 1 mV），SPICE 中 0.1 V 时误差约 1.0 mV（1%），能整流的最小信号由失调决定。例1 末句改为「只算开环增益 7.5 μV；加上约 1 mV 失调，实际约 2%（SPICE）」。page2 小结、page3 小结里的「几微伏量级 / 由开环增益 A 决定，几乎完美」改为「实际由失调决定，毫伏级」。code/figs/05_figs.py 的打印和 assert 文字注明「只算开环增益」，图上数值（0.80 V）不变</td>
-</tr>
-<tr>
-<td>⚠️ 基本型运放脚电压 0.8 / 0.75 / 0.9 V（page2 §1、例1、图05-p2-2）</td>
-<td>已改</td>
-<td>page2 开头「取 0.7 V」后补一句：电流只有十几微安，1N4148 实际压降 0.4～0.5 V，0.1 V 输入时运放脚约 0.5 V 而不是 0.8 V；不影响输出</td>
-</tr>
-<tr>
-<td>⚠️ 改进型运放脚电压 −0.70～+0.90 V（图05-p2-4、例2）</td>
-<td>已改</td>
-<td>与上条合在同一句里：改进型运放脚实测约 −0.4～+0.65 V</td>
-</tr>
-<tr>
-<td>⚠️ 练习4：输入 2 V 时约 1.3 V</td>
-<td>已改</td>
-<td>答案改为「约 1.3～1.5 V（电流一百多微安，压降不到 0.7 V；SPICE 1N4148 得 1.49 V）」</td>
-</tr>
-<tr>
-<td>⚠️ 图05-p2-2：1 kHz 误差 −3.5%、60 µs</td>
-<td>已改</td>
-<td>图后讲解末尾补：TI 官方 LM741 模型下约 −7.5%、约 70 μs，比简化模型差一倍</td>
-</tr>
-<tr>
-<td>⚠️ 图05-p3-1：基本型 + 741，10 kHz −70.3%</td>
-<td>已改</td>
-<td>page3 扫描一第一行描述后补：厂家 741 模型下第二个正半周完全没有输出（−100%），简化模型偏乐观</td>
-</tr>
-<tr>
-<td>⚠️ 图05-p2-4：改进型 + 741，1 kHz −0.5%</td>
-<td>已改</td>
-<td>图05-p2-4 讲解后补一段：实测误差由失调决定，厂家模型 +2.6%，其中约 +1.6% 来自失调（失调 × (1 + R_f/R_1) = 2 后被整流成直流偏置）</td>
-</tr>
-<tr>
-<td>⚠️ page3 §3：改进型 + 741 约 2 kHz 碰 1% 线、10 kHz −5.3%</td>
-<td>已改</td>
-<td>在「大约到 2 kHz 才碰线」后补括号：厂家模型下速度损失更小（10 kHz 约 1%，20 kHz 约 3%），这个频段失调是更大的误差来源</td>
-</tr>
-</tbody>
-</table>
-<p>页面里的仿真代码、code/05_sim.py 和图都保留原来的简化模型（GBW + 压摆率、0.7 V 折线二极管），页面已说明是简化模型；SPICE 数值只写在说明句里，没有改动仿真得到的 −3.5% / −0.5% / −70.3% 等数字，因此页面、图和脚本打印仍一致。</p>
-<p>改动文件：05-precision-rectifier/page2.md、05-precision-rectifier/page3.md、code/figs/05_figs.py（只改打印和 assert 文字）、review/spice/05.md。图片由脚本重新生成（内容不变）。</p>
-<p>检查：count_cjk（1697 / 3233 / 3191）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（15 / 99 / 25）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
+<p>本节点 ❌ 1 条已改；⚠️ 4 条全部处理（改 4、不改 0）；另按建议末尾的「可选修改」顺手加注了 −14.9 V 的带载说明（✅ 项）。</p>
+<ol>
+<li><strong>❌ page2 §一「1.2 kHz 时输出 −4.946 V，误差约 1.1%」</strong>：已改。改为：1.2 kHz 时 A 约 1000，反相端涨到约 5 mV，但输出幅度并没有小 1.1%——高频时运放自身输出落后 90°，修正分母里的「1」和「11/1000」要像直角三角形两条直角边合成，√(1² + 0.011²) ≈ 1.00006，误差约万分之一，输出仍约 −5.00 V，只多落后约 0.6°；SPICE（TI LM358B 模型）1.2 kHz 时 4.999 V、误差约 0.02%。真正让倍数明显下降的是接近带宽的频率：按 <a href="../../05-inverting-amp/page3.html">05 反相放大 · 参数与调试篇</a> 第一节第 4 小节，10 倍电路带宽约 109 kHz，50 kHz 时倍数约 9.1、降约 9%。结论句改为「倍数越大、信号频率越接近带宽，只看电阻比就越不准」。
+<ul>
+<li>原错误数值只在页面文字里，脚本和图里没有。为保证正文数字都有脚本打印，在 <code>code/figs/05_figs.py</code> 末尾新增打印 + 断言：A = 1000、|分母| = 1.00006、|Vo| = 5.000 V、幅度误差 0.006%、多落后 0.6°、反相端 5 mV；10 倍电路带宽 109 kHz、50 kHz 时倍数 9.09。没有改动任何图。</li>
+</ul>
+</li>
+<li><strong>⚠️ page2 §一「反相端只有约 50 µV」</strong>：已改。其后加「💡 实际芯片会怎样」小框：50 µV 是只算开环增益的理论值，LM358B 失调电压典型 ±0.3 mV、最大 ±3 mV，SPICE 反相端约 0.36 mV、输出 −4.99696 V，所以直觉篇第五节万用表量到的是零点几毫伏，对输出影响约千分之一。</li>
+<li><strong>⚠️ page3 图 05-p3-2「倍数 1 的带宽约 600 kHz」</strong>：已改。在「分母是 1+|Av|=2」后补一句：这是按手册 GBW 典型值的估算；TI 模型 SPICE 倍数 1 带宽约 1.25 MHz，倍数 10、100 分别约 145 kHz、14.5 kHz，这些数当作「至少有这么宽」来用，倍数越大估算越准。图和脚本的估算模型（GBW/(1+G)）不变，页面已说明它是估算。</li>
+<li><strong>⚠️ page3 故障排查表「负半周平在约 0.1 V」</strong>：已改为「看输出负半周是否平在 0 V 附近（LM358B 单电源时最低只有几到几十毫伏）」。</li>
+<li><strong>⚠️ page3 练习 3(2)「反相端约 0.46 V」</strong>：已改。答案改为：输出经 Rf 吸约 0.15 mA，负侧下限约 −14.4 V（SPICE −14.39 V），反相端 2 − 16.4×10/110 ≈ 0.51 V、电流约 0.149 mA；按 −14.9 V 粗算是 0.46 V，结论一样。<code>code/figs/05_figs.py</code> 新增「练习 3（带载下限）」打印 0.51 V / 0.149 mA 并断言；原 −14.9 V 的 0.464 V 打印保留作粗算对照。</li>
+<li><strong>可选（✅ 项）page1 §五 第 3 步、page2 图 05-p2-2 的 −14.9 V</strong>：已加注。page1 第 3 步括注「这是几乎不带负载时的典型值；本电路输出要经反馈电阻吸电流，SPICE 约在输入 1.43 V、输出 −14.4 V 处变平」；page2 图 05-p2-2 讲解末尾补一句同样的说明（正半周约 13.8 V）。图仍按手册典型值 13.5 / −14.9 V 画，页面已写明是典型值，未重画。</li>
+</ol>
+<p>改动文件：<code>05-inverting-amp/page1.md</code>、<code>05-inverting-amp/page2.md</code>、<code>05-inverting-amp/page3.md</code>、<code>code/figs/05_figs.py</code>、<code>review/spice/05.md</code>。</p>
+<p>检查（仓库根目录）：count_cjk（2036/2067/2568 字）、run_blocks（页面 1 过 1 跳过填空）、run_blocks --scripts（05_sim.py、05_figs.py）、check_figs、check_github_math（31/43/57）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

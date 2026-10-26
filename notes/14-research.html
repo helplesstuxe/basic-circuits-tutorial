@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>14 电压比较器 · 资料笔记（作者 C）</title>
+<title>14 积分电路 · 调研笔记（作者 C）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,43 +42,29 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/14-research.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="14-电压比较器--资料笔记作者-c">14 电压比较器 · 资料笔记（作者 C）</h1>
+<h1 id="14-积分电路--调研笔记作者-c">14 积分电路 · 调研笔记（作者 C）</h1>
 <h2 id="已打开并引用的资料">已打开并引用的资料</h2>
 <ul>
-<li>TI SBOA313A《Non-Inverting Comparator with Hysteresis Circuit》<a href="https://www.ti.com/lit/an/sboa313a/sboa313a.pdf">https://www.ti.com/lit/an/sboa313a/sboa313a.pdf</a>
+<li>TI SBOA275B <em>Integrator Circuit</em>：<a href="https://www.ti.com/lit/an/sboa275b/sboa275b.pdf%EF%BC%88%E6%9C%AC%E5%9C%B0">https://www.ti.com/lit/an/sboa275b/sboa275b.pdf（本地</a> /workspace/authorC/refs/sboa275b.pdf）
 <ul>
-<li>TLV7041 开漏输出需上拉；VH 1.7 V / VL 1.3 V / Vhys 400 mV，3 V 电源，R1 273k、R2 2M、R3 100k 上拉、R4 1.01M / R5 1M 分压出 VTH。</li>
-<li>设计步骤：输出低时 VTH = VH·R2/(R1+R2)；输出高时叠加法求 VL。与本节公式一致（3×273/2000 ≈ 0.41 V）。</li>
-<li>「噪声、信号变化或慢变信号在单一门限下会造成不希望的输出翻转」。</li>
+<li>理想积分器会依输入失调电压极性饱和到电源轨，需要反馈电阻 R2 提供稳定直流工作点；R2 限制积分的最低频率。</li>
+<li>Vout = −1/(R1C1)∫Vin dt；示例 R1 100 kΩ、C1 1.59 nF（f0dB 1 kHz）、R2 100 MΩ、TLV9002 ±2.5 V，仿真中设 Vos −740 μV。</li>
+<li>Design notes：R2 尽量大；选 CMOS 运放减小偏置电流误差；GBP ≥ 10·fMax；必要时同相端接可调基准抵消失调；常放在更大的伺服环路里由外环提供直流反馈。</li>
+<li>第 3 步 &quot;lower cutoff a decade less than the minimum operating frequency&quot;。注意：该文档 R2 公式的数值（10 Hz vs 表中 fMin 100 Hz）前后不一致，教程只引用&quot;低十倍&quot;的原则和示例取值，没有照抄其公式。</li>
 </ul>
 </li>
-<li>TI SLOA067《Op Amp and Comparators – Don't Confuse Them!》<a href="https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/14/op-amp-vs-comparators.pdf">https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/14/op-amp-vs-comparators.pdf</a>
+<li>运放输出摆幅 / GBW 数量级沿用 02 页（LM358B 数据手册，02 作者已引用）。</li>
+</ul>
+<h2 id="设计取值本节">设计取值（本节）</h2>
+<p>R 10 kΩ、C 100 nF（RC 1 ms）、Rf 1 MΩ（Rf·C 0.1 s，f_c ≈ 1.6 Hz）；输出极限按 ±15 V 供电示意 ±13.5 V；±1 V 500 Hz 方波 + 20 mV 偏置。</p>
+<h2 id="仿真结果code14_simpycodefigs14_figspy">仿真结果（code/14_sim.py、code/figs/14_figs.py）</h2>
 <ul>
-<li>比较器输出级为饱和工作优化；运放输出管是线性管，开环时在线性区停留久、沿慢；饱和恢复时间不可预测（微秒到几十毫秒），厂家不保证开环工作。</li>
-<li>回差可消除慢变输入的抖动；作者认为 1%～2% 足够（本节在 page3 说明为何取更大）。</li>
+<li>方波 → 三角波峰峰 1.00 V；理想积分器 627 ms 撞 −13.5 V（漂移 20 V/s）；Rf 1 MΩ 时中心 −2.00 V。</li>
+<li>Rf 扫描：10k/100k/1M/10M → 中心 −0.02/−0.20/−2.00/−13.01 V（10 MΩ 已削顶）；500 Hz 下 Rf 10 kΩ 峰峰 0.93 V（变形），100 kΩ 与 1 MΩ 为 1.00 V。</li>
+<li>RC 扫描：0.05/1/10 ms → 峰峰 20.00（削平）/1.00/0.10 V。</li>
 </ul>
-</li>
-<li>TI LM393 数据手册 SLCS005AH <a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a>
-<ul>
-<li>开集电极输出，可电平转换，多输出并联实现「与」；单电源 2～36 V；响应时间典型 1.3 μs（B 版 1 μs）；</li>
-<li>共模范围 25 °C 上限 (V+)−1.5 V，全温度 (V+)−2.0 V；注释：只要一个输入在范围内输出即正确；</li>
-<li>VOL：ISINK ≤ 4 mA 时典型 110 mV、最大 400 mV；输入偏置电流典型 25 nA（B 版 3.5 nA）；</li>
-<li>上升时间 τR ≈ RPULLUP × CL；布线：加旁路电容，输出线远离反相输入。</li>
-</ul>
-</li>
-<li>本书 P3：LM358 输出高电平约比正电源低 1.5 V；开环饱和；无负反馈时虚短不成立。</li>
-</ul>
-<h2 id="仿真设计">仿真设计</h2>
-<ul>
-<li>code/14_sim.py：5 V、Vref 2.5 V、R1 10k、R2 100k、R3 2.2k → V_H 2.750 V、V_L 2.255 V、回差 0.495 V；
-20 s 三角形输入 2→3→2 V，dt 10 ms，σ 40 mV，seed 1：普通 98 次、施密特 2 次（7.08 s 翻高、16.67 s 翻低）。</li>
-<li>扫描：R2 1M…68k（回差 0.05…0.72 V），σ 20/40/80 mV → 达到 2 次所需回差 0.11/0.23/0.49 V（约 6σ，经验值，仅对本例高斯噪声）。</li>
-<li>温度传感器 0.1 V/°C 为示意值，未对应具体型号。</li>
-</ul>
-<h2 id="待核实">待核实</h2>
-<ul>
-<li>无。</li>
-</ul>
+<h2 id="未用--待核实">未用 / 待核实</h2>
+<p>无「待核实」标记。</p>
 
 </main>
 <div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

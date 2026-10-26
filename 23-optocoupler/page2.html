@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/23-optocoupler/page2.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="23-光耦隔离--原理与实现篇">23 光耦隔离 · 原理与实现篇</h1>
-<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a>、<a href="../22-bjt-relay-driver/page1.html">22 三极管开关与继电器驱动 · 直觉篇</a></p>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a></p>
 <blockquote class="alert alert-warning">
 <p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
 <p>本节点特有的危险点：① 光耦输入侧一旦接到市电，输入电阻、LED 引脚和附近焊盘全部带电，不要因为&quot;输出侧只有 5 V&quot;就去碰板子；② 两侧的地必须分开，调试时示波器探头的地夹只能夹在一侧，不能同时夹两侧。</p>
@@ -57,9 +57,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h2 id="一最小知识">一、最小知识</h2>
 <p>本页只用到前置节点里的三件事：</p>
 <ol>
-<li>LED 是二极管，导通时两端电压基本固定，电流要靠串联电阻来定（见 <a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a>、<a href="../P2-semiconductor-basics/page2.html">P2 半导体入门 · 原理与实现篇</a>）。光耦里的红外 LED 压降记作 <span class="math math-inline">\(V_F\)</span> ，PC817 手册给出典型 1.2 V、最大 1.4 V。</li>
-<li>三极管当开关用时，&quot;想要&quot;的电流比外电路能给的大，它就饱和， <span class="math math-inline">\(V_{CE}\)</span> 降到约 0.2 V，记作 <span class="math math-inline">\(V_{CE(sat)}\)</span> （见 <a href="../P2-semiconductor-basics/page2.html">P2 半导体入门 · 原理与实现篇</a>）。</li>
-<li>器件参数有分散性，设计时<strong>按最坏情况算，再留余量</strong>（见 <a href="../22-bjt-relay-driver/page2.html">22 三极管开关与继电器驱动 · 原理与实现篇</a>）。22 节用的是 β 的最小值，本节用的是 CTR 的最小值。</li>
+<li>LED 是二极管，导通时两端电压基本固定，电流要靠串联电阻来定（见 <a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../03-semiconductor-basics/page2.html">03 半导体入门 · 原理与实现篇</a>）。光耦里的红外 LED 压降记作 <span class="math math-inline">\(V_F\)</span> ，PC817 手册给出典型 1.2 V、最大 1.4 V。</li>
+<li>三极管当开关用时，&quot;想要&quot;的电流比外电路能给的大，它就饱和， <span class="math math-inline">\(V_{CE}\)</span> 降到约 0.2 V，记作 <span class="math math-inline">\(V_{CE(sat)}\)</span> （见 <a href="../03-semiconductor-basics/page2.html">03 半导体入门 · 原理与实现篇</a>）。</li>
+<li>器件参数有分散性，设计时<strong>按最坏情况算，再留余量</strong>（见 <a href="../07-bjt-relay-driver/page2.html">07 三极管开关与继电器驱动 · 原理与实现篇</a>）。07 节用的是 β 的最小值，本节用的是 CTR 的最小值。</li>
 </ol>
 <p>光敏三极管和普通三极管唯一的区别是：它的&quot;基极电流&quot;由照进来的光产生。所以我们不用 β，而是直接用光耦手册给的<strong>电流传输比</strong>，通常写成百分数：</p>
 <div class="math math-display">\[\text{CTR} = \frac{I_C}{I_F}\]</div>
@@ -74,11 +74,11 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <div class="math math-display">\[I_{C,\max} = \text{CTR} \cdot I_F\]</div>
 <p><strong>第三步：输出侧&quot;需要多少&quot;</strong>。先用中文说：要把输出拉到 0.2 V，上拉电阻 <span class="math math-inline">\(R_L\)</span> 两端就要有 <span class="math math-inline">\(V_{CC} - V_{CE(sat)}\)</span> 的电压，这需要一个确定的电流。三极管能给的必须比需要的多，它才会饱和：</p>
 <div class="math math-display">\[\text{CTR} \cdot I_F \ge \frac{V_{CC} - V_{CE(sat)}}{R_L}\]</div>
-<p>这和 22 节的饱和条件是同一个式子，只是把 β 换成了 CTR，把 <span class="math math-inline">\(I_B\)</span> 换成了 <span class="math math-inline">\(I_F\)</span> 。Vishay 的应用笔记 AN45 用的就是这个不等式。以图 23-p2-1 为例， <span class="math math-inline">\(V_{CC} = 5\ \text{V}\)</span> ， <span class="math math-inline">\(R_L = 4.7\ \text{k}\Omega\)</span> ，需要 <span class="math math-inline">\(I_C \ge 4.8 / 4.7 \approx 1.02\ \text{mA}\)</span> 。</p>
+<p>这和 07 节的饱和条件是同一个式子，只是把 β 换成了 CTR，把 <span class="math math-inline">\(I_B\)</span> 换成了 <span class="math math-inline">\(I_F\)</span> 。Vishay 的应用笔记 AN45 用的就是这个不等式。以图 23-p2-1 为例， <span class="math math-inline">\(V_{CC} = 5\ \text{V}\)</span> ， <span class="math math-inline">\(R_L = 4.7\ \text{k}\Omega\)</span> ，需要 <span class="math math-inline">\(I_C \ge 4.8 / 4.7 \approx 1.02\ \text{mA}\)</span> 。</p>
 <p><strong>第四步：CTR 按多少算</strong>？PC817 手册写的是 <span class="math math-inline">\(I_F = 5\ \text{mA}\)</span> 时 CTR 在 50% 到 400% 之间，同一个型号能差 8 倍。更麻烦的是 LED 会老化：手册里的曲线表明，LED 光输出在 5 年左右会降到约一半。所以本页按&quot;最小 50%、再老化一半&quot;取 <strong>25%</strong> 来设计。代入：</p>
 <div class="math math-display">\[I_F \ge \frac{1.02\ \text{mA}}{0.25} \approx 4.09\ \text{mA}\]</div>
 <p>2.2 kΩ 给的 4.91 mA 比这个大，够用。</p>
-<p><strong>第五步：速度</strong>。光敏三极管关断后，输出要靠 <span class="math math-inline">\(R_L\)</span> 给集电极上的电容充电才能回到高电平，和 RC 充电一样（见 <a href="../P1-components-basics/page1.html">P1 元件速成 · 直觉篇</a>），快慢由时间常数决定：</p>
+<p><strong>第五步：速度</strong>。光敏三极管关断后，输出要靠 <span class="math math-inline">\(R_L\)</span> 给集电极上的电容充电才能回到高电平，和 RC 充电一样（见 <a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>），快慢由时间常数决定：</p>
 <div class="math math-display">\[\tau = R_L C, \qquad t_r \approx 2.2 \tau\]</div>
 <p><span class="math math-inline">\(t_r\)</span> 是从 10% 升到 90% 的上升时间。2.2 是这样来的：RC 充电时电压按 <span class="math math-inline">\(1 - e^{-t/\tau}\)</span> 上升，升到 10% 要 <span class="math math-inline">\(\tau \ln(10/9)\)</span> ，升到 90% 要 <span class="math math-inline">\(\tau \ln 10\)</span> ，两者相减就是 <span class="math math-inline">\(\tau \ln 9 \approx 2.2\tau\)</span> 。Vishay 的光耦开关速度笔记指出，影响速度的第一因素就是负载电阻。于是出现一个取舍： <span class="math math-inline">\(R_L\)</span> 越大，第三步需要的电流越小，但第五步的上升沿越慢。</p>
 <p>难点在于&quot;这个 C 有多大&quot;。光耦比一个普通的 RC 电路慢得多，原因有两个：</p>

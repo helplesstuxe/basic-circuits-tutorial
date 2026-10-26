@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20 有源滤波 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/20-active-filter/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="20-有源滤波--原理与实现篇">20 有源滤波 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a></p>
+<h2 id="这一页要解决的问题">这一页要解决的问题</h2>
+<p>直觉篇说&quot;电阻和电容决定分界&quot;。这一页回答三个问题：分界频率怎么算？一级 RC 挡得够不够？不够时怎么用 Sallen-Key 电路做成二阶？最后三道例题，从照着算到自己改成高通。</p>
+<h2 id="一一阶低通截止频率公式">一、一阶低通：截止频率公式</h2>
+<p><strong>意思</strong>：电容的&quot;阻碍&quot;随频率升高而变小。当电容的阻碍和电阻 <span class="math math-inline">\(R\)</span> 一样大时，输出降到输入的约 0.707 倍，这个频率就是截止频率 <span class="math math-inline">\(f_c\)</span> 。</p>
+<p>电容的阻碍叫<strong>容抗</strong>，记作 <span class="math math-inline">\(X_C\)</span> ，单位欧姆：</p>
+<div class="math math-display">\[X_C = \frac{1}{2\pi f C}\]</div>
+<p>其中 <span class="math math-inline">\(f\)</span> 是信号频率， <span class="math math-inline">\(C\)</span> 是电容量， <span class="math math-inline">\(2\pi\)</span> 来自正弦波转一圈是 <span class="math math-inline">\(2\pi\)</span> 弧度。令 <span class="math math-inline">\(X_C = R\)</span> ，解出：</p>
+<div class="math math-display">\[f_c = \frac{1}{2\pi R C}\]</div>
+<p><strong>代数</strong>： <span class="math math-inline">\(R\)</span> = 16 kΩ， <span class="math math-inline">\(C\)</span> = 10 nF，</p>
+<div class="math math-display">\[f_c = \frac{1}{2\pi \times 16000 \times 10 \times 10^{-9}} \approx 995\ \text{Hz}\]</div>
+<p><strong>一步一步推（不用复数）</strong>。为什么&quot;容抗等于电阻&quot;时是 0.707 倍，而不是一半？</p>
+<p>推导用的就是直觉篇那个一阶有源低通，图 20-p2-4 把电流和两段电压标了出来。</p>
+<p><a class="img-link" href="img/20_p2_4_first_order_derive.png"><img alt="一阶有源低通：Vi 经 16 kΩ 电阻 R 到节点，节点经 10 nF 电容 C 接地并接跟随器同相端；同一个电流 I 流过 R 和 C，R 上的电压是 IR，C 上的电压是 I 乘容抗" src="img/20_p2_4_first_order_derive.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-4　推导用的一阶低通：同一个电流 I 先流过 R，再流过 C 到地</em></p>
+<p>图 20-p2-4 中跟随器的同相端几乎不取电流，所以流过 <span class="math math-inline">\(R\)</span> 的电流 <span class="math math-inline">\(I\)</span> 全部流进 <span class="math math-inline">\(C\)</span> ，这就是下面第 1 步「流过同一个电流」的来历；输出取自电容上端，所以 <span class="math math-inline">\(V_o = V_C\)</span> 。</p>
+<ol>
+<li><strong>电阻和电容串联，流过同一个电流</strong>。电阻上的电压幅度是 <span class="math math-inline">\(V_R = I R\)</span> ，电容上的电压幅度是 <span class="math math-inline">\(V_C = I X_C\)</span> ，这里 <span class="math math-inline">\(I\)</span> 是电流的幅度。</li>
+<li><strong>但两者&quot;不同步&quot;</strong>。电阻电压和电流同时到达最大；电容电压要等电流把它充满之后才最大，恰好晚四分之一个周期。为什么是四分之一？电容的电流正比于电压曲线的斜率（<a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a> 讲过），所以电流在电容电压上升最快的时刻最大；正弦上升最快的地方是过零处，它比峰值正好早四分之一个周期。反过来说，电容电压的峰值比电流的峰值晚四分之一个周期。两个正弦&quot;错开四分之一周期&quot;相加时，合成的幅度不是简单相加，而是像直角三角形的两条直角边求斜边：</li>
+</ol>
+<div class="math math-display">\[V_i^2 = V_R^2 + V_C^2\]</div>
+<ol start="3">
+<li><strong>输出取自电容</strong>。跟随器把电容电压原样送出，所以 <span class="math math-inline">\(V_o = V_C\)</span> 。把第 1 步代入第 2 步：</li>
+</ol>
+<div class="math math-display">\[\frac{V_o}{V_i} = \frac{I X_C}{\sqrt{(I R)^2 + (I X_C)^2}} = \frac{1}{\sqrt{1 + (R/X_C)^2}}\]</div>
+<ol start="4">
+<li><strong>把 <span class="math math-inline">\(R/X_C\)</span> 写成频率之比</strong>。 <span class="math math-inline">\(R/X_C = 2\pi f R C\)</span> ，而 <span class="math math-inline">\(f_c = 1/(2\pi R C)\)</span> ，所以 <span class="math math-inline">\(R/X_C = f/f_c\)</span> 。</li>
+</ol>
+<p>代数验证：当 <span class="math math-inline">\(X_C = R\)</span> 时，直角三角形两条直角边相等，斜边是直角边的 <span class="math math-inline">\(\sqrt{2}\)</span> 倍，输出就是 <span class="math math-inline">\(1/\sqrt{2} \approx 0.707\)</span> 倍，而不是一半。这正是&quot;−3 dB 点&quot;的来历。</p>
+<p><strong>挡住多少</strong>？把第 4 步代回第 3 步，一阶低通（跟随器倍数为 1）在任意频率 <span class="math math-inline">\(f\)</span> 下的输出幅度与输入幅度之比是</p>
+<div class="math math-display">\[\frac{V_o}{V_i} = \frac{1}{\sqrt{1 + (f/f_c)^2}}\]</div>
+<p>代数：在 <span class="math math-inline">\(f = f_c\)</span> 处是 <span class="math math-inline">\(1/\sqrt{2} \approx 0.707\)</span> ；在 10 kHz（约 10 倍 <span class="math math-inline">\(f_c\)</span> ）处是 <span class="math math-inline">\(1/\sqrt{1+101} \approx 0.099\)</span> ，大约只剩十分之一。</p>
+<p><strong>分贝</strong>。工程上常把倍数换成<strong>分贝</strong>（dB）： <span class="math math-inline">\(20\lg(V_o/V_i)\)</span> 。0.707 倍是 −3 dB，0.1 倍是 −20 dB，0.01 倍是 −40 dB。所以截止频率又叫&quot;−3 dB 点&quot;。一阶低通在 <span class="math math-inline">\(f_c\)</span> 以上频率每升高 10 倍（叫一个&quot;十倍频程&quot;），输出再降 10 倍，也就是<strong>每十倍频程 −20 dB</strong>。</p>
+<h2 id="二二阶-sallen-key-低通">二、二阶 Sallen-Key 低通</h2>
+<p>一阶的下降太&quot;温柔&quot;：10 kHz 的噪声只压到十分之一。把两级 RC 串起来能降得更快，但简单串联时第二级会拖累第一级。<strong>Sallen-Key</strong> 电路用一个跟随器解决这个问题，并且把两电阻中间那个节点的电容（ <span class="math math-inline">\(C_2\)</span> ）接到输出端，而不是接地，借输出&quot;推一把&quot;，让拐角更陡。</p>
+<p>看 图 20-p2-1：输入经 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_2\)</span> 两个电阻到运放同相端， <span class="math math-inline">\(C_1\)</span> 从同相端接地， <span class="math math-inline">\(C_2\)</span> 从两电阻中间的节点接到输出。</p>
+<p><a class="img-link" href="img/20_p2_1_sallen_key.png"><img alt="两个电阻串联到运放同相端，同相端经 10 纳法电容接地，两电阻中间经 33 纳法电容接到输出，运放接成跟随器" src="img/20_p2_1_sallen_key.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-1　单位增益 Sallen-Key 二阶低通</em></p>
+<p>图 20-p2-1 中的运放输出直接接反相端，就是 <a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a>：它让 <span class="math math-inline">\(C_1\)</span> 上的电压原样出现在输出端，再经 <span class="math math-inline">\(C_2\)</span> 送回中间节点。元件值取自 TI 应用笔记 SLOA049 表 10-1 的 1 kHz 巴特沃斯设计。</p>
+<p><strong>意思</strong>：二阶电路有两个参数。一个是<strong>特征频率</strong> <span class="math math-inline">\(f_0\)</span> ，相当于一阶的 <span class="math math-inline">\(f_c\)</span> ，由四个元件的乘积决定；另一个是<strong>品质因数</strong> <span class="math math-inline">\(Q\)</span> ，管拐角处&quot;鼓不鼓&quot;。 <span class="math math-inline">\(Q\)</span> = 0.707 时通带最平、又不过冲，这种设计叫<strong>巴特沃斯</strong>（Butterworth）。 <span class="math math-inline">\(Q\)</span> 的直觉含义： <span class="math math-inline">\(Q\)</span> 大，曲线在拐角处会先往上鼓起来再掉下去； <span class="math math-inline">\(Q\)</span> 小，拐角早早就软塌塌地往下弯。下面三个式子（ <span class="math math-inline">\(f_0\)</span> 、 <span class="math math-inline">\(Q\)</span> 和幅度公式）的推导要用复数，超出高中范围，这里直接用结论。可以用来放心的是：把 SLOA049 表 10-1 的元件值代进去，算出的 <span class="math math-inline">\(Q\)</span> 约 0.71，正好是表里标的 0.707；仿真画出的曲线也和&quot;二阶每十倍频程 −40 dB&quot;对得上。</p>
+<div class="math math-display">\[f_0 = \frac{1}{2\pi\sqrt{R_1 R_2 C_1 C_2}}, \qquad Q = \frac{\sqrt{R_1 R_2 C_1 C_2}}{C_1 (R_1 + R_2)}\]</div>
+<p><strong>代数</strong>： <span class="math math-inline">\(R_1 R_2 C_1 C_2 = 4220 \times 18400 \times 10 \times 10^{-9} \times 33 \times 10^{-9} \approx 2.56 \times 10^{-8}\)</span> ，开方约 <span class="math math-inline">\(1.60 \times 10^{-4}\)</span> ，所以 <span class="math math-inline">\(f_0 \approx 1/(2\pi \times 1.60 \times 10^{-4}) \approx 994\)</span> Hz； <span class="math math-inline">\(Q \approx 1.60 \times 10^{-4} / (10 \times 10^{-9} \times 22620) \approx 0.71\)</span> 。</p>
+<p><strong>为什么两个电容不一样大</strong>？试试四个元件都取相等： <span class="math math-inline">\(R_1 = R_2 = R\)</span> 、 <span class="math math-inline">\(C_1 = C_2 = C\)</span> 。代入 <span class="math math-inline">\(Q\)</span> 的公式，分子是 <span class="math math-inline">\(RC\)</span> ，分母是 <span class="math math-inline">\(C \times 2R\)</span> ，得 <span class="math math-inline">\(Q\)</span> = 0.5，比 0.707 小，拐角会&quot;发软&quot;，在 <span class="math math-inline">\(f_0\)</span> 处已经降到一半（−6 dB）。要把 <span class="math math-inline">\(Q\)</span> 抬高，就要让接到输出的 <span class="math math-inline">\(C_2\)</span> 比接地的 <span class="math math-inline">\(C_1\)</span> 大：本例 <span class="math math-inline">\(C_2\)</span> 是 <span class="math math-inline">\(C_1\)</span> 的 3.3 倍，输出&quot;推一把&quot;的作用更强， <span class="math math-inline">\(Q\)</span> 才到 0.71。</p>
+<p><strong>幅度公式</strong>：</p>
+<div class="math math-display">\[\frac{V_o}{V_i} = \frac{1}{\sqrt{\left(1 - (f/f_0)^2\right)^2 + \left(f/(Q f_0)\right)^2}}\]</div>
+<p>代数：在 10 kHz， <span class="math math-inline">\(f/f_0 \approx 10\)</span> ，第一项约 <span class="math math-inline">\((1-100)^2 \approx 9800\)</span> ，第二项约 <span class="math math-inline">\((10/0.71)^2 \approx 200\)</span> ，开方约 100，输出只剩约 0.01 倍，即 −40 dB。<strong>二阶每十倍频程 −40 dB</strong>，比一阶陡一倍。</p>
+<h2 id="三仿真两种低通的幅频曲线">三、仿真：两种低通的幅频曲线</h2>
+<p>下面的代码按上面两个幅度公式，从 10 Hz 扫到 100 kHz，画出两种低通的输出/输入幅度（以 dB 表示），并检查 10 kHz 处二阶确实约 −40 dB。代码里的 a、b 两项就是 Sallen-Key 幅度公式分母里的两项，只是没有先除成 <span class="math math-inline">\(f/f_0\)</span> 的形式。代码与仓库里的 code/20_sim.py 内容一致，存成文件后<strong>在仓库根目录运行</strong>（开头两行会找到 code/figs 里的画图样式）。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# 20 有源滤波最小仿真：截止频率都约 1 kHz 的一阶有源低通和二阶 Sallen-Key 低通，比较幅频特性（输出幅度 / 输入幅度）。
+import numpy as np                                 # 数组运算
+import matplotlib.pyplot as plt                    # 画图
+import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
+
+f = np.logspace(1, 5, 800)                         # 频率从 10 Hz 扫到 100 kHz
+w = 2 * np.pi * f                                  # 角频率 ω = 2πf（公式里要用）
+
+R, C = 16e3, 10e-9                                 # 一阶：R = 16 kΩ，C = 10 nF
+fc1 = 1 / (2 * np.pi * R * C)                      # 截止频率 fc = 1/(2πRC) ≈ 995 Hz
+H1 = 1 / np.sqrt(1 + (f / fc1) ** 2)               # 一阶低通的幅值（运放接成跟随器，倍数 1）
+
+R1, R2 = 4.22e3, 18.4e3                            # 二阶 Sallen-Key（TI SLOA049 表 10-1 巴特沃斯，fc = 1 kHz）
+C1, C2 = 10e-9, 33e-9                              # C1 接地，C2 接到输出（反馈电容）
+a = 1 - w ** 2 * R1 * R2 * C1 * C2                 # 幅值公式分母里的第一项
+b = w * C1 * (R1 + R2)                             # 幅值公式分母里的第二项
+H2 = 1 / np.sqrt(a ** 2 + b ** 2)                  # 二阶 Sallen-Key 低通的幅值（倍数 1）
+
+dB = lambda h: 20 * np.log10(h)                    # 幅值换成分贝：每 20 dB 等于 10 倍
+for fx in (1e3, 10e3):                             # 打印 1 kHz 和 10 kHz 处的衰减
+    h1 = 1 / np.sqrt(1 + (fx / fc1) ** 2)
+    wx = 2 * np.pi * fx
+    h2 = 1 / np.sqrt((1 - wx ** 2 * R1 * R2 * C1 * C2) ** 2 + (wx * C1 * (R1 + R2)) ** 2)
+    print(f&quot;{fx/1e3:g} kHz：一阶 {h1:.3f} 倍（{dB(h1):.0f} dB），二阶 {h2:.3f} 倍（{dB(h2):.0f} dB）&quot;)
+print(f&quot;一阶截止频率 {fc1:.0f} Hz&quot;)
+assert abs(fc1 - 995) &lt; 1                          # 1/(2π × 16 kΩ × 10 nF) ≈ 995 Hz
+assert abs(dB(1 / np.sqrt((1 - (2e4*np.pi) ** 2 * R1*R2*C1*C2) ** 2 + (2e4*np.pi*C1*(R1+R2)) ** 2)) + 40) &lt; 1  # 10 kHz 处二阶约 −40 dB
+
+fig, ax = plt.subplots(figsize=fs.SIZE[&quot;single&quot;])  # 一张图
+ax.semilogx(f, dB(H1), **fs.LS[&quot;third&quot;], label=&quot;一阶有源低通&quot;)             # 红紫色点划线
+ax.semilogx(f, dB(H2), **fs.LS[&quot;vout&quot;], label=&quot;二阶 Sallen-Key 低通&quot;)      # 橙色
+fs.ref_h(ax, -3, &quot;−3 dB（0.707 倍）&quot;, x=0.62, ha=&quot;left&quot;)                 # 灰色点线：截止频率处的幅值
+fs.ref_v(ax, 1e3, &quot;1 kHz&quot;)                         # 灰色点线：截止频率
+for fx in (10e3,):                                 # 标出 10 kHz 处两条曲线的数值
+    fs.mark(ax, fx, dB(1 / np.sqrt(1 + (fx / fc1) ** 2)), fmt=&quot;{:.0f}&quot;, unit=&quot; dB&quot;, dx=6, dy=4)
+    wx = 2 * np.pi * fx
+    fs.mark(ax, fx, dB(1 / np.sqrt((1 - wx**2*R1*R2*C1*C2) ** 2 + (wx*C1*(R1+R2)) ** 2)), fmt=&quot;{:.0f}&quot;, unit=&quot; dB&quot;, dx=6, dy=-12)
+fs.axlabels(ax, &quot;频率&quot;, &quot;Hz&quot;, &quot;输出/输入 幅度&quot;, &quot;dB&quot;)                    # 轴标签
+ax.set_xticks([10, 100, 1e3, 1e4, 1e5]); ax.set_xticklabels([&quot;10&quot;, &quot;100&quot;, &quot;1 k&quot;, &quot;10 k&quot;, &quot;100 k&quot;])
+ax.set_ylim(-80, 8); ax.legend(loc=&quot;lower left&quot;, fontsize=8)              # 纵轴范围和图例
+fs.save(fig, &quot;20&quot;, &quot;20_p2_2_freq_response.png&quot;)    # 保存到 20-active-filter/img/
+</code></pre>
+<p>运行后打印 1 kHz 处两种低通都约 0.705 倍（−3 dB）；10 kHz 处一阶 0.099 倍（−20 dB），二阶 0.010 倍（−40 dB）。曲线见 图 20-p2-2。</p>
+<p><a class="img-link" href="img/20_p2_2_freq_response.png"><img alt="两条曲线在 1 千赫以下都接近 0 分贝，之后红紫色点划线缓慢下降，橙色曲线下降得快一倍，10 千赫处分别标着负 20 和负 40 分贝" src="img/20_p2_2_freq_response.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-2　一阶与二阶低通的幅频曲线</em></p>
+<p>图 20-p2-2 横轴是频率（每一大格是 10 倍），纵轴是输出/输入幅度的分贝值。灰色点线一条是 −3 dB（0.707 倍），一条是 1 kHz，两条曲线都在两线交点附近穿过，说明截止频率都设计在 1 kHz。往右看，红紫色点划线（一阶）在 10 kHz 处是 −20 dB，橙色（二阶）是 −40 dB：同样 10 kHz 的噪声，二阶比一阶多压 10 倍。</p>
+<h2 id="四例题">四、例题</h2>
+<p><strong>例 1（完整示范）</strong> 用 10 nF 电容做截止频率约 1 kHz 的一阶低通，电阻取多少？10 kHz 的噪声能压到多少？</p>
+<p>第 1 步，意思：截止时 <span class="math math-inline">\(X_C = R\)</span> 。公式 <span class="math math-inline">\(f_c = 1/(2\pi R C)\)</span> 变形为 <span class="math math-inline">\(R = 1/(2\pi f_c C)\)</span> 。</p>
+<p>第 2 步，代数： <span class="math math-inline">\(R = 1/(2\pi \times 1000 \times 10 \times 10^{-9}) \approx 15.9\)</span> kΩ，取标准值 16 kΩ，实际 <span class="math math-inline">\(f_c \approx 995\)</span> Hz。</p>
+<p>第 3 步，检查效果：10 kHz 时 <span class="math math-inline">\(f/f_c \approx 10\)</span> ， <span class="math math-inline">\(V_o/V_i = 1/\sqrt{1 + 100} \approx 0.1\)</span> 。0.3 V 的噪声剩约 0.03 V，和直觉篇的仿真一致。</p>
+<p>第 4 步，检查有用信号：50 Hz 时 <span class="math math-inline">\(f/f_c \approx 0.05\)</span> ， <span class="math math-inline">\(V_o/V_i = 1/\sqrt{1.0025} \approx 0.999\)</span> ，几乎不受影响。</p>
+<p><strong>例 2（填空）</strong> 用 10 nF 电容做截止频率 2 kHz 的一阶低通，并算出 20 kHz 噪声剩多少倍。</p>
+<p>第 1 步： <span class="math math-inline">\(R = 1/(2\pi \times\)</span> ____ <span class="math math-inline">\(\times 10 \times 10^{-9}) \approx\)</span> ____ kΩ。</p>
+<p>第 2 步：20 kHz 时 <span class="math math-inline">\(f/f_c\)</span> = ____， <span class="math math-inline">\(V_o/V_i \approx\)</span> ____ 。</p>
+<details><summary>答案</summary>
+<p>第 1 步：2000 Hz；约 7.96 kΩ（频率翻倍，电阻减半），可取标准值 8.2 kΩ 或 7.87 kΩ。</p>
+<p>第 2 步： <span class="math math-inline">\(f/f_c\)</span> = 10， <span class="math math-inline">\(V_o/V_i = 1/\sqrt{101} \approx 0.1\)</span> ：只要频率比相同，衰减倍数就相同。</p>
+</details>
+<p><strong>例 3（变体迁移：高通）</strong> 想挡住低频（比如传感器的缓慢漂移），只放过 100 Hz 以上的信号，怎么改？</p>
+<p>把 R 和 C <strong>对调位置</strong>：电容串在路上，电阻接地，见 图 20-p2-3。</p>
+<p><a class="img-link" href="img/20_p2_3_highpass.png"><img alt="输入经 100 纳法电容到一个节点，节点经 15.9 千欧电阻接地，同时接运放同相端，运放接成跟随器" src="img/20_p2_3_highpass.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-3　一阶有源高通（C + R + 跟随器）</em></p>
+<p>图 20-p2-3 中，低频时电容像断开，信号过不去；高频时电容像导线，信号几乎全部到达同相端。截止频率公式不变： <span class="math math-inline">\(f_c = 1/(2\pi \times 15.9\ \text{k}\Omega \times 100\ \text{nF}) \approx 100\)</span> Hz。幅度公式变成</p>
+<div class="math math-display">\[\frac{V_o}{V_i} = \frac{f/f_c}{\sqrt{1 + (f/f_c)^2}}\]</div>
+<p>代数：在 10 Hz 处 <span class="math math-inline">\(0.1/\sqrt{1.01} \approx 0.1\)</span> ，低频被压到十分之一。接地的电阻还有一个作用：给同相端提供直流通路，否则运放的输入偏置电流没有地方流，输出会慢慢漂走。</p>
+<h2 id="本页小结">本页小结</h2>
+<p><strong>一阶低通的截止频率 <span class="math math-inline">\(f_c = 1/(2\pi RC)\)</span> ，来自&quot;容抗等于电阻&quot;，此时输出是输入的 0.707 倍（−3 dB），之后每十倍频程 −20 dB；二阶 Sallen-Key 的 <span class="math math-inline">\(f_0 = 1/(2\pi\sqrt{R_1R_2C_1C_2})\)</span> ， <span class="math math-inline">\(Q\)</span> = 0.707 为巴特沃斯，每十倍频程 −40 dB；运放在这里是跟随器（12），需要放大时换成同相放大（08）</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

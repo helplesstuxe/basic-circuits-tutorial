@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 运放入门 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/02-opamp-basics/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="02-运放入门--原理与实现篇">02 运放入门 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
+<h2 id="本页要解决的问题">本页要解决的问题</h2>
+<p>上一页（<a href="page1.html">02 运放入门 · 直觉篇</a>）给了两句口诀：虚短（有负反馈、输出未饱和时，两输入端电压几乎相等）和虚断（输入端几乎不取电流）。可是&quot;几乎&quot;到底是多少？为什么开环增益 A 只有 10 万、并不是无穷大，我们却敢把两端电压当成相等？这一页只用上一页的一个式子 <span class="math math-inline">\(V_o = A(V_+ - V_-)\)</span> 和 01 里学过的欧姆定律，<strong>不借助任何口诀</strong>，把一个真实的放大电路算到底，再看口诀是怎么&quot;自己冒出来&quot;的。最后用一段 Python 仿真，把 A 从 10 扫到 100 万，亲眼看着结果逼近口诀给出的答案。</p>
+<h2 id="一理想运放的四条假设">一、理想运放的四条假设</h2>
+<p>教科书和厂家的应用笔记（如 TI 的 SLAA068）通常先假设一个&quot;理想运放&quot;：</p>
+<ol>
+<li>开环增益 A 无穷大；</li>
+<li>输入端不取电流（输入电阻无穷大）；</li>
+<li>输出端的内阻为零：不管接什么负载，它想输出多少伏就是多少伏（内阻的意思是：把一个电源看成&quot;理想电压源串一个电阻&quot;，这个电阻就是内阻，见 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a>）；</li>
+<li>对所有频率的信号一视同仁。</li>
+</ol>
+<p>真实的运放当然做不到，比如 LM358B 的 A 典型值约为 14 万倍，两个输入端之间的电阻约 10 MΩ（兆欧，一千万欧），输入电流虽然很小，但不是零。下面我们只保留第 2 条（输入不取电流），A 就用有限的 10 万，看看误差有多大。</p>
+<h2 id="二推导a-有限时的反相放大器">二、推导：A 有限时的反相放大器</h2>
+<p>请看 图 02-p2-1。这是 <a href="../05-inverting-amp/page2.html">05 反相放大 · 原理与实现篇</a> 要专门讲的&quot;反相放大器&quot;：输入电压 <span class="math math-inline">\(V_i\)</span> 经过输入电阻 <span class="math math-inline">\(R_1\)</span> 接到反相端，输出 <span class="math math-inline">\(V_o\)</span> 经过反馈电阻 <span class="math math-inline">\(R_f\)</span> 也接回反相端，同相端接地。注意：<a href="page1.html">02 运放入门 · 直觉篇</a>的负反馈方框图是输入接同相端的版本，这里换成输入接反相端的版本，因为它推起来最简单；两种接法的结论（虚短、虚断）完全相同。</p>
+<p><a class="img-link" href="img/02_p2_1_inverting_finiteA.png"><img alt="反相放大电路：Vi 经 R1 接到反相端，Rf 从输出接回反相端，同相端接地，运放内部写着 A" src="img/02_p2_1_inverting_finiteA.png" loading="lazy" /></a></p>
+<p><em>图 02-p2-1　用来推导的反相放大电路（输入电阻 10 kΩ，反馈电阻 100 kΩ，开环增益 A）</em></p>
+<p>在 图 02-p2-1 中，反馈电阻 <span class="math math-inline">\(R_f\)</span> 把输出接回了反相端，这就是 <a href="page1.html">02 运放入门 · 直觉篇</a> 说的负反馈。图里标了两个电流： <span class="math math-inline">\(I_1\)</span> 从 <span class="math math-inline">\(V_i\)</span> 流过 <span class="math math-inline">\(R_1\)</span> 到达反相端， <span class="math math-inline">\(I_f\)</span> 从反相端流过 <span class="math math-inline">\(R_f\)</span> 到达输出端。反相端那个黑点的电压记作 <span class="math math-inline">\(V_-\)</span> ，同相端接地， <span class="math math-inline">\(V_+ = 0\)</span> 。</p>
+<p><strong>第 1 步：电流守恒</strong>。反相端这个点像一个三通水管接头，流进来多少就要流出去多少。运放输入端不取电流，所以从 <span class="math math-inline">\(R_1\)</span> 流进来的电流全部从 <span class="math math-inline">\(R_f\)</span> 流走。用欧姆定律分别写出两个电流（电流 = 电阻两端电压差 ÷ 电阻）：</p>
+<div class="math math-display">\[\frac{V_i - V_-}{R_1} = \frac{V_- - V_o}{R_f}\]</div>
+<p><strong>第 2 步：运放自己的规律</strong>。输出等于 A 乘以两端之差，而 <span class="math math-inline">\(V_+ = 0\)</span> ：</p>
+<div class="math math-display">\[V_o = A\thinspace (0 - V_-) \quad\Rightarrow\quad V_- = -\frac{V_o}{A}\]</div>
+<p><strong>第 3 步：联立</strong>。把第 2 步的 <span class="math math-inline">\(V_-\)</span> 代入第 1 步，整理一下（只用到移项和通分）就得到输出电压：</p>
+<div class="math math-display">\[V_o = -\frac{R_f}{R_1}\thinspace V_i \cdot \frac{1}{1 + \dfrac{1 + R_f/R_1}{A}}\]</div>
+<details><summary>中间步骤（自己推不出来时再展开）</summary>
+<p>为了少写字，记电阻比 <span class="math math-inline">\(k = R_f/R_1\)</span> 。</p>
+<ol>
+<li>第 1 步的式子两边同乘 <span class="math math-inline">\(R_f\)</span> ，左边变成 <span class="math math-inline">\(k(V_i - V_-)\)</span> ： <span class="math math-inline">\(kV_i - kV_- = V_- - V_o\)</span> 。</li>
+<li>把含 <span class="math math-inline">\(V_-\)</span> 的项移到右边： <span class="math math-inline">\(kV_i = (1+k)V_- - V_o\)</span> 。</li>
+<li>代入第 2 步的 <span class="math math-inline">\(V_- = -V_o/A\)</span> ： <span class="math math-inline">\(kV_i = -\frac{(1+k)V_o}{A} - V_o = -V_o\left(1 + \frac{1+k}{A}\right)\)</span> 。</li>
+<li>两边同除以括号里的那一项，就得到 <span class="math math-inline">\(V_o = -kV_i \div \left(1 + \frac{1+k}{A}\right)\)</span> ，把 <span class="math math-inline">\(k\)</span> 换回 <span class="math math-inline">\(R_f/R_1\)</span> 就是上面的式子。</li>
+</ol>
+</details>
+<p>这个式子用中文说就是：<strong>输出等于&quot;负的电阻比乘以输入&quot;，再乘一个修正系数</strong>。修正系数的分母里有一项&quot;(1 + 电阻比) ÷ A&quot;，A 越大，这一项越小，修正系数就越接近 1。</p>
+<p><strong>第 4 步：代数</strong>。取 <span class="math math-inline">\(R_1\)</span> =10 kΩ， <span class="math math-inline">\(R_f\)</span> =100 kΩ（电阻比为 10）， <span class="math math-inline">\(V_i\)</span> =0.5 V，A = 100000：</p>
+<ul>
+<li>修正项 = (1 + 10) ÷ 100000 = 0.00011，修正系数 = 1 ÷ 1.00011 ≈ 0.99989；</li>
+<li><span class="math math-inline">\(V_o\)</span> ≈ −10 × 0.5 V × 0.99989 ≈ −4.99945 V，放大倍数 <span class="math math-inline">\(A_v = V_o / V_i\)</span> ≈ −9.9989；</li>
+<li><span class="math math-inline">\(V_-\)</span> = 4.99945 V ÷ 100000 ≈ 0.050 mV，也就是 50 μV。</li>
+</ul>
+<p>这里 <span class="math math-inline">\(A_v\)</span> 是<strong>电压放大倍数</strong>，即输出电压除以输入电压，负号表示输出和输入方向相反。接上反馈以后整个电路的放大倍数叫<strong>闭环放大倍数</strong>（&quot;闭环&quot;就是输出经反馈电阻又绕回输入、形成了一个环），就是这里的 <span class="math math-inline">\(A_v\)</span> ；它和运放自身的开环增益 A 是两回事。结果和&quot;理想答案&quot; −10 只差万分之一点一；而反相端的电压只有 50 μV，和同相端的 0 V 相比，完全可以当成相等。</p>
+<blockquote>
+<p>💡 <strong>实际芯片会怎样</strong>：50 μV 是只考虑开环增益时的理论值。真实的 LM358B 两个输入端之间本来就有一个零点几毫伏的<strong>失调电压</strong>（手册典型 ±0.3 mV、最大 ±3 mV），用 TI 的 LM358B 模型做 SPICE 仿真，反相端是 362 μV 而不是 50 μV，输出 −4.99696 V。所以用万用表量反相端，读到的是零点几毫伏甚至几毫伏；它对 5 V 输出的影响只有千分之一左右，只要有负反馈、输出没饱和，虚短照样好用。</p>
+</blockquote>
+<h2 id="三虚短虚断是这样冒出来的">三、虚短、虚断是这样冒出来的</h2>
+<p>把第 3 步的式子里的 A 想象成无穷大，修正系数就变成 1：</p>
+<div class="math math-display">\[V_o = -\frac{R_f}{R_1}\thinspace V_i\]</div>
+<p>同时第 2 步的 <span class="math math-inline">\(V_- = -V_o / A\)</span> 变成 0，也就是 <span class="math math-inline">\(V_- = V_+\)</span> 。这就是<strong>虚短</strong>。<strong>虚断</strong>则是我们一开始就用上的&quot;输入端不取电流&quot;。所以以后遇到有负反馈、输出未饱和的运放电路，可以直接跳过上面四步：</p>
+<ol>
+<li>由虚短，反相端电压等于同相端电压（这里是 0 V，这个点因此叫&quot;虚地&quot;）；</li>
+<li>由虚断， <span class="math math-inline">\(R_1\)</span> 上的电流全部流过 <span class="math math-inline">\(R_f\)</span> ；</li>
+<li>一行就得 <span class="math math-inline">\(V_o = -\frac{R_f}{R_1} V_i\)</span> 。</li>
+</ol>
+<p>但要记住口诀的<strong>两个前提</strong>：一是<strong>必须有负反馈</strong>（反馈接在反相端；反馈接到同相端就是<strong>正反馈</strong>，输出会被推向饱和，虚短不成立，10、24 会用到它），二是<strong>输出没有饱和</strong>。推导的第 2 步之所以能得到&quot; <span class="math math-inline">\(V_-\)</span> 很小&quot;，是因为负反馈把输出钉在一个有限的值上；没有反馈时，第 1 步的电流方程根本不存在，两输入端可以差好几伏。</p>
+<p>下面这段仿真把上面的四步交给 Python：对 200 个不同的 A 解出放大倍数和 <span class="math math-inline">\(V_-\)</span> ，并画出 图 02-p2-2。代码可以直接复制运行（需要 numpy 和 matplotlib）：把它存成一个文件，<strong>在仓库根目录运行</strong>，开头两行会让 Python 找到 <code>code/figs</code> 里全书统一的画图样式 <code>figstyle</code>（图上的中文也靠它显示，否则会变成方框）。完整文件见 <a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/code/02_sim.py">code/02_sim.py</a>。</p>
+<h2 id="四仿真a-从-10-扫到-100-万">四、仿真：A 从 10 扫到 100 万</h2>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# 02 最小仿真：开环增益 A 有限时，反相放大器的闭环放大倍数和反相端电压 V- 各是多少。
+# 思路：运放只做一件事 V_o = A·(V+ − V-)；反相端节点满足「流进 = 流出」（输入电流为 0），
+#      两式联立就能解出 V_o，不需要任何「虚短」假设。看 A 越大，结果越接近 −R_f/R_1、V- 越接近 0。
+import numpy as np                                 # 数组运算
+import matplotlib.pyplot as plt                    # 画图
+import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
+
+R1, Rf = 10e3, 100e3                               # 输入电阻 R1 = 10 kΩ，反馈电阻 Rf = 100 kΩ
+V_i = 0.5                                          # 输入电压 0.5 V（直流，便于看清数字）
+
+def solve(A):                                      # 给定开环增益 A，解出闭环放大倍数和 V-
+    # 联立 ① V_o = A·(0 − V-)  ② (V_i − V-)/R1 = (V- − V_o)/Rf，消去 V- 得：
+    V_o = -(Rf / R1) * V_i / (1 + (1 + Rf / R1) / A)   # 有限 A 下的输出电压
+    return V_o / V_i, -V_o / A                     # 放大倍数 A_v = V_o/V_i；V- 由 ① 倒推 = −V_o/A
+
+A = np.logspace(1, 6, 200)                         # 开环增益从 10 扫到 100 万（对数均匀取 200 个点）
+gain, V_minus = solve(A)                           # 一次算出 200 个点
+at = solve                                         # 打印单个点时也用同一个函数
+
+for a in (1e2, 1e3, 1e5):                          # 打印几个典型值（正文引用的数字都来自这里）
+    g, vm = at(a)
+    print(f&quot;A = {a:&gt;8.0f}: A_v = {g:.4f}，V- = {vm*1e3:.4f} mV&quot;)
+g5, vm5 = at(1e5)
+assert abs(g5 - (-10)) &lt; 0.002                     # A = 10 万时，放大倍数和理想值 −10 相差不到 0.002
+assert abs(vm5) &lt; 1e-4                             # A = 10 万时，V- 不到 0.1 mV：几乎就是 0 V（虚短）
+
+fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE[&quot;pair&quot;])
+a1.semilogx(A, -gain, **fs.LS[&quot;vout&quot;], label=&quot;闭环放大倍数 $|A_v|$&quot;)      # 橙色：仿真结果
+a1.axhline(Rf / R1, **fs.LS[&quot;good&quot;], label=&quot;理想值 $R_f/R_1$ = 10&quot;)      # 黑色虚线：理想值
+fs.mark(a1, 1e2, -at(1e2)[0], dx=4, dy=-12)                               # 标出 A = 100 时的值
+fs.mark(a1, 1e5, -at(1e5)[0], fmt=&quot;{:.4f}&quot;, dx=-30, dy=-14)              # 标出 A = 10 万时的值
+fs.axlabels(a1, &quot;开环增益 A&quot;, None, &quot;放大倍数&quot;, None); a1.set_ylim(0, 11); a1.legend(loc=&quot;lower right&quot;)
+a2.loglog(A, abs(V_minus) * 1e3, **fs.LS[&quot;fb&quot;], label=&quot;反相端电压 $|V_-|$&quot;)  # 蓝绿色虚线：V-
+fs.mark(a2, 1e5, abs(vm5) * 1e3, fmt=&quot;{:.4f}&quot;, unit=&quot; mV&quot;, dx=-60, dy=6)
+fs.axlabels(a2, &quot;开环增益 A&quot;, None, &quot;$|V_-|$&quot;, &quot;mV&quot;); a2.legend(loc=&quot;upper right&quot;)
+fs.save(fig, &quot;02&quot;, &quot;02_p2_2_gain_vs_A.png&quot;)        # 保存到 02-opamp-basics/img/
+</code></pre>
+<p>运行后会打印：</p>
+<pre><code class="language-text">A =      100: A_v = -9.0090，V- = 45.0450 mV
+A =     1000: A_v = -9.8912，V- = 4.9456 mV
+A =   100000: A_v = -9.9989，V- = 0.0500 mV
+</code></pre>
+<p>并生成下面的 图 02-p2-2。</p>
+<p><a class="img-link" href="img/02_p2_2_gain_vs_A.png"><img alt="左图：闭环放大倍数随开环增益 A 增大而逼近 10；右图：反相端电压随 A 增大而按比例减小" src="img/02_p2_2_gain_vs_A.png" loading="lazy" /></a></p>
+<p><em>图 02-p2-2　开环增益 A 对闭环放大倍数（左）和反相端电压（右）的影响</em></p>
+<p>图 02-p2-2 左图的橙色线是电路的放大倍数（取了绝对值），黑色虚线是理想值 <span class="math math-inline">\(R_f/R_1\)</span> = 10。A 只有 100 时，放大倍数只有 9.01，误差约 10%；A 到 1000 以上，橙色线就几乎贴住了黑色虚线；A = 10 万时是 9.9989。右图的蓝绿色虚线是反相端电压 <span class="math math-inline">\(|V_-|\)</span> ，两个坐标轴都是对数刻度（对数刻度：每一大格代表数值乘 10，所以 10、100、1000 的间距一样），它是一条斜直线：A 每大 10 倍， <span class="math math-inline">\(V_-\)</span> 就小 10 倍，A = 10 万时只剩 0.0500 mV。这就是&quot;A 越大，越听电阻的话&quot;的定量版本：电阻比决定了结果，A 只负责把误差压小。</p>
+<h2 id="五对照同一个运放不加反馈会怎样">五、对照：同一个运放，不加反馈会怎样</h2>
+<p>把 图 02-p2-1 里的 <span class="math math-inline">\(R_f\)</span> 拿掉，输入直接接同相端、反相端接地，运放就工作在开环状态，两种接法如图 02-p2-4 所示。</p>
+<p><a class="img-link" href="img/02_p2_4_open_vs_closed_circuit.png"><img alt="左：反相放大，输入经 10 kΩ 进反相端，100 kΩ 从输出接回反相端；右：开环，输入直接接同相端，反相端接地" src="img/02_p2_4_open_vs_closed_circuit.png" loading="lazy" /></a></p>
+<p><em>图 02-p2-4　对照用的两种接法：(a) 有负反馈的 −10 倍反相放大，(b) 不加反馈的开环</em></p>
+<p>下面的 图 02-p2-3 用同一个峰值 0.5 V、频率 1 kHz 的正弦输入，对比两种接法（这张图由 <a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/code/figs/02_figs.py">code/figs/02_figs.py</a> 生成）。</p>
+<p><a class="img-link" href="img/02_p2_3_open_vs_closed.png"><img alt="有负反馈时输出是放大 10 倍、反相的平滑正弦；不加反馈时输出在正负 13.5 伏之间来回跳成方波" src="img/02_p2_3_open_vs_closed.png" loading="lazy" /></a></p>
+<p><em>图 02-p2-3　有负反馈与没有反馈的输出对比（输入峰值 0.5 V，1 kHz）</em></p>
+<p>图 02-p2-3 中蓝色是输入 <span class="math math-inline">\(V_i\)</span> ，橙色是接了负反馈的输出：一条反相、峰值 5.0 V 的平滑正弦，正是 −10 倍。朱红色带 × 的是开环输出：输入只要稍微大于 0，输出就冲到 13.5 V；稍微小于 0，就掉到 −13.5 V，正弦变成了方波。这张图为了简单把上下限都画成 ±13.5 V；用 TI 的 LM358B 模型做 SPICE 仿真，方波上沿约 13.8 V、下沿约 −15.0 V，负电源一侧离电源近得多，上下并不对称，<a href="page3.html">02 运放入门 · 参数与调试篇</a> 第一、二节会讲到。这时两个输入端之间的电压差最大有 0.5 V，比虚短的 50 μV 大了一万倍。<strong>开环时不能用虚短</strong>，这张图就是最直接的证据。</p>
+<h2 id="六例题由完整到留空到迁移">六、例题：由完整到留空到迁移</h2>
+<p><strong>例 1（完整示例）</strong>　 <span class="math math-inline">\(R_1\)</span> =10 kΩ， <span class="math math-inline">\(R_f\)</span> =100 kΩ，A = 100000， <span class="math math-inline">\(V_i\)</span> =0.5 V，求 <span class="math math-inline">\(V_o\)</span> 和 <span class="math math-inline">\(V_-\)</span> 。</p>
+<p>解：修正项 (1+10)/100000 = 0.00011； <span class="math math-inline">\(V_o\)</span> = −10 × 0.5 ÷ 1.00011 ≈ −4.99945 V； <span class="math math-inline">\(V_-\)</span> = − <span class="math math-inline">\(V_o\)</span> /A ≈ 0.050 mV。与理想值 −5 V 相差约 0.011%，与仿真打印的 −9.9989 倍一致。</p>
+<p><strong>例 2（关键步骤留空）</strong>　换一个便宜的运放，A = 10000；电阻改成 <span class="math math-inline">\(R_1\)</span> =10 kΩ、 <span class="math math-inline">\(R_f\)</span> =200 kΩ（电阻比 20）， <span class="math math-inline">\(V_i\)</span> =0.1 V。请把下面代码里的空格填上再运行：</p>
+<pre><code class="language-python">R1, Rf, A, V_i = 10e3, 200e3, 1e4, 0.1
+V_o = -(Rf / R1) * V_i / (1 + ____ / A)      # 修正项的分子是什么？
+V_minus = ____                               # 由 V_o = A·(0 − V-) 倒推
+print(V_o, V_minus)
+</code></pre>
+<details><summary>答案</summary>
+<p>修正项分子是 <code>(1 + Rf / R1)</code>，即 21；<code>V_minus = -V_o / A</code>。</p>
+<p><span class="math math-inline">\(V_o\)</span> = −20 × 0.1 ÷ (1 + 21/10000) = −2 ÷ 1.0021 ≈ −1.9958 V，放大倍数约 −19.958，误差约 0.21%； <span class="math math-inline">\(V_-\)</span> ≈ 0.20 mV。可以看出：电阻比越大、A 越小，误差越大，误差约等于 (1 + 电阻比)/A。</p>
+</details>
+<p><strong>例 3（变体迁移：单电源）</strong>　把例 1 的电路接到单电源上： <span class="math math-inline">\(V_{CC}\)</span> =5 V， <span class="math math-inline">\(V_{EE}\)</span> 接地（0 V），输入 <span class="math math-inline">\(V_i\)</span> =+0.5 V，电路如图 02-p2-5 所示。</p>
+<p><a class="img-link" href="img/02_p2_5_single_supply.png"><img alt="反相放大接 5 V 单电源：负电源脚接地，输入 0.5 V 经 10 kΩ 进反相端，100 kΩ 反馈，同相端接地" src="img/02_p2_5_single_supply.png" loading="lazy" /></a></p>
+<p><em>图 02-p2-5　例 3 的电路：反相放大接 5 V 单电源</em></p>
+<p>按公式应输出 −5 V，实际会输出多少？虚短还成立吗？先自己想，再看答案。</p>
+<details><summary>答案</summary>
+<p>输出只能在 0～5 V 之间活动，−5 V 根本到不了，输出会贴在最低点上不动，也就是<strong>饱和</strong>了。这个最低点只比 0 V 高一点：LM358B 手册给出，5 V 单电源、负载接地时输出最低典型只有约 5 mV、最大 20 mV（SPICE 仿真约 0.024 V）；<a href="page3.html">02 运放入门 · 参数与调试篇</a>的参数表&quot;输出摆幅&quot;一行写的&quot;比负电源高约 0.1 V&quot;是更保守的估计，这里按 0.1 V 算，结论不变（按 0.02 V 代入，反相端约 0.456 V，仍约 0.46 V）。这时反相端电压 <span class="math math-inline">\(V_-\)</span> 由 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_f\)</span> 串联分压决定，只是两端分别是 0.5 V 和 0.1 V，都不是 0 V。做法是：先算两端电压差 0.5 − 0.1 = 0.4 V；电流 = 0.4 V ÷ (10 kΩ + 100 kΩ)，它在 <span class="math math-inline">\(R_1\)</span> 上降掉 0.4 × 10/110 ≈ 0.036 V；再从 0.5 V 往下减：0.5 − 0.036 ≈ 0.46 V。同相端却是 0 V，两端相差约 0.46 V，<strong>虚短不成立</strong>。解决办法是给同相端加一个&quot;中点电压&quot;（例如 2.5 V），让输出以 2.5 V 为中心上下摆动；<a href="page3.html">02 运放入门 · 参数与调试篇</a>还会画图算给你看单电源下输出能摆多远。</p>
+</details>
+<h2 id="小结">小结</h2>
+<ul>
+<li>只用&quot;输入端不取电流&quot;和 <span class="math math-inline">\(V_o = A(V_+ - V_-)\)</span> ，就能推出反相放大的输出；A 有限时，误差约为 (1 + 电阻比)/A，A = 10 万时只有万分之一左右。</li>
+<li>A 趋于无穷大，就得到虚短（ <span class="math math-inline">\(V_+ = V_-\)</span> ）和虚断两条口诀，以后可以一步到位。</li>
+<li>口诀的前提是<strong>有负反馈、输出不饱和</strong>；开环时输出在电源之间来回跳，绝不能用虚短。</li>
+</ul>
+<p>参考：TI《Understanding Basic Analog – Ideal Op Amps》(SLAA068B) <a href="https://www.ti.com/lit/an/slaa068b/slaa068b.pdf">https://www.ti.com/lit/an/slaa068b/slaa068b.pdf</a> ；TI 反相放大电路手册 (SBOA270) <a href="https://www.ti.com/lit/pdf/sboa270">https://www.ti.com/lit/pdf/sboa270</a> 。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

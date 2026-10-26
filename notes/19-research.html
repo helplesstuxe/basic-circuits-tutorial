@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>19 星三角降压启动 · 资料笔记（作者 D）</title>
+<title>19 射极跟随器 · 资料笔记（作者 D）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,75 +42,84 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/19-research.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="19-星三角降压启动--资料笔记作者-d">19 星三角降压启动 · 资料笔记（作者 D）</h1>
+<h1 id="19-射极跟随器--资料笔记作者-d">19 射极跟随器 · 资料笔记（作者 D）</h1>
 <p>以下每条都打开过原网页。</p>
+<h2 id="原理厂家应用笔记--数据手册">原理（厂家应用笔记 / 数据手册）</h2>
 <ol>
-<li>
-<p>电工天下《电机星三角降压启动的控制电路图详解》<a href="https://www.dgjs123.com/diandongji/7411.html">https://www.dgjs123.com/diandongji/7411.html</a></p>
+<li>ADI 大学课程 Chapter 9 Single Transistor Amplifier Stages，9.4 Voltage followers <a href="https://wiki.analog.com/university/courses/electronics/text/chapter-9">https://wiki.analog.com/university/courses/electronics/text/chapter-9</a>
 <ul>
-<li>Y—△ 起动只能用于正常运行时为 △ 接法的电动机；三只接触器（主 KM、星 KMY、角 KM△）+ 一个时间继电器 + 热继电器。</li>
-<li>降压起动电流为直接起动的 1/3。</li>
-<li>控制过程：SB2 → KM 自锁；KT 线圈、KMY 线圈通电；KT 通电延时断开常闭在 Y 回路，通电延时闭合常开在 △ 回路；KMY 常闭闭锁 △ 回路，KM△ 常闭切断 Y 回路，另一个 KM△ 常闭切断 KT。&quot;Y-△两回路都要有闭锁&quot;。</li>
-<li>时间继电器触点分通电延时 / 断电延时，要记清。</li>
+<li>射极跟随器 = 共集电极：输入阻抗远高于输出阻抗，叫&quot;缓冲&quot;。</li>
+<li>增益总小于 1（r_E 与 R_L 分压）；输入输出之间差一个 V_BE，约 0.65 V。</li>
+<li>作用是电流 / 功率增益和阻抗匹配，不是电压增益；基极电流约是发射极电流的 1/β（约 1/100）。</li>
+<li>例题：V_in 5.6 V、V_BE 按 0.6 V 估，V_out 5 V；R_L 1 kΩ → I_E 5 mA、r_E 5 Ω。</li>
 </ul>
 </li>
-<li>
-<p>电工天下《电动机星三角启动的接线图》<a href="https://www.dgjs123.com/diandongji/2281.html">https://www.dgjs123.com/diandongji/2281.html</a></p>
+<li>TI LM358 数据手册 SLOS068AB（2024-10 修订）<a href="https://www.ti.com/lit/ds/symlink/lm358.pdf">https://www.ti.com/lit/ds/symlink/lm358.pdf</a>
 <ul>
-<li>△ 接法：U1 与 W2、V1 与 U2、W1 与 V2 分别联结；Y 接法把尾端（U2、V2、W2）短接（&quot;锁尾&quot;）。</li>
+<li>LM358（5.7 节表）：V_S = 15 V、V_O = 0 V 时输出拉电流（Source）最小 20 mA、典型 30 mA；短路电流典型 ±40 mA、最大 ±60 mA。</li>
+<li>LM358B（5.5 节表）：输出高电平离正电源 1.4 V（1 mA，典型）。</li>
 </ul>
 </li>
-<li>
-<p>电工天下《星三角控制电路原理图及星三角启动说明》<a href="https://www.dgjs123.com/diandongji/13701.html">https://www.dgjs123.com/diandongji/13701.html</a></p>
+<li>TI AN-272 Op Amp Booster Designs <a href="https://www.ti.com/lit/an/snoa600b/snoa600b.pdf">https://www.ti.com/lit/an/snoa600b/snoa600b.pdf</a>
 <ul>
-<li>启动电流、启动力矩都只有全压启动的 1/3；适合轻载启动。</li>
-<li>鼠笼电机启动电流通常是运行电流的 5–7 倍；电网电压要求一般 ±10%。</li>
+<li>IC 工艺限制运放输出功率，需要&quot;助推级&quot;；通常把助推级放进运放的反馈环里，以保住低漂移和稳定的增益。</li>
+<li>助推级有自己的相移，要注意振荡。互补射极跟随器用 D2、D3 补偿两管 V_BE，避免交越失真。</li>
 </ul>
 </li>
-<li>
-<p>Siemens 白皮书 Starting Motors <a href="https://assets.new.siemens.com/siemens/assets/api/uuid:6ba7593d-d8d0-481c-b029-a5987c11366f/startingmotors-whitepaper.pdf">https://assets.new.siemens.com/siemens/assets/api/uuid:6ba7593d-d8d0-481c-b029-a5987c11366f/startingmotors-whitepaper.pdf</a></p>
+<li>TI AN-4 Monolithic Op Amp—The Universal Linear Component <a href="https://www.ti.com/lit/an/snoa650b/snoa650b.pdf">https://www.ti.com/lit/an/snoa650b/snoa650b.pdf</a>
 <ul>
-<li>星三角需要三只接触器（星、角、主）；星形使启动电流降到约 1/3；切换到三角形时还会有一个较小的电流尖峰，但总体明显低于直接启动；电机接线 6 根。</li>
+<li>不在反馈环里的射极跟随器接长电缆时常常振荡；接在运放输出后也可能振荡，常用磁珠串在跟随器与电缆之间解决。</li>
+<li>50 mA 的缓冲器至少要 0.1 μF 的电源旁路电容。</li>
 </ul>
 </li>
-<li>
-<p>施耐德中国 FAQ FA421304 <a href="https://www.schneider-electric.cn/zh/faqs/FA421304/">https://www.schneider-electric.cn/zh/faqs/FA421304/</a></p>
+<li>Central Semiconductor TIP31 系列数据手册（Mouser 托管）<a href="https://www.mouser.com/datasheet/2/68/tip31-845511.pdf">https://www.mouser.com/datasheet/2/68/tip31-845511.pdf</a>
 <ul>
-<li>星形启动时间 T：过短 → 转速太低，失去优势；过长 → 重载时转速可能下降，启动失败。设定：观察启动电流，电流随转速上升而下降，不再下降时就是最佳切换时刻。</li>
-<li>转换间隙 t：防止星接触器没断开导致相间短路；过长 → 电流中断，转速急降，再以角形直接启动，冲击大。影响因素：主触点机械动作 + 灭弧时间。</li>
+<li>I_C 连续 3 A；P_D 40 W（管壳 25 °C，需散热片）、2.0 W（环境 25 °C，不加散热片）；θ_JA 62.5 °C/W；T_J 最高 150 °C。</li>
+<li>h_FE ≥ 25（V_CE 4 V、I_C 1 A），10–50（3 A）；V_BE(on) ≤ 1.8 V（3 A）。</li>
 </ul>
 </li>
-<li>
-<p>施耐德 FAQ FA24956 <a href="https://www.se.com/uk/en/faqs/FA24956/">https://www.se.com/uk/en/faqs/FA24956/</a></p>
+<li>Semelab 2N3904 数据手册（Farnell 托管）<a href="https://www.farnell.com/datasheets/1686115.pdf">https://www.farnell.com/datasheets/1686115.pdf</a>
 <ul>
-<li>LADS2 延时模块在常闭断开与常开闭合之间的切换时间是 40 ms ± 15 ms；LC1D80 及以下够用，更大的接触器不够，有短路风险。</li>
+<li>I_C 200 mA；P_D 350 mW（T_A 25 °C）；h_FE 100–300（V_CE 1 V、I_C 10 mA）。</li>
+<li>注意：不同厂家的 2N3904 功耗额定不同。全书统一采用 onsemi 2N3903/2N3904 手册：TO-92、环境 25 °C 时 625 mW（每升高 1 °C 减 5 mW），θ_JA 200 °C/W；h_FE 最小值 10 mA 时 100、50 mA 时 60、100 mA 时 30（<a href="https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf%EF%BC%89%E3%80%82%E6%9C%AC%E8%8A%82%E7%82%B9%E9%A1%B5%E9%9D%A2%E6%8C%89">https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf）。本节点页面按</a> onsemi 625 mW 举例，Semelab 的 350 mW 只作对比记录。</li>
 </ul>
-</li>
-<li>
-<p>网易 / 防爆云平台《电机星三角启动时间确定及启动电流计算方法》<a href="https://www.163.com/dy/article/HDRJC87G0518L5FC.html">https://www.163.com/dy/article/HDRJC87G0518L5FC.html</a></p>
-<ul>
-<li>经验公式：切换时间 ≈ 2√(容量) + 4 秒（容量 kVA），但必须按实际调整；全压启动电流为额定 4–7 倍；星形每相绕组 220 V，三角形 380 V。</li>
-<li>负荷重时星形转速停止上升、电流仍在额定 1.2 倍以上，不及时切换会让热继电器动作。</li>
-</ul>
-</li>
-<li>
-<p>Tutorialspoint 星形 / 三角形线、相关系 <a href="https://www.tutorialspoint.com/article/voltage-and-currents-in-star-and-delta-connected-systems">https://www.tutorialspoint.com/article/voltage-and-currents-in-star-and-delta-connected-systems</a></p>
-<ul>
-<li>星形：线电压 = √3 × 相电压，线电流 = 相电流；三角形：线电压 = 相电压，线电流 = √3 × 相电流。</li>
-</ul>
-</li>
-<li>
-<p>18 节点笔记（互锁、TeSys D 吸合 / 释放时间）见 notes/18-research.md。</p>
-</li>
-<li>
-<p>（本轮补）Siemens 应用实例 24499345 <em>Star-delta (Wye-delta) Switching of 3-Phase Motors</em> V2.0 <a href="https://cache.industry.siemens.com/dl/files/345/24499345/att_1039101/v1/CD_FE_III_001_V20_EN.pdf">https://cache.industry.siemens.com/dl/files/345/24499345/att_1039101/v1/CD_FE_III_001_V20_EN.pdf</a> （条目页 <a href="https://support.industry.siemens.com/cs/ww/en/view/24499345">https://support.industry.siemens.com/cs/ww/en/view/24499345</a> ，已下载打开）</p>
 </li>
 </ol>
+<h2 id="推导--教程">推导 / 教程</h2>
+<ol start="7">
+<li>Wikipedia Common collector <a href="https://en.wikipedia.org/wiki/Common_collector">https://en.wikipedia.org/wiki/Common_collector</a>
 <ul>
-<li>切换空档里转子落后于相序，磁场在定子中感应出衰减的残余电压；接成三角形时残余电压与线电压的相位关系决定差值 ΔU，从而决定暂态电流峰值。</li>
-<li>℘ = 暂态电流峰值 / 启动电流峰值，理论最大 2；实测有利接法 0.8，不利接法 1.37。</li>
-<li>对调两相改变转向时，接法会自动在有利/不利之间互换。
-原核实标记（切换尖峰真实大小）据此改写：本模型无残余电压，2.6/5.8 ≈ 0.45 标为&quot;无残余电压时的示意值&quot;，19_sim.py 打印并断言；标记已删除。</li>
+<li>可看成&quot;全部输出串联负反馈&quot;：V_BE = V_in − V_out，晶体管自动调整让发射极 = 输入 − 近似恒定的 V_BE。</li>
+<li>A_v ≈ 1；r_in ≈ β·R_E；r_out ≈ R_source/β（R_E 大时）；电流增益 β + 1。</li>
+<li>共集电极常用作 B 类、AB 类输出级。</li>
+</ul>
+</li>
+<li>Electronics Tutorials Common Collector Amplifier <a href="https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html">https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html</a>
+<ul>
+<li>输出比基极低约 0.7 V，同相；r'_e = 25 mV / I_e；输出幅度一般是输入的 98%–99%；电流增益 γ = I_E/I_B = β + 1。</li>
+</ul>
+</li>
+<li>Electronics Tutorials Crossover Distortion <a href="https://www.electronics-tutorials.ws/amplifier/amp_7.html">https://www.electronics-tutorials.ws/amplifier/amp_7.html</a>
+<ul>
+<li>推挽（B 类）在过零附近两管都不导通，出现&quot;平台 / 死区&quot;，因为硅管 V_BE 要到约 0.7 V 才导通；小信号时更严重。</li>
+<li>用两只二极管给两管预偏置（AB 类）可大大减小。</li>
+</ul>
+</li>
+</ol>
+<h2 id="代码">代码</h2>
+<ol start="10">
+<li>PySpice 1.5 例子 Bipolar Transistor <a href="https://pyspice.fabrice-salvaire.fr/releases/v1.5/examples/transistor/transistor.html">https://pyspice.fabrice-salvaire.fr/releases/v1.5/examples/transistor/transistor.html</a>
+<ul>
+<li>用 SPICE 模型（2n2222a）做 DC 扫描画 I_B–V_BE 曲线，0.65 V 处画参考线；本节点没有用 SPICE，而是在 code/19_sim.py 里用指数模型 I_C = I_S·e^(V_BE/V_T) 自己解，思路相同。</li>
+</ul>
+</li>
+</ol>
+<h2 id="常见错误汇总">常见错误（汇总）</h2>
+<ul>
+<li>忘记 V_BE：想要 5 V，实际只有约 4.3 V（ADI 例题、Electronics Tutorials）。解决：把运放反馈取自发射极（AN-272）。</li>
+<li>管子功耗过大：P = V_CE × I_C；小管子 2N3904 只有 625 mW（onsemi，环境 25 °C；Semelab 版只有 350 mW），要换 TIP31 这类功率管并估算温升（θ_JA）。</li>
+<li>单电源下输入低于约 0.7 V 时管子截止，输出削到 0（Wikipedia：输出只能从 V_BE 跟到 V+）。</li>
+<li>跟随器接长线 / 容性负载振荡（AN-4），加磁珠或基极串小电阻。基极电阻阻值已核实：AN-4（SNOA650B）第 6 页图 8 High Current Output Buffer 中 LM101 输出经 R1 = 470 Ω 接 2N2222/2N2905 互补管基极，正文 &quot;R1 is included to eliminate parasitic oscillations from the output transistors&quot;；同段建议集电极各串 50 Ω 限流。正文 page3 按此取 470 Ω，压降数字由 code/figs/19_figs.py 的 rout_rin_rb() 打印。</li>
 </ul>
 
 </main>

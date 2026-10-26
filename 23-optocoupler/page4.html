@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/23-optocoupler/page4.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="23-光耦隔离--动手实验篇">23 光耦隔离 · 动手实验篇</h1>
-<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../16-oscillator/page1.html">下一页：16 振荡器 · 直觉篇</a> · 前置节点：<a href="../P2-semiconductor-basics/page1.html">P2 半导体入门 · 直觉篇</a>、<a href="../22-bjt-relay-driver/page1.html">22 三极管开关与继电器驱动 · 直觉篇</a></p>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../24-oscillator/page1.html">下一页：24 振荡器 · 直觉篇</a> · 前置节点：<a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>、<a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a></p>
 <h2 id="这次实验要验证什么">这次实验要验证什么</h2>
 <p>用一只 PC817 在面包板上搭一个最简单的光耦隔离电路：输入侧用 9 V 电池和按钮，输出侧用 5 V 电源和一只上拉电阻，两边的地不连在一起。亲手确认三件事：</p>
 <ol>
@@ -174,7 +174,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>把图 23-p4-1 的连线按节点改画成原理图，就是图 23-p4-3。左边是 9 V 输入侧，右边是 5 V 输出侧，中间的虚线是隔离带；PC817 的四个引脚都写上了引脚号和孔位，紫色圆圈和面包板图里的测量点同名。</p>
 <p><a class="img-link" href="img/23_p4_3_schem_lab.png"><img alt="PC817 光耦实验的原理图：左边输入侧，9 V 电池正极经红线 j5、按钮 h5–h9、测量点 P、1 kΩ 输入电阻 i9–i14、测量点 Q、红色指示 LED g14–g19、蓝线 h19 到 h20，到测量点 A 和 PC817 的 1 脚 A（f20），2 脚 K（f21）经紫线 j21 回到「电池−」轨；右边输出侧，+5 V 轨经红线 a26 和上拉电阻 d20–d26 到第 20 列，也就是 4 脚 C（e20）和测量点 OUT，3 脚 E（e21）经黑线 a21 接 GND 轨，470 μF 电容 b20–b23 用虚线画出，橙线从 c20 引出；中间一条竖虚线是隔离带，两边的地分别是「电池−」轨和 GND 轨" src="img/23_p4_3_schem_lab.png" loading="lazy" /></a></p>
 <p><em>图 23-p4-3　与图 23-p4-1 对应的原理图（左：9 V 输入侧，地是「电池−」轨；右：5 V 输出侧，地是 GND 轨；中间虚线是隔离带）</em></p>
-<p><strong>对照看</strong>：面包板的连通规则见 <a href="../P1-components-basics/page4.html">P1 元件速成 · 动手实验篇</a>：同一列的 a–e 五个孔连通，f–j 五个孔连通，所以第 20 列下半区的 h20 蓝线和 f20 的 1 脚是同一个节点 A，第 20 列上半区的 c20 橙线、d20 的上拉电阻、e20 的 4 脚和后插的电容 b20 是同一个节点 OUT。原理图里隔离带左右各有一条地线：左边紫色的「电池−」轨只连 2 脚和电池负极，右边黑色的 GND 轨只连 3 脚、电容和 5 V 电源负极，没有任何一根线跨过隔离带，这就是测量表步骤 1 量到开路的原因。输入回路是一个串联圈：电池、按钮、 <span class="math math-inline">\(R_{in}\)</span> 、红色 LED 和 PC817 的 LED 依次串起来，所以两只 LED 电流相同；输出侧 <span class="math math-inline">\(R_L\)</span> 和光敏三极管上下串在 +5 V 和 GND 之间，OUT 就取在两者中间。把它和 <a href="page2.html">23 光耦隔离 · 原理与实现篇</a> 「六、低压动手实验」的电路对照，只多了红色 LED 和后插的 470 μF 电容；元件怎么选的思路见同一页「二、推导：两颗电阻怎么选」。</p>
+<p><strong>对照看</strong>：面包板的连通规则见 <a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a>：同一列的 a–e 五个孔连通，f–j 五个孔连通，所以第 20 列下半区的 h20 蓝线和 f20 的 1 脚是同一个节点 A，第 20 列上半区的 c20 橙线、d20 的上拉电阻、e20 的 4 脚和后插的电容 b20 是同一个节点 OUT。原理图里隔离带左右各有一条地线：左边紫色的「电池−」轨只连 2 脚和电池负极，右边黑色的 GND 轨只连 3 脚、电容和 5 V 电源负极，没有任何一根线跨过隔离带，这就是测量表步骤 1 量到开路的原因。输入回路是一个串联圈：电池、按钮、 <span class="math math-inline">\(R_{in}\)</span> 、红色 LED 和 PC817 的 LED 依次串起来，所以两只 LED 电流相同；输出侧 <span class="math math-inline">\(R_L\)</span> 和光敏三极管上下串在 +5 V 和 GND 之间，OUT 就取在两者中间。把它和 <a href="page2.html">23 光耦隔离 · 原理与实现篇</a> 「六、低压动手实验」的电路对照，只多了红色 LED 和后插的 470 μF 电容；元件怎么选的思路见同一页「二、推导：两颗电阻怎么选」。</p>
 <ol>
 <li><strong>插光耦</strong>。PC817 圆点（1 脚）朝左下，跨在中间凹槽上：1 脚 f20、2 脚 f21、3 脚 e21、4 脚 e20。先认准圆点再插，插反了后面全错。</li>
 <li><strong>铺输出侧电源</strong>。5 V 电源正极接上方最外侧一条轨（+5 V），负极接它下面一条（GND）。先不要开电源。</li>

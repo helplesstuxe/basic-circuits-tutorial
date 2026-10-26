@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>20 双控开关：模拟学生 2 试读记录（市电节点）</title>
+<title>20 有源滤波：模拟学生 2 试读记录</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -48,8 +48,14 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/student2/20.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="20-双控开关模拟学生-2-试读记录市电节点">20 双控开关：模拟学生 2 试读记录（市电节点）</h1>
-<p>本节在拓扑顺序中排第 12。前置节点只有 P1，开关的&quot;通 / 断&quot;概念就是从 P1 来的。本节用到的单刀双掷开关在页内就讲清楚了，所以 <strong>P1 的链接够用</strong>。page2 实验第 2 步还引用了 P2 中&quot;LED 压降约 2 V&quot;，P2 也给到了。</p>
+<h1 id="20-有源滤波模拟学生-2-试读记录">20 有源滤波：模拟学生 2 试读记录</h1>
+<p>本节在拓扑顺序中排第 8。前置节点：01、08、12。</p>
+<ul>
+<li><strong>08 同相放大·直觉篇</strong>：顺着链接读了相关段落， <span class="math math-inline">\(A_v = 1 + R_f/R_1\)</span> 讲得很清楚，<strong>给到了</strong>我需要的东西。</li>
+<li><strong>12 电压跟随器·直觉篇</strong>：负载会把分压器拉低、跟随器能把前后级隔开，这些都讲到了，而且 12 里还反向链接回 20。<strong>给到了</strong>。</li>
+<li><strong>01</strong>：电容的直觉概念足够用。</li>
+<li>另外，本节 page2 第一次正式给出容抗 <span class="math math-inline">\(X_C = 1/(2\pi f C)\)</span> ，这正好补上了我在 18 中卡住的地方。但 18 在拓扑顺序上排在 20 前面，所以 18 应该链接到这里，或者自己先讲一遍容抗。</li>
+</ul>
 <h2 id="代码运行">代码运行</h2>
 <table>
 <thead>
@@ -62,13 +68,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <tbody>
 <tr>
 <td>page2 代码块</td>
-<td>PASS*</td>
-<td>单独复制出来运行会报 figstyle 缺失；按正文要求放进 code/ 后通过。它用 <code>__file__</code> 定位 figs，所以在交互式环境里粘贴运行会失败。A/B/C/D 四部分的输出与正文的&quot;运行结果&quot;逐行一致，所有 assert 都通过</td>
+<td>PASS*：复制到空目录运行时报 ModuleNotFoundError: figstyle，加上 PYTHONPATH 或放进 code/ 后 PASS</td>
+<td>正文已明确写&quot;需要和仓库的 code/figs 目录放在一起运行&quot;，所以这条不算错。我用 diff 核对过，代码块与 code/20_sim.py <strong>逐字一致</strong>；输出 0.705/0.704、0.099/0.010、995 Hz 与正文一致</td>
 </tr>
 <tr>
 <td>code/20_sim.py</td>
 <td>PASS</td>
-<td>输出同上，图与仓库中的版本逐字节相同</td>
+<td>输出同上；重新生成的图与仓库中的图逐字节相同</td>
 </tr>
 </tbody>
 </table>
@@ -84,83 +90,45 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <tbody>
 <tr>
 <td>p2 例 2</td>
-<td>7 次，奇数，灯亮；s1 = 1，s2 = 0</td>
+<td>2000 Hz → R ≈ 7.96 kΩ；f/fc = 10 → 约 0.1</td>
 <td>对</td>
 </tr>
 <tr>
-<td>p2 例 3</td>
-<td>起始状态亮；拨 S1 后灭；功能正常，不必返工</td>
-<td>对（我没想到&quot;同或&quot;这个词，但结论一致）</td>
-</tr>
-<tr>
 <td>p3 练习 1</td>
-<td>2 只双控开关 + 3 只中途开关</td>
+<td>约 159 Hz</td>
 <td>对</td>
 </tr>
 <tr>
 <td>p3 练习 2</td>
-<td>拨了 3 次，奇数，灯亮；0⊕0⊕1 = 1</td>
+<td>一阶约 0.31（−10 dB），二阶约 0.11（−19 dB），二阶更好，约 3 倍</td>
 <td>对</td>
 </tr>
 <tr>
 <td>p3 练习 3</td>
-<td>不对。开关接在零线上时功能正常，但灯头带电；要请电工在灯灭时用验电器测灯头</td>
-<td>对（漏了&quot;螺口灯头的火线要接中间端子&quot;这一点）</td>
+<td>(1) fc ≤ 约 100 Hz，50 Hz 剩 0.89；(2) 用提示算出 f0 ≈ 447 Hz，50 Hz 几乎是 1</td>
+<td>对（第 2 问靠题目给的化简式才做出来）</td>
+</tr>
+<tr>
+<td>p3 练习 4</td>
+<td>C 100 nF 串联，R 15.9 kΩ 接地；同相放大取 Rf = R1 = 10 kΩ</td>
+<td>对</td>
 </tr>
 </tbody>
 </table>
-<p>合计 5/5。p2 例 1 是完整示范，不计入。</p>
+<p>合计 5/5。p2 例 3 是带解答的示范题，没有计入。</p>
 <h2 id="卡住--吃力--小问题">卡住 / 吃力 / 小问题</h2>
 <ol>
-<li><strong>小问题</strong>：page1「灭了以后再拨任意一只……如果用 0 和 1 记两只开关&quot;有没有被拨过&quot;」。
-<ul>
-<li>图 20-p1-3 画的是灯亮的状态，紧接着又说&quot;都没拨……灯灭&quot;。我一开始以为图里画的就是&quot;都没拨&quot;的状态，结果对不上。</li>
-<li>page2 第一步才规定&quot;出厂位置&quot;，而且 S2 的 0 位接 B。</li>
-<li>建议在 page1 加一句&quot;图中是已经拨过一只的状态&quot;，或者把出厂位置的约定提前到 page1。</li>
-</ul>
-</li>
-<li><strong>小问题</strong>：术语问题。
-<ul>
-<li>&quot;异或&quot;和 <span class="math math-inline">\(\oplus\)</span> 在 page1 有中文解释，可以接受；但 page2 例 3 的答案里突然出现&quot;同或&quot;，没有定义。</li>
-<li>&quot;相线&quot;在 page1 和 page2 里引用国标原文时就出现了，要到 page3 的参数表里才写明&quot;相线（火线）&quot;。建议第一次出现时就注明&quot;相线 = 火线&quot;。</li>
-</ul>
-</li>
-<li><strong>小问题</strong>：page2「下面的程序把每只开关、每根导线都看成&quot;把两个点连起来&quot;，再用并查集」。
-<ul>
-<li>我只会一点 Python。<code>groups</code> 函数里嵌套定义了 <code>find</code>，最后把函数本身 <code>return</code> 出去，这个写法我是第一次见，靠注释才勉强看懂。</li>
-<li>好在整段代码的思路（连通就是同一组）讲得清楚，不影响理解结论。</li>
-</ul>
-</li>
-<li><strong>小问题</strong>：page2「六、低压动手实验」第 1 步「总是和另外某一个脚相通的那个，就是公共端」。
-<ul>
-<li>这句话容易误读：每个位置下都有一对脚相通。我想了一下才明白，意思是&quot;无论开关拨到哪边，它都参与相通的那一对&quot;。</li>
-<li>建议改成&quot;拨到两边各量一次，两次都出现在相通那一对里的脚就是公共端&quot;。</li>
-</ul>
-</li>
-<li><strong>小问题（安全相关）</strong>：page3 故障排查表里有两处&quot;怎么查&quot;写成了用户自己能做的动作，表内没有重复&quot;断电 / 电工&quot;的要求：
-<ul>
-<li>「介意的话把开关面板翻转安装」：要翻转面板就得拆墙上的开关。</li>
-<li>「先换灯」：如果开关正好接在零线上，换灯时灯头是带电的。</li>
-<li>表格上方虽然有一句&quot;所有检查都要……由电工进行&quot;，但读者照着表格某一行去操作时很容易忽略那句话。建议在这两格里直接加上&quot;（断开断路器后，由电工操作）&quot;。</li>
-</ul>
-</li>
+<li><strong>吃力</strong>：page2「<strong>意思</strong>：二阶电路有两个参数」，以及后面的 <span class="math math-inline">\(f_0\)</span> 、 <span class="math math-inline">\(Q\)</span> 公式和「<strong>幅度公式</strong>」。这三个式子都是直接给出的，没有任何推导，也没有交代来源；&quot;品质因数&quot;和&quot;巴特沃斯&quot;也只有一句话的定义。我只能把它们当作黑盒代入计算。一阶部分有&quot;直角三角形&quot;的推导，读得很踏实，二阶这里落差就很明显。建议在这里写明&quot;二阶推导需要复数，本书只用结果&quot;，并补一句 Q 的直觉含义，例如&quot;Q 大，拐角处会先鼓起来再掉下去&quot;。</li>
+<li><strong>小问题</strong>：page2「<strong>但两者&quot;不同步&quot;</strong>。……电容电压要等电流把它充满之后才最大，恰好晚四分之一个周期」。&quot;恰好四分之一周期&quot;这个说法我只能接受，没法验证。可以加一句&quot;电流在电压上升最快的时候最大，正弦曲线上升最快的地方比峰值早四分之一个周期&quot;，这样就能和 18 讲的&quot;斜率&quot;概念接上。</li>
+<li><strong>小问题</strong>：page3「三、运放带宽也会&quot;偷偷当滤波器&quot;」这一节写的是 GBW，而 18 page3 写的是 GBP，两节对同一个量用了不同的记号。另外这一节链接的 08 参数与调试篇不在本节的前置列表里。好在我从 02 已经学过增益带宽积，所以能看懂。</li>
+<li><strong>小问题</strong>：page3「所以<strong>处理数字脉冲、怕过冲的场合，二阶要选更小的 <span class="math math-inline">\(Q\)</span> （贝塞尔型）</strong>」，以及第三节里的&quot;MFB 多重反馈&quot;。这两个术语都只出现一次名字，没有画图说明，我不知道它们长什么样。建议加一句话说明，或者明确标注&quot;了解即可&quot;。</li>
+<li><strong>小问题</strong>：page3 第四节第 1 条中，X7R、C0G、ppm 这几个词连续出现。正文给了括号解释（&quot;温度变 100 °C 才变 0.3%&quot;），我能看懂，只是信息密度偏高。</li>
 </ol>
-<p>计数：卡住 0，吃力 0，小问题 5。</p>
+<p>计数：卡住 0，吃力 1，小问题 4。</p>
 <h2 id="图">图</h2>
-<p>20-p1-1/2/3、p2-1/2/3、p3-1/2 全部能读懂，替代文字写得很详细。</p>
-<ul>
-<li>图 20-p2-3 用朱红色框标出&quot;灯头带电&quot;，非常醒目。</li>
-<li>图 20-p3-2 中实线表示交叉、点线表示直通，图下有说明，与仿真 s2 = 1 的情况一致。</li>
-</ul>
-<h2 id="市电安全评估">市电安全评估</h2>
-<p><strong>有效。</strong></p>
-<ul>
-<li>三页的开头都有 WARNING，每页都列出了本节特有的危险点：灯灭时跨线仍可能带电、开关接零线时功能正常但灯头带电、只关墙上开关不等于断电。</li>
-<li>实验明确只用 9 V 电池，还写了&quot;<strong>不要</strong>拆墙上的开关来练手&quot;。</li>
-<li>page3 指出&quot;只用非接触式电笔不够&quot;。</li>
-<li>练习 3 专门纠正&quot;功能正常 = 接线安全&quot;这个误区。</li>
-</ul>
-<p>看完之后，我不会想去动家里墙上的开关。唯一的缺口是上面第 5 条：排查表中有两格看起来像是 DIY 操作指引。</p>
+<p>图 20-p1-1、p1-2、p2-1 到 p2-3、p3-1、p3-2 都能读懂，替代文字也写得很到位。我还自己验算了排查表&quot;电容接反&quot;那一行： <span class="math math-inline">\(Q\)</span> 约 0.214，1 kHz 处约 −13.4 dB，与表中数字一致。</p>
+<h2 id="市电">市电</h2>
+<p>本节不是市电节点。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

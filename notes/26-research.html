@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>26 上拉/下拉电阻与电平转换 · 调研笔记（作者 C）</title>
+<title>26 H 桥电机驱动 · 调研笔记（作者 C）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,38 +42,30 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/26-research.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="26-上拉下拉电阻与电平转换--调研笔记作者-c">26 上拉/下拉电阻与电平转换 · 调研笔记（作者 C）</h1>
+<h1 id="26-h-桥电机驱动--调研笔记作者-c">26 H 桥电机驱动 · 调研笔记（作者 C）</h1>
 <h2 id="已打开并引用的资料">已打开并引用的资料</h2>
 <ul>
-<li>TI SLVA689A <a href="https://www.ti.com/lit/an/slva689/slva689.pdf">https://www.ti.com/lit/an/slva689/slva689.pdf</a> （本地 /workspace/authorC/refs/slva689.pdf.txt）：Rp(min) = (VCC − VOL(max)) / IOL；tr = 0.8473·Rp·Cb（0.3→0.7 VCC）；Rp(max) = tr / (0.8473·Cb)；标准/快速/快速+ 的 tr 1000/300/120 ns，Cb 400/400/550 pF，VOL 0.4 V @ 3 mA；例：快速模式、200 pF、3.3 V → Rp 966.7 Ω～1.77 kΩ。</li>
-<li>Nexperia AN10441 Rev. 2 <a href="https://assets.nexperia.com/documents/application-note/AN10441.pdf">https://assets.nexperia.com/documents/application-note/AN10441.pdf</a> （WebFetch 打开；<a href="http://nxp.com">nxp.com</a> 旧地址 404）：单 N 沟道 MOS 管双向电平转换，栅极接 VDD1（低压）、源极接低压侧、漏极接高压侧，两侧各自上拉；三种状态（无人拉低 / 低压侧拉低 / 高压侧拉低经漏-衬底二极管）；支持线与；适用标准和快速模式。</li>
-<li>onsemi BSS138 <a href="https://www.onsemi.com/pdf/datasheet/bss138-d.pdf">https://www.onsemi.com/pdf/datasheet/bss138-d.pdf</a> ：50 V、0.22 A；VGS(th) 0.8/1.3/1.5 V；RDS(on) 4.5 V 时 1.0/6.0 Ω；Ciss 27 pF；体二极管 VSD 典型 0.8 V。</li>
-<li>TI SN74HC14 <a href="https://www.ti.com/lit/ds/symlink/sn74hc14.pdf">https://www.ti.com/lit/ds/symlink/sn74hc14.pdf</a> （本地 sn74hc14.txt）：4.5 V 时 VT+ 1.55/2.5/3.13 V，VT− 0.9/1.6/2.45 V，ΔVT 0.4/0.9/2.1 V；II ±1 µA。</li>
-<li>Microchip ATmega328P 汽车级数据手册 7810D <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf</a> （本地 atmega328p.txt）：VIL ≤ 0.3 VCC，VIH ≥ 0.6 VCC，RPU 20–50 kΩ，漏电 1 µA；§13.2.6 未用引脚建议开内部上拉。</li>
-<li>Ganssle 第 1 部分 <a href="https://www.ganssle.com/debouncing.htm">https://www.ganssle.com/debouncing.htm</a> ：18 种开关，去掉两个异常值后平均 1557 µs、最长 6200 µs；开关 E 断开时抖 157 ms；建议留余量。</li>
-<li>Ganssle 第 2 部分 <a href="https://www.ganssle.com/debouncing-pt2.htm">https://www.ganssle.com/debouncing-pt2.htm</a> ：R1/R2/C + 施密特去抖电路；「Never run the cap directly to the input on a microprocessor」；按 20 ms 设计；50 ms 感觉不到、100 ms 明显；电容误差 +80/−20%（电解）、±30%（陶瓷）；不要把未去抖开关接中断/触发器时钟；软件每 1–5 ms 采样。</li>
+<li>TI DRV8871 数据手册 <a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a> （本地文本 /workspace/authorC/refs/drv8871.pdf.txt）：四只 N 沟道 MOS 管 H 桥；VM 6.5–45 V；Rds(on) HS+LS 典型 565 mΩ（307 + 258），24 V/1 A 时最大 360 + 320 mΩ；Ipeak 3.6 A；输入脉宽 ≥ 800 ns；tDEAD 220 ns；VILIM 59/64/69 kV，I_TRIP = 64 kV / RILIM，RILIM ≥ 15 kΩ；tOFF 25 µs；IOCP 3.7/4.5/6.4 A；tRETRY 3 ms；真值表 00 滑行、05 反转、10 正转、11 刹车；「When using PWM, it typically works best to switch between driving and braking」；储能电容章节（大小、耐压、布局）。</li>
+<li>TI SLVA321A <a href="https://www.ti.com/lit/an/slva321a/slva321a.pdf">https://www.ti.com/lit/an/slva321a/slva321a.pdf</a> （本地 slva321a.txt）：快/慢衰减、直通与死区、电感电流必须有续流路径。</li>
+<li>TI SLUA618 <a href="https://www.ti.com/lit/pdf/slua618">https://www.ti.com/lit/pdf/slua618</a> 第 5.2 节：高边 NFET 需要高于电源的栅压、自举（06 节已打开引用）。</li>
+<li>Infineon IRLZ44N 数据手册（06 节已打开）：Rds(on) 25 mΩ，用作直通模型的导通电阻。</li>
 </ul>
 <h2 id="设计取值">设计取值</h2>
 <ul>
-<li>去抖：R1 = R2 = 10 kΩ，C = 1 µF，74HC14 门限按 4.5 V 典型值 <s>2.5 / 1.6 V（5 V 系统近似）</s> → 按 4.5 V / 6 V 两栏插值到 5 V：2.77 / 1.73 V（第 7 轮 SPICE 更正）。</li>
-<li>电平转换：BSS138 门限 <s>1.3 V，K 由 RDS(on) = 1 Ω @ 4.5 V 反推（0.3125 A/V²）</s> → 取 Diodes 官方 SPICE 模型 VTO = 1 V、KP = 0.395 A/V²（第 7 轮 SPICE 更正）；体二极管 0.6 V + 50 Ω（示意）；两侧 10 kΩ、50 pF；开漏驱动 100 Ω。</li>
-<li>I²C 扫描：3.3 V、200 pF、400 kHz；1.5 / 4.7 / 10 kΩ。</li>
-<li>悬空引脚示意：20 V 50 Hz 人体感应、0.5 pF 耦合、10 pF 输入电容（全部为示意值）。</li>
+<li>电机：VM 12 V，R 2 Ω，L 1 mH，Ke 0.02 V·s/rad，J 1e-5 kg·m²，b 1e-5；桥臂电阻取 DRV8871 典型值。</li>
+<li>直通模型：每管过渡 200 ns（示意），回路电感 20 nH，回路电阻 10 mΩ。</li>
+<li>PWM 20 kHz，「驱动—刹车」方式；dt 0.5 µs（每周期 100 步）。</li>
+<li>限流：RILIM 32 kΩ → 2 A（1.84–2.16 A）。</li>
 </ul>
-<h2 id="仿真结果code26_simpycodefigs26_figspy-打印">仿真结果（code/26_sim.py、code/figs/26_figs.py 打印）</h2>
+<h2 id="仿真结果">仿真结果</h2>
 <ul>
-<li>去抖：只上拉翻转 22 次；RC + 施密特 2 次；按下 <s>12.3 ms</s> → 11.5 ms（公式 <s>11.4 ms</s> → 10.6 ms）、松开 <s>13.2 ms</s> → 15.5 ms（公式 <s>13.9 ms</s> → 16.1 ms）（第 7 轮 SPICE 更正）；SPICE（TI SN74HC14 模型，5 V）为 11.36 / 15.66 ms。</li>
-<li>抖动示意：一次按下 7 个下降沿。</li>
-<li>悬空：耦合幅度 0.95 V，50% 时间在 1.5～3.0 V；10 kΩ 上拉时 31 µV。</li>
-<li>电平转换：正确接法两侧拉低均约 0.08 V；松手后约 <s>2.02 V（+328 ns）</s> → 2.31 V（+404 ns）分开（第 7 轮 SPICE 更正）；SPICE（Diodes 模型，含结电容）为 2.32 V、+767 ns；接反时空闲 3.85 / 4.45 V。</li>
-<li>I²C：Rp min 967 Ω，快速模式 max 1770 Ω，标准模式 max 5901 Ω；tr 254 / 796 / 1695 ns，半周期末 3.25 / 2.43 / 1.53 V。</li>
-<li>τ 扫描（20 次按键、抖动 0.5–6.2 ms 示意）：施密特多翻次数 <s>12.5 / 7.5 / 3.5 / 0.6</s> → 11.8 / 6.6 / 2.6 / 0.3（第 7 轮 SPICE 更正） / 0 …（τ ≥ 2.2 ms 为 0）；单门限 + 20 mV 低通噪声最低 2.2（τ = 1 ms），47 ms 时 76.9；最长延迟 10 ms → <s>17.5 ms</s> 19.8 ms，22 ms → 39.0 ms，47 ms → <s>66.9 ms</s> 77.7 ms（第 7 轮 SPICE 更正）。</li>
+<li>code/26_sim.py：25/50/75% → 1346/2690/4034 rpm（平均模型 1347/2694/4039），纹波 0.113/0.150/0.113 A。</li>
+<li>code/figs/26_figs.py：全速 5377 rpm，起动峰值 4.56 A；刹车 136 ms 到 10%（τ = 59 ms 理论吻合），滑行 2 s 后 14%；直通峰值 0/50/100/150 ns 死区 → 59.7/45.2/30.4/15.3 A，≥ 200 ns 为 0；纹波 0.5k–50k Hz 4.06 → 0.060 A。</li>
 </ul>
 <h2 id="未用待核实">未用·待核实</h2>
 <ul>
-<li>74HC14 没有 5 V 一行数据，正文 <s>明确写了按 4.5 V 典型值估算</s> → 已改为按 4.5 V / 6 V 两栏线性插值到 5 V（第 7 轮 SPICE 更正）。</li>
-<li>练习 2 的 220 mAh 电池容量标为示意值。</li>
-<li>正文无 [待核实]。</li>
+<li>无 [待核实] 标记。页面中的 200 ns 过渡时间和直通模型标注为示意。</li>
+<li>未使用：其他厂商（ST L298 等）资料，未打开故未引用。</li>
 </ul>
 
 </main>

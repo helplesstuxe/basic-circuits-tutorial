@@ -51,28 +51,28 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h1 id="作者指南">作者指南</h1>
 <p>写任何一页之前，先读完 <a href="00-design.html">00-design.md</a>，找到你负责的节点的内容提要和它的前置节点。本指南是硬性规则；与本指南冲突时以 <a href="../specs/task-spec.html">specs/task-spec.md</a> 为准。</p>
 <h2 id="1-文件与页面结构">1. 文件与页面结构</h2>
-<p>每个知识点一个文件夹，例如 <code>01-inverting-amp/</code>，里面只放四个页面和一个图片文件夹：</p>
-<pre><code class="language-text">01-inverting-amp/
+<p>每个知识点一个文件夹，例如 <code>05-inverting-amp/</code>，里面只放四个页面和一个图片文件夹：</p>
+<pre><code class="language-text">05-inverting-amp/
 ├── page1.md      直觉篇
 ├── page2.md      原理与实现篇
 ├── page3.md      参数与调试篇
 ├── page4.md      动手实验篇
 └── img/          本节点的全部 PNG（由脚本生成，不手工放图）
 </code></pre>
-<p>画图和仿真脚本放在 <code>code/</code>，文件名以节点编号开头，仿真脚本放 <code>code/NN_*.py</code>（例如 <code>code/01_sim.py</code>），画图脚本放 <code>code/figs/NN_figs.py</code>（例如 <code>code/figs/01_figs.py</code>）；共用模块 <code>figstyle.py</code>、<code>schem.py</code> 也在 <code>code/figs/</code>。</p>
+<p>画图和仿真脚本放在 <code>code/</code>，文件名以节点编号开头，仿真脚本放 <code>code/NN_*.py</code>（例如 <code>code/05_sim.py</code>），画图脚本放 <code>code/figs/NN_figs.py</code>（例如 <code>code/figs/05_figs.py</code>）；共用模块 <code>figstyle.py</code>、<code>schem.py</code> 也在 <code>code/figs/</code>。</p>
 <p>每页的固定结构：</p>
 <ul>
 <li>
 <p>第一行是一级标题，格式为「NN 电路名 · 直觉篇」（或「原理与实现篇」「参数与调试篇」「动手实验篇」）。</p>
 </li>
 <li>
-<p>标题下面一行写导航：上一页、本节点其余三页、下一页，以及前置节点的链接。上一页、下一页按 README 的阅读顺序排：节点内 page1 → page4，page4 的下一页是下一个节点的 page1，下一个节点 page1 的上一页是本节点 page4；全书第一页 P1 page1 的上一页和最后一页 26 page4 的下一页都是 README。正文里提到「下一页」「下一篇」时要与导航一致。</p>
+<p>标题下面一行写导航：上一页、本节点其余三页、下一页，以及前置节点的链接。上一页、下一页按 README 的阅读顺序排：节点内 page1 → page4，page4 的下一页是下一个节点的 page1，下一个节点 page1 的上一页是本节点 page4；全书第一页 01 page1 的上一页和最后一页 29 page4 的下一页都是 README。正文里提到「下一页」「下一篇」时要与导航一致。</p>
 </li>
 <li>
-<p>跨节点链接一律写全名加篇名，格式 <code>[NN 名称 · 篇名](../NN-slug/pageN.md)</code>，例如 <code>[P3 运放入门 · 直觉篇](../P3-opamp-basics/page1.md)</code>、<code>[下一页：17 自锁 · 直觉篇](../17-self-locking/page1.md)</code>。名称照抄 00-design §5.1（写「17 自锁」，不写「17 自锁电路」「自锁控制」），链接指向具体的 <a href="http://pageN.md">pageN.md</a>，不指向文件夹。</p>
+<p>跨节点链接一律写全名加篇名，格式 <code>[NN 名称 · 篇名](../NN-slug/pageN.md)</code>，例如 <code>[02 运放入门 · 直觉篇](../02-opamp-basics/page1.md)</code>、<code>[下一页：04 自锁 · 直觉篇](../04-self-locking/page1.md)</code>。名称照抄 00-design §5.1（写「04 自锁」，不写「04 自锁电路」「自锁控制」），链接指向具体的 <a href="http://pageN.md">pageN.md</a>，不指向文件夹。</p>
 </li>
 <li>
-<p><strong>交叉引用必须是链接</strong>。正文里不写纯文字的「见 06 page2」「page3 会再讲」：跨节点写 <code>[NN 名称 · 篇名](../NN-slug/pageN.md)</code>，本节点内写 <code>[NN 名称 · 篇名](pageN.md)</code>；要指到某一节，就在链接后面写「第七节」「例 3」这样的文字。代码块里的注释可以写「见 P2 page2」，因为代码里没法放链接。自查（只应剩下代码注释）：
+<p><strong>交叉引用必须是链接</strong>。正文里不写纯文字的「见 13 page2」「page3 会再讲」：跨节点写 <code>[NN 名称 · 篇名](../NN-slug/pageN.md)</code>，本节点内写 <code>[NN 名称 · 篇名](pageN.md)</code>；要指到某一节，就在链接后面写「第七节」「例 3」这样的文字。代码块里的注释可以写「见 03 page2」，因为代码里没法放链接。自查（只应剩下代码注释）：
 <code>grep -nE '(^|[^/A-Za-z_-])page ?[1234]([^.0-9a-z_]|$)' */page*.md</code></p>
 </li>
 <li>
@@ -89,7 +89,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <ol>
 <li>导航行（见上）；</li>
 <li>「这次实验要验证什么」：一两句话，并链接到 page2 里对应的结论；</li>
-<li>⚠️ 安全须知：只用 12 V 及以下的直流电；电解电容分正负；三极管、稳压管、电阻可能发烫，不要用手摸；接线、改线前先断电。涉及 220 V/380 V 的节点（06、09、17、18、19、20、22、23、24）只做低压替代版（12 V/24 V 线圈、小灯泡或 LED 代替市电负载，按钮代替真实开关），必须写明「不要接 220 V」、市电部分请电工做；23 的过零检测、24 的市电初级不做实验。用两节 9 V 电池串联得到 ±9 V 时，要提醒两轨之间实际相差 18 V；</li>
+<li>⚠️ 安全须知：只用 12 V 及以下的直流电；电解电容分正负；三极管、稳压管、电阻可能发烫，不要用手摸；接线、改线前先断电。涉及 220 V/380 V 的节点（13、25、04、11、15、27、07、23、28）只做低压替代版（12 V/24 V 线圈、小灯泡或 LED 代替市电负载，按钮代替真实开关），必须写明「不要接 220 V」、市电部分请电工做；23 的过零检测、28 的市电初级不做实验。用两节 9 V 电池串联得到 ±9 V 时，要提醒两轨之间实际相差 18 V；</li>
 <li>器材清单，表格列「元件 | 型号或数值 | 数量 | 说明」，型号用页面里用过的、常见易买的，不写价格；</li>
 <li>搭建步骤：编号步骤写清每个元件插在面包板哪一排、哪一列；配面包板俯视接线图「图 NN-p4-1」（matplotlib + figstyle 绘制，标出行号、列号和电源轨，导线颜色区分正负和信号，图前同样要有引导句），并链接到 page2 的电路图；</li>
 <li>测量表，表格列「步骤 | 测什么 | 红表笔 | 黑表笔 | 挡位 | 应该读到 | 读不到时先查」。数值取 <code>review/spice/NN.md</code> 里的万用表范围；那里没有的，用 <code>code/NN_sim.py</code> 或 <code>spice/NN/run.py</code> 实际算出来，不准编造；</li>
@@ -120,7 +120,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><strong>每页正文不少于 500 汉字</strong>（page4 不少于 1500 汉字），代码、公式、图注不计入。用 <code>tools/count_cjk.py</code> 检查。</p>
 </li>
 <li>
-<p>有两个变体的节点（06、09、13、16）两种变体都要讲，见 00-design 的内容提要。</p>
+<p>有两个变体的节点（13、25、18、24）两种变体都要讲，见 00-design 的内容提要。</p>
 </li>
 </ul>
 <h2 id="2-图的规则">2. 图的规则</h2>
@@ -129,16 +129,16 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>电路图用 schemdraw（通过 <code>code/figs/schem.py</code>），波形和曲线用 matplotlib（通过 <code>code/figs/figstyle.py</code>），全部输出 PNG。<strong>禁止</strong> ASCII 图、手工截图和 Mermaid。</p>
 </li>
 <li>
-<p>图片由 <code>code/figs/NN_figs.py</code> 生成，存到 <code>NN-slug/img/</code>，文件名写成 <code>NN_pX_k_含义.png</code>，例如 <code>01_p2_1_waveform.png</code>。每张不超过 200 KB（<code>figstyle.save</code> 会自动压缩并检查）。</p>
+<p>图片由 <code>code/figs/NN_figs.py</code> 生成，存到 <code>NN-slug/img/</code>，文件名写成 <code>NN_pX_k_含义.png</code>，例如 <code>05_p2_1_waveform.png</code>。每张不超过 200 KB（<code>figstyle.save</code> 会自动压缩并检查）。</p>
 </li>
 <li>
-<p>图号写成「图 NN-pX-k」：NN 是节点编号，X 是页码，k 是本页第几张图，从 1 开始连续。例如 <code>01-inverting-amp/page2.md</code> 里的第 2 张图是「图 01-p2-2」。</p>
+<p>图号写成「图 NN-pX-k」：NN 是节点编号，X 是页码，k 是本页第几张图，从 1 开始连续。例如 <code>05-inverting-amp/page2.md</code> 里的第 2 张图是「图 05-p2-2」。</p>
 </li>
 <li>
 <p>每张图三件套：</p>
 <ol>
-<li><strong>引导句</strong>：图前一句话告诉读者要看什么，例如「请看图 01-p2-1 里橙色曲线的峰值」。</li>
-<li><strong>图注</strong>：图下一行，格式为 <code>*图 01-p2-1　反相放大的输入与输出波形*</code>。</li>
+<li><strong>引导句</strong>：图前一句话告诉读者要看什么，例如「请看图 05-p2-1 里橙色曲线的峰值」。</li>
+<li><strong>图注</strong>：图下一行，格式为 <code>*图 05-p2-1　反相放大的输入与输出波形*</code>。</li>
 <li><strong>图后讲解</strong>：至少两三句，说明图里的现象和它说明了什么。</li>
 </ol>
 </li>
@@ -213,7 +213,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><strong>关键结论要用 <code>assert</code> 断言</strong>，例如 <code>assert abs(gain - (-10)) &lt; 0.05</code>，这样参数被改错时脚本会直接报错。</p>
 </li>
 <li>
-<p>正文只提本页的图号。<code>tools/check_figs.py</code> 会把「图 NN-pY-k」这种指向别的页的图号判为错误；要引用别页的图，写成链接加文字描述，例如「见 <a href="../01-inverting-amp/page2.html">01 反相放大 · 原理与实现篇</a> 的波形图」。</p>
+<p>正文只提本页的图号。<code>tools/check_figs.py</code> 会把「图 NN-pY-k」这种指向别的页的图号判为错误；要引用别页的图，写成链接加文字描述，例如「见 <a href="../05-inverting-amp/page2.html">05 反相放大 · 原理与实现篇</a> 的波形图」。</p>
 </li>
 <li>
 <p><strong>答案图放在揭晓之后</strong>：练习题的答案图只能出现在 <code>&lt;details&gt;</code> 里面，或者出现在正文揭晓答案的那句话之后。</p>
@@ -234,12 +234,12 @@ fig, ax = plt.subplots(figsize=fs.SIZE[&quot;single&quot;])
 ax.plot(t * 1e3, vi, **fs.LS[&quot;vin&quot;], label=&quot;$V_i$&quot;)
 fs.ref_h(ax, 0, &quot;0 V&quot;)                     # 灰色点线参考线
 fs.axlabels(ax, &quot;时间&quot;, &quot;ms&quot;, &quot;电压&quot;, &quot;V&quot;) # 轴标签「量 / 单位」
-fs.save(fig, &quot;01&quot;, &quot;01_p2_1_waveform.png&quot;) # 存到 01-inverting-amp/img/
+fs.save(fig, &quot;05&quot;, &quot;05_p2_1_waveform.png&quot;) # 存到 05-inverting-amp/img/
 
 with schem.drawing() as d:                 # 电路图
     d += elm.Resistor().label(&quot;$R_1$&quot;)
     d += (op := elm.Opamp().anchor(&quot;in1&quot;))
-schem.save_schem(d, &quot;01&quot;, &quot;01_p1_1_circuit.png&quot;)
+schem.save_schem(d, &quot;05&quot;, &quot;05_p1_1_circuit.png&quot;)
 </code></pre>
 <ul>
 <li>schemdraw 自带元件可以直接用：运放、二极管、稳压管、LED、整流桥、NPN/PNP 三极管、N/P 沟道 MOS 管、电阻、电容、电感、电位器、变压器、光耦、肖特基二极管、熔断器、开关、单刀双掷开关、按钮、继电器、正弦/方波/直流源、电池、灯、直流电机、地。继电-接触器控制图要用国标画法，请用 <code>schem.py</code> 里的自定义元件：<code>Coil</code>（线圈方框）、<code>ContactNO</code> / <code>ContactNC</code>（常开/常闭触点）、<code>PushNO</code> / <code>PushNC</code>（按钮）、<code>TimerNO</code> / <code>TimerNC</code>（时间继电器延时触点）、<code>ThermalHeater</code> / <code>ThermalNC</code>（热继电器）、<code>Motor3</code>（三相电机）、<code>LampX</code>（指示灯）。隔离电路用 <code>schem.barrier</code>（隔离带虚线）和 <code>schem.module</code>（带引脚名的模块方框）。运行 <code>python code/figs/schem.py --demo</code> 可以看到全部元件。</li>
@@ -274,7 +274,7 @@ schem.save_schem(d, &quot;01&quot;, &quot;01_p1_1_circuit.png&quot;)
 <li>积分、微分从「面积」「斜率」讲起；频率响应不讲复数。</li>
 <li>符号严格按 00-design 第 4 节的符号表；每个符号在本页首次出现时用一句中文解释。</li>
 <li>每个公式：先说中文意思 → 写公式 → 代一组数算一遍。</li>
-<li>页面之间多用相对链接，例如 <code>[虚短](../P3-opamp-basics/page2.md)</code>。</li>
+<li>页面之间多用相对链接，例如 <code>[虚短](../02-opamp-basics/page2.md)</code>。</li>
 </ul>
 <h3 id="加粗的标点规则">加粗的标点规则</h3>
 <ul>
@@ -310,7 +310,7 @@ schem.save_schem(d, &quot;01&quot;, &quot;01_p1_1_circuit.png&quot;)
 <li>GitHub 手机 App 不渲染公式，这是平台限制，不用处理。</li>
 </ul>
 <h2 id="6-安全提醒">6. 安全提醒</h2>
-<p>涉及 220V/380V 市电的节点（06、09、17、18、19、20，以及扩展篇的 22、23、24）必须在 page1 开头和每个实验或接线环节放安全警示框：</p>
+<p>涉及 220V/380V 市电的节点（13、25、04、11、15、27，以及扩展篇的 07、23、28）必须在 page1 开头和每个实验或接线环节放安全警示框：</p>
 <pre><code class="language-markdown">&gt; [!WARNING]
 &gt; **市电危险**：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。
 </code></pre>
@@ -334,7 +334,7 @@ $PY tools/fix_inline_math_spacing.py --check NN-slug/page*.md  # 确认没有遗
 $PY tools/check_github_math.py NN-slug/page*.md notes/NN-research.md  # GitHub 渲染公式数与源文件一致
 </code></pre>
 <ul>
-<li>画图脚本的路径是 <code>code/figs/NN_figs.py</code>（不是 <code>code/NN_figs.py</code>），仿真脚本是 <code>code/NN_sim.py</code>；P1–P3 的 NN 就写 <code>P1</code> <code>P2</code> <code>P3</code>。</li>
+<li>画图脚本的路径是 <code>code/figs/NN_figs.py</code>（不是 <code>code/NN_figs.py</code>），仿真脚本是 <code>code/NN_sim.py</code>；NN 一律是两位数字 01–29。</li>
 <li>给工具传<strong>文件</strong>，不要传文件夹：写 <code>NN-slug/page*.md</code>，不写 <code>NN-slug/</code>。有的工具收到文件夹会去扫整个子目录甚至全仓库，有的直接不认。</li>
 <li>上面几个工具不检查加粗标点和跨节点链接格式，这两条（§4「加粗的标点规则」、§1 链接格式）交稿前自己搜一遍 <code>**</code> 和 <code>](../</code>。</li>
 </ul>

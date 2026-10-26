@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>19 星三角降压启动 · SPICE 核对报告（审校 B）</title>
+<title>19 射极跟随器：SPICE 复核报告</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -37,34 +37,121 @@ mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;p
 mjx-container{max-width:100%}
 .footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
 </style>
-
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
 </head>
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/19.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="19-星三角降压启动--spice-核对报告审校-b">19 星三角降压启动 · SPICE 核对报告（审校 B）</h1>
-<p>运行：<code>python spice/19/run.py</code>（从仓库根目录运行，退出码 0）
-网表：<code>spice/19/stardelta.cir</code>（控制回路）、<code>spice/19/threephase.cir</code>（三相关系）</p>
+<h1 id="19-射极跟随器spice-复核报告">19 射极跟随器：SPICE 复核报告</h1>
+<ul>
+<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/19/.spiceinit</code> 设为 psa。</li>
+<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/19/run.py</code>，退出码 0，已实际运行，共 50 项。</li>
+<li><strong>本节没有强电</strong>，所有电压都在 15 V 以下。</li>
+</ul>
+<h2 id="网表">网表</h2>
+<table>
+<thead>
+<tr>
+<th>网表</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dc_ef.cir</code></td>
+<td>理想源推基极，2N3904 和 TIP31C 并列：负载扫描（1 kΩ / 100 / 50 / 20 Ω）、例 1～例 3、练习 1、图 19-p3-1 管耗最大值</td>
+</tr>
+<tr>
+<td><code>t_sine.cir</code></td>
+<td>图 19-p2-2：5 V ± 2 V、50 Hz，12 V 电源，50 Ω 负载</td>
+</tr>
+<tr>
+<td><code>t_opA.cir</code></td>
+<td>LM358 跟随器直接带 50 Ω</td>
+</tr>
+<tr>
+<td><code>t_opB.cir</code> / <code>t_opB3.cir</code></td>
+<td>图 19-p2-4：反馈取自发射极（分别用 TIP31C / 2N3904）</td>
+</tr>
+<tr>
+<td><code>t_opRB.cir</code></td>
+<td>page3 §2：环内串 470 Ω 基极电阻</td>
+</tr>
+<tr>
+<td><code>t_opC.cir</code></td>
+<td>page3 §2：环外串 470 Ω 基极电阻（反馈只取运放自己的输出）</td>
+</tr>
+<tr>
+<td><code>dc_lab.cir</code></td>
+<td>page2 §7 低压动手实验：9 V、电位器 444/556 Ω、2N3904、1 kΩ / 220 Ω</td>
+</tr>
+<tr>
+<td><code>t_ss5.cir</code></td>
+<td>练习 2：LM358B，5 V 单电源</td>
+</tr>
+<tr>
+<td><code>t_pp.cir</code></td>
+<td>练习 4：2N3904 / 2N3906 推挽</td>
+</tr>
+</tbody>
+</table>
 <h2 id="模型与来源">模型与来源</h2>
-<ul>
-<li><strong>没有用到厂商器件模型。</strong></li>
-<li>接触器 KM、KMY、KM△ 用的是 ngspice 内置 <code>SW</code> + RC 行为模型，跟 spice/18 相同：线圈 400 Ω（假设），吸合 20 ms、释放 10 ms 的设定方法和 18 一样。</li>
-<li>时间继电器 KT 是行为模型：线圈有电时用 1 A 给 1 F 电容充电，相当于 1 V/s，断电后立刻清零；电容电压达到 TSET 时，延时触点动作。</li>
-<li>上面这些时间参数都是从页面取值倒推来的，所以时序类的核对只能检验<strong>逻辑和接线</strong>，不能检验接触器本身的物理特性。</li>
-<li>三相关系：三只 ngspice 正弦源，彼此相差 120°。相电压取 <strong>12 V 有效值</strong>，即把 220 V 等比例缩小，不接市电。绕组阻抗用示意值 Z = 3 + j4 Ω。所有比值都与电压和 Z 无关。</li>
-<li><strong>跳过的内容</strong>：
-<ul>
-<li>380 V 主电路和电动机（属于市电）。</li>
-<li>页面的「示意电动机」标幺模型，包括 5.8/1.9/2.6/0.83 倍、转速、图 19-p3-1/2。页面自己说明这些参数是编出来的，SPICE 没有可对照的实体。</li>
-</ul>
-</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>2N3904</td>
+<td>spice/models/2N3904_onsemi.lib（复用）</td>
+<td>onsemi：<a href="https://www.onsemi.com/pub/Collateral/2N3904.LIB">https://www.onsemi.com/pub/Collateral/2N3904.LIB</a></td>
+</tr>
+<tr>
+<td>2N3906</td>
+<td>spice/models/2N3906_onsemi.lib（复用）</td>
+<td>onsemi：<a href="https://www.onsemi.com/pub/Collateral/2N3906.LIB">https://www.onsemi.com/pub/Collateral/2N3906.LIB</a></td>
+</tr>
+<tr>
+<td>TIP31（页面写 TIP31）</td>
+<td>spice/models/TIP31C_onsemi.lib（复用）</td>
+<td>onsemi：<a href="https://www.onsemi.com/pub/Collateral/TIP31C.LIB">https://www.onsemi.com/pub/Collateral/TIP31C.LIB</a> 。TIP31 和 TIP31C 只差耐压，这里按同系列使用，不算替代模型。</td>
+</tr>
+<tr>
+<td>LM358</td>
+<td>spice/models/LMx58_LM2904.lib（复用）</td>
+<td>TI：<a href="https://www.ti.com/lit/zip/snom268">https://www.ti.com/lit/zip/snom268</a></td>
+</tr>
+<tr>
+<td>LM358B（练习 2）</td>
+<td>spice/models/LMx58B_LM2904B.lib（复用）</td>
+<td>TI：<a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
+</tr>
+</tbody>
+</table>
+<p>本节没有使用替代模型。</p>
+<h2 id="假设">假设</h2>
+<ol>
+<li>页面的仿真用的是“β = 50、I_S = 1e-13”的示意模型，页面自己也写明是示意值。SPICE 里换成厂商模型后，β 和 V_BE 都取模型自带的值：2N3904 在 50～80 mA 时 β 约 43～60；TIP31C 在 100 mA 时 β 约 260。两种管子都列出；页面的工作点数值优先和 2N3904 比，因为这是页面实际搭建用的管子。</li>
+<li>题目里给定了 β = 50 的基极电流（例 1、例 2、练习 1），按题设判断。SPICE 算出的值写在“结论”栏里，只作参考。</li>
+<li>运放电路用 12 V 单电源，输入 5 V 用 PWL 从 0 慢慢升上去。几种接法放在同一个网表里时，SPICE 的初始点不收敛，所以拆成了 5 个文件。</li>
+<li>练习 2 中 LM358B 接成跟随器，推 2N3904 的基极。</li>
+<li>练习 4 页面没有给电源和负载，这里假设 ±12 V、1 kΩ、1 kHz。死区边界取“输出达到 10 mV 时的输入电压”。</li>
+</ol>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
 <tr>
-<th>位置</th>
-<th>核对项</th>
+<th>页面位置</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
@@ -73,346 +160,504 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>p2 §三 [时序]</td>
-<td>KM 吸合时刻</td>
-<td>0.52 s</td>
-<td>0.5201 s</td>
+<td>p2 §3 负载扫描 1 kΩ 输出</td>
+<td>4.37 V</td>
+<td>4.318 V（TIP31C 4.516）</td>
+<td>−1.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §3 100 Ω 输出</td>
+<td>4.31 V</td>
+<td>4.195 V（TIP31C 4.431）</td>
+<td>−2.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §3 / 图19-p2-3 50 Ω 输出</td>
+<td>4.29 V</td>
+<td>4.143 V（TIP31C 4.400）</td>
+<td>−3.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §3 20 Ω 输出</td>
+<td>4.27 V</td>
+<td>4.038 V（TIP31C 4.349）</td>
+<td>−5.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §3/§4 1 kΩ→20 Ω 输出变化与 R_out</td>
+<td>101 mV，0.48 Ω</td>
+<td>280 mV，约 1.4 Ω（TIP31C 167 mV，约 0.8 Ω）</td>
+<td>×2.8</td>
+<td>⚠️ 真实管子还有体电阻和大电流效应</td>
+</tr>
+<tr>
+<td>p1 图19-p1-2 / p2 推导二 50 Ω 基极电流</td>
+<td>1.68～1.7 mA</td>
+<td>1.86 mA（TIP31C 0.33 mA）</td>
+<td>+11%</td>
+<td>✅ 在 β 的分散范围内</td>
+</tr>
+<tr>
+<td>p2 §3 20 Ω 基极电流</td>
+<td>4.18 mA</td>
+<td>9.12 mA（β 降到 21）</td>
+<td>+118%</td>
+<td>⚠️ 2N3904 在 200 mA 时 β 大跌，已到 I_C 上限</td>
+</tr>
+<tr>
+<td>p2 §3 1 kΩ 管耗</td>
+<td>0.03 W</td>
+<td>0.033 W</td>
+<td>+9.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §3 100 Ω 管耗</td>
+<td>0.32 W</td>
+<td>0.323 W</td>
+<td>+0.9%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §3 50 Ω 管耗</td>
+<td>0.65 W</td>
+<td>0.636 W</td>
+<td>−2.1%</td>
+<td>✅ 仍超过 625 mW</td>
+</tr>
+<tr>
+<td>p2 §3 20 Ω 管耗</td>
+<td>1.62 W</td>
+<td>1.535 W</td>
+<td>−5.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §4 50 Ω 时 2N3904 结温</td>
+<td>155 °C</td>
+<td>152 °C</td>
+<td>−1.8%</td>
+<td>✅ 仍超过 150 °C，结论不变</td>
+</tr>
+<tr>
+<td>p2 §4 R_in ≈ (β+1)R_L</td>
+<td>2550 Ω</td>
+<td>2683 Ω（V_i/I_B）</td>
+<td>+5.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例1 V_o</td>
+<td>5.3 V</td>
+<td>5.18 V</td>
+<td>−2.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例1 I_E</td>
+<td>53.0 mA</td>
+<td>51.8 mA</td>
+<td>−2.3%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例1 I_B（题设 β = 50）</td>
+<td>1.04 mA</td>
+<td>0.85 mA</td>
+<td>−19%</td>
+<td>✅ 按题设计算；真实 β 更大，页面的估算偏保守</td>
+</tr>
+<tr>
+<td>p2 例1 P_C</td>
+<td>0.348 W</td>
+<td>0.3475 W</td>
+<td>−0.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例2 V_o</td>
+<td>2.6 V</td>
+<td>2.48 V</td>
+<td>−4.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例2 I_E</td>
+<td>55.3 mA</td>
+<td>52.7 mA</td>
+<td>−4.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例2 I_B（题设 β = 50）</td>
+<td>1.08 mA</td>
+<td>0.87 mA</td>
+<td>−20%</td>
+<td>✅ 按题设，偏保守</td>
+</tr>
+<tr>
+<td>p2 例2 P_C</td>
+<td>0.510 W</td>
+<td>0.494 W</td>
+<td>−3.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3 V_i = 5.7 V 时 50 Ω 上电压</td>
+<td>5.0 V</td>
+<td>4.83 V（TIP31C 5.09）</td>
+<td>−3.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3 12 V 电源管耗</td>
+<td>0.693 W</td>
+<td>0.675 W</td>
+<td>−2.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 例3 7 V 电源管耗</td>
+<td>0.198 W</td>
+<td>0.204 W</td>
+<td>+3.2%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1 V_o（TIP31C）</td>
+<td>8.3 V</td>
+<td>8.30 V</td>
+<td>0.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习1 I_B（题设 β = 50）</td>
+<td>8.14 mA</td>
+<td>2.32 mA（模型 β 约 180）</td>
+<td>−72%</td>
+<td>✅ 按题设计算，属于保守估计</td>
+</tr>
+<tr>
+<td>p3 练习1 P_C</td>
+<td>2.73 W</td>
+<td>2.77 W</td>
+<td>+1.3%</td>
+<td>✅ 超过 2 W 的结论成立</td>
+</tr>
+<tr>
+<td>p3 图19-p3-1 最大管耗（TIP31C）</td>
+<td>0.71 W</td>
+<td>0.717 W（2N3904 0.699）</td>
+<td>+1.0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图19-p2-2 正弦输出最高</td>
+<td>6.28 V</td>
+<td>6.105 V（TIP31C 6.373）</td>
+<td>−2.8%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图19-p2-2 正弦输出最低</td>
+<td>2.31 V</td>
+<td>2.192 V（TIP31C 2.432）</td>
+<td>−5.1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 图19-p2-2 交流增益</td>
+<td>0.994</td>
+<td>0.978（TIP31C 0.985）</td>
+<td>−1.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 §4 / p2 图19-p2-2 峰值处 V_BE 台阶</td>
+<td>0.72 V（范围 0.694～0.720）</td>
+<td>2N3904 0.81～0.89 V；TIP31C 0.57～0.63 V</td>
+<td>+24% / −13%</td>
+<td>⚠️ 大电流下 2N3904 的 V_BE 明显超过 0.7 V</td>
+</tr>
+<tr>
+<td>p2 推导三 3→7 V 时 V_BE 变化</td>
+<td>26 mV</td>
+<td>87 mV（TIP31C 58 mV）</td>
+<td>×3.3</td>
+<td>⚠️ 增益结论（≈0.98～0.99）不变</td>
+</tr>
+<tr>
+<td>p1 §1 / p2 图19-p2-2 LM358 直接带 50 Ω</td>
+<td>1.50 V</td>
+<td>2.02 V（约 40 mA 限流）</td>
+<td>+35%</td>
+<td>⚠️ 方向对：照样带不动</td>
+</tr>
+<tr>
+<td>p2 图19-p2-4 反馈取自发射极 V_o</td>
+<td>5.00 V</td>
+<td>5.002 V</td>
 <td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 [时序]</td>
-<td>KMY 吸合时刻（星形启动）</td>
-<td>0.52 s</td>
-<td>0.5201 s</td>
+<td>p2 图19-p2-4 此时运放输出</td>
+<td>5.71 V</td>
+<td>5.61 V（2N3904 5.88）</td>
+<td>−1.7%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §2 环内串 470 Ω：V_o</td>
+<td>5.00 V</td>
+<td>5.002 V</td>
 <td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 [时序]</td>
-<td>KT 到时（KMY 线圈断电时刻）</td>
-<td>6.5 s</td>
-<td>6.502 s</td>
-<td>+0.0%</td>
+<td>p3 §2 环内串 470 Ω：运放输出</td>
+<td>6.50 V</td>
+<td>5.80 V</td>
+<td>−11%</td>
+<td>✅ 页面按 β = 50 计算，偏保守；“仍低于上限”的结论成立</td>
+</tr>
+<tr>
+<td>p3 §2 环外串 470 Ω：V_o</td>
+<td>约 3.5 V</td>
+<td>4.25 V</td>
+<td>+22%</td>
+<td>⚠️ 实际掉多少取决于 β</td>
+</tr>
+<tr>
+<td>p2 §7 第2步 V_E（1 kΩ）</td>
+<td>4.36 V</td>
+<td>4.314 V</td>
+<td>−1.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 [时序] 图19-p2-5</td>
-<td>KMY 释放时刻</td>
-<td>6.51 s</td>
-<td>6.512 s</td>
-<td>+0.0%</td>
+<td>p2 §7 第2步 V_B − V_E</td>
+<td>0.6～0.7 V</td>
+<td>0.682 V</td>
+<td>在范围内</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 [时序] 图19-p2-5</td>
-<td>KM△ 吸合时刻</td>
-<td>6.53 s</td>
-<td>6.532 s</td>
-<td>+0.0%</td>
+<td>p2 §7 第3步 V_E（220 Ω）</td>
+<td>4.28 V</td>
+<td>4.201 V</td>
+<td>−1.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 [时序] 图19-p2-5</td>
-<td>切换空档</td>
-<td>20 ms</td>
-<td>20 ms</td>
-<td>-0.0%</td>
+<td>p1 §4 220 Ω / 1 kΩ 电流比</td>
+<td>约 4.5 倍</td>
+<td>4.43 倍</td>
+<td>−1.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 [时序]</td>
-<td>KT 线圈断电复位时刻</td>
-<td>6.53 s</td>
-<td>6.532 s</td>
-<td>+0.0%</td>
+<td>p2 §7 第4步 去掉三极管、220 Ω 直接挂滑片</td>
+<td>2.36 V</td>
+<td>2.358 V</td>
+<td>−0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §三 结论1</td>
-<td>KMY、KM△ 同时吸合时长</td>
-<td>0 ms</td>
-<td>0 ms</td>
-<td>—</td>
+<td>p2 §7 第5步 220 Ω 时管耗</td>
+<td>0.09 W</td>
+<td>0.091 W</td>
+<td>+0.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 关键参数表</td>
-<td>切换空档 = KM△ 吸合时间（仿真里 20 ms）</td>
-<td>20 ms</td>
-<td>20 ms</td>
-<td>-0.0%</td>
+<td>p3 练习2 输入 2.7 V 时输出</td>
+<td>2.0 V</td>
+<td>1.94 V</td>
+<td>−2.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §五 步骤3</td>
-<td>按 SB1：三只全灭（SPICE：全灭）</td>
-<td>—</td>
-<td>1</td>
-<td>—</td>
+<td>p3 练习2 LM358B 输出最高</td>
+<td>约 3.6 V</td>
+<td>3.50 V</td>
+<td>−2.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §五 步骤3</td>
-<td>按 SB1 后 KT 线圈电压（复位）</td>
-<td>0 V</td>
-<td>3.2e-06 V</td>
-<td>—</td>
+<td>p3 练习2 跟随器输出最高</td>
+<td>约 2.9 V</td>
+<td>2.72 V</td>
+<td>−6.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §五 步骤3</td>
-<td>再按 SB2(8.5 s)：KMY 释放时刻 8.5+6+0.01</td>
-<td>14.51 s</td>
-<td>14.51 s</td>
-<td>+0.0%</td>
+<td>p3 练习4 推挽输出峰值</td>
+<td>2.3 V</td>
+<td>2.345 / −2.313 V</td>
+<td>+2.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §五 步骤3</td>
-<td>再按 SB2：KM△ 吸合时刻</td>
-<td>14.53 s</td>
-<td>14.53 s</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 §五 步骤4</td>
-<td>短接 KMY 常闭（tpick 20 ms、tdrop 10 ms）：空档（同时吸合 0.0 ms：照页面的 20/10 ms 不会出现「一起亮」；只有吸合比释放快时才会重叠）</td>
-<td>— ms</td>
-<td>10 ms</td>
-<td>—</td>
-<td>⚠️</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>去掉 KMY 常闭：空档（负 = 重叠）（重叠 7.0 ms）</td>
-<td>-7 ms</td>
-<td>-7 ms</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>装回 KMY 常闭：空档 = KM△ 吸合时间</td>
-<td>12 ms</td>
-<td>12 ms</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 图19-p1-1</td>
-<td>星形每段电压 / 线电压（页面 219/380）</td>
-<td>0.5763</td>
-<td>0.5774</td>
-<td>+0.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p1 图19-p1-1</td>
-<td>三角形每段电压 / 线电压（页面 380/380）</td>
-<td>1</td>
-<td>1</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图19-p2-1</td>
-<td>相电压峰值 / 有效值（页面 311/220）</td>
-<td>1.414</td>
-<td>1.414</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图19-p2-1</td>
-<td>两相之差峰值 / 单相峰值（√3）</td>
-<td>1.732</td>
-<td>1.732</td>
-<td>+0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图19-p2-1</td>
-<td>L2 比 L1 晚（50 Hz）</td>
-<td>6.67 ms</td>
-<td>6.667 ms</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 §二 推导</td>
-<td>I_L,Y / I_L,Δ</td>
-<td>0.3333</td>
-<td>0.3333</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 §二 推导</td>
-<td>I_L,Δ / I_ph,Δ</td>
-<td>1.732</td>
-<td>1.732</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例题1</td>
-<td>星形绕组电流 / 三角形绕组电流（页面 46.7/80.8≈0.577）</td>
-<td>0.577</td>
-<td>0.5773</td>
-<td>+0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例题1</td>
-<td>按比例换算星形启动线电流（直接启动 140 A）</td>
-<td>46.7 A</td>
-<td>46.67 A</td>
-<td>-0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例题2</td>
-<td>按比例换算星形启动线电流（直接启动 80 A）</td>
-<td>26.7 A</td>
-<td>26.67 A</td>
-<td>-0.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习1</td>
-<td>按比例换算星形启动线电流（直接启动 180 A）</td>
-<td>60 A</td>
-<td>60 A</td>
-<td>-0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习4</td>
-<td>Y 接法电机绕组额定电压 380/√3（按仿真比值）</td>
-<td>219 V</td>
-<td>219.4 V</td>
-<td>+0.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 关键参数表</td>
-<td>星形时间经验公式 2√13.2+4（算术）（纯算术，非 SPICE）</td>
-<td>11.3 s</td>
-<td>11.26 s</td>
-<td>-0.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 §三/p1 图19-p1-2</td>
-<td>示意电动机的 5.8 倍/1.9 倍/2.6 倍/0.83 倍、转速 91% 等（未仿真：页面自己声明是参数编造的示意模型，且属于 380 V 电动机；1/3 比例已由上面的三相电路核对）</td>
-<td>—</td>
-<td>nan</td>
-<td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p3 图19-p3-1/19-p3-2</td>
-<td>T 扫描、空档扫描的尖峰倍数与转速（未仿真：同上，示意电动机模型）</td>
-<td>—</td>
-<td>nan</td>
-<td>—</td>
-<td>ℹ️</td>
+<td>p3 练习4 死区边界</td>
+<td>±0.7 V</td>
+<td>±0.45 V（输出达到 10 mV、1 kΩ 负载）</td>
+<td>−36%</td>
+<td>⚠️ 小电流时 V_BE 只有 0.45～0.6 V</td>
 </tr>
 </tbody>
 </table>
-<p>统计：✅ 28　⚠️ 1　❌ 0　ℹ️ 2</p>
-<h2 id="需要修改的地方">需要修改的地方</h2>
-<p><strong>⚠️ page2 §五 动手实验第 4 步（短接 KMY 常闭）</strong></p>
-<p>按页面自己的时间（吸合 20 ms、释放 10 ms）仿真：短接后 KMY 在 6.510 s 断开，KM△ 在 6.520 s 闭合，空档仍有 +10 ms，<strong>两盏灯不会一起亮</strong>。只有像练习 2 那样「吸合比释放快」时才会重叠。学生照做大概率什么也看不到，可能误以为「短接也没事」。建议在第 4 步末尾补一句：</p>
+<p><strong>统计：✅ 43　⚠️ 7　❌ 0</strong></p>
+<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>1. p2 §3 结论“负载从 1 kΩ 变到 20 Ω……输出只变 101 mV”，以及 §4 “管子自己带来的 0.48 Ω”</strong>。建议在 §4 的那一段后面补一句：</p>
 <blockquote>
-<p>看不到&quot;一起亮&quot;并不说明这根常闭可以省掉。去掉 KMY 常闭以后，空档就等于&quot;KM△ 的吸合时间减 KMY 的释放时间&quot;：按本页的 20 ms 和 10 ms 算还剩 +10 ms，所以灯不会一起亮；可是继电器线圈上反并了二极管，释放会变慢，换一只吸合更快的继电器，空档就可能变成负数（见参数篇练习 2 的 −7 ms）。能不能重叠全看两只继电器的快慢，这正是不能靠运气的原因。</p>
+<p>0.48 Ω 是只考虑 <span class="math math-inline">\(V_{BE}\)</span> 对数特性的理想值。真实管子内部还有几欧以下的体电阻，电流到一两百毫安时，管子也开始“吃力”。用厂商模型算：2N3904 从 1 kΩ 到 20 Ω 输出要掉约 280 mV（相当于 1.4 Ω），TIP31C 掉约 170 mV（0.8 Ω）。所以内阻是“1 Ω 上下”，仍然很硬，只是没有 0.48 Ω 那么理想。</p>
 </blockquote>
-<h2 id="结论">结论</h2>
-<ul>
-<li>控制回路的时序全部和代码输出一致，误差 ≤2 ms，只来自 0.2 ms 步长和 RC 门限：
-<ul>
-<li>KM 和 KMY 在 0.520 s 吸合</li>
-<li>KMY 在 6.510 s 释放</li>
-<li>KM△ 在 6.530 s 吸合</li>
-<li>空档 20 ms</li>
-<li>KT 在 6.530 s 复位</li>
-<li>KMY 和 KM△ 从未同时吸合</li>
-</ul>
-</li>
-<li>按 SB1 后全部复位，再按 SB2 能重复同样的顺序。</li>
-<li>练习 2 的 −7 ms 和 12 ms 都复现了。</li>
-<li>三相关系 √3、1/3、0.577、6.67 ms 全部吻合；各例题和练习按 SPICE 得到的比值换算，结果也一致。</li>
-</ul>
-<h2 id="面包板万用表读数page2-五12-v-继电器--延时模块">面包板万用表读数（page2 §五，12 V 继电器 + 延时模块）</h2>
+<p><strong>2. p2 §3 运行结果中 R_L = 20 Ω 一行的“I_B 4.18 mA”</strong>。建议在结果后面加注：</p>
+<blockquote>
+<p>注意：这一行按 β = 50 算。真的 2N3904 流 200 mA 时已经到了手册的 I_C 上限，β 会掉到 20 左右，基极电流要 9 mA 上下，而且管耗 1.5 W 远超额定值。20 Ω 这种负载只能用 TIP31 一类的功率管。</p>
+</blockquote>
+<p><strong>3. p1 §4 和 p2 图19-p2-2 “输入峰值 7.00 V 时，输出约 6.28 V，差 0.72 V”，以及推导三“ <span class="math math-inline">\(V_{BE}\)</span> 只变约 26 mV”</strong>。建议改成：</p>
+<blockquote>
+<p>输入峰值 7.00 V 时，输出比输入低 0.6～0.9 V，具体多少看管子：小管 2N3904 流 120 mA 时 <span class="math math-inline">\(V_{BE}\)</span> 接近 0.9 V，TIP31 这种功率管只有约 0.63 V。电流从 46 mA 变到 126 mA， <span class="math math-inline">\(V_{BE}\)</span> 实际要变 60～90 mV（比 26 mV 多，管子内部的体电阻也有压降），但相对 4 V 的摆幅仍然很小，交流增益还是 0.98 左右。</p>
+</blockquote>
+<p><strong>4. p1 §1 / p2 图19-p2-2 “运放被限在 30 mA，输出只有 1.50 V”</strong>。建议改成：</p>
+<blockquote>
+<p>运放进入限流，输出只有 1.5～2 V（LM358 的限流值典型 30～40 mA，个体差别不小），而且是一条直线——波形完全丢了。</p>
+</blockquote>
+<p><strong>5. p3 §2 “如果反馈只取运放自己的输出，跟随器的输出会再低 0.79 V，从 4.29 V 掉到 3.5 V 左右”</strong>。建议改成：</p>
+<blockquote>
+<p>如果反馈只取运放自己的输出，基极电阻上的压降会让跟随器的输出再低一截。按 β = 50 算是 0.79 V（4.29 V 掉到 3.5 V 左右）；实际 TIP31 在 100 mA 时 β 有一两百，只掉零点一几伏。不管掉多少，都是 β 越小掉得越多、而且随管子变，所以还是把反馈取自发射极最省心。</p>
+</blockquote>
+<p><strong>6. p3 练习4 答案“夹在中间的 ±0.7 V 里两只管子都不导通”</strong>。建议改成：</p>
+<blockquote>
+<p>夹在中间大约 ±0.5～0.7 V 的范围里，两只管子都几乎不导通，输出接近 0。具体边界看负载：负载电流只有几十微安时， <span class="math math-inline">\(V_{BE}\)</span> 0.45 V 左右就开始导通；负载重了，边界更接近 0.7 V。</p>
+</blockquote>
+<h2 id="面包板万用表读数表page2-7-低压动手实验9-v">面包板万用表读数表（page2 §7 低压动手实验，9 V）</h2>
 <table>
 <thead>
 <tr>
-<th>测量</th>
-<th>量程</th>
-<th>红表笔 → 黑表笔</th>
-<th>预期读数</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>档位</th>
+<th>预期读数（SPICE，2N3904）</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>电源</td>
-<td>DC 20 V</td>
-<td>12 V 正 → 负</td>
-<td>约 12 V</td>
+<td>滑片电压（三极管已接，1 kΩ）</td>
+<td>电位器滑片（= 基极）</td>
+<td>电池负极（地）</td>
+<td>DC V 20 V</td>
+<td>≈5.00 V</td>
 </tr>
 <tr>
-<td>按 SB2 后，「公共点」对负极</td>
-<td>DC 20 V</td>
-<td>KM 自锁触点出线端 → 电源负</td>
-<td>约 12 V（一直保持）</td>
+<td>发射极（1 kΩ）</td>
+<td>2N3904 发射极</td>
+<td>地</td>
+<td>DC V</td>
+<td>≈4.31 V</td>
 </tr>
 <tr>
-<td>星形阶段 KMY 线圈</td>
-<td>DC 20 V</td>
-<td>KMY 线圈正端 → 电源负</td>
-<td>约 12 V；KT 到时后变成 0 V</td>
+<td>V_BE（1 kΩ）</td>
+<td>基极</td>
+<td>发射极</td>
+<td>DC V 2 V</td>
+<td>≈0.68 V</td>
 </tr>
 <tr>
-<td>星形阶段 KM△ 线圈</td>
-<td>DC 20 V</td>
-<td>KM△ 线圈正端 → 电源负</td>
-<td>0 V；KT 到时后约 12 V</td>
+<td>发射极（220 Ω）</td>
+<td>发射极</td>
+<td>地</td>
+<td>DC V</td>
+<td>≈4.20 V（基极 ≈4.96 V，V_BE ≈0.76 V）</td>
 </tr>
 <tr>
-<td>星形阶段 KM△ 支路里的 KMY 常闭两端</td>
-<td>DC 20 V</td>
-<td>常闭靠电源一侧 → 靠线圈一侧</td>
-<td>KT 到时前 0 V（KT 常开还没闭合，支路里没有电压），切换后 0 V（触点已闭合）</td>
+<td>负载电流（220 Ω）</td>
+<td>串在发射极和 220 Ω 之间</td>
+<td>—</td>
+<td>DC mA 200 mA</td>
+<td>≈19 mA</td>
 </tr>
 <tr>
-<td>三角形运行后 KT 线圈</td>
-<td>DC 20 V</td>
-<td>KT 模块 V+ → V−</td>
-<td>0 V（被 KM△ 常闭切断，KT 复位）</td>
+<td>V_CE（220 Ω）</td>
+<td>集电极</td>
+<td>发射极</td>
+<td>DC V</td>
+<td>≈4.8 V（管耗 ≈0.09 W，微温）</td>
 </tr>
 <tr>
-<td>每只线圈电流</td>
-<td>DC 200 mA，串在回路里</td>
-<td>电源正 → 线圈</td>
-<td>12 V ÷ 线圈电阻，按 400 Ω 算约 30 mA；稳态三角形时总电流约 60 mA 加上 LED</td>
+<td>对比：不接三极管，220 Ω 直接挂滑片</td>
+<td>滑片</td>
+<td>地</td>
+<td>DC V</td>
+<td>≈2.36 V</td>
 </tr>
 <tr>
-<td>空档长短</td>
-<td>万用表测不了，要用示波器</td>
-<td>CH1 接 KMY 灯、CH2 接 KM△ 灯，地接电源负</td>
-<td>两个通道之间的间隔 = 空档（页面取值下约 20 ms）</td>
+<td>练习2（5 V 单电源，LM358B，100 Ω，输入 2.7 V）</td>
+<td>发射极</td>
+<td>地</td>
+<td>DC V</td>
+<td>≈1.94 V；输入调高后最高约 2.7 V，运放输出最高约 3.5 V</td>
 </tr>
 </tbody>
 </table>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>本节点 ❌ 0 条；⚠️ 1 条已改（改 1、不改 0）。ℹ️ 2 条未改。报告未提及导航链接，未动。</p>
-<ol>
-<li><strong>⚠️ page2 §五 动手实验第 4 步（短接 KMY 常闭，按页面 20 / 10 ms 空档仍有 +10 ms，看不到一起亮）</strong>：已改。按建议在第 4 步末尾补一段：按本页时间大概率看不到&quot;一起亮&quot;，但不说明常闭可省；去掉后空档 = KM△ 吸合时间 − KMY 释放时间，20/10 ms 时 +10 ms（仿真 KMY 6.510 s 断开、KM△ 6.520 s 闭合）；线圈反并二极管使释放变慢、换吸合更快的继电器就可能变负，链接到 <a href="../../19-star-delta-start/page3.html">19 星三角降压启动 · 参数与调试篇</a> 练习 2 的 −7 ms。原文「只在 12 V 实验板上做」「做完马上断电」的安全提示保留在前；本次未改故障排查表，断电/请电工规则不受影响。</li>
-</ol>
-<p>改动文件：<code>19-star-delta-start/page2.md</code>、<code>review/spice/19.md</code>。</p>
-<p>检查（仓库根目录）：count_cjk（1959/3759/2594 字）、run_blocks（1 过）、run_blocks --scripts（19_sim.py、19_figs.py）、check_figs（3/5/2 张）、check_github_math（0/25/7）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+<p>统计：❌ 0 条；⚠️ 7 条全部处理（7 条改、0 条不改）；ℹ️ 无。</p>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>处理</th>
+<th>改了哪里、怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⚠️ p2 §3/§4：1 kΩ→20 Ω 输出变 101 mV、R_out 0.48 Ω</td>
+<td>已改</td>
+<td>page2 §4「第一种：0.48 Ω」段后新加「💡 实际芯片会怎样」小框，第 1 条：真实管子有几欧以下体电阻，厂家模型 2N3904 掉约 280 mV（1.4 Ω）、TIP31C 约 170 mV（0.8 Ω），内阻是「1 Ω 上下」</td>
+</tr>
+<tr>
+<td>⚠️ p2 §3：20 Ω 时 I_B 4.18 mA</td>
+<td>已改</td>
+<td>小框第 2 条：2N3904 在 200 mA 已到 I_C 上限，β 掉到约 20，I_B 约 9 mA、管耗 1.5 W，只能用 TIP31 类功率管</td>
+</tr>
+<tr>
+<td>⚠️ p1 §4 / 图19-p2-2：峰值处 V_BE 0.72 V</td>
+<td>已改</td>
+<td>小框第 3 条：2N3904 接近 0.9 V、TIP31 约 0.63 V，输出比输入低 0.6～0.9 V；page1 示波器那段「差 0.72 V」后加括号（真实 2N3904 差 0.8～0.9 V，TIP31 约 0.6 V）</td>
+</tr>
+<tr>
+<td>⚠️ p2 推导三：3→7 V 时 V_BE 只变 26 mV</td>
+<td>已改</td>
+<td>page2 推导三该句后加括号：26 mV 只按指数模型，厂家模型要变 60～90 mV，增益仍约 0.98</td>
+</tr>
+<tr>
+<td>⚠️ p1 §1 / 图19-p2-2：LM358 直接带 50 Ω 输出 1.50 V</td>
+<td>已改</td>
+<td>小框第 4 条：限流典型 30～40 mA，厂家模型 2.02 V，结论不变；page1 §1「被压到 1.5 V 左右」改为「1.5～2 V（限流值因芯片个体而异）」</td>
+</tr>
+<tr>
+<td>⚠️ p3 §2：环外串 470 Ω 后约 3.5 V</td>
+<td>已改</td>
+<td>按报告建议改写：β = 50 时掉 0.79 V；实际 TIP31 β 一两百，只掉零点一几伏（厂家模型 4.25 V）；所以反馈取自发射极最省心</td>
+</tr>
+<tr>
+<td>⚠️ p3 练习4：死区边界 ±0.7 V</td>
+<td>已改</td>
+<td>答案改为「大约 ±0.5～0.7 V，两管都几乎不导通，输出接近 0」，并说明轻载时 V_BE 0.45 V 就开始导通</td>
+</tr>
+</tbody>
+</table>
+<p>脚本（code/19_sim.py、code/figs/19_figs.py）和页面代码块保留理想模型，打印值（6.28 V、0.72 V、101 mV、4.18 mA、1.50 V 等）不变，页面里这些数仍与脚本和图一致；SPICE 数值只出现在说明文字里，并注明来自厂家模型。</p>
+<p>改动文件：19-emitter-follower/page1.md、<a href="http://page2.md">page2.md</a>、<a href="http://page3.md">page3.md</a>、review/spice/19.md。图片由脚本重新生成（内容不变）。</p>
+<p>检查：count_cjk（1913 / 2767 / 2271）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（4 / 96 / 54）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

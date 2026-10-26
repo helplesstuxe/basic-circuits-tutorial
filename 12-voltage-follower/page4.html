@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 电压跟随器 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/12-voltage-follower/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="12-电压跟随器--动手实验篇">12 电压跟随器 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../13-bridge-rectifier/page1.html">下一页：13 桥式整流 · 直觉篇</a> · 前置节点：<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a> · 后续：<a href="../19-emitter-follower/page1.html">19 射极跟随器 · 直觉篇</a>、<a href="../20-active-filter/page1.html">20 有源滤波 · 直觉篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>这一页用一片 LM358、9 V 电池和几只电阻，把 <a href="page1.html">12 电压跟随器 · 直觉篇</a> 开头那个&quot;一接负载电压就掉&quot;的分压器原样搭出来，只用万用表验证四件事：</p>
+<ol>
+<li><strong>分压器带不动负载</strong>：两只 10 kΩ 把 9 V 分成 4.5 V，直接接 1 kΩ 负载只剩约 0.75 V，接 10 kΩ 剩约 3.0 V。对应 <a href="page1.html">12 电压跟随器 · 直觉篇</a> 的&quot;痛点&quot;和 <a href="page2.html">12 电压跟随器 · 原理与实现篇</a> 第二节的仿真。</li>
+<li><strong>跟随器把负载&quot;隔开&quot;</strong>：同样的 1 kΩ 改接到跟随器输出，输出仍是 4.5 V，分压点也纹丝不动；负载要的约 4.5 mA 由运放从电池&quot;搬&quot;过来。对应直觉篇第二节的&quot;传话的人&quot;。</li>
+<li><strong>跟随器只保护后面，不修复前面</strong>：负载接回分压点时，跟随器输出跟着一起掉，它只是照抄输入。对应直觉篇第三节第 3 步。</li>
+<li><strong>单电源的&quot;禁区&quot;</strong>：一节 9 V、M 就是电池负极时，输入在 0～约 7.4 V 之间输出都跟得上；输入到 8.2 V、9 V 时，输出停在约 7.5 V 不动；输入是 0 V 时，输出只能到约 0.02 V。对应 <a href="page3.html">12 电压跟随器 · 参数与调试篇</a> 第二节。</li>
+</ol>
+<p>顺带还会得到一个很实用的结论：<strong>一节 9 V 加一个分压器和一个跟随器，就能造出一个带得动负载的 4.5 V 中点</strong>。前面 <a href="../02-opamp-basics/page4.html">02 运放入门 · 动手实验篇</a> 和 <a href="../05-inverting-amp/page4.html">05 反相放大 · 动手实验篇</a> 里用 1 kΩ/1 kΩ 加 47 μF 造中点，02 思考题 3 的答案最后说&quot;用一个运放跟随器把中点撑住&quot;，指的就是这个。</p>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>只用 12 V 及以下的直流电</strong>。本页任何一点对 M 都不超过 9 V；两节 9 V 串联时 V+ 轨到 V− 轨是 18 V，这是本页上限，不要再加电池。</li>
+<li><strong>9 V 电池的两个扣子不能碰在一起</strong>，短路几秒钟就发烫。没插进面包板的电池扣用胶带包好。</li>
+<li><strong>LM358 缺口朝左，8 脚接 V+、4 脚接 V−</strong>。接反会发烫，<strong>不要用手摸</strong>，立即拔掉电池扣。</li>
+<li><strong>负载不要小于 1 kΩ，更不要把输出 ③ 直接接 M</strong>。LM358 输出短路时会输出几十毫安，芯片发烫、电池很快耗光。</li>
+<li><strong>单电源时输入只来自分压器</strong>。分压器两端是 V+ 和 M，分压点永远在两者之间，不会低于 4 脚。不要从别处引入比电池负极还低的电压：LM358 的输入脚不能比 4 脚低 0.3 V 以上（手册的绝对最大额定值），否则可能损坏芯片。</li>
+<li><strong>换电阻、挪负载线、改接法前先断电</strong>。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运放</td>
+<td>LM358（DIP-8 直插）</td>
+<td>1</td>
+<td>只用 A 半边，B 半边接成跟随器闲置</td>
+</tr>
+<tr>
+<td>9 V 电池</td>
+<td>6F22 叠层电池 + 电池扣</td>
+<td>2</td>
+<td>双电源两节，单电源一节</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>10 kΩ</td>
+<td>3</td>
+<td>分压 Rd1、Rd2，第 8 步的负载</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>1 kΩ</td>
+<td>1</td>
+<td>负载 RL</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>47 kΩ</td>
+<td>1</td>
+<td>第 13、16 步换分压电阻</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>100 kΩ</td>
+<td>1</td>
+<td>第 14 步换 Rd2</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>2.2 kΩ、4.7 kΩ、22 kΩ</td>
+<td>各 1</td>
+<td>只在&quot;没有示波器怎么办&quot;里逐点测用，可选</td>
+</tr>
+<tr>
+<td>面包板</td>
+<td>830 孔</td>
+<td>1</td>
+<td>上下各两条电源轨</td>
+</tr>
+<tr>
+<td>跳线</td>
+<td>红、黑、紫、蓝、绿</td>
+<td>若干</td>
+<td>颜色约定见下图</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>数字式，有直流 200 mV 挡</td>
+<td>1</td>
+<td>量 ③ 与 ① 之差用</td>
+</tr>
+</tbody>
+</table>
+<p>电阻用 5% 碳膜电阻。&quot;应该读到&quot;的范围按 5% 公差、电池 9 V 算；电池实际电压在 8～9.6 V 之间，读数会按比例变化，用后面的 Python 按你量到的电池电压算就准了。</p>
+<p>本页没有需要降压替代的地方：直觉篇用 10 V 分压，这里换成 9 V 电池，所有数按 9 V 重算。直觉篇第 4 步的 1 kHz 正弦需要信号源和示波器，这里换成逐点测量。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p><strong>中点（地）怎么接</strong>：所有电压都以 M 为参考，黑表笔几乎一直插在 M 上。上面第二条轨（T2）和下面第二条轨（B2）都是 M，最上面 T1 是 V+，下面 B1 是 V−。</p>
+<ul>
+<li><strong>两节 9 V（双电源，第 0～9 步）</strong>：电池 A 的 + 接 V+ 轨；A 的 − 与电池 B 的 + 拧在一起接 M 轨；B 的 − 接 V− 轨。V+ 对 M 是 +9 V，V− 对 M 是 −9 V。右下角灰框里的黑线不插。</li>
+<li><strong>一节 9 V（单电源，第 10～17 步）</strong>：拆掉电池 B。电池 + 接 V+ 轨，− 接 V− 轨，再插灰框里的黑线（B2 第 28 列接 B1 第 28 列），把 M 轨并到 V− 轨。<strong>这时 M 就是电池负极，也就是 0 V</strong>。本页不需要 1 kΩ/1 kΩ 那种分压中点：跟随器本身就是在&quot;造中点&quot;，第 12 步就是它。</li>
+</ul>
+<p>见 图 12-p4-1。电路就是 <a href="page1.html">12 电压跟随器 · 直觉篇</a> 第二节那张&quot;分压器经跟随器接负载&quot;的图，10 V 换成 9 V，&quot;地&quot;换成 M。</p>
+<p><a class="img-link" href="img/12_p4_1_breadboard.png"><img alt="面包板接线图：左上两只分压电阻从正电源轨分到 M 轨，分压点经蓝线接到运放 3 脚；1 脚和 2 脚用短线相连；右边负载电阻一端接 M，另一端用负载线接到输出" src="img/12_p4_1_breadboard.png" loading="lazy" /></a></p>
+<p><em>图 12-p4-1　LM358 电压跟随器的面包板接法（负载线插 j14 经跟随器，改插 j10 直接接分压点）</em></p>
+<p>插线之前先对照 图 12-p4-3 的电路原理图把节点认清：上排是分压器、跟随器和负载，旁边是 LM358 不用的另一半，下排是两节 9 V 和一节 9 V 两种供电接法。</p>
+<p><a class="img-link" href="img/12_p4_3_schem_lab.png"><img alt="图 12-p4-1 对应的电路原理图：V+ 经 Rd1 10k 到分压点①（第 10 列），再经 Rd2 到 M；分压点经蓝线接 3 脚，1 脚和 2 脚用绿线短接；输出③（第 14 列）经负载线接 RL 到 M，虚线表示负载线改插 j10 直接接分压点；下排是两种供电接法" src="img/12_p4_3_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 12-p4-3　图 12-p4-1 对应的电路原理图（灰色小字是面包板列号或孔位，小黑字 1～8 是 LM358 引脚号）</em></p>
+<p><strong>对照看</strong>：面包板的连通规则见 <a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a>：同一列上半 a–e 连通、下半 f–j 连通，凹槽两边不通。本页的分压点①在第 10 列，Rd1、Rd2 和那根通往 3 脚的蓝线都插在这一列，所以原理图里它们汇成一个点。跟随器的 1 脚和 2 脚用一根绿线短接，原理图里画成从输出绕回反相端的反馈线；输出③在第 14 列，负载线从 j14 引到 RL。把负载线改插 j10，就是原理图里那条虚线：RL 直接并到分压点上，不再经过运放。</p>
+<p>图 12-p4-1 里红线是 V+，紫色线是 V−，黑线是 M，蓝线是信号和负载线，绿色线是反馈和短接，黄圈 ①③ 是测量点。按顺序插：</p>
+<ol>
+<li>黑线把上下两条 M 轨（T2 第 1 列和 B2 第 1 列）连通。</li>
+<li>LM358 缺口朝左：1～4 脚在 f14～f17，8～5 脚在 e14～e17。</li>
+<li>电源：红线 a14 → V+ 轨（8 脚），紫色线 j17 → V− 轨（4 脚）。</li>
+<li>B 半边：绿色短线 c15–c16（7 脚接 6 脚），黑线 a17 → M 轨（5 脚）。闲置的半边接成跟随器、输入接 M，就不会自己乱振。</li>
+<li>分压器：红线 T1 第 6 列 → a6；Rd1（10 kΩ）插 b6–b10；Rd2（10 kΩ）插 c10–c12；黑线 a12 → M 轨。第 10 列就是分压点 ①。</li>
+<li>蓝线 e10 → f10 跨过中间槽，再用蓝线 g10 → g16 把分压点接到 3 脚（同相端）。</li>
+<li>绿色短线 h14 → h15：1 脚（输出）直接接 2 脚（反相端）。这根线就是跟随器的全部&quot;反馈网络&quot;。第 14 列是输出 ③。</li>
+<li>负载 RL（先用 1 kΩ）插 h22–h25，黑线 j25 → M 轨。负载线一端插 j22，另一端先<strong>不插</strong>；做到第 4 步再插 j14（经跟随器），第 6 步改插 j10（直接接分压点）。</li>
+<li>双电源做第 0～9 步；断电，拆电池 B、插灰框黑线，做第 10～17 步。</li>
+</ol>
+<h2 id="测量表">测量表</h2>
+<p>万用表直流电压挡，黑表笔接 M 轨（第 3 步例外，见表）。&quot;仿真&quot;值由 <code>code/figs/12_figs.py</code> 用 ngspice 加 TI 的 LM358B 模型、按本页这块板子（两节 9 V，或一节 9 V 且 M = 电池负极）现算并打印；范围按 5% 电阻、电池 9 V 算，毫伏级的范围参考 <a href="../review/spice/12.html">12 的 SPICE 核对表</a>。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>双电源 V+</td>
+<td>V+ 轨</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>+8 V 以上</td>
+<td>电池 A 的电池扣</td>
+</tr>
+<tr>
+<td>1</td>
+<td>双电源 V−</td>
+<td>V− 轨</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>−8 V 以下</td>
+<td>读到正值：电池 B 接反</td>
+</tr>
+<tr>
+<td>2</td>
+<td>不接负载，分压点 ①</td>
+<td>第 10 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>4.28～4.72 V（仿真 4.500 V）</td>
+<td>Rd1 是否接到 V+、Rd2 是否接到 M</td>
+</tr>
+<tr>
+<td>3</td>
+<td>不接负载，③ 与 ① 之差</td>
+<td>第 14 列</td>
+<td>第 10 列</td>
+<td>直流 200 mV</td>
+<td>−3～+3 mV（仿真 +0.36 mV）</td>
+<td>几伏：h14–h15 短线没插，变成开环</td>
+</tr>
+<tr>
+<td>4</td>
+<td>负载线插 j14（1 kΩ 接跟随器输出），量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>与第 2 步相同（仿真 4.500 V）</td>
+<td>明显变低：负载线插到了 j10</td>
+</tr>
+<tr>
+<td>5</td>
+<td>同上，量 ①</td>
+<td>第 10 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>与第 2 步相同（仿真 4.500 V），纹丝不动</td>
+<td>变低：3 脚那根蓝线插错列</td>
+</tr>
+<tr>
+<td>6</td>
+<td>负载线改插 j10（1 kΩ 直接接分压点），量 ①</td>
+<td>第 10 列</td>
+<td>M 轨</td>
+<td>直流 2 V</td>
+<td>0.68～0.82 V（仿真 0.750 V）</td>
+<td>这就是&quot;带不动&quot;</td>
+</tr>
+<tr>
+<td>7</td>
+<td>同上，量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 2 V</td>
+<td>与第 6 步相同（仿真 0.750 V）</td>
+<td>正常：跟随器照抄已经掉下来的输入</td>
+</tr>
+<tr>
+<td>8</td>
+<td>RL 换 10 kΩ，负载线仍插 j10，量 ①</td>
+<td>第 10 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>2.80～3.20 V（仿真 3.000 V）</td>
+<td>负载轻一些，掉得少一些</td>
+</tr>
+<tr>
+<td>9</td>
+<td>负载线改插 j14（10 kΩ 接跟随器输出），量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>与第 2 步相同（仿真 4.500 V）</td>
+<td>又回到 4.5 V</td>
+</tr>
+<tr>
+<td>10</td>
+<td>单电源（M = 电池负极），V+ 对 M</td>
+<td>V+ 轨</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>+8 V 以上；再量 V− 轨对 M 应为 0</td>
+<td>V− 不是 0：灰框黑线没插</td>
+</tr>
+<tr>
+<td>11</td>
+<td>拔掉负载线，量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>4.28～4.72 V（仿真 4.500 V）</td>
+<td>和双电源一样</td>
+</tr>
+<tr>
+<td>12</td>
+<td>RL 换回 1 kΩ，负载线插 j14，量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>与第 11 步相同（仿真 4.500 V）</td>
+<td>一个带得动 4.5 mA 的中点</td>
+</tr>
+<tr>
+<td>13</td>
+<td>拔掉负载线，Rd2 换 47 kΩ，量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>7.29～7.55 V（仿真 7.42 V），与 ① 相差不到 0.05 V</td>
+<td>刚好在禁区边上</td>
+</tr>
+<tr>
+<td>14</td>
+<td>Rd2 换 100 kΩ，量 ①</td>
+<td>第 10 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>8.10～8.25 V（仿真 8.18 V）</td>
+<td>100 kΩ 色环：棕黑黄</td>
+</tr>
+<tr>
+<td>15</td>
+<td>同上，量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>约 7.5 V（仿真 7.50 V），比 ① 低约 0.7 V</td>
+<td>正常：输入进了禁区</td>
+</tr>
+<tr>
+<td>16</td>
+<td>Rd2 换回 10 kΩ，Rd1 换 47 kΩ，量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 20 V</td>
+<td>1.45～1.71 V（仿真 1.58 V），与 ① 相同</td>
+<td>47 kΩ 色环：黄紫橙</td>
+</tr>
+<tr>
+<td>17</td>
+<td>拔掉 Rd1（输入经 Rd2 接到 M），量 ③</td>
+<td>第 14 列</td>
+<td>M 轨</td>
+<td>直流 2 V</td>
+<td>0～0.05 V（仿真 0.024 V）</td>
+<td>正常：到不了真正的 0 V</td>
+</tr>
+</tbody>
+</table>
+<p>一共 18 步。第 4、5 两步是本页的主角：负载从分压点&quot;挪&quot;到跟随器后面，分压点和负载上都是 4.5 V，1 kΩ 里流着 4.5 mA，按欧姆定律这股电流如果从分压器出，分压器上面那只 10 kΩ 就要压降 45 V，根本不可能；它其实是 LM358 从 V+ 轨取来的。第 3 步量出的零点几毫伏，就是 <a href="page2.html">12 电压跟随器 · 原理与实现篇</a> 第一节说的&quot;倍数 0.99999&quot;加上失调电压，万用表的 20 V 挡完全看不出来。</p>
+<p>第 6、7 两步说明 <a href="page1.html">12 电压跟随器 · 直觉篇</a> 第三节那句话：跟随器只保护<strong>它后面</strong>的电路。负载接在分压点上，分压点先掉到 0.75 V，跟随器老老实实照抄，输出也是 0.75 V。</p>
+<p>第 13～17 步就是 <a href="page3.html">12 电压跟随器 · 参数与调试篇</a> 第二节的&quot;禁区&quot;，只是电源从 5 V 换成了 9 V。上限约 V+ − 1.5 V = 7.5 V，下限约 0.02 V。注意第 15 步停在 7.5 V，比 <a href="../08-noninverting-amp/page4.html">08 同相放大 · 动手实验篇</a> 第 12 步开环时的 7.8 V 还低：跟随器的输入等于输出，先撞上的是<strong>输入</strong>的共模上限，而不是输出的上限。实际芯片的共模上限在 V+ − 1.5 V 到 V+ − 2 V 之间，所以第 13 步如果读到比 ① 低几十毫伏，说明你的芯片禁区稍宽，也算正常。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>直觉篇和参数与调试篇用示波器看两条线是否重合，没有示波器就<strong>换电阻、逐点用万用表测</strong>，结果画成 图 12-p4-2：</p>
+<ol>
+<li>两节 9 V，分压器保持 10 kΩ/10 kΩ。负载依次换 1 k、2.2 k、4.7 k、10 k、22 k、47 k、100 kΩ，每个负载各测两次：负载线插 j10 时量 ①，插 j14 时量 ③。</li>
+<li>一节 9 V、M = 电池负极，不接负载。按&quot;Rd1 拔掉、47k/10k、22k/10k、10k/10k、10k/22k、10k/47k、10k/100k、Rd2 拔掉&quot;的顺序换分压电阻（前一个是 Rd1，后一个是 Rd2），每次量 ① 和 ③。</li>
+<li>第 1 组以负载为横轴（每格乘 10 倍）、电压为纵轴；第 2 组以 ① 为横轴、③ 为纵轴，描点连线。</li>
+</ol>
+<p><a class="img-link" href="img/12_p4_2_points.png"><img alt="左图：横轴负载从一千欧到十万欧，经跟随器的一条线平平地停在四点五伏，直接接分压点的一条线从零点七五伏慢慢升到四点二九伏；右图：一节电池时输出沿着输出等于输入的斜线走，到七点五伏以上变平" src="img/12_p4_2_points.png" loading="lazy" /></a></p>
+<p><em>图 12-p4-2　没有示波器时逐点测：左边换负载，右边换分压电阻</em></p>
+<p>图 12-p4-2 左图里，橙色圆点（经跟随器）从 1 kΩ 到 100 kΩ 一直贴着 4.5 V 的黑色虚线；紫色方块（直接接）在 1 kΩ 时只有 0.75 V，负载越轻越接近 4.5 V，到 100 kΩ 还是只有 4.29 V。这和 <a href="page2.html">12 电压跟随器 · 原理与实现篇</a> 第二节那张&quot;负载越重，直接接法掉得越多&quot;的图是一回事：分压器的内阻是两只 10 kΩ 并联，也就是 5 kΩ，负载要比 5 kΩ 大得多，直接接才不会明显掉。</p>
+<p>右图里，橙色圆点在 0～7.42 V 之间贴着&quot;输出 = 输入&quot;的虚线，8.18 V 和 9 V 两个点都停在 7.50 V，灰色区就是禁区；最左边输入 0 V 时，输出停在 0.024 V，没有真正到 0。想让输出在 0～9 V 全程跟随，要么换轨到轨运放，要么像第 0～9 步那样用双电源。</p>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>先断电量出电池电压和各电阻的实际值，再填读数。偏差超过 10% 并且差值超过 0.05 V 的会给出提示；第 3 步是毫伏级，只看是否在 ±3 mV 以内，第 17 步只看是否低于 0.1 V。下面是一组示例读数。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# ① 实际值：电池电压（正数）和电阻
+m = dict(VA=9.38, Vsingle=9.36, Rd1=9.95e3, Rd2=10.04e3, R47=46.6e3, R100=99.2e3, RL1=0.992e3, RL10=10.06e3)
+# ② 各步读数（伏）
+r = {&quot;2&quot;: 4.71, &quot;3&quot;: 0.0004, &quot;4&quot;: 4.71, &quot;5&quot;: 4.71, &quot;6&quot;: 0.78, &quot;7&quot;: 0.78, &quot;8&quot;: 3.15, &quot;9&quot;: 4.71,
+     &quot;10&quot;: 9.36, &quot;11&quot;: 4.70, &quot;12&quot;: 4.70, &quot;13&quot;: 7.70, &quot;14&quot;: 8.50, &quot;15&quot;: 7.80, &quot;16&quot;: 1.66, &quot;17&quot;: 0.023}
+
+
+def par(a, b):
+    return a * b / (a + b)
+
+
+def div(v, top, bot):
+    return v * bot / (top + bot)
+
+
+half_d = div(m[&quot;VA&quot;], m[&quot;Rd1&quot;], m[&quot;Rd2&quot;])
+half_s = div(m[&quot;Vsingle&quot;], m[&quot;Rd1&quot;], m[&quot;Rd2&quot;])
+expect = {
+    &quot;2&quot;: (half_d, &quot;Rd1 是否接 V+、Rd2 是否接 M&quot;),
+    &quot;4&quot;: (half_d, &quot;负载线是否插在 j14&quot;),
+    &quot;5&quot;: (half_d, &quot;3 脚蓝线是否插在第 10、16 列&quot;),
+    &quot;6&quot;: (div(m[&quot;VA&quot;], m[&quot;Rd1&quot;], par(m[&quot;Rd2&quot;], m[&quot;RL1&quot;])), &quot;负载线是否插在 j10&quot;),
+    &quot;7&quot;: (div(m[&quot;VA&quot;], m[&quot;Rd1&quot;], par(m[&quot;Rd2&quot;], m[&quot;RL1&quot;])), &quot;跟随器照抄第 6 步&quot;),
+    &quot;8&quot;: (div(m[&quot;VA&quot;], m[&quot;Rd1&quot;], par(m[&quot;Rd2&quot;], m[&quot;RL10&quot;])), &quot;RL 是否换成 10 kΩ&quot;),
+    &quot;9&quot;: (half_d, &quot;负载线是否插回 j14&quot;),
+    &quot;10&quot;: (m[&quot;Vsingle&quot;], &quot;电池电压&quot;),
+    &quot;11&quot;: (half_s, &quot;灰框黑线是否插好&quot;),
+    &quot;12&quot;: (half_s, &quot;负载线是否插在 j14&quot;),
+    &quot;13&quot;: (div(m[&quot;Vsingle&quot;], m[&quot;Rd1&quot;], m[&quot;R47&quot;]), &quot;Rd2 是否换成 47 kΩ&quot;),
+    &quot;14&quot;: (div(m[&quot;Vsingle&quot;], m[&quot;Rd1&quot;], m[&quot;R100&quot;]), &quot;Rd2 是否换成 100 kΩ&quot;),
+    &quot;15&quot;: (m[&quot;Vsingle&quot;] - 1.5, &quot;电池电压&quot;),             # 跟随器最高约比 V+ 低 1.5 V（共模上限）
+    &quot;16&quot;: (div(m[&quot;Vsingle&quot;], m[&quot;R47&quot;], m[&quot;Rd2&quot;]), &quot;Rd1 是否换成 47 kΩ&quot;),
+}
+print(f&quot;第 3 步 ③−① {r['3'] * 1e3:+.2f} mV&quot; + (&quot;&quot; if abs(r[&quot;3&quot;]) &lt;= 3e-3 else &quot;  ← 超过 ±3 mV，先查 h14–h15 短线&quot;))
+print(f&quot;第 17 步输出 {r['17']:+.3f} V&quot; + (&quot;（贴底，符合预期）&quot; if r[&quot;17&quot;] &lt; 0.1 else &quot;  ← 应在 0 V 附近，先查 Rd1 是否拔掉&quot;))
+print(f&quot;分压器内阻 Rd1 ∥ Rd2 = {par(m['Rd1'], m['Rd2']) / 1e3:.2f} kΩ；第 5 步 ÷ 第 2 步 = {r['5'] / r['2']:.3f}（应为 1）&quot;)
+for k, (e, hint) in expect.items():
+    v = r[k]
+    dev = (v - e) / abs(e) * 100
+    flag = f&quot;  ← 偏差超过 10%，先查：{hint}&quot; if abs(dev) &gt; 10 and abs(v - e) &gt; 0.05 else &quot;&quot;
+    print(f&quot;第 {k:&gt;2} 步  实测 {v:+7.3f} V  计算 {e:+7.3f} V  偏差 {dev:+6.1f}%{flag}&quot;)
+</code></pre>
+<p>示例读数都没有触发提示。第 15 步的计算值用的是经验规律&quot;跟随器最高比 V+ 低约 1.5 V&quot;（来自 SPICE 仿真和 LM358 手册的共模输入范围），只能估到零点几伏。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>实测值</th>
+<th>计算值</th>
+<th>偏差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>双电源 V+</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td>双电源 V−</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td>空载分压点 ①</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td>③ − ①（mV）</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4</td>
+<td>1 kΩ 接 ③：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td>1 kΩ 接 ③：①</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6</td>
+<td>1 kΩ 接 ①：①</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7</td>
+<td>1 kΩ 接 ①：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>8</td>
+<td>10 kΩ 接 ①：①</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>9</td>
+<td>10 kΩ 接 ③：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10</td>
+<td>单电源 V+</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>11</td>
+<td>单电源空载 ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>12</td>
+<td>单电源 1 kΩ 接 ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>13</td>
+<td>Rd2 = 47 kΩ：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>14</td>
+<td>Rd2 = 100 kΩ：①</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>15</td>
+<td>Rd2 = 100 kΩ：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>16</td>
+<td>Rd1 = 47 kΩ：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>17</td>
+<td>Rd1 拔掉：③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>逐点测量另记两张表：负载、①（直接接）、③（经跟随器）三栏；Rd1、Rd2、①、③ 四栏。</p>
+<h2 id="思考题">思考题</h2>
+<p><strong>思考题 1</strong>：第 7 步跟随器输出也掉到了 0.75 V，有同学说&quot;跟随器坏了&quot;。你怎么向他解释？如果一块板子上分压点后面要接三个不同的负载，跟随器应该放在哪里？</p>
+<details><summary>答案</summary>
+<p>没坏。跟随器的任务是&quot;输出等于输入&quot;，第 7 步它的输入（分压点）已经被直接接上去的 1 kΩ 拉到 0.75 V，它照抄 0.75 V 正是在正常工作。跟随器只能保护它<strong>后面</strong>的电路，不能修复<strong>前面</strong>已经被拖低的信号。三个负载都应该接在跟随器输出上，分压点上除了 3 脚什么都不接；这样分压器始终相当于空载，三个负载要的电流都由运放提供，只要总电流不超过 LM358 的输出能力（本页的 1 kΩ 是 4.5 mA，远在限值以内）。</p>
+</details>
+<p><strong>思考题 2</strong>：第 12 步用一节 9 V、一个分压器和一个跟随器造出了带得动负载的 4.5 V。能不能把它当成 <a href="../05-inverting-amp/page4.html">05 反相放大 · 动手实验篇</a> 里的 M 来用？和那里的 1 kΩ/1 kΩ 加 47 μF 比，好在哪里？要注意什么？</p>
+<details><summary>答案</summary>
+<p>可以，这正是单电源电路里常用的&quot;虚拟地&quot;。好处有两个：分压器可以用两只 100 kΩ，只耗几十微安，而 1 kΩ/1 kΩ 要一直耗 4.5 mA；电流流进或流出中点时，跟随器会把它&quot;顶住&quot;，中点不会被拉偏，而电阻分压的中点会跟着电流移动。要注意的有三点：一是 LM358 刚好有两个半边，可以用闲着的 B 半边来做这个跟随器；二是不要在跟随器输出上直接并一个大电容来&quot;稳住&quot;中点，<a href="page3.html">12 电压跟随器 · 参数与调试篇</a> 第一节讲过，容性负载会让跟随器振荡，电容应当并在分压点上，或者输出先串几十欧的隔离电阻再接电容；三是中点 4.5 V 本身要在跟随器能跟上的范围内，9 V 时上限约 7.5 V，4.5 V 很安全。</p>
+</details>
+<p><strong>思考题 3</strong>：第 15 步跟随器输出停在约 7.5 V，可 <a href="../08-noninverting-amp/page4.html">08 同相放大 · 动手实验篇</a> 里拔掉 Rf 后输出能到约 7.8 V。为什么跟随器反而&quot;矮&quot;了一截？如果想让跟随器在 9 V 单电源下跟到 8.5 V，有什么办法？</p>
+<details><summary>答案</summary>
+<p>LM358 有两个上限：输出最高约 V+ − 1.2 V，同相端和反相端的共模电压最高约 V+ − 1.5 V。同相放大时输入很小、输出很大，先撞上的是输出上限，所以是 7.8 V。跟随器的输入就等于输出，输入先走到 7.5 V 就超出了共模范围，虚短不再成立，输出也就停在 7.5 V。想跟到 8.5 V，要么提高电源（例如 12 V，上限约 10.5 V，见 <a href="page3.html">12 电压跟随器 · 参数与调试篇</a> 练习 5），要么换&quot;轨到轨输入输出&quot;的运放，要么用两节 9 V 的双电源，让 8.5 V 离 V+ 远一些。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>我能说出分压器为什么带不动 1 kΩ 负载，并用 Rd2 ∥ RL 算出约 0.75 V。</li>
+<li>我能在面包板上把 LM358 接成跟随器，并说出 1 脚接 2 脚的那根短线就是全部反馈。</li>
+<li>我能用 200 mV 挡量出 ③ 与 ① 只差零点几毫伏，并说清楚负载电流是从哪里来的。</li>
+<li>我能分别说清楚两节 9 V 和一节 9 V 时 M 接在哪里，并用跟随器造出一个带得动负载的 4.5 V 中点。</li>
+<li>我能用换分压电阻的办法找到单电源跟随器的禁区，并解释它为什么停在约 V+ − 1.5 V 而不是 V+ − 1.2 V。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

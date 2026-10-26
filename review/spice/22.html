@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>22 三极管开关与继电器驱动 · SPICE 核对报告（审校 B）</title>
+<title>22 过载保护：SPICE 复核报告</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,409 +42,671 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/22.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="22-三极管开关与继电器驱动--spice-核对报告审校-b">22 三极管开关与继电器驱动 · SPICE 核对报告（审校 B）</h1>
-<p>运行：<code>python spice/22/run.py</code>（在仓库根目录，退出码 0）。网表：</p>
+<h1 id="22-过载保护spice-复核报告">22 过载保护：SPICE 复核报告</h1>
 <ul>
-<li><code>spice/22/relay.cir</code>：线圈侧完整电路。先跑 <code>op</code>，再跑关断瞬态。<code>DMODE</code> 选续流方式：0 = 无二极管（100 pF 杂散），1 = 仅 1N4148，2 = 1N4148 + 24 V 稳压管。</li>
-<li><code>spice/22/sweep.cir</code>：图 22-p3-1 的 R_B 扫描，<a href="http://run.py">run.py</a> 逐点调用 <code>op</code>。</li>
+<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/22/.spiceinit</code> 设为 psa；闭环网表用 <code>.options method=gear</code>、步长 10 μs。</li>
+<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/22/run.py</code>，退出码 0，已实际运行，共 50 项。<a href="http://run.py">run.py</a> 会先按页面代码（种子 3）生成 <code>spice/22/noise_pwl.inc</code>，再从 wrdata 输出里数翻转次数。</li>
+<li><strong>强电</strong>：本节是 12 V 电机加 5 V 比较器，全部是低压，按页面电路完整仿真。</li>
 </ul>
+<h2 id="网表spice22">网表（spice/22/）</h2>
+<table>
+<thead>
+<tr>
+<th>网表</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>th_sweep.cir</code></td>
+<td>推导一：比较器加门限网络，三角波慢扫采样电压，测 V_H / V_L；另接一路 R_F = 1 Ω 的对照，看偏置电流压降</td>
+</tr>
+<tr>
+<td><code>inv_time.cir</code></td>
+<td>推导二、图 22-p3-2 (a)、例 3：电流源阶跃流过 R_S，τ = 10 / 47 / 100 ms，电流 5 / 20 A；以及 R_S 0.2 Ω、0.5→3 A</td>
+</tr>
+<tr>
+<td><code>start_filter.cir</code></td>
+<td>图 22-p3-2 (b)、练习 2、练习 4：启动冲击 1 + 4e^(−t/20 ms)（或 50 ms）经 RC 滤波的峰值（开环），以及 I²t 积分</td>
+</tr>
+<tr>
+<td><code>n_hyst.cir</code> / <code>n_nohyst.cir</code></td>
+<td>图 22-p2-2：页面代码生成的负载，有回差 / 无回差比较器，只数翻转、不切断</td>
+</tr>
+<tr>
+<td><code>cl_stall.cir</code></td>
+<td>图 22-p1-1、图 22-p3-1 第二行：完整闭环，0.1 s 堵转，打嗝</td>
+</tr>
+<tr>
+<td><code>cl_stall47.cir</code></td>
+<td>练习 1：C_F 4.7 μF</td>
+</tr>
+<tr>
+<td><code>cl_3a.cir</code></td>
+<td>例 1 (2)：1 A 突变到 3 A</td>
+</tr>
+<tr>
+<td><code>cl_nohyst.cir</code></td>
+<td>图 22-p3-1 第一行：无回差闭环（写出 nohyst_vg.txt 用来数翻转）</td>
+</tr>
+<tr>
+<td><code>cl_start10.cir</code> / <code>cl_start47.cir</code></td>
+<td>图 22-p3-2 (b) 的闭环版：电机从静止启动，τ = 10 / 47 ms</td>
+</tr>
+<tr>
+<td><code>dmm.cir</code></td>
+<td>万用表读数表：正常 1 A 和堵转跳闸后断开期间各点电压</td>
+</tr>
+</tbody>
+</table>
 <h2 id="模型与来源">模型与来源</h2>
-<ul>
-<li><strong>Q1 2N3904</strong>：<code>spice/models/2N3904_onsemi.lib</code>（<code>Q2n3904</code>，onsemi 官方模型，审校 A 已下载，这里直接复用）。</li>
-<li><strong>D1 1N4148</strong>：<code>spice/models/1N4148_nexperia.lib</code>（Nexperia 官方模型，复用）。</li>
-<li><strong>24 V 稳压管 1N4749A</strong>：<code>spice/models/1N4749A_diodes_zener.lib</code>，本轮新建。
-<ul>
-<li>来源：<a href="https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt%EF%BC%88Diodes">https://ltwiki.org/files/LTspiceIV/Vendor List/Diodes Incorporated/Spice/spicemodels_zener_diodes.txt（Diodes</a> Inc. 厂家文件，LTspice Vendor List 存档，已实际打开）。与现有的 <code>1N47xxA_diodes_zener.lib</code> 同一来源，但那个文件里没有 24 V 这一档，所以另建一个文件，没有覆盖原文件。</li>
-<li>唯一改动：原文件里有一行没带注释符的分类标签 <code>Zener</code>，前面加了 <code>*</code>。子电路本体原样保留。</li>
-<li>页面只写「24 V 稳压管」，没给型号。选 1N4749A 是我的假设。</li>
-</ul>
-</li>
-<li><strong>继电器线圈</strong>：页面给 SRD-05VDC 高灵敏型 70 Ω。电感按页面和 code/22_sim.py 的示意值 0.1 H，杂散电容 100 pF 也是页面示意值。厂家手册没有电感参数，这是一个假设。</li>
-<li><strong>ULN2003A</strong>：TI 明确表示不提供 SPICE 模型（TI E2E 论坛官方回复），所以练习 5 只复核算术，记 ℹ️。</li>
-<li><strong>跳过</strong>：继电器触点侧的 220 V 负载回路（市电），只仿真 5 V / 12 V 线圈驱动侧。</li>
-</ul>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LM393</td>
+<td><strong>替代</strong>：spice/models/LM393A.lib，子电路 <code>LM393A</code>（复用，同事 B 下载）</td>
+<td>TI LM393A PSpice 模型：<a href="https://www.ti.com/lit/zip/slcj017">https://www.ti.com/lit/zip/slcj017</a> 。TI 没有单独的老 LM393 模型，用 A 档代替，引脚和功能相同</td>
+</tr>
+<tr>
+<td>IRLZ44N</td>
+<td>spice/models/IRLZ44N_infineon.lib（复用）</td>
+<td>Infineon：<a href="https://www.infineon.com/dgdl/irlz44n.spi?fileId=5546d462533600a40153573f68cb3e76">https://www.infineon.com/dgdl/irlz44n.spi?fileId=5546d462533600a40153573f68cb3e76</a></td>
+</tr>
+<tr>
+<td>续流二极管 D1</td>
+<td><strong>替代</strong>：spice/models/1N5822_vishay.lib（复用）</td>
+<td>Vishay：<a href="https://www.vishay.com/docs/88003/1n5822.txt">https://www.vishay.com/docs/88003/1n5822.txt</a> 。页面只说“与 06 节相同”，没有给型号</td>
+</tr>
+<tr>
+<td>电阻、电容、电机</td>
+<td>理想元件</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<h2 id="假设">假设</h2>
+<ol>
+<li><strong>电机</strong>：页面只给了 12 V、正常 1 A、堵转约 5 A。这里建成反电动势 9.6 V + 线圈电阻 2.28 Ω + 电感 1 mH。电感是假设的；堵转时反电动势变为 0。启动时反电动势按 9.6·(1−e^(−t/20 ms)) 上升，这样冲击电流约为 1 + 4e^(−t/20 ms)，与页面一致。</li>
+<li><strong>无回差</strong>：页面写“两条门限都取 193 mV”，网表里去掉 R_H，把 R_B 改成 1.325 kΩ，使门限为 193 mV。</li>
+<li><strong>反时限曲线和图 22-p3-2 (b)</strong>：页面的定义是只看“判”、不切断，所以用电流源加开环比较器或纯 RC 来仿。</li>
+<li><strong>打嗝和无回差的平均电流</strong>：取 0.2～0.5 s 的平均。无回差一项量的是流过 R_S 的电流（MOS 管电流），因为页面说的是被“钉”在门限上的采样电流。</li>
+</ol>
 <h2 id="核对表">核对表</h2>
 <table>
 <thead>
 <tr>
-<th>位置</th>
-<th>核对项</th>
+<th>页面位置</th>
+<th>项目</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
 <th>结论</th>
+<th>说明</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>p2 §2 第一步</td>
-<td>I_C(max) = 4.8/70（SPICE 为实际 I_C）（SPICE 的 V_CE(sat) 为 0.27 V，比 0.2 V 稍大，I_C 略小）</td>
-<td>68.6 mA</td>
-<td>67.52 mA</td>
-<td>-1.6%</td>
-<td>✅</td>
+<td>p1 图22-p1-1</td>
+<td>堵转电流（电机建模前提）</td>
+<td>5 A</td>
+<td>4.995 A</td>
+<td>-0.1%</td>
+<td>✅（建模前提）</td>
+<td>电机模型按 5 A 堵转标定</td>
 </tr>
 <tr>
-<td>p2 例1 / A 部分</td>
-<td>5 V 引脚、R_B=680 Ω 的 I_B（模型 V_BE≈0.87 V（大电流饱和），比 0.7 V 高）</td>
-<td>6.32 mA</td>
-<td>6.067 mA</td>
-<td>-4.0%</td>
+<td>p1 图22-p1-1</td>
+<td>堵转后切断时间</td>
+<td>26 ms</td>
+<td>26.68 ms</td>
+<td>+2.6%</td>
 <td>✅</td>
+<td>闭环全电路</td>
 </tr>
 <tr>
-<td>p2 动手 步骤2</td>
-<td>680 Ω 时 V_CE（万用表 20 V 档）（0.27 V 仍在手册 ≤0.3 V（50 mA/5 mA）内；页面写「0.2 V 左右」合适）</td>
-<td>0.2 V</td>
-<td>0.2733 V</td>
-<td>+36.6%</td>
+<td>p1 §三 图22-p1-2 说明</td>
+<td>1 A 时采样电压</td>
+<td>0.1 V</td>
+<td>0.09995 V</td>
+<td>-0.1%</td>
 <td>✅</td>
+<td>闭环电路正常运行</td>
 </tr>
 <tr>
-<td>p1 图22-p1-2</td>
-<td>开到底时线圈拿到的额定电压比例</td>
-<td>96 %</td>
-<td>94.53 %</td>
-<td>-1.5%</td>
-<td>✅</td>
+<td>p2 前置知识</td>
+<td>IRLZ44N 导通电阻（栅 5 V，最大）</td>
+<td>25 mΩ</td>
+<td>21.32 mΩ</td>
+<td>-14.7%</td>
+<td>✅ 在最大值以内</td>
+<td>1 A 时 V_DS ÷ 1 A；页面给的是最大值</td>
 </tr>
 <tr>
-<td>p1 图22-p1-2 / A 部分</td>
-<td>开到底时三极管功耗 V_CE·I_C（SPICE V_CE(sat)=0.27 V（手册上限 0.3 V → 20.6 mW），在器件公差内；远小于 625 mW）</td>
-<td>13.7 mW</td>
-<td>18.45 mW</td>
-<td>+34.7%</td>
+<td>p2 推导一</td>
+<td>跳闸门限 V_H</td>
+<td>193 mV</td>
+<td>192.4 mV</td>
+<td>-0.3%</td>
 <td>✅</td>
+<td>三角波慢扫</td>
 </tr>
 <tr>
-<td>p1 图22-p1-2 / A 部分</td>
-<td>另加基极功耗 I_B·V_BE 后的总功耗（页面未计）（基极再加约 5 mW，不影响结论）</td>
-<td>— mW</td>
-<td>23.76 mW</td>
+<td>p2 推导一</td>
+<td>恢复门限 V_L</td>
+<td>146 mV</td>
+<td>147.8 mV</td>
+<td>+1.2%</td>
+<td>✅</td>
+<td>LM393 输出低 85 mV 抬高了 V_L</td>
+</tr>
+<tr>
+<td>p2 推导一</td>
+<td>回差</td>
+<td>47 mV</td>
+<td>44.67 mV</td>
+<td>-5.0%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 推导一</td>
+<td>跳闸电流 V_H/0.1Ω</td>
+<td>1.93 A</td>
+<td>1.924 A</td>
+<td>-0.3%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 推导一</td>
+<td>恢复电流 V_L/0.1Ω</td>
+<td>1.46 A</td>
+<td>1.478 A</td>
+<td>+1.2%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 推导二</td>
+<td>堵转 5 A 切断时间（τ=0.1 s）</td>
+<td>26 ms</td>
+<td>26.21 ms</td>
+<td>+0.8%</td>
+<td>✅</td>
+<td>电流源阶跃，开环判</td>
+</tr>
+<tr>
+<td>p2 图22-p2-2</td>
+<td>无回差翻转次数</td>
+<td>10 次</td>
+<td>10 次</td>
+<td>+0.0%</td>
+<td>✅</td>
+<td>翻转时刻 3.95 4.04 4.05 4.06 4.06 4.11 4.12 8.12 8.12 8.19</td>
+</tr>
+<tr>
+<td>p2 图22-p2-2</td>
+<td>有回差翻转次数</td>
+<td>2 次</td>
+<td>2 次</td>
+<td>+0.0%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 图22-p2-2</td>
+<td>有回差跳低时刻</td>
+<td>3.95 s</td>
+<td>3.941 s</td>
+<td>-0.2%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 图22-p2-2</td>
+<td>有回差恢复时刻</td>
+<td>9.65 s</td>
+<td>9.407 s</td>
+<td>-2.5%</td>
+<td>✅</td>
+<td>对 V_L 很敏感：V_L 高 2 mV → 提前 0.24 s</td>
+</tr>
+<tr>
+<td>p2 例题1(2)</td>
+<td>1 A→3 A 跳闸时间</td>
+<td>62 ms</td>
+<td>62.4 ms</td>
+<td>+0.6%</td>
+<td>✅</td>
+<td>闭环，3 A 实测 3.00 A</td>
+</tr>
+<tr>
+<td>p2 例题2</td>
+<td>R_S 0.05 Ω 跳闸电流</td>
+<td>3.86 A</td>
+<td>3.849 A</td>
+<td>-0.3%</td>
+<td>✅</td>
+<td>SPICE 门限 ÷ R_S</td>
+</tr>
+<tr>
+<td>p2 例题2</td>
+<td>R_S 0.05 Ω 恢复电流</td>
+<td>2.92 A</td>
+<td>2.955 A</td>
+<td>+1.2%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 例题3</td>
+<td>R_S 0.2 Ω 跳闸电流</td>
+<td>0.96 A</td>
+<td>0.9622 A</td>
+<td>+0.2%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 例题3</td>
+<td>R_S 0.2 Ω 恢复电流</td>
+<td>0.73 A</td>
+<td>0.7388 A</td>
+<td>+1.2%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p2 例题3</td>
+<td>0.5 A→3 A 切断时间</td>
+<td>20 ms</td>
+<td>20.39 ms</td>
+<td>+1.9%</td>
+<td>✅</td>
+<td>R_S 0.2 Ω，电流源阶跃</td>
+</tr>
+<tr>
+<td>p3 §一 读表</td>
+<td>R_F 10k 上偏置电流压降（最大）</td>
+<td>2.5 mV</td>
+<td>0.25 mV</td>
+<td>-90.0%</td>
+<td>✅ 页面给的是最大值，典型值小一个量级</td>
+<td>模型为典型偏置（总 70 nA）；页面写的是最大值</td>
+</tr>
+<tr>
+<td>p3 图22-p3-1 第一行</td>
+<td>无回差首次切断</td>
+<td>26 ms</td>
+<td>26.81 ms</td>
+<td>+3.1%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-1 第一行</td>
+<td>0.4 s 内翻转次数</td>
+<td>2.88e+04 次</td>
+<td>6268 次</td>
+<td>-78.2%</td>
+<td>⚠️ 数量是仿真步长的产物；真实约 8 kHz，且 MOS 管半开半关</td>
+<td>栅极在 0.38～3.35 V 间摆动</td>
+</tr>
+<tr>
+<td>p3 图22-p3-1 第一行</td>
+<td>平均（采样）电流</td>
+<td>1.93 A</td>
+<td>1.916 A</td>
+<td>-0.7%</td>
+<td>✅</td>
+<td>电机电流含续流 2.82 A</td>
+</tr>
+<tr>
+<td>p3 图22-p3-1 第一行</td>
+<td>MOS 管平均功耗</td>
+<td>— W</td>
+<td>3.912 W</td>
 <td>—</td>
-<td>ℹ️</td>
+<td>✅ 定性一致（发热），见修改建议</td>
+<td>页面只说“发热”</td>
 </tr>
 <tr>
-<td>p2 §2</td>
-<td>饱和裕量 β_forced 下 I_B/I_C(max)/30 倍数</td>
-<td>2.8 倍</td>
-<td>2.696 倍</td>
-<td>-3.7%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>打嗝断开时间</td>
+<td>28 ms</td>
+<td>26.43 ms</td>
+<td>-5.6%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 例2</td>
-<td>3.3 V 引脚、R_B=470 Ω 的 I_B</td>
-<td>5.53 mA</td>
-<td>5.175 mA</td>
-<td>-6.4%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>打嗝导通时间</td>
+<td>14 ms</td>
+<td>14.17 ms</td>
+<td>+1.2%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 例2</td>
-<td>3.3 V、470 Ω 时 V_CE（饱和）（在手册 ≤0.3 V 内）</td>
-<td>0.2 V</td>
-<td>0.2827 V</td>
-<td>+41.4%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>打嗝周期</td>
+<td>42 ms</td>
+<td>40.61 ms</td>
+<td>-3.3%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 例2</td>
-<td>3.3 V 引脚仍用 680 Ω 的 I_B（V_BE 比 0.7 V 高，实际更小）</td>
-<td>3.82 mA</td>
-<td>3.593 mA</td>
-<td>-5.9%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>导通占比</td>
+<td>34 %</td>
+<td>34.91 %</td>
+<td>+2.7%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 A 部分 / 动手 步骤3</td>
-<td>R_B=10 kΩ：SPICE 典型 2N3904 的等效 β（页面说结果「看运气」，β 在 30～300 之间都可能；典型模型落在中间）</td>
-<td>100</td>
-<td>77.64</td>
-<td>-22.4%</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p2 A 部分 β=100 行</td>
-<td>R_B=10 kΩ 时 V_CE（页面 β=100 → 1.99 V）（模型 β≈78，与页面 β=100 那一行同属「半开」，结论一致：线圈电压不够）</td>
-<td>1.99 V</td>
-<td>2.712 V</td>
-<td>+36.3%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>平均电流</td>
+<td>1.73 A</td>
+<td>1.741 A</td>
+<td>+0.6%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 A 部分 β=100 行</td>
-<td>R_B=10 kΩ 时线圈电压比例（页面 60%，&lt;75% 吸不上）（同上，结论一致）</td>
-<td>60 %</td>
-<td>45.76 %</td>
-<td>-23.7%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>打嗝中滤波电压上沿</td>
+<td>193 mV</td>
+<td>192.7 mV</td>
+<td>-0.2%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 A 部分</td>
-<td>R_B=10 kΩ 半开时三极管功耗（页面 β=100 → 85.6 mW）（接近放大区最坏值 89 mW）</td>
-<td>85.6 mW</td>
-<td>88.98 mW</td>
-<td>+3.9%</td>
+<td>p3 图22-p3-1 第二行</td>
+<td>打嗝中滤波电压下沿</td>
+<td>146 mV</td>
+<td>147.9 mV</td>
+<td>+1.3%</td>
 <td>✅</td>
+<td></td>
 </tr>
 <tr>
-<td>p2 A 部分</td>
-<td>放大区最坏功耗 V_CC²/(4R)（SPICE 半开点 V_CE=2.7 V 正好接近 V_CC/2）</td>
-<td>89.3 mW</td>
-<td>88.98 mW</td>
-<td>-0.4%</td>
+<td>p3 图22-p3-2(a)</td>
+<td>τ=10 ms 5 A 切断</td>
+<td>2.6 ms</td>
+<td>2.621 ms</td>
+<td>+0.8%</td>
 <td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(a)</td>
+<td>τ=10 ms 20 A 切断</td>
+<td>0.5 ms</td>
+<td>0.4975 ms</td>
+<td>-0.5%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(a)</td>
+<td>τ=47 ms 5 A 切断</td>
+<td>12.4 ms</td>
+<td>12.32 ms</td>
+<td>-0.7%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(a)</td>
+<td>τ=47 ms 20 A 切断</td>
+<td>2.35 ms</td>
+<td>2.338 ms</td>
+<td>-0.5%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(a)</td>
+<td>τ=100 ms 5 A 切断</td>
+<td>26.4 ms</td>
+<td>26.21 ms</td>
+<td>-0.7%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(a)</td>
+<td>τ=100 ms 20 A 切断</td>
+<td>5 ms</td>
+<td>4.975 ms</td>
+<td>-0.5%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(b)</td>
+<td>未滤波尖峰</td>
+<td>500 mV</td>
+<td>500 mV</td>
+<td>+0.0%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(b)</td>
+<td>τ=10 ms 滤波峰值</td>
+<td>278 mV</td>
+<td>277.8 mV</td>
+<td>-0.1%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(b)</td>
+<td>τ=47 ms 滤波峰值</td>
+<td>144 mV</td>
+<td>144.1 mV</td>
+<td>+0.1%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(b)</td>
+<td>τ=100 ms 滤波峰值</td>
+<td>100 mV</td>
+<td>100 mV</td>
+<td>+0.0%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(b) 闭环</td>
+<td>τ=10 ms 启动误跳（栅极最低）</td>
+<td>— V</td>
+<td>0.08646 V</td>
+<td>—</td>
+<td>✅ 和页面“误跳闸”一致</td>
+<td>会跳闸，滤波电压被切在 193 mV</td>
+</tr>
+<tr>
+<td>p3 图22-p3-2(b) 闭环</td>
+<td>τ=47 ms 启动峰值</td>
+<td>144 mV</td>
+<td>146.1 mV</td>
+<td>+1.4%</td>
+<td>✅</td>
+<td>不跳，栅极最低 4.90 V</td>
+</tr>
+<tr>
+<td>p3 练习1</td>
+<td>τ=47 ms 打嗝断开时间</td>
+<td>13 ms</td>
+<td>12.44 ms</td>
+<td>-4.3%</td>
+<td>✅</td>
+<td>周期 19.4 ms</td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>τ=47 ms 峰值（50 ms 衰减）</td>
+<td>220 mV</td>
+<td>220.2 mV</td>
+<td>+0.1%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>峰值出现时刻</td>
+<td>60 ms</td>
+<td>60.13 ms</td>
+<td>+0.2%</td>
+<td>✅</td>
+<td></td>
+</tr>
+<tr>
+<td>p3 练习2</td>
+<td>τ=100 ms 峰值</td>
+<td>156 mV</td>
+<td>156.2 mV</td>
+<td>+0.2%</td>
+<td>✅</td>
+<td></td>
 </tr>
 <tr>
 <td>p3 练习3</td>
-<td>10 kΩ 时 β≈100（SPICE 典型管 β 见上一行）（练习是反推题，算术无误）</td>
-<td>100</td>
-<td>77.64</td>
-<td>-22.4%</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p3 图22-p3-1</td>
-<td>左端平台（饱和时线圈电压比例）</td>
-<td>96 %</td>
-<td>96.09 %</td>
-<td>+0.1%</td>
+<td>R_S 0.033 Ω 跳闸电流</td>
+<td>5.84 A</td>
+<td>5.831 A</td>
+<td>-0.1%</td>
 <td>✅</td>
-</tr>
-<tr>
-<td>p3 图22-p3-1</td>
-<td>跌破 75% 的 R_B（SPICE 典型管；页面三条线 2.41/8.03/24.08 kΩ）（典型管在 50 mA 附近 β≈60，拐点落在页面 β=30 与 β=100 两条线之间，图的结论成立）</td>
-<td>— kΩ</td>
-<td>4.491 kΩ</td>
-<td>—</td>
-<td>ℹ️</td>
-</tr>
-<tr>
-<td>p3 图22-p3-1</td>
-<td>680 Ω 离典型管拐点的倍数（页面「好几倍」）</td>
-<td>— 倍</td>
-<td>6.604 倍</td>
-<td>—</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 B 部分</td>
-<td>关断前线圈电流</td>
-<td>68.6 mA</td>
-<td>67.48 mA</td>
-<td>-1.6%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 B 部分</td>
-<td>线圈储能 ½LI²（L=0.1 H 为页面示意值）</td>
-<td>0.235 mJ</td>
-<td>0.2277 mJ</td>
-<td>-3.1%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-2</td>
-<td>无二极管：集电极尖峰（100 pF 杂散）（SPICE 的 Gummel-Poon 模型不含击穿，所以和页面一样“冲到两千多伏”；页面已说明真实电路会在 40 V 以上先击穿）</td>
-<td>2170 V</td>
-<td>2129 V</td>
-<td>-1.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-2</td>
-<td>尖峰出现时刻（2N3904 自身 C_ob 并在 100 pF 上，谐振稍慢）</td>
-<td>5 μs</td>
-<td>5.023 μs</td>
-<td>+0.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-3 右</td>
-<td>只有二极管 1N4148：集电极钳位电压（1N4148 在 68 mA 时 V_F≈0.86 V（页面取 0.7 V））</td>
-<td>5.7 V</td>
-<td>5.858 V</td>
-<td>+2.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-3 左</td>
-<td>只有二极管 1N4148：电流降到 7.14 mA 用时（二极管压降比 0.7 V 大，电流掉得稍快）</td>
-<td>2.17 ms</td>
-<td>2.094 ms</td>
-<td>-3.5%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-3 右</td>
-<td>二极管 + 24 V 稳压管 1N4749A：集电极钳位电压（1N4749A 在 68 mA 时 V_Z 比标称 24 V 高）</td>
-<td>29.7 V</td>
-<td>30.06 V</td>
-<td>+1.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-3 左</td>
-<td>二极管 + 24 V 稳压管 1N4749A：电流降到 7.14 mA 用时</td>
-<td>0.23 ms</td>
-<td>0.2222 ms</td>
-<td>-3.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 图22-p2-3</td>
-<td>加稳压管后快几倍</td>
-<td>9.7 倍</td>
-<td>9.423 倍</td>
-<td>-2.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例3</td>
-<td>55 Ω 线圈的 I_C(max)</td>
-<td>87.3 mA</td>
-<td>84.92 mA</td>
-<td>-2.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例3</td>
-<td>560 Ω 给的 I_B（V_BE 比 0.7 V 高）</td>
-<td>7.68 mA</td>
-<td>7.327 mA</td>
-<td>-4.6%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例3</td>
-<td>560 Ω 时 V_CE（饱和）（87 mA 下仍饱和，在手册 ≤0.3 V（50 mA）附近）</td>
-<td>0.2 V</td>
-<td>0.3292 V</td>
-<td>+64.6%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>12 V/400 Ω 的 I_C</td>
-<td>29.5 mA</td>
-<td>29.54 mA</td>
-<td>+0.2%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>3.3 V、1.5 kΩ 给的 I_B（V_BE 比 0.7 V 高）</td>
-<td>1.73 mA</td>
-<td>1.671 mA</td>
-<td>-3.4%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 练习2</td>
-<td>V_CE（饱和）</td>
-<td>0.2 V</td>
-<td>0.1823 V</td>
-<td>-8.9%</td>
-<td>✅</td>
+<td></td>
 </tr>
 <tr>
 <td>p3 练习4</td>
-<td>12 V 继电器 + 24 V 稳压管关断钳位（≤40 V）（电感沿用 0.1 H 示意值；钳位电压只取决于 V_CC+V_F+V_Z，与电感无关）</td>
-<td>36.7 V</td>
-<td>37.01 V</td>
-<td>+0.9%</td>
+<td>启动冲击多出的 I²t</td>
+<td>0.32 A²s</td>
+<td>0.32 A²s</td>
+<td>+0.0%</td>
 <td>✅</td>
+<td>ngspice 积分</td>
 </tr>
 <tr>
-<td>p3 练习5</td>
-<td>ULN2003A：TI 不提供 SPICE 模型，只核算术 82%/78%/91%（算术复核无误）</td>
-<td>—</td>
-<td>nan</td>
-<td>—</td>
-<td>ℹ️</td>
+<td><strong>合计</strong></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td>✅49 ⚠️1 ❌0</td>
+<td></td>
 </tr>
 </tbody>
 </table>
-<p>统计：✅ 31　⚠️ 0　❌ 0　（ℹ️ 5）</p>
-<h2 id="结论">结论</h2>
+<p>评级标准：✅ 表示偏差在 10% 以内，或页面给的是最大值且 SPICE 没有超过；⚠️ 表示有明显出入；❌ 表示方向错、数量级错或会误导。</p>
+<p><strong>几点说明</strong></p>
 <ul>
-<li><strong>A 部分（饱和检查）</strong>：结论全部成立。
-<ul>
-<li>5 V / 680 Ω 时 I_B = 6.07 mA，V_CE = 0.27 V，线圈拿到 94.5%。</li>
-<li>3.3 V / 470 Ω 时 I_B = 5.18 mA，仍然饱和。</li>
-<li>真实管子的 V_BE 约 0.85 V，高于页面取的 0.7 V，所以基极电流比页面低 4–6%，饱和压降高 0.07 V。两项都在手册公差内（V_CE(sat) ≤ 0.3 V）。</li>
+<li>V_L 比页面高约 2 mV，原因是 LM393 输出低电平不是 0 V。它拉着 2.2 kΩ 上拉，约有 85 mV，抬高了 V_L。所以回差是 44.7 mV，不是 47 mV；有回差时的恢复时刻也因此从 9.65 s 提前到 9.41 s。这些都在 10% 以内。</li>
+<li>图 22-p2-2 的 10 次和 2 次翻转都能在 SPICE 里精确复现，翻转时刻也对得上。</li>
 </ul>
-</li>
-<li><strong>R_B = 10 kΩ</strong>：典型模型的 β ≈ 78，V_CE = 2.71 V，线圈电压 46%，吸不上。与页面「β = 100 时半开、继电器不吸」的结论同向。半开功耗 89 mW，与页面 85.6 mW 和最坏值 89 mW 一致。</li>
-<li><strong>图 22-p3-1</strong>：典型管跌破 75% 的点在 R_B ≈ 4.5 kΩ。它在大电流下 β 约 60，所以拐点落在页面 β = 30 和 β = 100 两条线之间。680 Ω 离拐点 6.6 倍，与页面「好几倍」一致。</li>
-<li><strong>B 部分（关断）</strong>：
-<ul>
-<li>无二极管时尖峰 2129 V，出现在 5.0 μs。onsemi 模型不含击穿，所以 SPICE 和页面一样只体现 LC 谐振。页面已说明真实管子会先击穿。</li>
-<li>只接 1N4148：钳位 5.86 V，电流降到 7.14 mA 用 2.09 ms。</li>
-<li>再串 1N4749A：钳位 30.1 V，用 0.222 ms，快 9.4 倍。</li>
-<li>以上各项都在 4% 以内。</li>
-</ul>
-</li>
-<li>例 3、练习 2 和练习 4（12 V 继电器 + 24 V 稳压管钳位 37.0 V，低于 40 V）都通过。</li>
-<li><strong>无需修改。</strong> 可选的一句补充（不算错误）：动手步骤 2 可以改成「应在 0.2～0.3 V 左右」，因为 SPICE 和手册上限都是 0.27～0.3 V。</li>
-</ul>
-<h2 id="面包板万用表读数page2-六仅-5-v-线圈侧220-v-触点侧不要上电测">面包板万用表读数（page2 §六，仅 5 V 线圈侧；220 V 触点侧不要上电测）</h2>
+<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
+<p><strong>p3 图 22-p3-1 第一行（无回差）</strong>。原句：</p>
+<blockquote>
+<p>每个仿真步长（10 μs）都在翻转，0.4 s 里翻转了 28803 次。平均电流被「钉」在门限 1.93 A，MOS 管在高速开关中发热，电机一直在受冲击。</p>
+</blockquote>
+<p>建议改为：</p>
+<blockquote>
+<p>在我们的简化仿真里，比较器每个仿真步长（10 μs）都翻转一次，0.4 s 翻转了 28803 次。这个次数只是仿真步长的产物；真实电路翻得多快，由比较器和 MOS 管自身的速度决定。用厂商模型仿真大约是每秒 8000 次上下，0.4 s 里约 6000 次。更糟的是，比较器来不及把栅极完全拉高或拉低，栅极电压停在 0.4～3.3 V 之间，MOS 管长时间处于「半开半关」状态，平均发热约 4 W，没有散热片的 TO-220 很快就会烫手。流过采样电阻的平均电流确实被「钉」在门限 1.93 A 附近；但电机线圈里还有经续流二极管循环的电流，电机本身的平均电流约 2.8 A，电机一直在受冲击。这是最糟糕的情况。</p>
+</blockquote>
+<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
+<p>条件：图 22-p2-1 完整电路，12 V 电机电源，5 V 比较器电源；数值来自 <code>dmm.cir</code>。断开期间的电压一直在变（电容在放电），万用表只能看到大致数值，看清楚要用示波器。</p>
 <table>
 <thead>
 <tr>
-<th>测量</th>
-<th>量程</th>
-<th>红表笔 → 黑表笔</th>
-<th>预期读数</th>
+<th>测量点</th>
+<th>表笔位置</th>
+<th>正常运行 1 A</th>
+<th>堵转跳闸后断开期间（跳闸后约 5 ms）</th>
+<th>页面值</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>步骤 2：V_CE（R_B = 680 Ω，基极接 5 V）</td>
-<td>DC 20 V</td>
-<td>Q1 集电极 → Q1 发射极（GND）</td>
-<td>约 0.27 V（0.2～0.3 V），继电器吸合</td>
+<td>采样点</td>
+<td>红笔接 MOS 管源极（R_S 上端），黑笔接 R_S 下端的地</td>
+<td>0.100 V</td>
+<td>≈0 V</td>
+<td>1 A 对应 0.1 V；5 A 对应 0.5 V</td>
 </tr>
 <tr>
-<td>线圈两端电压</td>
-<td>DC 20 V</td>
-<td>+5 V → Q1 集电极</td>
-<td>约 4.73 V（额定的 94%）</td>
+<td>反相端（−）</td>
+<td>红笔接 C_F 上端（LM393 的 2 脚），黑笔接地</td>
+<td>0.100 V</td>
+<td>约 0.18 V，正从 193 mV 往 146 mV 放电</td>
+<td>正常时低于门限</td>
 </tr>
 <tr>
-<td>R_B 两端电压（算 I_B = 读数 / 680）</td>
-<td>DC 20 V</td>
-<td>单片机引脚 → Q1 基极</td>
-<td>约 4.13 V → I_B ≈ 6.1 mA</td>
+<td>同相端（+）</td>
+<td>红笔接 LM393 的 3 脚（R_A / R_B 交点），黑笔接地</td>
+<td>0.193 V</td>
+<td>0.147 V</td>
+<td>193 mV / 146 mV</td>
 </tr>
 <tr>
-<td>V_BE</td>
-<td>DC 2 V</td>
-<td>Q1 基极 → Q1 发射极</td>
-<td>约 0.87 V</td>
+<td>比较器输出（栅极）</td>
+<td>红笔接 LM393 的 1 脚（MOS 管栅极），黑笔接地</td>
+<td>4.90 V</td>
+<td>0.09 V</td>
+<td>高（5 V）/ 接近 0 V</td>
 </tr>
 <tr>
-<td>步骤 3：V_CE（R_B 换 10 kΩ）</td>
-<td>DC 20 V</td>
-<td>Q1 集电极 → Q1 发射极</td>
-<td>典型管约 2.7 V，继电器不吸或抖动；β 很大的管子才会读到约 0.2 V</td>
+<td>MOS 管漏极</td>
+<td>红笔接漏极（电机下端），黑笔接地</td>
+<td>0.121 V（V_DS ≈ 21 mV）</td>
+<td>12 V</td>
+<td>—</td>
 </tr>
 <tr>
-<td>续流二极管方向检查（插板前单独测；装上后它和 70 Ω 线圈并联，两个方向都读得很低）</td>
-<td>二极管档</td>
-<td>红 → D1 阳极（接 Q1 集电极那端），黑 → D1 阴极（+5 V 那端）</td>
-<td>0.5～0.7 V；反过来测应显示 OL</td>
+<td>电机电流</td>
+<td>电流挡串在 +12 V 和电机之间</td>
+<td>1.00 A</td>
+<td>0</td>
+<td>1 A / 0</td>
 </tr>
 </tbody>
 </table>
+<p>万用表测打嗝时，读数会在两种状态之间跳。用电流挡测堵转平均电流，约 1.7 A（页面 1.73 A）。</p>
 <h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>改动文件：<code>22-bjt-relay-driver/page2.md</code>（只改一句）。本节点 ❌ 0、⚠️ 0，ℹ️ 按要求不改；脚本和图不用改（检查时运行脚本重新生成了本节点的图，内容不变）。</p>
-<ul>
-<li>采纳报告的可选补充：page2 §六 动手步骤 2 的「应在 0.2 V 左右」改为「应在 0.2～0.3 V 左右（真实管子的饱和压降比本页取的 0.2 V 略高，SPICE 约 0.27 V）」。</li>
-<li>导航链接：报告未指出错误链接。</li>
-</ul>
-<p>检查：count_cjk、run_blocks（页面 + <code>code/22_sim.py</code>、<code>code/figs/22_figs.py</code>）、check_figs、check_github_math 全部通过；fix_inline_math_spacing --check 为 0。</p>
+<p>统计：❌ 0 条；⚠️ 1 条已处理（1 条改、0 条不改）；ℹ️ 无改动。</p>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>处理</th>
+<th>改了哪里、怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>⚠️ p3 图 22-p3-1 第一行：0.4 s 翻转 2.88 万次</td>
+<td>已改</td>
+<td>按建议改写该条：28803 次注明是简化仿真「每个步长翻一次」的产物；厂商模型约每秒 8000 次、0.4 s 约 6000 次；栅极停在 0.4～3.3 V，MOS 管半开半关，平均发热约 4 W，TO-220 无散热片很快烫手；采样电阻平均电流约 1.93 A，但电机电流含续流约 2.8 A。28803 次是脚本/图的数，保留</td>
+</tr>
+</tbody>
+</table>
+<p>脚本（code/22_sim.py、code/figs/22_figs.py）未改。</p>
+<p>改动文件：22-overload-protection/page3.md、review/spice/22.md。</p>
+<p>检查：count_cjk（1512 / 2252 / 2800）、run_blocks（页面 2 块、脚本 2 个）、check_figs、check_github_math（2 / 54 / 40）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

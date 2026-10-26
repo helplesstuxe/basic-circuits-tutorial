@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>25 H 桥电机驱动 · 资深教师审读</title>
+<title>25 开关电源 · 资深教师审读</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,22 +42,36 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/teacher/25.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="25-h-桥电机驱动--资深教师审读">25 H 桥电机驱动 · 资深教师审读</h1>
+<h1 id="25-开关电源--资深教师审读">25 开关电源 · 资深教师审读</h1>
 <h2 id="总评">总评</h2>
-<p>全节质量高。</p>
+<p>本节有以下几处做得好：</p>
 <ul>
-<li><strong>page1</strong>：用&quot;四道闸门的 H 形水渠&quot;引出 H 桥，&quot;斜着成对打开&quot;的口诀好记；刹车和直通两种状态单独讲，并配了一张&quot;正转—滑行—正转—刹车—反转&quot;的仿真时序图，读者能直接看到&quot;刹车比滑行停得快得多&quot;。</li>
-<li><strong>page2</strong>：体二极管在 L11 先定义再使用，是全书少有的做法（21、09、26 都没有这样处理），可以作为范例。三段推导都配了&quot;中文意思&quot;。例 3 指出 DRV8871 倒车时&quot;IN1 高电平占空比是 70%，不是 30%&quot;，正好戳中新手的典型误区。</li>
-<li><strong>page3</strong>：用两次扫描（死区、PWM 频率）把&quot;死区不短于过渡时间&quot;和&quot;刚好避开可听范围&quot;两条规则讲成可以验证的结论。练习 4 的迁移题（8 A 车窗电机）设计得好，能逼读者列出芯片替他做了哪些事。</li>
+<li><strong>page1</strong>：从 21 的 7 W 发热引出问题，再用&quot;水龙头全开/全关 + 飞轮 + 水箱&quot;讲开关电源的工作方式，过渡自然。续流二极管和 01 里的继电器线圈反峰（L40）对上了，前后知识打通了。</li>
+<li><strong>page2</strong>：伏秒平衡分三步推出来，适合高中读者。含损耗的占空比公式和仿真结果相互印证。用 13 讲到的&quot;整流 + 滤波&quot;来解读源头附图中的反激副边，这个处理合理。</li>
+<li><strong>page3</strong>：电感饱和、反向恢复、热点回路这三个真实的坑都配有资料来源。测纹波要用接地弹簧，这个细节对新手很有价值。</li>
 </ul>
-<p><strong>数值复核</strong>（全部无误）：</p>
+<p>全部数值复核无误：</p>
 <ul>
-<li>转速与电流：稳态 563 rad/s = 5377 rpm（I = bω/K = 0.28 A）。滑行 0.3 s 后 5377·e^{-0.3} ≈ 3983 rpm，刹车 0.2 s 后 ≈ 183 rpm。刹车时间常数 τ = 1e-5 / (0.0004/2.516 + 1e-5) = 59 ms，2.3τ = 136 ms。纹波 0.15 A、0.1125 A。</li>
-<li>page2 例题：2686 rpm、4030 rpm、IN1 70%、−3.6 V。</li>
-<li>page3：I_TRIP 表 4.27 / 3.20 / 2.67 / 2.00 / 1.49 / 1.00 A；1.84–2.16 A。直通功率 3.66 / 2.08 / 0.93 / 0.24 W。L/R = 0.5 ms。纹波随频率按 1/f 变化。练习 42.7 kΩ（1.37–1.60 A）、4 W、30 kHz。</li>
-<li>滑行时电流约 11 µs 降到 0：用 0.28 A × 1 mH / ≈25 V ≈ 11 µs 复核成立。</li>
+<li><strong>page1</strong>：41.7% / 21%；0.84～1.16 A；损耗 0.38 W，效率 92.9%。</li>
+<li><strong>page2</strong>：
+<ul>
+<li>斜率 149 / 106 A/ms，纹波 0.310 A / 4.1 mV；</li>
+<li>含损耗占空比 D = (5 + 0.4 + 0.05)/(12 + 0.4 − 0.05) = 0.441；</li>
+<li>二极管损耗 0.224 W，下管损耗 0.028 W；</li>
+<li>例 2：0.208、0.42 A、42%、约 50 µH；例 3：0.58 / 0.145 / 0.44 W；</li>
+<li>所引 Wikipedia 中 2.38 W / 0.51 W 的例子，已在 Buck converter 词条原文核对（输入 5 V、输出 3.3 V、10 A，二极管 0.7 V，MOSFET 0.015 Ω）。</li>
 </ul>
-<p>没有&quot;[待核实]&quot;标记。</p>
+</li>
+<li><strong>page3</strong>：
+<ul>
+<li>速查表各项：0.56 A、0.22 W、0.022 W；</li>
+<li>17.5 MHz；</li>
+<li>损耗合计 0.379 W，效率 92.9%；</li>
+<li>练习：33 µH 与 2.3 A；0.39 W；70 MHz、×4、×16。</li>
+</ul>
+</li>
+</ul>
+<p>全节没有&quot;[待核实]&quot;标记。</p>
 <h2 id="逐条意见">逐条意见</h2>
 <table>
 <thead>
@@ -73,37 +87,30 @@ mjx-container{max-width:100%}
 <tr>
 <td>1</td>
 <td>建议</td>
-<td>page2 L138；图 25-p2-2（code/25_sim.py L104 <code>(&quot;ref&quot;, 0.25)</code>）</td>
-<td>占空比 25% 的转速曲线用了 <code>ref</code> 样式（灰色点线）。全书规定灰色点线只用于参考线、门限线，而同一张图的下半部分（L124）又用灰色点线画&quot;平均电压 6 V&quot;参考线。读者会把一条数据曲线当成参考线。</td>
-<td>25% 曲线改用 <code>third</code>（红紫色点划线），正文 L138 改为&quot;红紫色点划线（25%）&quot;。这一条需要通知作者改图，评审不改动脚本。</td>
+<td>page2 L74</td>
+<td>斜率用的是理想公式（149 / 106 A/ms），导通和断开时间却取自含损耗的 D = 0.441（2.21 / 2.79 µs）。读者自己相乘会得到 149 × 2.21 = 0.33 A 和 106 × 2.79 = 0.30 A，两者不相等，和&quot;一上一下正好抵消&quot;对不上。</td>
+<td>两种改法任选其一。<br>① 时间改用理想 D：上升段 2.08 µs、下降段 2.92 µs，149 × 2.08 ≈ 106 × 2.92 ≈ 0.31 A。<br>② 保留 2.21 / 2.79 µs，并补一句：&quot;计入 0.4 V 二极管压降和电阻后，下降斜率约为 (5 + 0.4 + 0.05)/47 µH ≈ 116 A/ms，上升斜率约 147 A/ms，这样两段都是约 0.32 A，正好抵消。&quot;</td>
 </tr>
 <tr>
 <td>2</td>
 <td>建议</td>
-<td>page1 L52；page2 L148</td>
-<td>图 25-p1-3 的电机电流用 <code>vin</code>（蓝色）。全书电流统一用天蓝色（<code>cur</code>），09、23 节都是这样。本节图文是一致的，但和其他章节的约定不一致。</td>
-<td>图 25-p1-3 的电流改用 <code>cur</code>，正文改为&quot;天蓝色&quot;。page2 L148 用蓝色、橙色区分&quot;滑行&quot;和&quot;刹车&quot;两条曲线，属于对比用色，可以保留。</td>
+<td>page2 L178</td>
+<td>原文写&quot;光耦和隔离反馈留到「28 隔离电源与数字隔离器」再详细讲&quot;。但按导航顺序，23 光耦隔离已经在 25 之前讲过，读者会以为光耦还没学。</td>
+<td>改为&quot;光耦已在 <a href="../../23-optocoupler/page1.html">23 光耦隔离</a> 讲过；把它用在电源反馈、以及更快的数字隔离器，留到 28 再讲&quot;。</td>
 </tr>
 <tr>
 <td>3</td>
 <td>建议</td>
-<td>page2 L25、L73–75；page3 L86、L88</td>
-<td>以下名词超出高中范围，正文没有解释：<br>• &quot;自举&quot;（L25）<br>• 转动惯量 J（kg·m²）、摩擦系数 b、转矩（L73–75）<br>• &quot;TVS 管&quot;（page3 L86）<br>• &quot;电荷泵&quot;（page3 L88）</td>
-<td>分别加括注：<br>• 自举：&quot;用一只电容把上管的栅极电压'垫高'到电源电压之上&quot;<br>• J：&quot;转子有多'沉'、多难转起来或停下来&quot;<br>• 转矩：&quot;让电机转动的'力矩'&quot;<br>• TVS 管：&quot;电压超过某值就导通、把尖峰吸掉的保护二极管&quot;<br>• 电荷泵：&quot;用电容把电压'抬高'的小电路&quot;</td>
+<td>page2 L160、L173；page1 L91</td>
+<td>有三处术语问题：<br>• &quot;体二极管&quot;未解释（06、26、29 节也有同样问题，见 cross-chapter）；<br>• &quot;初级&quot;与&quot;副边&quot;混用，而高中课本用的是&quot;原线圈 / 副线圈&quot;；<br>• &quot;拓扑&quot;未解释。</td>
+<td>• &quot;体二极管&quot;加括注：&quot;MOSFET 制造时在漏极和源极之间天然形成的一只二极管，方向从源到漏&quot;；<br>• 首次出现&quot;初级&quot;时写&quot;初级（原线圈一侧）&quot;，全节统一用&quot;初级 / 次级&quot;或统一用&quot;原边 / 副边&quot;，二选一；<br>• &quot;拓扑&quot;加括注：&quot;电路的连接结构&quot;。</td>
 </tr>
 <tr>
 <td>4</td>
 <td>建议</td>
-<td>page2 L77</td>
-<td>原文：&quot;滑行时……电感两端被加上约 −(V_M + 2V_D) 的反向电压&quot;。这里漏掉了反电动势 e：此时电机还在高速转，e ≈ 11.3 V 和电源同向相加，电感上实际约 −25 V。按原文的 13.6 V 计算，电流要约 20 µs 才降到 0，和 L150 写的 11 µs 对不上。</td>
-<td>改为&quot;电感两端约为 −(V_M + 2V_D + e) ≈ −(12 + 1.6 + 11.3) ≈ −25 V，0.28 A 的电流约 11 µs 就降到 0&quot;。</td>
-</tr>
-<tr>
-<td>5</td>
-<td>建议</td>
-<td>page3 L94–118</td>
-<td>&quot;变体迁移&quot;的标签符合 AUTHOR_GUIDE L32，但练习 1–3 没有标难度，读者看不出是否&quot;由易到难&quot;（AUTHOR_GUIDE L32 的要求）。</td>
-<td>练习 1–3 分别标&quot;易 / 中 / 中&quot;。</td>
+<td>page3 L119–144</td>
+<td>三道练习没有标难度，也没有&quot;变体迁移&quot;题。练习 1（24 V、2 A、30% 纹波）其实就是迁移题。另外，没有一道题考到输出电容和纹波。</td>
+<td>练习 2、练习 3 标&quot;易 / 中&quot;；练习 1 改标&quot;变体迁移&quot;并挪到最后，题末加一问：&quot;要输出纹波 ≤ 10 mV，C_o 至少多大？&quot;答案：C ≥ 0.6 / (8 × 200 kHz × 0.01 V) ≈ 37.5 µF，取 47 µF。</td>
 </tr>
 </tbody>
 </table>
@@ -113,63 +120,60 @@ mjx-container{max-width:100%}
 <tr>
 <th>位置</th>
 <th>正文</th>
-<th>PNG / 脚本</th>
+<th>PNG</th>
 <th>结果</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>page1 L26</td>
-<td>橙色路径、灰色断开</td>
-<td>橙色</td>
+<td>page1 L58–60</td>
+<td>蓝色开关节点、橙色输出、天蓝色电流</td>
+<td>都有</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page1 L44</td>
-<td>朱红色直通</td>
-<td>朱红色（25_figs.py L19 注释写的是&quot;红紫色&quot;，与实际颜色不符，只是代码注释，不影响读者）</td>
+<td>page1 L79</td>
+<td>橙色开关、朱红色带 × 线性</td>
+<td>都有</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page1 L52</td>
-<td>橙色转速、蓝色电流</td>
-<td><code>vout</code> / <code>vin</code></td>
-<td>✓（但见第 2 条）</td>
-</tr>
-<tr>
-<td>page2 L134–139</td>
-<td>灰色点线 25%、蓝色、橙色</td>
-<td><code>ref</code> / <code>vin</code> / <code>vout</code></td>
-<td>图文一致，但见第 1 条</td>
-</tr>
-<tr>
-<td>page2 L148</td>
-<td>橙色刹车、蓝色滑行</td>
-<td><code>vout</code> / <code>vin</code></td>
+<td>page2 L74</td>
+<td>正文不写颜色</td>
+<td>蓝色、天蓝色</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page3 L45–46</td>
-<td>朱红色（无 ×）、蓝色、黑色虚线；右图朱红色 × 号、灰色点线</td>
-<td><code>bad</code> 去掉 marker / <code>vin</code> / <code>good</code>；右图为 <code>bad</code>，带 ×</td>
+<td>page2 L100</td>
+<td>黑色虚线、橙色圆点、红紫色点划线</td>
+<td>橙色、红紫色</td>
+<td>✓（替代文字写&quot;红紫色方块点划线&quot;，正文没提方块，可忽略）</td>
+</tr>
+<tr>
+<td>page3 L40</td>
+<td>天蓝色、朱红色带 ×</td>
+<td>都有</td>
 <td>✓</td>
 </tr>
 <tr>
-<td>page3 L71–73</td>
-<td>朱红色 1 kHz、黑色虚线 20 kHz、橙色圆点、灰色点线、灰色区域</td>
-<td>一致</td>
+<td>page3 L86</td>
+<td>朱红色柱 / 橙色柱</td>
+<td>都有</td>
 <td>✓</td>
 </tr>
 </tbody>
 </table>
 <h2 id="安全">安全</h2>
-<p>本节不涉及市电，不需要 WARNING。</p>
+<p>本节属市电相关节点。三页开头都有 <code>[!WARNING]</code>，各自写明了本页特有的危险：</p>
 <ul>
-<li>风险点都已写明：直通（电流可达几十安）、刹车电流 −4.36 A、停机回灌造成的电压上冲、8 A 时的散热问题。</li>
-<li>续流和反峰由体二极管提供通路，这一点讲得清楚（page2 L26、L77）。</li>
+<li>311 V 大电解电容断电后仍有残留电压；</li>
+<li>初级不隔离；</li>
+<li>示波器地夹不能接初级；</li>
+<li>管子、电感会发烫。</li>
 </ul>
+<p>page3 动手实验前另有一个 WARNING：只用带限流的实验室电源，12 V、限流 1.5 A。L103 把&quot;浮地实验电源可以接地夹&quot;和&quot;离线式电源的初级接地夹等于短路&quot;并排对比，讲得很好。续流（反峰）的道理在 page1 L40 已和 01 的继电器打通。安全方面合格。</p>
 <h2 id="计数">计数</h2>
-<p>必改 0，建议 5。</p>
+<p>必改 0，建议 4。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

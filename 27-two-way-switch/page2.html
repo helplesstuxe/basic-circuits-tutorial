@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>27 双控开关 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/27-two-way-switch/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="27-双控开关--原理与实现篇">27 双控开关 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节点特有的危险点：① 本页第三种接错（开关接在零线）<strong>功能上完全正常</strong>，用&quot;开关灯试一试&quot;是查不出来的，必须用验电器或万用表测；② 墙里的跨线在灯灭时也可能带电，不要以为&quot;灯灭了线就没电&quot;。</p>
+</blockquote>
+<h2 id="一最小知识">一、最小知识</h2>
+<p>本页只用到两件事：</p>
+<ol>
+<li>开关闭合就是一根导线，断开就是断路（见 <a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>）。单刀双掷开关有三个端子：<strong>公共端</strong>（刀固定的那一头，英文常写 COM）和两个触点。刀在任何时候只接其中一个触点。</li>
+<li>灯要亮，灯的两端必须一端接通火线 L、另一端接通零线 N，形成回路。只要有一处断开，就没有电流。</li>
+</ol>
+<p>本页不算电压、电流，只回答&quot;通不通&quot;。这种只看连通关系的分析，正好能用一个很短的程序做完。</p>
+<h2 id="二推导为什么是异或">二、推导：为什么是异或</h2>
+<p>请对照图 27-p2-1 看电流的走向。天蓝色粗线是电流路径：</p>
+<p><a class="img-link" href="img/27_p2_1_path.png"><img alt="左图 S1 等于 1、S2 等于 0，两把刀都接跨线 B，天蓝色电流路径从火线经跨线 B 到灯再到零线；右图再拨 S2，刀离开跨线 B，没有电流路径" src="img/27_p2_1_path.png" loading="lazy" /></a></p>
+<p><em>图 27-p2-1　同一个双控电路的两种状态，天蓝色是电流路径</em></p>
+<p><strong>第一步：给开关位置编号</strong>。规定两只开关都从&quot;出厂位置&quot;开始，记作 0；被拨过一次记作 1。按图 27-p2-1 的画法，S1 在 0 时刀接跨线 A，在 1 时接跨线 B；S2 正好反过来，在 0 时接跨线 B，在 1 时接跨线 A。这样规定，起始状态（都是 0）灯是灭的，和装修完交房时一样。</p>
+<p><strong>第二步：写出&quot;灯亮&quot;的条件</strong>。先用中文说：两把刀搭在同一根跨线上，灯就亮。只有两种可能：S1 在 0、S2 在 1（都接 A），或者 S1 在 1、S2 在 0（都接 B）。也就是&quot;两个数不一样&quot;时灯亮，这正是<strong>异或</strong>，用 <span class="math math-inline">\(\oplus\)</span> 表示：</p>
+<div class="math math-display">\[\text{灯} = s_1 \oplus s_2\]</div>
+<p>图 27-p2-1 左图是 <span class="math math-inline">\(s_1 = 1\)</span> 、 <span class="math math-inline">\(s_2 = 0\)</span> ，代入得 1，灯亮；右图再拨 S2，变成 <span class="math math-inline">\(s_1 = 1\)</span> 、 <span class="math math-inline">\(s_2 = 1\)</span> ，得 0，灯灭。</p>
+<p><strong>第三步：为什么拨哪只都管用</strong>。异或有一个性质：把其中一个输入取反，输出一定取反。</p>
+<div class="math math-display">\[(1 - s_1) \oplus s_2 = 1 - (s_1 \oplus s_2)\]</div>
+<p>对 <span class="math math-inline">\(s_2\)</span> 也一样。所以不管另一只开关在哪，拨手边这只，灯一定翻转。推广一步：从起始状态算起，<strong>两只开关一共被拨了奇数次，灯亮；偶数次，灯灭</strong>。</p>
+<p><strong>第四步：开关为什么要放在火线一侧</strong>。只看&quot;亮不亮&quot;，开关放在火线一侧还是零线一侧，上面三步完全一样。区别在灯灭的时候：开关在火线一侧，灯和火线之间是断开的，灯头不带电；开关在零线一侧，灯的一端始终直接连着火线，灯虽然灭了，灯头仍是 220 V。所以 GB 50303-2015 规定&quot;相线应经开关控制&quot;。</p>
+<h2 id="三仿真">三、仿真</h2>
+<p>下面的程序把每只开关、每根导线都看成&quot;把两个点连起来&quot;，再用并查集（一种把连通的点归成一组的方法）判断灯的两端是不是分别连着 L 和 N。A 部分列真值表；B 部分检查&quot;拨一只开关灯就变&quot;在所有情况下是否成立，并画状态图；C 部分模拟三种常见接错；D 部分是参数与调试篇要用的三地控制。程序要在<strong>仓库根目录</strong>运行：<code>python code/27_sim.py</code>（第二行靠这个找到 <code>code/figs</code> 里的共享画图样式），它会重新生成图 27-p2-2 和图 27-p2-3。想改参数做实验，先复制一份：<code>cp code/27_sim.py my_27.py</code>，再改 <code>my_27.py</code>。</p>
+<p>读代码时有一处写法可能第一次见：<code>groups</code> 函数里面又定义了一个小函数 <code>find</code>，用来查&quot;这个点属于哪一组&quot;，<code>groups</code> 最后把 <code>find</code> 交出去，后面的代码拿它来问&quot;灯的两端各和谁同组&quot;。看不懂这种写法也没关系，只要记住&quot;连通的点归为同一组&quot;，就能读懂后面的结果。</p>
+<pre><code class="language-python"># 27 双控开关的最小仿真：把开关和导线看成&quot;谁和谁连通&quot;，算出每种开关位置下灯亮不亮。
+# A：正确接法的真值表；B：四种状态的状态图；C：三种常见接错；D：三地控制（加一只中途开关）。
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import itertools                                   # 列出所有开关组合
+import matplotlib.pyplot as plt                    # 画图
+import figstyle as fs                              # 全书统一的颜色、保存函数
+
+def groups(wires):                                 # 输入&quot;哪两个点连在一起&quot;的列表，输出连通的点集合
+    parent = {}                                    # 并查集：每个点记一个&quot;代表&quot;
+    def find(x):                                   # 找 x 的代表
+        parent.setdefault(x, x)                    # 第一次见到的点，代表就是它自己
+        while parent[x] != x:                      # 一直往上找
+            x = parent[x]
+        return x
+    for a, b in wires:                             # 每根导线或闭合的触点
+        parent[find(a)] = find(b)                  # 把两边合并成一组
+    return find                                    # 返回&quot;找代表&quot;的函数，代表相同就是连通
+
+def spdt(name, pos):                               # 单刀双掷开关：公共端 COM 接到 1 号或 2 号触点
+    return [(f&quot;{name}.COM&quot;, f&quot;{name}.{1 + pos}&quot;)]  # pos = 0 接 1 号，pos = 1 接 2 号
+
+def lamp_state(wires):                             # 灯的两端一端通火线 L、一端通零线 N，灯就亮
+    find = groups(wires)                           # 算连通关系
+    top, bot = find(&quot;灯.上&quot;), find(&quot;灯.下&quot;)          # 灯两端各属于哪一组
+    on = {top, bot} == {find(&quot;L&quot;), find(&quot;N&quot;)}      # 一端是 L 组、另一端是 N 组 → 有电流 → 亮
+    live = find(&quot;L&quot;) in (top, bot)                 # 灯头有没有哪一端连着火线（灯灭时这就是触电隐患）
+    return on, live                                # 返回（亮不亮，灯头带不带电）
+
+def correct(s1, s2):                               # 正确接法：火线进 S1 公共端，S2 公共端出来去灯
+    w = [(&quot;L&quot;, &quot;S1.COM&quot;), (&quot;S2.COM&quot;, &quot;灯.上&quot;), (&quot;灯.下&quot;, &quot;N&quot;)]   # 火线、灯线、零线
+    w += [(&quot;S1.1&quot;, &quot;S2.2&quot;), (&quot;S1.2&quot;, &quot;S2.1&quot;)]      # 两根跨线：A 连 S1.1 和 S2.2，B 连 S1.2 和 S2.1
+    return w + spdt(&quot;S1&quot;, s1) + spdt(&quot;S2&quot;, s2)     # 加上两只开关此刻闭合的那一路
+
+def swapped_travelers(s1, s2):                     # 接错 1：跨线在一端对调（A、B 互换）
+    w = [(&quot;L&quot;, &quot;S1.COM&quot;), (&quot;S2.COM&quot;, &quot;灯.上&quot;), (&quot;灯.下&quot;, &quot;N&quot;)]
+    w += [(&quot;S1.1&quot;, &quot;S2.1&quot;), (&quot;S1.2&quot;, &quot;S2.2&quot;)]      # 跨线变成 1 对 1、2 对 2
+    return w + spdt(&quot;S1&quot;, s1) + spdt(&quot;S2&quot;, s2)
+
+def wrong_common(s1, s2):                          # 接错 2：S2 的公共端和一个触点接反了
+    w = [(&quot;L&quot;, &quot;S1.COM&quot;), (&quot;S2.1&quot;, &quot;灯.上&quot;), (&quot;灯.下&quot;, &quot;N&quot;)]     # 去灯的线错接在 S2.1 上
+    w += [(&quot;S1.1&quot;, &quot;S2.2&quot;), (&quot;S1.2&quot;, &quot;S2.COM&quot;)]    # 跨线 B 错接在 S2 的公共端上
+    return w + spdt(&quot;S1&quot;, s1) + spdt(&quot;S2&quot;, s2)
+
+def switch_on_neutral(s1, s2):                     # 接错 3：火线直接进灯，开关串在零线一侧
+    w = [(&quot;L&quot;, &quot;灯.上&quot;), (&quot;灯.下&quot;, &quot;S1.COM&quot;), (&quot;S2.COM&quot;, &quot;N&quot;)]   # 开关断的是零线
+    w += [(&quot;S1.1&quot;, &quot;S2.2&quot;), (&quot;S1.2&quot;, &quot;S2.1&quot;)]      # 跨线照常
+    return w + spdt(&quot;S1&quot;, s1) + spdt(&quot;S2&quot;, s2)
+
+STATES = list(itertools.product((0, 1), repeat=2)) # 四种组合 (0,0) (0,1) (1,0) (1,1)
+
+print(&quot;[A] 正确接法真值表（0/1 = 开关在出厂位置/被拨过）&quot;)
+for s1, s2 in STATES:                              # 逐个组合
+    on, _ = lamp_state(correct(s1, s2))
+    print(f&quot;    S1={s1} S2={s2} → 灯{'亮' if on else '灭'}&quot;)
+    assert on == bool(s1 ^ s2)                     # 检查：灯 = S1 异或 S2
+
+def flips(wiring):                                 # 数一数：从每个状态拨一只开关，有几次灯会变
+    n = 0
+    for s1, s2 in STATES:
+        now = lamp_state(wiring(s1, s2))[0]
+        n += lamp_state(wiring(1 - s1, s2))[0] != now   # 拨 S1
+        n += lamp_state(wiring(s1, 1 - s2))[0] != now   # 拨 S2
+    return n                                       # 满分 8 次（4 个状态 × 2 只开关）
+
+print(f&quot;[B] 正确接法：拨一只开关灯就变的次数 = {flips(correct)} / 8&quot;)
+assert flips(correct) == 8                         # 任何时候拨任何一只都管用
+
+fig, ax = fs.diagram(6, 3.4)                       # 状态图：四个方框是四种状态，连线是&quot;拨一只开关&quot;
+pos = {(0, 0): (1.4, 2.6), (1, 0): (4.6, 2.6), (0, 1): (1.4, 0.8), (1, 1): (4.6, 0.8)}
+for (s1, s2), (x, y) in pos.items():               # 画四个方框，亮的状态填黄色
+    on = lamp_state(correct(s1, s2))[0]
+    fs.box(ax, x, y, f&quot;S1={s1}  S2={s2}\n灯{'亮' if on else '灭'}&quot;, w=1.8, h=0.8,
+           fc=&quot;#fff2a8&quot; if on else &quot;#e8e8e8&quot;)
+fs.arrow(ax, (2.3, 2.7), (3.7, 2.7), &quot;拨 S1&quot;); fs.arrow(ax, (3.7, 2.5), (2.3, 2.5))
+fs.arrow(ax, (2.3, 0.9), (3.7, 0.9), &quot;拨 S1&quot;); fs.arrow(ax, (3.7, 0.7), (2.3, 0.7))
+fs.arrow(ax, (1.3, 2.2), (1.3, 1.2)); fs.arrow(ax, (1.5, 1.2), (1.5, 2.2))
+fs.arrow(ax, (4.5, 2.2), (4.5, 1.2)); fs.arrow(ax, (4.7, 1.2), (4.7, 2.2))
+ax.text(1.75, 1.7, &quot;拨 S2&quot;, fontsize=9, va=&quot;center&quot;); ax.text(4.85, 1.7, &quot;拨 S2&quot;, fontsize=9, va=&quot;center&quot;)
+fs.save(fig, &quot;27&quot;, &quot;27_p2_2_states.png&quot;)
+
+print(&quot;[C] 三种接错&quot;)
+rows = [(&quot;正确接法&quot;, correct), (&quot;跨线一端对调&quot;, swapped_travelers),
+        (&quot;公共端接错&quot;, wrong_common), (&quot;开关接在零线&quot;, switch_on_neutral)]
+table = {}                                         # 记下每种接法、每个状态的结果，画图用
+for name, wiring in rows:
+    res = [lamp_state(wiring(s1, s2)) for s1, s2 in STATES]
+    table[name] = res
+    lit = sum(on for on, _ in res)                 # 四个状态里亮了几个
+    danger = sum((not on) and live for on, live in res)  # 灯灭但灯头连着火线的状态数
+    print(f&quot;    {name}：亮 {lit}/4，拨开关有效 {flips(wiring)}/8，灯灭时灯头带电 {danger}/4&quot;)
+assert flips(swapped_travelers) == 8               # 跨线对调：照样两地都能控制，只是亮灭位置反了
+assert flips(wrong_common) &lt; 8                     # 公共端接错：有时候拨开关不管用
+assert flips(switch_on_neutral) == 8               # 开关接在零线：功能看起来完全正常……
+assert sum((not on) and live for on, live in table[&quot;开关接在零线&quot;]) == 2   # ……但灯灭时灯头仍带电
+
+fig, ax = plt.subplots(figsize=(7, 2.8))           # 画成表格：行是接法，列是开关状态
+ax.set_xlim(0, 4); ax.set_ylim(0, 4); ax.invert_yaxis(); ax.grid(False)
+for j, (name, res) in enumerate(table.items()):
+    for i, (on, live) in enumerate(res):
+        bad = (not on) and live                    # 灯灭但带电，用朱红色框出来
+        ax.add_patch(plt.Rectangle((i + 0.05, j + 0.08), 0.9, 0.84, fc=&quot;#fff2a8&quot; if on else &quot;#e8e8e8&quot;,
+                                   ec=fs.C[&quot;bad&quot;] if bad else &quot;0.6&quot;, lw=2.2 if bad else 0.8))
+        ax.text(i + 0.5, j + 0.5, (&quot;亮&quot; if on else &quot;灭&quot;) + (&quot;（灯头带电）&quot; if bad else &quot;&quot;),
+                ha=&quot;center&quot;, va=&quot;center&quot;, fontsize=9, color=fs.C[&quot;bad&quot;] if bad else &quot;k&quot;)
+ax.set_xticks([0.5, 1.5, 2.5, 3.5], [f&quot;S1={a} S2={b}&quot; for a, b in STATES])
+ax.set_yticks([0.5, 1.5, 2.5, 3.5], list(table))
+ax.tick_params(length=0); [s.set_visible(False) for s in ax.spines.values()]
+ax.xaxis.tick_top()
+fs.save(fig, &quot;27&quot;, &quot;27_p2_3_mistakes.png&quot;)
+
+def three_way(s1, s2, s3):                         # 三地控制：S1、S3 是双控开关，S2 是中途开关
+    w = [(&quot;L&quot;, &quot;S1.COM&quot;), (&quot;S3.COM&quot;, &quot;灯.上&quot;), (&quot;灯.下&quot;, &quot;N&quot;)]
+    w += [(&quot;S1.1&quot;, &quot;M.a1&quot;), (&quot;S1.2&quot;, &quot;M.b1&quot;)]      # S1 的两个触点接中途开关的入口 a1、b1
+    w += [(&quot;M.a2&quot;, &quot;S3.2&quot;), (&quot;M.b2&quot;, &quot;S3.1&quot;)]      # 中途开关的出口 a2、b2 接 S3
+    w += [(&quot;M.a1&quot;, &quot;M.a2&quot;), (&quot;M.b1&quot;, &quot;M.b2&quot;)] if s2 == 0 else [(&quot;M.a1&quot;, &quot;M.b2&quot;), (&quot;M.b1&quot;, &quot;M.a2&quot;)]  # 直通或交叉
+    return w + spdt(&quot;S1&quot;, s1) + spdt(&quot;S3&quot;, s3)
+
+print(&quot;[D] 三地控制真值表&quot;)
+for s in itertools.product((0, 1), repeat=3):     # 八种组合
+    on, _ = lamp_state(three_way(*s))
+    print(f&quot;    S1={s[0]} 中途={s[1]} S3={s[2]} → 灯{'亮' if on else '灭'}&quot;)
+    assert on == bool(s[0] ^ s[1] ^ s[2])          # 灯 = 三只开关的异或：拨任何一只都翻转
+</code></pre>
+<p>运行结果：</p>
+<pre><code class="language-text">[A] 正确接法真值表（0/1 = 开关在出厂位置/被拨过）
+    S1=0 S2=0 → 灯灭
+    S1=0 S2=1 → 灯亮
+    S1=1 S2=0 → 灯亮
+    S1=1 S2=1 → 灯灭
+[B] 正确接法：拨一只开关灯就变的次数 = 8 / 8
+[C] 三种接错
+    正确接法：亮 2/4，拨开关有效 8/8，灯灭时灯头带电 0/4
+    跨线一端对调：亮 2/4，拨开关有效 8/8，灯灭时灯头带电 0/4
+    公共端接错：亮 1/4，拨开关有效 4/8，灯灭时灯头带电 0/4
+    开关接在零线：亮 2/4，拨开关有效 8/8，灯灭时灯头带电 2/4
+[D] 三地控制真值表
+    S1=0 中途=0 S3=0 → 灯灭
+    S1=0 中途=0 S3=1 → 灯亮
+    S1=0 中途=1 S3=0 → 灯亮
+    S1=0 中途=1 S3=1 → 灯灭
+    S1=1 中途=0 S3=0 → 灯亮
+    S1=1 中途=0 S3=1 → 灯灭
+    S1=1 中途=1 S3=0 → 灯灭
+    S1=1 中途=1 S3=1 → 灯亮
+</code></pre>
+<h2 id="四看结果">四、看结果</h2>
+<p>A 部分的真值表四行里，(0,1) 和 (1,0) 亮，(0,0) 和 (1,1) 灭，和第二步的异或一致。B 部分把它画成了图 27-p2-2：</p>
+<p><a class="img-link" href="img/27_p2_2_states.png"><img alt="四个方框代表四种开关状态，亮的两个填黄色、灭的两个填灰色；横向箭头表示拨 S1，竖向箭头表示拨 S2，每条箭头都连接一亮一灭两个状态" src="img/27_p2_2_states.png" loading="lazy" /></a></p>
+<p><em>图 27-p2-2　双控开关的状态图</em></p>
+<p>图 27-p2-2 里，四个方框是四种状态，箭头是&quot;拨一次开关&quot;。可以看到<strong>每一条箭头都是从黄框指向灰框，或者从灰框指向黄框</strong>，没有一条箭头连着两个同色的方框。这就是&quot;拨哪只都管用&quot;的图形说法，程序里的 8/8 也是这个意思：4 个状态，每个状态 2 只开关可拨，一共 8 种拨法，每一种都让灯变了。</p>
+<p>C 部分的结果画成了图 27-p2-3，每一行是一种接法，每一列是一种开关状态：</p>
+<p><a class="img-link" href="img/27_p2_3_mistakes.png"><img alt="四行四列的表格。正确接法和跨线一端对调都是两亮两灭；公共端接错只有一格亮；开关接在零线两亮两灭，但两个灭的格子用朱红色框出，标着灯头带电" src="img/27_p2_3_mistakes.png" loading="lazy" /></a></p>
+<p><em>图 27-p2-3　正确接法和三种接错在四种开关状态下的结果</em></p>
+<p>图 27-p2-3 的四行分别说明：</p>
+<ul>
+<li><strong>跨线一端对调</strong>（在 S2 那头把两根跨线互换）：亮灭的位置整体反过来了，但仍然两亮两灭，拨开关有效 8/8。也就是说功能没坏，只是&quot;出厂位置&quot;变成了灯亮。</li>
+<li><strong>公共端接错</strong>（S2 的公共端和一个触点接反）：四种状态只有一种亮，拨开关只有 4/8 有效。用户感觉是&quot;有时候拨了没反应&quot;。Samotech 的排障指南把&quot;火线或灯线没接在公共端上&quot;列为&quot;只有一只开关管用&quot;最常见的原因：开关背面三个端子长得差不多，没看清哪个是公共端就接了。</li>
+<li><strong>开关接在零线</strong>：亮灭和正确接法完全一样，8/8 有效，看起来没毛病。可是两个&quot;灭&quot;的格子被朱红色框出来了：灯灭时灯头仍然连着火线。这种错误<strong>只能用仪表查出来</strong>。</li>
+</ul>
+<p>三种接错在线路上各是什么样子，见图 27-p2-4（开关都画在出厂位置：S1 搭跨线 A，S2 搭跨线 B）。</p>
+<p><a class="img-link" href="img/27_p2_4_mistakes.png"><img alt="三种接错的原理图：（a）跨线 A、B 在 S2 端交叉对调；（b）S2 的公共端接了跨线 B，去灯的线接到了 S2 的下触点；（c）火线先进灯，两只开关串在零线一侧" src="img/27_p2_4_mistakes.png" loading="lazy" /></a></p>
+<p><em>图 27-p2-4　三种接错：（a）跨线一端对调　（b）公共端接错　（c）开关接在零线</em></p>
+<p>图 27-p2-4（a）中两根跨线在 S2 端交叉，出厂位置两把刀反而接到同一根线上，所以起始状态灯亮。（b）中去灯的线不在 S2 的公共端上，S2 的刀只在一个位置能把电送到灯，所以只剩一种组合亮。（c）中开关断的是零线，灯灭时灯的火线端仍然带电。</p>
+<h2 id="五渐隐例题">五、渐隐例题</h2>
+<p><strong>例 1（完整）</strong>：起始状态两只开关都在 0，灯灭。晚上回家，楼下拨了 S1；上楼后拨了 S2；半夜下楼喝水，在楼上拨了 S2；回来时在楼下又拨了 S1。每一步之后灯是什么状态？</p>
+<ul>
+<li>拨 S1： <span class="math math-inline">\(s_1 = 1\)</span> 、 <span class="math math-inline">\(s_2 = 0\)</span> ， <span class="math math-inline">\(1 \oplus 0 = 1\)</span> ，亮。</li>
+<li>拨 S2： <span class="math math-inline">\(s_1 = 1\)</span> 、 <span class="math math-inline">\(s_2 = 1\)</span> ， <span class="math math-inline">\(1 \oplus 1 = 0\)</span> ，灭。</li>
+<li>拨 S2： <span class="math math-inline">\(s_1 = 1\)</span> 、 <span class="math math-inline">\(s_2 = 0\)</span> ，亮。</li>
+<li>拨 S1： <span class="math math-inline">\(s_1 = 0\)</span> 、 <span class="math math-inline">\(s_2 = 0\)</span> ，灭。</li>
+<li>核对：一共拨了 4 次，偶数，最后是灭的，和第三步的结论一致。</li>
+</ul>
+<p><strong>例 2（填空）</strong>：起始状态灯灭。一天里 S1 被拨了 5 次，S2 被拨了 2 次。总次数是 <span class="math math-inline">\(\square\)</span> 次，是 <span class="math math-inline">\(\square\)</span> 数，所以灯 <span class="math math-inline">\(\square\)</span> 。此时 <span class="math math-inline">\(s_1 = \square\)</span> ， <span class="math math-inline">\(s_2 = \square\)</span> 。</p>
+<details><summary>答案</summary>
+<p>总次数 7 次，奇数，所以灯亮。S1 拨了奇数次， <span class="math math-inline">\(s_1 = 1\)</span> ；S2 拨了偶数次， <span class="math math-inline">\(s_2 = 0\)</span> ；代入 <span class="math math-inline">\(1 \oplus 0 = 1\)</span> ，同样是亮。</p>
+</details>
+<p><strong>例 3（变体迁移）</strong>：电工在 S2 那头把两根跨线接反了（图 27-p2-3 第二行）。起始状态两只开关都在 0。灯是亮还是灭？拨 S1 以后呢？这个错误需不需要返工？</p>
+<details><summary>答案</summary>
+<p>跨线对调后，两只开关在 0 时都接同一根跨线，所以起始状态灯亮；拨 S1 后两把刀分开，灯灭。灯变成 <span class="math math-inline">\(1 - (s_1 \oplus s_2)\)</span> ，也就是&quot;同或&quot;（&quot;两者相同&quot;时为 1，正好是异或反过来），拨任意一只仍然翻转。功能上不需要返工，只是开关面板&quot;按下去那头&quot;和灯的亮灭对应关系反过来了，很多人家里就是这样的。</p>
+</details>
+<h2 id="六低压动手实验">六、低压动手实验</h2>
+<blockquote class="alert alert-warning">
+<p><strong>市电危险</strong>：本电路的实际版本接 220V/380V 市电，触电可能致命。本页的仿真和动手实验只在 12V 以下的低压电源上进行；任何接线、改线都必须在断电并验电后操作，由持证电工完成。</p>
+<p>本节点特有的危险点：① 本实验只用 9 V 电池，<strong>不要</strong>拆墙上的开关来练手；② 墙上的开关即使&quot;看起来一样&quot;，里面接的是 220 V，本实验的任何结论都不能代替持证电工的验电。</p>
+</blockquote>
+<p>材料：两只小的单刀双掷拨动开关（三个引脚的那种）、9 V 电池、红色 LED 一只、1 kΩ 电阻一只、面包板、导线、万用表。</p>
+<p>第 4、5、6 步都要改线：每次改线前先取下 9 V 电池扣，改好、检查一遍再接回去，养成和真实市电&quot;先断电再动线&quot;一样的习惯。</p>
+<ol>
+<li>先找公共端：万用表打到通断档，把开关拨到一边，量三个引脚两两之间，记下哪一对相通；再拨到另一边量一次。两次都出现在相通那一对里的脚，就是公共端（通常是中间那个脚，但以实测为准）。</li>
+<li>接正确接法：9 V 正极 → S1 公共端；S1 两个触点分别用两根导线（跨线）接 S2 的两个触点；S2 公共端 → 1 kΩ → LED 长脚（正极），LED 短脚 → 9 V 负极。红色 LED 压降约 2 V（见 <a href="../03-semiconductor-basics/page1.html">03 半导体入门 · 直觉篇</a>），电流约 <span class="math math-inline">\((9 - 2) / 1\ \text{k}\Omega = 7\ \text{mA}\)</span> ，亮度足够。</li>
+<li>把四种开关组合都试一遍，应当两亮两灭，并且在任何状态下拨任意一只，LED 都会翻转。和图 27-p2-2 对照。</li>
+<li>复现接错 1：在 S2 那头把两根跨线对调。应当仍然两亮两灭，只是原来亮的组合变成灭。</li>
+<li>复现接错 2：把 S2 公共端上的线和 S2 某个触点上的线对调。应当只剩一种组合亮，和图 27-p2-3 第三行一致。</li>
+<li>复现接错 3（模拟&quot;开关接在零线&quot;）：改成 9 V 正极 → 1 kΩ → LED 长脚，LED 短脚 → S1 公共端，S2 公共端 → 9 V 负极。先拨到 LED 灭，再用万用表黑表笔接电池负极、红表笔接电阻和 LED 相接的那一点，读数应接近 9 V；换回第 2 步的正确接法，同样在 LED 灭时测这一点，读数应接近 0 V。这就是&quot;灯灭了灯头还带电&quot;的低压版本。</li>
+</ol>
+<p>第 2 步和第 6 步的接法以及红表笔的测量点画在图 27-p2-5 里。</p>
+<p><a class="img-link" href="img/27_p2_5_lab.png"><img alt="低压实验原理图：（a）9 V 正极接 S1 公共端，两根跨线接 S2，S2 公共端经 1 kΩ 和 LED 到 9 V 负极，测量点在电阻和 LED 之间；（b）9 V 正极先经 1 kΩ 和 LED 再到 S1 公共端，S2 公共端接 9 V 负极" src="img/27_p2_5_lab.png" loading="lazy" /></a></p>
+<p><em>图 27-p2-5　低压实验：（a）第 2 步正确接法　（b）第 6 步模拟开关接在零线</em></p>
+<p>图 27-p2-5（a）中 LED 灭时测量点只经 LED 连着负极，读数接近 0 V。（b）中测量点经 1 kΩ 一直连着正极，LED 灭时没有电流、电阻上没有压降，读数接近 9 V，对应&quot;灯灭了灯头还带电&quot;。</p>
+<p>以上读数是模型估算，未经实测，具体数值会因万用表内阻和 LED 而略有不同。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Wikipedia，Multiway switching（两地控制原理、四种组合中两种亮灯、开关只能断不接地导线）：<a href="https://en.wikipedia.org/wiki/Multiway_switching">https://en.wikipedia.org/wiki/Multiway_switching</a></li>
+<li>Samotech，How to wire a 2-way light switch (UK)（COM、L1、L2 的接法；&quot;只有一只开关管用&quot;最常见原因是火线或灯线没接在 COM 上）：<a href="https://www.samotech.co.uk/guides/wiring/how-to-wire-2-way-light-switch-uk/">https://www.samotech.co.uk/guides/wiring/how-to-wire-2-way-light-switch-uk/</a></li>
+<li>GB 50303-2015《建筑电气工程施工质量验收规范》第 20.1.4 条（相线应经开关控制）：<a href="https://gf.cabr-fire.com/article-19525.htm">https://gf.cabr-fire.com/article-19525.htm</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

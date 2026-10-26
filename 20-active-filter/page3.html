@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>20 有源滤波 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/20-active-filter/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="20-有源滤波--参数与调试篇">20 有源滤波 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：20 有源滤波 · 动手实验篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> · 后续：<a href="../24-oscillator/page1.html">24 振荡器 · 直觉篇</a></p>
+<h2 id="这一页解决什么问题">这一页解决什么问题</h2>
+<p>公式会算了，焊出来却&quot;不对劲&quot;：要么有用的信号也被削弱，要么噪声挡不干净，要么波形边沿出现小鼓包。这一页先看两张图——方波经过两种低通会怎样、算截止频率漏掉 <span class="math math-inline">\(2\pi\)</span> 会怎样——再讨论元件误差和取值，最后给出故障排查表和四道练习。</p>
+<h2 id="一方波看清一阶和二阶的性格">一、方波：看清&quot;一阶&quot;和&quot;二阶&quot;的性格</h2>
+<p>方波的边沿里含有很多高频成分，所以用低通处理方波，最能看出滤波器的&quot;性格&quot;。图 20-p3-1 把 0～1 V、500 Hz 的方波分别送进截止频率都约 1 kHz 的一阶低通和二阶 Sallen-Key 低通。</p>
+<p><a class="img-link" href="img/20_p3_1_square.png"><img alt="蓝色方波，红紫色点划线的一阶输出边沿是圆滑的指数曲线，橙色的二阶输出起步慢但更陡，顶部略微冲过 1 伏，标着 1.04 伏" src="img/20_p3_1_square.png" loading="lazy" /></a></p>
+<p><em>图 20-p3-1　500 Hz 方波经过一阶与二阶低通</em></p>
+<p>图 20-p3-1 中蓝色是输入方波 <span class="math math-inline">\(V_i\)</span> 。红紫色点划线（一阶）一开始爬得最快，越接近 1 V 越慢，是 01 里熟悉的 RC 充电曲线。橙色（二阶）起步稍晚，但中段更陡，并且冲到 1.04 V 后才回落，过冲约 4%。这是巴特沃斯（ <span class="math math-inline">\(Q\)</span> = 0.707）的正常表现： <span class="math math-inline">\(Q\)</span> 再大，鼓包会更高，还会来回振荡几下。所以<strong>处理数字脉冲、怕过冲的场合，二阶要选更小的 <span class="math math-inline">\(Q\)</span> （贝塞尔型）</strong>（贝塞尔型就是 <span class="math math-inline">\(Q\)</span> 比 0.707 再小一些的同一种电路，拐角更软，但过冲更小；电路结构不变，只是元件值不同，了解即可），SLOA049 表 10-1 给了对应元件值。</p>
+<h2 id="二最常见的错误算截止频率漏了-2π">二、最常见的错误：算截止频率漏了 2π</h2>
+<p>很多人记成&quot; <span class="math math-inline">\(f_c = 1/(RC)\)</span>&quot;。用 10 nF 电容设计 1 kHz 时，就会算出 <span class="math math-inline">\(R\)</span> = 1/(1000 × 10 nF) = 100 kΩ，比正确的 16 kΩ 大了约 6.3 倍（就是 <span class="math math-inline">\(2\pi\)</span> ）。结果见 图 20-p3-2。</p>
+<p><a class="img-link" href="img/20_p3_2_missing_2pi.png"><img alt="橙色正确曲线在 1 千赫处为负 3 分贝，朱红色带叉的错误曲线拐点在 159 赫兹，1 千赫处已经是负 16 分贝" src="img/20_p3_2_missing_2pi.png" loading="lazy" /></a></p>
+<p><em>图 20-p3-2　漏了 2π：截止频率低了约 6 倍</em></p>
+<p>图 20-p3-2 中橙色是正确设计，1 kHz 处 −3 dB。朱红色带 × 的是漏了 <span class="math math-inline">\(2\pi\)</span> 的设计：实际截止频率只有 <span class="math math-inline">\(1/(2\pi \times 100\ \text{k}\Omega \times 10\ \text{nF}) \approx 159\)</span> Hz（左边那条灰色点线），1 kHz 处已经是 −16 dB，约 0.16 倍。如果有用信号正好在几百赫兹，它会被当成噪声削掉。<strong>验算方法</strong>：算完马上把 <span class="math math-inline">\(R\)</span> 、 <span class="math math-inline">\(C\)</span> 代回 <span class="math math-inline">\(f_c = 1/(2\pi RC)\)</span> 看看是不是目标值。</p>
+<h2 id="三运放带宽也会偷偷当滤波器">三、运放带宽也会&quot;偷偷当滤波器&quot;</h2>
+<p><a href="../08-noninverting-amp/page3.html">08 同相放大 · 参数与调试篇</a> 讲过：运放的放大能力随频率下降，闭环带宽约等于增益带宽积 GBW 除以倍数。LM358B 的 GBW 约 1.2 MHz，跟随器（倍数 1）带宽约 1.2 MHz，做 1 kHz 滤波绰绰有余；但如果做 100 kHz 的滤波、再让它放大 10 倍，带宽只剩约 120 kHz，曲线会比设计提前往下掉。Microchip 的应用笔记 <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/adn003.pdf">ADN003</a> 给了一条好记的经验：Sallen-Key 选 GBW ≥ 100 × 倍数 × 截止频率，MFB 选 GBW ≥ 100 ×（倍数 + 1）× 截止频率。按它算，1 kHz 的跟随器型低通要 100 × 1 × 1 kHz = 100 kHz，LM358B 的 1.2 MHz 足够；100 kHz、10 倍的低通要 100 × 10 × 100 kHz = 100 MHz，是 LM358B 的约 83 倍，只能换高速运放或降低单级倍数。这个 100 倍是偏保守的余量：TI 的 <a href="https://www.ti.com/lit/pdf/sboa588">SBOA588</a> 说，常见设计工具推荐 100 倍；如果按运放的实际带宽修正电阻电容，余量可以小很多。但不修正时余量太小会出明显误差，它的例子里 GBW 只有滤波器带宽的 2.5 倍，误差约 17%。另外 TI 的 SLOA049 指出，多重反馈（MFB，另一种二阶结构：运放接成反相放大，两只电容分别接在反馈和对地位置；本教程不展开，了解即可）结构的高频特性比 Sallen-Key 好，对远高于截止频率的衰减要求严格时可以考虑它。</p>
+<h2 id="四元件误差与取值截止频率有多准">四、元件误差与取值：截止频率有多&quot;准&quot;</h2>
+<p><strong>意思</strong>： <span class="math math-inline">\(f_c = 1/(2\pi RC)\)</span> 里 <span class="math math-inline">\(R\)</span> 和 <span class="math math-inline">\(C\)</span> 是相乘的，所以哪一个偏大几个百分点，截止频率就大约偏小同样的百分点。</p>
+<p><strong>代数</strong>： <span class="math math-inline">\(R\)</span> = 16 kΩ 用了 5% 的电阻，偏大到 16.8 kΩ， <span class="math math-inline">\(f_c\)</span> 变成 995 ÷ 1.05 ≈ 948 Hz；电容偏小 10%（9 nF）， <span class="math math-inline">\(f_c\)</span> 变成 995 ÷ 0.9 ≈ 1105 Hz。两个误差碰巧同方向时会叠加。</p>
+<p>由此得到几条实用的取值原则：</p>
+<ol>
+<li><strong>电阻用 1% 的就够，误差主要来自电容</strong>。常用的 X7R 瓷片电容，按 <a href="https://media.digikey.com/pdf/Data%20Sheets/Kemet%20PDFs/X7R_Dielectric_Comm_Rev_2019.pdf">KEMET X7R 手册</a>，出厂误差有 ±5%、±10%、±20% 几挡，从 −55 °C 到 +125 °C 容量还会变 ±15%。KEMET 的<a href="https://content.kemet.com/datasheets/F3101_MIL-PRF-11015.pdf">另一份手册</a>还说，这类电容加上 5 V 以上的直流电压后容量会变小，放久了也会慢慢变小（老化）。同一份手册里的 C0G（也叫 NP0）电容，温度系数只有 0 ± 30 ppm/°C（温度变 100 °C 才变 0.3%），而且容量不随电压、频率和时间变化。所以 TI 的 <a href="https://www.ti.com/lit/an/sloa049b/sloa049b.pdf">SLOA049</a> 第 12 节建议：滤波器的电容用 C0G、误差 1%，电阻用 1% 的金属膜电阻。举个例子，Sallen-Key 的截止频率和 <span class="math math-inline">\(\sqrt{C_1 C_2}\)</span> 成反比，两只 X7R 电容如果都在低温端少了 15%，截止频率就高出约 18%。</li>
+<li><strong>电阻不要太小</strong>。第一个电阻和信号源内阻串联，信号源内阻相当于让 <span class="math math-inline">\(R\)</span> 变大；电阻取几千欧以上，几十欧的内阻影响就不到 1%。电阻太小，信号源还要提供更大的电流。</li>
+<li><strong>电阻也不要太大</strong>。几百千欧以上时，运放的输入偏置电流流过它会产生可观的直流误差，电阻本身的噪声也变大。先在几千欧到一百千欧里选电阻，再算电容，是常见的做法。</li>
+<li><strong>二阶对比例更敏感</strong>。Sallen-Key 的 <span class="math math-inline">\(Q\)</span> 取决于两个电容之比和两个电阻之比，比例一歪，拐角处就会&quot;鼓&quot;起来或&quot;塌&quot;下去（见下表第三行）。</li>
+</ol>
+<p><strong>滤波器只能挡&quot;频率不同&quot;的干扰</strong>。如果干扰和有用信号的频率差不多，例如 50 Hz 工频干扰叠在 50 Hz 附近的信号上，再好的低通也分不开它们；这时要靠 <a href="../16-differential-amp/page1.html">16 差分放大 · 直觉篇</a> 抵消两根线上相同的干扰，或者从源头屏蔽。</p>
+<h2 id="五故障排查表">五、故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>有用信号也被削弱，截止频率低了约 6 倍</td>
+<td>计算时漏了 <span class="math math-inline">\(2\pi\)</span></td>
+<td>扫频找 −3 dB 点；把 R、C 代回公式复算</td>
+<td>按 <span class="math math-inline">\(R = 1/(2\pi f_c C)\)</span> 重算</td>
+</tr>
+<tr>
+<td>截止频率偏了 10% 以上</td>
+<td>电容误差大或随温度变化</td>
+<td>用电容表量实际容量，对比标称值</td>
+<td>换精度高、温漂小的电容，如 C0G（NP0）、1%（SLOA049 的建议）</td>
+</tr>
+<tr>
+<td>二阶拐角变&quot;钝&quot;，1 kHz 处约 −13 dB</td>
+<td>Sallen-Key 两个电容接反， <span class="math math-inline">\(Q\)</span> 由 0.71 变成约 0.21</td>
+<td>对照原理图：接地的应是 10 nF，接输出的应是 33 nF</td>
+<td>按 <a href="page2.html">原理与实现篇</a> 的 Sallen-Key 电路改回</td>
+</tr>
+<tr>
+<td>高频端衰减不够，或比设计提前下降</td>
+<td>运放带宽不足（GBW/倍数 太小）</td>
+<td>示波器看高频处输出幅度和相位</td>
+<td>换 GBW 更大的运放，或降低单级倍数</td>
+</tr>
+<tr>
+<td>输出顶部或底部被削平</td>
+<td>超出运放输出摆幅，或单电源没有偏置</td>
+<td>看削平的电压是否接近电源轨</td>
+<td>减小输入或倍数；单电源时把信号偏置到中点（见 12）</td>
+</tr>
+<tr>
+<td>输出上有一个与输入无关的高频振荡</td>
+<td>运放直接驱动长电缆或大电容负载，出现自激（没有输入也自己振荡）</td>
+<td>断开负载看振荡是否消失</td>
+<td>在运放输出串一个小电阻再接负载（TI 的 TIDU032C 用 6.2 Ω 驱动 0.1 μF）</td>
+</tr>
+<tr>
+<td>50 Hz 干扰怎么也滤不掉</td>
+<td>干扰频率落在通带内，低通本来就放它过去</td>
+<td>对比干扰频率和截止频率</td>
+<td>用差分放大（16）抵消，或加屏蔽、改走线</td>
+</tr>
+<tr>
+<td>截止频率随温度漂移</td>
+<td>电容的容量随温度变化</td>
+<td>用热风轻吹电容，看 −3 dB 点是否移动</td>
+<td>换温度稳定的电容</td>
+</tr>
+<tr>
+<td>高通输出慢慢漂到电源一边</td>
+<td>同相端对地的电阻漏接，偏置电流无通路</td>
+<td>断开输入，量同相端直流电压</td>
+<td>补上接地电阻（<a href="page2.html">原理与实现篇</a> 例 3 高通中的 R）</td>
+</tr>
+</tbody>
+</table>
+<p>排查表第三行「两个电容接反」的样子见图 20-p3-3。</p>
+<p><a class="img-link" href="img/20_p3_3_sk_caps_swapped.png"><img alt="两个 Sallen-Key 低通并排：左边正确，接地的是 10 nF、接输出的是 33 nF；右边两个电容对调，接地的成了 33 nF、接输出的成了 10 nF" src="img/20_p3_3_sk_caps_swapped.png" loading="lazy" /></a></p>
+<p><em>图 20-p3-3　Sallen-Key 两个电容：（a）正确接法，（b）接反</em></p>
+<p>图 20-p3-3 两边的电阻、运放完全一样，只是朱红色的两个电容换了位置。 <span class="math math-inline">\(Q\)</span> 公式分母里是接地那只电容，它从 10 nF 变成 33 nF， <span class="math math-inline">\(Q\)</span> 就从 0.71 掉到约 0.21，拐角变「钝」。焊接时最容易在这里出错，可以先认准「接地的是小电容」。</p>
+<h2 id="六练习">六、练习</h2>
+<p><strong>练习 1（容易）</strong> 一阶低通用 <span class="math math-inline">\(R\)</span> = 10 kΩ、 <span class="math math-inline">\(C\)</span> = 100 nF，截止频率是多少？</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(f_c = 1/(2\pi \times 10000 \times 100 \times 10^{-9}) \approx 159\)</span> Hz。</p>
+</details>
+<p><strong>练习 2（中等）</strong> 用本节的两个 1 kHz 低通，计算 3 kHz 处的输出/输入幅度，各约多少分贝？哪一个对 3 kHz 的干扰更有效？</p>
+<details><summary>答案</summary>
+<p>一阶： <span class="math math-inline">\(1/\sqrt{1 + (3000/995)^2} \approx 0.31\)</span> ，约 −10 dB。</p>
+<p>二阶： <span class="math math-inline">\(f/f_0 \approx 3.02\)</span> ，分母第一项 <span class="math math-inline">\((1 - 9.1)^2 \approx 66\)</span> ，第二项 <span class="math math-inline">\((3.02/0.71)^2 \approx 18\)</span> ，开方约 9.2，幅度约 0.11，约 −19 dB。</p>
+<p>二阶更有效，同样 3 kHz 的干扰压得多约 3 倍。</p>
+</details>
+<p><strong>练习 3（提高）</strong> 有用信号 50 Hz，干扰 2 kHz，要求干扰压到原来的 1/20 以下。(1) 用一阶低通，截止频率最高能取多少？此时 50 Hz 的信号还剩多少？(2) 改用二阶巴特沃斯（ <span class="math math-inline">\(Q\)</span> = 0.707），截止频率又能取多少？50 Hz 剩多少？提示：巴特沃斯二阶的幅度可以化简为 <span class="math math-inline">\(1/\sqrt{1 + (f/f_0)^4}\)</span> 。</p>
+<details><summary>答案</summary>
+<p>(1) 要 <span class="math math-inline">\(1/\sqrt{1 + (2000/f_c)^2} \le 0.05\)</span> ，即 <span class="math math-inline">\(1 + (2000/f_c)^2 \ge 400\)</span> ， <span class="math math-inline">\(2000/f_c \ge \sqrt{399} \approx 20\)</span> ， <span class="math math-inline">\(f_c\)</span> 最高约 100 Hz。这时 50 Hz 处 <span class="math math-inline">\(1/\sqrt{1 + 0.25} \approx 0.89\)</span> ，有用信号也被削掉约 11%。</p>
+<p>(2) 要 <span class="math math-inline">\((2000/f_0)^4 \ge 399\)</span> ， <span class="math math-inline">\(2000/f_0 \ge 4.47\)</span> ， <span class="math math-inline">\(f_0\)</span> 最高约 447 Hz。50 Hz 处 <span class="math math-inline">\((50/447)^4 \approx 0.00016\)</span> ，幅度约 0.9999，几乎不受影响。这就是二阶的好处：衰减更陡，截止频率可以离有用信号远一些。</p>
+</details>
+<p><strong>练习 4（变体迁移）</strong> 传感器信号 <span class="math math-inline">\(V_i\)</span> 很小，而且有缓慢的直流漂移。请设计一个一阶有源<strong>高通</strong>：截止频率约 100 Hz，通带内放大 2 倍。画出电路思路并给出元件值。</p>
+<details><summary>答案</summary>
+<p>沿用 <a href="page2.html">原理与实现篇</a> 例 3 的高通：电容 <span class="math math-inline">\(C\)</span> = 100 nF 串在路上， <span class="math math-inline">\(R\)</span> = 15.9 kΩ 接地，得到 <span class="math math-inline">\(f_c \approx 100\)</span> Hz。</p>
+<p>把跟随器换成 <a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>：倍数 <span class="math math-inline">\(1 + R_f/R_1 = 2\)</span> ，取 <span class="math math-inline">\(R_f = R_1\)</span> = 10 kΩ。</p>
+<p>通带内（远高于 100 Hz）输出约是输入的 2 倍；100 Hz 处约 2 × 0.707 ≈ 1.41 倍；直流漂移被电容挡住。注意 15.9 kΩ 接地电阻不能省，它给同相端提供直流通路。</p>
+<p>电路见图 20-p3-4。</p>
+<p><a class="img-link" href="img/20_p3_4_highpass_gain2.png"><img alt="一阶有源高通加 2 倍同相放大：Vi 经 100 nF 电容 C 到同相端，同相端经 15.9 kΩ 电阻 R 接地；反相端经 R1 10 kΩ 接地，Rf 10 kΩ 跨在反相端和输出之间" src="img/20_p3_4_highpass_gain2.png" loading="lazy" /></a></p>
+<p><em>图 20-p3-4　练习 4 答案：一阶高通后接 2 倍同相放大</em></p>
+<p>图 20-p3-4 左半边就是原理与实现篇例 3 的高通，朱红色的 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_f\)</span> 把跟随器改成了同相放大：反相端经 <span class="math math-inline">\(R_1\)</span> 接地， <span class="math math-inline">\(R_f\)</span> 跨在反相端和输出之间。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<p><strong>方波最能看出滤波器的性格：一阶圆滑无过冲，二阶巴特沃斯更陡但有约 4% 过冲；算截止频率千万别漏 <span class="math math-inline">\(2\pi\)</span> ；截止频率的误差主要来自电容，R、C 各偏几个百分点，截止频率就偏几个百分点；运放带宽不够时，它自己也会变成一个滤波器</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

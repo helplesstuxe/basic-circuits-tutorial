@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>16 差分放大 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/16-differential-amp/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="16-差分放大--参数与调试篇">16 差分放大 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../05-inverting-amp/page1.html">05 反相放大 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a></p>
+<h2 id="这一页解决什么问题">这一页解决什么问题</h2>
+<p>差分放大搭出来&quot;能用&quot;很容易，&quot;抗干扰抗得好&quot;却很难。衡量抗干扰能力有一个专门的指标，叫<strong>共模抑制比</strong>。这一页先说清楚它是什么，再看两件最容易把它搞坏的事：<strong>电阻误差</strong>和<strong>信号源内阻</strong>。再讨论电阻取多大，最后是故障表和四道练习。</p>
+<h2 id="一共模抑制比差分倍数是共模倍数的多少倍">一、共模抑制比：差分倍数是共模倍数的多少倍</h2>
+<p>差分倍数 <span class="math math-inline">\(A_d\)</span> （d 指 difference，差）是&quot;差值放大多少倍&quot;，理想时等于 <span class="math math-inline">\(R_2/R_1\)</span> ；共模倍数 <span class="math math-inline">\(A_{cm}\)</span> （cm 指 common mode，共模）是&quot;两根线上一样的部分放大多少倍&quot;，理想时为 0。两者之比就是共模抑制比，工程上用分贝（dB）表示：</p>
+<div class="math math-display">\[\mathrm{CMRR} = 20 \lg \frac{A_d}{A_{cm}}\]</div>
+<p>式中 lg 就是以 10 为底的对数。为什么乘 20 而不是 10？分贝本来是为功率比定的（10 lg 功率比），而功率和电压的平方成正比，lg 电压² = 2 lg 电压，所以电压比要用 20 lg。分贝只是把&quot;倍数&quot;换个说法：每 20 dB 等于 10 倍，60 dB 就是 1000 倍，80 dB 是 10000 倍。代数：<a href="page2.html">16 差分放大 · 原理与实现篇</a> 的仿真里 <span class="math math-inline">\(A_d\)</span> = 10、 <span class="math math-inline">\(A_{cm}\)</span> ≈ 0.009，比值约 1100 倍，约 61 dB。意思是：同样大小的共模干扰和差分信号，干扰在输出端只有信号的约千分之一。</p>
+<h2 id="二电阻误差比例一歪抑制比就掉">二、电阻误差：比例一歪，抑制比就掉</h2>
+<p>普通电阻有 1%、0.1% 等误差等级。看 图 16-p3-1，差分倍数仍是 10。</p>
+<p><a class="img-link" href="img/16_p3_1_cmrr_tolerance.png"><img alt="横轴电阻误差 0.01% 到 5%；红紫色点划线只有 R4 偏差，0.1% 时 81 分贝、1% 时 61 分贝；朱红色带叉的四只电阻最坏情况，0.1% 时 69 分贝、1% 时 49 分贝" src="img/16_p3_1_cmrr_tolerance.png" loading="lazy" /></a></p>
+<p><em>图 16-p3-1　电阻误差与共模抑制比</em></p>
+<p>图 16-p3-1 中，红紫色点划线是只有一只电阻偏差的情况：误差 0.1% 时约 81 dB，1% 时约 61 dB。朱红色带 × 的线是更现实的最坏情况：四只电阻各偏 ε，而且偏的方向正好&quot;凑到一起&quot;，1% 时只剩约 49 dB，0.1% 时约 69 dB。&quot;凑到一起&quot;具体是： <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_4\)</span> 偏大， <span class="math math-inline">\(R_2\)</span> 、 <span class="math math-inline">\(R_3\)</span> 偏小（或者全部反过来）。这样 <span class="math math-inline">\(V_1\)</span> 一路的倍数 <span class="math math-inline">\(R_2/R_1\)</span> 变小，而 <span class="math math-inline">\(V_2\)</span> 一路的分压 <span class="math math-inline">\(R_4/(R_3+R_4)\)</span> 变大，两边的误差朝相反方向走，相减时不能互相抵消。code/figs/16_figs.py 算出的最坏值和估算式 <span class="math math-inline">\((1+k)/(4\varepsilon)\)</span> 一致（ <span class="math math-inline">\(k = R_2/R_1\)</span> 是倍数， <span class="math math-inline">\(\varepsilon\)</span> 是电阻误差；这里直接用结论，推导要把四个误差都展开，不再列出）：倍数 10、误差 1% 时，11 ÷ 0.04 = 275 倍，约 49 dB。两条线都是斜直线：<strong>误差每大 10 倍，抑制比少 20 dB</strong>。TI 的差分放大电路手册（倍数为 1 的例子）给出的数也是同一个规律：1% 电阻最坏约 34 dB、0.1% 约 54 dB。它比本节低 15 dB，是因为倍数不同：代入估算式，倍数 1 时是 2 ÷ 0.04 = 50 倍，约 34 dB。<strong>倍数越大，同样的电阻误差下抑制比越高</strong>。所以要高抑制比，必须用 0.1% 甚至 0.01% 的电阻，或直接用内部电阻激光修调过的差分放大器芯片。</p>
+<h2 id="三信号源内阻外面的电阻也算进比例里">三、信号源内阻：外面的电阻也算进比例里</h2>
+<p>传感器或导线自身有电阻 <span class="math math-inline">\(R_s\)</span> ，它和 <span class="math math-inline">\(R_1\)</span> 串联，等效于 <span class="math math-inline">\(R_1\)</span> 变成了 <span class="math math-inline">\(R_1 + R_s\)</span> ，比例就歪了。接法见 图 16-p3-3：内阻 <span class="math math-inline">\(R_s\)</span> 夹在 <span class="math math-inline">\(V_1\)</span> 和 <span class="math math-inline">\(R_1\)</span> 之间，对运放来说，上面一路的输入电阻变成了 <span class="math math-inline">\(R_1 + R_s\)</span> ，而下面一路 <span class="math math-inline">\(R_3\)</span> 、 <span class="math math-inline">\(R_4\)</span> 不变。</p>
+<p><a class="img-link" href="img/16_p3_3_rs_circuit.png"><img alt="四电阻差分放大，V1 先经过一只红紫色的信号源内阻 Rs，再经 10 千欧 R1 进反相端；R2 100 千欧从输出接回反相端；V2 经 10 千欧 R3 进同相端，R4 100 千欧接地" src="img/16_p3_3_rs_circuit.png" loading="lazy" /></a></p>
+<p><em>图 16-p3-3　只有 V1 一侧带信号源内阻的差分放大</em></p>
+<p>图 16-p3-3 中两路电阻不再对称，下面看它对抑制比的影响。看 图 16-p3-2，假设只有 <span class="math math-inline">\(V_1\)</span> 一侧有内阻。</p>
+<p><a class="img-link" href="img/16_p3_2_source_resistance.png"><img alt="横轴信号源内阻 1 欧到 10 千欧；朱红色带叉的曲线从 100 分贝左右一直下降，100 欧时 61 分贝，1 千欧时 41 分贝；灰色点线标 61 分贝" src="img/16_p3_2_source_resistance.png" loading="lazy" /></a></p>
+<p><em>图 16-p3-2　信号源内阻对共模抑制比的影响</em></p>
+<p>图 16-p3-2 中，内阻只有 100 Ω 时，抑制比就掉到约 61 dB，和&quot;1% 电阻偏一只&quot;（灰色点线）一样糟；内阻到 1 kΩ 时只剩约 41 dB，差分倍数也从 10 变成 9.13。这里要说明一下：电阻不再对称时， <span class="math math-inline">\(V_1\)</span> 一路和 <span class="math math-inline">\(V_2\)</span> 一路的倍数不再相等，这时约定<strong>差分倍数取两路倍数的平均，共模倍数取两路倍数的差</strong>（两根线上一样的部分，正好被&quot;两路之差&quot;放大）。原因很直接：100 Ω 正好是 10 kΩ 的 1%。对策是让信号先过跟随器再进差分放大，也就是 <a href="page2.html">16 差分放大 · 原理与实现篇</a> 例 3 的仪表放大器；或者把四只电阻都选大一些，使内阻相对可以忽略。</p>
+<h2 id="四电阻取多大不是越大越好也不是越小越好">四、电阻取多大：不是越大越好，也不是越小越好</h2>
+<p>倍数只由比例决定，10 kΩ/100 kΩ 和 1 kΩ/10 kΩ 都是 10 倍，那该选哪一组？要在三件事之间权衡：</p>
+<ol>
+<li><strong>太小：吃信号源的电流，也吃运放的电流</strong>。差分放大的输入电阻大约就是 <span class="math math-inline">\(R_1\)</span> （以及 <span class="math math-inline">\(R_3 + R_4\)</span> ）。 <span class="math math-inline">\(R_1\)</span> 取 1 kΩ 时，上一节 100 Ω 的内阻就占了 10%，比例歪得更厉害；同时输出要驱动 <span class="math math-inline">\(R_2\)</span> ，电阻小了运放也更累。</li>
+<li><strong>太大：怕运放的输入电流和外界干扰</strong>。运放输入端其实有极小的偏置电流，流过几百千欧的电阻会产生毫伏级的误差电压；大电阻对附近导线&quot;感应&quot;来的干扰也更敏感。</li>
+<li><strong>折中</strong>：低频、普通精度的场合，四只电阻在几千欧到一百千欧之间比较常见。本节一直用 10 kΩ/100 kΩ 就是这个道理。</li>
+</ol>
+<p>还有一个<strong>共模范围</strong>的问题：同相端电压 = <span class="math math-inline">\(V_2 \times R_4/(R_3 + R_4)\)</span> ，倍数越大，这个比例越接近 1，同相端几乎等于输入的共模电压。所以差分放大能接受多大的共模电压，主要由运放的共模输入范围决定。若共模电压超过运放电源，常见的做法是先用大电阻把两个输入一起衰减（例如倍数小于 1 的差分接法），再放大，或者直接选允许高共模电压的专用芯片。</p>
+<h2 id="五故障排查表">五、故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出里有明显的 50 Hz 波纹</td>
+<td>电阻比例不匹配，共模干扰漏进来</td>
+<td>两输入端短接后接同一个干扰源，看输出是否为 0</td>
+<td>换 0.1% 电阻或集成差分放大器</td>
+</tr>
+<tr>
+<td>倍数比计算值小</td>
+<td>信号源内阻与 <span class="math math-inline">\(R_1\)</span> 或 <span class="math math-inline">\(R_3\)</span> 串联</td>
+<td>量信号源内阻，与输入电阻比较</td>
+<td>前面加跟随器，或改用仪表放大器</td>
+</tr>
+<tr>
+<td>输入为 0 时输出有固定偏移</td>
+<td>两组比例不同，加上直流共模电压</td>
+<td>把两个输入同时接同一直流电压，看输出</td>
+<td>调整电阻比例，或用可调电阻微调</td>
+</tr>
+<tr>
+<td>输出削顶或不随输入变化</td>
+<td>同相端共模电压超出运放共模范围</td>
+<td>量同相端电压，对照手册共模范围</td>
+<td>降低共模电压，增大分压比，或提高电源</td>
+</tr>
+<tr>
+<td>一根输入线断开后输出顶到电源</td>
+<td>断开的一侧悬空，运放输入端失去确定电压</td>
+<td>逐根量两个输入端对地电压</td>
+<td>检查接插件；输入端各加一个大电阻到地或到中点，给出确定电压</td>
+</tr>
+<tr>
+<td>输出夹杂着高频噪声</td>
+<td>电阻取得过大，或输入线太长没有屏蔽</td>
+<td>把输入线缩短或换屏蔽线，看噪声是否减小</td>
+<td>电阻改到几千欧到一百千欧；用双绞线（两根线拧在一起，两根收到的干扰几乎一样，正好被差分放大减掉）或屏蔽线（外面包一层接地的金属网，把干扰挡在外面）传送两根信号</td>
+</tr>
+<tr>
+<td>输出符号反了</td>
+<td><span class="math math-inline">\(V_1\)</span> 、 <span class="math math-inline">\(V_2\)</span> 接反</td>
+<td>只给 <span class="math math-inline">\(V_2\)</span> 加正电压，看输出是否为正</td>
+<td>交换两根输入线</td>
+</tr>
+</tbody>
+</table>
+<h2 id="六练习">六、练习</h2>
+<p><strong>练习 1（基础）</strong>：四只电阻 <span class="math math-inline">\(R_1 = R_3\)</span> = 5 kΩ、 <span class="math math-inline">\(R_2 = R_4\)</span> = 50 kΩ， <span class="math math-inline">\(V_2\)</span> = 0.82 V、 <span class="math math-inline">\(V_1\)</span> = 0.80 V，输出多少？</p>
+<details><summary>答案</summary>
+<p>比例相同，倍数 50/5 = 10， <span class="math math-inline">\(V_o\)</span> = 10 × (0.82 − 0.80) = 0.2 V。</p>
+</details>
+<p><strong>练习 2（进阶）</strong>：差分倍数 10，共模抑制比 60 dB。输入里有 1 V 的共模干扰，输出端会残留多大的干扰？若想让残留降到 1 mV，抑制比至少要多少？</p>
+<details><summary>答案</summary>
+<p>60 dB 即 <span class="math math-inline">\(A_d/A_{cm}\)</span> = 1000， <span class="math math-inline">\(A_{cm}\)</span> = 10 ÷ 1000 = 0.01，残留 1 V × 0.01 = 10 mV。要降到 1 mV， <span class="math math-inline">\(A_{cm}\)</span> 需为 0.001，比值 10000，即 80 dB。</p>
+</details>
+<p><strong>练习 3（提高）</strong>：<a href="page2.html">16 差分放大 · 原理与实现篇</a> 仿真的差分放大（ <span class="math math-inline">\(R_1 = R_3\)</span> = 10 kΩ、 <span class="math math-inline">\(R_2 = R_4\)</span> = 100 kΩ），信号源 <span class="math math-inline">\(V_1\)</span> 一侧有 200 Ω 内阻，两根线上的共模干扰为 2 V。求此时的差分倍数大约是多少，以及输出端残留的共模干扰有多大。</p>
+<details><summary>答案</summary>
+<p>内阻与 <span class="math math-inline">\(R_1\)</span> 串联，等效 <span class="math math-inline">\(R_1'\)</span> = 10.2 kΩ。 <span class="math math-inline">\(V_1\)</span> 一路的倍数是 100/10.2 ≈ 9.80； <span class="math math-inline">\(V_2\)</span> 一路的倍数是 100/110 × (1 + 9.80) ≈ 9.82。按第三节的约定，差分倍数取两者的平均，约 9.81（比设计的 10 少了约 2%）。共模倍数 = 9.82 − 9.80 ≈ 0.018，2 V 共模在输出端残留约 2 × 0.018 ≈ 36 mV，比&quot;一只电阻偏 1%&quot;时的 18 mV 还大一倍，因为 200 Ω 相当于 <span class="math math-inline">\(R_1\)</span> 偏了 2%。</p>
+</details>
+<p><strong>练习 4（变体迁移）</strong>：用一只 0.1 Ω 的采样电阻测电机电流，电阻两端对地电压约 12 V（共模），电流 2 A 时两端差 0.2 V。要求输出 2 V，并能接到单片机。请选差分放大的电阻，并说明共模电压对运放有什么要求、电阻误差有什么要求。</p>
+<p>电路接法如 图 16-p3-4：12 V 电源正极经采样电阻接电机，采样电阻靠电源的一端接 <span class="math math-inline">\(V_2\)</span> 一路（ <span class="math math-inline">\(R_3\)</span> ），靠电机的一端接 <span class="math math-inline">\(V_1\)</span> 一路（ <span class="math math-inline">\(R_1\)</span> ），这样电流越大输出越正；四只电阻的阻值留给你选。</p>
+<p><a class="img-link" href="img/16_p3_4_shunt_exercise.png"><img alt="12 伏电源正极接一只红紫色的 0.1 欧采样电阻下端，电阻上端接电机，电机另一端接地；采样电阻下端经 R3 接运放同相端，R4 接地；上端经 R1 接反相端，R2 从输出接回反相端，输出去单片机" src="img/16_p3_4_shunt_exercise.png" loading="lazy" /></a></p>
+<p><em>图 16-p3-4　练习 4 的电流检测接法（电阻值待选）</em></p>
+<p>图 16-p3-4 中采样电阻两端对地都约 12 V，两端之间只差 0.2 V。</p>
+<details><summary>答案</summary>
+<p>倍数 2 ÷ 0.2 = 10，可取 <span class="math math-inline">\(R_1 = R_3\)</span> = 10 kΩ、 <span class="math math-inline">\(R_2 = R_4\)</span> = 100 kΩ。同相端电压约 12 × 100/110 ≈ 10.9 V，运放的共模输入范围要能覆盖它（例如用更高电源，或者把四只电阻改成先衰减共模的接法、选专用电流检测放大器）。共模 12 V 远大于差分信号 0.2 V，按 1% 电阻最坏约 49 dB（约 280 倍）算，12 V 的共模在输出端会残留约 12 × 10 ÷ 280 ≈ 0.43 V，误差太大，所以至少要 0.1% 电阻（约 69 dB，约 2800 倍，残留约 0.04 V；再算上运放自身的共模抑制比，TI 官方模型 SPICE 仿真实际约 0.05 V），或用集成的电流检测放大器。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<p><strong>共模抑制比衡量差分放大抗干扰的能力，每 20 dB 是 10 倍。电阻误差每大 10 倍，抑制比少 20 dB；信号源内阻也会混进比例。高抑制比要靠精密电阻、集成芯片或仪表放大器</strong>。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

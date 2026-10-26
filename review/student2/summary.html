@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>模拟学生 2 汇总（节点 13–26）</title>
+<title>模拟学生 2 汇总（节点 04、06、07、10、11、15、18、20、23、24、26–29）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,8 +42,8 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/student2/summary.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="模拟学生-2-汇总节点-1326">模拟学生 2 汇总（节点 13–26）</h1>
-<p>阅读顺序按 notes/00-design.md 的依赖边做拓扑排序：17 → 21 → 22 → 14 → 18 → 19 → 13 → 15 → 23 → 16 → 25 → 20 → 24 → 26。</p>
+<h1 id="模拟学生-2-汇总节点-040607101115182023242629">模拟学生 2 汇总（节点 04、06、07、10、11、15、18、20、23、24、26–29）</h1>
+<p>阅读顺序按 notes/00-design.md 的依赖边做拓扑排序：04 → 06 → 07 → 10 → 11 → 15 → 18 → 20 → 23 → 24 → 26 → 27 → 28 → 29。</p>
 <table>
 <thead>
 <tr>
@@ -58,7 +58,7 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>17</td>
+<td>04</td>
 <td>0</td>
 <td>0</td>
 <td>6</td>
@@ -67,7 +67,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>21</td>
+<td>06</td>
 <td>0</td>
 <td>2</td>
 <td>7</td>
@@ -76,7 +76,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>22</td>
+<td>07</td>
 <td>1</td>
 <td>1</td>
 <td>5</td>
@@ -85,7 +85,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>14</td>
+<td>10</td>
 <td>0</td>
 <td>1</td>
 <td>5</td>
@@ -94,7 +94,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>18</td>
+<td>11</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -103,7 +103,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>19</td>
+<td>15</td>
 <td>0</td>
 <td>2</td>
 <td>4</td>
@@ -112,7 +112,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>13</td>
+<td>18</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -121,7 +121,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>15</td>
+<td>20</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -139,7 +139,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>16</td>
+<td>24</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -148,7 +148,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>25</td>
+<td>26</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -157,7 +157,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>20</td>
+<td>27</td>
 <td>0</td>
 <td>0</td>
 <td>5</td>
@@ -166,7 +166,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>24</td>
+<td>28</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -175,7 +175,7 @@ mjx-container{max-width:100%}
 <td>PASS</td>
 </tr>
 <tr>
-<td>26</td>
+<td>29</td>
 <td>0</td>
 <td>1</td>
 <td>4</td>
@@ -197,20 +197,20 @@ mjx-container{max-width:100%}
 <p>说明：</p>
 <ul>
 <li><strong>PASS*</strong>：把代码块单独复制出来运行，会报 <code>ModuleNotFoundError: figstyle</code>；放在 code/ 目录下运行，或设置了 PYTHONPATH，就能通过。</li>
-<li><strong>14 FAIL</strong>：按页面原样运行会失败，详见 <a href="http://14.md">14.md</a>。</li>
-<li><strong>中文方框</strong>：21、25、26 的代码块没有设置中文字体，生成的图里中文显示为方框，已计入小问题。</li>
+<li><strong>14 FAIL</strong>：按页面原样运行会失败，详见 <a href="http://10.md">10.md</a>。</li>
+<li><strong>中文方框</strong>：06、26、29 的代码块没有设置中文字体，生成的图里中文显示为方框，已计入小问题。</li>
 <li><strong>NN_sim.py</strong>：全部以退出码 0 结束，重新生成的图与仓库中的逐字节相同。所有运行都在 /tmp 的副本里进行，没有改动仓库。</li>
 <li><strong>其他共性问题</strong>：
 <ul>
-<li>13 先用了&quot;容抗&quot;，15 才定义 X_C。</li>
-<li>24、26 页首的前置链接指向 page1，但正文引用的内容在 page2。</li>
-<li>26 的正文说 26_sim.py 里有电平转换模型，运行后却没有相应的输出。</li>
+<li>18 先用了&quot;容抗&quot;，20 才定义 X_C。</li>
+<li>28、26 页首的前置链接指向 page1，但正文引用的内容在 page2。</li>
+<li>29 的正文说 29_sim.py 里有电平转换模型，运行后却没有相应的输出。</li>
 </ul>
 </li>
-<li><strong>市电安全（20、24）</strong>：警示是有效的。
+<li><strong>市电安全（27、28）</strong>：警示是有效的。
 <ul>
-<li>20：排查表中&quot;翻转安装&quot;&quot;先换灯&quot;两格读起来像可以自己动手，建议补上&quot;先断电 / 请电工&quot;。</li>
-<li>24：建议明确推荐成品的封闭式认证适配器，不要自己去接变压器的一次侧。</li>
+<li>27：排查表中&quot;翻转安装&quot;&quot;先换灯&quot;两格读起来像可以自己动手，建议补上&quot;先断电 / 请电工&quot;。</li>
+<li>28：建议明确推荐成品的封闭式认证适配器，不要自己去接变压器的一次侧。</li>
 </ul>
 </li>
 </ul>

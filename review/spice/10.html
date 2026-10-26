@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>10 稳压管稳压：SPICE 复核报告</title>
+<title>10 电压比较器 — ngspice 核对报告（审阅人 B）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -37,114 +37,79 @@ mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;p
 mjx-container{max-width:100%}
 .footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
 </style>
-<script>
-window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
-packages:{'[+]':['ams']}},
-options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
-chtml:{matchFontHeight:false},startup:{typeset:true}};
-</script>
-<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+
 </head>
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/10.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="10-稳压管稳压spice-复核报告">10 稳压管稳压：SPICE 复核报告</h1>
-<ul>
-<li><strong>工具</strong>：ngspice 44.2，batch 模式，<code>spice/10/.spiceinit</code> 设为 psa。</li>
-<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/10/run.py</code>，退出码 0，已实际运行，共 59 项。</li>
-<li><strong>强电</strong>：本节所有页面（包括动手实验）都只用 10–14 V（例 2、练习 4 用 18–30 V）的实验电源，没有市电部分，所以全部按页面电路仿真。</li>
-</ul>
-<h2 id="网表spice10">网表（spice/10/）</h2>
-<table>
-<thead>
-<tr>
-<th>网表</th>
-<th>内容</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td><code>dc_main.cir</code></td>
-<td>图 10-p1-1 主电路：R 180 Ω + 1N4733A。包括图 10-p1-2 输入扫描（RL 255 Ω）、page1 §四的效率、图 10-p2-1 负载扫描（10 V，电流源 0→40 mA）、例 1 / 下限核对（14 V 空载）、图 10-p3-1 的 R 扫描、page3 §4 动手实验第 1～3 步、练习 1 和练习 2</td>
-</tr>
-<tr>
-<td><code>t_rip12.cir</code></td>
-<td>图 10-p1-3：平均 12 V、1 V 峰峰的 100 Hz 锯齿，RL 255 Ω</td>
-</tr>
-<tr>
-<td><code>t_low180.cir</code> / <code>t_low270.cir</code></td>
-<td>图 10-p3-2：输入 10–11 V 锯齿，负载 20 mA，R 分别取 180 Ω 和 270 Ω</td>
-</tr>
-<tr>
-<td><code>dc_fol.cir</code></td>
-<td>图 10-p2-2 / 图 10-p2-3：稳压管加 2N3904 射极跟随器，负载 0→100 mA；另算 12 V、100 mA 时的管耗</td>
-</tr>
-<tr>
-<td><code>dc_ex2.cir</code></td>
-<td>例 2：1N4742A、390 Ω、24 V，空载</td>
-</tr>
-<tr>
-<td><code>dc_ex3.cir</code></td>
-<td>例 3：560 Ω、1N4733A 加功率管跟随器，14 V，负载 0 / 200 mA；另算 10 V、200 mA</td>
-</tr>
-<tr>
-<td><code>t_p4_390.cir</code> / <code>t_p4_910.cir</code></td>
-<td>练习 4：1N4742A，RL 1.2 kΩ，1 V 纹波，R 分别取 390 Ω 和 910 Ω</td>
-</tr>
-</tbody>
-</table>
-<h2 id="模型与来源">模型与来源</h2>
+<h1 id="10-电压比较器--ngspice-核对报告审阅人-b">10 电压比较器 — ngspice 核对报告（审阅人 B）</h1>
+<p>运行：在仓库根目录 <code>/workspace/circuits-venv/bin/python spice/10/run.py</code>（退出码 0；结果写入 <code>spice/10/results.json</code>）。</p>
+<h2 id="使用的模型">使用的模型</h2>
 <table>
 <thead>
 <tr>
 <th>器件</th>
-<th>模型文件</th>
+<th>文件</th>
 <th>来源</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>1N4733A（5.1 V）</td>
-<td>spice/models/1N47xxA_diodes_zener.lib，子电路 <code>DI_1N4733A</code>（复用）</td>
-<td>Diodes Inc. 厂商模型，收录在 LTspice Vendor List：<a href="https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt">https://ltwiki.org/files/LTspiceIV/Vendor List/Diodes Incorporated/Spice/spicemodels_zener_diodes.txt</a></td>
+<td>LM393（页面指定）</td>
+<td><code>spice/models/LM393A.lib</code>（子电路 <code>LM393A</code>：1 +in, 2 −in, 3 V+, 4 V−, 5 开集电极输出）</td>
+<td>TI 官方 PSpice 宏模型 SLCJ017，<a href="https://www.ti.com/lit/zip/slcj017">https://www.ti.com/lit/zip/slcj017</a> （LM393A 产品页 <a href="https://www.ti.com/product/LM393A">https://www.ti.com/product/LM393A</a> ）</td>
 </tr>
 <tr>
-<td>1N4742A（12 V）</td>
-<td>同一文件，子电路 <code>DI_1N4742A</code>（复用，已确认存在）</td>
-<td>同上</td>
-</tr>
-<tr>
-<td>2N3904</td>
-<td>spice/models/2N3904_onsemi.lib（复用）</td>
-<td>onsemi：<a href="https://www.onsemi.com/pub/Collateral/2N3904.LIB">https://www.onsemi.com/pub/Collateral/2N3904.LIB</a></td>
-</tr>
-<tr>
-<td>例 3 的“NPN 功率三极管”</td>
-<td><strong>替代</strong>：spice/models/TIP31C_onsemi.lib（复用）</td>
-<td>onsemi：<a href="https://www.onsemi.com/pub/Collateral/TIP31C.LIB">https://www.onsemi.com/pub/Collateral/TIP31C.LIB</a> 。页面没有给型号，只说“β 按 60 估算”，所以用 TIP31C 代表。</td>
+<td>电阻、电容、电压源</td>
+<td>ngspice 内置</td>
+<td>—</td>
 </tr>
 </tbody>
 </table>
-<p><strong>要先说清楚的一点</strong>：页面用的线性模型是 V_Z0 = 4.757 V、r_Z = 7 Ω。这个 7 Ω 是手册在 49 mA 测试电流下给的<strong>最大值</strong>。Diodes 模型的击穿支路是 IS 16.2 fA、N 1.87、RS 0.296 Ω，换算成动态电阻：9 mA 时约 5.7 Ω，20～30 mA 时约 2～3 Ω，49 mA 时约 1.3 Ω。所以凡是由 r_Z 决定的量（线性调整率、纹波、负载调整），SPICE 都只有页面的 1/2 到 1/5。</p>
-<p>这类偏差按“页面估计偏保守”评为 ⚠️，不评 ❌，理由有两条：</p>
-<ul>
-<li>方向没有错，页面按手册最大值估算，是合理的最坏情况；</li>
-<li>真实的 5.1 V 稳压管拐点比这个指数模型软，实测值多半落在两者之间。</li>
-</ul>
-<p>另外，Diodes 模型在 5～30 mA 时的电压是 4.99～5.06 V，比页面的 4.82～4.97 V 高约 0.1～0.17 V。这在 ±5% 的容差（4.85～5.36 V）以内，评 ✅。</p>
-<h2 id="假设">假设</h2>
-<ol>
-<li>页面写“负载 20 mA”的地方（page1 §四、图 10-p2-1、图 10-p3-2、例 3），一律用恒流源负载；写“负载 255 Ω”或“1 kΩ / 510 Ω”的地方，用电阻负载。</li>
-<li>纹波用 100 Hz 锯齿：1 ms 上升，9 ms 下降。电路是纯电阻性的，纹波峰峰值和波形形状无关。</li>
-<li>练习 4 页面写的是“假设输入足够高”，这里平均输入取 30 V。这样 910 Ω 时稳压管仍有约 9 mA。</li>
-<li>跟随器在“负载为 0”时，真实三极管的发射极会浮到接近基极（SPICE 得 5.06 V）。页面的 4.253 V 来自“V_BE 固定 0.7 V”的设定，所以页面的“空载”在 SPICE 里取 1 mA 轻载来比。</li>
-<li>“开始导通”和“断流”这类边界，SPICE 取 I_Z = 0.1 mA，同时附上 I_Z = 1 mA 时的值。</li>
-</ol>
-<h2 id="核对表">核对表</h2>
+<p>说明：TI 没有单独提供「LM393」（无后缀）模型，这里用同一颗芯片 A 档（失调更小）的官方宏模型。<code>spice/models/LM2903B_LM393B.lib</code> 也已下载，但没有使用：页面讲的是传统 LM393，参数表里的 1.3 µs 等数值也来自传统 LM393 手册。</p>
+<h2 id="网表">网表</h2>
 <table>
 <thead>
 <tr>
-<th>页面位置</th>
+<th>文件</th>
+<th>对应页面位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>spice/10/schmitt_sweep.cir</code></td>
+<td>page1 图 10-p1-1 / 图 10-p1-3，page2 §2 门限计算与图 10-p2-1，page3 §2 R2 扫描端点，练习 2、3（输入 2.0→3.0→2.0 V 慢速三角波）</td>
+</tr>
+<tr>
+<td><code>spice/10/sine.cir</code></td>
+<td>page1「在示波器上会看到什么」第 3、5 步（1 kHz 正弦）</td>
+</tr>
+<tr>
+<td><code>spice/10/resp.cir</code></td>
+<td>page3 §1 参数表：响应时间、上拉电阻与上升沿</td>
+</tr>
+<tr>
+<td><code>spice/10/window.cir</code></td>
+<td>page3 §4 图 10-p3-2 / 图 10-p3-3 窗口比较器</td>
+</tr>
+<tr>
+<td><code>spice/10/noise.cir</code></td>
+<td>page2 §4 仿真程序（输入与 <code>code/10_sim.py</code> 相同：同一公式、同一随机种子）</td>
+</tr>
+</tbody>
+</table>
+<p>假设：</p>
+<ul>
+<li>基本比较器用 R1 = 1 mΩ、R2 = 10¹² Ω 来近似「没有 R1、R2」。</li>
+<li>窗口比较器的 2.25 V / 2.75 V 门限页面没给分压电阻，用理想电压源代替。</li>
+<li>响应时间按 LM393 手册的测试条件：100 mV 阶跃、5 mV 过驱、15 pF 负载。</li>
+</ul>
+<h2 id="核对结果">核对结果</h2>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>核对项</th>
 <th>页面值</th>
 <th>SPICE 值</th>
 <th>偏差</th>
@@ -153,613 +118,344 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </thead>
 <tbody>
 <tr>
-<td>p1 图 10-p1-2：稳压管开始导通的输入（RL 255 Ω）</td>
-<td>8.1 V</td>
-<td>8.17 V（I_Z 1 mA 时 8.53 V）</td>
-<td>+0.9%</td>
+<td>p1 图10-p1-1</td>
+<td>基准分压 Vref</td>
+<td>2.5 V</td>
+<td>2.5 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图 10-p1-2：输入 10 V 时输出</td>
-<td>4.83 V</td>
-<td>4.996 V</td>
-<td>+3.4%</td>
-<td>✅ 在 ±5% 容差内</td>
-</tr>
-<tr>
-<td>p1 图 10-p1-2：输入 14 V 时输出</td>
-<td>4.97 V</td>
-<td>5.065 V</td>
-<td>+1.9%</td>
+<td>p1 图10-p1-1</td>
+<td>基本比较器上升翻转点</td>
+<td>2.5 V</td>
+<td>2.5 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 图 10-p1-2 / p1 小结 / p2 开头：输入 10→14 V 时输出的变化</td>
-<td>146 mV</td>
-<td>68.7 mV</td>
-<td>−53%</td>
-<td>⚠️ 页面按 r_Z 最大值 7 Ω 算，偏保守约 2 倍</td>
-</tr>
-<tr>
-<td>p1 图 10-p1-3 / p2 §纹波：1 V 纹波 → 输出峰峰</td>
-<td>36.5 mV</td>
-<td>15.5 mV</td>
-<td>−57%</td>
-<td>⚠️ 原因同上</td>
-</tr>
-<tr>
-<td>p1 图 10-p1-3：输出平均</td>
-<td>4.90 V</td>
-<td>5.039 V</td>
-<td>+2.8%</td>
+<td>p1 图10-p1-1</td>
+<td>基本比较器下降翻转点</td>
+<td>2.5 V</td>
+<td>2.5 V</td>
+<td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 §四：12 V、20 mA 时的输入电流</td>
-<td>39.5 mA</td>
-<td>38.7 mA</td>
-<td>−2.1%</td>
+<td>p1 图10-p1-1</td>
+<td>输出高电平(2.2k 上拉)</td>
+<td>5 V</td>
+<td>5 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 §四：输入功率</td>
-<td>0.47 W</td>
-<td>0.464 W</td>
-<td>−1.3%</td>
+<td>p3 §1 表</td>
+<td>输出低电平(灌 2.3 mA) ≤0.4 V（页面为上限）</td>
+<td>0.4 V</td>
+<td>0.0827 V</td>
+<td>-79.3%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 §四：负载功率</td>
-<td>0.10 W</td>
-<td>0.101 W</td>
-<td>+0.8%</td>
+<td>p2 §2 / 图10-p2-1</td>
+<td>上门限 VH</td>
+<td>2.75 V</td>
+<td>2.732 V</td>
+<td>-0.7%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p1 §四：效率</td>
-<td>21%</td>
-<td>21.7%</td>
-<td>+3.4%</td>
+<td>p2 §2 / 图10-p2-1</td>
+<td>下门限 VL(计入 R3)</td>
+<td>2.255 V</td>
+<td>2.255 V</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 叠加验证：输入 10→11 V 时输出差（RL 255 Ω）</td>
-<td>36.5 mV（4.8257→4.8622 V）</td>
-<td>25.7 mV（4.996→5.022 V）</td>
-<td>−30%</td>
-<td>⚠️ 原因同上</td>
-</tr>
-<tr>
-<td>p2 图 10-p2-1：10 V 空载时 I_Z</td>
-<td>28.0 mA</td>
-<td>27.4 mA</td>
-<td>−2.0%</td>
+<td>p2 §2 / 图10-p2-1</td>
+<td>回差</td>
+<td>0.495 V</td>
+<td>0.4762 V</td>
+<td>-3.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-1：负载 20 mA 时 I_Z</td>
-<td>8.8 mA</td>
-<td>7.8 mA</td>
-<td>−11%</td>
-<td>✅ 输出高 0.17 V（容差内）的连带结果</td>
-</tr>
-<tr>
-<td>p2 图 10-p2-1：负载 20 mA 时 V_o</td>
-<td>4.819 V</td>
-<td>4.993 V</td>
-<td>+3.6%</td>
+<td>p3 §2 R2 扫描</td>
+<td>R2=1meg 回差</td>
+<td>0.05 V</td>
+<td>0.04757 V</td>
+<td>-4.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-1：失去稳压的负载电流</td>
-<td>29.2 mA</td>
-<td>28.9 mA（I_Z 1 mA 时 27.4 mA）</td>
-<td>−1.0%</td>
+<td>p3 §2 R2 扫描</td>
+<td>R2=68k 回差</td>
+<td>0.72 V</td>
+<td>0.6979 V</td>
+<td>-3.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-1：负载 40 mA 时 V_o</td>
-<td>2.80 V</td>
-<td>2.80 V</td>
-<td>0.0%</td>
+<td>p3 练习2</td>
+<td>R2=220k 回差</td>
+<td>0.23 V</td>
+<td>0.217 V</td>
+<td>-5.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §负载调整：负载 0→20 mA 时输出下降</td>
-<td>0.13 V</td>
-<td>0.067 V</td>
-<td>−49%</td>
-<td>⚠️ 原因同上</td>
-</tr>
-<tr>
-<td>p2 例 1 / 下限核对：14 V 空载 I_Z</td>
-<td>49.4 mA</td>
-<td>49.5 mA</td>
-<td>+0.2%</td>
+<td>p3 练习2</td>
+<td>R2=330k 回差</td>
+<td>0.15 V</td>
+<td>0.1446 V</td>
+<td>-3.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例 1：14 V 空载 V_o</td>
-<td>5.10 V</td>
-<td>5.095 V</td>
-<td>−0.1%</td>
+<td>p3 练习3</td>
+<td>上拉 3.3 V：上门限</td>
+<td>2.75 V</td>
+<td>2.733 V</td>
+<td>-0.6%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例 1：稳压管功耗</td>
-<td>0.25 W</td>
-<td>0.252 W</td>
-<td>+0.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例 1：R 功耗</td>
-<td>0.44 W</td>
-<td>0.441 W</td>
+<td>p3 练习3</td>
+<td>上拉 3.3 V：下门限（SPICE 计入 R3=2.2k）</td>
+<td>2.42 V</td>
+<td>2.422 V</td>
 <td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-3：跟随器“空载”输出</td>
-<td>4.253 V</td>
-<td>4.440 V（1 mA）</td>
-<td>+4.4%</td>
+<td>p3 练习3</td>
+<td>上拉 3.3 V：回差</td>
+<td>0.33 V</td>
+<td>0.311 V</td>
+<td>-5.7%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-3：跟随器负载 100 mA 时输出</td>
-<td>4.232 V</td>
-<td>4.180 V</td>
-<td>−1.2%</td>
+<td>p1 示波器第3步</td>
+<td>中心 2.5 V：高电平占空比</td>
+<td>50 %</td>
+<td>49.99 %</td>
+<td>-0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-3 / 第 139 行：跟随器从轻载到 100 mA 的输出下降</td>
-<td>22 mV（附注“V_BE 会略增，再低一点”）</td>
-<td>260 mV</td>
-<td>约 12 倍</td>
-<td>⚠️ 附注严重低估了 V_BE 的增量</td>
-</tr>
-<tr>
-<td>p2 图 10-p2-3：跟随器空载时 I_Z</td>
-<td>28.0 mA</td>
-<td>27.4 mA</td>
-<td>−2.0%</td>
+<td>p1 示波器第3步</td>
+<td>中心 2.75 V：高电平占空比</td>
+<td>66.7 %</td>
+<td>66.65 %</td>
+<td>-0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 图 10-p2-3：跟随器 100 mA 时 I_Z</td>
-<td>24.9 mA</td>
-<td>24.9 mA</td>
-<td>−0.1%</td>
+<td>p1 示波器第5步</td>
+<td>施密特 高电平占空比</td>
+<td>49.8 %</td>
+<td>50.25 %</td>
+<td>+0.9%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 §射极跟随器：100 mA 时基极电流</td>
-<td>3.23 mA（题设 β = 30）</td>
-<td>2.60 mA（模型 β ≈ 38）</td>
-<td>−20%</td>
-<td>✅ β 取手册最小值是题设</td>
-</tr>
-<tr>
-<td>p2 §射极跟随器：12 V、100 mA 时三极管功耗</td>
-<td>0.78 W</td>
-<td>0.760 W</td>
-<td>−2.6%</td>
+<td>p1 示波器第5步</td>
+<td>翻高比普通比较器晚</td>
+<td>0.083 ms</td>
+<td>0.07793 ms</td>
+<td>-6.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例 2：1N4742A、390 Ω、24 V 空载 I_Z</td>
-<td>30.5 mA</td>
-<td>30.7 mA</td>
-<td>+0.6%</td>
+<td>p1 示波器第5步</td>
+<td>翻低比普通比较器晚（页面称两次都约 0.08 ms）</td>
+<td>0.083 ms</td>
+<td>0.07575 ms</td>
+<td>-8.7%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例 2：V_o</td>
-<td>12.09 V</td>
-<td>12.04 V</td>
-<td>−0.4%</td>
+<td>p1 示波器第5步</td>
+<td>翻高时的输入电压</td>
+<td>2.75 V</td>
+<td>2.735 V</td>
+<td>-0.5%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例 2：稳压管功耗</td>
-<td>0.37 W</td>
-<td>0.369 W</td>
-<td>−0.2%</td>
+<td>p1 示波器第5步</td>
+<td>翻低时的输入电压</td>
+<td>2.26 V</td>
+<td>2.271 V</td>
+<td>+0.5%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p2 例 2：R 功耗</td>
-<td>0.36 W</td>
-<td>0.367 W</td>
-<td>+1.9%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例 3：560 Ω、14 V 空载 I_Z</td>
-<td>16.3 mA</td>
-<td>16.0 mA</td>
-<td>−1.7%</td>
-<td>✅（功率管用 TIP31C 替代）</td>
-</tr>
-<tr>
-<td>p2 例 3：14 V、200 mA 时基极电压</td>
-<td>4.85 V</td>
-<td>5.03 V</td>
-<td>+3.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例 3：14 V、200 mA 时输出</td>
-<td>4.15 V</td>
-<td>4.39 V</td>
-<td>+5.8%</td>
-<td>✅ 稳压管 +3.7% 加上 V_BE 的差，在容差内</td>
-</tr>
-<tr>
-<td>p2 例 3：三极管功耗</td>
-<td>1.97 W</td>
-<td>1.92 W</td>
-<td>−2.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p2 例 3：10 V、200 mA 时 I_Z（设计要求）</td>
-<td>≥ 5 mA</td>
-<td>7.96 mA</td>
-<td>满足</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-1：R 上限（10 V、20 mA、I_Z = 5 mA）</td>
-<td>208 Ω</td>
-<td>201 Ω</td>
-<td>−3.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-1：R 下限（14 V 空载、P_Z = 0.65 W）</td>
-<td>73 Ω</td>
-<td>70.2 Ω</td>
-<td>−3.8%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-1：R = 40 Ω 时稳压管功耗</td>
-<td>1.21 W</td>
-<td>1.15 W</td>
-<td>−5.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-1：R = 40 Ω 时稳压管电流</td>
-<td>197 mA</td>
-<td>220 mA</td>
-<td>+11%</td>
-<td>⚠️ 结论“超过 178 mA”不变，数值偏低</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-1：完全断流的 R</td>
-<td>263 Ω</td>
-<td>260 Ω</td>
-<td>−1.3%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-2：R 180 Ω、10–11 V、20 mA 时输出纹波</td>
-<td>37 mV</td>
-<td>27.0 mV</td>
-<td>−27%</td>
-<td>⚠️ r_Z 偏保守</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-2：R 270 Ω 时输出最低</td>
-<td>4.60 V</td>
-<td>4.599 V</td>
-<td>0.0%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-2：R 270 Ω 时输出纹波</td>
-<td>178 mV</td>
-<td>337 mV</td>
-<td>+89%</td>
-<td>⚠️ 页面低估了失稳的后果</td>
-</tr>
-<tr>
-<td>p3 图 10-p3-2：270 Ω 与 180 Ω 的纹波倍数</td>
-<td>约 5 倍</td>
-<td>12.5 倍</td>
-<td>+149%</td>
-<td>⚠️ 同上</td>
-</tr>
-<tr>
-<td>p3 §4 第 1 步：空载时开始击穿的输入</td>
-<td>约 4.8 V</td>
-<td>5.07 V（I_Z 1 mA）</td>
-<td>+5.7%</td>
-<td>✅</td>
-</tr>
-<tr>
-<td>p3 §4 第 2 步：I_Z“等量减小”</td>
-<td>定性</td>
-<td>负载 1 kΩ→255 Ω：I_L 增加 14.5 mA，I_Z 减少 14.3 mA</td>
+<td>p1 示波器第5步</td>
+<td>幅度 0.2 V 时翻转次数</td>
+<td>0 次</td>
+<td>0 次</td>
 <td>—</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 §4 第 3 步：R 270 Ω、255 Ω 负载时 I_Z</td>
-<td>约 0.7 mA</td>
-<td>0.25 mA</td>
-<td>−64%</td>
-<td>⚠️ 量级一样，具体数值和拐点有关</td>
-</tr>
-<tr>
-<td>p3 §4 第 3 步：输出比第 2 步低</td>
-<td>定性</td>
-<td>4.825 V（第 2 步为 4.996 V）</td>
-<td>—</td>
+<td>p3 §1 表</td>
+<td>响应时间 低→高(100 mV 阶跃, 5 mV 过驱, 15 pF)</td>
+<td>1.3 µs</td>
+<td>1.454 µs</td>
+<td>+11.8%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 §4 第 3 步：电源调到 9.5 V 时输出</td>
-<td>约 4.6 V</td>
-<td>4.614 V</td>
-<td>+0.3%</td>
+<td>p3 §1 表</td>
+<td>响应时间 高→低(同条件)</td>
+<td>1.3 µs</td>
+<td>1.408 µs</td>
+<td>+8.3%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习 1：120 Ω、14 V 空载 I_Z</td>
-<td>72.8 mA</td>
-<td>74.0 mA</td>
-<td>+1.6%</td>
+<td>p3 §1</td>
+<td>上升沿 10–90%(2.2k×15p)（RC=33 ns；10–90% 理论 2.2·RC=73 ns）</td>
+<td>33 ns</td>
+<td>199.7 ns</td>
+<td>+505.2%</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 §1</td>
+<td>上拉 1 MΩ 上升沿 10–90%（RC=15 µs；10–90% 理论 33 µs）</td>
+<td>15 µs</td>
+<td>32.96 µs</td>
+<td>+119.7%</td>
+<td>ℹ️</td>
+</tr>
+<tr>
+<td>p3 图10-p3-3</td>
+<td>窗口输出跳变 t1</td>
+<td>3.33 s</td>
+<td>3.334 s</td>
+<td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习 1：V_o</td>
-<td>5.27 V</td>
-<td>5.12 V</td>
-<td>−2.8%</td>
+<td>p3 图10-p3-3</td>
+<td>窗口输出跳变 t2</td>
+<td>6.66 s</td>
+<td>6.666 s</td>
+<td>+0.1%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习 1：稳压管功耗</td>
-<td>0.38 W</td>
-<td>0.379 W</td>
-<td>−0.3%</td>
+<td>p3 图10-p3-3</td>
+<td>窗口输出跳变 t3</td>
+<td>13.33 s</td>
+<td>13.33 s</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习 2：47 Ω、14 V 空载 I_Z</td>
-<td>171 mA（“离 I_ZM 只差一点”）</td>
-<td>187 mA（已超过 I_ZM 178 mA）</td>
-<td>+9.5%</td>
-<td>⚠️ 结论从“差一点”变成“已超过”</td>
-</tr>
-<tr>
-<td>p3 练习 2：V_o</td>
-<td>5.96 V</td>
-<td>5.20 V</td>
-<td>−13%</td>
-<td>⚠️ 线性 r_Z 外推到 171 mA 偏高</td>
-</tr>
-<tr>
-<td>p3 练习 2：稳压管功耗</td>
-<td>1.02 W</td>
-<td>0.974 W</td>
-<td>−4.5%</td>
+<td>p3 图10-p3-3</td>
+<td>窗口输出跳变 t4</td>
+<td>16.66 s</td>
+<td>16.67 s</td>
+<td>+0.0%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 练习 4：1N4742A、390 Ω、1.2 kΩ 时输出纹波</td>
-<td>22 mV</td>
-<td>4.1 mV</td>
-<td>−81%</td>
-<td>⚠️ 页面用 r_Z 最大值 9 Ω，偏保守约 5 倍</td>
+<td>p2 §4 代码输出</td>
+<td>普通比较器翻转次数</td>
+<td>98 次</td>
+<td>98 次</td>
+<td>+0.0%</td>
+<td>✅</td>
 </tr>
 <tr>
-<td>p3 练习 4：R = 910 Ω 时纹波（要求 &lt; 10 mV）</td>
-<td>&lt; 10 mV</td>
-<td>4.9 mV</td>
-<td>满足</td>
-<td>✅ 按最大值设计是稳妥的做法</td>
-</tr>
-<tr>
-<td><strong>合计</strong></td>
-<td></td>
-<td></td>
-<td></td>
-<td>✅ 46　⚠️ 13　❌ 0</td>
+<td>p2 §4 代码输出</td>
+<td>施密特比较器翻转次数</td>
+<td>2 次</td>
+<td>2 次</td>
+<td>+0.0%</td>
+<td>✅</td>
 </tr>
 </tbody>
 </table>
-<h2 id="️-的修改建议页面口吻可直接粘贴">⚠️ 的修改建议（页面口吻，可直接粘贴）</h2>
-<p><strong>修改 1：r_Z 偏保守，一次性说明。</strong> 涉及 p1 第 39 / 53 / 73 行，p2 第 10 / 34 / 36 / 50 行，p3 第 49 行的“37 mV”，以及练习 4（第 108 行）。数字可以不改，在 p1 第 39 行“只变了 146 mV”后面加一句：</p>
-<blockquote>
-<p>这里的 146 mV 是按手册给的动态电阻 7 Ω 算的，而手册上这个数是<strong>最大值</strong>，所以算出的是最坏情况。用 Diodes 公司的 1N4733A 模型仿真，同样从 10 V 调到 14 V，输出只变约 70 mV；1 V 的纹波到输出约 16 mV。实测落在这两组数之间都算正常，关键是数量级：几伏的变化被压到几十毫伏。</p>
-</blockquote>
-<p>p2 第 50 行的“≈ 0.13 V”后面加：</p>
-<blockquote>
-<p>（按 7 Ω 的最大值算；用厂商模型仿真只降约 0.07 V。）</p>
-</blockquote>
-<p>p3 练习 4 答案末尾加：</p>
-<blockquote>
-<p>9 Ω 也是手册上的最大值。用 Diodes 公司的 1N4742A 模型仿真，390 Ω 时输出纹波只有约 4 mV，已经低于 10 mV。所以 910 Ω 是按最坏情况设计的结果，偏稳妥。</p>
-</blockquote>
-<p><strong>修改 2：p2 第 139 行，把最后一句换成：</strong></p>
-<blockquote>
-<p>这里把 V_BE 当作固定的 0.7 V。真实三极管的 V_BE 随电流增大会明显变大：用 onsemi 的 2N3904 模型仿真，负载从 1 mA 加到 100 mA，V_BE 大约从 0.62 V 涨到 0.87 V，输出从约 4.44 V 降到约 4.18 V，降了 0.2～0.3 V，而不是 22 mV。跟随器“几乎是水平线”只是相对单用稳压管而言；要把输出真正稳住，还得靠 08 节加的运放反馈。</p>
-</blockquote>
-<p><strong>修改 3：p3 第 37 行，把“这时电流约 197 mA”改成：</strong></p>
-<blockquote>
-<p>这时电流约 200 mA 以上（按线性模型算约 197 mA，厂商模型约 220 mA）</p>
-</blockquote>
-<p><strong>修改 4：p3 第 49 行，把“最低到 4.60 V，纹波变成 178 mV，差不多是 180 Ω 时的 5 倍”改成：</strong></p>
-<blockquote>
-<p>最低到 4.60 V，纹波变成约 0.2～0.3 V（线性模型算得 178 mV，厂商模型仿真约 0.34 V），是 180 Ω 时的 5 倍以上</p>
-</blockquote>
-<p><strong>修改 5：p3 第 60 行（动手实验第 3 步），把“ <span class="math math-inline">\(I_Z\)</span> 只剩约 0.7 mA”改成：</strong></p>
-<blockquote>
-<p><span class="math math-inline">\(I_Z\)</span> 只剩不到 1 mA（几百微安，具体数值和管子的拐点有关）</p>
-</blockquote>
-<p><strong>修改 6：p3 练习 2 答案（第 92 行），把“输出约 … ≈ 5.96 V”之后的两句换成：</strong></p>
-<blockquote>
-<p>输出约 5.96 V（线性模型在这么大的电流下会高估，厂商模型仿真约 5.2 V），功耗约 1 W。电流已经到了 I_ZM 178 mA 附近，厂商模型仿真得 187 mA，已经超过；功耗也远超一半余量 0.65 W。</p>
-</blockquote>
-<h2 id="面包板万用表读数表">面包板万用表读数表</h2>
-<p>条件：图 10-p1-1 主电路，R 180 Ω，1N4733A，实验电源。</p>
-<table>
-<thead>
-<tr>
-<th>测量点</th>
-<th>表笔位置</th>
-<th>10 V、RL 255 Ω</th>
-<th>14 V、空载（第 4 步）</th>
-<th>R 换 270 Ω、10 V、RL 255 Ω（第 3 步）</th>
-<th>页面值</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>输入</td>
-<td>红笔接电源正极，即 R 的输入端；黑笔接地</td>
-<td>10.00 V</td>
-<td>14.00 V</td>
-<td>10.00 V</td>
-<td>同左</td>
-</tr>
-<tr>
-<td>V_o</td>
-<td>红笔接稳压管阴极（有色环那端），也就是 R 的输出端；黑笔接地（稳压管阳极）</td>
-<td>5.00 V</td>
-<td>5.10 V</td>
-<td>4.83 V</td>
-<td>4.83 V / 5.10 V / “比第 2 步低”</td>
-</tr>
-<tr>
-<td>R 两端电压</td>
-<td>红笔接 R 的输入端，黑笔接 R 的输出端</td>
-<td>5.00 V</td>
-<td>8.90 V</td>
-<td>5.18 V</td>
-<td>—</td>
-</tr>
-<tr>
-<td>I_R</td>
-<td>电流挡串在电源和 R 之间</td>
-<td>27.8 mA</td>
-<td>49.5 mA</td>
-<td>19.2 mA</td>
-<td>28.0 mA（空载）/ 49.4 mA</td>
-</tr>
-<tr>
-<td>I_Z</td>
-<td>电流挡串在稳压管阳极和地之间</td>
-<td>8.2 mA</td>
-<td>49.5 mA</td>
-<td>0.25 mA</td>
-<td>约 8.8 mA / 49.4 mA / 约 0.7 mA</td>
-</tr>
-<tr>
-<td>I_L</td>
-<td>电流挡串在 V_o 和负载电阻之间</td>
-<td>19.6 mA</td>
-<td>0</td>
-<td>18.9 mA</td>
-<td>约 20 mA</td>
-</tr>
-</tbody>
-</table>
-<p>实测时 V_o 可以有 ±5% 的出入（4.85～5.36 V），I_Z 会跟着变。</p>
-<p><strong>跟随器（图 10-p2-2）</strong>：10 V 输入，负载 100 mA。</p>
+<p>统计：✅ 31　⚠️ 0　❌ 0　ℹ️ 2（仅供参考）</p>
+<h3 id="说明">说明</h3>
 <ul>
-<li>基极：红笔接 2N3904 基极（稳压管阴极），约 5.05 V。</li>
-<li>发射极（输出）：约 4.18 V。</li>
-<li>集电极：接电源，10 V。</li>
-<li>稳压管电流：约 24.9 mA。</li>
+<li>上门限 SPICE 为 2.732 V（页面 2.75 V）。原因是 LM393 输出低电平不是 0 V，而是约 0.08 V（灌 2.3 mA）。代入公式 V_H = (V_ref(R1+R2) − V_OL·R1)/R2 约降低 8 mV，再加上模型的失调，误差 &lt; 1%，不需要改。</li>
+<li>「上拉 2.2 kΩ 配 15 pF 约 33 ns」是时间常数 R3·CL。按 10%→90% 算的上升时间是 2.2·R3·CL ≈ 73 ns；在 5 mV 小过驱下，输出管关断本身也要约 0.2 µs，所以 SPICE 测到 0.2 µs。1 MΩ 时 10%→90% 为 33 µs，正好是 2.2 × 15 µs。页面说的是「约为 R3 × CL」，量级正确，记 ℹ️，不要求修改。如果想更严谨，可以在页面括号里补一句「这是时间常数，10%→90% 的上升时间约为它的 2.2 倍」。</li>
 </ul>
-<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
-<p>统计：❌ 0 条；⚠️ 13 条全部处理（13 条改、0 条不改）；ℹ️ 无改动。r_Z 偏保守的 6 条按修改 1 合并说明，图和脚本里的数字（按 7 Ω / 9 Ω 最大值算）保留。</p>
+<h2 id="️---修改建议">⚠️ / ❌ 修改建议</h2>
+<p>本节没有 ⚠️ 或 ❌。</p>
+<h2 id="面包板万用表读数5-v-供电lm393-第-8-脚-vcc第-4-脚-gnd比较器-a第-3-脚同相第-2-脚反相第-1-脚输出">面包板万用表读数（5 V 供电，LM393 第 8 脚 VCC、第 4 脚 GND；比较器 A：第 3 脚同相、第 2 脚反相、第 1 脚输出）</h2>
 <table>
 <thead>
 <tr>
-<th>条目</th>
-<th>处理</th>
-<th>改了哪里、怎么改</th>
+<th>测什么</th>
+<th>红表笔 → 黑表笔</th>
+<th>档位</th>
+<th>应读到</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>⚠️ p1 图 10-p1-2 / 小结 / p2 开头：10→14 V 输出变 146 mV</td>
-<td>已改（合并）</td>
-<td>page1 图 10-p1-2 讨论段后加一段：146 mV 按手册最大值 7 Ω 算，是最坏情况；1N4733A 厂家模型约 70 mV、1 V 纹波约 16 mV；实测在两者之间都正常。小结和 p2 开头只是复述，不重复加</td>
+<td>电源</td>
+<td>第 8 脚 → GND</td>
+<td>DC 20 V</td>
+<td>5.00 V</td>
 </tr>
 <tr>
-<td>⚠️ p1 图 10-p1-3 / p2 §纹波：1 V 纹波 → 36.5 mV</td>
-<td>已改（合并）</td>
-<td>同上一段里点明图 10-p1-3 的 36.5 mV 对应厂家模型约 16 mV；page2 叠加验证段后加一段：7 Ω 是 49 mA 下的最大值，20～30 mA 时只有两三欧，厂家模型纹波约 16 mV</td>
+<td>基准</td>
+<td>第 2 脚 → GND</td>
+<td>DC 20 V</td>
+<td>2.50 V（两只 10 kΩ 都是 1% 时为 2.48～2.52 V）</td>
 </tr>
 <tr>
-<td>⚠️ p2 叠加验证：10→11 V 差 36.5 mV</td>
-<td>已改（合并）</td>
-<td>同上 page2 新段里给出厂家模型约 26 mV，说明本页估算偏保守</td>
+<td>输出高</td>
+<td>第 1 脚 → GND（V_in 高于门限）</td>
+<td>DC 20 V</td>
+<td>约 4.95 V（施密特接法下 R2 支路会分走一点电流）</td>
 </tr>
 <tr>
-<td>⚠️ p2 §负载调整：0→20 mA 降 0.13 V</td>
-<td>已改</td>
-<td>「≈ 0.13 V」后加括号：按 7 Ω 最大值算，厂家模型只降约 0.07 V</td>
+<td>输出低</td>
+<td>第 1 脚 → GND（V_in 低于门限）</td>
+<td>DC 2 V</td>
+<td>约 0.08 V（手册上限 0.4 V）</td>
 </tr>
 <tr>
-<td>⚠️ p2 图 10-p2-3：跟随器 0→100 mA 只降 22 mV</td>
-<td>已改</td>
-<td>段末「V_BE 会略增」换成修改 2：2N3904 模型 V_BE 0.62→0.87 V，输出 4.44→4.18 V，降 0.2～0.3 V；要真正稳住靠 08 的运放反馈（加了跨节点链接）。22 mV 是脚本/图的理想值，保留</td>
+<td>施密特：输出低、V_in = 2.0 V 时的同相端</td>
+<td>第 3 脚 → GND</td>
+<td>DC 20 V</td>
+<td>约 1.82 V（证明「虚短」不成立：与第 2 脚差约 0.68 V）</td>
 </tr>
 <tr>
-<td>⚠️ p3 图 10-p3-1：R = 40 Ω 时 197 mA</td>
-<td>已改</td>
-<td>改为「约 200 mA 以上（线性模型约 197 mA，厂商模型约 220 mA）」</td>
+<td>施密特上门限</td>
+<td>电位器中间抽头 → GND，从低往高慢慢拧，看输出 LED 或第二只表刚翻高时的读数</td>
+<td>DC 20 V</td>
+<td>约 2.73～2.75 V</td>
 </tr>
 <tr>
-<td>⚠️ p3 图 10-p3-2：180 Ω 纹波 37 mV</td>
-<td>已改</td>
-<td>加括号：按 7 Ω 最大值算，厂商模型约 27 mV</td>
+<td>施密特下门限</td>
+<td>同上，从高往低拧</td>
+<td>DC 20 V</td>
+<td>约 2.25～2.26 V</td>
 </tr>
 <tr>
-<td>⚠️ p3 图 10-p3-2：270 Ω 纹波 178 mV</td>
-<td>已改</td>
-<td>改为「约 0.2～0.3 V（线性模型 178 mV，厂商模型约 0.34 V）」</td>
-</tr>
-<tr>
-<td>⚠️ p3 图 10-p3-2：270 Ω 与 180 Ω 约 5 倍</td>
-<td>已改</td>
-<td>改为「5 倍以上（厂商模型约 12 倍）」</td>
-</tr>
-<tr>
-<td>⚠️ p3 §4 第 3 步：I_Z 约 0.7 mA</td>
-<td>已改</td>
-<td>改为「不到 1 mA（几百微安，具体数值和管子的拐点有关）」</td>
-</tr>
-<tr>
-<td>⚠️ p3 练习 2：47 Ω 时 I_Z 171 mA「只差一点」</td>
-<td>已改</td>
-<td>改为「已经到了 I_ZM 178 mA 附近，厂商模型仿真得 187 mA，已经超过」</td>
-</tr>
-<tr>
-<td>⚠️ p3 练习 2：V_o 5.96 V</td>
-<td>已改</td>
-<td>加括号：线性模型在大电流下高估，厂商模型约 5.2 V</td>
-</tr>
-<tr>
-<td>⚠️ p3 练习 4：390 Ω 纹波 22 mV</td>
-<td>已改</td>
-<td>答案末尾加一段：9 Ω 也是最大值，1N4742A 模型 390 Ω 时约 4 mV，已低于 10 mV，910 Ω 是按最坏情况设计、偏稳妥</td>
+<td>上拉电流（输出低时）</td>
+<td>断开上拉电阻一端，串入电流表：R3 → 第 1 脚</td>
+<td>DC 20 mA</td>
+<td>约 2.2 mA（(5 − 0.08) V / 2.2 kΩ）</td>
 </tr>
 </tbody>
 </table>
-<p>脚本（code/10_sim.py、code/figs/10_figs.py）未改，打印值（146 mV、36.5 mV、22 mV、197 mA、178 mV、171 mA 等）不变，页面里这些数仍与脚本和图一致；SPICE 数值只出现在说明文字里，并注明来自厂家模型。</p>
-<p>改动文件：10-zener-regulator/page1.md、<a href="http://page2.md">page2.md</a>、<a href="http://page3.md">page3.md</a>、review/spice/10.md。</p>
-<p>检查：count_cjk（1853 / 2732 / 2595）、run_blocks（页面 1 块、脚本 2 个）、check_figs、check_github_math（6 / 78 / 33）、fix_inline_math_spacing --check 全部通过；仓库根目录无多余文件。</p>
+<h2 id="修改记录第-7-轮">修改记录（第 7 轮）</h2>
+<p>本节点 ❌ 0 条、⚠️ 0 条，没有需要修改的项。ℹ️ 2 条（上门限 2.732 V 与 2.75 V 的差异、上拉时间常数与 10%→90% 上升时间）按说明「不需要改 / 不要求修改」，未改。报告未提及导航链接，未动。</p>
+<p>改动文件：仅 <code>review/spice/10.md</code>（本记录）。页面、脚本、图均未改。</p>
+<p>检查（仓库根目录）：count_cjk（1991/2177/2429 字）、run_blocks（1 过）、run_blocks --scripts（10_sim.py、10_figs.py）、check_figs（3/2/3 张）、check_github_math（12/81/53）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

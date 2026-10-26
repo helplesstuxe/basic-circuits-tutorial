@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>SPICE 核对汇总 · 审校 B（节点 13–26）</title>
+<title>SPICE 核对汇总 · 审校 B（节点 04、06、07、10、11、15、18、20、23、24、26–29）</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,7 +42,7 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/summary-b.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="spice-核对汇总--审校-b节点-1326">SPICE 核对汇总 · 审校 B（节点 13–26）</h1>
+<h1 id="spice-核对汇总--审校-b节点-040607101115182023242629">SPICE 核对汇总 · 审校 B（节点 04、06、07、10、11、15、18、20、23、24、26–29）</h1>
 <p>每个节点都可以在仓库根目录运行 <code>python spice/NN/run.py</code>，退出码为 0，结果写入 <code>spice/NN/results.json</code>。每个节点的详细表格、修改文字和万用表读数见 <code>review/spice/NN.md</code>。下表的计数直接从各节点的 results.json 统计得到。</p>
 <h2 id="各节点计数">各节点计数</h2>
 <table>
@@ -58,84 +58,84 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>13 微分器</td>
+<td>18 微分器</td>
 <td>27</td>
 <td>10</td>
 <td>2</td>
 <td>3</td>
-<td><a href="13.html">13.md</a></td>
+<td><a href="18.html">18.md</a></td>
 </tr>
 <tr>
-<td>14 电压比较器</td>
+<td>10 电压比较器</td>
 <td>31</td>
 <td>0</td>
 <td>0</td>
 <td>2</td>
-<td><a href="14.html">14.md</a></td>
+<td><a href="10.html">10.md</a></td>
 </tr>
 <tr>
-<td>15 有源滤波器</td>
+<td>20 有源滤波器</td>
 <td>28</td>
 <td>0</td>
+<td>0</td>
+<td>2</td>
+<td><a href="20.html">20.md</a></td>
+</tr>
+<tr>
+<td>24 振荡器</td>
+<td>23</td>
+<td>6</td>
+<td>0</td>
+<td>4</td>
+<td><a href="24.html">24.md</a></td>
+</tr>
+<tr>
+<td>04 自锁</td>
+<td>29</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+<td><a href="04.html">04.md</a></td>
+</tr>
+<tr>
+<td>11 互锁</td>
+<td>36</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td><a href="11.html">11.md</a></td>
+</tr>
+<tr>
+<td>15 星三角起动</td>
+<td>28</td>
+<td>1</td>
 <td>0</td>
 <td>2</td>
 <td><a href="15.html">15.md</a></td>
 </tr>
 <tr>
-<td>16 振荡器</td>
-<td>23</td>
-<td>6</td>
-<td>0</td>
-<td>4</td>
-<td><a href="16.html">16.md</a></td>
-</tr>
-<tr>
-<td>17 自锁</td>
-<td>29</td>
-<td>0</td>
-<td>0</td>
-<td>1</td>
-<td><a href="17.html">17.md</a></td>
-</tr>
-<tr>
-<td>18 互锁</td>
-<td>36</td>
-<td>0</td>
-<td>0</td>
-<td>0</td>
-<td><a href="18.html">18.md</a></td>
-</tr>
-<tr>
-<td>19 星三角起动</td>
-<td>28</td>
-<td>1</td>
-<td>0</td>
-<td>2</td>
-<td><a href="19.html">19.md</a></td>
-</tr>
-<tr>
-<td>20 双控开关</td>
+<td>27 双控开关</td>
 <td>27</td>
 <td>0</td>
 <td>0</td>
 <td>0</td>
-<td><a href="20.html">20.md</a></td>
+<td><a href="27.html">27.md</a></td>
 </tr>
 <tr>
-<td>21 MOS 管开关</td>
+<td>06 MOS 管开关</td>
 <td>24</td>
 <td>14</td>
 <td>0</td>
 <td>3</td>
-<td><a href="21.html">21.md</a></td>
+<td><a href="06.html">06.md</a></td>
 </tr>
 <tr>
-<td>22 三极管驱动继电器</td>
+<td>07 三极管驱动继电器</td>
 <td>31</td>
 <td>0</td>
 <td>0</td>
 <td>5</td>
-<td><a href="22.html">22.md</a></td>
+<td><a href="07.html">07.md</a></td>
 </tr>
 <tr>
 <td>23 光耦</td>
@@ -146,28 +146,28 @@ mjx-container{max-width:100%}
 <td><a href="23.html">23.md</a></td>
 </tr>
 <tr>
-<td>24 隔离电源</td>
+<td>28 隔离电源</td>
 <td>25</td>
 <td>3</td>
 <td>0</td>
 <td>8</td>
-<td><a href="24.html">24.md</a></td>
+<td><a href="28.html">28.md</a></td>
 </tr>
 <tr>
-<td>25 H 桥</td>
+<td>26 H 桥</td>
 <td>55</td>
 <td>0</td>
 <td>0</td>
 <td>3</td>
-<td><a href="25.html">25.md</a></td>
+<td><a href="26.html">26.md</a></td>
 </tr>
 <tr>
-<td>26 上拉与电平转换</td>
+<td>29 上拉与电平转换</td>
 <td>50</td>
 <td>7</td>
 <td>0</td>
 <td>2</td>
-<td><a href="26.html">26.md</a></td>
+<td><a href="29.html">29.md</a></td>
 </tr>
 <tr>
 <td><strong>合计</strong></td>
@@ -192,14 +192,14 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>13</td>
+<td>18</td>
 <td>p1「在示波器上会看到什么」第 1 步：理想微分器（只有 C 和 Rf）</td>
 <td>干净的 ±1 V 方波（无振铃）</td>
 <td>平顶上叠加约 4.8 V 峰峰的振铃</td>
 <td>LM358B 模型的 AC 增益在 14.6 kHz 有约 2.5 万倍的尖峰，理想微分器几乎就是振荡器</td>
 </tr>
 <tr>
-<td>13</td>
+<td>18</td>
 <td>p1 同一节第 3 步：159 Hz 正弦输入（理想版）</td>
 <td>输出 0.5 V</td>
 <td>0.58 V，且叠加振铃</td>
@@ -268,49 +268,49 @@ mjx-container{max-width:100%}
 </thead>
 <tbody>
 <tr>
-<td>14</td>
+<td>10</td>
 <td>LM393</td>
 <td>TI LM393A 官方宏模型（<code>LM393A.lib</code>）</td>
 <td>TI 没有无后缀的 LM393 模型，用同一颗芯片的 A 档代替</td>
 </tr>
 <tr>
-<td>16</td>
+<td>24</td>
 <td>1N4148</td>
 <td>Nexperia 官方（审校 A 已建，复用）</td>
 <td>不是替代，列出备查</td>
 </tr>
 <tr>
-<td>17 / 18 / 19</td>
+<td>04 / 11 / 15</td>
 <td>接触器、时间继电器</td>
 <td>ngspice 内建 SW + RC 行为模型</td>
 <td>节点本身没有半导体器件</td>
 </tr>
 <tr>
-<td>20</td>
+<td>27</td>
 <td>红色 LED</td>
 <td><code>LED_red_ltspice.lib</code> 里的 APT1608SURCK（通用模型）</td>
 <td>没找到可下载的官方红 LED 模型</td>
 </tr>
 <tr>
-<td>21</td>
+<td>06</td>
 <td>续流二极管 D1</td>
 <td>Vishay 1N5822 官方</td>
 <td>页面没给型号，按 1N5822 假设</td>
 </tr>
 <tr>
-<td>21</td>
+<td>06</td>
 <td>Q2</td>
 <td>onsemi 2N7000（假设型号）</td>
 <td>页面没给型号。IRF540N、AO3400A 没有拿到官方模型，未仿真</td>
 </tr>
 <tr>
-<td>22</td>
+<td>07</td>
 <td>24 V 稳压管</td>
 <td>1N4749A（Diodes Inc. 厂家文件，来自 LTspice Vendor List 存档）</td>
 <td>线圈电感 0.1 H 是假设</td>
 </tr>
 <tr>
-<td>22</td>
+<td>07</td>
 <td>ULN2003A</td>
 <td>无模型（TI 不提供），只核算术，记 ℹ️</td>
 <td></td>
@@ -322,25 +322,25 @@ mjx-container{max-width:100%}
 <td>Sharp、Everlight 都不提供 SPICE 模型；4N25 只核算术</td>
 </tr>
 <tr>
-<td>24</td>
+<td>28</td>
 <td>NME0505SC</td>
 <td>无模型（Murata 不提供），用页面自己的示意公式（行为源）</td>
 <td>PC817 只作对照</td>
 </tr>
 <tr>
-<td>25</td>
+<td>26</td>
 <td>DRV8871</td>
 <td>无模型。用理想 SW 开关（0.307 / 0.258 Ω）加通用体二极管 <code>D(IS=1e-9 N=1.6)</code></td>
 <td>DRV8876-Q1 的模型（SLVMCQ2）是另一颗芯片，下载了但没用。另用 IRLZ44N 官方模型做了真实半桥的死区对照</td>
 </tr>
 <tr>
-<td>26</td>
+<td>29</td>
 <td>BSS138</td>
 <td>Diodes Inc.（Zetex）官方模型（<code>BSS138_diodes.lib</code>，本轮新建）</td>
 <td>页面引用的是 onsemi BSS138，但 onsemi 的下载地址对本机返回 Access Denied</td>
 </tr>
 <tr>
-<td>26</td>
+<td>29</td>
 <td>74HC14</td>
 <td>TI SN74HC14 官方行为模型（<code>SN74HC14_TI.lib</code>，SCLM222，本轮新建）</td>
 <td>不是替代</td>
@@ -350,21 +350,21 @@ mjx-container{max-width:100%}
 <h2 id="本轮新建的模型文件spicemodels">本轮新建的模型文件（spice/models/）</h2>
 <p>已有的文件都直接复用，没有覆盖。</p>
 <ul>
-<li><code>ISO7721_TI.lib</code>（节点 24）</li>
+<li><code>ISO7721_TI.lib</code>（节点 28）</li>
 <li><code>PC817_ltspice.lib</code>（节点 23）</li>
-<li><code>1N4749A_diodes_zener.lib</code>（节点 22）</li>
-<li><code>BSS138_diodes.lib</code>（节点 26）</li>
-<li><code>SN74HC14_TI.lib</code>（节点 26）</li>
+<li><code>1N4749A_diodes_zener.lib</code>（节点 07）</li>
+<li><code>BSS138_diodes.lib</code>（节点 29）</li>
+<li><code>SN74HC14_TI.lib</code>（节点 29）</li>
 </ul>
 <p>每个文件开头都写明了实际打开过的来源地址。</p>
 <h2 id="按规则跳过的部分市电--高压">按规则跳过的部分（市电 / 高压）</h2>
 <ul>
-<li>17、18、19：380 V 三相主电路和电动机，只仿真控制回路。19 的示意电动机标幺模型是页面自己说明编造的参数，也跳过。</li>
-<li>20：220 V 照明回路，只核对页面的 9 V 动手版。</li>
-<li>22：继电器触点一侧的 220 V 负载回路。</li>
+<li>04、11、15：380 V 三相主电路和电动机，只仿真控制回路。15 的示意电动机标幺模型是页面自己说明编造的参数，也跳过。</li>
+<li>27：220 V 照明回路，只核对页面的 9 V 动手版。</li>
+<li>07：继电器触点一侧的 220 V 负载回路。</li>
 <li>23：图 23-p3-2 过零检测（输入接 220 V）。</li>
-<li>24：图 24-p2-1 的 220 V 初级和保险丝，用理想正弦源代替次级。</li>
-<li>13–16、21、25、26：没有市电部分。</li>
+<li>28：图 28-p2-1 的 220 V 初级和保险丝，用理想正弦源代替次级。</li>
+<li>06、10、18、20、24、26、29：没有市电部分。</li>
 </ul>
 
 </main>

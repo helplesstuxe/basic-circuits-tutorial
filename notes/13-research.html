@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>13 微分电路 · 调研笔记（作者 C）</title>
+<title>13 桥式整流 · 调研笔记</title>
 <style>
 :root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
 @media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
@@ -42,34 +42,60 @@ mjx-container{max-width:100%}
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/13-research.md">GitHub 源文件</a></div></nav>
 <main>
-<h1 id="13-微分电路--调研笔记作者-c">13 微分电路 · 调研笔记（作者 C）</h1>
-<h2 id="已打开并引用的资料">已打开并引用的资料</h2>
+<h1 id="13-桥式整流--调研笔记">13 桥式整流 · 调研笔记</h1>
+<p>只记结论和出处；所有链接都已实际打开（2026-10-22）。</p>
+<h2 id="器件参数">器件参数</h2>
 <ul>
-<li>TI SBOA276C <em>Differentiator Circuit</em>：<a href="https://www.ti.com/lit/an/sboa276c/sboa276c.pdf%EF%BC%88%E6%9C%AC%E5%9C%B0">https://www.ti.com/lit/an/sboa276c/sboa276c.pdf（本地</a> /workspace/authorC/refs/sboa276c.pdf）
+<li>Vishay 1N4001–1N4007 数据手册（Doc 88503，Rev 29-Apr-2020）：<a href="https://www.vishay.com/docs/88503/1n4001.pdf">https://www.vishay.com/docs/88503/1n4001.pdf</a>
 <ul>
-<li>&quot;The ideal differentiator circuit is fundamentally unstable and requires the addition of an input resistor, a feedback capacitor, or both, to be stable. The components required for stability limit the bandwidth...&quot;</li>
-<li>Vout = −R2·C1·dVin/dt；示例 R2 499 kΩ、C1 15 nF、R1 1 kΩ、TLV9061（10 MHz），5 V 单电源，R3 = R4 = 100 kΩ 给出 2.5 V 参考；fMin 100 Hz、fMax 2.5 kHz。</li>
-<li>Design notes：R2 取大以免 C1 过大；R2 并电容滤高频噪声，从其截止频率约半个数量级（≈3.5 倍）处开始削弱微分作用；同相端加参考电压可单电源工作；保持在线性输出摆幅内。</li>
-<li>Design steps：最低微分频率比最低工作频率低至少半个数量级（C1 ≥ 11.1 nF → 15 nF）；上限截止频率比最高工作频率高至少半个数量级（R1 ≤ 1.2 kΩ → 1 kΩ）；GBP &gt; (R1+R2)/(2π·R1²·C1) &gt; 5.3 MHz；fc = 1/(2π·R2·CF)。</li>
+<li>最大重复峰值反向电压 V_RRM：1N4001 50 V、1N4002 100 V、1N4003 200 V、1N4004 400 V、1N4005 600 V、1N4006 800 V、1N4007 1000 V。</li>
+<li>平均正向整流电流 I_F(AV) 1.0 A；峰值正向浪涌电流 I_FSM 30 A（8.3 ms 单个半正弦）。</li>
+<li>最大正向压降 V_F 1.1 V（1.0 A）。</li>
 </ul>
 </li>
-<li>LM358B GBW 约 1.2 MHz 沿用 P3 页。</li>
 </ul>
-<h2 id="设计取值本节">设计取值（本节）</h2>
-<p>C 100 nF、Rf 10 kΩ（Rf·C 1 ms，与 12 节三角波斜率 ±1 V/ms 配合得到 ±1 V 方波）；实用版 R1 1 kΩ、Cf 10 nF（R1·C = Rf·Cf = 0.1 ms，f_H ≈ 1.59 kHz，高频增益封顶 Rf/R1 = 10）。干扰 10 mV、20 kHz。本例 GBP 条件 ≈ 17.5 kHz。
-教学取值优先波形可读，未完整套用 TI「半个数量级」流程，page3 已说明。</p>
-<h2 id="仿真结果code13_simpycodefigs13_figspy">仿真结果（code/13_sim.py、code/figs/13_figs.py）</h2>
+<h2 id="原理与设计经验">原理与设计经验</h2>
 <ul>
-<li>斜率图：+2 / 0 / −0.5 V/ms → −2.0 / 0.0 / +0.5 V。三角波 → ±1.00 V 方波。</li>
-<li>噪声：理想微分器干扰峰峰 2.51 V（理论 2·2π·20k·1ms·10mV）；实用版 16 mV；实用版上升段 −1.00 V。</li>
-<li>1.2 MHz GBW 运放模型：理想微分器拐角后冲到 2.80 V、振铃 13.8 kHz（估算 √(GBW/(2π·Rf·C)) = 13.8 kHz，ζ≈0.006）；实用版最高 1.00 V、无振铃。</li>
-<li>R1 扫描（理想运放、无 Cf）：100/300/1k/3k Ω → 干扰 1573/645/199/67 mV，边沿 90% 用时 0.02/0.07/0.23/0.69 ms（≈2.3·R1·C）。</li>
-<li>page2 代码块（只串 R1、Euler）：平顶（1.5–2 ms）波动理想 2.51 V、串 R1 0.21 V。</li>
+<li>Rod Elliott（ESP）「Linear Power Supply Design」：<a href="https://sound-au.com/power-supplies.htm">https://sound-au.com/power-supplies.htm</a>
+<ul>
+<li>桥式整流里，每个半周有两只二极管串联导通；二极管反向耐压只要超过交流峰值即可。</li>
+<li>每只二极管压降约 0.7–0.9 V，两只串联，合计约 1.8 V 要从峰值里扣掉。</li>
+<li>二极管只在峰值附近很短的时间里导通，峰值电流可以超过直流输出电流的 5 倍。</li>
+<li>直流输出要从滤波电容的两端引出，而不是从整流桥引出。</li>
+<li>经验公式 C = (I/ΔV)·k·1000 µF，100 Hz 纹波时 k = 7；对 2 Vpp 纹波约为每安培 3500 µF。电容加倍，纹波减半。</li>
+<li>上电浪涌电流可能很大（文中给出浪涌电流表，实测市电内阻约 0.8 Ω）；市电电压有 ±10% 的波动，设计要留余量。</li>
+<li>泄放电阻：让电容在约 10 s 内放到约 37%（一个时间常数）。</li>
+<li>滤波电容是电源头号故障源：纹波电流、温度、ESR。</li>
 </ul>
-<h2 id="附图说明">附图说明</h2>
-<p>（作者 A 复核放大附图后更正）source-20-circuits 附图中标「14 微分电路」的一格画成<strong>输入 C、反馈 C、没有电阻</strong>（不是输入 R、反馈 C）。这是电容比例反相放大：ΔVo = −(C/Cf)·ΔVi，且无直流通路，偏置电流使输出以 Ib/Cf 漂移到饱和。page1 新增「附图第二格」一节及图 13-p1-4（原样电路）、13-p1-5（同一方波送进积分电路 / 微分电路 / 电容–电容接法：0.45 V 峰峰三角波、±5 V 边沿脉冲、0 ↔ −2 V 反相方波），并说明附图大概率省略了与 Cf 并联的 Rf。漂移所用 20 nA 是示意值。page3 排查表加了对应一行。</p>
-<h2 id="未用--待核实">未用 / 待核实</h2>
-<p>无「待核实」标记。</p>
+</li>
+<li>Wikipedia「Diode bridge」：<a href="https://en.wikipedia.org/wiki/Diode_bridge">https://en.wikipedia.org/wiki/Diode_bridge</a>
+<ul>
+<li>四只二极管组成的桥，把交流的两个半周都变成同一极性；也可用作直流输入的反接保护。</li>
+</ul>
+</li>
+<li>Wikipedia「Ripple (electrical)」：<a href="https://en.wikipedia.org/wiki/Ripple_(electrical)">https://en.wikipedia.org/wiki/Ripple_(electrical)</a>
+<ul>
+<li>全波整流加电容滤波，峰峰纹波 V_pp ≈ I/(2fC)（半波为 I/(fC)）。</li>
+</ul>
+</li>
+<li>Wikipedia「Aluminum electrolytic capacitor」：<a href="https://en.wikipedia.org/wiki/Aluminum_electrolytic_capacitor">https://en.wikipedia.org/wiki/Aluminum_electrolytic_capacitor</a>
+<ul>
+<li>极性接反或加交流电压会使介质层损坏、内部短路，可能烧毁或爆裂（页面有炸开的电容照片）。</li>
+</ul>
+</li>
+</ul>
+<h2 id="运放全波整流">运放全波整流</h2>
+<ul>
+<li>Fiore《Operational Amplifiers and Linear Integrated Circuits》7.2.2 Precision Full-Wave Rectifier（LibreTexts，链接同 notes/09-research.md）
+<ul>
+<li>又叫绝对值电路；由反相精密半波整流和加权加法器组成，用两只运放；除一只外所有电阻取同一个值（那一只是 R/2）。</li>
+</ul>
+</li>
+</ul>
+<h2 id="未采用">未采用</h2>
+<ul>
+<li>electronics-tutorials 的整流页面下载失败（HTTP 000），未引用。</li>
+</ul>
 
 </main>
 <div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
