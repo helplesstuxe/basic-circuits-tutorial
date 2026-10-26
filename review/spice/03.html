@@ -46,7 +46,7 @@ mjx-container{max-width:100%}
 <ul>
 <li>复核人：reviewer A；工具：ngspice 44.2（batch 模式）</li>
 <li>运行：从仓库根目录执行 <code>python spice/03/run.py</code>（退出码 0，已实际运行）</li>
-<li>网表：<code>spice/03/diodes.cir</code>（二极管/稳压管）、<code>spice/03/bjt.cir</code>（三极管偏置与开关）、<code>spice/03/rbsweep.cir</code>（基极电阻扫描）、<code>spice/03/mos.cir</code>（2N7000）</li>
+<li>网表：<code>spice/03/diodes.cir</code>（二极管/稳压管）、<code>spice/03/bjt.cir</code>（三极管偏置与开关）、<code>spice/03/rbsweep.cir</code>（基极电阻扫描）、<code>spice/03/mos.cir</code>（2N7000）、<code>spice/03/amp.cir</code>（共射放大，第 9 轮新增）</li>
 </ul>
 <h2 id="用到的器件模型">用到的器件模型</h2>
 <table>
@@ -534,6 +534,92 @@ mjx-container{max-width:100%}
 </ul>
 <p>改动文件：<code>03-semiconductor-basics/page2.md</code>、<code>03-semiconductor-basics/page3.md</code>、<code>review/spice/03.md</code>。</p>
 <p>检查（仓库根目录）：count_cjk（2115/3106/3171 字）、run_blocks（页面 1 块）、run_blocks --scripts（03_sim.py、03_figs.py）、check_figs、check_github_math（17/70/62）五项全部通过；fix_inline_math_spacing --check 0 处；仓库根目录无多余文件。</p>
+<h2 id="第-9-轮共射放大spice03ampcir">第 9 轮：共射放大（<code>spice/03/amp.cir</code>）</h2>
+<p>电路：VIN → RB 10 kΩ → 基极，5 V → RC 1 kΩ → 集电极，发射极接地，2N3904 用 onsemi 官方模型；<code>.dc VIN 0 1.6 0.001</code>。<code>spice/03/run.py</code> 新增 10 行，全部打印在报告末尾。</p>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page1 / page2 理想模型 Q 点（输入 0.95 V → VC 2.5 V）</td>
+<td>2.5 V</td>
+<td>1.39 V</td>
+<td>−44%</td>
+<td>仅参考：页面明说 β = 100、VBE = 0.7 V 的理想模型；page2 💡 已写明真实管 Q 点左移到约 0.85 V</td>
+</tr>
+<tr>
+<td>page2 💡 / page4 第 16 步：VC = 2.5 V 时的输入</td>
+<td>0.851 V</td>
+<td>0.851 V</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 💡 / page4 第 17 步：Q 点基极</td>
+<td>0.658 V</td>
+<td>0.658 V</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page4 第 18 步：Q − 0.10 V 时 VC</td>
+<td>3.57 V</td>
+<td>3.57 V</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page4 第 21 步：Q + 0.10 V 时 VC</td>
+<td>1.38 V</td>
+<td>1.37 V</td>
+<td>−0.4%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page2 💡 / page4：±0.10 V 时基极只变</td>
+<td>约 0.04 V（39 mV）</td>
+<td>39.5 mV</td>
+<td>+1%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page1 / page2 理想增益 −β·RC/RB</td>
+<td>−10</td>
+<td>−11.0</td>
+<td>−10%</td>
+<td>✅（page2 💡 写「约 −11，和 −10 很接近」）</td>
+</tr>
+<tr>
+<td>page4 Python 实测增益</td>
+<td>−11.0</td>
+<td>−10.98</td>
+<td>0%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page4 第 22 步：输入 0.60 V 时 VC</td>
+<td>约 4.7 V</td>
+<td>4.73 V</td>
+<td>+0.6%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>page4 第 23 步：输入 1.30 V 时 VC</td>
+<td>约 0.2 V</td>
+<td>0.22 V</td>
+<td>+12%（差 0.02 V）</td>
+<td>✅（饱和区，按 0.05 V 绝对差判）</td>
+</tr>
+</tbody>
+</table>
+<p>补充：page4 Python 用 Q 点算出的 β ≈ 130 和基极动态电阻 VT/IB ≈ 1.34 kΩ 预测增益 −11.4，与 SPICE −11.0 差 4%；ΔIC/ΔIB = 137（β 随电流略升）。实验二的安全余量：电位器上端 5 × 10/32 = 1.56 V，IB 小于 96 µA，IC 小于 5 mA，Q 点管耗 6.25 mW。</p>
 
 </main>
 <div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

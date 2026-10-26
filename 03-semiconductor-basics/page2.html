@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/03-semiconductor-basics/page2.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="03-半导体入门--原理与实现篇">03 半导体入门 · 原理与实现篇</h1>
-<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
 <h2 id="先补一个工具伏安特性曲线">先补一个工具：伏安特性曲线</h2>
 <p>要说清一个元件「怎么导电」，最直接的办法是给它加一个个不同的电压，记下流过它的电流，再把这些点连成曲线，这条曲线叫<strong>伏安特性曲线</strong>（横轴电压、纵轴电流）。电阻的伏安特性是一条过原点的直线，斜率就是 <span class="math math-inline">\(1/R\)</span> ，这正是欧姆定律（见 <a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> 的电阻分压一节）。半导体器件的曲线都是弯的，而这一节的全部内容，就是读懂这几条弯曲线，再从中提炼出能拿来估算的简单规则。</p>
 <p>本页的器件参数来自真实数据手册，出处写在每段末尾；画曲线用的是简化的教学模型，数值和具体型号会有出入，但形状和量级是对的。</p>
@@ -93,6 +93,58 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>负载线上的每一点都满足 <span class="math math-inline">\(V_{CE} = V_{CC} - I_C R_C\)</span> ，三极管的工作点只能落在这条线上。基极电阻取 47 kΩ：输入 0 V 时 <span class="math math-inline">\(I_B = 0\)</span> ，工作点在右下角（截止， <span class="math math-inline">\(V_{CE}\)</span> = 5 V）；输入 1.64 V 时 <span class="math math-inline">\(I_B = (1.64 - 0.7)/47000 = 20\)</span> μA， <span class="math math-inline">\(I_C = 100 \times 20\)</span> μA = 2.0 mA，工作点落在橙色曲线上（放大， <span class="math math-inline">\(V_{CE}\)</span> = 3.0 V）；输入 5 V 时 <span class="math math-inline">\(I_B\)</span> = 91.5 μA，按 β 算该有 9.15 mA，可负载线最多只给 4.8 mA，工作点被推到左上角（饱和， <span class="math math-inline">\(V_{CE}\)</span> = 0.2 V）。数据手册中 2N3904 的 β 在 10 mA 时为 100–300，饱和压降最大 0.2 V（<a href="https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf">onsemi 2N3904 数据手册</a>）。</p>
 <blockquote>
 <p>💡 <strong>实际芯片会怎样</strong>：上面按 β = 100 计算。真实的 2N3904 在 2 mA 左右 β 多在 100–300 之间，SPICE 用一只典型 2N3904 仿真，β 约 130，搭出来 IC 约 2.71 mA、VCE 约 2.29 V，而不是 2.0 mA、3.0 V；β 再大一些（约 230 以上）就会直接进饱和。放大区的工作点会随管子的 β 走，这正是后面要用负反馈把它「钉住」的原因；饱和区的两个数（0.2 V、4.8 mA）则几乎不受 β 影响，仿真是 0.18 V、4.82 mA。</p>
+</blockquote>
+<h3 id="放大是怎么发生的共射放大一步一步算">放大是怎么发生的：共射放大一步一步算</h3>
+<p>上面的三个工作点是「一个输入对应一个输出」。放大要看的是<strong>变化</strong>：输入变一点，输出变多少。把图 03-p2-7 的基极电阻换成 10 kΩ，并让输入由两部分叠加——一个固定的直流<strong>偏置</strong> 0.95 V，加上一个上下摆动 ±0.1 V 的小信号，就是图 03-p2-9 的共射放大电路（信号从基极进、从集电极出，发射极接地，「共射」就是发射极为输入、输出两边共用）。</p>
+<p><a class="img-link" href="img/03_p2_9_ce_amp.png"><img alt="共射放大电路：0.95 V 直流偏置串 ±0.1 V 小信号，经 10 kΩ 基极电阻进基极，5 V 经 1 kΩ 进集电极，集电极为输出" src="img/03_p2_9_ce_amp.png" loading="lazy" /></a></p>
+<p><em>图 03-p2-9　共射放大电路：直流偏置 0.95 V 上叠加 ±0.1 V 小信号</em></p>
+<p>图里标了三个式子，每个都只用到前面学过的东西：</p>
+<ol>
+<li>基极回路： <span class="math math-inline">\(R_B\)</span> 两端的电压是 <span class="math math-inline">\(V_i - 0.7\)</span> ，所以 <span class="math math-inline">\(I_B = (V_i - 0.7)/R_B\)</span> （只在 <span class="math math-inline">\(V_i\)</span> 高于 0.7 V 时成立，否则 <span class="math math-inline">\(I_B = 0\)</span> ）。</li>
+<li>放大区： <span class="math math-inline">\(I_C = \beta I_B\)</span> 。</li>
+<li>集电极回路： <span class="math math-inline">\(R_C\)</span> 上掉的电压是 <span class="math math-inline">\(I_C R_C\)</span> ，所以 <span class="math math-inline">\(V_C = V_{CC} - I_C R_C\)</span> 。</li>
+</ol>
+<p>电流方向： <span class="math math-inline">\(I_B\)</span> 从输入经 <span class="math math-inline">\(R_B\)</span> 流进基极； <span class="math math-inline">\(I_C\)</span> 从 5 V 经 <span class="math math-inline">\(R_C\)</span> 流进集电极；两者在管子里汇合，从发射极流到地。</p>
+<p><strong>静态工作点</strong>（Q 点）。 先只看偏置 0.95 V： <span class="math math-inline">\(I_B\)</span> = (0.95 − 0.7)/10k = 25 μA， <span class="math math-inline">\(I_C\)</span> = 100 × 25 μA = 2.5 mA， <span class="math math-inline">\(V_C\)</span> = 5 − 2.5 mA × 1 kΩ = 2.5 V。</p>
+<p><strong>信号来了</strong>。 输入摆到 1.05 V： <span class="math math-inline">\(I_B\)</span> = 0.35 V ÷ 10 kΩ = 35 μA， <span class="math math-inline">\(I_C\)</span> = 3.5 mA， <span class="math math-inline">\(V_C\)</span> = 5 − 3.5 = 1.5 V；摆到 0.85 V： <span class="math math-inline">\(I_B\)</span> = 15 μA， <span class="math math-inline">\(I_C\)</span> = 1.5 mA， <span class="math math-inline">\(V_C\)</span> = 3.5 V。输入总共变 0.2 V，输出总共变 −2 V，放大倍数（电压增益）记作 <span class="math math-inline">\(A_v\)</span> ：</p>
+<div class="math math-display">\[A_v = \frac{\Delta V_C}{\Delta V_i} = \frac{1.5 - 3.5}{1.05 - 0.85} = -10\]</div>
+<p>负号就是「反相」。把三个式子连起来还能直接得到公式：输入变 <span class="math math-inline">\(\Delta V_i\)</span> ，基极电流变 <span class="math math-inline">\(\Delta V_i / R_B\)</span> ，集电极电流变 <span class="math math-inline">\(\beta \Delta V_i / R_B\)</span> ，集电极电压变 <span class="math math-inline">\(-\beta R_C \Delta V_i / R_B\)</span> ，所以</p>
+<div class="math math-display">\[A_v = -\frac{\beta R_C}{R_B} = -\frac{100 \times 1000}{10000} = -10\]</div>
+<p>请看图 03-p2-10：它就是图 03-p2-3 那种输出特性，只画了 15、25、35 μA 三条，黑色虚线还是 5 V、1 kΩ 的负载线。</p>
+<p><a class="img-link" href="img/03_p2_10_qpoint.png"><img alt="图 03-p2-10 工作点沿负载线来回滑动" src="img/03_p2_10_qpoint.png" loading="lazy" /></a></p>
+<p><em>图 03-p2-10　输入摆动时，工作点沿负载线在 15 μA 和 35 μA 两条曲线之间来回滑动</em></p>
+<p>三个黑点都在负载线上：中间的 Q 点（2.5 V，2.5 mA），输入升到 1.05 V 时滑到左上（1.5 V，3.5 mA），降到 0.85 V 时滑到右下（3.5 V，1.5 mA）。竖着看，集电极电流在 1.5～3.5 mA 之间摆 2 mA；横着看，集电极电压在 1.5～3.5 V 之间摆 2 V，方向和电流相反。</p>
+<p><strong>偏置为什么要选在中间</strong>。 负载线的两头是截止（右下角， <span class="math math-inline">\(V_C\)</span> = 5 V）和饱和（左上角， <span class="math math-inline">\(V_C\)</span> 约 0.2 V），工作点滑到头就「撞墙」，输出波形会被削平。请看图 03-p2-11 三种偏置下的输出波形。</p>
+<p><a class="img-link" href="img/03_p2_11_bias.png"><img alt="图 03-p2-11 偏置合适与偏置太低、太高" src="img/03_p2_11_bias.png" loading="lazy" /></a></p>
+<p><em>图 03-p2-11　同样 ±0.1 V 的输入，偏置 0.95 V、0.75 V、1.15 V 时的集电极电压</em></p>
+<p>(a) 偏置 0.95 V，输出在 1.5～3.5 V 之间完整摆动，离两头都有余量。(b) 偏置 0.75 V，算出来 Q 点 <span class="math math-inline">\(V_C\)</span> = 4.5 V，输入往下摆到 0.7 V 以下时基极电流变成 0，管子截止， <span class="math math-inline">\(V_C\)</span> 被卡在 5 V，波形顶上被削平（朱红色叉）。(c) 偏置 1.15 V，Q 点 <span class="math math-inline">\(V_C\)</span> = 0.5 V，输入往上摆时「想要」的 <span class="math math-inline">\(V_C\)</span> 低于 0.2 V，管子饱和，波形底下被削平。所以偏置要让 Q 点大约落在负载线中间，也就是 <span class="math math-inline">\(V_C\)</span> 约等于 <span class="math math-inline">\(V_{CC}\)</span> 的一半。</p>
+<p>下面这段代码把上面三个式子写成一个函数，算出 Q 点、放大倍数和三种偏置下的输出范围（在仓库根目录运行，不依赖仓库里的文件，只打印数字）。</p>
+<pre><code class="language-python"># 共射放大：理想模型（V_BE = 0.7 V、β = 100、饱和压降 0.2 V）
+VCC, RB, RC, BETA, VBE, VSAT = 5.0, 10e3, 1e3, 100, 0.7, 0.2
+
+def ce_amp(vin):
+    ib = max(vin - VBE, 0.0) / RB          # ① 基极电流：低于 0.7 V 就是 0（截止）
+    ic = BETA * ib                         # ② 放大区：I_C = β·I_B
+    ic = min(ic, (VCC - VSAT) / RC)        # 饱和：外电路最多给这么多电流
+    vc = VCC - ic * RC                     # ③ 集电极电压
+    return ib, ic, vc
+
+for vin in (0.85, 0.95, 1.05):
+    ib, ic, vc = ce_amp(vin)
+    print(f&quot;V_i = {vin:.2f} V  -&gt;  I_B = {ib*1e6:4.1f} uA, I_C = {ic*1e3:.2f} mA, V_C = {vc:.2f} V&quot;)
+
+gain = (ce_amp(1.05)[2] - ce_amp(0.85)[2]) / (1.05 - 0.85)
+print(f&quot;电压增益 A_v = {gain:.1f}，公式 -β·R_C/R_B = {-BETA*RC/RB:.1f}&quot;)
+assert abs(gain + 10) &lt; 1e-9
+
+for vq in (0.95, 0.75, 1.15):              # 三种偏置，输入都是 ±0.1 V
+    lo = min(ce_amp(vq + 0.1)[2], ce_amp(vq - 0.1)[2])
+    hi = max(ce_amp(vq + 0.1)[2], ce_amp(vq - 0.1)[2])
+    print(f&quot;偏置 {vq:.2f} V：V_C 在 {lo:.2f} ~ {hi:.2f} V 之间（摆幅 {hi-lo:.2f} V）&quot;)
+</code></pre>
+<p>运行结果的三行偏置分别是 1.50～3.50 V（摆幅 2.00 V）、3.50～5.00 V（摆幅 1.50 V，顶上被削）、0.20～1.50 V（摆幅 1.30 V，底下被削）：被削掉的那一截就是图 03-p2-11 (b)(c) 里的朱红色叉。</p>
+<blockquote>
+<p>💡 <strong>实际芯片会怎样</strong>：用典型 2N3904 的 SPICE 模型仿真同一个电路（ <span class="math math-inline">\(R_B\)</span> = 10 kΩ、 <span class="math math-inline">\(R_C\)</span> = 1 kΩ、5 V），真实管子的 <span class="math math-inline">\(V_{BE}\)</span> 只有约 0.66 V、β 约 130，所以 <span class="math math-inline">\(V_C\)</span> = 2.5 V 的 Q 点出现在输入约 0.85 V（不是 0.95 V）；在它上下各摆 0.1 V，集电极电压从 3.57 V 变到 1.38 V，增益约 −11，和理想模型的 −10 很接近。还有一个差别：输入变 0.2 V 时，基极电压只变约 0.04 V——基极–发射极之间那只「二极管」的电压并不完全固定，电流越大它略高一点，这一点点会让增益比 <span class="math math-inline">\(\beta R_C / R_B\)</span> 略小一些。β 是因管而异的（2N3904 手册写 100–300），所以同一个电路换一只管子 Q 点就会跑，实验时要靠调偏置把 <span class="math math-inline">\(V_C\)</span> 调回约 2.5 V，见 <a href="page4.html">动手实验篇</a> 的实验二。</p>
 </blockquote>
 <h2 id="4-mos-管门限电压和导通电阻">4. MOS 管：门限电压和导通电阻</h2>
 <p>N 沟道 MOS 管只看 <span class="math math-inline">\(V_{GS}\)</span> 。 <span class="math math-inline">\(V_{GS}\)</span> 低于门限电压 <span class="math math-inline">\(V_{GS(th)}\)</span> 时漏极电流几乎为零；超过以后，电流随 <span class="math math-inline">\(V_{GS}\)</span> 迅速增大。以常见的小功率 MOS 管 2N7000 为例，数据手册给出 <span class="math math-inline">\(V_{GS(th)}\)</span> 最小 0.8 V、典型 2.1 V、最大 3.0 V，栅源电压不得超过 ±20 V（<a href="https://www.onsemi.com/download/data-sheet/pdf/nds7002a-d.pdf">onsemi 2N7000 数据手册</a>）。</p>

@@ -37,7 +37,13 @@ mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;p
 mjx-container{max-width:100%}
 .footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
 </style>
-
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
 </head>
 <body class="tex2jax_ignore">
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/03-semiconductor-basics/page4.md">GitHub 源文件</a></div></nav>
@@ -50,6 +56,7 @@ mjx-container{max-width:100%}
 <li><strong>二极管的「0.7 V 规则」</strong>：1N4148 串 1 kΩ 接 5 V，二极管两端只剩约 0.68 V，其余电压都落在电阻上；把电流从 0.4 mA 调到 4.3 mA，压降只多了约 0.1 V。对应 <a href="page2.html">03 半导体入门 · 原理与实现篇</a> 第一节的指数曲线。</li>
 <li><strong>稳压管的「墙」</strong>：1N4733A 串 560 Ω 接 9 V 电池，输出稳在约 5.0 V；接上 1 kΩ 负载几乎不变，接上 470 Ω 负载就「墙倒了」，输出掉到约 4.1 V。对应 <a href="page2.html">03 半导体入门 · 原理与实现篇</a> 第二节。</li>
 <li><strong>三极管当开关</strong>：基极通过 10 kΩ 接 5 V，集电极掉到 0.1 V 左右，LED 点亮；基极接地，LED 熄灭。选做部分把基极电阻换成 47 kΩ，让三极管停在放大区，看集电极电压怎样随 β 变化。对应 <a href="page2.html">03 半导体入门 · 原理与实现篇</a> 第三节的三个区和负载线，以及 <a href="page3.html">03 半导体入门 · 参数与调试篇</a> 第二节「基极电阻选大了就不饱和」。</li>
+<li><strong>三极管怎样放大（实验二）</strong>：把 B 区改成共射放大电路，用电位器当「输入信号」一点点拧，基极电压只变几十毫伏，集电极电压却变 2 V 多、而且方向相反，放大约 11 倍。对应 <a href="page1.html">03 半导体入门 · 直觉篇</a> 的「三极管怎样放大」和 <a href="page2.html">03 半导体入门 · 原理与实现篇</a> 的共射放大小节。</li>
 </ol>
 <p>MOS 管这一页不做：它的门限电压离散很大，要配合后面的 <a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a> 一起做才有意思。</p>
 <h2 id="️-安全须知">⚠️ 安全须知</h2>
@@ -118,7 +125,7 @@ mjx-container{max-width:100%}
 <td>电阻</td>
 <td>1 kΩ，1/4 W，±5%</td>
 <td>3</td>
-<td>二极管限流、选做时的 RC、稳压管的 1 kΩ 负载</td>
+<td>二极管限流、选做和实验二的 RC、稳压管的 1 kΩ 负载</td>
 </tr>
 <tr>
 <td>电阻</td>
@@ -131,6 +138,12 @@ mjx-container{max-width:100%}
 <td>47 kΩ</td>
 <td>1</td>
 <td>选做：放大区的基极电阻</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>22 kΩ</td>
+<td>1</td>
+<td>实验二：串在电位器上端，把输入限制在 0～1.56 V</td>
 </tr>
 <tr>
 <td>电阻</td>
@@ -417,6 +430,156 @@ for k, v in readings.items():
     print(f&quot;{k:&lt;10} 实测 {v:6.3f} V  计算 {e:6.3f} V  偏差 {dev:+6.1f}%{flag}&quot;)
 </code></pre>
 <p>示例里的读数都没有触发提示。第 13 步最容易&quot;偏差大&quot;，因为它对 β 和滑动端电压都很敏感：β 差 20%，集电极电压可以差 0.5 V 以上。</p>
+<h2 id="实验二三极管放大输入变一点输出变很多">实验二：三极管放大——输入变一点，输出变很多</h2>
+<p>前面的选做第 12～14 步只量了一个工作点。这一节把 B 区改成 <a href="page2.html">03 半导体入门 · 原理与实现篇</a> 的共射放大电路（基极电阻 10 kΩ、集电极电阻 1 kΩ、5 V），用电位器当一个「拧得很慢的输入信号」：先把集电极调到 2.5 V（Q 点），再让输入上下各变 0.05 V、0.10 V，看集电极怎么跟着变。整块板子改完的样子见图 03-p4-4，对应的原理图见图 03-p4-5。</p>
+<p><a class="img-link" href="img/03_p4_4_breadboard_amp.png"><img alt="实验二的面包板：A 区、C 区不动；B 区 RB 10k、RC 1k，红线 +5 V 接第 22 列，22k 从第 22 列接到电位器上端第 27 列，蓝线从电位器滑动端接到第 13 列" src="img/03_p4_4_breadboard_amp.png" loading="lazy" /></a></p>
+<p><em>图 03-p4-4　实验二的面包板接线（只改 B 区和电位器）</em></p>
+<p><a class="img-link" href="img/03_p4_5_schem_lab.png"><img alt="实验二的原理图：+5 V 经 22k 到电位器上端，滑动端④经蓝线和 RB 10k 进基极②，+5 V 经 RC 1k 进集电极③，发射极接地" src="img/03_p4_5_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 03-p4-5　图 03-p4-4 对应的原理图（灰色小字是面包板列号，②③④是测量点）</em></p>
+<p><strong>对照看</strong>：图 03-p4-5 最上面的 +5 V 在面包板上就是第 22 列——红线把 +5 V 轨接到 a22，RC（c18–c22）和 22 kΩ（d22–d27）的一端也都插在这一列，所以原理图里这三样画在同一个点上。22 kΩ 的另一端在第 27 列，就是电位器的「+」端；电位器「−」端第 29 列接地，滑动端第 28 列是测量点 ④。原理图里从 ④ 到 RB 的那段线，在面包板上是那根从 b28 绕到 a13 的蓝线，RB 插在 b13–b17，第 17 列是基极 ②。三极管仍是 d16、d17、d18 依次插 E 发射极、B 基极、C 集电极，第 18 列就是集电极 ③。</p>
+<p><strong>为什么要加 22 kΩ</strong>：它和 10 kΩ 电位器分压，电位器上端只有 5 × 10 ÷ (22 + 10) ≈ 1.56 V，整圈拧下来输入只在 0～1.56 V 之间变，放大区（约 0.7～1.0 V）占了很大一段，好调；同时基极电流最多不到 (1.56 − 0.6) ÷ 10 kΩ ≈ 96 μA，集电极电流最多不到 5 V ÷ 1 kΩ = 5 mA，Q 点时三极管发热只有 2.5 V × 2.5 mA ≈ 6 mW，完全安全。</p>
+<h3 id="改线步骤接着第-17-步的板子做">改线步骤（接着第 17 步的板子做）</h3>
+<ol start="18">
+<li>断电。拔掉 LED，拔掉两根红线：+5 V 轨 → a25、+5 V 轨 → a27。</li>
+<li>RC 从 220 Ω 换成 1 kΩ，仍插 c18–c22；加一根红线：+5 V 轨第 22 列 → a22。</li>
+<li>RB 保持 10 kΩ（b13–b17）。如果刚做完选做第 12～14 步、插的是 47 kΩ，换回 10 kΩ。</li>
+<li>22 kΩ：d22 → d27。</li>
+<li>蓝线：把 a13 那根从 +5 V 轨拔下，改接到 b28（电位器滑动端）。如果做过选做，这根已经接好了。</li>
+<li>检查：第 22 列有红线、RC、22 kΩ 三样；a29 仍有黑线接地；A 区、C 区不用动。把电位器拧到「−」那头（④ 接近 0 V），再通电。</li>
+</ol>
+<h3 id="实验二测量表">实验二测量表</h3>
+<p>黑表笔接地。第 16 步先找 Q 点，后面四步都以它为中心：比如第 16 步读到 ④ = 0.851 V，第 18 步就把 ④ 调到 0.751 V。电位器不好一次调准，调到相差 0.005 V 以内即可，<strong>以实际读到的 ④ 为准</strong>记下来。「应该读到」一栏是 ngspice 用 onsemi 的 2N3904 模型算出的典型值，由 <code>code/figs/03_figs.py</code> 打印。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>15</td>
+<td>电位器上端</td>
+<td>第 27 列</td>
+<td>直流 20 V</td>
+<td>1.3～1.8 V（典型 1.56 V）</td>
+<td>读到 5 V：22 kΩ 没插或插到了别的列</td>
+</tr>
+<tr>
+<td>16</td>
+<td>拧电位器让 ③ = 2.50 V，记下此时的 ④</td>
+<td>先第 18 列，再第 28 列</td>
+<td>直流 20 V</td>
+<td>④ 约 0.75～0.95 V（典型 0.851 V）</td>
+<td>③ 拧不到 2.5 V：RC 是不是还是 220 Ω</td>
+</tr>
+<tr>
+<td>17</td>
+<td>Q 点的 ② 基极</td>
+<td>第 17 列</td>
+<td>直流 20 V</td>
+<td>0.62～0.70 V（典型 0.658 V）</td>
+<td>和 ④ 一样大：RB 没插好；接近 0：三极管引脚插错</td>
+</tr>
+<tr>
+<td>18</td>
+<td>④ = Q − 0.10 V 时的 ②、③</td>
+<td>第 17、18 列</td>
+<td>直流 20 V</td>
+<td>② 0.635 V，③ 3.57 V</td>
+<td>③ 变化反而和 ④ 同向：表笔接到了第 17 列</td>
+</tr>
+<tr>
+<td>19</td>
+<td>④ = Q − 0.05 V 时的 ②、③</td>
+<td>第 17、18 列</td>
+<td>直流 20 V</td>
+<td>② 0.648 V，③ 3.05 V</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>20</td>
+<td>④ = Q + 0.05 V 时的 ②、③</td>
+<td>第 17、18 列</td>
+<td>直流 20 V</td>
+<td>② 0.667 V，③ 1.94 V</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>21</td>
+<td>④ = Q + 0.10 V 时的 ②、③</td>
+<td>第 17、18 列</td>
+<td>直流 20 V</td>
+<td>② 0.674 V，③ 1.38 V</td>
+<td>③ 已贴到 0.2 V：这只管子 β 很大，只做 ±0.05 V 两步</td>
+</tr>
+<tr>
+<td>22</td>
+<td>④ 调到约 0.60 V 时的 ③</td>
+<td>第 18 列</td>
+<td>直流 20 V</td>
+<td>约 4.7 V（接近截止）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>23</td>
+<td>④ 调到约 1.30 V 时的 ③</td>
+<td>第 18 列</td>
+<td>直流 20 V</td>
+<td>约 0.2 V（饱和）</td>
+<td>拧到头都下不去：RC 两端是否真是 1 kΩ</td>
+</tr>
+</tbody>
+</table>
+<p>第 18～21 步的 ③ 会随 β 变：β 越大，同样 ±0.10 V 输入下 ③ 摆得越远。不管数字是多少，有三件事一定成立，这就是「放大」的证据：① ④ 往上调，③ 往下走（反相）；② ③ 的变化比 ④ 大十倍左右；③ ② 几乎不动——④ 变 0.2 V，② 只变约 0.04 V，剩下的 0.16 V 都落在 RB 上，变成基极电流的变化 0.16 V ÷ 10 kΩ = 16 μA，再乘 β 变成集电极电流的变化。</p>
+<p>请看图 03-p4-6：橙色实线是 SPICE 算出的 ③ 随 ④ 的变化，紫色圆点就是第 18～21 步和第 16 步的五个读数。</p>
+<p><a class="img-link" href="img/03_p4_6_amp_curve.png"><img alt="图 03-p4-6 实验二：集电极电压随输入的变化" src="img/03_p4_6_amp_curve.png" loading="lazy" /></a></p>
+<p><em>图 03-p4-6　实验二应该读到的曲线：浅蓝色带是第 18～21 步调的范围</em></p>
+<p>左边 ④ 低于约 0.55 V 时，基极电流几乎为 0，③ 贴在 5 V（截止）；右边 ④ 高过约 1.05 V，③ 贴在 0.2 V 左右（饱和）；只有中间这一段是斜的，斜率就是放大倍数。浅蓝色带里 ④ 从 0.751 V 变到 0.951 V，③ 从 3.57 V 降到 1.38 V，放大倍数约 (1.38 − 3.57) ÷ 0.2 ≈ −11。黑色虚线是第 2 页 β = 100、 <span class="math math-inline">\(V_{BE}\)</span> = 0.7 V 的理想模型：斜率差不多，只是整体右移了约 0.1 V，因为真实管子的 <span class="math math-inline">\(V_{BE}\)</span> 只有约 0.66 V、β 约 130。你自己的读数点应该落在一条和橙色线差不多斜的线上，左右平移一点是 β 不同造成的，不是故障。</p>
+<h3 id="用-python-核对实验二的读数">用 Python 核对实验二的读数</h3>
+<p>把第 15～21 步的读数填进 <code>readings</code>，每一步填（④，②，③）三个数。程序用欧姆定律算出每一步的 <span class="math math-inline">\(I_B\)</span> 和 <span class="math math-inline">\(I_C\)</span> ，再算 β 和放大倍数，并用 Q 点算出的 β 预测其余四步的 ③：偏差超过 10%、并且差值超过 0.05 V 的会给出提示。下面默认填的是 SPICE 典型值。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# ① 你量到的电源和电阻（先断电用电阻挡量）
+m = dict(V5=5.00, RB=10.0e3, RC=1.0e3)
+# ② 各步读数（伏）：(④ 输入, ② 基极, ③ 集电极)
+readings = {&quot;18 Q-0.10&quot;: (0.751, 0.635, 3.57), &quot;19 Q-0.05&quot;: (0.801, 0.648, 3.05),
+            &quot;16 Q 点&quot;:   (0.851, 0.658, 2.50), &quot;20 Q+0.05&quot;: (0.901, 0.667, 1.94),
+            &quot;21 Q+0.10&quot;: (0.951, 0.674, 1.38)}
+VT = 0.02585                                        # 热电压（第 2 页二极管公式里的那个数）
+
+for k, (vi, vb, vc) in readings.items():
+    ib = (vi - vb) / m[&quot;RB&quot;]                        # RB 两端电压 ÷ RB
+    ic = (m[&quot;V5&quot;] - vc) / m[&quot;RC&quot;]                   # RC 两端电压 ÷ RC
+    print(f&quot;{k:&lt;10} I_B = {ib*1e6:5.1f} uA   I_C = {ic*1e3:4.2f} mA   I_C/I_B = {ic/ib:5.0f}&quot;)
+
+vi_q, vb_q, vc_q = readings[&quot;16 Q 点&quot;]
+ib_q = (vi_q - vb_q) / m[&quot;RB&quot;]
+beta = (m[&quot;V5&quot;] - vc_q) / m[&quot;RC&quot;] / ib_q            # 用 Q 点算出这只管子的 β
+rd = VT / ib_q                                      # 基极-发射极「二极管」的动态电阻
+gain_expect = -beta * m[&quot;RC&quot;] / (m[&quot;RB&quot;] + rd)      # 比 -β·RC/RB 多算了 rd 这一点
+lo, hi = readings[&quot;18 Q-0.10&quot;], readings[&quot;21 Q+0.10&quot;]
+gain = (hi[2] - lo[2]) / (hi[0] - lo[0])
+dvb = hi[1] - lo[1]
+print(f&quot;β ≈ {beta:.0f}，实测放大倍数 {gain:+.1f}，预测 {gain_expect:+.1f}，粗算 -β·RC/RB = {-beta*m['RC']/m['RB']:+.1f}&quot;)
+print(f&quot;输入变 {hi[0]-lo[0]:.3f} V，基极只变 {dvb*1e3:.0f} mV，集电极变 {hi[2]-lo[2]:+.2f} V&quot;)
+
+for k, (vi, vb, vc) in readings.items():
+    e = vc_q + gain_expect * (vi - vi_q)            # 用预测的放大倍数推这一步的 ③
+    dev = (vc - e) / e * 100
+    bad = abs(dev) &gt; 10 and abs(vc - e) &gt; 0.05
+    flag = &quot;  ← 偏差超过 10%，先查：④ 是否调准、③ 有没有贴到 0.2 V 或 5 V&quot; if bad else &quot;&quot;
+    print(f&quot;{k:&lt;10} ③ 实测 {vc:5.2f} V  预测 {e:5.2f} V  偏差 {dev:+5.1f}%{flag}&quot;)
+
+assert gain &lt; -5, &quot;放大倍数应为负（反相），而且大小在 5 以上&quot;
+assert abs(dvb) &lt; 0.3 * abs(hi[0] - lo[0]), &quot;基极电压的变化应远小于输入的变化&quot;
+print(&quot;三条放大证据都成立：反相、放大十倍左右、基极几乎不动&quot;)
+</code></pre>
+<p>默认读数下，程序算出 β ≈ 130、实测放大倍数 −11.0、预测 −11.4，五个点都没有触发提示；基极只变 39 mV。如果你的 β 是 250，放大倍数会到 −20 左右，±0.10 V 时 ③ 可能已经贴到 0.2 V，这时把 <code>readings</code> 里第 18、21 两行换成第 19、20 步的读数，程序照样能用。</p>
 <h2 id="实验记录表">实验记录表</h2>
 <table>
 <thead>
@@ -527,6 +690,69 @@ for k, v in readings.items():
 <td></td>
 <td></td>
 </tr>
+<tr>
+<td>15</td>
+<td>实验二：电位器上端</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>16</td>
+<td>实验二：Q 点的 ④（③ = 2.50 V）</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>17</td>
+<td>实验二：Q 点的 ②</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>18</td>
+<td>Q − 0.10 V：④ / ② / ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>19</td>
+<td>Q − 0.05 V：④ / ② / ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>20</td>
+<td>Q + 0.05 V：④ / ② / ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>21</td>
+<td>Q + 0.10 V：④ / ② / ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>22</td>
+<td>④ 约 0.60 V 时的 ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>23</td>
+<td>④ 约 1.30 V 时的 ③</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
 </tbody>
 </table>
 <p>逐点测量另记一张表：输入档位、二极管电压、1 kΩ 两端电压、电流（mA）四栏，6 行。</p>
@@ -543,6 +769,10 @@ for k, v in readings.items():
 <details><summary>答案</summary>
 <p>稳压管能&quot;稳住&quot;，靠的是限流电阻里有富余的电流可以让它分走。9 V 电池经过 560 Ω，在输出为 5 V 时最多只能送出 (9 − 5) ÷ 560 ≈ 7.1 mA。470 Ω 负载在 5 V 下要 5 ÷ 470 ≈ 10.6 mA，比能送出的还多，输出只好往下掉；掉到 5 V 以下，稳压管就回到&quot;墙&quot;前面那段几乎不导电的区域，等于不存在，剩下的就是普通分压 9 × 470 ÷ (560 + 470) ≈ 4.1 V。接 1 kΩ 时负载只要约 5 mA，稳压管还能分到 2 mA 多，所以输出几乎不变。后面的 <a href="../17-zener-regulator/page1.html">17 稳压管稳压 · 直觉篇</a> 会专门讲怎样选这个限流电阻。</p>
 </details>
+<p><strong>思考题 4</strong>：实验二里 ④ 从 Q − 0.10 V 调到 Q + 0.10 V，一共变了 0.2 V，基极 ② 却只变了约 0.04 V。剩下的电压去哪了？为什么集电极 ③ 能变 2 V 多？</p>
+<details><summary>答案</summary>
+<p>第 1 步：剩下约 0.16 V 落在 RB（10 kΩ）上，所以基极电流变了 0.16 V ÷ 10 kΩ = 16 μA（读数里是 11.6 μA 变到 27.7 μA）。第 2 步：三极管把这 16 μA 放大 β 倍左右（约 130 倍），集电极电流变约 2.2 mA（1.43 mA 变到 3.62 mA）。第 3 步：这 2.2 mA 的变化全部流过 RC（1 kΩ），RC 上的电压就变约 2.2 V；RC 上多掉的电压，集电极就少了，所以 ③ 往下走约 2.2 V。多出来的能量来自 5 V 电源，三极管只是用小小的基极电流去「控制」从电源流过 RC 的大电流。</p>
+</details>
 <h2 id="自测清单">自测清单</h2>
 <ul>
 <li>我能看着 1N4148、1N4733A 和 LED 认出阴极，并按指定方向插进面包板。</li>
@@ -550,6 +780,7 @@ for k, v in readings.items():
 <li>我能用万用表判断三极管是饱和、截止还是在放大区，并解释截止时集电极为什么读不到 5 V。</li>
 <li>我能算出稳压管限流电阻能带多大的负载，并用实验验证负载太重时稳压会失效。</li>
 <li>我能在两组电源只共地的情况下正确接线，说出为什么 +5 V 和 +9 V 不能连在一起。</li>
+<li>我能把共射放大电路的集电极调到约 2.5 V，用三个读数（④②③）说出「反相、放大十倍左右、基极几乎不动」这三条放大证据，并算出这只管子的 β。</li>
 </ul>
 
 </main>
