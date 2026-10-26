@@ -1,0 +1,22 @@
+* 19 page3 练习4 / 图19-p3-2：推挽射极跟随器 2N3904 + 2N3906，输入 ±3 V 正弦
+* 页面：输出峰值 2.3 V，过零附近 ±0.7 V 内输出为零（平台）
+* 假设：电源 ±12 V，负载 1 kΩ，1 kHz，基极由理想源推动（页面未给）
+.include ../models/2N3904_onsemi.lib
+.include ../models/2N3906_onsemi.lib
+VP p 0 12
+VN n 0 -12
+VI i 0 SIN(0 3 1k)
+Q1 p i o Q2n3904
+Q2 n i o q2n3906
+RL o 0 1k
+.control
+tran 1u 2m 0 1u
+meas tran mx max v(o) from=1m to=2m
+meas tran mn min v(o) from=1m to=2m
+meas tran tw when v(o)=0.01 rise=2
+meas tran vth find v(i) at=tw
+echo "RES mx $&mx"
+echo "RES mn $&mn"
+echo "RES vth $&vth"
+.endc
+.end

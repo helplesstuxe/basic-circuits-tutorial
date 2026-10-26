@@ -1,20 +1,18 @@
-# 12 积分电路 · 调研笔记（作者 C）
+# 12 电压跟随器 · 研究笔记（作者 A）
 
-## 已打开并引用的资料
-- TI SBOA275B *Integrator Circuit*：https://www.ti.com/lit/an/sboa275b/sboa275b.pdf（本地 /workspace/authorC/refs/sboa275b.pdf）
-  - 理想积分器会依输入失调电压极性饱和到电源轨，需要反馈电阻 R2 提供稳定直流工作点；R2 限制积分的最低频率。
-  - Vout = −1/(R1C1)∫Vin dt；示例 R1 100 kΩ、C1 1.59 nF（f0dB 1 kHz）、R2 100 MΩ、TLV9002 ±2.5 V，仿真中设 Vos −740 μV。
-  - Design notes：R2 尽量大；选 CMOS 运放减小偏置电流误差；GBP ≥ 10·fMax；必要时同相端接可调基准抵消失调；常放在更大的伺服环路里由外环提供直流反馈。
-  - 第 3 步 "lower cutoff a decade less than the minimum operating frequency"。注意：该文档 R2 公式的数值（10 Hz vs 表中 fMin 100 Hz）前后不一致，教程只引用"低十倍"的原则和示例取值，没有照抄其公式。
-- 运放输出摆幅 / GBW 数量级沿用 P3 页（LM358B 数据手册，P3 作者已引用）。
+## 理论
+- TI SBOA269 缓冲器（跟随器）电路手册 https://www.ti.com/lit/pdf/sboa269 ：增益 1，输入阻抗高、输出阻抗低，用于隔离信号源与负载。
+- TI SLAA068B https://www.ti.com/lit/an/slaa068b/slaa068b.pdf ：跟随器是同相放大 Rf = 0、R1 开路的特例。
+- LM358B 数据手册 https://www.ti.com/lit/ds/symlink/lm358.pdf ：输入共模上限 V+ − 1.5 V；输出最低约 V− + 0.1 V；GBW 1.2 MHz。
 
-## 设计取值（本节）
-R 10 kΩ、C 100 nF（RC 1 ms）、Rf 1 MΩ（Rf·C 0.1 s，f_c ≈ 1.6 Hz）；输出极限按 ±15 V 供电示意 ±13.5 V；±1 V 500 Hz 方波 + 20 mV 偏置。
+## 实战代码 / 容性负载
+- TI TIDU032C（容性负载驱动参考设计）https://www.ti.com/lit/pdf/tidu032 ：用隔离电阻 RISO（例 6.2 Ω）驱动 0.1 μF，设计相位裕度 45°、过冲约 23%（其运放并非 LM358B）。
+- TI SSZT999（容性负载稳定性博客）https://www.ti.com/lit/pdf/sszt999 、SBOA418 https://www.ti.com/lit/pdf/sboa418 ：容性负载与运放输出电阻形成额外极点，相位裕度下降，阶跃出现振铃；串小电阻隔离。
+- 本节容性负载图用一阶运放模型（GBW 1.2 MHz）+ 开环输出电阻 + 0.1 μF，scipy.signal.step 求阶跃响应。
+- （本轮更正）开环输出电阻原用 50 Ω 假设值（原有核实标记，现已删除）；现已在 LM358B 数据手册 https://www.ti.com/lit/ds/symlink/lm358.pdf （LM358B/LM358BA 电气特性表，已下载打开）查到：RO open-loop output resistance 300 Ω（f = 1 MHz，IO = 0 A）；CLOAD capacitive load drive 100 pF。模型改用 300 Ω（按固定值处理，属简化）。
+- 新结果（12_figs.py 打印并断言）：直接接 0.1 μF 最高 0.190 V、过冲 90%，60 μs 内不稳定；串 10 Ω 过冲 40%；串 33 Ω 最高 0.101 V、过冲 1.2%、8.2 μs 进入 ±2%；0.1 μF / 100 pF = 1000 倍；1 mA × 33 Ω = 33 mV。
 
-## 仿真结果（code/12_sim.py、code/figs/12_figs.py）
-- 方波 → 三角波峰峰 1.00 V；理想积分器 627 ms 撞 −13.5 V（漂移 20 V/s）；Rf 1 MΩ 时中心 −2.00 V。
-- Rf 扫描：10k/100k/1M/10M → 中心 −0.02/−0.20/−2.00/−13.01 V（10 MΩ 已削顶）；500 Hz 下 Rf 10 kΩ 峰峰 0.93 V（变形），100 kΩ 与 1 MΩ 为 1.00 V。
-- RC 扫描：0.05/1/10 ms → 峰峰 20.00（削平）/1.00/0.10 V。
-
-## 未用 / 待核实
-无「待核实」标记。
+## 常见误区
+- 以为 1 倍没用（作用是阻抗变换/隔离）。
+- 直接驱动大电容、长电缆导致振荡。
+- 单电源下以为能 0～5 V 满幅跟随（LM358B 只有约 0.1～3.5 V）。

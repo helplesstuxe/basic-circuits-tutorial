@@ -5,7 +5,7 @@
 代码块在临时目录运行，图片写到临时目录，不会污染仓库；需要 code/figs/ 里的共享模块时，代码块可以
 `import figstyle`/`import schem`——本工具把 code/ 和 code/figs/ 加进 PYTHONPATH。
 用法:
-  python tools/run_blocks.py 01-inverting-amp/page2.md ...      # 指定文件
+  python tools/run_blocks.py 05-inverting-amp/page2.md ...      # 指定文件
   python tools/run_blocks.py                                     # 不给参数 = 所有 P*/NN-*/page*.md
   python tools/run_blocks.py --scripts [code/01_*.py ...]        # 在仓库根目录运行仿真/画图脚本（默认 code/*.py 和 code/figs/*_figs.py）
 请用教程的虚拟环境运行：/workspace/circuits-venv/bin/python tools/run_blocks.py …

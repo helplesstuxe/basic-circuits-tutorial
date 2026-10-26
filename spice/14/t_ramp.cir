@@ -1,0 +1,37 @@
+* 14 积分电路 · 原理与实现篇 例题 3：RC = 1 ms，输入恒定 −0.5 V，从 0 V 起斜坡上升，多久到 +10 V，最高能到多少（页面按 +13.5 V，27 ms）
+* LM358B（TI 官方模型），±15 V
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e12
+VP vcc 0 15
+VN vee 0 -15
+VR rst 0 PWL(0 1 49u 1 50u 0)
+.model swr sw vt=0.5 vh=0.1 ron=1 roff=1e15
+* 理想积分器：R 输入，C 反馈；电容旁的开关只在 t < 50 μs 时闭合，给电容清零（代替“初始输出 0 V”），之后断开（1e15 Ω）
+.subckt integ in o vcc vee rst r=10k c=100n
+R1 in m {r}
+C1 m o {c}
+S1 m o rst 0 swr
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+* 实用积分器：C 旁并 R_f，有直流工作点，不需要清零
+.subckt pinteg in o vcc vee r=10k c=100n rf=1meg
+R1 in m {r}
+C1 m o {c}
+R2 m o {rf}
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+VA a 0 PWL(0 0 50u 0 50.1u -0.5)
+XI a o vcc vee rst integ
+.control
+tran 5u 40m 0 5u
+meas tran t10 when v(o)=10 rise=1
+let d10 = t10 - 50u
+meas tran vmax max v(o)
+let vm1 = vmax - 0.05
+meas tran tmax when v(o)=vm1 rise=1
+let dmax = tmax - 50u
+echo "RES d10 $&d10"
+echo "RES vmax $&vmax"
+echo "RES dmax $&dmax"
+.endc
+.end

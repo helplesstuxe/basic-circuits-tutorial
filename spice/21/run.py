@@ -1,144 +1,128 @@
-"""21 MOS 管开关：IRLZ44N（Infineon 官方模型）低边开关、续流二极管、P 沟道高边栅压。
-在仓库根目录运行：python spice/21/run.py"""
-import pathlib, sys
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import numpy as np
-import ng
-from ng import check
+#!/usr/bin/env python3
+"""21 线性稳压：分立稳压电路（LM358 + TIP31C + 1N4733A）与 7805 替代核对。"""
+# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
+import subprocess, re, sys, pathlib, math
+HERE = pathlib.Path(__file__).resolve().parent
+ROWS = []
 
+def ngspice(cir, need=()):
+    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
+    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
+    out = r.stdout + r.stderr
+    vals = {}
+    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
+        try:
+            vals[k] = float(v)
+        except ValueError:
+            vals[k] = float("nan")
+    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
+    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
+        print(out[-3000:])
+        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
+    return vals
 
-def sw_energy(d, t0, t1, i_col=5):
-    """按 code/21_sim.py 的判据：V_DS > 2·I_L·R_ON(0.15 V) 且有电流的时段积分 V·I。"""
-    a = np.loadtxt(d)
-    t, vd, i = a[:, 0], a[:, 3] if i_col == 5 else a[:, 1], a[:, i_col]
-    w = (t >= t0) & (t <= t1) & (vd > 0.15) & (i > 0.01)
-    return np.trapezoid((vd * i)[w], t[w]) if w.any() else 0.0
+def row(loc, item, page, spice, unit="", note=""):
+    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
+    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
+    ROWS.append((loc, item, page, spice, unit, dev, note))
 
+def fmt(x):
+    if x is None:
+        return "—"
+    a = abs(x)
+    if a == 0:
+        return "0"
+    if a >= 1000 or a < 0.01:
+        return f"{x:.4g}"
+    return f"{x:.4g}"
 
-def first_cross(t, y, level, t0, falling):
-    w = t >= t0
-    t, y = t[w], y[w]
-    k = np.where(y <= level)[0] if falling else np.where(y >= level)[0]
-    return t[k[0]] if len(k) else float("nan")
+def report(title):
+    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
+    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
+    for loc, item, page, spice, unit, dev, note in ROWS:
+        d = "   —  " if dev is None else f"{dev:+7.2f}%"
+        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
+    print(f"共 {len(ROWS)} 项。")
+# ---- 工具结束 ----
 
+DC = ["vref", "vo", "vob", "iin", "iz"]
+RIP = ["opp", "omn", "ipp", "imn", "rav", "oav", "izav"]
+d14 = ngspice("t_dc14.cir", need=DC)
+d14l = ngspice("t_dc14l.cir", need=DC)
+d13 = ngspice("t_dc13.cir", need=DC)
+d15 = ngspice("t_dc15.cir", need=DC)
+l180 = ngspice("t_lab180.cir", need=DC)
+l18 = ngspice("t_lab18.cir", need=DC)
+e1 = ngspice("t_ex1.cir", need=DC)
+e2 = ngspice("t_ex2.cir", need=DC)
+p1 = ngspice("t_p1.cir", need=DC)
+r14 = ngspice("t_rip14.cir", need=RIP)
+r115 = ngspice("t_rip115.cir", need=RIP)
+r12 = ngspice("t_rip12.cir", need=RIP)
+r2k = ngspice("t_ripRZ2k.cir", need=RIP)
+dr = ngspice("t_drop05.cir", need=["v12", "v11", "v10", "hd10", "vknee"])
+drl = ngspice("t_drop005.cir", need=["vknee"])
+sc = ngspice("t_stab_C10.cir", need=["opp", "fosc"])
+se = ngspice("t_stab_esr1L.cir", need=["opp"])
+s78 = ngspice("t_78xx_sub.cir", need=["vo12", "ii12", "vo9", "ii9"])
 
-print("== 21 MOS 管开关（IRLZ44N）==")
-# ---------- 低边开关，纯电阻 4 Ω（12 V / 3 A 灯带）----------
-R = {rg: ng.run("lowside.cir", {"RG": rg}) for rg in ("10", "100", "1000")}
-r = R["100"]
-check("p2 §1", "栅极峰值电流 5 V/100 Ω", 50, r["IGPK"] * 1e3, "mA", "模型内含 2.4 Ω 内部栅阻")
-check("p3 §1", "R_G/R_GS 分压后稳态 V_GS", 4.95, r["VGSS"], "V")
-r1k = ng.run("lowside.cir", {"RGS": "1k"})
-check("p3 §1", "R_GS 换 1 kΩ 后稳态 V_GS（页面「损失约 9%」）", 5 * 1000 / 1100, r1k["VGSS"], "V")
-rds5 = r["VDSS"] / r["IDS"]
-check("p2 例1 第1步", "5 V 驱动（实际 4.95 V）3 A 时 R_DS(on)：页面用手册最大值 25 mΩ", 25, rds5 * 1e3, "mΩ",
-      "SPICE 为典型值，低于手册最大值，页面按最大值估算偏安全", v="✅")
-check("p2 例1 第1步", "导通损耗 P_cond（D=50%）", 0.1125, 3 ** 2 * rds5 * 0.5, "W",
-      "页面按最大值 25 mΩ，SPICE 典型值更低；方向偏安全", v="✅")
-check("p2 §2 代数", "平台电压 V_pl（V_DS 降到 6 V 时的 V_GS，纯电阻负载）", 2.8, r["VPL"], "V",
-      "页面为示意值；门限 1.0–2.0 V 的批次差异会让平台上下移动约 ±0.5 V", v="✅" if abs(r["VPL"] / 2.8 - 1) < 0.2 else "⚠️")
-
-# 开通完成时间（V_DS 降到 0.15 V）
-for rg, pg in (("10", 0.07), ("100", 0.74), ("1000", 7.43)):
-    check("p3 §2 图21-p3-1左", f"R_G={rg} Ω 开通完成时间", pg, R[rg]["TONDONE"] * 1e6, "μs",
-          "与 R_G 基本成正比 ✓；绝对值差异来自示意模型与门限批次差异", v="✅" if abs(R[rg]["TONDONE"] * 1e6 / pg - 1) < 0.2 else "⚠️")
-
-# 开关能量：纯电阻负载
-E = {}
-for rg in R:
-    d = R[rg]["_dir"] + "/ls.txt"
-    E[rg] = (sw_energy(d, 0, 10e-6), sw_energy(d, 10e-6, 20e-6))
-eon, eoff = E["100"]
-NOTE_R = ("纯电阻负载时电压、电流同时变化（发热≈V·I·t/6），而页面示意模型是「先电流到 3 A 再降电压」的感性钳位波形（≈V·I·t/2），"
-          "且 12 V 下真实 Q_GD 更小；页面数值偏大、方向偏安全")
-check("p2 §3", "E_on（R_G=100 Ω，12 V/3 A 纯电阻）", 12.6, eon * 1e6, "μJ", NOTE_R, v="⚠️")
-check("p2 §3", "E_off（同上）", 10.8, eoff * 1e6, "μJ", NOTE_R, v="⚠️")
-
-# ---------- 感性负载 + 续流二极管（钳位感性，最接近页面示意模型）----------
-I1 = ng.run("inductive.cir", {"DMODE": "1"})
-d = I1["_dir"] + "/ind.txt"
-a = np.loadtxt(d)
-t, vd, idd, vg = a[:, 0], a[:, 1], a[:, 3], a[:, 5]
-w_off = (t >= 3e-3) & (t <= 3.0199e-3) & (vd > 0.15) & (idd > 0.01)
-w_on = (t >= 3.02e-3) & (t <= 3.03e-3) & (vd > 0.15) & (idd > 0.01)
-eoff_L = np.trapezoid((vd * idd)[w_off], t[w_off])
-eon_L = np.trapezoid((vd * idd)[w_on], t[w_on])
-ESUM_L = eon_L + eoff_L
-check("p2 §3 / 例1 第2步", "E_on+E_off（R_G=100 Ω，3 A 电机 + 1N5822 续流，钳位感性）", 23.4, ESUM_L * 1e6, "μJ",
-      "官方模型约为页面的 1/2.7：页面 Q_GD=12 nC、平台 2.8 V 偏保守；方向偏安全，但「仿真得 23.4 μJ」宜注明是示意模型上限", v="⚠️")
-check("p2 §3 / 例1 第2步", "同上，纯电阻灯带（例 1 题面的负载）", 23.4, (eon + eoff) * 1e6, "μJ", NOTE_R, v="⚠️")
-# 开通时段的电流爬升、平台（钳位感性，第二次开通 3.02 ms）
-t_on0 = 3.02e-3 + 1e-9
-tri0 = first_cross(t, idd, 0.1 * 2.75, t_on0, False); tri1 = first_cross(t, idd, 0.9 * 2.75, t_on0, False)
-tpl0 = first_cross(t, vd, 0.9 * 12.46, tri1, True); tpl1 = first_cross(t, vd, 0.1 * 12.46, tri1, True)
-check("p2 §2 代数", "电流爬升时间 t_ri（10→90%，钳位感性开通）", 0.14, (tri1 - tri0) * 1e6 / 0.8, "μs",
-      "SPICE 10→90% 时间按 /0.8 折算。真实管子跨导很大，V_GS 只需比门限高约 0.3 V 电流就到 3 A，所以电流几乎是「跳」上去的；页面「门限 1.5 V→平台 2.8 V 线性爬升」是示意", v="⚠️")
-check("p2 §2 代数", "开通平台时间 t_pl,on（V_DS 90→10%）", 0.55, (tpl1 - tpl0) * 1e6 / 0.8, "μs",
-      "官方模型 12 V 时的 Q_GD 小于页面取的 12 nC", v="✅" if abs((tpl1 - tpl0) / 0.8e-6 / 0.55 - 1) < 0.2 else "⚠️")
-check("p2 §5", "有续流二极管：关断后漏极电压（页面「约 12.7 V」）", 12.7, I1["VDPK"], "V",
-      "D1 用 1N5822 肖特基，压降比硅管小；硅二极管约 12.7 V")
-check("p2 §5", "关断瞬间 3 A 转到 D1（漏极电流降到 0，线圈电流 = 页面 3 A）", 3.0, I1["ISS"], "A")
-
-# 不同 R_G 的 20 kHz 开关损耗（p3 §2 图右 / 练习4）
-PS = {}
-for rg, pg in (("10", 0.047), ("100", 0.468), ("1000", 4.678)):
-    IL = ng.run("inductive.cir", {"DMODE": "1", "RG": rg})
-    a = np.loadtxt(IL["_dir"] + "/ind.txt"); t, vd, idd = a[:, 0], a[:, 1], a[:, 3]
-    e = 0.0
-    for t0, t1 in ((3e-3, 3.0199e-3), (3.02e-3, 3.06e-3)):
-        w = (t >= t0) & (t <= t1) & (vd > 0.15) & (idd > 0.01)
-        e += np.trapezoid((vd * idd)[w], t[w])
-    PS[rg] = e * 20e3
-    er = sum(E[rg]) * 20e3
-    check("p3 §2 图21-p3-1右", f"R_G={rg} Ω、20 kHz 开关损耗（钳位感性 / 纯电阻 {er:.3f} W）", pg, PS[rg], "W",
-          "官方模型约为页面的 1/2.5～1/5；页面偏保守，与 R_G 成正比的结论 ✓", v="⚠️")
-pc = 3 ** 2 * 0.025 * 0.5
-for f, pg in ((1e3, 0.136), (20e3, 0.580), (100e3, 2.450)):
-    check("p2 §4 图21-p2-2 / 例1、例2", f"{f/1e3:.0f} kHz 合计发热（导通按 25 mΩ 最大值 + SPICE 开关能量）", pg,
-          pc + ESUM_L * f, "W", "开关部分偏保守（见上）；1 kHz 时导通占主导，结论不变" if f == 1e3 else "开关能量页面偏保守",
-          v="✅" if abs((pc + ESUM_L * f) / pg - 1) <= 0.1 else "⚠️")
-check("p2 §4", "导通损耗与开关损耗相交频率", 4.8, pc / ESUM_L / 1e3, "kHz", "开关能量更小，交点右移", v="⚠️")
-tj4 = (PS["1000"] + 0.113) * 62
-check("p3 练习4", "R_G=1 kΩ、20 kHz 温升（页面 297 °C →「很快烧坏」）", 297, tj4, "°C",
-      "官方模型下结温约 25+%.0f=%.0f °C：低于 175 °C 但已很烫，仍是坏设计；页面「很快烧坏」偏夸大，数值偏大" % (tj4, 25+tj4), v="⚠️")
-
-# 无续流二极管：雪崩钳位
-I0 = ng.run("inductive.cir", {"DMODE": "0", "T2": "3.3e-3", "TE": "3.29m", "TSTOP": "3.5m"})
-check("p2 §5", "无续流二极管：关断尖峰（页面理想计算 ≈16000 V，并说明实际在 55 V 以上雪崩）", 55, I0["VDPK"], "V",
-      "模型体二极管 BV=55 V，尖峰被雪崩钳在约 55 V，与页面「55 V 以上某处被击穿」一致", v="✅")
-check("p2 §5", "每次关断灌进 MOS 管的能量（页面 ½LI² = 4.5 mJ）", 4.5, I0["EAV"] * 1e3, "mJ",
-      "钳位期间电源还在继续送能量（≈ ½LI²·V_cl/(V_cl−12 V)），同时线圈串联电阻 4 Ω 也分走一部分；页面只算 ½LI²", v="✅" if abs(I0["EAV"]*1e3/4.5-1)<=0.1 else "⚠️")
-I2 = ng.run("inductive.cir", {"DMODE": "2"})
-check("p3 练习3", "D1 接反、MOS 导通时电流（页面「可能有几十安」，理想电源）", None, I2["ISS"], "A",
-      "电源无内阻时达到数十～近百安：等于短路，结论一致", v="✅")
-
-# ---------- 导通电阻 vs 驱动电压（p3 §3 图21-p3-2）----------
-for vgs, mx in ((10, 22), (5, 25), (4, 35)):
-    rr = ng.run("rds.cir", {"VGS": str(vgs)})
-    check("p3 §3 图21-p3-2", f"V_GS={vgs} V、3 A 时 R_DS(on)（页面列手册最大值 {mx} mΩ）", mx, rr["RDS"] * 1e3, "mΩ",
-          "SPICE 为典型值，低于最大值，页面按最大值算发热偏安全", v="✅" if rr["RDS"] * 1e3 <= mx else "❌")
-rr = ng.run("rds.cir", {"VGS": "3.3"})
-check("p3 §3", "V_GS=3.3 V 时 R_DS(on)（手册未保证，仅供参考）", None, rr["RDS"] * 1e3, "mΩ", "典型样品可用，但手册不保证", v="ℹ️")
-check("p3 故障表", "万用表二极管档：红 S 黑 D 体二极管读数（页面「零点几伏」，1 mA 测试电流）", None, rr["VBD"], "V",
-      "0.45 V，落在「零点几伏」内", v="✅")
-
-# ---------- P 沟道高边栅压（栅压只由上拉/Q2 决定）----------
-h = ng.run("highside.cir", {"VS": "12", "VIN": "5"})
-check("p1 图21-p1-2", "Q2 导通时 Q1 的 V_GS", -12, h["VGS1"], "V")
-h = ng.run("highside.cir", {"VS": "12", "VIN": "0"})
-check("p1 图21-p1-2", "Q2 关断时 Q1 的 V_GS（≈0）", 0, h["VGS1"], "V")
-h = ng.run("highside.cir", {"VS": "24", "VIN": "5"})
-check("p3 练习5", "24 V 时 Q2 导通的 Q1 V_GS", -24, h["VGS1"], "V")
-h = ng.run("highside.cir", {"VS": "24", "VIN": "5", "RSER": "10k"})
-check("p3 练习5 改法一", "串 10 kΩ 分压后 Q1 V_GS", -12, h["VGS1"], "V")
-
-# ---------- 练习 1：3.3 V / 47 Ω ----------
-r47 = ng.run("lowside.cir", {"RG": "47", "VDRV": "3.3"})
-check("p3 练习1", "3.3 V / 47 Ω 栅极峰值电流", 70, r47["IGPK"] * 1e3, "mA", "模型内部栅阻 2.4 Ω 使峰值略低")
-r180 = ng.run("lowside.cir", {"RG": "180", "VDRV": "3.3"})
-check("p3 练习1", "R_G=180 Ω 时峰值电流 ≤ 20 mA", 18.3, r180["IGPK"] * 1e3, "mA")
-
-for x in ("p2 例3 AO3400A", "p3 §3 IRF540N"):
-    check(x, "无可用官方模型（AO3400A/IRF540N 未取得厂家 SPICE 文件），只核算术", None, float("nan"), "",
-          "页面算术已复核无误", v="ℹ️")
-ng.save()
+# ---- 主例：14 V、0.5 A ----
+vo, vref = d14["vo"], d14["vref"]
+il = vo / 17.66
+ie = il + vo / 9000.0                       # 负载 + 分压电阻
+pin = 14 * -d14["iin"]
+pload = vo * il
+pc = (14 - vo) * ie
+row("p2 §2 第1步", "I_Z（14 V）", 9.18, -d14["iz"] * 1e3, "mA")
+row("p2 §2 第1步", "V_ref（14 V）", 4.821, vref, "V", "Diodes 1N4733A 模型 9 mA 时约 5.00 V；手册 5.1 V±5% @49 mA")
+row("p2 §2 第3步 / p1 §三", "V_o = V_ref(1+R_f/R_1)", 8.508, vo, "V", f"按 SPICE 基准算公式值 {vref * (1 + 3.9 / 5.1):.3f} V")
+row("p2 §2 第4步", "运放输出（0.5 A）", 9.26, d14["vob"], "V")
+row("p2 §2 第4步", "V_BE（0.5 A）", 0.755, d14["vob"] - vo, "V", "TIP31C 模型")
+row("p1 图21-p1-3", "从输入拿走的功率", 7.14, pin, "W")
+row("p1 图21-p1-3", "负载得到的功率", 4.25, pload, "W", "负载电流 0.5 A，SPICE 输出电压高 0.32 V")
+row("p1 图21-p1-3", "调整管发热", 2.75, pc, "W")
+row("p1 图21-p1-3", "基准、分压、运放", 0.14, pin - pload - pc, "W")
+row("p1 §四", "效率", 60, pload / pin * 100, "%")
+dvl = (d14l["vo"] - vo) * 1e6
+row("p1 §三 / p2 §三 / p2 §六", "负载 0.01→0.5 A 输出变化", 1.8, dvl, "µV",
+    f"运放输出变 {(d14['vob'] - d14l['vob']) * 1e3:.0f} mV（页面设 V_BE 变 0.1 V）；等效 AK ≈ {(d14['vob'] - d14l['vob']) / (dvl * 1e-6):.0f}（页面 56667）")
+row("p2 §六", "输入 13→15 V 输出变化", 24.5, (d15["vo"] - d13["vo"]) * 1e3, "mV")
+# ---- 纹波 ----
+row("p1 图21-p1-2 / p2 §五", "输出纹波（14 V 平均、2 V 峰峰）", 24.5, r14["opp"] * 1e3, "mV",
+    f"基准纹波按 1N4733A 模型（9 mA 时 r_Z≈5.7 Ω）；抑制 {2 / r14['opp']:.0f} 倍")
+row("p2 §五", "纹波抑制（dB）", 38, 20 * math.log10(2 / r14["opp"]), "dB")
+row("p3 练习3", "R_Z 2 kΩ：输出纹波", 12.3, r2k["opp"] * 1e3, "mV", "指数型稳压管 r_Z∝1/I_Z，电流减半 r_Z 加倍，纹波几乎不变")
+row("p3 练习3", "R_Z 2 kΩ：I_Z", 4.6, -r2k["izav"] * 1e3, "mA")
+row("p3 练习3", "R_Z 2 kΩ：基准", 4.79, r2k["rav"], "V")
+row("p3 练习3", "R_Z 2 kΩ：输出", 8.45, r2k["oav"], "V")
+# ---- 压差 ----
+row("p2 §四 / p3 §一", "最低输入（0.5 A）", 10.76, dr["vknee"], "V", "拐点定义：输出比 12 V 时低 20 mV")
+row("p2 §四", "最低输入（0.05 A）", 10.70, drl["vknee"], "V")
+row("p2 §六", "输入 12 V 时 V_o", 8.48, dr["v12"], "V")
+row("p2 §六", "输入 11 V 时 V_o", 8.47, dr["v11"], "V")
+row("p2 §四 / §六", "输入 10 V 时 V_o", 7.74, dr["v10"], "V")
+row("p2 §四", "跟随区压差（输入 10 V）", 2.26, dr["hd10"], "V")
+row("p3 §三 图21-p3-2", "11.5 V 平均：输出最低", 8.24, r115["omn"], "V")
+row("p3 §三 图21-p3-2", "11.5 V 平均：输出纹波", 245, r115["opp"] * 1e3, "mV", f"是 14 V 时的 {r115['opp'] / r14['opp']:.0f} 倍（页面 10 倍）")
+row("p3 练习2", "12 V 平均、2 V 纹波：输出纹波（无缺口）", None, r12["opp"] * 1e3, "mV", f"谷底 11 V；与 14 V 时 {r14['opp'] * 1e3:.1f} mV 相近，无缺口")
+# ---- 例题、练习 ----
+row("p2 例1", "R_f 7.5 kΩ、16 V：V_o", 11.91, e1["vo"], "V")
+row("p2 例1", "调整管功耗", 2.05, (16 - e1["vo"]) * 0.5, "W", "差别来自 V_o 高 0.48 V")
+row("p2 例2", "R_f 2.0 kΩ、12 V：V_o", 6.71, e2["vo"], "V")
+row("p2 例2", "调整管功耗", 1.59, (12 - e2["vo"]) * 0.3, "W")
+row("p3 练习1", "16 V、0.5 A 调整管功耗", 3.75, (16 - p1["vo"]) * 0.5, "W")
+# ---- 动手实验 ----
+row("p3 §五 第2步", "180 Ω：V_ref", 4.82, l180["vref"], "V")
+row("p3 §五 第2步", "180 Ω：V_o", 8.51, l180["vo"], "V")
+row("p3 §五 第2步", "180 Ω：运放输出", 9.2, l180["vob"], "V")
+row("p3 §五 第3步", "换 18 Ω：输出变化（几乎不变）", None, (l18["vo"] - l180["vo"]) * 1e3, "mV")
+row("p3 §五 第3步", "换 18 Ω：运放输出升高", None, (l18["vob"] - l180["vob"]) * 1e3, "mV", "页面：几十毫伏")
+row("p3 §五 第4步", "输出开始下降的输入（10.7–10.8 V）", 10.75, dr["vknee"], "V")
+# ---- 稳定性 ----
+row("p2 图21-p2-1 C_o 10 µF", "理想 10 µF 直接并输出：输出峰峰", None, sc["opp"], "V", f"持续振荡 {sc['fosc'] / 1e3:.1f} kHz（页面图示为稳定直线）")
+row("p3 §四", "10 µF 串 1 Ω ESR、0.05 A：输出峰峰", None, se["opp"] * 1e3, "mV", "稳定")
+# ---- 7805（替代：LM317 接成 5 V）----
+row("p2 例3（替代 LM317）", "12 V→5 V、1 A：V_o", 5.0, s78["vo12"], "V", "替代模型，仅核对功耗")
+row("p2 例3（替代 LM317）", "功耗", 7.0, (12 - s78["vo12"]) * s78["vo12"] / 5, "W")
+row("p3 练习4（替代 LM317）", "9 V→5 V、0.5 A 功耗", 2.0, (9 - s78["vo9"]) * s78["vo9"] / 10, "W")
+report("21 线性稳压")

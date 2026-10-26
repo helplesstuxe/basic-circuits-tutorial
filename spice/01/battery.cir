@@ -1,0 +1,21 @@
+* 01 电源内阻（page2 §7 例子）：5.00 V 源接 100 Ω 读 4.00 V → r=25 Ω，再接 50 Ω 应读 3.33 V；
+* 9 V 电池接 30 Ω 读 8.1 V → r≈3.33 Ω，接 10 Ω 读 6.75 V。电池按"理想源 + 内阻"建模（页面本身的模型）。
+V1 a 0 5
+Ri1 a b 25
+RL1 b 0 50
+V2 c 0 9
+Ri2 c d 3.333
+RL2 d 0 10
+V3 e 0 9
+Ri3 e f 3.333
+RL3 f 0 30
+.control
+op
+let vb=v(b)
+let vd=v(d)
+let vf=v(f)
+echo "RES vb $&vb"
+echo "RES vd $&vd"
+echo "RES vf $&vf"
+.endc
+.end

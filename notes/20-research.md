@@ -1,34 +1,22 @@
-# 20 双控开关 · 资料笔记（作者 D）
+# 20 有源滤波 · 调研笔记（作者 A）
 
-以下每条都打开过原网页。
+## 理论
+- TI SLOA049《Active Low-Pass Filter Design》https://www.ti.com/lit/pdf/sloa049 （已打开，跳转到 sloa049b）：Sallen-Key 单位增益结构增益精度最好；MFB 灵敏度和高频特性更好；表 10-1 给出 fc = 1 kHz 巴特沃斯值 C1 = 10 nF、C2 = 33 nF、R1 = 4.22 kΩ、R2 = 18.4 kΩ（m = 0.229，n = 3.3，Q = 0.707）。本节仿真直接用这组值。
+- TI SBOA293/SBOA294（低通滤波电路手册，已打开）：一阶/二阶低通设计流程与元件取值思路。
+- TI SLOA024、SLOA093（已打开）：滤波器分类与阶数、巴特沃斯定义。
 
-## 原理
+## 代码
+- scipy.signal.lsim 文档（已打开）：用传递函数分子分母系数做时域仿真，本节 20_figs.py 用它算噪声滤除和方波响应。
 
-1. Wikipedia，Multiway switching <https://en.wikipedia.org/wiki/Multiway_switching>
-   - 两地控制用两只 SPDT（美国叫 3-way，英国叫 2-way）开关，中间用一对 traveler（跨线）相连；四种开关组合里两种灯亮。
-   - 三地及以上：在两只 SPDT 之间插入中途开关（美国叫 4-way，英国叫 intermediate），本质是 DPDT，在「直通」和「交叉」之间切换；可以串任意多只。
-   - Carter 接法让灯座螺口外壳在灯灭时也可能带电，已被禁止；美国 NEC 404.2 要求开关只能断不接地的导线（即相线）。
-   - 现代也用低压继电器 / 智能开关实现多地控制。
-2. Samotech，How to wire a 2-way light switch (UK) <https://www.samotech.co.uk/guides/wiring/how-to-wire-2-way-light-switch-uk/>
-   - 每只两地开关三个端子：COM、L1、L2；COM 在一个位置接 L1，另一个位置接 L2。
-   - 永久火线进第一只的 COM，第二只的 COM 出来去灯；两根 strapper 连 L1–L1、L2–L2；零线直接到灯，不经过开关。
-   - 常见故障：「只有一只开关管用」最常见原因是火线或去灯的线接在 L1/L2 上，而不是 COM。
-   - 中途开关有四个端子，让两根跨线直通或交叉；每多一个控制点加一只中途开关。
-   - 安全：断开回路、上锁挂牌、用双极验电器验电（只用非接触式电笔不够）。
-   - 注：该页称「跨线在一端对调会导致灯常亮或常灭」，本节的仿真（code/20_sim.py C 部分）显示两根跨线在一端整体对调只会让亮灭位置反过来，功能不变；所以正文没有引用这一句，而是用仿真结果。
-
-## 国内规范
-
-3. GB 50303-2015《建筑电气工程施工质量验收规范》§20.1 <https://gf.cabr-fire.com/article-19525.htm>
-   - 20.1.4：照明开关「相线应经开关控制」。
-   - 20.1.3：单相两孔插座面对插座右孔接相线、左孔接中性线。
-4. GB 50303-2015 §18.2.2 <https://gf.cabr-fire.com/article-19520.htm>
-   - 第 4 款：「当采用螺口灯头时，相线应接于螺口灯头中间的端子上」。
-
-## 仿真依据
-
-- 开关和导线按「谁和谁连通」建模（并查集），灯两端一端通 L、一端通 N 即亮；这是理想开关模型，不涉及电压、电流大小。
-
-## [待核实]
-
-- 低压实验所用小拨动开关（如 SS12D00 一类）的额定值各厂不同，正文只说「按开关标称值使用」，未给具体型号出处。
+## 常见错误
+- 截止频率漏 2π：自己推导，R 会算大 2π 倍，fc 低到 159 Hz（图 20-p3-2）。
+- 运放带宽不足：闭环带宽约 GBW/增益（08 节已核实 LM358B GBW 1.2 MHz）。
+  - （本轮解决）经验法则出处改为 Microchip ADN003 https://ww1.microchip.com/downloads/en/DeviceDoc/adn003.pdf （已下载打开）：闭环带宽应至少为截止频率的 100 倍；Sallen-Key 增益 1：GBWP ≥ 100·fC；增益 > 1：GBWP ≥ 100·G·fC；MFB：GBWP ≥ 100·(−G + 1)·fC。
+  - TI SBOA588 https://www.ti.com/lit/pdf/sboa588 （已打开）：许多滤波设计工具推荐 GBWP 100 倍；修正无源元件可降低余量；其例子 GBWP 仅为滤波带宽 2.5 倍时误差约 17%。
+  - 20_figs.py 打印并断言 100 × 1 × 1 kHz = 100 kHz ≤ 1.2 MHz，100 × 10 × 100 kHz = 100 MHz。
+- Sallen-Key 两个电容位置接反：Q 由 0.71 变成 0.21（自己计算）。
+- （本轮解决）电容容差与材质影响 fc：
+  - KEMET X7R 商用手册 https://media.digikey.com/pdf/Data%20Sheets/Kemet%20PDFs/X7R_Dielectric_Comm_Rev_2019.pdf ：−55～+125 °C 容量变化 ±15%；容差 ±5/±10/±20%；老化约 3%/十倍时间。
+  - KEMET F3101（MIL-PRF-11015 引线 MLCC）https://content.kemet.com/datasheets/F3101_MIL-PRF-11015.pdf ：C0G 0 ± 30 ppm/°C，Class I 不受电压、频率、时间影响；X7R ±15%，Z5U +22/−56%；直流电压 > 5 V 时 Class II 容量下降；老化 C0G 无、X7R 2%/十倍时间。
+  - TI SLOA049B 第 14 节 https://www.ti.com/lit/an/sloa049b/sloa049b.pdf ：电容避免 < 10 pF，用 C0G（NP0）、1%；电阻用低温漂金属膜 1%。
+  - 页面删去未找到出处的"薄膜电容"；20_figs.py 打印并断言 30 ppm × 100 °C = 0.3%、两电容同时 −15% → fc +17.6%。

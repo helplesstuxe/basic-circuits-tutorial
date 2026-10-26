@@ -1,0 +1,19 @@
+* 02 LM358B 压摆率（page3 参数表 SR≈0.5 V/µs），±15 V 跟随器，输入 −5→+5 V 阶跃，10 kΩ 负载
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VI in 0 PULSE(-5 5 10u 10n 10n 100u 200u)
+XU in out vcc vee out LMX58B_LM2904B
+RL out 0 10k
+.control
+tran 0.05u 200u
+meas tran t1 when v(out)=-3 rise=1
+meas tran t2 when v(out)=3 rise=1
+meas tran t3 when v(out)=3 fall=1
+meas tran t4 when v(out)=-3 fall=1
+let srf = 6/(t4-t3)/1e6
+echo "RES srf $&srf"
+let sr = 6/(t2-t1)/1e6
+echo "RES sr $&sr"
+.endc
+.end

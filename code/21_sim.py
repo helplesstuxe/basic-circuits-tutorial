@@ -1,122 +1,181 @@
-"""21 仿真：低边 N 沟道 MOS 管开关的栅极充放电（栅极电荷示意模型）和开关损耗。
-运行：/workspace/circuits-venv/bin/python code/21_sim.py   → 21-mosfet-switch/img/21_p2_1_gate_charge.png
-page2 里的代码块是本文件的精简版（只借用 figstyle 的中文字体设置）；code/figs/21_figs.py 会调用这里的 simulate()。
-模型参数是「示意值」，量级参考 IRLZ44N 数据手册（Q_gs = 8.6 nC、R_DS(on) = 25 mΩ @ V_GS = 5 V、V_GS(th) 1.0–2.0 V），
-不代表某个型号的精确波形。
+"""21 线性稳压：静态与时域计算，生成 21-linear-regulator/img/ 里的曲线图。
+运行：/workspace/circuits-venv/bin/python code/21_sim.py
+电路（见 21 page2）：稳压管基准（17 的 1N4733A 模型：V = V_Z + r_Z·(I_Z − I_ZT)，即 V = V_Z0 + r_Z·I_Z，V_Z0 ≈ 4.757 V；经 R_Z = 1 kΩ 从 V_i 供电）
+→ 运放 LM358 接成同相放大（08 的公式，R_1 = 5.1 kΩ，R_f = 3.9 kΩ），输出推动 TIP31 射极跟随器（19 的指数模型）。
+示意假设：运放开环增益 A = 1e5；运放输出最高到 V_i − 1.5 V（与 19 的估算相同）；β = 50；I_S = 1e-13 A。
+图上的每个数字都由本脚本打印；关键结论用 assert 检查。
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
+import figstyle as fs
 import numpy as np
+import matplotlib.pyplot as plt
 
-# ---- 示意模型参数 ----
-V_TH = 1.5        # 门限电压 V_GS(th)：电流从这里开始出现（V）
-V_PL = 2.8        # 「米勒平台」电压：负载电流全部流过时的 V_GS（V）
-Q_GS = 8.6e-9     # 栅极充到平台所需电荷（C）
-Q_GD = 12e-9      # 平台期间要搬走的电荷（栅漏电容放电，C）
-C_TAIL = 6e-9     # 平台之后的等效栅极电容（F）
-R_ON = 0.025      # 完全导通时的 R_DS(on)（Ω，5 V 驱动）
-V_DD = 12.0       # 负载电源（V）
-I_L = 3.0         # 负载电流（A）
-
-
-def vgs_of_q(q):
-    """栅极电荷 → 栅源电压：先线性上升到平台，平台上不动，之后再线性上升。"""
-    q = np.asarray(q, dtype=float)
-    return np.where(q < Q_GS, q / Q_GS * V_PL,
-                    np.where(q < Q_GS + Q_GD, V_PL, V_PL + (q - Q_GS - Q_GD) / C_TAIL))
+N = "21"
+VZ, IZT, RZ_DYN, R_Z = 5.1, 0.049, 7.0, 1000.0   # 1N4733A（见 17 page2）：49 mA 时 5.1 V；限流电阻 1 kΩ
+VZ0 = VZ - RZ_DYN * IZT                  # 击穿起点 ≈ 4.757 V
+R1, RF = 5100.0, 3900.0                   # 同相放大：倍数 1 + RF/R1
+A_OL = 1e5                                # 运放开环增益（示意值）
+HEAD = 1.5                                # 运放输出最高 = V_i − 1.5 V（同 19）
+VT, IS, BETA = 0.02585, 1e-13, 50.0       # 三极管模型（同 19）
+I_OP = 0.020                              # LM358 最小拉电流 20 mA（见 19 page1）
+K = R1 / (R1 + RF)                        # 分压比
 
 
-def simulate(r_g=100.0, v_drv=5.0, t_on=10e-6, t_end=20e-6, dt=1e-9):
-    """驱动电压在 0..t_on 为 v_drv、之后为 0；逐步计算栅极电荷，返回各波形和一次开、关的开关能量。"""
-    t = np.arange(0, t_end, dt)
-    vd = np.where(t < t_on, v_drv, 0.0)                    # 驱动电压（单片机引脚）
-    q = np.zeros_like(t)
-    for k in range(1, len(t)):
-        ig = (vd[k - 1] - vgs_of_q(q[k - 1])) / r_g        # 栅极电流 = 栅极电阻两端电压 / R_G
-        q[k] = max(q[k - 1] + ig * dt, 0.0)                # 电荷累加（不会小于 0）
-    vgs = vgs_of_q(q)
-    i_d = I_L * np.clip((vgs - V_TH) / (V_PL - V_TH), 0, 1)              # 门限到平台之间电流线性上升
-    frac = np.clip((q - Q_GS) / Q_GD, 0, 1)                               # 平台走了多少
-    v_ds = np.maximum(V_DD * (1 - frac), i_d * R_ON)                      # 平台期间 V_DS 从 12 V 降到接近 0
-    p = v_ds * i_d                                                        # MOS 管瞬时发热功率
-    sw = v_ds > 2 * I_L * R_ON                                            # 「没开到底」的时刻
-    e_on = float(np.sum(p[sw & (t < t_on)]) * dt)                         # 开通一次的开关能量
-    e_off = float(np.sum(p[sw & (t >= t_on)]) * dt)                       # 关断一次的开关能量
-
-    def cross(mask):
-        idx = np.flatnonzero(mask)
-        return float(t[idx[0]]) if len(idx) else float("nan")
-    # 开关时间：从驱动跳变到 V_DS 走完 90%
-    t_sw_on = cross((t < t_on) & (v_ds < 0.1 * V_DD))
-    t_sw_off = cross((t >= t_on) & (v_ds > 0.9 * V_DD)) - t_on
-    # 电流爬升时间 t_ri（开通时漏极电流从 0 升到 3 A）、电流下降时间 t_fi（关断时从 3 A 降到 0）
-    on, off = t < t_on, t >= t_on
-    t_ri = cross(on & (i_d >= I_L * 0.999)) - cross(on & (i_d > 0))
-    t_fi = cross(off & (i_d <= 0)) - cross(off & (i_d < I_L * 0.999))
-    return dict(t=t, vd=vd, vgs=vgs, i_d=i_d, v_ds=v_ds, p=p, e_on=e_on, e_off=e_off,
-                t_sw_on=t_sw_on, t_sw_off=t_sw_off, t_ri=t_ri, t_fi=t_fi)
+def vref(vi):
+    """稳压管基准：I_Z = (V_i − V_Z0)/(R_Z + r_Z)，V_ref = V_Z0 + r_Z·I_Z。"""
+    iz = max(vi - VZ0, 0.0) / (R_Z + RZ_DYN)
+    return VZ0 + RZ_DYN * iz, iz
 
 
-def losses(f, e_sw, duty=0.5):
-    """PWM 频率 f 下的导通损耗、开关损耗（W）。"""
-    p_cond = I_L ** 2 * R_ON * duty
-    return p_cond, e_sw * f
+def vbe(il):
+    ic = il * BETA / (BETA + 1) + 1e-9
+    return VT * np.log(ic / IS + 1)
 
 
-if __name__ == "__main__":
-    import matplotlib.pyplot as plt
-    import figstyle as fs
-    s = simulate(r_g=100.0)
-    us = s["t"] * 1e6
-    print(f"[数值] R_G = 100 Ω：开通 {s['t_sw_on']*1e6:.2f} μs，关断 {s['t_sw_off']*1e6:.2f} μs；"
-          f"E_on = {s['e_on']*1e6:.1f} μJ，E_off = {s['e_off']*1e6:.1f} μJ")
-    print(f"[数值] 栅极峰值电流 = 5 V / 100 Ω = {5/100*1e3:.0f} mA")
-    # 手算 t_ri、t_fi：门限 1.5 V → 平台 2.8 V 要搬的电荷 = (2.8 − 1.5)/2.8 × Q_GS
-    dq = (V_PL - V_TH) / V_PL * Q_GS
-    i_on = (5.0 - (V_TH + V_PL) / 2) / 100.0                 # 开通：平均栅极电流 = (5 V − 平均 V_GS) / R_G
-    i_off = ((V_TH + V_PL) / 2) / 100.0                      # 关断：平均放电电流 = 平均 V_GS / R_G（驱动已是 0 V）
-    print(f"[数值] 门限→平台的电荷 = {dq*1e9:.2f} nC；手算 t_ri = {dq/i_on*1e6:.2f} μs（平均 {i_on*1e3:.1f} mA），"
-          f"t_fi = {dq/i_off*1e6:.2f} μs（平均 {i_off*1e3:.1f} mA）")
-    print(f"[数值] 仿真 t_ri = {s['t_ri']*1e6:.2f} μs，t_fi = {s['t_fi']*1e6:.2f} μs")
-    v_spike = 1e-3 * I_L / s["t_fi"]
-    print(f"[数值] 无续流二极管、L = 1 mH、3 A 在 t_fi 内降到 0：L·ΔI/Δt ≈ {v_spike:.0f} V")
-    assert abs(s["t_ri"] - 0.14e-6) < 0.02e-6 and abs(s["t_fi"] - 0.19e-6) < 0.02e-6
-    assert abs(dq / i_on - s["t_ri"]) < 0.02e-6 and abs(dq / i_off - s["t_fi"]) < 0.02e-6
-    assert v_spike > 10 * 55, "尖峰远超 IRLZ44N 的 55 V 耐压"
-    assert 0.5e-6 < s["t_sw_on"] < 1.5e-6, "100 Ω 时开通不到 1 μs"
-    assert abs(s["vgs"][int(9e-6 / 1e-9)] - 5.0) < 0.05, "开通 9 μs 后 V_GS 已充到驱动电压 5 V"
+def reg(vi, il):
+    """返回 (V_o, 是否在稳压, V_BE)。il 为负载电流（不含分压电阻电流）。"""
+    vr, _ = vref(vi)
+    ie = il                                # 先忽略分压电阻的约 1 mA，循环里补上
+    for _ in range(3):
+        vb_ = vbe(ie)
+        vo_set = (A_OL * vr - vb_) / (1 + A_OL * K)   # 闭环：V_B = A(V_ref − K·V_o)，V_o = V_B − V_BE
+        vo_max = vi - HEAD - vb_
+        vo = min(vo_set, vo_max)
+        ie = il + vo / (R1 + RF)
+    return vo, vo_set <= vo_max, vb_
 
-    fig, axs = plt.subplots(2, 2, figsize=fs.SIZE["grid"], sharey="row")
-    on90 = s["t_sw_on"] * 1e6
-    off90 = 10 + s["t_sw_off"] * 1e6
-    for col, (x0, x1, title, tx) in enumerate([(-0.2, 2.0, "开通（驱动 0 → 5 V）", on90),
-                                                (9.8, 12.0, "关断（驱动 5 → 0 V）", off90)]):
-        a1, a2 = axs[0, col], axs[1, col]
-        a1.plot(us, s["vd"], **fs.LS["vin"], label="驱动电压")
-        a1.plot(us, s["vgs"], **fs.LS["vout"], label="$V_{GS}$")
-        fs.ref_h(a1, V_PL, f"平台 {V_PL:.1f} V", x=0.98)
-        fs.ref_h(a1, V_TH, f"门限 {V_TH:.1f} V", x=0.98)
-        a1.set_title(title, fontsize=10); a1.set_ylim(-0.3, 6.2)
-        a2.plot(us, s["v_ds"], **fs.LS["third"], label="$V_{DS}$")
-        a2b = a2.twinx()
-        a2b.plot(us, s["i_d"], **fs.LS["cur"], label="漏极电流 $I$")
-        a2b.set_ylim(-0.125, 3.6)
-        if col == 1:
-            a2b.set_ylabel(fs.qlabel("电流", "A"))
-        else:
-            a2b.set_yticklabels([])
-        fs.ref_v(a2, tx, f"{tx:.2f} μs")
-        a2.set_ylim(-0.5, 14.4)
-        for a in (a1, a2):
-            a.set_xlim(x0, x1)
-        if col == 0:
-            fs.axlabels(a2, "时间", "μs", "电压", "V")
-        else:
-            a2.set_xlabel(fs.qlabel("时间", "μs"))
-        if col == 0:
-            fs.axlabels(a1, "", None, "电压", "V")
-            a1.legend(loc="lower right", fontsize=8)
-            h1, l1 = a2.get_legend_handles_labels(); h2, l2 = a2b.get_legend_handles_labels()
-            a2.legend(h1 + h2, l1 + l2, loc="center right", fontsize=8)
-    print(f"[参考线] 平台 {V_PL:.1f} V，门限 {V_TH:.1f} V，V_DS 走完 90% 的时刻 {on90:.2f} μs、{off90:.2f} μs")
-    fs.save(fig, "21", "21_p2_1_gate_charge.png")
+
+def ripple_in(t, avg, pp, f=100.0, t_rise=2.4e-3):
+    """锯齿状纹波（形状同 13 page2、17 page1）。"""
+    ph = np.mod(t, 1 / f)
+    lo, hi = avg - pp / 2, avg + pp / 2
+    return np.where(ph < t_rise, lo + (hi - lo) * ph / t_rise, hi - (hi - lo) * (ph - t_rise) / (1 / f - t_rise))
+
+
+IL = 0.5
+vr14, iz14 = vref(14.0)
+vo14, ok14, vbe14 = reg(14.0, IL)
+ideal = vr14 * (1 + RF / R1)
+drop = HEAD + vbe14
+print(f"[数值] V_i = 14 V：I_Z = {iz14*1e3:.1f} mA，V_ref = {vr14:.3f} V，理想 V_o = V_ref·(1 + R_f/R_1) = {ideal:.3f} V，仿真 V_o = {vo14:.3f} V")
+print(f"[数值] I_L = 0.5 A：V_BE = {vbe14:.3f} V，I_B = {IL/(BETA+1)*1e3:.1f} mA（< 20 mA），运放输出 = {vo14+vbe14:.2f} V")
+print(f"[数值] 压差 = 1.5 V + V_BE = {drop:.3f} V，最低输入 = {vo14+drop:.2f} V")
+assert abs(vo14 - ideal) < 1e-3 and ok14
+assert IL / (BETA + 1) < I_OP
+
+# ---------- 图 21-p1-2 带纹波的输入 vs 稳定的输出 ----------
+t = np.arange(0, 0.03, 20e-6)
+vi_t = ripple_in(t, 14.0, 2.0)
+vo_t = np.array([reg(v, IL)[0] for v in vi_t])
+rin, rout = vi_t.max() - vi_t.min(), vo_t.max() - vo_t.min()
+rr_db = 20 * np.log10(rin / rout)
+pred = rin * RZ_DYN / (R_Z + RZ_DYN) * (1 + RF / R1)
+print(f"[纹波] 输入 {vi_t.min():.1f}~{vi_t.max():.1f} V（峰峰 {rin:.2f} V）→ 输出 {vo_t.mean():.3f} V，纹波 {rout*1e3:.1f} mV（公式 {pred*1e3:.1f} mV），抑制 {rr_db:.0f} dB")
+assert abs(rout - pred) < 1e-3 and rr_db > 35
+fig, (a1, a2) = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=True)
+a1.plot(t * 1e3, vi_t, **fs.LS["vin"], label="输入 $V_i$：平均 14 V，纹波 2 V（峰峰）")
+a1.plot(t * 1e3, vo_t, **fs.LS["vout"], label="输出 $V_o$")
+fs.axlabels(a1, None, None, "电压", "V"); a1.set_ylim(0, 17)
+a1.legend(loc="lower right", fontsize=8)
+VOFF = np.floor(vo_t.mean() * 10) / 10          # 放大看时减掉的整数部分
+a2.plot(t * 1e3, (vo_t - VOFF) * 1e3, **fs.LS["vout"], label=f"输出 $V_o$ 放大看：纹波 {rout*1e3:.1f} mV")
+lo_mv = np.floor((vo_t.min() - VOFF) * 1e3 / 10) * 10 - 10
+fs.axlabels(a2, "时间", "ms", f"输出 − {VOFF:.1f} V", "mV"); a2.set_ylim(lo_mv, lo_mv + 60)
+a2.legend(loc="upper right", fontsize=8)
+a2.set_title(f"输出平均 {vo_t.mean():.3f} V（纵轴放大：只显示 {VOFF + lo_mv/1e3:.2f}–{VOFF + (lo_mv+60)/1e3:.2f} V）", fontsize=9, loc="left")
+print(f"[数值] 纵轴 {VOFF + lo_mv/1e3:.2f}–{VOFF + (lo_mv+60)/1e3:.2f} V")
+fs.save(fig, N, "21_p1_2_ripple.png")
+
+# ---------- 图 21-p1-3 功率去哪了（V_i = 14 V，0.5 A）----------
+p_in = 14.0 * (IL + iz14 + vo14 / (R1 + RF))
+p_load = vo14 * IL
+p_pass = (14.0 - vo14) * (IL + vo14 / (R1 + RF))
+p_other = p_in - p_load - p_pass
+eta = p_load / p_in
+print(f"[功率] 输入 {p_in:.2f} W = 负载 {p_load:.2f} W + 调整管 {p_pass:.2f} W + 基准与分压 {p_other:.2f} W；效率 {eta*100:.0f}%")
+assert 2.0 < p_pass < 3.0 and 0.55 < eta < 0.7
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+names = ["从输入拿走", "负载得到", "调整管发热", "基准与分压"]
+vals = [p_in, p_load, p_pass, p_other]
+cols = [fs.C["vin"], fs.C["vout"], fs.C["bad"], fs.C["ref"]]
+bars = ax.bar(names, vals, color=cols)
+for b, v in zip(bars, vals):
+    ax.text(b.get_x() + b.get_width() / 2, v + 0.1, f"{v:.2f} W", ha="center", fontsize=9)
+fs.axlabels(ax, None, None, "功率", "W"); ax.set_ylim(0, 8.5)
+print("[数值] 柱高 " + "、".join(f"{v:.2f} W" for v in vals))
+fs.save(fig, N, "21_p1_3_power.png")
+
+# ---------- 图 21-p2-2 输入扫描：压差以下失去稳压 ----------
+vis = np.linspace(6, 16, 501)
+cur = {0.5: [], 0.05: []}
+for il_ in cur:
+    cur[il_] = np.array([reg(v, il_)[0] for v in vis])
+vmin05 = vo14 + drop
+vo_005, _, vbe005 = reg(14.0, 0.05)
+vmin005 = vo_005 + HEAD + vbe005
+o10 = reg(10.0, 0.5)[0]
+print(f"[扫描] 0.5 A：最低输入 {vmin05:.2f} V；0.05 A：V_BE {vbe005:.3f} V，最低输入 {vmin005:.2f} V")
+print(f"[扫描] V_i = 10 V、0.5 A：输出只有 {o10:.2f} V（= 10 − {drop:.2f}）")
+assert vmin005 < vmin05 and abs(o10 - (10 - drop)) < 0.01
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(vis, vis, **fs.LS["vin"], label="输入 $V_i$ 本身")
+ax.plot(vis, cur[0.5], **fs.LS["vout"], label="输出 $V_o$（负载 0.5 A）")
+ax.plot(vis, cur[0.05], **fs.LS["third"], label="输出 $V_o$（负载 0.05 A）")
+fs.ref_v(ax, vmin05, f"{vmin05:.2f} V", y=0.62)
+fs.mark(ax, 10.0, o10, "{:.2f}", " V", dx=6, dy=-14)
+fs.mark(ax, 14.0, vo14, "{:.2f}", " V", dx=-10, dy=-16)
+ax.axvspan(6, vmin05, color="0.9", zorder=0)
+ax.text(8.2, 13.5, "压差不够：\n输出跟着输入走", ha="center", fontsize=9, color="0.3")
+fs.axlabels(ax, "输入 $V_i$", "V", "电压", "V"); ax.set_ylim(0, 16.5)
+ax.legend(loc="lower right", fontsize=8)
+fs.save(fig, N, "21_p2_2_dropout.png")
+
+# ---------- 图 21-p3-1 调整管功耗与效率随输入变化 ----------
+vis2 = np.linspace(11.5, 20, 200)
+pc = (vis2 - vo14) * IL
+eff = vo14 * IL / (vis2 * (IL + np.array([vref(v)[1] for v in vis2]) + vo14 / (R1 + RF)))
+# 市电偏高 10%：二极管压降（桥式两只约 1.4 V）不跟着涨。原峰值 15 V → 变压器峰值 16.4 V → ×1.1 → 减 1.4 V
+vpk_hi = (14.0 + 1.0 + 1.4) * 1.1 - 1.4
+v_hi = vpk_hi - 1.0                                    # 纹波仍按 2 V（峰峰）算，平均 = 峰值 − 1 V
+print(f"[散热] 市电 +10%：整流峰值 {vpk_hi:.2f} V，平均约 {v_hi:.2f} V（若直接 14 × 1.1 = {14*1.1:.1f} V）")
+assert abs(v_hi - 15.6) < 0.1
+p156 = (15.6 - vo14) * IL
+print(f"[散热] V_i = 14 V：P_C ≈ {(14-vo14)*IL:.2f} W；V_i = 15.6 V（市电 +10%）：P_C ≈ {p156:.2f} W；V_i = 20 V：{(20-vo14)*IL:.2f} W，效率 {eff[-1]*100:.0f}%")
+for p in ((14 - vo14) * IL, p156):
+    print(f"[散热] P = {p:.2f} W：不加散热片温升 {p*62.5:.0f} °C；总热阻需 ≤ {(150-40)/p:.1f} °C/W，减去结到管壳 3.1 °C/W，散热片 ≤ {(150-40)/p-3.125:.1f} °C/W")
+assert (14 - vo14) * IL > 2.0                           # 超过 TIP31 不加散热片的 2 W
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(vis2, pc, **fs.LS["bad"], label="调整管功耗 $P_C$（左轴）")
+fs.ref_h(ax, 2.0, "TIP31 不加散热片 2 W", x=0.98, ha="right")
+fs.mark(ax, 14.0, (14 - vo14) * IL, "{:.2f}", " W", dx=6, dy=-14)
+fs.mark(ax, 15.6, p156, "{:.2f}", " W", dx=4, dy=12)
+fs.axlabels(ax, "输入 $V_i$", "V", "功耗", "W"); ax.set_ylim(0, 6)
+ax2 = ax.twinx()
+ax2.plot(vis2, eff * 100, **fs.LS["third"], label="效率（右轴）")
+ax2.set_ylabel("效率 (%)"); ax2.set_ylim(0, 100)
+e14 = vo14 * IL / (14 * (IL + iz14 + vo14 / (R1 + RF)))
+fs.mark(ax2, 14.0, e14 * 100, "{:.0f}", " %", dx=6, dy=6)
+fs.mark(ax2, 20.0, eff[-1] * 100, "{:.0f}", " %", dx=-30, dy=8)
+h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
+ax.legend(h1 + h2, l1 + l2, loc="upper center", fontsize=8)
+assert eff[-1] < 0.5 and e14 > 0.55
+fs.save(fig, N, "21_p3_1_heat.png")
+
+# ---------- 图 21-p3-2 压差不够：纹波谷底掉到门槛以下（平均 11.5 V）----------
+vi_lo = ripple_in(t, 11.5, 2.0)
+vo_lo = np.array([reg(v, IL)[0] for v in vi_lo])
+dip = vo_lo.max() - vo_lo.min()
+print(f"[压差] 输入平均 11.5 V、纹波 2 V：谷底 {vi_lo.min():.1f} V < {vmin05:.2f} V，输出最低 {vo_lo.min():.2f} V，纹波 {dip*1e3:.0f} mV（正常时 {rout*1e3:.1f} mV）")
+assert dip > 5 * rout
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, vi_lo, **fs.LS["vin"], label="输入：平均 11.5 V，纹波 2 V")
+ax.plot(t * 1e3, vo_lo, **fs.LS["vout"], label="输出 $V_o$")
+ax.plot(t * 1e3, vi_lo - drop, **fs.LS["third"], label=f"输入 − {drop:.2f} V")
+ax.axhline(vmin05, **fs.LS["ref"], label=f"最低输入 {vmin05:.2f} V")
+k = np.argmin(vo_lo)
+fs.mark(ax, t[k] * 1e3, vo_lo[k], "{:.2f}", " V", dx=6, dy=-14)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(6.5, 15)
+ax.legend(loc="upper right", fontsize=8, ncol=2)
+fs.save(fig, N, "21_p3_2_low_headroom.png")
+print("21_sim OK")

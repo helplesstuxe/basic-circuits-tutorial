@@ -1,171 +1,289 @@
-"""03 电压跟随器：全部配图（图 03-p2-2 由 code/03_sim.py 生成）。
+"""03 半导体入门：全部配图（电路图 + 特性曲线）。
 运行：/workspace/circuits-venv/bin/python code/figs/03_figs.py
-图上的每个数字都由本脚本打印；关键结论用 assert 检查。
+图上的每个数字都由 fs.mark 或 print 打印；关键结论用 assert 检查。
+器件模型是教学用的简化模型，参数取自数据手册的典型值（出处见 notes/03-research.md）。
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from schem import *            # noqa: F401,F403
-import figstyle as fs
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import signal
+import figstyle as fs
+import schem
+import schemdraw.elements as elm
 
-N = "03"
-
-
-def follower(d, vin="$V_i$ 输入", vout="$V_o$ 输出", lab_minus=None, lab_plus=None, out_len=1.25):
-    """跟随器：输出直接接回反相端。返回 (op, 输入端点, 输出端点)。"""
-    d += (op := elm.Opamp(leads=True))
-    d += elm.Line().left().at(op.in1).length(0.5)
-    d += (j := elm.Dot())
-    up = elm.Line().up().at(j.center).length(1.6 if lab_minus else 1.2)
-    if lab_minus:
-        up.label(lab_minus, "bottom", fontsize=11)
-    d += up
-    d += elm.Line().right().tox(op.out.x + 0.5)
-    d += elm.Line().down().toy(op.out)
-    d += elm.Dot()
-    pl = elm.Line().left().at(op.in2).length(3.2 if lab_plus else 1.5)
-    if lab_plus:
-        pl.label(lab_plus, "bottom", fontsize=11)
-    d += pl
-    if vin:
-        d += elm.Dot(open=True).label(vin, "left")
-    pin = d.here
-    d += elm.Line().right().at(op.out).length(out_len)
-    if vout:
-        d += elm.Dot(open=True).label(vout, "right")
-    pout = d.here
-    return op, pin, pout
+P = "03"
+VT = 0.02585          # 热电压 kT/q，室温约 25.85 mV
 
 
-def divider(d, top="10 kΩ", bot="10 kΩ", vs="10 V"):
-    """从当前位置向左画分压器：返回分压点。"""
-    d += elm.Line().left().length(0.8)
-    d += (mid := elm.Dot())
-    d += elm.Resistor().up().label(top, "bottom")
-    d += elm.Vdd().label(vs)
-    d += elm.Resistor().down().at(mid.center).label(bot, "bottom")
-    d += elm.Ground()
-    return mid
+# ---------------- 简化器件模型 ----------------
+def diode_i(v, Is=1e-14, n=1.0):
+    """肖克利二极管方程：I = Is·(e^(V/(n·VT)) − 1)。Is=1e-14 A、n=1 时硅管 1 mA 约 0.65 V。"""
+    return Is * (np.exp(np.clip(v, -5, 3.5) / (n * VT)) - 1)
 
 
-# ---------- 图 03-p1-2 跟随器电路 ----------
-with drawing() as d:
-    follower(d)
-save_schem(d, N, "03_p1_2_circuit.png")
+def diode_v(i, Is=1e-14, n=1.0):
+    """反解：给定正向电流求压降。"""
+    return n * VT * np.log(i / Is + 1)
 
-# ---------- 图 03-p1-1 分压器直接接负载 ----------
-with drawing() as d:
-    d += (s := elm.Dot(open=True).label("分压点", "top"))
-    d += elm.Line().right().at(s.center).length(1.5)
-    d += elm.Resistor().down().label("$R_L$ 1 kΩ\n负载", "bottom")
-    d += elm.Ground()
-    d.here = s.center
-    d += elm.Line().left().length(0.01)
-    divider(d)
-save_schem(d, N, "03_p1_1_direct.png")
 
-# ---------- 图 03-p1-3 分压器经跟随器接负载 ----------
-with drawing() as d:
-    op, pin, pout = follower(d, vin=None, vout=None, out_len=0.8)
-    d.here = pin
-    divider(d)
-    d += elm.Resistor().down().at(pout).label("$R_L$ 1 kΩ\n负载", "bottom")
-    d += elm.Ground()
-save_schem(d, N, "03_p1_3_buffered.png")
-print("分压 10 V × 10/(10+10) = 5 V；直接接 1 kΩ 负载只剩 "
-      f"{10 * (1e3 * 10e3 / 11e3) / (10e3 + 1e3 * 10e3 / 11e3):.2f} V，经跟随器仍为 5.00 V")
+LED_IS, LED_N = 1e-18, 2.0   # 红色 LED 的示意参数：10 mA 时压降约 1.9 V
 
-# ---------- 图 03-p2-1 分析图 ----------
-with drawing() as d:
-    follower(d, lab_minus="$V_- = V_o$（导线直连）", lab_plus="$I \\approx 0$，$V_+ = V_i$")
-save_schem(d, N, "03_p2_1_analysis.png")
 
-# ---------- 图 03-p2-3 基准电压缓冲 ----------
-with drawing() as d:
-    op, pin, pout = follower(d, vin=None, vout=None, out_len=4.4)
-    d.here = pin
-    d += elm.Line().left().length(0.8)
-    d += (mid := elm.Dot())
-    d += elm.Resistor().up().label("10 kΩ", "bottom")
-    d += elm.Vdd().label("5 V")
-    d += elm.Resistor().down().at(mid.center).label("10 kΩ", "bottom")
-    d += elm.Ground()
-    d += elm.Line().left().at(mid.center).length(1.6)
-    d += elm.Capacitor().down().label("100 nF", "top")
-    d += elm.Ground()
-    for dx, txt in ((1.6, "去 ADC 参考端"), (4.4, "去比较器门限")):
-        x = op.out.x + dx
-        if dx < 4:
-            d += elm.Dot().at((x, op.out.y))
-        d += elm.Line().down().at((x, op.out.y)).length(1.0)
-        d += elm.Dot(open=True).label(txt, "bottom")
-    d += elm.Line().right().at(op.out).length(0.01).label("$V_{ref}$ = 2.5 V", "top", ofst=(2.0, 0.1))
-save_schem(d, N, "03_p2_3_vref_buffer.png")
+IZT = 49e-3           # 1N4733A 的测试电流 I_ZT：手册的 V_Z = 5.1 V 就是在这个电流下测的
 
-# ---------- 图 03-p3-1 容性负载：振铃与隔离电阻 ----------
-wt = 2 * np.pi * 1.2e6                                 # LM358B 增益带宽积 1.2 MHz
-Ro, CL = 300.0, 0.1e-6                                 # LM358B 手册：开环输出电阻 RO = 300 Ω（f = 1 MHz、IO = 0）；负载电容 0.1 μF
-CLOAD_RATED = 100e-12                                  # LM358B 手册：容性负载驱动能力 100 pF
-print(f"负载电容 0.1 μF 是手册容性负载能力 100 pF 的 {CL / CLOAD_RATED:.0f} 倍")
-assert round(CL / CLOAD_RATED) == 1000
-t = np.linspace(0, 60e-6, 6001)
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(t * 1e6, np.where(t > 0, 1.0, 0.0) * 0.1, **fs.LS["vin"], label="$V_i$ 输入阶跃 0.1 V")
-res, settle = {}, {}
-for Riso, key, name in ((0.0, "bad", "直接接 0.1 μF"), (10.0, "third", "串 10 Ω"), (33.0, "vout", "串 33 Ω 隔离电阻")):
-    T = (Ro + Riso) * CL
-    # 负载电压 / 输入 = wt / (T s² + (1 + wt·Riso·CL) s + wt)（单极点运放 + 输出电阻 + 隔离电阻 + 电容）
-    _, y = signal.step(([wt], [T, 1 + wt * Riso * CL, wt]), T=t)
-    y = 0.1 * y
-    k = np.argmax(y)
-    os_pct = (y[k] / 0.1 - 1) * 100
-    res[Riso] = os_pct
-    out = np.abs(y - 0.1) > 0.002                      # 偏离 0.1 V 超过 2%
-    settle[Riso] = t[np.nonzero(out)[0][-1]] if out[-1] == False else np.inf
-    ax.plot(t * 1e6, y, **fs.LS[key], label=f"负载电压：{name}")
-    if Riso != 10.0:
-        fs.mark(ax, t[k] * 1e6, y[k], fmt="{:.3f}", unit=" V", dx=6, dy=4)
-    print(f"{name}：最高 {y[k]:.3f} V，过冲 {os_pct:.1f}%，进入 ±2% 的时间 {settle[Riso] * 1e6:.1f} μs")
-assert res[0.0] > 80 and 30 < res[10.0] < 50 and res[33.0] < 2
-assert settle[0.0] == np.inf and settle[33.0] < 10e-6   # 直接接电容：60 μs 内都没稳住；33 Ω：10 μs 内稳住
-print(f"1 mA 负载电流在 33 Ω 上的压降：{1e-3 * 33 * 1e3:.0f} mV")
-fs.ref_h(ax, 0.1, "0.1 V")
-fs.axlabels(ax, "时间", "μs", "电压", "V"); ax.legend(loc="upper right", fontsize=8, ncol=2)
-ax.set_ylim(-0.01, 0.27)
-fs.save(fig, N, "03_p3_1_cap_load.png")
 
-# ---------- 图 03-p3-2 单电源 5 V 跟随器：两头都到不了 ----------
-vin = np.linspace(0, 5, 501)
-V_HI, V_LO = 5.0 - 1.5, 0.02                           # LM358B：输出最高约 V+ − 1.5 V；最低按 SPICE（TI 模型 0.024 V）取约 0.02 V（第 7 轮由 0.1 V 更正）
-vout = np.clip(vin, V_LO, V_HI)
-print(f"单电源 5 V 跟随器：输出范围 {V_LO} V ～ {V_HI} V")
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(vin, vin, **fs.LS["good"], label="理想 $V_o = V_i$")
-ax.plot(vin, vout, **fs.LS["vout"], label="实际 $V_o$")
-fs.ref_h(ax, V_HI, f"{V_HI} V", x=0.02, ha="left")
-fs.ref_h(ax, V_LO, f"{V_LO} V", x=0.6, ha="left")
-fs.mark(ax, V_HI, V_HI, fmt="{:.1f}", unit=" V", dx=6, dy=-14)
-assert vout.max() == 3.5 and vout.min() == 0.02
-fs.axlabels(ax, "输入 $V_i$", "V", "输出 $V_o$", "V"); ax.legend(loc="lower right", fontsize=8)
-fs.save(fig, N, "03_p3_2_single_supply.png")
+def zener_v(iz, vz=5.1, rz=7.0, izt=IZT):
+    """击穿区模型 V = V_Z + r_Z·(I_Z − I_ZT)：I_Z = I_ZT 时正好等于手册的 V_Z。"""
+    return vz + rz * (iz - izt)
 
-# ---------- 正文与练习里的其余数字（只打印 + 断言） ----------
-# 压摆率：不用求导，直接数值算正弦相邻两点的斜率，找最大值，和 2πfVp 对比
-f, Vp = 1e3, 1.0
-tt = np.linspace(0, 1 / f, 100001)
-vv = Vp * np.sin(2 * np.pi * f * tt)
-slope = np.max(np.abs(np.diff(vv) / np.diff(tt)))
-print(f"1 kHz、峰值 1 V 正弦：数值最大斜率 {slope:.1f} V/s，2πfVp = {2*np.pi*f*Vp:.1f} V/s，平均斜率 4fVp = {4*f*Vp:.0f} V/s")
-assert abs(slope / (2 * np.pi * f * Vp) - 1) < 1e-3
-print(f"最大斜率 / 平均斜率 = {slope/(4*f*Vp):.3f}（π/2 = {np.pi/2:.3f}）")
-# 分压器内阻：两只 10 kΩ 并联 5 kΩ，接 1 kΩ 负载
-print(f"5 V × 1/(5+1) = {5*1/(5+1):.2f} V")
-assert abs(5 / 6 - 0.83) < 0.01
-# 诊断练习：隔离电阻 33 Ω、负载 0.5 mA 的压降
-print(f"33 Ω × 0.5 mA = {33*0.5e-3*1e3:.1f} mV")
-assert abs(33 * 0.5e-3 - 0.0165) < 1e-9
+
+def zener_i(v, vz=5.1, rz=7.0, izt=IZT):
+    """稳压管（以阳极→阴极为正方向）：正向像普通二极管；反向电压超过 V_Z − r_Z·I_ZT 后，
+    电流按 1/rz 急剧增大（击穿区是一条直线，I_Z = I_ZT 时两端电压正好是 V_Z）。"""
+    fwd = diode_i(v)
+    v0 = vz - rz * izt                                    # 直线外推到电流为 0 的电压，约 4.757 V
+    rev = np.where(v < -v0, (v + v0) / rz, 0.0)          # 击穿后的近似直线，斜率 1/rz
+    return fwd + rev
+
+
+def bjt_ic(vce, ib, beta=100.0, vk=0.06):
+    """三极管输出特性（示意）：放大区 I_C = β·I_B；V_CE 很小时进入饱和，I_C 被压下来。"""
+    return beta * ib * (1 - np.exp(-vce / vk))
+
+
+def mos_id(vgs, vth=2.1, k=0.2):
+    """MOS 管转移特性（平方律，示意）：V_GS < V_th 时 I_D≈0；之后 I_D = k/2·(V_GS − V_th)²。"""
+    ov = np.clip(vgs - vth, 0, None)
+    return 0.5 * k * ov ** 2
+
+
+def mos_rdson(vgs, vth=2.1, k=0.2):
+    """完全导通时的导通电阻 R_DS(on) ≈ 1 / (k·(V_GS − V_th))（平方律模型的线性区）。"""
+    return 1.0 / (k * (vgs - vth))
+
+
+def bjt_switch(vin, rb, rc, vcc=5.0, beta=100.0, vbe=0.7, vcesat=0.2):
+    """三极管开关的直流工作点（分段模型）：返回 (I_B, I_C, V_CE, 区域)。"""
+    ib = max(0.0, (vin - vbe) / rb)
+    ic_max = (vcc - vcesat) / rc
+    if ib == 0:
+        return 0.0, 0.0, vcc, "截止"
+    if beta * ib < ic_max:
+        ic = beta * ib
+        return ib, ic, vcc - ic * rc, "放大"
+    return ib, ic_max, vcesat, "饱和"
+
+
+# ================= page1 =================
+def p1_1():
+    """二极管正接、反接：灯亮 / 灯不亮。"""
+    with schem.drawing(fontsize=11) as d:
+        for x0, rev, txt, lamp in [(0, False, "二极管正接", "灯亮"), (7, True, "二极管反接", "灯不亮")]:
+            d += elm.SourceV().endpoints((x0, 0), (x0, 3)).label("6 V", loc="bottom")
+            d += elm.Line().endpoints((x0, 3), (x0 + 1, 3))
+            dd = elm.Diode().endpoints((x0 + 1, 3), (x0 + 4, 3)).label(txt, loc="top")
+            d += dd.reverse() if rev else dd
+            d += elm.Lamp().endpoints((x0 + 4, 3), (x0 + 4, 0)).label(lamp, loc="bottom")
+            d += elm.Line().endpoints((x0 + 4, 0), (x0, 0))
+    schem.save_schem(d, P, "03_p1_1_diode_valve.png")
+
+
+def p1_2():
+    """稳压管：串电阻接 12 V，两端稳定在 5.1 V。"""
+    with schem.drawing(fontsize=11) as d:
+        d += elm.SourceV().endpoints((0, 0), (0, 3)).label("12 V", loc="bottom")
+        d += elm.Resistor().endpoints((0, 3), (3, 3)).label("R  1 kΩ", loc="top")
+        d += elm.Zener().endpoints((3, 0), (3, 3)).label("稳压管\n$V_Z$ = 5.1 V", loc="bottom")
+        d += elm.Line().endpoints((3, 3), (5, 3))
+        d += elm.Dot(open=True).at((5, 3)).label("输出约 5.1 V", loc="right")
+        d += elm.Line().endpoints((3, 0), (0, 0))
+        d += elm.Line().endpoints((3, 0), (5, 0))
+        d += elm.Dot(open=True).at((5, 0)).label("0 V", loc="right")
+    schem.save_schem(d, P, "03_p1_2_zener.png")
+
+
+def p1_3():
+    """三极管与 MOS 管各当一个开关，点亮 LED。"""
+    with schem.drawing(fontsize=11) as d:
+        # 左：NPN 三极管
+        d += elm.Line().endpoints((2, 6), (4, 6))
+        d += elm.Dot(open=True).at((2, 6)).label("+5 V", loc="left")
+        d += elm.Resistor().endpoints((4, 6), (4, 4.2)).label("$R_C$\n220 Ω", loc="bottom")
+        d += elm.LED().endpoints((4, 4.2), (4, 2.6))
+        q = elm.BjtNpn().theta(0).anchor("collector").at((4, 2.6))
+        d += q
+        d += elm.Resistor().endpoints((q.base[0] - 2.5, q.base[1]), q.base).label("$R_B$  10 kΩ", loc="top")
+        d += elm.Dot(open=True).at((q.base[0] - 2.5, q.base[1])).label("控制 0/5 V", loc="left")
+        d += elm.Ground().at(q.emitter)
+        d += elm.Label().at((2.6, -0.4)).label("三极管：小电流 $I_B$ 控制大电流 $I_C$")
+        # 右：N 沟道 MOS 管
+        x = 9.5
+        d += elm.Line().endpoints((x - 2, 6), (x, 6))
+        d += elm.Dot(open=True).at((x - 2, 6)).label("+5 V", loc="left")
+        d += elm.Resistor().endpoints((x, 6), (x, 4.2)).label("$R_D$\n220 Ω", loc="bottom")
+        d += elm.LED().endpoints((x, 4.2), (x, 2.6))
+        m = elm.NFet().theta(0).reverse().anchor("drain").at((x, 2.6))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints((g[0] - 2.5, g[1]), g)
+        d += elm.Dot(open=True).at((g[0] - 2.5, g[1])).label("控制 0/5 V", loc="left")
+        d += elm.Dot().at((g[0] - 0.8, g[1]))
+        d += elm.Resistor().endpoints((g[0] - 0.8, g[1]), (g[0] - 0.8, m.source[1] - 0.3)).label("$R_{GS}$\n100 kΩ", loc="bottom")
+        d += elm.Line().endpoints((g[0] - 0.8, m.source[1] - 0.3), (m.source[0], m.source[1] - 0.3))
+        d += elm.Line().endpoints(m.source, (m.source[0], m.source[1] - 0.3))
+        d += elm.Ground().at((m.source[0], m.source[1] - 0.3))
+        d += elm.Label().at((8.6, -0.4)).label("MOS 管：电压 $V_{GS}$ 控制电流")
+    schem.save_schem(d, P, "03_p1_3_switches.png")
+
+
+# ================= page2 =================
+def p2_1():
+    """普通硅二极管与红色 LED 的正向伏安特性。"""
+    v = np.linspace(0, 2.4, 1200)
+    i_si = diode_i(v) * 1e3
+    i_led = diode_i(v, LED_IS, LED_N) * 1e3
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    ax.plot(v, i_si, **fs.LS["vin"], label="硅二极管（如 1N4148）")
+    ax.plot(v, i_led, **fs.LS["third"], label="红光 LED")
+    v1 = float(diode_v(1e-3)); v10 = float(diode_v(10e-3))
+    vl10 = float(diode_v(10e-3, LED_IS, LED_N))
+    fs.ref_h(ax, 10)
+    fs.mark(ax, v10, 10, fmt="{:.0f}", unit=" mA", dx=-58, dy=4)
+    print(f"[数值] 硅管 1 mA 压降 {v1:.3f} V，10 mA 压降 {v10:.3f} V；LED 10 mA 压降 {vl10:.2f} V")
+    fs.ref_v(ax, v10, f"{v10:.2f} V")
+    fs.ref_v(ax, vl10, f"{vl10:.2f} V")
+    ax.set_ylim(-1, 25); ax.set_xlim(0, 2.4)
+    fs.axlabels(ax, "二极管两端电压 $V_D$", "V", "电流", "mA")
+    ax.legend(loc="upper left", bbox_to_anchor=(0.0, 0.85))
+    assert 0.6 < v1 < 0.7 and 0.68 < v10 < 0.75, "硅管压降应在 0.7 V 左右"
+    assert 1.8 < vl10 < 2.1, "红色 LED 压降应在 2 V 左右"
+    assert diode_v(20e-3) - diode_v(1e-3) < 0.1, "电流涨 20 倍，压降只涨不到 0.1 V"
+    fs.save(fig, P, "03_p2_1_diode_iv.png")
+    return v1, v10, vl10
+
+
+def p2_2():
+    """稳压管完整伏安特性：正向像二极管，反向在 −5.1 V 处击穿后电压几乎不变。"""
+    v = np.linspace(-6.0, 1.0, 3000)
+    i = zener_i(v) * 1e3
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    ax.plot(v, i, **fs.LS["third"], label="稳压管 5.1 V（如 1N4733A）")
+    fs.ref_h(ax, 0)
+    fs.ref_v(ax, -5.1, "$-V_Z$ = −5.1 V（测试电流 49 mA 处）")
+    # 反向电流 5 mA 和 49 mA（测试电流 I_ZT）时的电压，模型 V = V_Z + r_Z·(I_Z − I_ZT)
+    v5 = -zener_v(5e-3); v49 = -zener_v(49e-3)
+    fs.mark(ax, v5, -5, fmt="{:.0f}", unit=" mA", dx=6, dy=-2)
+    fs.mark(ax, v49, -49, fmt="{:.0f}", unit=" mA", dx=6, dy=-2)
+    print(f"[数值] 反向 5 mA 时 V = {v5:.3f} V，反向 49 mA 时 V = {v49:.3f} V，相差 {v5 - v49:.3f} V")
+    ax.text(-2.8, 6, "反向未击穿：几乎没有电流", ha="center", fontsize=9)
+    ax.text(-4.9, -38, "击穿区：电流变化很大，\n电压几乎不变", ha="left", fontsize=9)
+    ax.set_ylim(-60, 20)
+    fs.axlabels(ax, "两端电压（阳极减阴极）", "V", "电流", "mA")
+    ax.legend(loc="lower right")
+    assert abs(v5 - v49) < 0.35, "5→49 mA 电压变化应小于 0.35 V"
+    assert abs(v49 + 5.1) < 1e-9, "测试电流 49 mA 时必须正好等于手册 V_Z = 5.1 V"
+    assert abs(float(zener_i(v49)) * 1e3 + 49) < 1e-6, "曲线与公式一致：−5.1 V 处电流 −49 mA"
+    fs.save(fig, P, "03_p2_2_zener_iv.png")
+    return v5, v49
+
+
+def p2_3():
+    """NPN 输出特性 + 负载线：三个工作区。"""
+    vcc, rc, beta = 5.0, 1000.0, 100.0
+    vce = np.linspace(0, 5.5, 600)
+    fig, ax = plt.subplots(figsize=fs.SIZE["tall"])
+    for ib_ua, key in [(10, "vin"), (20, "vout"), (30, "third"), (40, "fb"), (60, "cur")]:
+        ax.plot(vce, bjt_ic(vce, ib_ua * 1e-6, beta) * 1e3, **fs.LS[key], label=f"$I_B$ = {ib_ua} µA")
+    ax.plot(vce, (vcc - vce) / rc * 1e3, **fs.LS["good"], label="负载线（$V_{CC}$ = 5 V，$R_C$ = 1 kΩ）")
+    pts = []
+    for vin in [0.0, 1.64, 5.0]:
+        ib, ic, v, reg = bjt_switch(vin, 47e3, rc, vcc, beta)
+        pts.append((reg, ib, ic, v))
+        fs.mark(ax, v, ic * 1e3, fmt="{:.1f}", unit=f" mA（{reg}）", dx=6, dy=4)
+        print(f"[数值] V_in={vin} V, R_B=47k: I_B={ib*1e6:.1f} µA, I_C={ic*1e3:.2f} mA, V_CE={v:.2f} V, {reg}")
+    ax.set_xlim(0, 5.5); ax.set_ylim(-0.3, 6.5)
+    fs.axlabels(ax, "集电极-发射极电压 $V_{CE}$", "V", "集电极电流 $I_C$", "mA")
+    ax.legend(loc="upper right", fontsize=8)
+    assert [p[0] for p in pts] == ["截止", "放大", "饱和"]
+    assert abs(pts[1][2] - beta * pts[1][1]) < 1e-9, "放大区 I_C = β·I_B"
+    assert pts[2][3] < 0.3 and pts[2][2] < beta * pts[2][1], "饱和区 V_CE 很小，且 I_C < β·I_B"
+    fs.save(fig, P, "03_p2_3_bjt_regions.png")
+    return pts
+
+
+def p2_4():
+    """N 沟道 MOS 管转移特性：I_D 随 V_GS 变化，阈值 V_GS(th)≈2.1 V。"""
+    vgs = np.linspace(0, 6, 600)
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    ax.plot(vgs, mos_id(vgs) * 1e3, **fs.LS["cur"], label="漏极电流 $I_D$（示意模型）")
+    fs.ref_v(ax, 2.1, "$V_{GS(th)}$ ≈ 2.1 V", y=0.6)
+    vals = {}
+    for vg in [1.5, 3.3, 5.0]:
+        idv = float(mos_id(vg)) * 1e3
+        vals[vg] = idv
+        fs.mark(ax, vg, idv, fmt="{:.0f}", unit=" mA", dx=-50 if vg > 4 else 6, dy=6)
+        print(f"[数值] V_GS={vg} V → I_D={idv:.1f} mA")
+    fs.axlabels(ax, "栅源电压 $V_{GS}$", "V", "漏极电流 $I_D$", "mA")
+    ax.legend(loc="upper left")
+    assert vals[1.5] == 0.0 and vals[5.0] > 5 * vals[3.3], "阈值以下不导通；5 V 驱动比 3.3 V 强得多"
+    fs.save(fig, P, "03_p2_4_mos_transfer.png")
+    return vals
+
+
+# ================= page3 =================
+def p3_1():
+    """改 R_B：β=60 与 β=200 两只管子的 V_CE。"""
+    vcc, rc, vin = 5.0, 100.0, 3.3      # 单片机 3.3 V 驱动，负载 100 Ω，饱和时 I_C = 48 mA
+    rbs = np.linspace(500, 15000, 400)
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    out = {}
+    for beta, key, lab in [(60, "vout", "β = 60（数据手册 50 mA 时的最小值）"), (200, "third", "β = 200（偏大的管子）")]:
+        v = np.array([bjt_switch(vin, rb, rc, vcc, beta)[2] for rb in rbs])
+        ax.plot(rbs / 1e3, v, **fs.LS[key], label=lab)
+        rb_edge = (vin - 0.7) / ((vcc - 0.2) / rc / beta)
+        out[beta] = rb_edge
+        fs.ref_v(ax, rb_edge / 1e3, f"{rb_edge/1e3:.1f} kΩ", y=0.55 if beta == 60 else 0.3)
+        print(f"[数值] β={beta}: R_B ≤ {rb_edge:.0f} Ω 才饱和")
+    fs.ref_h(ax, 0.2, "饱和 $V_{CE}$ ≈ 0.2 V", x=0.98)
+    fs.mark(ax, 1.0, bjt_switch(vin, 1000, rc, vcc, 60)[2], fmt="{:.1f}", unit=" V", dx=4, dy=6)
+    fs.axlabels(ax, "基极电阻 $R_B$", "kΩ", "$V_{CE}$", "V")
+    ax.legend(loc="upper left", fontsize=8)
+    assert out[60] < out[200]
+    assert bjt_switch(vin, 4700, rc, vcc, 60)[3] == "放大", "β 小的管子配 4.7 kΩ 不饱和"
+    assert bjt_switch(vin, 4700, rc, vcc, 200)[3] == "饱和", "β 大的管子配 4.7 kΩ 能饱和"
+    v47 = bjt_switch(vin, 4700, rc, vcc, 60)[2]
+    fs.mark(ax, 4.7, v47, fmt="{:.2f}", unit=" V", dx=6, dy=4)
+    assert bjt_switch(vin, 1000, rc, vcc, 60)[3] == "饱和"
+    fs.save(fig, P, "03_p3_1_rb_sweep.png")
+    return out
+
+
+def p3_2():
+    """MOS 管导通电阻随 V_GS 变化，以及 0.2 A 时的发热。"""
+    vgs = np.linspace(2.6, 10, 400)
+    r = mos_rdson(vgs)
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    ax.plot(vgs, r, **fs.LS["vout"], label="$R_{DS(on)}$（示意模型）")
+    res = {}
+    for vg in [3.3, 5.0, 10.0]:
+        rv = float(mos_rdson(vg)); res[vg] = rv
+        fs.mark(ax, vg, rv, fmt="{:.2f}", unit=" Ω", dx=6, dy=4)
+        print(f"[数值] V_GS={vg} V: R_DS(on)={rv:.2f} Ω，0.2 A 时发热 {0.2**2*rv*1e3:.0f} mW")
+    fs.ref_v(ax, 2.1, "$V_{GS(th)}$", y=0.5)
+    ax.set_ylim(0, 6); ax.set_xlim(1.8, 10.5)
+    fs.axlabels(ax, "栅源电压 $V_{GS}$", "V", "导通电阻", "Ω")
+    ax.legend(loc="upper right")
+    assert res[3.3] > 3 * res[10.0], "只比阈值高一点时，导通电阻大好几倍"
+    fs.save(fig, P, "03_p3_2_rdson.png")
+    return res
+
+
+if __name__ == "__main__":
+    fs.check_cjk("二极管正接反接灯亮不亮稳压管输出约三极管小电流控制大电流沟道示意模型硅红色击穿区变化很大几乎未没有集电极发射负载线截止放大饱和栅源漏阈值基数据手册最小偏导通电阻热")
+    p1_1(); p1_2(); p1_3()
+    p2_1(); p2_2(); p2_3(); p2_4()
+    p3_1(); p3_2()
+    print("03_figs OK")
 
 
 # ======================================================================================
@@ -180,7 +298,7 @@ from matplotlib.patches import Rectangle as _BbRect, Polygon as _BbPoly, Wedge a
 
 BB_ROWY = {r: y for r, y in zip("abcdefghij", [9, 8, 7, 6, 5, 3, 2, 1, 0, -1])}
 BB_RAILY = {"T1": 11.6, "T2": 10.8, "B1": -2.8, "B2": -3.6}
-BB_WIRE = dict(pos="#CC0000", gnd="#000000", neg=fs.C["third"], sig=fs.C["vin"], out=fs.C["vout"], fb=fs.C["fb"])
+BB_WIRE = dict(pos="#CC0000", gnd="#000000", neg=fs.C["third"], sig=fs.C["vin"], out=fs.C["vout"])
 
 
 def bb_xy(h):
@@ -342,228 +460,312 @@ def bb_ng_op(body, exprs, includes=()):
     return out
 
 
-def bb_ng_settle(body, exprs, includes=(), tstop=2e-3):
-    """含运放、输出可能顶到电源的电路，.op 常常不收敛；改用瞬态：信号源写成 PWL 从 0 慢慢升到目标值（1 ms），
-    电源保持恒定，读 tstop 前 0.1 ms 的稳定值。返回 {表达式: 数值}。网表写在临时目录，跑完即删。"""
-    import os as _os, re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
-    models = _os.path.abspath(_os.path.join(_os.path.dirname(fs.__file__), "..", "..", "spice", "models"))
-    inc = "\n".join(f".include {_os.path.join(models, m)}" for m in includes)
-    ctl = "\n".join(f"let e{k} = {e}\nmeas tran e{k}r find e{k} at={tstop - 1e-4:g}" for k, e in enumerate(exprs))
-    cir = f"* page4 稳态值\n{inc}\n{body}\n.control\ntran 1u {tstop:g} 0 1u\n{ctl}\n.endc\n.end\n"
-    tmp = _tf.mkdtemp(prefix="p4tr_")
-    try:
-        with open(_os.path.join(tmp, ".spiceinit"), "w") as f:
-            f.write("set ngbehavior=psa\nset num_threads=1\n")
-        with open(_os.path.join(tmp, "tr.cir"), "w", encoding="utf-8") as f:
-            f.write(cir)
-        r = _sp.run([_sh.which("ngspice") or "/usr/bin/ngspice", "-b", "tr.cir"], cwd=tmp,
-                    capture_output=True, text=True, timeout=300)
-    finally:
-        _sh.rmtree(tmp, ignore_errors=True)
-    vals = dict(_re.findall(r"^\s*(e\d+r)\s*=\s*([-+0-9.eE]+)", r.stdout, _re.M))
-    out = {e: (float(vals[f"e{k}r"]) if f"e{k}r" in vals else None) for k, e in enumerate(exprs)}
-    assert None not in out.values(), f"ngspice 失败：{r.stdout[-800:]}{r.stderr[-800:]}"
-    return out
-
-
-# ---------------- 动手实验篇（page4）：LM358 + 9 V 电池，ngspice + TI LM358B 模型现算读数 ----------------
-P4_LOADS = [1e3, 2.2e3, 4.7e3, 10e3, 22e3, 47e3, 100e3]
-
-
-def p4_fol(rd1=10e3, rd2=10e3, rl=None, at="out", mode="dual"):
-    """分压器（Rd1 接 V+、Rd2 接 M，None 表示拔掉）→ 跟随器 → 负载 RL（None 表示不接；at = "out" 接跟随器输出，"src" 直接接分压点）。
-    mode：dual = 两节 9 V，M = A− 与 B+ 的连接点；single = 一节 9 V，M 就是电池负极（= V−）。
-    读数都相对 M。分压器顶端用一个与 V+ 等值的 PWL 源从 0 V 用 1 ms 升到 9 V（电路上等同于接 V+），读稳定值。"""
-    if mode == "dual":
-        body = ["VP vp m 9", "VN m vn 9", "RZ m 0 1m"]
-    else:  # 单电源：V− 就是 M；把 M 放在 SPICE 地以下 4.5 V，避开模型在"V− 接全局地 + 重负载"时的假解（见 review/spice/03.md）
-        body = ["VP vp m 9", "VN vn m 0", "VG m 0 -4.5"]
-    body.append("VD d m PWL(0 0 1m 9)")
-    if rd1 is not None:
-        body.append(f"RD1 d s {rd1:g}")
-    if rd2 is not None:
-        body.append(f"RD2 s m {rd2:g}")
-    body.append("XU s o vp vn o LMX58B_LM2904B")
-    if rl is not None:
-        body.append(f"RL {'o' if at == 'out' else 's'} m {rl:g}")
-    ex = ["v(s)-v(m)", "v(o)-v(m)", "v(o)-v(s)"]
-    r = bb_ng_settle("\n".join(body), ex, ["LMx58B_LM2904B.lib"])
-    return dict(src=r[ex[0]], out=r[ex[1]], d=r[ex[2]])
-
-
-def _par(a, b):
-    return a * b / (a + b)
-
-
-def _rng_div(rd1, rd2, rl=None, v=9.0):
-    """5% 电阻时分压点（可带负载 RL，RL 也按 5%）的范围；电源按 9 V 计。"""
-    vals = []
-    for k1 in (0.95, 1.05):
-        for k2 in (0.95, 1.05):
-            for k3 in (0.95, 1.05):
-                lo = rd2 * k2 if rl is None else _par(rd2 * k2, rl * k3)
-                vals.append(v * lo / (rd1 * k1 + lo))
-    return min(vals), max(vals)
-
-
-P4_PAIRS = [(None, 10e3), (47e3, 10e3), (22e3, 10e3), (10e3, 10e3), (10e3, 22e3), (10e3, 47e3), (10e3, 100e3), (10e3, None)]
+# ---------------- 动手实验篇（page4）：数值（每个数都打印并断言） ----------------
+P4_VIN = [0.5, 1.0, 2.0, 3.0, 4.0, 5.0]      # 电位器滑动端调到的几个电压（逐点测二极管伏安特性）
 
 
 def p4_numbers():
-    r = {}
-    a = r["a"] = p4_fol()
-    lo, hi = _rng_div(10e3, 10e3)
-    print(f"[03 page4] 两节 9 V，不接负载：分压点 ① {a['src']:.3f} V，跟随器输出 ③ {a['out']:.4f} V，③−① {a['d'] * 1e3:+.2f} mV；5% 电阻时 ① {lo:.2f}～{hi:.2f} V")
-    assert abs(a["src"] - 4.5) < 0.005 and abs(a["d"]) < 3e-3 and (round(lo, 2), round(hi, 2)) == (4.28, 4.72)
-    x = r["f1k"] = p4_fol(rl=1e3)
-    print(f"[03 page4] 1 kΩ 接跟随器输出：① {x['src']:.3f} V，③ {x['out']:.4f} V，负载电流 {x['out'] / 1e3 * 1e3:.2f} mA")
-    assert abs(x["src"] - 4.5) < 0.005 and abs(x["out"] - 4.5) < 0.005
-    for rl in (1e3, 10e3):
-        x = r[("d", rl)] = p4_fol(rl=rl, at="src")
-        lo, hi = _rng_div(10e3, 10e3, rl)
-        print(f"[03 page4] {rl / 1e3:g} kΩ 直接接分压点：① {x['src']:.3f} V（5% 范围 {lo:.2f}～{hi:.2f} V），③ {x['out']:.3f} V")
-    assert abs(r[("d", 1e3)]["src"] - 0.75) < 0.005 and abs(r[("d", 10e3)]["src"] - 3.0) < 0.005
-    assert abs(r[("d", 1e3)]["out"] - r[("d", 1e3)]["src"]) < 3e-3
-    x = r["f10k"] = p4_fol(rl=10e3)
-    print(f"[03 page4] 10 kΩ 接跟随器输出：③ {x['out']:.3f} V")
-    assert abs(x["out"] - 4.5) < 0.005
-    x = r["s1k"] = p4_fol(rl=1e3, mode="single")
-    y = r["s0"] = p4_fol(mode="single")
-    print(f"[03 page4] 一节 9 V（M = 电池负极）：不接负载 ① {y['src']:.3f} V、③ {y['out']:.3f} V；1 kΩ 接 ③：③ {x['out']:.3f} V")
-    assert abs(x["out"] - 4.5) < 0.005 and abs(y["out"] - 4.5) < 0.005
-    fam = []
-    for rd1, rd2 in P4_PAIRS:
-        x = r[("p", rd1, rd2)] = p4_fol(rd1, rd2, mode="single")
-        fam.append((x["src"], x["out"]))
-        n1 = "拔掉" if rd1 is None else f"{rd1 / 1e3:g}k"
-        n2 = "拔掉" if rd2 is None else f"{rd2 / 1e3:g}k"
-        print(f"[03 page4] 一节 9 V，Rd1 {n1}、Rd2 {n2}：① {x['src']:.3f} V，③ {x['out']:.3f} V，③−① {x['d']:+.3f} V")
-    p = lambda a_, b_: r[("p", a_, b_)]
-    assert abs(p(10e3, 47e3)["out"] - p(10e3, 47e3)["src"]) < 0.01           # 7.42 V 还跟得上
-    assert 7.3 < p(10e3, 100e3)["out"] < 7.6 and p(10e3, 100e3)["src"] > 8.1  # 8.18 V 已进禁区，输出停在约 7.5 V
-    assert 7.3 < p(10e3, None)["out"] < 7.6 and 0 < p(None, 10e3)["out"] < 0.05
-    fam_l = {"src": [], "out": []}
-    for rl in P4_LOADS:
-        fam_l["src"].append(p4_fol(rl=rl, at="src")["src"])
-        fam_l["out"].append(p4_fol(rl=rl)["out"])
-    print("[03 page4] 负载扫描（两节 9 V）：" + "；".join(f"{rl / 1e3:g}k 直接 {s:.2f} V / 经跟随器 {o:.3f} V"
-                                             for rl, s, o in zip(P4_LOADS, fam_l["src"], fam_l["out"])))
-    return r, fam, fam_l
+    """page4 的期望读数。二极管、稳压管用 ngspice + 厂家模型（1N4148 Nexperia、1N4733A Diodes Inc.）现算；
+    三极管开关的读数照搬 review/spice/03.md 的面包板核对表。"""
+    # ① 1N4148 + 1 kΩ：先算 5 V 时的工作点，再算电位器调到几个电压时的点
+    body = "\n".join(f"V{k} in{k} 0 {v}\nR{k} in{k} d{k} 1k\nXD{k} d{k} 0 1N4148" for k, v in enumerate(P4_VIN))
+    r = bb_ng_op(body, [f"v(d{k})" for k in range(len(P4_VIN))], ["1N4148_nexperia.lib"])
+    vd = np.array([r[f"v(d{k})"] for k in range(len(P4_VIN))])
+    idd = (np.array(P4_VIN) - vd) / 1e3 * 1e3                # mA
+    for v, a, b in zip(P4_VIN, vd, idd):
+        print(f"[03 page4] 1N4148 + 1 kΩ，输入 {v:.1f} V：二极管 {a:.3f} V，电阻 {v - a:.2f} V，电流 {b:.2f} mA")
+    assert 0.66 <= vd[-1] <= 0.71, "5 V 时应落在 review 表的 0.66–0.71 V 里"
+    assert vd[1] < vd[-1] < vd[1] + 0.12, "电流从 0.3 mA 涨到 4.3 mA，压降只多了约 0.1 V"
+    # ② 1N4733A：9 V 电池 + 560 Ω，空载 / 接 1 kΩ / 接 470 Ω
+    z = bb_ng_op("V1 a 0 9\nR1 a z1 560\nXZ1 0 z1 DI_1N4733A\n"
+                 "R2 a z2 560\nXZ2 0 z2 DI_1N4733A\nRL2 z2 0 1k\n"
+                 "R3 a z3 560\nXZ3 0 z3 DI_1N4733A\nRL3 z3 0 470",
+                 ["v(z1)", "v(z2)", "v(z3)"], ["1N47xxA_diodes_zener.lib"])
+    vz0, vz1k, vz470 = z["v(z1)"], z["v(z2)"], z["v(z3)"]
+    iz0 = (9 - vz0) / 560
+    print(f"[03 page4] 9 V / 560 Ω / 1N4733A：空载 {vz0:.2f} V（V_Z ±5% → {vz0 * 0.95:.2f}～{vz0 * 1.05:.2f} V），"
+          f"稳压管电流 {iz0 * 1e3:.1f} mA，电阻上 {9 - vz0:.2f} V")
+    print(f"[03 page4] 接 1 kΩ 负载：{vz1k:.2f} V（{vz1k * 0.95:.2f}～{vz1k * 1.05:.2f} V），负载电流 {vz1k / 1e3 * 1e3:.1f} mA，"
+          f"稳压管剩 {((9 - vz1k) / 560 - vz1k / 1e3) * 1e3:.1f} mA")
+    lo = 9 * 470 * 0.95 / (470 * 0.95 + 560 * 1.05); hi = 9 * 470 * 1.05 / (470 * 1.05 + 560 * 0.95)
+    print(f"[03 page4] 接 470 Ω 负载：{vz470:.2f} V，稳压管几乎不导电，等于普通分压 9×470/(560+470) = "
+          f"{9 * 470 / 1030:.2f} V（电阻公差 → {lo:.2f}～{hi:.2f} V）")
+    assert abs(vz0 - 4.99) < 0.02 and abs(iz0 * 1e3 - 7.2) < 0.1, "和 review 表 12 V/1 kΩ（约 7 mA，约 5.0 V）同一个工作点"
+    assert vz0 - vz1k < 0.1, "接 1 kΩ 负载，输出只掉几十毫伏"
+    assert abs(vz470 - 9 * 470 / 1030) < 0.02, "接 470 Ω 后稳压管退出，变成普通分压"
+    assert (round(lo, 2), round(hi, 2)) == (3.88, 4.33)
+    # ③ 三极管放大区：Vin 1.64 V、RB 47 kΩ、RC 1 kΩ，页面公式 V_C = 5 − β·I_B·R_C（饱和时约 0.2 V）
+    ib = (1.64 - 0.7) / 47e3
+    for beta in (100, 130, 230):
+        vc = max(5 - beta * ib * 1e3, 0.2)
+        print(f"[03 page4] β = {beta}：I_B = {ib * 1e6:.0f} μA，集电极 {vc:.2f} V")
+    assert abs(ib * 1e6 - 20) < 0.1 and abs(5 - 100 * ib * 1e3 - 3.0) < 0.01 and 5 - 230 * ib * 1e3 < 0.5
+    print(f"[03 page4] 饱和时 LED 电流约 (5 − 2 − 0.1)/220 = {(5 - 2 - 0.1) / 220 * 1e3:.0f} mA，"
+          f"基极电流约 (5 − 0.75)/10k = {(5 - 0.75) / 10e3 * 1e3:.2f} mA")
+    return vd, idd
 
 
-# ---------------- 图 03-p4-1：面包板接线（两节 9 V 与一节 9 V 共用一块板） ----------------
+# ---------------- 图 03-p4-1：面包板接线图 ----------------
 def p4_1_breadboard():
-    rails = {"T1": ("V+ = +9 V", BB_WIRE["pos"]), "T2": ("M（地）", BB_WIRE["gnd"]),
-             "B1": ("V−（两节：−9 V；一节：= M）", BB_WIRE["neg"]), "B2": ("M（地）", BB_WIRE["gnd"])}
-    fig, ax = bb_board(30, rails, figsize=(10.6, 6.6))
-    bb_wire(ax, "T2-1", "B2-1", "gnd", via=[(-0.4, 10.8), (-0.4, -3.6)])
-    # 分压器：Rd1 接 V+，Rd2 接 M，分压点在第 10 列
-    bb_wire(ax, "T1-6", "a6", "pos")
-    bb_res(ax, "b6", "b10", "Rd1 10k（47k / 拔掉）")
-    bb_res(ax, "c10", "c12", "Rd2 10k（47k/100k/拔掉）", dy=-0.55)
-    bb_wire(ax, "a12", "T2-12", "gnd")
-    bb_wire(ax, "e10", "f10", "sig")                        # 跨过中间槽
-    # 分压点 → 3 脚：g10→g16 画成拱形跳线，从 g11～g15 上方跨过，不接触中间各列
-    _arc_x = np.linspace(10, 16, 25)
-    _arc = [(x, 2.0 + 0.62 * (1 - ((x - 13.0) / 3.0) ** 2) ** 0.5) for x in _arc_x[1:-1]]
-    bb_wire(ax, "g10", "g16", "sig", via=_arc)
-    # LM358：1～4 脚 f14～f17，8～5 脚 e14～e17
-    bb_dip8(ax, 14)
-    bb_wire(ax, "a14", "T1-14", "pos")                      # 8 脚 V+
-    bb_wire(ax, "c15", "c16", "fb")                         # 另一半：7 脚接 6 脚
-    bb_wire(ax, "a17", "T2-17", "gnd")                      # 另一半：5 脚接 M
-    bb_wire(ax, "j17", "B1-17", "neg")                      # 4 脚 V−
-    bb_wire(ax, "h14", "h15", "fb")                         # 跟随器：1 脚（输出）接 2 脚（反相端）
-    # 负载 RL：h22–h25，右端接 M；左端用负载线接到 ③（j14）或 ①（j10）
-    bb_res(ax, "h22", "h25", "RL 1k（10k）")
-    bb_wire(ax, "j25", "B2-25", "gnd")
-    bb_wire(ax, "j14", "j22", "sig", via=[(14.0, -1.45), (22.0, -1.45)])
-    _bb_label(ax, 18.0, -0.95, "负载线：插 j14 = 经跟随器；改插 j10 = 直接接分压点")
-    # 单电源才插：M 轨与 V− 轨短接
-    ax.add_patch(_BbRect((27.4, -4.25), 2.2, 1.2, fc="0.86", ec="0.45", ls="--", lw=0.9, zorder=0.5))
-    bb_wire(ax, "B2-28", "B1-28", "gnd")
-    _bb_label(ax, 26.5, -5.85, "灰框（右下角黑线）：只在一节 9 V 时插")
-    ax.set_ylim(-6.3, 14.2)
-    ax.text(0.2, 13.55, "两节 9 V：A 的 + 接 V+ 轨；A 的 − 与 B 的 + 拧在一起接 M 轨；B 的 − 接 V− 轨（灰框不插）",
-            ha="left", va="center", fontsize=8)
-    ax.text(0.2, 12.85, "一节 9 V：+ 接 V+ 轨，− 接 V− 轨，再插灰框里的黑线把 M 轨并到 V− 轨（M 就是电池负极 = 0 V）",
-            ha="left", va="center", fontsize=8)
-    bb_probe(ax, "h10", "①", dx=-0.6, dy=0.9)
-    bb_probe(ax, "i14", "③", dx=-0.75, dy=0.6)
-    bb_legend(ax, [("pos", "红：V+"), ("neg", "紫：V−"), ("gnd", "黑：M"), ("sig", "蓝：信号/负载线"), ("fb", "绿：反馈/短接")],
-              x=0.6, y=-5.0)
-    print("[图 03-p4-1] LM358 跟随器：1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚→V+，4 脚→V−；另一半 7、6 脚短接、5 脚→M；"
-          "a6 接 V+，Rd1 b6–b10，Rd2 c10–c12、a12 接 M；e10→f10、g10→g16 把分压点送到 3 脚；h14→h15 输出接反相端；"
-          "RL h22–h25、j25→M，负载线 j14→j22（改插 j10 即直接接）；一节 9 V 时 M 轨与 V− 轨短接；测点① 第 10 列、③ 第 14 列")
-    fs.save(fig, N, "03_p4_1_breadboard.png")
+    rails = {"T1": ("+5 V", BB_WIRE["pos"]), "T2": ("GND", BB_WIRE["gnd"]),
+             "B1": ("+9 V（电池）", BB_WIRE["pos"]), "B2": ("GND", BB_WIRE["gnd"])}
+    fig, ax = bb_board(30, rails, figsize=(10, 6.2))
+    bb_wire(ax, "T2-2", "B2-2", "gnd", via=[(-1.0, 10.8), (-1.0, -3.6)])     # 只连地，+5 V 和 +9 V 不能连
+    # A 区：1N4148 正向压降（第 3～10 列）
+    bb_wire(ax, "T1-3", "a3", "pos")
+    bb_res(ax, "b3", "b7", "1k")
+    bb_part2(ax, "c7", "c10", "1N4148", kind="diode", dy=0.55)
+    bb_wire(ax, "a10", "T2-10", "gnd")
+    bb_probe(ax, "d7", "①", dx=-0.9, dy=0.0)
+    # B 区：2N3904 开关（第 13～25 列）
+    bb_wire(ax, "a13", "T1-13", "sig")
+    bb_res(ax, "b13", "b17", "RB 10k")
+    bb_block(ax, ["d16", "d17", "d18"], "", pins=["E", "B", "C"], fc="#cfd8dc")
+    _bb_label(ax, 14.1, 6.0, "2N3904\n平面朝你")
+    bb_wire(ax, "a16", "T2-16", "gnd", via=[(15.6, 9.0), (15.6, 10.8)])
+    bb_res(ax, "c18", "c22", "RC 220")
+    bb_part2(ax, "b25", "b22", "LED", kind="led", fc="#ff6666", dy=0.55)
+    bb_wire(ax, "T1-25", "a25", "pos")
+    bb_probe(ax, "e17", "②", dx=-0.6, dy=-0.9)
+    bb_probe(ax, "e18", "③", dx=0.6, dy=-0.9)
+    # 电位器（第 27～29 列）
+    bb_wire(ax, "T1-27", "a27", "pos")
+    bb_block(ax, ["c27", "c28", "c29"], "", pins=["+", "滑", "−"], fc="#d7ccc8")
+    _bb_label(ax, 28, 8.0, "电位器 10k")
+    bb_wire(ax, "a29", "T2-29", "gnd")
+    bb_probe(ax, "e28", "④", dx=0.0, dy=-0.9)
+    # C 区：1N4733A 稳压（下半块第 20～29 列，9 V 电池供电）
+    bb_wire(ax, "B1-20", "j20", "pos")
+    bb_res(ax, "i20", "i24", "R 560")
+    bb_part2(ax, "h27", "h24", "1N4733A", kind="diode", dy=0.55)
+    bb_wire(ax, "j27", "B2-27", "gnd")
+    bb_res(ax, "f24", "f29", "RL（后插）", dy=0.55)
+    bb_wire(ax, "j29", "B2-29", "gnd")
+    bb_probe(ax, "g24", "⑤", dx=-1.0, dy=0.0)
+    for x, text in ((6.5, "A 区：二极管"), (12.5, "B 区：三极管开关")):
+        ax.text(x, 4.3, text, ha="center", va="center", fontsize=8, color="0.3")
+    # C 区在下半块：标签放在下半块 g 行第 18～22 列的空位上（同字号同颜色，底色同板子，盖住空孔，不压槽、不压元件）
+    ax.text(20.2, 2.0, "C 区：稳压管（9 V）", ha="center", va="center", fontsize=8, color="0.3", zorder=2,
+            bbox=dict(boxstyle="square,pad=0.15", fc="#f4f1ea", ec="none"))
+    bb_legend(ax, [("pos", "红线：接电源正极"), ("gnd", "黑线：接地"), ("sig", "蓝线：控制信号")])
+    print("[图 03-p4-1] A：1k b3–b7，1N4148 阳极 c7、阴极 c10，测点① 第 7 列；"
+          "B：控制线 a13→+5 V，RB b13–b17，2N3904 E d16 / B d17 / C d18，RC c18–c22，LED 阳极 b25、阴极 b22，"
+          "测点② 第 17 列、③ 第 18 列；电位器 c27/c28/c29，测点④ 第 28 列；"
+          "C：+9 V→j20，560 Ω i20–i24，1N4733A 阴极 h24、阳极 h27，RL f24–f29，测点⑤ 第 24 列")
+    fs.save(fig, P, "03_p4_1_breadboard.png")
 
 
-# ---------------- 图 03-p4-2：没有示波器时逐点测（左：负载扫描；右：一节 9 V 的输入禁区） ----------------
-def p4_2_points(fam, fam_l):
-    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.4, 4.4))
-    x = np.array(P4_LOADS) / 1e3
-    a1.semilogx(x, fam_l["out"], color=fs.C["vout"], marker="o", ms=5, lw=1.5, label="经跟随器（③）")
-    a1.semilogx(x, fam_l["src"], color=fs.C["third"], marker="s", ms=5, lw=1.3, ls="-.", label="直接接分压点（①）")
-    a1.axhline(4.5, **fs.LS["good"], label="空载 4.5 V")
-    a1.set_ylim(0, 5.2)
-    fs.axlabels(a1, "负载 RL", "kΩ", "负载上的电压（对 M）", "V")
-    a1.legend(loc="lower right", fontsize=8.5)
-    a1.set_title("两节 9 V：换不同负载", fontsize=10)
-    vi = np.array([p[0] for p in fam]); vo = np.array([p[1] for p in fam])
-    a2.plot([0, 9.2], [0, 9.2], **fs.LS["good"], label="理想 输出 = 输入")
-    a2.plot(vi, vo, color=fs.C["vout"], marker="o", ms=5, lw=1.5, label="实际（③ 对 ①）")
-    a2.axvspan(7.5, 9.3, color="0.88", zorder=0)
-    a2.text(8.35, 2.0, "禁区\n约 7.5 V 以上", ha="center", fontsize=9)
-    a2.annotate(f"停在 {vo.max():.2f} V", (vi.max(), vo.max()), (5.0, 8.6), fontsize=9,
-                arrowprops=dict(arrowstyle="-", color="0.4", lw=0.7))
-    a2.annotate(f"最低 {vo.min():.3f} V", (vi.min(), vo.min()), (1.2, 0.6), fontsize=9,
-                arrowprops=dict(arrowstyle="-", color="0.4", lw=0.7))
-    a2.set_xlim(-0.2, 9.3); a2.set_ylim(-0.2, 9.3)
-    fs.axlabels(a2, "输入 ①（对电池负极）", "V", "输出 ③", "V")
-    a2.legend(loc="upper left", fontsize=8.5)
-    a2.set_title("一节 9 V：换分压电阻", fontsize=10)
-    print(f"[数值] 负载 1k：直接 {fam_l['src'][0]:.2f} V、经跟随器 {fam_l['out'][0]:.3f} V；单 9 V 输出 {vo.min():.3f}～{vo.max():.2f} V")
-    assert 7.3 < vo.max() < 7.6 and 0 < vo.min() < 0.05 and min(fam_l["out"]) > 4.49
-    fs.save(fig, N, "03_p4_2_points.png")
+# ---------------- 图 03-p4-2：没有示波器也没有曲线仪时，逐点测二极管伏安特性 ----------------
+def p4_2_iv(vd, idd):
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    v = np.linspace(0.40, 0.75, 300)
+    ax.plot(v, diode_i(v) * 1e3, **fs.LS["good"], label="原理与实现篇的指数公式（示意参数）")
+    ax.plot(vd, idd, "o", color=fs.C["third"], ms=5, label="逐点读数（1N4148 厂家模型算出）")
+    for k, (tx, ty, ha) in ((1, (0.47, 1.0, "left")), (-1, (0.705, 3.6, "left"))):
+        ax.plot(vd[k], idd[k], "o", color="k", ms=3.5, zorder=5)
+        ax.annotate(f"{vd[k]:.2f} V，{idd[k]:.2f} mA", (vd[k], idd[k]), (tx, ty), ha=ha, va="center", fontsize=9,
+                    arrowprops=dict(arrowstyle="-", color="0.3", lw=0.7))
+        print(f"[数值] 图 03-p4-2 标注：{vd[k]:.2f} V，{idd[k]:.2f} mA")
+    fs.ref_v(ax, 0.7, "0.7 V")
+    ax.set_xlim(0.40, 0.80); ax.set_ylim(0, 5.5)
+    fs.axlabels(ax, "二极管两端电压（万用表①）", "V", "电流 = 1 kΩ 两端电压 ÷ 1 kΩ", "mA")
+    ax.legend(loc="upper left")
+    assert idd[-1] > 4 and idd[1] < 0.5
+    fs.save(fig, P, "03_p4_2_iv_points.png")
 
 
 if __name__ == "__main__":
-    _r, _fam, _fam_l = p4_numbers()
-    p4_1_breadboard(); p4_2_points(_fam, _fam_l)
+    _vd, _id = p4_numbers()
+    p4_1_breadboard(); p4_2_iv(_vd, _id)
 
 
-# ====================== 第 8 轮补电路图（page1–3） ======================
-EMPH = fs.C["third"]          # 新出现的元件用强调色
-BAD = fs.C["bad"]
+# ======================================================================================
+# 第 8 轮补电路图（page1–page3）：正文/例题/练习里描述了具体接法、但附近没有电路图的地方
+# ======================================================================================
+EMPH = schem.C["third"]      # 新出现、需要强调的元件
+BAD = schem.C["bad"]         # 错误接法的标注
 
-# ---------- 图 03-p2-4 例 1：3.3 V 分压直接接 2 kΩ 模块 vs 经跟随器 ----------
-with drawing() as d:
-    d.here = (0, 0)                                      # (a) 直接接：分压点就是模块输入
-    d += (s := elm.Dot(open=True).label("分压点", "top"))
-    d += elm.Line().right().at(s.center).length(1.5)
-    d += elm.Resistor().down().label("模块\n2 kΩ", "bottom").color(BAD)
-    d += elm.Ground()
-    d.here = s.center
-    d += elm.Line().left().length(0.01)
-    divider(d, top="10 kΩ", bot="20 kΩ", vs="5 V")
-    d += elm.Label().at((-0.5, -5.0)).label("(a) 直接接：只剩约 0.77 V", fontsize=11, color=BAD)
-    d.here = (10.0, 0); d.theta = 0                      # (b) 中间加跟随器（画完分压器后方向要复位）
-    op, pin, pout = follower(d, vin=None, vout=None, out_len=1.0)
-    d.here = pin
-    divider(d, top="10 kΩ", bot="20 kΩ", vs="5 V")
-    d += elm.Resistor().down().at(pout).label("模块\n2 kΩ", "bottom")
-    d += elm.Ground()
-    d += elm.Label().at((pin[0] + 1.5, -5.0)).label("(b) 经跟随器：约 3.33 V", fontsize=11)
-save_schem(d, N, "03_p2_4_ref_module.png")
 
-# ---------- 图 03-p3-3 跟随器驱动电容：串隔离电阻 R_iso ----------
-with drawing() as d:
-    d.here = (0, 0); d.theta = 0
-    op, pin, pout = follower(d, vin="$V_i$ 0.1 V 阶跃", vout=None, out_len=0.8)
-    d += elm.Resistor().right().at(pout).label("$R_{iso}$ 33 Ω").color(EMPH)
-    d += (n := elm.Dot())
-    d += elm.Capacitor().down().at(n.center).label("$C_L$\n0.1 μF", "bottom")
-    d += elm.Ground()
-    d += elm.Line().right().at(n.center).length(1.0)
-    d += elm.Dot(open=True).label("接负载", "right")
-save_schem(d, N, "03_p3_3_riso_circuit.png")
+def _vsrc(d, x, y0, y1, text):
+    """竖放电池：负极在 y0（下）、正极在 y1（上），左侧标注。"""
+    ym = (y0 + y1) / 2
+    d += elm.Line().endpoints((x, y0), (x, ym - 0.9))
+    d += elm.Battery().endpoints((x, ym - 0.9), (x, ym + 0.9))
+    d += elm.Line().endpoints((x, ym + 0.9), (x, y1))
+    d += elm.Label().at((x - 0.9, ym)).label(text)
+
+
+def _diode_loop(d, x0, vtxt, rtxt, parts, itxt):
+    """电池 → 电阻 → 若干只二极管（竖着向下）→ 回到电池负极。parts: [(元件类, 标注, 颜色)]。"""
+    top, bot = 4.0, -2.0 - 1.6 * (len(parts) - 1)
+    xr = x0 + 2.6
+    _vsrc(d, x0, bot, top, vtxt)
+    d += elm.Line().endpoints((x0, top), (xr - 0.2, top))
+    d += elm.Resistor().endpoints((xr - 0.2, top), (xr + 2.4, top)).label(rtxt)
+    xd = xr + 2.4
+    y = top
+    for k, (E, txt, col) in enumerate(parts):
+        y_next = y - (3.0 if k == 0 else 1.6)
+        d += E().endpoints((xd, y if k else y), (xd, y_next)).color(col)
+        d += elm.Label().at((xd + 0.75, (y + y_next) / 2)).label(txt, halign="left", color=col)
+        y = y_next
+    d += elm.Line().endpoints((xd, y), (xd, bot))
+    d += elm.Line().endpoints((xd, bot), (x0, bot))
+    d += elm.Label().at((x0 + 1.3, top + 0.45)).label(itxt, color=schem.C["cur"])
+
+
+def p2_6_diode_circuits():
+    print("[图 03-p2-6] (a) 5 V 串 1 kΩ 串硅二极管，I≈4.3 mA；(b) 例 1：5 V 串 330 Ω 串红色 LED")
+    i_a = (5 - 0.7) / 1000 * 1e3
+    i_b = (5 - 2) / 330 * 1e3
+    print(f"[数值] 估算电流 (a) {i_a:.1f} mA，(b) {i_b:.1f} mA")
+    assert abs(i_a - 4.3) < 0.05 and abs(i_b - 9.1) < 0.05
+    with schem.drawing(fontsize=11) as d:
+        _diode_loop(d, 0.0, "$V_{CC}$\n5 V", "$R$  1 kΩ", [(elm.Diode, "硅二极管\n$V_D$ ≈ 0.7 V", "black")], "→ $I$ ≈ 4.3 mA")
+        d += elm.Label().at((2.6, -3.2)).label("(a) 第 1 节：电源串电阻串二极管")
+        _diode_loop(d, 9.0, "$V_{CC}$\n5 V", "$R$  330 Ω", [(elm.LED, "红色 LED\n$V_D$ ≈ 2 V", EMPH)], "→ $I$ ≈ 9.1 mA")
+        d += elm.Label().at((11.6, -3.2)).label("(b) 例 1：LED 串限流电阻")
+    schem.save_schem(d, P, "03_p2_6_diode_circuits.png")
+
+
+def _npn_switch(d, x0, vin_txt, rb_txt, vcc_txt, rc_txt, rb_color="black", rc_color="black", rc_load=False):
+    """低边 NPN 开关：输入 → R_B → 基极；V_CC → R_C（或负载）→ 集电极；发射极接地。返回三极管。"""
+    xq = x0 + 4.0
+    q = elm.BjtNpn().anchor("base").at((xq, 0.0))
+    d += q
+    xc = q.collector[0]
+    d += elm.Line().endpoints(q.collector, (xc, 1.2))
+    d += elm.Resistor().endpoints((xc, 4.0), (xc, 1.2)).color(rc_color)
+    d += elm.Label().at((xc + 0.4, 2.6)).label(rc_txt, halign="left", color=rc_color)
+    d += elm.Dot(open=True).at((xc, 4.0)).label(vcc_txt, "top")
+    d += elm.Resistor().endpoints((x0 + 0.6, 0.0), (xq, 0.0)).color(rb_color).label(rb_txt, color=rb_color)
+    d += elm.Dot(open=True).at((x0 + 0.6, 0.0)).label(vin_txt, "left")
+    d += elm.Line().endpoints(q.emitter, (xc, -1.4))
+    d += elm.Ground().at((xc, -1.4))
+    d += elm.Label().at((xc + 0.35, 0.95)).label("C", fontsize=9, halign="left")
+    d += elm.Label().at((xq - 0.1, 0.35)).label("B", fontsize=9)
+    d += elm.Label().at((xc + 0.35, -0.95)).label("E", fontsize=9, halign="left")
+    return q
+
+
+def p2_7_bjt_switch():
+    print("[图 03-p2-7] NPN 开关：V_i 经 R_B 进基极，5 V 经 R_C=1 kΩ 进集电极，发射极接地")
+    with schem.drawing(fontsize=11) as d:
+        q = _npn_switch(d, 0.0, "$V_i$", "$R_B$  47 kΩ（第 3 节）\n10 kΩ（第 5 节）", "$V_{CC}$ = 5 V", "$R_C$\n1 kΩ")
+        xc = q.collector[0]
+        d += elm.Label().at((xc - 0.55, 1.75)).label("↓ $I_C$", color=schem.C["cur"], halign="right")
+        d += elm.Label().at((2.3, -0.75)).label("→ $I_B$", color=schem.C["cur"])
+        d += elm.Label().at((xc + 1.3, 0.0)).label("$V_{CE}$\n（C 对地）", color=EMPH)
+        d += elm.Label().at((3.0, -2.6)).label("$V_{BE}$ ≈ 0.7 V，$V_{CE} = V_{CC} - I_C R_C$")
+    schem.save_schem(d, P, "03_p2_7_bjt_switch.png")
+
+
+def p2_8_pmos_highside():
+    print("[图 03-p2-8] P 沟道高边开关：源极接 12 V，漏极经负载接地，栅极上拉到 12 V，开关 K 把栅极拉到地")
+    with schem.drawing(fontsize=11) as d:
+        xs = 6.0
+        m = elm.PFet().reverse().anchor("source").at((xs, 4.0))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints((1.5, 5.0), (xs, 5.0))
+        d += elm.Line().endpoints((xs, 5.0), m.source)
+        d += elm.Dot(open=True).at((1.5, 5.0)).label("+12 V", "left")
+        d += elm.Dot().at((g[0] - 1.6, 5.0))
+        d += elm.Resistor().endpoints((g[0] - 1.6, 5.0), (g[0] - 1.6, g[1])).color(EMPH)
+        d += elm.Label().at((g[0] - 2.0, (5.0 + g[1]) / 2)).label("上拉电阻", color=EMPH, halign="right")
+        d += elm.Line().endpoints((g[0] - 1.6, g[1]), g)
+        d += elm.Dot().at((g[0] - 1.6, g[1]))
+        d += elm.Label().at((g[0] - 0.8, g[1] + 0.3)).label("G", fontsize=9)
+        d += elm.Switch().endpoints((g[0] - 1.6, g[1]), (g[0] - 1.6, g[1] - 2.4))
+        d += elm.Label().at((g[0] - 2.0, g[1] - 1.2)).label("开关 K", halign="right")
+        d += elm.Ground().at((g[0] - 1.6, g[1] - 2.4))
+        d += elm.Resistor().endpoints(m.drain, (xs, m.drain[1] - 2.4)).label("负载", "bottom")
+        d += elm.Ground().at((xs, m.drain[1] - 2.4))
+        d += elm.Label().at((xs + 0.35, m.source[1] + 0.2)).label("S（源极）", fontsize=9, halign="left")
+        d += elm.Label().at((xs + 0.35, m.drain[1] - 0.2)).label("D（漏极）", fontsize=9, halign="left")
+        d += elm.Label().at((4.0, -1.4)).label("K 断开：栅极被拉到 12 V，$V_{GS}$ = 0 V → 关断\nK 闭合：栅极 = 0 V，$V_{GS}$ = −12 V → 导通")
+    schem.save_schem(d, P, "03_p2_8_pmos_highside.png")
+
+
+def p3_3_rb_sweep_circuit():
+    print("[图 03-p3-3] 扫描一的电路：3.3 V 驱动经 R_B（0.5–15 kΩ）进基极，5 V 经 100 Ω 负载进集电极")
+    with schem.drawing(fontsize=11) as d:
+        q = _npn_switch(d, 0.0, "单片机\n3.3 V", "$R_B$  0.5–15 kΩ 扫描", "5 V", "负载\n100 Ω", rb_color=EMPH)
+        d += elm.Label().at((q.collector[0] + 1.1, 0.0)).label("测 $V_{CE}$", color=schem.C["cur"])
+    schem.save_schem(d, P, "03_p3_3_rb_sweep_circuit.png")
+
+
+def p3_4_two_diodes():
+    print("[图 03-p3-4] 练习 1：12 V 串 1 kΩ 串两只同方向硅二极管")
+    with schem.drawing(fontsize=11) as d:
+        _diode_loop(d, 0.0, "12 V", "1 kΩ", [(elm.Diode, "$D_1$", "black"), (elm.Diode, "$D_2$", "black")], "→ $I$ = ?")
+    schem.save_schem(d, P, "03_p3_4_two_diodes.png")
+
+
+def p3_5_nmos_floating():
+    print("[图 03-p3-5] 练习 4：3.3 V 引脚直接接 2N7000 栅极，5 V 经 100 Ω 进漏极，栅极到地什么都没接")
+    with schem.drawing(fontsize=11) as d:
+        xd = 5.0
+        m = elm.NFet().reverse().anchor("drain").at((xd, 1.5))
+        d += m
+        g = m.gate
+        d += elm.Resistor().endpoints((xd, 4.4), m.drain)
+        d += elm.Label().at((xd + 0.4, 3.0)).label("负载\n100 Ω", halign="left")
+        d += elm.Dot(open=True).at((xd, 4.4)).label("5 V", "top")
+        d += elm.Line().endpoints((0.5, g[1]), g)
+        d += elm.Dot(open=True).at((0.5, g[1])).label("单片机引脚\n0 / 3.3 V", "left")
+        d += elm.Label().at((xd + 0.4, m.drain[1] - 0.75)).label("2N7000", halign="left", fontsize=10)
+        d += elm.Line().endpoints(m.source, (xd, m.source[1] - 0.6))
+        d += elm.Ground().at((xd, m.source[1] - 0.6))
+        d += elm.Label().at((2.0, g[1] - 1.3)).label("栅极和地之间\n什么都没接", color=BAD)
+    schem.save_schem(d, P, "03_p3_5_nmos_floating.png")
+
+
+def p3_6_pmos_direct():
+    print("[图 03-p3-6] 练习 5：P 沟道管源极接 12 V，栅极直接接 5 V 单片机引脚，漏极经负载接地")
+    with schem.drawing(fontsize=11) as d:
+        xs = 5.0
+        m = elm.PFet().reverse().anchor("source").at((xs, 3.5))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints(m.source, (xs, 4.4))
+        d += elm.Dot(open=True).at((xs, 4.4)).label("+12 V", "top")
+        d += elm.Line().endpoints((0.5, g[1]), g)
+        d += elm.Dot(open=True).at((0.5, g[1])).label("单片机引脚\n0 / 5 V", "left")
+        d += elm.Resistor().endpoints(m.drain, (xs, m.drain[1] - 2.4))
+        d += elm.Label().at((xs + 0.4, m.drain[1] - 1.2)).label("负载", halign="left")
+        d += elm.Ground().at((xs, m.drain[1] - 2.4))
+    schem.save_schem(d, P, "03_p3_6_pmos_direct.png")
+
+
+def p3_7_pmos_fixed():
+    print("[图 03-p3-7] 练习 5 答案：栅极上拉到 12 V，NPN 把栅极拉到地，单片机经 R_B 控制 NPN")
+    with schem.drawing(fontsize=11) as d:
+        xs = 8.0
+        m = elm.PFet().reverse().anchor("source").at((xs, 4.0))
+        d += m
+        g = m.gate
+        d += elm.Line().endpoints((g[0] - 1.6, 5.0), (xs, 5.0))
+        d += elm.Line().endpoints((xs, 5.0), m.source)
+        d += elm.Dot(open=True).at((xs, 5.0)).label("+12 V", "top")
+        xg = g[0] - 1.6
+        d += elm.Resistor().endpoints((xg, 5.0), (xg, g[1])).color(EMPH)
+        d += elm.Label().at((xg - 0.4, (5.0 + g[1]) / 2)).label("上拉电阻", color=EMPH, halign="right")
+        d += elm.Line().endpoints((xg, g[1]), g)
+        d += elm.Dot().at((xg, g[1]))
+        q = elm.BjtNpn().anchor("collector").at((xg, g[1] - 1.0)).color(EMPH)
+        d += q
+        d += elm.Line().endpoints((xg, g[1]), q.collector).color(EMPH)
+        d += elm.Ground().at(q.emitter)
+        d += elm.Resistor().endpoints((q.base[0] - 3.0, q.base[1]), q.base).color(EMPH).label("$R_B$", color=EMPH)
+        d += elm.Dot(open=True).at((q.base[0] - 3.0, q.base[1])).label("单片机引脚\n0 / 5 V", "left")
+        d += elm.Resistor().endpoints(m.drain, (xs, m.drain[1] - 2.4))
+        d += elm.Label().at((xs + 0.4, m.drain[1] - 1.2)).label("负载", halign="left")
+        d += elm.Ground().at((xs, m.drain[1] - 2.4))
+        d += elm.Label().at((4.5, -1.6)).label("引脚高 → NPN 导通 → 栅极 ≈ 0 V → P 沟道管导通\n引脚低 → NPN 截止 → 栅极被拉回 12 V → 关断")
+    schem.save_schem(d, P, "03_p3_7_pmos_fixed.png")
+
+
+if __name__ == "__main__":
+    p2_6_diode_circuits(); p2_7_bjt_switch(); p2_8_pmos_highside()
+    p3_3_rb_sweep_circuit(); p3_4_two_diodes(); p3_5_nmos_floating(); p3_6_pmos_direct(); p3_7_pmos_fixed()

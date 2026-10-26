@@ -1,0 +1,71 @@
+* 01 电感断电与续流二极管（page2 §5 图01-p2-4；page3 练习7；page3 参数表 G5V-1）
+* 线圈：0.1 H + 100 Ω，12 V，稳态 120 mA。开关在 t=1 ms 断开；断开后的开关按页面等效为 10 kΩ（导通 0.01 Ω）。
+* 续流二极管：页面只写"约 0.7 V 的二极管"，未给型号 → 用继电器电路最常用的 1N4007（Diodes 官方模型），另用 1N4148（Nexperia）对照。
+.include ../models/1N4007_diodes.lib
+.include ../models/1N4148_nexperia.lib
+.model SW1 SW(Ron=0.01 Roff=10k Vt=0.5 Vh=0)
+* 有二极管的两路用 Roff=1 GΩ（真实断开的开关），以便看清二极管自身造成的电流拖尾
+.model SW2 SW(Ron=0.01 Roff=1G Vt=0.5 Vh=0)
+Vctl ctl 0 PWL(0 1 1m 1 1.0001m 0)
+* (a) 无二极管
+V1 p1 0 12
+L1 p1 x1 0.1 IC=0.12
+R1 x1 n1 100
+S1 n1 0 ctl 0 SW1
+* (b) 1N4007 续流（阴极接电源侧 p2，阳极接线圈下端 n2）
+V2 p2 0 12
+L2 p2 x2 0.1 IC=0.12
+R2 x2 n2 100
+S2 n2 0 ctl 0 SW2
+D2 n2 p2 DI_1N4007
+* (c) 1N4148 续流
+V3 p3 0 12
+L3 p3 x3 0.1 IC=0.12
+R3 x3 n3 100
+S3 n3 0 ctl 0 SW2
+X3 n3 p3 1N4148
+* 练习7：12 V 接通 0.1 H + 100 Ω 线圈，电流上升
+V4 p4 0 PWL(0 0 1n 12)
+L4 p4 x4 0.1 IC=0
+R4 x4 0 100
+* G5V-1 12 V 款：960 Ω，L=0.85 H / 1.63 H，测 63.2% 上升时间
+V5 p5 0 PWL(0 0 1n 12)
+L5 p5 x5 0.85 IC=0
+R5 x5 0 960
+L6 p5 x6 1.63 IC=0
+R6 x6 0 960
+.options method=gear maxstep=1u
+.control
+tran 0.2u 12m uic
+meas tran vpk1 max v(n1) from=1m to=1.5m
+meas tran i1_10u find i(L1) at=1.010m
+meas tran vsw2 find v(n2) at=1.5m
+meas tran i2_1m find i(L2) at=2m
+meas tran i3_1m find i(L3) at=2m
+meas tran t2_1ma when i(L2)=1m fall=1 from=1.5m
+meas tran t2_01ma when i(L2)=0.1m fall=1 from=1.5m
+meas tran i2_290 find i(L2) at=3.9m
+meas tran i3_290 find i(L3) at=3.9m
+meas tran i4_1 find i(L4) at=1m
+meas tran i4_5 find i(L4) at=5m
+meas tran t5 when i(L5)=7.9e-3 rise=1
+meas tran t6 when i(L6)=7.9e-3 rise=1
+meas tran t3_1ma when i(L3)=1m fall=1 from=1.5m
+echo "RES t3_1ma $&t3_1ma"
+meas tran i1_end find i(L1) at=1.2m
+echo "RES i1_end $&i1_end"
+echo "RES vpk1 $&vpk1"
+echo "RES i1_10u $&i1_10u"
+echo "RES vsw2 $&vsw2"
+echo "RES i2_1m $&i2_1m"
+echo "RES i3_1m $&i3_1m"
+echo "RES t2_1ma $&t2_1ma"
+echo "RES t2_01ma $&t2_01ma"
+echo "RES i2_290 $&i2_290"
+echo "RES i3_290 $&i3_290"
+echo "RES i4_1 $&i4_1"
+echo "RES i4_5 $&i4_5"
+echo "RES t5 $&t5"
+echo "RES t6 $&t6"
+.endc
+.end

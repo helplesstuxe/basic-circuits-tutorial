@@ -1,108 +1,94 @@
-"""13 微分电路：用 ngspice + TI LM358B 官方模型核对页面数值。在仓库根目录运行：python spice/13/run.py"""
-import pathlib, sys
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import numpy as np
-import ng
-from ng import check
+#!/usr/bin/env python3
+"""13 桥式整流（只仿低压次级）：ngspice + Diodes 1N4007（替代 1N4001）/ Nexperia 1N4148 / TI TL072 官方模型复核页面数值。从仓库根运行：python spice/13/run.py"""
+# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
+import subprocess, re, sys, pathlib, math
+HERE = pathlib.Path(__file__).resolve().parent
+ROWS = []
 
-def wave(r, fname="out.txt"):
-    d = np.loadtxt(pathlib.Path(r["_dir"]) / fname)
-    return d[:, 0], d[:, 1]
+def ngspice(cir, need=()):
+    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
+    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
+    out = r.stdout + r.stderr
+    vals = {}
+    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
+        try:
+            vals[k] = float(v)
+        except ValueError:
+            vals[k] = float("nan")
+    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
+    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
+        print(out[-3000:])
+        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
+    return vals
 
-def npp(cir, flat=False, **p):
-    """与 code/13_sim.py 的 noise_pp 相同：同一电路有/无干扰两次结果相减，取 t>1 ms 的峰峰值。"""
-    r0 = ng.run(cir, dict(p, AN=0)); r1 = ng.run(cir, dict(p, AN="10m"))
-    t0, v0 = wave(r0); t1, v1 = wave(r1)
-    tg = np.arange(1e-3, 8e-3, 0.2e-6)
-    d = np.interp(tg, t1, v1) - np.interp(tg, t0, v0)
-    if flat:   # 只看平顶（每个拐角后 0.5 ms 到下一个拐角前），避开拐角处 LM358B 输出级交越
-        ph = (tg % 1e-3) / 1e-3
-        d = d[(ph > 0.5) & (ph < 0.98)]
-    return float(d.max() - d.min())
+def row(loc, item, page, spice, unit="", note=""):
+    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
+    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
+    ROWS.append((loc, item, page, spice, unit, dev, note))
 
-print("== 13 微分电路 ==")
-# --- page1 图13-p1-3 / page2 结论一：±0.5 V 500 Hz 三角波 -> ±1 V 方波 ---
-# 实用微分器（R1=1k, Cf=10n）在平顶后段的值
-r = ng.run("diff_tri.cir", dict(R1="1k", CF="10n"))
-t, v = wave(r)
-hi = v[(t > 5.6e-3) & (t < 6.0e-3)].mean()   # 输入下降段 -> 输出 +1 V
-lo = v[(t > 6.6e-3) & (t < 7.0e-3)].mean()   # 输入上升段 -> 输出 -1 V
-check("p1 图13-p1-3", "实用微分器 输入下降段输出", 1.0, hi, "V")
-check("p1 图13-p1-3", "实用微分器 输入上升段输出", -1.0, lo, "V")
-s = (t > 4e-3)
-vrms = np.sqrt(np.mean(v[s] ** 2))
-check("面包板", "实用版输出 真有效值(参考)", None, vrms, "V")
-# 理想微分器（无 R1/Cf）+ LM358B：平顶均值、拐角过冲、振铃频率（page3 图13-p3-1）
-r = ng.run("diff_tri.cir")
-t, v = wave(r)
-s = (t > 1e-3) & (t < 2e-3)
-check("p3 图13-p3-1", "理想微分器拐角后过冲峰值", 2.80, v[s].max(), "V", "LM358B 宏模型", v="⚠️")
-x = v[s] - v[s].mean(); tt = t[s]
-zc = tt[1:][np.diff(np.sign(x)) != 0]
-fring = 1 / (2 * np.mean(np.diff(zc)))
-check("p3 图13-p3-1", "理想微分器振铃频率", 13.8e3, fring, "Hz")
-s2 = (t > 1.7e-3) & (t < 2.0e-3)
-check("p1 示波器第1步", "理想版(无R1/Cf)平顶上叠加的振铃峰峰", 0.0, np.ptp(v[s2]), "V", "页面说通道2是±1 V方波", v="❌")
+def fmt(x):
+    if x is None:
+        return "—"
+    a = abs(x)
+    if a == 0:
+        return "0"
+    if a >= 1000 or a < 0.01:
+        return f"{x:.4g}"
+    return f"{x:.4g}"
 
-# --- page2 图13-p2-3 / 代码输出：10 mV 20 kHz 干扰（有/无干扰相减） ---
-check("p2 图13-p2-3", "理想微分器干扰峰峰(理想运放)", 2.51, npp("diff_tri_idealop.cir"), "V")
-check("p2 图13-p2-3", "理想微分器干扰峰峰(LM358B)", 2.51, npp("diff_tri.cir"), "V", "20 kHz 靠近 14.6 kHz 谐振峰", v="⚠️")
-check("p2 代码输出", "只串 R1=1k 干扰峰峰(理想运放)", 0.21, npp("diff_tri_idealop.cir", R1="1k"), "V")
-check("p2 代码输出", "只串 R1=1k 干扰峰峰(LM358B)", 0.21, npp("diff_tri.cir", R1="1k"), "V", v="⚠️")
-check("p2 图13-p2-3", "实用微分器(R1+Cf)干扰峰峰(理想运放)", 0.016, npp("diff_tri_idealop.cir", R1="1k", CF="10n"), "V")
-check("p2 图13-p2-3", "实用微分器(R1+Cf)干扰峰峰(LM358B, 平顶段)", 0.016, npp("diff_tri.cir", True, R1="1k", CF="10n"), "V", v="⚠️")
-check("p2 图13-p2-3", "实用微分器(R1+Cf)干扰峰峰(LM358B, 含拐角)", 0.016, npp("diff_tri.cir", R1="1k", CF="10n"), "V", "拐角输出过零处交越失真", v="ℹ️")
+def report(title):
+    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
+    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
+    for loc, item, page, spice, unit, dev, note in ROWS:
+        d = "   —  " if dev is None else f"{dev:+7.2f}%"
+        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
+    print(f"共 {len(ROWS)} 项。")
+# ---- 工具结束 ----
 
-# --- page3 扫描图二：R1 扫描（理想运放，无 Cf） ---
-table = {"100": (1.573, 0.02e-3), "300": (0.645, 0.07e-3), "1k": (0.199, 0.23e-3), "3k": (0.067, 0.69e-3)}
-for r1, (pp, t90) in table.items():
-    check("p3 R1 扫描表", f"R1={r1} 干扰峰峰", pp * 1e3, npp("diff_tri_idealop.cir", R1=r1) * 1e3, "mV")
-    r = ng.run("diff_tri_idealop.cir", dict(R1=r1))
-    t, v = wave(r)
-    k = (t > 3e-3) & (v > 0.8)        # 3 ms 拐角后输出 -1 -> +1，到 0.8 V 即 90%
-    check("p3 R1 扫描表", f"R1={r1} 边沿 90% 用时", t90 * 1e3, (t[k][0] - 3e-3) * 1e3, "ms", tol=20)
+b = ngspice("t_bridge.cir", need=["pk0", "mx", "mn", "av", "ipk", "inr", "tr", "tf", "r470", "r1000", "r4700", "r10000"])
+row("p1 图13-p1-2", "无电容输出峰值", 15.4, b["pk0"], "V")
+row("p1 图13-p1-3", "2200 µF 最高", 14.67, b["mx"], "V")
+row("p1 图13-p1-3", "2200 µF 最低", 14.00, b["mn"], "V")
+row("p1/p2 §5", "纹波（峰峰）", 0.67, b["mx"] - b["mn"], "V")
+row("p2 §5", "平均输出", 14.34, b["av"], "V")
+row("p2 §5", "负载电流", 191, b["av"] / 75 * 1e3, "mA")
+row("p1/p2 图13-p2-2", "每半周导通时间（门限 5 mA）", 2.42, (b["tf"] - b["tr"]) * 1e3, "ms")
+row("p1/p2 图13-p2-2", "二极管电流尖峰", 1.19, b["ipk"], "A")
+row("p2 §3", "上电第一周期浪涌", 6.7, b["inr"], "A")
+row("p2 §3", "公式纹波 I/(2fC)（偏保守）", 0.87, (b["av"] / 75) / (2 * 50 * 2200e-6), "V", "SPICE 实际纹波更小，方向一致")
+for c, pv in (("470", 2.89), ("1000", 1.45), ("4700", 0.31), ("10000", 0.15)):
+    row("p3 图13-p3-1", f"{c} µF 纹波", pv, b["r" + c], "V")
 
-# --- page2 结论二 / page1 示波器第 3 步：正弦增益（AC，LM358B） ---
-r = ng.run("ac_gain.cir")
-check("p2 结论二", "理想微分器 159 Hz 增益", 1.0, r["g159"], "倍")
-check("p2 结论二", "理想微分器 1.59 kHz 增益", 10.0, r["g1590"], "倍")
-check("p2 结论二", "理想微分器 20 kHz 增益", 126, r["g20k"], "倍", "接近 LM358B 谐振峰", v="⚠️")
-check("p2 结论二", "理想微分器 AC 增益峰值(谐振)", None, r["gpk"], "倍", "≈14.6 kHz 处")
-check("p1 示波器第3步", "159 Hz 0.5 V 正弦输出幅度(理想版瞬态)", 0.5, r["tran_amp"], "V", "叠加了持续振铃", v="❌")
-r = ng.run("ac_gain.cir", dict(R1="1k", CF="10n"))
-check("p1 示波器第3步", "同上，实用版(R1+Cf)", 0.5, r["tran_amp"], "V")
-r = ng.run("ac_gain.cir", dict(R1="1k"))
-check("p3 练习2", "只串 R1=1k 时 50 kHz 增益(LM358B)", 10.0, r["g50k"], "倍", "页面：封顶约 Rf/R1=10")
-check("p3 练习2", "5 mV 50 kHz 干扰输出幅度(只串R1)", 50, 5 * r["g50k"], "mV", "页面：不超过约 50 mV")
+e = ngspice("t_examples.cir", need=["e1mx", "e1pp", "e1av", "e2mx", "e2pp", "e2mxh"])
+row("p2 例1", "0.2 A 最高（页面估算上限）", 15.57, e["e1mx"], "V", "页面已说明真实更低")
+row("p2 例1", "0.2 A 纹波（公式 0.909）", 0.909, e["e1pp"], "V", "公式偏保守")
+row("p2 例1", "0.2 A 平均（页面估算）", 15.1, e["e1av"], "V")
+row("p2 例2", "9 V/0.5 A 电容最高（内阻 1 Ω）", 11.33, e["e2mx"], "V")
+row("p2 例2", "同上（内阻 0.5 Ω）", 11.33, e["e2mxh"], "V")
+row("p2 例2", "6800 µF 纹波（要求 ≤ 1 V）", 1.0, e["e2pp"], "V", "满足要求")
 
-# --- page1 图13-p1-5：三种接法 ---
-r = ng.run("three_circuits.cir")
-d = np.loadtxt(pathlib.Path(r["_dir"]) / "three.txt"); t = d[:, 0]
-s = (t > 6e-3) & (t < 10e-3)
-check("p1 图13-p1-5", "积分电路三角波峰峰", 0.45, np.ptp(d[s, 3]), "V")
-check("p1 图13-p1-5", "微分电路边沿脉冲正峰(LM358B)", 5.0, d[s, 5].max(), "V", "理想运放才是 5 V", v="⚠️")
-check("p1 图13-p1-5", "微分电路边沿脉冲负峰(LM358B)", -5.0, d[s, 5].min(), "V", v="⚠️")
-check("p1 图13-p1-5", "电容–电容接法 高电平", 0.0, d[s, 7].max(), "V")
-check("p1 图13-p1-5", "电容–电容接法 低电平", -2.0, d[s, 7].min(), "V")
+h = ngspice("t_half.cir", need=["hmx", "hpp", "hrv"])
+row("p2 例3", "半波最高", 16.27, h["hmx"], "V")
+row("p2 例3", "半波纹波（公式 1.82）", 1.82, h["hpp"], "V", "公式偏保守")
+row("p2 例3", "二极管反向电压", 33, -h["hrv"], "V")
 
-# --- page1 偏置电流漂移 ---
-r = ng.run("capcap_drift.cir")
-check("p1 附图第二格", "电容–电容接法漂移速度 |dVo/dt|", 0.40, abs(r["slope"]), "V/s", "页面 20 nA 示意值；TI 模型 Ib≈10 nA", v="⚠️")
-t, v = wave(r, "drift.txt")
-i = np.argmax(np.abs(v) > 13.5)
-check("p1 附图第二格", "漂到 13.5 V 用时", 34, t[i], "s", v="⚠️")
-check("p1 附图第二格", "最终饱和电压(负向)", -13.5, v[-1], "V", "LM358 输出可接近负轨", v="⚠️")
+s = ngspice("t_scope.cir", need=["okav", "okpp", "okav2", "okpp2", "bdav", "bdpp", "bdcl", "bdav2", "bdpp2", "bdcl2"])
+row("p3 图13-p3-2", "正确接法平均（1N4148 / 1N4001）", 2.93, s["okav"], "V", f"1N4001: {s['okav2']:.3f} V")
+row("p3 图13-p3-2", "正确接法纹波", 0.20, s["okpp"], "V", f"1N4001: {s['okpp2']:.3f} V")
+row("p3 图13-p3-2", "地夹接错 端口被钳在", -0.70, s["bdcl"], "V", f"1N4001: {s['bdcl2']:.3f} V")
+row("p3 图13-p3-2", "地夹接错 短路电流 (5+钳位)/50", 86, (5 + s["bdcl"]) / 50 * 1e3, "mA")
+row("p3 图13-p3-2", "地夹接错 平均", 3.17, s["bdav"], "V", f"1N4001: {s['bdav2']:.3f} V")
+row("p3 图13-p3-2", "地夹接错 纹波", 0.50, s["bdpp"], "V", f"1N4001: {s['bdpp2']:.3f} V")
 
-# --- page3 练习1：Rf·C=1 ms，±2 V 三角波 ---
-r = ng.run("diff_tri_idealop.cir", dict(VM=2, FT=1000, TSTOP="6m"))
-t, v = wave(r)
-check("p3 练习1", "±2 V 1 kHz：输出方波 +幅度(理想运放)", 8.0, v[(t > 4.8e-3) & (t < 4.95e-3)].mean(), "V")
-check("p3 练习1", "±2 V 1 kHz：输出方波 −幅度(理想运放)", -8.0, v[(t > 4.3e-3) & (t < 4.45e-3)].mean(), "V")
-r = ng.run("diff_tri.cir", dict(VM=2, FT=1000, R1="100", TSTOP="6m"))
-t, v = wave(r)
-check("p3 练习1", "±2 V 1 kHz：+幅度(LM358B, 加 R1=100Ω 抑振)", 8.0, v[(t > 4.8e-3) & (t < 4.95e-3)].mean(), "V", "假设：R1=100Ω 仅为消除振铃")
-r = ng.run("diff_tri.cir", dict(VM=2, FT=2000, R1="100", TSTOP="6m"))
-t, v = wave(r); s = t > 3e-3
-check("p3 练习1", "±2 V 2 kHz：正向削顶电平(LM358B)", 13.5, v[s].max(), "V")
-check("p3 练习1", "±2 V 2 kHz：负向削顶电平(LM358B)", -13.5, v[s].min(), "V")
-ng.save()
+f = ngspice("t_fw.cir", need=["pk", "av", "emax", "emin", "bpk", "av3", "av3b"])
+row("p2 图13-p2-4", "运放全波 0.5 V 输出峰值", 500.0, f["pk"] * 1e3, "mV")
+row("p2 图13-p2-4", "运放全波 平均", 318.0, f["av"] * 1e3, "mV")
+row("p2 图13-p2-4", "与 |Vi| 最大误差（含过零毛刺）", 0.040, max(abs(f["emax"]), abs(f["emin"])) * 1e3, "mV", "峰值处 10～120 µV；最大值来自 50 Hz 过零毛刺")
+row("p2 图13-p2-4", "同信号 二极管桥输出峰值", 0, f["bpk"] * 1e3, "mV", "页面'始终 0'")
+row("p3 练习4", "峰值 0.3 V 平均", 0.191, f["av3"], "V")
+row("p3 练习4", "R/2 错装成 R 平均", 0.095, f["av3b"], "V")
+
+d = ngspice("t_bleed.cir", need=["v10"])
+row("p3 练习3", "4.7k 泄放 10 s 后剩余比例", 37, d["v10"] / 15.6 * 100, "%")
+
+report("13 桥式整流（低压次级）")

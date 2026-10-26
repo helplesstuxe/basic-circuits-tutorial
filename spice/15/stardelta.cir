@@ -1,0 +1,77 @@
+* 15 星三角：低压版（12 V 继电器 + 延时模块代替 KM/KMY/KM△/KT）控制回路
+* 核对：page2 §二 控制回路 图15-p2-3 与 §三 代码输出「[时序]」两行、图15-p2-5；§五 动手实验步骤 2～4；page3 练习 2、关键参数表「切换空档」
+* 不仿真 380 V 主电路与电动机（市电）；KMY、KM△ 同时吸合的时长代表主电路相间短路。
+* 继电器行为模型同 spice/11：线圈 400 Ω（假设），τ=10 ms RC + 回差开关，门限由 run.py 按 tp/td 算出（默认 20 ms/10 ms）。
+* KT：通电延时型。线圈有电时 1 A 恒流给 1 F 充电（1 V/s），断电立即放电复位；电压到 TSET（V）= 延时到（s）。
+* SHORTY=1：把 KM△ 支路里的 KMY 常闭短接（page2 动手实验第 4 步 / page3 练习 2）
+*@def VTM=0.6163
+*@def VHM=0.2484
+*@def VTY=0.6163
+*@def VHY=0.2484
+*@def VTD=0.6163
+*@def VHD=0.2484
+*@def TSET=6
+*@def SHORTY=0
+*@def SB1=0 0
+*@def SB2=0 0
+*@def TSTOP=10
+.model SWN SW(VT=0.5 VH=0.01 RON=0.01 ROFF=1e9)
+.model SWKM SW(VT=@VTM@ VH=@VHM@ RON=1 ROFF=1e9)
+.model SWKY SW(VT=@VTY@ VH=@VHY@ RON=1 ROFF=1e9)
+.model SWKD SW(VT=@VTD@ VH=@VHD@ RON=1 ROFF=1e9)
+.model SWT SW(VT=@TSET@ VH=1m RON=1 ROFF=1e9)
+VS vs 0 12
+VONE one 0 1
+VSB1 s1 0 PWL(@SB1@)
+VSB2 s2 0 PWL(@SB2@)
+Bn1 ns1 0 V=1-v(s1)
+S0 vs x ns1 0 SWN
+S1 x p s2 0 SWN
+S2 x p aM 0 SWN
+* KM 线圈
+RCM p 0 400
+BFM fM0 0 V=v(p)/12
+RFM fM0 fM 10k
+CFM fM 0 1u IC=0
+SAM one aM fM 0 SWKM
+RAM aM 0 1k
+BNM naM 0 V=1-v(aM)
+* KT 线圈支路：公共点 → KM△ 常闭 → KT 线圈
+SKT p ktc naD 0 SWN
+RKT ktc 0 400
+GKT 0 ktv value={v(ktc)/12}
+CKT ktv 0 1 IC=0
+BKR ktr 0 V=1-v(ktc)/12
+SKR ktv 0 ktr 0 SWR
+.model SWR SW(VT=0.5 VH=0.01 RON=1m ROFF=1e12)
+ST one Td ktv 0 SWT
+RT Td 0 1k
+BNT nT 0 V=1-v(Td)
+* KMY 支路：公共点 → KT 延时断开常闭 → KM△ 常闭 → KMY 线圈
+SY1 p y1 nT 0 SWN
+SY2 y1 cY naD 0 SWN
+RCY cY 0 400
+BFY fY0 0 V=v(cY)/12
+RFY fY0 fY 10k
+CFY fY 0 1u IC=0
+SAY one aY fY 0 SWKY
+RAY aY 0 1k
+BNY naY 0 V=1-v(aY)
+* KM△ 支路：公共点 → [KT 延时闭合常开 ∥ KM△ 自锁] → KMY 常闭（可短接）→ KM△ 线圈
+SD1 p d1 Td 0 SWN
+SD2 p d1 aD 0 SWN
+BYS ysh 0 V=max(v(naY),@SHORTY@)
+SD3 d1 cD ysh 0 SWN
+RCD cD 0 400
+BFD fD0 0 V=v(cD)/12
+RFD fD0 fD 10k
+CFD fD 0 1u IC=0
+SAD one aD fD 0 SWKD
+RAD aD 0 1k
+BND naD 0 V=1-v(aD)
+.control
+tran 0.2m @TSTOP@ 0 0.2m uic
+wrdata sd.txt v(aM) v(aY) v(aD) v(ktc) v(cY) v(cD) v(ktv)
+echo "RESULT done 1"
+.endc
+.end

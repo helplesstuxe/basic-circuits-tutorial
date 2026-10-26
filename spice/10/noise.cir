@@ -1,0 +1,20 @@
+* 10 电压比较器：page2 §4 仿真「同一段噪声，两种比较器」（code/10_sim.py 同一段 20 s 输入，σ=40 mV，种子 1，每 10 ms 一点）
+* 两路 LM393A 同时接同一输入：XP 为基本比较器，XS 为施密特比较器（R1=10k、R2=100k、R3=2.2k）。
+* @VIN@ 由 run.py 用 code/10_sim.py 的同一算法生成的 PWL 点替换。
+.include ../models/LM393A.lib
+VCC vcc 0 5
+RA vcc ref 10k
+RB ref 0 10k
+VIN in 0 PWL(@VIN@)
+XP in ref vcc 0 outp LM393A
+RP vcc outp 2.2k
+RR1 in p 10k
+RR2 p outs 100k
+RR3 vcc outs 2.2k
+XS p ref vcc 0 outs LM393A
+.control
+tran 1m 20 0 0.2m
+wrdata noise.txt v(in) v(outp) v(outs)
+echo "RESULT done 1"
+.endc
+.end

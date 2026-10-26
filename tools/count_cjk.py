@@ -2,7 +2,7 @@
 """统计 Markdown 正文的汉字数（硬标准：每页 ≥ 500 汉字，不含代码和公式）。
 排除：代码块 ```…```、块公式 $$…$$、行内公式 $…$、行内代码 `…`、图片 ![替代文字](路径) 的替代文字、HTML 注释 <!-- -->。
 用法:
-  python tools/count_cjk.py 01-inverting-amp/page1.md [更多文件...]
+  python tools/count_cjk.py 05-inverting-amp/page1.md [更多文件...]
   python tools/count_cjk.py                # 不给参数 = 仓库里所有 P*/NN-*/page*.md
   python tools/count_cjk.py --min 500 …    # 改下限（默认 500）
 退出码：0 = 全部达标；1 = 至少一页不足（LOW）。

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""08 线性稳压：分立稳压电路（LM358 + TIP31C + 1N4733A）与 7805 替代核对。"""
+"""08 同相放大：ngspice + TI LM358B 官方模型复核页面数值。从仓库根运行：python spice/08/run.py"""
 # ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
 import subprocess, re, sys, pathlib, math
 HERE = pathlib.Path(__file__).resolve().parent
@@ -45,84 +45,67 @@ def report(title):
     print(f"共 {len(ROWS)} 项。")
 # ---- 工具结束 ----
 
-DC = ["vref", "vo", "vob", "iin", "iz"]
-RIP = ["opp", "omn", "ipp", "imn", "rav", "oav", "izav"]
-d14 = ngspice("t_dc14.cir", need=DC)
-d14l = ngspice("t_dc14l.cir", need=DC)
-d13 = ngspice("t_dc13.cir", need=DC)
-d15 = ngspice("t_dc15.cir", need=DC)
-l180 = ngspice("t_lab180.cir", need=DC)
-l18 = ngspice("t_lab18.cir", need=DC)
-e1 = ngspice("t_ex1.cir", need=DC)
-e2 = ngspice("t_ex2.cir", need=DC)
-p1 = ngspice("t_p1.cir", need=DC)
-r14 = ngspice("t_rip14.cir", need=RIP)
-r115 = ngspice("t_rip115.cir", need=RIP)
-r12 = ngspice("t_rip12.cir", need=RIP)
-r2k = ngspice("t_ripRZ2k.cir", need=RIP)
-dr = ngspice("t_drop05.cir", need=["v12", "v11", "v10", "hd10", "vknee"])
-drl = ngspice("t_drop005.cir", need=["vknee"])
-sc = ngspice("t_stab_C10.cir", need=["opp", "fosc"])
-se = ngspice("t_stab_esr1L.cir", need=["opp"])
-s78 = ngspice("t_78xx_sub.cir", need=["vo12", "ii12", "vo9", "ii9"])
+d = ngspice("dc_noninv.cir", need=["voa", "vma", "vob", "voc", "voe", "vor", "vok", "voq"])
+r = ngspice("dc_ramp.cir", need=["vod", "voh", "vom"])
+i = ngspice("dc_inv.cir", need=["vof", "von", "voi"])
+s = ngspice("dc_sum.cir", need=["vpl", "vol"])
+g = ngspice("dc_ol.cir", need=["vog"])
+row("p1 §二", "0.5 V 输入 → 输出", 1.5, d["voa"], "V")
+row("p1 §二", "−0.2 V 输入 → 输出", -0.6, d["vob"], "V")
+row("p2 §一 第二步", "反相端 = 输出 × 1/3", d["voa"] / 3, d["vma"], "V", "页面值取 SPICE 输出 ÷ 3")
+row("p1 §四 第2步", "Rf=40k 倍数", 5.0, d["voc"] / 0.5, "")
+row("p1 §四 第2步", "Rf=0 倍数", 1.0, r["vod"] / 0.5, "")
+row("p1 §四 第3步", "串 100k 后输出（不变）", 1.5, d["voe"], "V")
+row("p1 §四 第3步", "对照 05 反相串 100k：10/110×0.5", -0.4545, i["vof"], "V")
+row("p1 §四 第5步", "拔掉 Rf 输出贴电源", None, g["vog"], "V", "页面定性：贴到电源边")
+row("p2 图08-p2-3", "同一对电阻 反相倍数", -2.0, i["voi"] / 0.5, "")
+row("p2 例1", "内阻 20k 10k/91k 0.5 V → 输出", 5.05, r["voh"], "V")
+row("p2 例2", "10k/30k 0.3 V → 输出", 1.2, d["vok"], "V")
+row("p2 例3", "同相端", 0.35, s["vpl"], "V")
+row("p2 例3", "输出", 0.7, s["vol"], "V")
+row("p3 练习1", "2k/18k 0.25 V → 输出", 2.5, r["vom"], "V")
+row("p3 练习2", "反相 内阻 50k → 输出", -0.333, i["von"], "V")
+row("p3 练习2", "同相 内阻 50k → 输出", 3.0, d["voq"], "V")
+row("补充", "内阻 1 MΩ 同相 0.5 V → 输出", 1.5, d["vor"], "V", "IB 流过 1 MΩ 的影响")
 
-# ---- 主例：14 V、0.5 A ----
-vo, vref = d14["vo"], d14["vref"]
-il = vo / 17.66
-ie = il + vo / 9000.0                       # 负载 + 分压电阻
-pin = 14 * -d14["iin"]
-pload = vo * il
-pc = (14 - vo) * ie
-row("p2 §2 第1步", "I_Z（14 V）", 9.18, -d14["iz"] * 1e3, "mA")
-row("p2 §2 第1步", "V_ref（14 V）", 4.821, vref, "V", "Diodes 1N4733A 模型 9 mA 时约 5.00 V；手册 5.1 V±5% @49 mA")
-row("p2 §2 第3步 / p1 §三", "V_o = V_ref(1+R_f/R_1)", 8.508, vo, "V", f"按 SPICE 基准算公式值 {vref * (1 + 3.9 / 5.1):.3f} V")
-row("p2 §2 第4步", "运放输出（0.5 A）", 9.26, d14["vob"], "V")
-row("p2 §2 第4步", "V_BE（0.5 A）", 0.755, d14["vob"] - vo, "V", "TIP31C 模型")
-row("p1 图08-p1-3", "从输入拿走的功率", 7.14, pin, "W")
-row("p1 图08-p1-3", "负载得到的功率", 4.25, pload, "W", "负载电流 0.5 A，SPICE 输出电压高 0.32 V")
-row("p1 图08-p1-3", "调整管发热", 2.75, pc, "W")
-row("p1 图08-p1-3", "基准、分压、运放", 0.14, pin - pload - pc, "W")
-row("p1 §四", "效率", 60, pload / pin * 100, "%")
-dvl = (d14l["vo"] - vo) * 1e6
-row("p1 §三 / p2 §三 / p2 §六", "负载 0.01→0.5 A 输出变化", 1.8, dvl, "µV",
-    f"运放输出变 {(d14['vob'] - d14l['vob']) * 1e3:.0f} mV（页面设 V_BE 变 0.1 V）；等效 AK ≈ {(d14['vob'] - d14l['vob']) / (dvl * 1e-6):.0f}（页面 56667）")
-row("p2 §六", "输入 13→15 V 输出变化", 24.5, (d15["vo"] - d13["vo"]) * 1e3, "mV")
-# ---- 纹波 ----
-row("p1 图08-p1-2 / p2 §五", "输出纹波（14 V 平均、2 V 峰峰）", 24.5, r14["opp"] * 1e3, "mV",
-    f"基准纹波按 1N4733A 模型（9 mA 时 r_Z≈5.7 Ω）；抑制 {2 / r14['opp']:.0f} 倍")
-row("p2 §五", "纹波抑制（dB）", 38, 20 * math.log10(2 / r14["opp"]), "dB")
-row("p3 练习3", "R_Z 2 kΩ：输出纹波", 12.3, r2k["opp"] * 1e3, "mV", "指数型稳压管 r_Z∝1/I_Z，电流减半 r_Z 加倍，纹波几乎不变")
-row("p3 练习3", "R_Z 2 kΩ：I_Z", 4.6, -r2k["izav"] * 1e3, "mA")
-row("p3 练习3", "R_Z 2 kΩ：基准", 4.79, r2k["rav"], "V")
-row("p3 练习3", "R_Z 2 kΩ：输出", 8.45, r2k["oav"], "V")
-# ---- 压差 ----
-row("p2 §四 / p3 §一", "最低输入（0.5 A）", 10.76, dr["vknee"], "V", "拐点定义：输出比 12 V 时低 20 mV")
-row("p2 §四", "最低输入（0.05 A）", 10.70, drl["vknee"], "V")
-row("p2 §六", "输入 12 V 时 V_o", 8.48, dr["v12"], "V")
-row("p2 §六", "输入 11 V 时 V_o", 8.47, dr["v11"], "V")
-row("p2 §四 / §六", "输入 10 V 时 V_o", 7.74, dr["v10"], "V")
-row("p2 §四", "跟随区压差（输入 10 V）", 2.26, dr["hd10"], "V")
-row("p3 §三 图08-p3-2", "11.5 V 平均：输出最低", 8.24, r115["omn"], "V")
-row("p3 §三 图08-p3-2", "11.5 V 平均：输出纹波", 245, r115["opp"] * 1e3, "mV", f"是 14 V 时的 {r115['opp'] / r14['opp']:.0f} 倍（页面 10 倍）")
-row("p3 练习2", "12 V 平均、2 V 纹波：输出纹波（无缺口）", None, r12["opp"] * 1e3, "mV", f"谷底 11 V；与 14 V 时 {r14['opp'] * 1e3:.1f} mV 相近，无缺口")
-# ---- 例题、练习 ----
-row("p2 例1", "R_f 7.5 kΩ、16 V：V_o", 11.91, e1["vo"], "V")
-row("p2 例1", "调整管功耗", 2.05, (16 - e1["vo"]) * 0.5, "W", "差别来自 V_o 高 0.48 V")
-row("p2 例2", "R_f 2.0 kΩ、12 V：V_o", 6.71, e2["vo"], "V")
-row("p2 例2", "调整管功耗", 1.59, (12 - e2["vo"]) * 0.3, "W")
-row("p3 练习1", "16 V、0.5 A 调整管功耗", 3.75, (16 - p1["vo"]) * 0.5, "W")
-# ---- 动手实验 ----
-row("p3 §五 第2步", "180 Ω：V_ref", 4.82, l180["vref"], "V")
-row("p3 §五 第2步", "180 Ω：V_o", 8.51, l180["vo"], "V")
-row("p3 §五 第2步", "180 Ω：运放输出", 9.2, l180["vob"], "V")
-row("p3 §五 第3步", "换 18 Ω：输出变化（几乎不变）", None, (l18["vo"] - l180["vo"]) * 1e3, "mV")
-row("p3 §五 第3步", "换 18 Ω：运放输出升高", None, (l18["vob"] - l180["vob"]) * 1e3, "mV", "页面：几十毫伏")
-row("p3 §五 第4步", "输出开始下降的输入（10.7–10.8 V）", 10.75, dr["vknee"], "V")
-# ---- 稳定性 ----
-row("p2 图08-p2-1 C_o 10 µF", "理想 10 µF 直接并输出：输出峰峰", None, sc["opp"], "V", f"持续振荡 {sc['fosc'] / 1e3:.1f} kHz（页面图示为稳定直线）")
-row("p3 §四", "10 µF 串 1 Ω ESR、0.05 A：输出峰峰", None, se["opp"] * 1e3, "mV", "稳定")
-# ---- 7805（替代：LM317 接成 5 V）----
-row("p2 例3（替代 LM317）", "12 V→5 V、1 A：V_o", 5.0, s78["vo12"], "V", "替代模型，仅核对功耗")
-row("p2 例3（替代 LM317）", "功耗", 7.0, (12 - s78["vo12"]) * s78["vo12"] / 5, "W")
-row("p3 练习4（替代 LM317）", "9 V→5 V、0.5 A 功耗", 2.0, (9 - s78["vo9"]) * s78["vo9"] / 10, "W")
-report("08 线性稳压")
+a = ngspice("ac.cir", need=["ga", "gb", "gc", "gd", "gh", "bwe", "bwf", "bwg", "bwh", "bwk", "gl", "zl"])
+row("p2 仿真/图08-p2-2", "内阻 1k 反相倍数", 1.82, a["ga"], "")
+row("p2 仿真/图08-p2-2", "内阻 100k 反相倍数", 0.18, a["gb"], "")
+row("p2 图08-p2-2", "内阻 100 Ω 同相倍数", 3.0, a["gc"], "")
+row("p2 图08-p2-2", "内阻 1 MΩ 同相倍数", 3.0, a["gd"], "")
+row("p2 例1", "倍数（10k/91k）", 10.1, a["gh"], "")
+row("p3 图08-p3-2", "2 倍带宽", 600e3 / 1e3, a["bwe"] / 1e3, "kHz", "模型 GBW 偏大且低增益时更快")
+row("p3 图08-p3-2 / §2", "10 倍带宽", 120, a["bwf"] / 1e3, "kHz", "页面估算偏保守")
+row("p3 图08-p3-2", "100 倍带宽", 12, a["bwg"] / 1e3, "kHz", "页面估算偏保守")
+row("p2 例1 第4步", "带宽", 120, a["bwh"] / 1e3, "kHz", "页面估算偏保守")
+row("p3 练习3(3)", "4 倍带宽", 300, a["bwk"] / 1e3, "kHz", "页面估算偏保守")
+row("p3 §一.3 交流耦合", "1 kHz 倍数", 3.0, a["gl"], "")
+row("p3 §一.3 交流耦合", "信号源看到的输入电阻", 100, a["zl"] / 1e3, "kΩ")
+
+t = ngspice("t_scope.cir", need=["omax", "omin", "tpk", "omax40"])
+row("p1 §四 第1步/图08-p1-3", "0.5 V 峰值 → 输出峰值", 1.5, t["omax"], "V")
+row("p1 §四 第1步/图08-p1-3", "输出最低", -1.5, t["omin"], "V")
+row("p1 图08-p1-3", "输出到顶时刻（第2周期）", 1.25, t["tpk"] * 1e3, "ms", "与输入同时到顶")
+row("p1 §四 第2步", "Rf=40k 输出峰值", 2.5, t["omax40"], "V")
+t = ngspice("t_ss3.cir", need=["omax", "vclip"])
+row("p1 §四 第4步", "单 5 V、3 倍：输出不动的电平", 3.5, t["omax"], "V", "手册 V+−1.35～1.5 V")
+row("p1 §四 第4步", "单 5 V、3 倍：开始不动的输入", 1.17, t["vclip"], "V")
+t = ngspice("t_ss2.cir", need=["omax", "vclip"])
+row("p3 §1/图08-p3-1", "单 5 V 输出上限", 3.5, t["omax"], "V", "手册 V+−1.35～1.5 V")
+row("p3 §1/图08-p3-1", "2 倍开始削顶的输入", 1.75, t["vclip"], "V")
+t = ngspice("t_cm.cir", need=["omax", "vfail"])
+row("p3 §1 共模上限", "跟随器输出最高", 3.5, t["omax"], "V")
+row("p3 §1 共模上限", "跟随失效时的输入", 3.5, t["vfail"], "V")
+t = ngspice("t_ex3.cir", need=["vo08", "omax"])
+row("p3 练习3(1)", "0.8 V → 输出", 3.2, t["vo08"], "V")
+row("p3 练习3(2)", "削顶上限（余量 = 上限 − 3.2）", 3.5, t["omax"], "V", "余量页面 0.3 V")
+t = ngspice("t_ex4g2.cir", need=["omax", "omin", "pmax", "bavg"])
+row("p3 练习4", "偏置点", 2.5, t["bavg"], "V")
+row("p3 练习4", "2 倍：理想最高 4.5 V → 实际（削顶）", 3.5, t["omax"], "V", "确实削顶")
+row("p3 练习4", "2 倍：最低", 0.5, t["omin"], "V")
+row("p3 练习4", "同相端最高", 3.5, t["pmax"], "V")
+t = ngspice("t_ex4g1.cir", need=["omax", "omin"])
+row("p3 练习4 改法", "1 倍：输出最高", 3.5, t["omax"], "V")
+row("p3 练习4 改法", "1 倍：输出最低", 1.5, t["omin"], "V")
+
+report("08 同相放大")

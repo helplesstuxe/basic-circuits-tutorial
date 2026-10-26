@@ -1,0 +1,17 @@
+* 08 page3 练习3：5 V 单电源 LM358B，R1=10k、Rf=30k（4 倍），输入 0.8 V → 输出约 3.2 V，不削顶（余量 0.3 V）
+* 输入 1 ms 内从 0 升到 0.8 V，读 4 ms 时的输出；再把输入慢慢升到 1.2 V 读削顶电平（检验 3.5 V 上限与余量）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 5
+VS in 0 PWL(0 0 1m 0.8 5m 0.8 15m 1.2)
+X1 in m vcc 0 o LMX58B_LM2904B
+R1 m 0 10k
+RF o m 30k
+.control
+tran 10u 15m
+meas tran vo08 find v(o) at=4m
+meas tran omax max v(o)
+echo "RES vo08 $&vo08"
+echo "RES omax $&omax"
+.endc
+.end

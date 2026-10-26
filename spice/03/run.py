@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""03 电压跟随器：ngspice + TI LM358B 官方模型复核页面数值。从仓库根运行：python spice/03/run.py"""
+"""03 半导体入门：用 ngspice + 厂家模型核对页面数值。从仓库根运行：python spice/03/run.py"""
 # ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
 import subprocess, re, sys, pathlib, math
 HERE = pathlib.Path(__file__).resolve().parent
@@ -16,7 +16,7 @@ def ngspice(cir, need=()):
         except ValueError:
             vals[k] = float("nan")
     miss = [n for n in need if n not in vals or math.isnan(vals[n])]
-    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
+    if r.returncode != 0 or miss or re.search(r"(?i)fatal error|failed|error on line", out):
         print(out[-3000:])
         sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
     return vals
@@ -45,73 +45,82 @@ def report(title):
     print(f"共 {len(ROWS)} 项。")
 # ---- 工具结束 ----
 
-d = ngspice("dc_div.cir", need=["d0", "o0", "d1", "o1", "il1_v", "d2", "o2", "d10k", "d100k", "e1d0", "e1d", "e1o", "e1i_v", "e2d", "e2o", "x2d", "x2o"])
-row("p1 开头", "10V 两只10k 分压点空载", 5.0, d["d0"], "V")
-row("p1 图03-p1-1", "1k 直接接分压点", 0.83, d["d2"], "V")
-row("p1 图03-p1-3 / 第2步", "1k 接跟随器输出：分压点", 5.0, d["d1"], "V")
-row("p1 图03-p1-3 / 第2步", "1k 接跟随器输出：负载电压", 5.0, d["o1"], "V")
-row("p1 图03-p1-3 / 第2步", "1k 负载电流", 5.0, d["il1_v"] / 1e3 * 1e3, "mA")
-row("p1 第3步", "1k 改接分压点：跟随器输出", 0.83, d["o2"], "V")
-row("p2 仿真/图03-p2-2", "直接接 10k", 3.33, d["d10k"], "V")
-row("p2 仿真/图03-p2-2", "直接接 100k", 4.76, d["d100k"], "V")
-row("p2 例1 第1步", "10k/20k 空载", 3.33, d["e1d0"], "V")
-row("p2 例1 第2步", "直接接 2k 模块", 0.77, d["e1d"], "V")
-row("p2 例1 第3步", "经跟随器 模块电压", 3.33, d["e1o"], "V")
-row("p2 例1 第3步", "模块电流", 1.7, d["e1i_v"] / 2e3 * 1e3, "mA")
-row("p2 例2", "内阻50k 后级200k 直接接（比例）", 0.8, d["e2d"], "")
-row("p3 练习2", "内阻20k 后级20k 直接接（比例）", 0.5, d["x2d"], "")
-row("p3 练习2", "经跟随器（比例）", 1.0, d["x2o"], "")
+def sweep(cir):
+    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=300)
+    rows = [list(map(float, l.split()[1:])) for l in r.stdout.splitlines() if l.startswith("SWEEP")]
+    if r.returncode != 0 or not rows:
+        print(r.stdout[-2000:], r.stderr[-2000:]); sys.exit(f"{cir} 失败")
+    return rows
 
-v = ngspice("dc_vin.cir", need=["o5", "o0", "om12", "o25", "o18"])
-row("p1 代数", "输入 5 V → 输出", 5.0, v["o5"], "V")
-row("p1 代数", "输入 −1.2 V → 输出", -1.2, v["om12"], "V")
-row("p2 代数", "输入 2.5 V → 输出", 2.5, v["o25"], "V")
-row("p2 A=10万", "5 V 输入时输出与 5 V 之差（绝对值）", 0.05, abs(v["o5"] - 5) * 1e3, "mV", "主要是失调 0.29 mV；万用表量不出来的结论成立")
-row("p3 练习1", "1.8 V 输入 3.6k 负载：输出", 1.8, v["o18"], "V")
-row("p3 练习1", "负载电流", 0.5, v["o18"] / 3.6e3 * 1e3, "mA")
-row("p3 练习3", "33 Ω × 0.5 mA 压降", 16.5, 33 * 0.5e-3 * 1e3, "mV", "欧姆定律，非仿真")
-row("p3 §一", "33 Ω × 1 mA 压降", 33, 33 * 1e-3 * 1e3, "mV", "欧姆定律，非仿真")
+def cross(rows, col, level):
+    """线性插值求第 col 列首次超过 level 时的 RB。"""
+    for a, b in zip(rows, rows[1:]):
+        if a[col] <= level < b[col]:
+            return a[0] + (level - a[col]) * (b[0] - a[0]) / (b[col] - a[col])
+    return None
 
-c = ngspice("t_cap.cir", need=["pk0", "pp0a", "pp0b", "pk10", "pk33", "ts33"])
-row("p3 图03-p3-1", "直接接 0.1µF 最高", 0.190, c["pk0"], "V")
-row("p3 图03-p3-1", "直接接 55~65µs 峰峰值（仍在振）", None, (c["pp0a"] - c["pp0b"]) * 1e3, "mV", "页面：60 µs 还在振荡")
-row("p3 图03-p3-1", "串 10 Ω 最高", 0.140, c["pk10"], "V")
-row("p3 图03-p3-1", "串 33 Ω 最高", 0.101, c["pk33"], "V")
-row("p3 图03-p3-1", "串 33 Ω 过冲", 1.0, (c["pk33"] / 0.1 - 1) * 100, "%")
-row("p3 图03-p3-1", "串 33 Ω 进入 ±2% 时间（阶跃后）", 8.0, (c["ts33"] - 5e-6) * 1e6, "µs")
+d = ngspice("diodes.cir", need=["vlamp", "vz", "iz", "vz49", "vz5", "vf10", "id5", "ip"])
+row("p1 图03-p1-1", "6V+1N4007+灯(20Ω假设) 灯电压", 5.3, d["vlamp"], "V")
+row("p1 图03-p1-2", "12V/1k/1N4733A 输出", 5.1, d["vz"], "V")
+row("p1 图03-p1-2", "电阻上电压", 6.9, 12 - d["vz"], "V")
+row("p2 §1 0.7V规则例", "5V/1k/1N4148 电流", 4.31, d["id5"] * 1e3, "mA")
+row("p2 §1 仿真打印", "2V 时 VD", 0.662, d["vd2"], "V")
+row("p2 §1 仿真打印", "2V 时 I", 1.34, d["id2"] * 1e3, "mA")
+row("p2 §1 仿真打印", "5V 时 VD", 0.692, d["vd5"], "V")
+row("p2 §1 仿真打印", "12V 时 VD", 0.717, d["vd12"], "V")
+row("p2 §1 仿真打印", "12V 时 I", 11.28, d["id12"] * 1e3, "mA")
+row("p2 §1 1N4148", "1 mA 时 VF(典型0.6-0.7)", 0.65, d["vf1"], "V", "取区间中点")
+row("p2 §1 1N4148", "10 mA 时 VF(典型≈0.7,≤1)", 0.70, d["vf10"], "V")
+row("p2 §2 1N4733A", "49 mA 时 VZ", 5.1, d["vz49"], "V")
+row("p2 §2 1N4733A", "5 mA 时 V", 4.792, d["vz5"], "V", "页面按 rZ=7Ω(最大值)")
+row("p2 图03-p2-2", "击穿起点(取1mA)", 4.8, d["vz1"], "V")
+row("p3 练习1", "12V/1k/两只1N4148", 10.6, d["ip"] * 1e3, "mA")
+row("p3 练习1", "12V/1k/两只1N4007", 10.6, d["iq"] * 1e3, "mA")
+row("p3 练习2", "稳压管电流(粗算)", 6.9, d["iz"] * 1e3, "mA")
+row("p3 练习2", "稳压管功耗", 35, d["iz"] * d["vz"] * 1e3, "mW")
+row("p3 练习2", "精算电流", 7.19, d["iz"] * 1e3, "mA")
+row("p3 练习2", "精算电压", 4.81, d["vz"], "V")
 
-s = ngspice("t_ss5.cir", need=["omax", "omin", "vfail"])
-row("p3 图03-p3-2", "5V 单电源 输出上限", 3.5, s["omax"], "V")
-row("p3 图03-p3-2 / 小结", "5V 单电源 输出下限", 0.1, s["omin"], "V")
-row("p3 图03-p3-2", "开始跟不上的输入", 3.5, s["vfail"], "V")
-e = ngspice("t_ex1ss.cir", need=["o333", "omax2k"])
-row("p2 例1 第4步", "5V 单电源 带 2k 输出", 3.33, e["o333"], "V")
-row("p2 例1 第4步", "5V 单电源 带 2k 输出上限", 3.5, e["omax2k"], "V")
-row("p2 例1 第4步", "余量", 0.17, e["omax2k"] - e["o333"], "V")
-x = ngspice("t_ex5.cir", need=["o6", "omax12"])
-row("p3 练习5", "12V 单电源 偏置输出", 6.0, x["o6"], "V")
-row("p3 练习5", "12V 单电源 输出上限", 10.5, x["omax12"], "V")
+b = ngspice("bjt.cir", need=["ib1_164", "vce1_164", "ic1_164", "vce1_5", "vin_sat3", "ib3"])
+row("p1 图03-p1-3 左", "基极电流(几百µA)", 430, b["ib3"] * 1e6, "µA", "页面'几百微安'，按(5-0.7)/10k")
+row("p1 图03-p1-3 左", "LED 电流(推算)", 12.7, b["ic3"] * 1e3, "mA", "(5-2-0.2)/220；LED 用2V源代替")
+row("p2 §3 图03-p2-3", "Vin1.64V IB", 20, b["ib1_164"] * 1e6, "µA")
+row("p2 §3 图03-p2-3", "Vin1.64V IC(β=100)", 2.0, b["ic1_164"] * 1e3, "mA")
+row("p2 §3 图03-p2-3", "Vin1.64V VCE(β=100)", 3.0, b["vce1_164"], "V")
+row("p2 §3 图03-p2-3", "Vin5V IB", 91.5, b["ib1_5"] * 1e6, "µA")
+row("p2 §3 图03-p2-3", "Vin5V VCE(饱和)", 0.2, b["vce1_5"], "V")
+row("p2 §3 图03-p2-3", "Vin5V IC", 4.8, b["ic1_5"] * 1e3, "mA")
+row("p2 §5 图03-p2-5", "开始导通 Vin(IC=1mA)", 0.7, b["vin_1ma"], "V")
+row("p2 §5 图03-p2-5", "进入饱和 Vin(VCE=0.3V)", 1.18, b["vin_sat3"], "V")
+row("p2 §5 图03-p2-5", "进入饱和 Vin(VCE=0.2V)", 1.18, b["vin_sat"], "V")
+row("p2 §5 图03-p2-5", "饱和 IC", 4.8, b["ic2_5"] * 1e3, "mA")
 
-r = ngspice("t_sr.cir", need=["a1", "s1", "a3", "s3", "a2", "a8", "ax", "ex", "ak", "ek"])
-st = ngspice("t_step.cir", need=["srr", "srf"])
-row("p3 §三", "压摆率（大阶跃 上升）", 0.5, st["srr"], "V/µs")
-row("p3 §三", "压摆率（大阶跃 下降）", 0.5, st["srf"], "V/µs")
-row("p3 §三 代数", "1V 峰 80 kHz 输出峰值", 1.0, r["a1"], "V", "不失真边缘，最大斜率 %.3f V/µs" % r["s1"])
-row("p3 §三 代数", "3V 峰 27 kHz 输出峰值", 3.0, r["a3"], "V", "不失真边缘，最大斜率 %.3f V/µs" % r["s3"])
-row("p3 练习4", "2V 峰 40 kHz 输出峰值", 2.0, r["a2"], "V")
-row("p3 练习4", "100 kHz 峰值 0.8 V 输出峰值", 0.8, r["a8"], "V")
-row("补充", "3V 峰 80 kHz（超 fmax）输出峰值", None, r["ax"], "V", "变成三角波，最大偏差 %.2f V" % r["ex"])
-row("p1 第4步", "1 kHz 1V 峰 输出峰值", 1.0, r["ak"], "V", "与输入最大偏差 %.2f mV" % (r["ek"] * 1e3))
+s = sweep("rbsweep.cir")   # 列：RB, VCE, IC, IB, VCE(12V/120Ω), IC(12V/120Ω)
+at = {int(x[0]): x for x in s}
+row("p2 例2", "饱和 IC", 48, at[1500][2] * 1e3, "mA")
+row("p2 例2 / p3", "RB=1.5k VCE(≤0.3 即饱和)", 0.2, at[1500][1], "V", "2N3904 VCE(sat)max 0.3V@50mA")
+row("p2 例2", "RB=1.5k IB", 1.6, at[1500][3] * 1e3, "mA")
+row("p3 图03-p3-1", "RB=1k VCE", 0.2, at[1000][1], "V")
+row("p3 图03-p3-1", "离开饱和 RB(VCE=0.3V)", 3.2, cross(s, 1, 0.3) / 1e3, "kΩ", "页面 β=60；真实管见报告")
+row("p3 图03-p3-1", "离开饱和 RB(VCE=0.4V)", 3.2, cross(s, 1, 0.4) / 1e3, "kΩ")
+row("p3 图03-p3-1", "RB=4.7k VCE(β=60)", 1.68, at[4700][1], "V", "真实典型 2N3904")
+row("p3 图03-p3-1", "RB=4.7k IC", 33, at[4700][2] * 1e3, "mA")
+row("p3 图03-p3-1", "RB=4.7k 管耗", 55, at[4700][1] * at[4700][2] * 1e3, "mW")
+row("p3 图03-p3-1", "RB=10.8k VCE(β=200 边界)", 0.2, at[10800][1], "V", "页面假想 β=200 管")
+row("p3 练习3", "RB=1k IC", 98, at[1000][5] * 1e3, "mA")
+row("p3 练习3", "RB=1k VCE", 0.2, at[1000][4], "V")
+row("p3 练习3", "RB=2.2k VCE(压线)", 0.2, at[2200][4], "V", "页面:β偏小就不饱和")
+print("  [RB 扫描 3.3V→5V/100Ω]  " + "  ".join(f"{int(x[0])}Ω:{x[1]:.2f}V" for x in s))
+print("  [RB 扫描 5V→12V/120Ω]   " + "  ".join(f"{int(x[0])}Ω:{x[4]:.2f}V" for x in s))
 
-a = ngspice("ac.cir", need=["g10", "gpk", "bw"])
-row("p2 代数", "低频倍数", 0.99999, a["g10"], "")
-row("p3 §三 末段", "跟随器带宽", 1.2, a["bw"] / 1e6, "MHz", "模型有 %.1f dB 尖峰" % (20 * math.log10(a["gpk"])))
+m = ngspice("mos.cir", need=["vth", "r45", "r10", "id3"])
+row("p2 §4 / p3 参数表", "2N7000 VGS(th)(典型2.1,0.8-3.0)", 2.1, m["vth"], "V")
+row("p3 参数表", "RDS(on)@4.5V,75mA (max5.3)", 5.3, m["r45"], "Ω", "LEVEL1 模型")
+row("p3 参数表", "RDS(on)@10V,500mA (max5)", 5.0, m["r10"], "Ω")
+row("p2 例3/p3 练习4", "3.3V 直驱 100Ω 负载电流", 48, m["id3"] * 1e3, "mA", "页面:半开半关、不稳妥")
+row("p2 例3/p3 练习4", "3.3V 直驱 VDS", None, m["vds3"], "V")
+row("p3 图03-p3-2(示意)", "Rds@3.3V,0.2A", 4.17, m["ra"], "Ω", "示意模型,不判")
+row("p3 图03-p3-2(示意)", "Rds@5V,0.2A", 1.72, m["rb"], "Ω", "示意模型,不判")
+row("p3 图03-p3-2(示意)", "Rds@10V,0.2A", 0.63, m["rc"], "Ω", "示意模型,不判")
 
-f1 = ngspice("t_ref.cir", need=["o0", "omin", "omax", "d0", "dmin"])
-f2 = ngspice("t_ref2.cir", need=["a0", "amin", "amax"])
-row("p2 例3", "基准 2.5 V（缓冲后）", 2.5, f1["o0"], "V")
-row("p2 例3", "1mA/1µs 快脉冲：缓冲输出最大跳动", None, (f1["o0"] - f1["omin"]) * 1e3, "mV", "页面：几乎不跳（假设脉冲）")
-row("p2 例3", "对照：同一脉冲直接抽 100nF 分压点", None, (f1["d0"] - f1["dmin"]) * 1e3, "mV")
-row("p2 例3", "0.1mA/100ns 沿：缓冲输出最大跳动", None, max(f2["a0"] - f2["amin"], f2["amax"] - f2["a0"]) * 1e3, "mV")
-
-report("03 电压跟随器")
+report("03 半导体入门")

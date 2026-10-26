@@ -1,50 +1,38 @@
-# 07 射极跟随器 · 资料笔记（作者 D）
+# 07 三极管开关与继电器驱动 · 资料笔记（作者 D）
 
-以下每条都打开过原网页。
+下面每条都是作者真的打开过的来源；没找到出处的数值在正文标「[待核实]」或写明「示意值」。
 
-## 原理（厂家应用笔记 / 数据手册）
+1. **onsemi 2N3904 数据手册** https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf
+   - $V_{CEO}$ 40 V； $I_C$ 连续 200 mA；功耗 625 mW（TO-92，环境 25 °C，每升高 1 °C 减 5 mW）；结到环境热阻 $\theta_{JA}$ 200 °C/W（与 19 一致）；"useful dynamic range extends to 100 mA as a switch"。
+   - $h_{FE}$ 最小：0.1 mA 时 40、1 mA 时 70、10 mA 时 100（最大 300）、50 mA 时 60、100 mA 时 30。
+   - $V_{CE(sat)}$ ≤ 0.2 V（10 mA / 1 mA）、≤ 0.3 V（50 mA / 5 mA），即强制 β = 10 的测试条件； $V_{BE(sat)}$ 0.65–0.85 V（10 mA）、≤ 0.95 V（50 mA）。
+2. **松乐 SRD 系列继电器数据手册**（alldatasheet 镜像）https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html
+   - 高灵敏型 5 V：71.4 mA、70 Ω ±10%、0.36 W；12 V：30 mA、400 Ω。标准型 5 V：89.3 mA、55 Ω、0.45 W。
+   - 吸合电压最大 75%、释放电压最小 10%、最大允许电压 120%（标准型 110%）。
+   - 触点 10 A 250 VAC / 10 A 28 VDC；吸合时间最大 10 ms、释放时间最大 5 ms。
+   - 绝缘耐压：线圈与触点之间 1500 VAC，触点之间 1000 VAC。寿命：机械 10^7 次，电气 10^5 次。
+   - 手册**没有给线圈电感**，仿真里的 0.1 H 是示意值。
+3. **TI ULN2003A 数据手册** https://www.ti.com/lit/ds/symlink/uln2003a.pdf
+   - 7 路达林顿；每路 500 mA；输出耐压 50 V；内置钳位二极管，COM 端接线圈电源。
+   - 每路输入串了 2.7 kΩ 基极电阻，可直接接 5 V TTL / CMOS（3.3 V 也可用）。
+   - $V_{CE(sat)}$ 典型 / 最大：100 mA 时 0.9 / 1.1 V、200 mA 时 1.0 / 1.3 V、350 mA 时 1.2 / 1.6 V。
+   - 应用示例： $I_{COIL} = (V_{SUP} - V_{CE(SAT)})/R_{COIL}$ ，12–48 V 线圈、20–300 mA。
+4. **TE Connectivity：线圈抑制与继电器寿命** https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html
+   - 不加抑制时线圈感应电压可达数百甚至上千伏。
+   - 只并二极管能把电压钳到二极管压降，但电流衰减慢，衔铁释放变慢，触点粘连、熔焊的风险变大。
+   - 二极管串稳压管（齐纳管）衰减更快，稳压值按开关器件的耐压选。继电器的参数是在不加抑制时测的。
+5. **Microchip ATmega48A/88A/168A/328/328P 数据手册** https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf
+   - 绝对最大额定值：每个 I/O 引脚 DC 电流 40.0 mA；VCC、GND 引脚 200.0 mA。
+   - $V_{OH}$ 的测试条件： $I_{OH}$ = −20 mA、VCC = 5 V（85 °C 时最小 4.2 V）； $I_{OH}$ = −10 mA、VCC = 3 V（85 °C 时最小 2.3 V）。正文里「建议 20 mA」指这个测试条件。
+6. **Finder 62 系列功率继电器样本** https://cdn.findernet.com/app/uploads/S62EN.pdf
+   - "Reinforced insulation between coil and contacts according to EN 60335-1, with 6 mm clearance & 8 mm creepage distance"。用来说明：线圈侧到触点侧要留几毫米的电气间隙和爬电距离。
 
-1. ADI 大学课程 Chapter 9 Single Transistor Amplifier Stages，9.4 Voltage followers <https://wiki.analog.com/university/courses/electronics/text/chapter-9>
-   - 射极跟随器 = 共集电极：输入阻抗远高于输出阻抗，叫"缓冲"。
-   - 增益总小于 1（r_E 与 R_L 分压）；输入输出之间差一个 V_BE，约 0.65 V。
-   - 作用是电流 / 功率增益和阻抗匹配，不是电压增益；基极电流约是发射极电流的 1/β（约 1/100）。
-   - 例题：V_in 5.6 V、V_BE 按 0.6 V 估，V_out 5 V；R_L 1 kΩ → I_E 5 mA、r_E 5 Ω。
-2. TI LM358 数据手册 SLOS068AB（2024-10 修订）<https://www.ti.com/lit/ds/symlink/lm358.pdf>
-   - LM358（5.7 节表）：V_S = 15 V、V_O = 0 V 时输出拉电流（Source）最小 20 mA、典型 30 mA；短路电流典型 ±40 mA、最大 ±60 mA。
-   - LM358B（5.5 节表）：输出高电平离正电源 1.4 V（1 mA，典型）。
-3. TI AN-272 Op Amp Booster Designs <https://www.ti.com/lit/an/snoa600b/snoa600b.pdf>
-   - IC 工艺限制运放输出功率，需要"助推级"；通常把助推级放进运放的反馈环里，以保住低漂移和稳定的增益。
-   - 助推级有自己的相移，要注意振荡。互补射极跟随器用 D2、D3 补偿两管 V_BE，避免交越失真。
-4. TI AN-4 Monolithic Op Amp—The Universal Linear Component <https://www.ti.com/lit/an/snoa650b/snoa650b.pdf>
-   - 不在反馈环里的射极跟随器接长电缆时常常振荡；接在运放输出后也可能振荡，常用磁珠串在跟随器与电缆之间解决。
-   - 50 mA 的缓冲器至少要 0.1 μF 的电源旁路电容。
-5. Central Semiconductor TIP31 系列数据手册（Mouser 托管）<https://www.mouser.com/datasheet/2/68/tip31-845511.pdf>
-   - I_C 连续 3 A；P_D 40 W（管壳 25 °C，需散热片）、2.0 W（环境 25 °C，不加散热片）；θ_JA 62.5 °C/W；T_J 最高 150 °C。
-   - h_FE ≥ 25（V_CE 4 V、I_C 1 A），10–50（3 A）；V_BE(on) ≤ 1.8 V（3 A）。
-6. Semelab 2N3904 数据手册（Farnell 托管）<https://www.farnell.com/datasheets/1686115.pdf>
-   - I_C 200 mA；P_D 350 mW（T_A 25 °C）；h_FE 100–300（V_CE 1 V、I_C 10 mA）。
-   - 注意：不同厂家的 2N3904 功耗额定不同。全书统一采用 onsemi 2N3903/2N3904 手册：TO-92、环境 25 °C 时 625 mW（每升高 1 °C 减 5 mW），θ_JA 200 °C/W；h_FE 最小值 10 mA 时 100、50 mA 时 60、100 mA 时 30（https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf）。本节点页面按 onsemi 625 mW 举例，Semelab 的 350 mW 只作对比记录。
+7. **欧姆龙 G5V-1 数据手册** https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf （本轮下载打开）
+   - Coil Data 表（参考值）：5 V 款 167 Ω、30 mA，线圈电感 0.15 H（Armature OFF）/ 0.29 H（Armature ON）。page2 用它说明仿真取 0.1 H 与真实 5 V 小继电器同一量级。
+8. **TI SLUAAR5《Circuit Board Insulation Design According to IEC60664 for Motor Drive Applications》** https://www.ti.com/lit/wp/sluaar5/sluaar5.pdf （本轮下载打开）
+   - Clearance：按包括瞬态在内的最大峰值电压（overvoltage category [OVC] level）确定，污染等级、温度、湿度有影响。
+   - Creepage：与 RMS/DC 电压有关，取决于污染等级和绝缘材料的 CTI。
 
-## 推导 / 教程
-
-7. Wikipedia Common collector <https://en.wikipedia.org/wiki/Common_collector>
-   - 可看成"全部输出串联负反馈"：V_BE = V_in − V_out，晶体管自动调整让发射极 = 输入 − 近似恒定的 V_BE。
-   - A_v ≈ 1；r_in ≈ β·R_E；r_out ≈ R_source/β（R_E 大时）；电流增益 β + 1。
-   - 共集电极常用作 B 类、AB 类输出级。
-8. Electronics Tutorials Common Collector Amplifier <https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html>
-   - 输出比基极低约 0.7 V，同相；r'_e = 25 mV / I_e；输出幅度一般是输入的 98%–99%；电流增益 γ = I_E/I_B = β + 1。
-9. Electronics Tutorials Crossover Distortion <https://www.electronics-tutorials.ws/amplifier/amp_7.html>
-   - 推挽（B 类）在过零附近两管都不导通，出现"平台 / 死区"，因为硅管 V_BE 要到约 0.7 V 才导通；小信号时更严重。
-   - 用两只二极管给两管预偏置（AB 类）可大大减小。
-
-## 代码
-
-10. PySpice 1.5 例子 Bipolar Transistor <https://pyspice.fabrice-salvaire.fr/releases/v1.5/examples/transistor/transistor.html>
-    - 用 SPICE 模型（2n2222a）做 DC 扫描画 I_B–V_BE 曲线，0.65 V 处画参考线；本节点没有用 SPICE，而是在 code/07_sim.py 里用指数模型 I_C = I_S·e^(V_BE/V_T) 自己解，思路相同。
-
-## 常见错误（汇总）
-
-- 忘记 V_BE：想要 5 V，实际只有约 4.3 V（ADI 例题、Electronics Tutorials）。解决：把运放反馈取自发射极（AN-272）。
-- 管子功耗过大：P = V_CE × I_C；小管子 2N3904 只有 625 mW（onsemi，环境 25 °C；Semelab 版只有 350 mW），要换 TIP31 这类功率管并估算温升（θ_JA）。
-- 单电源下输入低于约 0.7 V 时管子截止，输出削到 0（Wikipedia：输出只能从 V_BE 跟到 V+）。
-- 跟随器接长线 / 容性负载振荡（AN-4），加磁珠或基极串小电阻。基极电阻阻值已核实：AN-4（SNOA650B）第 6 页图 8 High Current Output Buffer 中 LM101 输出经 R1 = 470 Ω 接 2N2222/2N2905 互补管基极，正文 "R1 is included to eliminate parasitic oscillations from the output transistors"；同段建议集电极各串 50 Ω 限流。正文 page3 按此取 470 Ω，压降数字由 code/figs/07_figs.py 的 rout_rin_rb() 打印。
+## 原「待核实」项处理结果
+- 线圈电感：仍用 0.1 H 示意值，正文改为引用 G5V-1 的 5 V 款 0.15～0.29 H 作量级依据；杂散电容 100 pF 在正文写明是示意值。
+- 自制 PCB 上 220V 与低压走线的间距：正文引用 TI SLUAAR5 说明 IEC 60664-1 按哪些条件确定间距，明确本页不给具体毫米数。

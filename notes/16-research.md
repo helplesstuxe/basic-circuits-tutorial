@@ -1,18 +1,14 @@
-# 16 振荡器 · 调研笔记（作者 A）
+# 16 差分放大 · 研究笔记（作者 A）
 
-## 已打开的资料
-- TI SLOA060《Sine-Wave Oscillator》https://www.ti.com/lit/pdf/sloa060 （已打开）：文氏桥 R1=R2、C1=C2 时反馈系数 β = 1/3，要求 A = 3，即 RF = 2RG；f0 = 1/(2πRC)。10 kΩ/10 nF 设计 1.59 kHz，实测 1.57 kHz，输出顶到电源轨，失真 2.8%；RF 减小 0.8% 即停振。灯泡非线性反馈失真 < 0.1%，JFET AGC 失真 < 0.2%；"Some circuits use diode limiting … soft limit"。运放 GBW 应高出振荡频率至少十倍，文氏桥要求 GBW > 43 ωosc；压摆率须 > 2πVp·f0。
-- TI SNOA998A《Relaxation Oscillator Circuit》https://www.ti.com/lit/pdf/snoa998 （已打开）：R2=R3=R4 时门限为电源的 1/3、2/3（5 V 时 1.67/3.33 V）；充、放电时间各 t = 0.69R1C1；陶瓷电容选 C0G/NPO 以获得温度稳定性。本节弛张振荡器拓扑与之相同（用运放代替比较器）。
-- TI LM358B 数据手册 https://www.ti.com/lit/ds/symlink/lm358.pdf （01–03 节已打开）：输出正摆幅约 V+ − 1.5 V，负摆幅约 +0.1 V → 本节 LM358 模型取 0.1～3.5 V。
-- 本仓库 14-voltage-comparator 页面（施密特比较器门限概念；14 用同相施密特，本节弛张振荡器是电容接反相端的形式）。
-- numpy/scipy 文档（之前节点已打开）：仿真只用 numpy 固定步长欧拉积分、最小二乘频率扫描。
+## 理论
+- TI SBOA274 差分放大电路手册 https://www.ti.com/lit/pdf/sboa274 ：R2/R1 = R4/R3 时 Vo = (R2/R1)(V2 − V1)；CMRR 受电阻容差限制：1% 容差最坏约 34 dB、典型 55.6 dB；0.1% 容差 54 / 75.6 dB（该例增益为 1）。
+- TI SLAA068B https://www.ti.com/lit/an/slaa068b/slaa068b.pdf ：差分放大 = 反相 + 同相叠加。
+- TI SBOA281 / SBOA282 仪表放大器电路手册 https://www.ti.com/lit/pdf/sboa281 、https://www.ti.com/lit/pdf/sboa282 ：三运放结构，增益 1 + 2R/Rg，输入阻抗高、CMRR 不受源内阻影响。
 
-## 自己的计算 / 建模假设（非出自资料）
-- 二极管稳幅模型：Rf = 12 kΩ + (10 kΩ ∥ 反向并联二极管)，二极管两端电压用 0.6·tanh(·/0.6) 近似；小信号增益 3.2，稳定峰值 1.85 V。这是示意模型，非器件级仿真。
-- 削顶模型：运放输出硬限幅 ±4 V（假设值）。
-- "偏离正弦的比例" = 与最小二乘拟合正弦之差的 RMS ÷ 正弦 RMS，与 SLOA060 的 THD 定义不同，只比较量级。削顶 8.6%（1562 Hz），稳幅 2.9%（1589 Hz）。
-- LM358 弛张振荡：门限 1.70/2.83 V、周期 1.53 ms、占空比 65%，均为 16_figs.py 的计算结果。
-- 练习 3：1 Hz、10 µF → R ≈ 72 kΩ；取 75 kΩ 约 0.96 Hz；LM358 周期按 1.53/1.39 比例放大约 1.15 s，占空比约 65%（自算）。
+## 实战代码
+- 本节仿真直接用理想运放公式（虚短虚断）在 numpy 里算，无需 SPICE；参考 scipy/numpy 文档。
 
-## 页面中的 [待核实]
-- 无（灯泡/AGC、GBW、C0G 建议均已由 SLOA060 / SNOA998A 核实）。
+## 常见误区
+- 四只电阻不成比例 → 共模泄漏（本节算得：增益 10、单只 1% 偏差 CMRR ≈ 61 dB；四只最坏 ≈ 49 dB）。
+- 忽视信号源内阻：内阻串在 R1 上等于电阻失配，100 Ω 即相当于 1% 误差。
+- 以为两输入端输入电阻相等（反相端 R1，同相端 R3 + R4），对源不平衡。

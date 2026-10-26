@@ -1,0 +1,22 @@
+* 06 MOS 管开关：导通电阻与体二极管（page3 §3 扫描二 图06-p3-2；page2 例1 第1步；page3 故障表「负载不亮」行 —— 万用表二极管档测体二极管）
+* 电路：漏极经 4 Ω 接 +12 V（3 A 负载），栅极直接加 VGS（无 RG 压降，DC），源极接地。
+* 体二极管：1 mA 电流源从 S 流向 D（假设：万用表二极管档测试电流约 1 mA），红表笔 S、黑表笔 D。
+.include ../models/IRLZ44N_infineon.lib
+*@def VGS=5
+VDD vdd 0 12
+RL vdd d 4
+VG g 0 @VGS@
+X1 d g 0 irlz44n
+* 第二只管子单独测体二极管（G 接 S）
+I1 0 s2 1m
+X2 0 0 s2 irlz44n
+.control
+op
+let rds=v(d)/(-i(VDD))
+let idd=-i(VDD)
+let vbd=v(s2)
+echo "RESULT RDS $&rds"
+echo "RESULT ID $&idd"
+echo "RESULT VBD $&vbd"
+.endc
+.end

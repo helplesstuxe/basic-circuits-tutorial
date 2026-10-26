@@ -5,7 +5,7 @@ __pycache__/
 
 # SPICE 运行时生成的数据
 spice/**/*_vg.txt
-spice/11/noise_pwl.inc
+spice/22/noise_pwl.inc
 __pycache__/
 *.pyc
 _site/

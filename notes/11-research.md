@@ -1,36 +1,32 @@
-# 11 过载保护 · 调研笔记（作者 C）
+# 11 互锁 · 资料笔记（作者 D）
 
-## 已打开并引用的资料
-- TI SBOA285A *Single-Supply, Low-Side, Unidirectional Current-Sensing Circuit*：https://www.ti.com/lit/an/sboa285a/sboa285a.pdf（本地 /workspace/authorC/refs/sboa285a.pdf）
-  - 1 A 满量程、R1 = 250 mΩ 采样电阻（满量程 250 mV），增益 1 + R3/R2 = 19.6（715 Ω / 13.3 kΩ），输出 50 mV–4.9 V，TLV9062。
-  - 采样电阻容差直接成为增益误差；小电流端失调电压的相对误差最大（Vos 0.3 mV 在 IiMin 10.2 mA 时约 12%）；R3 并电容可滤波。
-- TI SBOA169B *Precision, low-side current measurement*：https://www.ti.com/lit/an/sboa169b/sboa169b.pdf
-  - 高边 / 低边采样对比；低边共模电压接近地、电路简单；缺点是采样电阻压降使负载地相对电源地偏移，Rs 越小偏移越小。
-- TI LM393 数据手册（SLCS005）：https://www.ti.com/lit/ds/symlink/lm393.pdf
-  - 无后缀 LM393：VIO 典型 2 mV、25 °C 最大 5 mV；IIB 最大 250 nA；输入共模范围含地；开集电极输出。
-- TI DRV8871 数据手册：https://www.ti.com/lit/ds/symlink/drv8871.pdf
-  - OCP：电流超过 IOCP 持续 tOCP（1.5 μs）后关断全部 FET，tRETRY（3 ms）后自动重试，故障仍在则重复——打嗝式保护的实例。
-- Infineon IRLZ44N 数据手册：https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf（Rds(on) 最大 25 mΩ @ VGS 5 V，沿用 21 节）
-- ABB 热过载继电器手册：https://library.e.abb.com/public/a9cd1c3f07dc1870852573a300738595/1SXU106043B0201.pdf
-  - 电机电流流过双金属片发热弯曲而脱扣；1.05 Ie 不脱扣、1.2 Ie 2 h 内脱扣；7.2 Ie 下 Class 10 为 4–10 s（10A/20/30 级另有规定）；手动 / 自动复位。
-- Littelfuse *Fuseology Design Guide*：https://nationalfuse.com/wp-content/uploads/2023/03/Fuseology-Design-Guide.pdf
-  - 正常负载不超过额定电流 75%（25 °C）；脉冲（启动冲击）I²t 不超过熔化 I²t 额定值的 20%；TCC 为平均曲线，规格给 135% / 200% 下最长熔断时间。
-- 17 节 page3 引用的「热继电器不能做短路保护」出处，本节只转述并指回 17 节。
+以下网页均已实际打开阅读。
 
-## 设计取值（本节）
-12 V / 1 A 直流电机，堵转 5 A；低边 RS 0.1 Ω / 1 W；LM393 反相施密特：RA 33 kΩ（接 5 V）/ RB 1 kΩ，RH 100 kΩ，RPU 2.2 kΩ，输出直接驱动 IRLZ44N 栅极（正常 = 输出高 = 导通）；RF 10 kΩ、CF 10 μF，τ = 0.1 s。
-门限：V_T = 0.147 V、R_T = 0.971 kΩ → V_H 193 mV（1.93 A）、V_L 146 mV（1.46 A），回差 47 mV。
-启动模型：I = 1 + 4·e^(−t/20 ms) A。
+1. BCcampus Open Textbook《Basic Motor Control》第 36 章 Forward/Reverse Control Circuits https://pressbooks.bccampus.ca/basicmotorcontrol/chapter/forward-reverse-control-circuits/
+   - 交换三根进线中的任意两根即可反转；正转接触器 L1→T1、L2→T2、L3→T3，反转接触器 L1→T3、L2→T2、L3→T1。
+   - 两只接触器必须电气互锁 + 机械互锁；同时得电会短路，后果危险。
+   - 电气互锁：一个方向线圈的常闭触点串在另一方向线圈回路里；正转时按反转无效，必须先按停止。
+   - 机械互锁是"最后一道防线"：即使两个线圈都得电，也只有一个衔铁能吸到底，被挡住的那只会剧烈抖动（chattering）。
+   - 按钮互锁需要四触点（常开 + 常闭）复合按钮；可不按停止直接反转，但这种突然反转（反接，plugging）对电机冲击大；仍然需要电气互锁。
+2. 电工天下《交流接触器连锁电动机正反转控制原理图与故障处理》https://www.dgjs123.com/diandongji/1573.html
+   - 中文术语：接触器互锁、按钮互锁、双重互锁；KM1、KM2 同时吸合造成相间短路。
+   - 同时按下两个复合按钮，两只接触器线圈都不能通电。
+   - 调试：接触器上口接线保持一致，在下口调相；通电试验时先断开电动机接线。
+   - 故障："叭哒"一下吸不住——互锁常闭接点接成了"自己锁自己"；一抬手就断开——自锁接点接错。
+3. 规范网《按钮、接触器双重联锁控制线路优缺点》https://www.guifan.net/zhishi/2022/64180.html
+   - 接触器联锁可靠但必须先按停止；按钮联锁操作方便，但 KM1 主触头熔焊或被异物卡住时，即使线圈失电主触头也不分断，此时按 SB2 会造成相间短路。
+   - 双重联锁兼具两者优点，缺点是线路复杂、容易接错。
+   - 检查方法：断开主电路，用万用表测控制回路，按下按钮应读到线圈直流电阻；手动压下另一接触器应变为断路。
+4. Schneider Electric FAQ FA109542（LAD9R1 换向组件构成）https://www.se.com/uk/en/faqs/FA109542/
+   - LAD9R1 = 机械互锁 LAD9V2 + 上口连接排 LAD9V5 + 下口（换相）连接排 LAD9V6；LAD9R1V 另含电气互锁接线件 LAD9V1。
+5. GT-Engineering《Power Contactors》https://www.gt-engineering.it/en/insights/electrical-hazard-and-arc-flash-mitigation/contactors-used-in-safety-applications/power-contactors/
+   - 引 IEC 60947-4-1 附录 F：镜像触点（mirror contact）是不能和常开主触点同时处于闭合位置的常闭辅助触点。→ 主触点熔焊时常闭辅助触点保持断开，接触器互锁仍有效。
+6. 沿用 04 的资料：Schneider TeSys D 目录（闭合时间 12–22 ms，断开时间 4–19 ms；释放电压 0.3–0.6 Uc）https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf
 
-## 仿真结果（code/11_sim.py、code/figs/11_figs.py）
-- 开环慢变（1→2.6→1 A，σ 0.15 A 随机起伏，种子 3）：无回差翻转 10 次，有回差 2 次（3.95 s 跳、9.65 s 恢复）；page2 代码块结果相同。
-- 堵转 5 A：26 ms 切断（公式 τ·ln((I−I0)/(I−Itrip)) 26.4 ms）。
-- 闭环堵转：无回差每个 10 μs 步翻转（0.4 s 内 28803 次），平均电流 1.93 A；有回差打嗝：断 28.0 ms（= τ·ln(V_H/V_L)）、通 14.3 ms、占空比 34%、平均 1.73 A；锁存：1 次翻转，0 A。
-- 反时限：τ = 10/47/100 ms → 5 A 堵转 2.6/12.4/26.4 ms，20 A 短路 0.50/2.35/5.00 ms。
-- 启动（从 0 起）滤波后峰值：τ = 10/47/100 ms → 278/144/100 mV（10 ms 误跳）。
-- RS 表（跳闸 1.93 A 不变）：0.01/0.05/0.1/0.5 Ω → 门限 19.3/96.4/192.7/963.6 mV，跳闸功耗 0.04/0.19/0.37/1.86 W，5 mV 失调占比 25.9/5.2/2.6/0.5%。
-- LM393 IIB 250 nA × 10 kΩ = 2.5 mV。
-- 练习 4：启动冲击超出稳态部分的 I²t = 16·τ_start = 0.32 A²s。
-
-## 未用 / 待核实
-无「待核实」标记。page3 提到「实际产品常再串保险丝作最后防线」「锁存可用 LM393 另一半 / 单片机 / 自锁继电器实现」为一般工程常识，未单独引用。
+仿真用的示意参数：吸合 20 ms（12–22 ms 之内）、释放 10 ms（4–19 ms 之内）。
+7. （本轮补）西门子 3RT2037-1AR60 数据表 https://support.industry.siemens.com/teddatasheet/?caller=SIOS&format=pdf&language=en&mlfbs=3RT2037-1AR60 （已打开）
+   - closing delay at AC 10…80 ms；opening delay at AC 10…18 ms；arcing time 10…20 ms；带 IEC 60947-4-1 镜像触点。
+   - 与 TeSys D 不是同一型号，page3 只借用量级并注明。
+8. （本轮补）ABB Technical Application Papers No. 26 https://library.e.abb.com/public/619009ca06434972a40b3479a1ed3c69/AP_Apparecchi-manovra-MT(EN)C_1VCP000735.pdf （已下载打开）
+   - 触点分开后电弧使电流继续流一段时间；断路器在交流电流自然过零时熄弧；交流电流每周期过零两次。→ 50 Hz 半周期 10 ms，与燃弧 10～20 ms 一致。
+原核实标记（电弧持续时间）已据第 7、8 条解决并删除；11_sim.py 打印并断言 10 ms 半周期和"20 ms 空档 − 20 ms 燃弧 = 0 ms"。

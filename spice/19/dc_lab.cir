@@ -1,0 +1,23 @@
+* 19 page2 §7 低压动手实验 / page1 §4：9 V，1 kΩ 电位器滑片调到 5 V（上段 444 Ω、下段 556 Ω），2N3904 集电极接 9 V，发射极经 1 kΩ 或 220 Ω 接地
+* 页面：V_E ≈ 4.36 V（1 kΩ），≈ 4.28 V（220 Ω）；V_B − V_E 约 0.6~0.7 V；不加三极管把 220 Ω 直接挂滑片 → ≈ 2.36 V；220 Ω 时管耗约 0.09 W
+.include ../models/2N3904_onsemi.lib
+V9 v 0 9
+RU v w 444
+RD w 0 556
+Q1 v w e Q2n3904
+RE e 0 1k
+RU2 v w2 444
+RD2 w2 0 556
+RX w2 0 220
+.control
+op
+echo "RES vb1k $&v(w)"
+echo "RES ve1k $&v(e)"
+echo "RES vw2 $&v(w2)"
+alter RE resistance=220
+op
+echo "RES vb220 $&v(w)"
+echo "RES ve220 $&v(e)"
+echo "RES ic220 $&@Q1[ic]"
+.endc
+.end

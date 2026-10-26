@@ -1,0 +1,119 @@
+* 20 有源滤波：AC 扫频，LM358B（TI 官方模型），±15 V 供电（页面未给电源，假设双电源）
+* X1  page1 图20-p1-2 / page2 一阶有源低通：R=16k，C=10n，跟随器；输出接 1k 负载（page1 示波器第 5 步）
+* X1N 对照：同一 RC 不经运放，1k 直接接在电容上（page1 第 5 步「无源滤波器怕负载」）
+* X2  page2 图20-p2-1 单位增益 Sallen-Key：R1=4.22k，R2=18.4k，C1=10n（接地），C2=33n（接输出）
+* X3  page3 故障表第 3 行：两个电容接反（C1=33n 接地，C2=10n 接输出）
+* X4  page3 图20-p3-2 漏了 2π：R=100k，C=10n
+* X5  page2 图20-p2-3 一阶高通：C=100n 串联，R=15.9k 接地，跟随器
+* X6  page3 练习 4：同一高通 + 同相放大 ×2（Rf=R1=10k）
+* X7  page3 练习 1：R=10k，C=100n
+.include ../models/LMx58B_LM2904B.lib
+VP vp 0 15
+VN vn 0 -15
+VIN in 0 DC 0 AC 1
+* 1) 一阶低通 + 1k 负载
+R1a in a1 16k
+C1a a1 0 10n
+XU1 a1 o1 vp vn o1 LMX58B_LM2904B
+RL1 o1 0 1k
+* 1N) 无源 RC 直接带 1k
+R1n in o1n 16k
+C1n o1n 0 10n
+RL1n o1n 0 1k
+* 1U) 一阶低通空载
+R1u in a1u 16k
+C1u a1u 0 10n
+XU1u a1u o1u vp vn o1u LMX58B_LM2904B
+* 2) Sallen-Key
+R2a in m2 4.22k
+R2b m2 p2 18.4k
+C2a p2 0 10n
+C2b m2 o2 33n
+XU2 p2 o2 vp vn o2 LMX58B_LM2904B
+* 3) 电容接反
+R3a in m3 4.22k
+R3b m3 p3 18.4k
+C3a p3 0 33n
+C3b m3 o3 10n
+XU3 p3 o3 vp vn o3 LMX58B_LM2904B
+* 4) 漏 2π
+R4a in a4 100k
+C4a a4 0 10n
+XU4 a4 o4 vp vn o4 LMX58B_LM2904B
+* 5) 高通
+C5a in a5 100n
+R5a a5 0 15.9k
+XU5 a5 o5 vp vn o5 LMX58B_LM2904B
+* 6) 高通 ×2
+C6a in a6 100n
+R6a a6 0 15.9k
+XU6 a6 n6 vp vn o6 LMX58B_LM2904B
+R6f o6 n6 10k
+R6g n6 0 10k
+* 7) 练习1
+R7a in a7 10k
+C7a a7 0 100n
+XU7 a7 o7 vp vn o7 LMX58B_LM2904B
+.control
+ac dec 400 1 1meg
+let g1=mag(v(o1))
+let g1u=mag(v(o1u))
+let g1n=mag(v(o1n))
+let g2=mag(v(o2))
+let g3=mag(v(o3))
+let g4=mag(v(o4))
+let g5=mag(v(o5))
+let g6=mag(v(o6))
+let g7=mag(v(o7))
+meas ac g1_50 FIND g1 AT=50
+meas ac g1_100 FIND g1 AT=100
+meas ac g1_1k FIND g1 AT=1k
+meas ac g1_3k FIND g1 AT=3k
+meas ac g1_10k FIND g1 AT=10k
+meas ac g1_100k FIND g1 AT=100k
+meas ac g1u_1k FIND g1u AT=1k
+meas ac g1u_10k FIND g1u AT=10k
+meas ac g1u_100k FIND g1u AT=100k
+meas ac fc1 WHEN g1=0.70711
+meas ac g1n_100 FIND g1n AT=100
+meas ac fc1n WHEN g1n=0.04387
+meas ac g2_1k FIND g2 AT=1k
+meas ac g2_3k FIND g2 AT=3k
+meas ac g2_10k FIND g2 AT=10k
+meas ac f02 WHEN g2=0.70711
+meas ac g2max MAX g2
+meas ac g3_1k FIND g3 AT=1k
+meas ac g4_1k FIND g4 AT=1k
+meas ac fc4 WHEN g4=0.70711
+meas ac fc5 WHEN g5=0.70711
+meas ac g5_10 FIND g5 AT=10
+meas ac g6_100 FIND g6 AT=100
+meas ac g6_2k FIND g6 AT=2k
+meas ac fc7 WHEN g7=0.70711
+echo "RESULT g1_50 $&g1_50"
+echo "RESULT g1_100 $&g1_100"
+echo "RESULT g1_1k $&g1_1k"
+echo "RESULT g1_3k $&g1_3k"
+echo "RESULT g1_10k $&g1_10k"
+echo "RESULT g1_100k $&g1_100k"
+echo "RESULT g1u_1k $&g1u_1k"
+echo "RESULT g1u_10k $&g1u_10k"
+echo "RESULT g1u_100k $&g1u_100k"
+echo "RESULT fc1 $&fc1"
+echo "RESULT g1n_100 $&g1n_100"
+echo "RESULT fc1n $&fc1n"
+echo "RESULT g2_1k $&g2_1k"
+echo "RESULT g2_3k $&g2_3k"
+echo "RESULT g2_10k $&g2_10k"
+echo "RESULT f02 $&f02"
+echo "RESULT g2max $&g2max"
+echo "RESULT g3_1k $&g3_1k"
+echo "RESULT g4_1k $&g4_1k"
+echo "RESULT fc4 $&fc4"
+echo "RESULT fc5 $&fc5"
+echo "RESULT g5_10 $&g5_10"
+echo "RESULT g6_100 $&g6_100"
+echo "RESULT g6_2k $&g6_2k"
+echo "RESULT fc7 $&fc7"
+.endc
+.end

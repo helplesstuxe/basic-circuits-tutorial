@@ -1,0 +1,81 @@
+* 03 二极管 / 稳压管
+* 对应：page1 图03-p1-1（6 V、二极管+灯泡 → 灯约 5.3 V）；page1 图03-p1-2（12 V、1 kΩ、5.1 V 稳压管 → 约 5.1 V，电阻上 6.9 V）
+*       page2 §1（5 V、1 kΩ、二极管 → 4.31 mA；仿真打印 2/5/12 V 时 VD=0.662/0.692/0.717 V、I=1.34/4.31/11.28 mA）
+*       page2 §1（1N4148：10 mA 时 VF ≤1 V，1–10 mA 时典型 0.6–0.7 V）；page2 §2 图03-p2-2（1N4733A：49 mA 时 5.1 V，5 mA 时 4.792 V）
+*       page3 练习1（12 V、1 kΩ、两只硅二极管 → 10.6 mA）；练习2（6.9 mA / 35 mW；精确 7.19 mA、4.81 V）
+* 假设：页面二极管未写型号 → 小信号用 1N4148（Nexperia），灯泡回路用 1N4007（Diodes）；灯泡未给参数，按 6 V/0.3 A 小灯泡热态约 20 Ω 的线性电阻
+.include ../models/1N4148_nexperia.lib
+.include ../models/1N4007_diodes.lib
+.include ../models/1N47xxA_diodes_zener.lib
+* 灯泡回路
+V6 v6 0 6
+D1 v6 lamp DI_1N4007
+Rlamp lamp 0 20
+* 稳压管 12 V / 1 kΩ / 1N4733A（阳极接地，阴极接输出）
+V12 v12 0 12
+Rz v12 z 1k
+XZ 0 z DI_1N4733A
+* 1N4733A 在测试电流 49 mA 与 5 mA 下
+I49 0 z49 49m
+XZ49 0 z49 DI_1N4733A
+I5 0 z5 5m
+XZ5 0 z5 DI_1N4733A
+I1 0 z1 1m
+XZ1 0 z1 DI_1N4733A
+* 1N4148 在 1 mA、10 mA 下的正向压降
+If1 0 a1 1m
+XD1 a1 0 1N4148
+If10 0 a10 10m
+XD10 a10 0 1N4148
+* 2/5/12 V 经 1 kΩ 驱动 1N4148
+V2 s2 0 2
+R2 s2 d2 1k
+XD2 d2 0 1N4148
+V5 s5 0 5
+R5 s5 d5 1k
+XD5 d5 0 1N4148
+R12 v12 d12 1k
+XD12 d12 0 1N4148
+* 练习1：12 V、1 kΩ、两只 1N4148 / 两只 1N4007
+Rp1 v12 p1 1k
+XDp1 p1 p2 1N4148
+XDp2 p2 0 1N4148
+Rq1 v12 q1 1k
+Dq1 q1 q2 DI_1N4007
+Dq2 q2 0 DI_1N4007
+.control
+op
+let vlamp=v(lamp)
+let vz=v(z)
+let iz=(12-v(z))/1k
+let vz49=v(z49)
+let vz5=v(z5)
+let vz1=v(z1)
+let vf1=v(a1)
+let vf10=v(a10)
+let vd2=v(d2)
+let id2=(2-v(d2))/1k
+let vd5=v(d5)
+let id5=(5-v(d5))/1k
+let vd12=v(d12)
+let id12=(12-v(d12))/1k
+let ip=(12-v(p1))/1k
+let iq=(12-v(q1))/1k
+echo "RES vlamp $&vlamp"
+echo "RES vz $&vz"
+echo "RES iz $&iz"
+echo "RES vz49 $&vz49"
+echo "RES vz5 $&vz5"
+echo "RES vz1 $&vz1"
+echo "RES vf1 $&vf1"
+echo "RES vf10 $&vf10"
+echo "RES vd2 $&vd2"
+echo "RES id2 $&id2"
+echo "RES vd5 $&vd5"
+echo "RES id5 $&id5"
+echo "RES vd12 $&vd12"
+echo "RES id12 $&id12"
+echo "RES ip $&ip"
+echo "RES iq $&iq"
+.endc
+.end

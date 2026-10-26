@@ -1,0 +1,43 @@
+* 26 H 桥：page2「刹车与滑行的对比」图26-p2-3 与推导三（τ刹车≈59 ms、136 ms 降到 10%、−4.36 A、11 µs 快衰减、滑行 2 s 后 14%）。
+* 从全速（页面 5384 rpm，平均模型 D=1）开始：MODE=1 刹车（S3、S4 导通）；MODE=0 滑行（四管全关，电流走体二极管回灌 12 V）。
+* 开关 / 体二极管 / 电机等效电路同 seq.cir（理想开关 + 通用二极管，无 DRV8871 SPICE 模型）。
+*@def MODE=1
+*@def TSTOP=2
+*@def W0=563.8
+*@def I0=0.2819
+VM vm 0 12
+.model SWH SW(Ron=0.307 Roff=10Meg Vt=0.5 Vh=0)
+.model SWL SW(Ron=0.258 Roff=10Meg Vt=0.5 Vh=0)
+.model DB D(IS=1e-9 N=1.6)
+S1 vm a 0 0 SWH
+S3 a 0 g 0 SWL
+S2 vm b 0 0 SWH
+S4 b 0 g 0 SWL
+D1 a vm DB
+D3 0 a DB
+D2 b vm DB
+D4 0 b DB
+VG g 0 @MODE@
+RM a m1 2
+LM m1 m2 1m IC=@I0@
+VS m2 m3 0
+BE m3 b V=0.02*v(w)
+BT 0 w I=0.02*i(VS)
+CJ w 0 1e-5 IC=@W0@
+RB w 0 1e5
+.control
+tran 0.1u @TSTOP@ 0 20u uic
+let rpm = v(w)*60/(2*pi)
+let i = i(VS)
+meas tran t10 WHEN v(w)=56.38 FALL=1
+meas tran imin MIN i FROM=0 TO=20m
+meas tran tmin MIN_AT i FROM=0 TO=20m
+meas tran wend FIND v(w) AT=@TSTOP@
+meas tran tzero WHEN i=1e-4 FALL=1
+echo "RESULT T10 $&t10"
+echo "RESULT IMIN $&imin"
+echo "RESULT TMIN $&tmin"
+echo "RESULT WEND $&wend"
+echo "RESULT TZERO $&tzero"
+.endc
+.end

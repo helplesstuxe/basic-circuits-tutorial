@@ -1,0 +1,17 @@
+* 05 page1 §五 第4步：10k/100k，±15 V，0.5 V 峰值 1 kHz 叠加 0.2 V 直流 → 输出在 +3 V 和 −7 V 之间
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VA a 0 SIN(0.2 0.5 1k)
+R1a a ma 10k
+RFa ma oa 100k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+.control
+tran 2u 4m
+meas tran omax max v(oa) from=2m to=4m
+meas tran omin min v(oa) from=2m to=4m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+.endc
+.end

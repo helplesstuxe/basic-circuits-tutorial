@@ -1,0 +1,33 @@
+* 14 积分电路 · 面包板万用表读数（直流）：直觉篇 图 14-p1-2 的电路并 R_f = 1 MΩ（直觉篇第 5 步 / 原理篇 图 14-p2-3 下），R 10 kΩ，C 100 nF，±15 V
+* 万用表只能读直流平均值，所以用直流输入代替方波：方波的平均值就是它的直流偏置。三种输入：接地、+5 mV、+20 mV（页面例子里的偏置量）
+* LM358B（TI 官方模型）；C 在直流下开路，不影响读数
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e12
+VP vcc 0 15
+VN vee 0 -15
+.subckt pinteg in o m vcc vee r=10k c=100n rf=1meg
+R1 in m {r}
+C1 m o {c}
+R2 m o {rf}
+XA 0 m vcc vee o LMX58B_LM2904B
+.ends
+X0 0 o0 m0 vcc vee pinteg
+VA5 a5 0 5m
+X5 a5 o5 m5 vcc vee pinteg
+VA20 a20 0 20m
+X20 a20 o20 m20 vcc vee pinteg
+* 参数与调试篇 §二 两步法上限：R_f = 250 kΩ、20 mV 偏置时中心应偏约 −0.5 V
+X250 a20 o250 m250 vcc vee pinteg rf=250k
+.control
+op
+echo "RES o0 $&v(o0)"
+echo "RES m0 $&v(m0)"
+echo "RES o5 $&v(o5)"
+echo "RES m5 $&v(m5)"
+echo "RES o20 $&v(o20)"
+echo "RES m20 $&v(m20)"
+echo "RES o250 $&v(o250)"
+let ivp = -i(VP)
+echo "RES ivp $&ivp"
+.endc
+.end

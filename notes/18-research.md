@@ -1,32 +1,26 @@
-# 18 互锁 · 资料笔记（作者 D）
+# 18 微分电路 · 调研笔记（作者 C）
 
-以下网页均已实际打开阅读。
+## 已打开并引用的资料
+- TI SBOA276C *Differentiator Circuit*：https://www.ti.com/lit/an/sboa276c/sboa276c.pdf（本地 /workspace/authorC/refs/sboa276c.pdf）
+  - "The ideal differentiator circuit is fundamentally unstable and requires the addition of an input resistor, a feedback capacitor, or both, to be stable. The components required for stability limit the bandwidth..."
+  - Vout = −R2·C1·dVin/dt；示例 R2 499 kΩ、C1 15 nF、R1 1 kΩ、TLV9061（10 MHz），5 V 单电源，R3 = R4 = 100 kΩ 给出 2.5 V 参考；fMin 100 Hz、fMax 2.5 kHz。
+  - Design notes：R2 取大以免 C1 过大；R2 并电容滤高频噪声，从其截止频率约半个数量级（≈3.5 倍）处开始削弱微分作用；同相端加参考电压可单电源工作；保持在线性输出摆幅内。
+  - Design steps：最低微分频率比最低工作频率低至少半个数量级（C1 ≥ 11.1 nF → 15 nF）；上限截止频率比最高工作频率高至少半个数量级（R1 ≤ 1.2 kΩ → 1 kΩ）；GBP > (R1+R2)/(2π·R1²·C1) > 5.3 MHz；fc = 1/(2π·R2·CF)。
+- LM358B GBW 约 1.2 MHz 沿用 02 页。
 
-1. BCcampus Open Textbook《Basic Motor Control》第 36 章 Forward/Reverse Control Circuits https://pressbooks.bccampus.ca/basicmotorcontrol/chapter/forward-reverse-control-circuits/
-   - 交换三根进线中的任意两根即可反转；正转接触器 L1→T1、L2→T2、L3→T3，反转接触器 L1→T3、L2→T2、L3→T1。
-   - 两只接触器必须电气互锁 + 机械互锁；同时得电会短路，后果危险。
-   - 电气互锁：一个方向线圈的常闭触点串在另一方向线圈回路里；正转时按反转无效，必须先按停止。
-   - 机械互锁是"最后一道防线"：即使两个线圈都得电，也只有一个衔铁能吸到底，被挡住的那只会剧烈抖动（chattering）。
-   - 按钮互锁需要四触点（常开 + 常闭）复合按钮；可不按停止直接反转，但这种突然反转（反接，plugging）对电机冲击大；仍然需要电气互锁。
-2. 电工天下《交流接触器连锁电动机正反转控制原理图与故障处理》https://www.dgjs123.com/diandongji/1573.html
-   - 中文术语：接触器互锁、按钮互锁、双重互锁；KM1、KM2 同时吸合造成相间短路。
-   - 同时按下两个复合按钮，两只接触器线圈都不能通电。
-   - 调试：接触器上口接线保持一致，在下口调相；通电试验时先断开电动机接线。
-   - 故障："叭哒"一下吸不住——互锁常闭接点接成了"自己锁自己"；一抬手就断开——自锁接点接错。
-3. 规范网《按钮、接触器双重联锁控制线路优缺点》https://www.guifan.net/zhishi/2022/64180.html
-   - 接触器联锁可靠但必须先按停止；按钮联锁操作方便，但 KM1 主触头熔焊或被异物卡住时，即使线圈失电主触头也不分断，此时按 SB2 会造成相间短路。
-   - 双重联锁兼具两者优点，缺点是线路复杂、容易接错。
-   - 检查方法：断开主电路，用万用表测控制回路，按下按钮应读到线圈直流电阻；手动压下另一接触器应变为断路。
-4. Schneider Electric FAQ FA109542（LAD9R1 换向组件构成）https://www.se.com/uk/en/faqs/FA109542/
-   - LAD9R1 = 机械互锁 LAD9V2 + 上口连接排 LAD9V5 + 下口（换相）连接排 LAD9V6；LAD9R1V 另含电气互锁接线件 LAD9V1。
-5. GT-Engineering《Power Contactors》https://www.gt-engineering.it/en/insights/electrical-hazard-and-arc-flash-mitigation/contactors-used-in-safety-applications/power-contactors/
-   - 引 IEC 60947-4-1 附录 F：镜像触点（mirror contact）是不能和常开主触点同时处于闭合位置的常闭辅助触点。→ 主触点熔焊时常闭辅助触点保持断开，接触器互锁仍有效。
-6. 沿用 17 的资料：Schneider TeSys D 目录（闭合时间 12–22 ms，断开时间 4–19 ms；释放电压 0.3–0.6 Uc）https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf
+## 设计取值（本节）
+C 100 nF、Rf 10 kΩ（Rf·C 1 ms，与 14 节三角波斜率 ±1 V/ms 配合得到 ±1 V 方波）；实用版 R1 1 kΩ、Cf 10 nF（R1·C = Rf·Cf = 0.1 ms，f_H ≈ 1.59 kHz，高频增益封顶 Rf/R1 = 10）。干扰 10 mV、20 kHz。本例 GBP 条件 ≈ 17.5 kHz。
+教学取值优先波形可读，未完整套用 TI「半个数量级」流程，page3 已说明。
 
-仿真用的示意参数：吸合 20 ms（12–22 ms 之内）、释放 10 ms（4–19 ms 之内）。
-7. （本轮补）西门子 3RT2037-1AR60 数据表 https://support.industry.siemens.com/teddatasheet/?caller=SIOS&format=pdf&language=en&mlfbs=3RT2037-1AR60 （已打开）
-   - closing delay at AC 10…80 ms；opening delay at AC 10…18 ms；arcing time 10…20 ms；带 IEC 60947-4-1 镜像触点。
-   - 与 TeSys D 不是同一型号，page3 只借用量级并注明。
-8. （本轮补）ABB Technical Application Papers No. 26 https://library.e.abb.com/public/619009ca06434972a40b3479a1ed3c69/AP_Apparecchi-manovra-MT(EN)C_1VCP000735.pdf （已下载打开）
-   - 触点分开后电弧使电流继续流一段时间；断路器在交流电流自然过零时熄弧；交流电流每周期过零两次。→ 50 Hz 半周期 10 ms，与燃弧 10～20 ms 一致。
-原核实标记（电弧持续时间）已据第 7、8 条解决并删除；18_sim.py 打印并断言 10 ms 半周期和"20 ms 空档 − 20 ms 燃弧 = 0 ms"。
+## 仿真结果（code/18_sim.py、code/figs/18_figs.py）
+- 斜率图：+2 / 0 / −0.5 V/ms → −2.0 / 0.0 / +0.5 V。三角波 → ±1.00 V 方波。
+- 噪声：理想微分器干扰峰峰 2.51 V（理论 2·2π·20k·1ms·10mV）；实用版 16 mV；实用版上升段 −1.00 V。
+- 1.2 MHz GBW 运放模型：理想微分器拐角后冲到 2.80 V、振铃 13.8 kHz（估算 √(GBW/(2π·Rf·C)) = 13.8 kHz，ζ≈0.006）；实用版最高 1.00 V、无振铃。
+- R1 扫描（理想运放、无 Cf）：100/300/1k/3k Ω → 干扰 1573/645/199/67 mV，边沿 90% 用时 0.02/0.07/0.23/0.69 ms（≈2.3·R1·C）。
+- page2 代码块（只串 R1、Euler）：平顶（1.5–2 ms）波动理想 2.51 V、串 R1 0.21 V。
+
+## 附图说明
+（作者 A 复核放大附图后更正）source-20-circuits 附图中标「14 微分电路」的一格画成**输入 C、反馈 C、没有电阻**（不是输入 R、反馈 C）。这是电容比例反相放大：ΔVo = −(C/Cf)·ΔVi，且无直流通路，偏置电流使输出以 Ib/Cf 漂移到饱和。page1 新增「附图第二格」一节及图 18-p1-4（原样电路）、18-p1-5（同一方波送进积分电路 / 微分电路 / 电容–电容接法：0.45 V 峰峰三角波、±5 V 边沿脉冲、0 ↔ −2 V 反相方波），并说明附图大概率省略了与 Cf 并联的 Rf。漂移所用 20 nA 是示意值。page3 排查表加了对应一行。
+
+## 未用 / 待核实
+无「待核实」标记。

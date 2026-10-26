@@ -1,34 +1,39 @@
-# 17 自锁 · 资料笔记（作者 D）
+# 17 稳压管稳压 · 调研笔记
 
-以下网页/手册均已实际打开阅读。
+只记结论和出处；所有链接都已实际打开（2026-10-23）。
 
-1. EEPower《Understanding Three-Wire Control》https://eepower.com/technical-articles/understanding-three-wire-control/
-   - 三线控制：常闭停止按钮与常开启动按钮串联；接触器的常开辅助触点并联在启动按钮两端，称 seal-in / hold-in / memory circuit。
-   - 按住停止按钮时再按启动按钮无效（locked-stop）。
-2. Open Textbook《Basic Motor Control — Manual Circuits》https://opentextbc.ca/basicmotorcontrol/chapter/manual-circuit/
-   - 与启动按钮并联的常开触点使电路具有低电压保护（LVP）；停电后接触器释放，来电不会自行启动。
-   - 实际中自锁触点在手指离开按钮之前就已闭合（"a fraction of a second"）。
-   - 过载继电器常闭触点串联在线圈回路中。
-3. 电工天下《接触器自锁正转控制线路的作用》https://www.dgjs123.com/jcq/12029.htm
-   - 中文术语：自锁（自保）触头；欠电压保护（一般降到 85% 额定电压以下释放）；失压（零压）保护。
-   - 注意：该文 SB1 为启动、SB2 为停止；本教程按 schem.py 约定 SB1 停止、SB2 启动，页面中说明不同书编号不同。
-4. 技成培训网《自锁正转控制线路实现欠电压和失电压保护》https://www.jcpeixun.com/knowledge/detail/23610.html
-   - 控制电路取 L1、L2 两相（380V 线电压）供线圈；热继电器 FR 发热元件串主电路、常闭触头串控制电路；热继电器不能做短路保护。
-5. Schneider TeSys D 目录（LC1D09–LC1D25 控制电路特性）https://nanologicautomation.com/pdf/switch-gears/contractors/Schneider-Contactors-TesysD-Nano-Logic-Automation.pdf
-   - 50/60 Hz 线圈：工作电压 0.85–1.1 Vc（50 或 60 Hz 线圈 0.8–1.1 Vc），释放电压 0.3–0.6 Vc。
-   - 闭合时间 12–22 ms（LC1D25 为 15–24 ms），断开时间 4–19 ms。
-6. ABB B6/B7 迷你接触器技术数据 https://www.ourdoconline.com/lpcp/1SBC100192C02/files/basic-html/page109.html
-   - 按 IEC 60947-4-1：交流线圈工作范围 0.85–1.1 Uc；释放电压 0.20–0.75 Uc。
-7. Kuphaldt, LibreTexts 6.4 Motor Control Circuits https://workforce.libretexts.org/Bookshelves/Electronics_Technology/Electric_Circuits_IV_-_Digital_Circuitry_(Kuphaldt)/06%3A_Ladder_Logic/6.04%3A_Motor_Control_Circuits
-   - seal-in 触点的"latch"含义；停止按钮用常闭触点。
-8. Kuphaldt, LibreTexts 6.5 Fail-safe Design https://workforce.libretexts.org/Bookshelves/Electronics_Technology/Electric_Circuits_IV_-_Digital_Circuitry_(Kuphaldt)/06%3A_Ladder_Logic/6.05%3A_Fail-safe_Design
-   - 导线、触点最常见的故障是断开；应设计成断线时进入最安全的状态 → 停止用常闭、串联。
+## 器件参数
 
-仿真采用的示意参数：吸合门限 85% Uc、释放门限 45% Uc（落在 0.3–0.6 之间）、吸合时间 20 ms（落在 12–22 ms 之间）。
-9. IEC 60028 摘录（cabledatasheet.com）https://www.cabledatasheet.com/general-cable-information/notes-from-iec-60028/
-   - 20°C 标准退火铜体积电阻率 1/58 = 0.017241 Ω·mm²/m。用于 page3 控制线长度估算。
-   - 线圈启动（吸合）与保持功率：TeSys D LC1D09–D25 50/60 Hz 线圈吸合 70 VA、保持 7 VA（见第 5 条同一页）。
-10. 欧姆龙《Technical Guide for General-purpose Relays》CSM_GeneralRelay_TG_E_9_1 https://edata.omron.com.au/eData/Relays/GeneralRelay_TG.pdf （本轮下载打开）
-   - 电磁铁吸力 F = φ²/(2μ0S)，φ = NI/Re；气隙磁阻占主导时 Re ≈ g/(μ0S) ⇒ F = (μ0S/2)·(NI/g)²，g 为铁芯与衔铁的气隙。→ 吸合后 g 变小，同样吸力所需电流 ∝ g，解释吸合门限高于释放门限（page2 原核实标记 已据此改写并删除标记）。
-   - MY4 DC 型：80% 额定电压以下即吸合、10% 以上才释放 → 目录写作"must-operate 80% max、must-release 10% min"。
-   - 17_sim.py 末尾打印并断言"气隙减半 ⇒ 电流减半"和 85%/45% 落在 TeSys D 范围内。
+- Vishay 1N4728A–1N4761A 数据手册（Doc 85816，Rev 2.7，07-Nov-2024）：https://www.vishay.com/docs/85816/1n4728a.pdf
+  - 功率 P_tot 1300 mW；稳压值容差 ±5%；结到环境热阻 R_thJA 110 K/W。
+  - 1N4733A：V_Z 5.1 V（测试电流 I_ZT 49 mA）；动态电阻 Z_ZT 7 Ω（49 mA 时）、Z_ZK 550 Ω（1 mA 时，即拐点附近）；最大稳压电流 I_ZM 178 mA；浪涌电流 890 mA。
+  - 1N4742A：V_Z 12 V（I_ZT 21 mA），Z_ZT 9 Ω，I_ZM 76 mA。
+  - 1N4740A：V_Z 10 V，I_ZM 91 mA。1N4735A：V_Z 6.2 V，Z_ZT 2 Ω。1N4732A：V_Z 4.7 V，I_ZM 193 mA。
+
+## 原理与设计经验
+
+- Wikipedia「Zener diode」：https://en.wikipedia.org/wiki/Zener_diode
+  - 并联稳压（shunt regulator）：电阻电流 I = (U_in − U_out)/R。
+  - R 要足够小，使稳压管在负载最大时仍处于击穿区（文中举 BZX79C5V6 推荐 5 mA）；R 又要足够大，使 I_D·V_B 不超过稳压管的额定功率。
+  - 并联稳压浪费电，只适合小负载。
+  - 温度系数：约 5.6 V 以下为负、以上为正，5.6 V 附近两种机理接近抵消；4.7 V 稳压管约 −2 mV/°C，和三极管 V_BE 相当，因此「4.7 V 稳压管 + NPN 发射极」得到约 4 V、温漂很小的电压。
+  - 5.6 V 以下的稳压管拐点更「圆」（击穿不那么陡）。
+- Rod Elliott（ESP）「Voltage And Current Regulators」：https://sound-au.com/articles/vi-regulators.html
+  - 稳压管电流宜取最大值（I = P/V）的 10%–50%；例：15 V 1 W 稳压管最大约 66.7 mA，工作电流取 7–33 mA；负载 20 mA 时算出 113 Ω，取 120 Ω。
+  - 负载断开时稳压管会非常烫，不要在没有负载时这样用。
+  - 仿真例：19.4 V 直流输入带 300 mVpp 纹波，输出 15.1 V、纹波 16 mVpp（约 25 dB 抑制）。
+  - 负载电流变化超过几个百分点的场合不推荐单用稳压管；输出电容必不可少。
+  - 下一步是加串联调整管（series regulator）；V_BE 温度系数约 −2 mV/°C。
+  - 市电电压波动按 +10%/−15% 考虑。
+  - 把 R1 分成两段、中间接一只电容，可以进一步减小纹波。
+
+- Wikipedia「Linear regulator」：https://en.wikipedia.org/wiki/Linear_regulator
+  - 简单并联稳压：R1 = (V_S − V_Z)/(I_Z + I_R2)；算好 R1 后若去掉负载，全部电流流过稳压管，可能超过其最大电流。
+  - 在并联稳压后加一级射极跟随器就成了简单的串联稳压：基极电流 I_B = I_L/h_FE(min) 是稳压管很轻的负载；R1 = (V_S − V_Z)/(I_Z + K·I_B)，K 取 1.2–2；输出比稳压管低约 0.65 V（V_BE）。
+  - 这种电路仍对负载和输入变化敏感，加负反馈可以改善；它常作为更高级串联稳压电路的「预稳压」。
+
+## 与前置节点的衔接
+
+- 03 page2：稳压管模型 V = V_Z + r_Z·I_Z，1N4733A 取 V_Z = 5.1 V、r_Z = 7 Ω；I_ZK 1 mA、I_ZM 178 mA、P_Z 1.3 W，「实际功耗 V_Z·I_Z 留一半余量」；三极管 V_BE ≈ 0.7 V、I_C = β·I_B。
+- 03 page3：2N3904 在 50 mA 时 β 最小 60；onsemi 2N3904 手册（https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf，2026-10-23 核对）：I_C = 100 mA、V_CE = 1 V 时 h_FE 最小 30，额定功耗 625 mW。本节变体（100 mA）按 β = 30 估算。
+- 13 page2：桥式整流滤波输出带 100 Hz 纹波，纹波 ΔV ≈ I/(2fC)。

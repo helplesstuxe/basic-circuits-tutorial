@@ -2,7 +2,7 @@
 """检查 Markdown 里的配图是否合规（notes/AUTHOR_GUIDE.md「图的规则」的可自动检查部分）：
   1. 每个 ![…](路径) 指向的本地文件存在，且是 PNG（禁止 ASCII 图、Mermaid：```mermaid 块直接 FAIL）；
   2. 每张 PNG < 200 KB；
-  3. 图号格式「图 NN-pX-k」与文件夹、页码一致（如 01-inverting-amp/page2.md 里只能出现「图 01-p2-k」），
+  3. 图号格式「图 NN-pX-k」与文件夹、页码一致（如 05-inverting-amp/page2.md 里只能出现「图 05-p2-k」），
      同一页里 k 从 1 起连续、不重复定义；
   4. 每个图号至少出现两次（图前引导句或图后讲解里提到 + 图注本身）。
 用法：python tools/check_figs.py [文件 …]（不给参数 = 所有 P*/NN-*/page*.md）。退出码 0 = 通过。

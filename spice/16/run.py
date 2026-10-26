@@ -1,137 +1,108 @@
-"""16 振荡器：ngspice + TI LM358B / Nexperia 1N4148 官方模型核对。在仓库根目录运行：python spice/16/run.py"""
-import pathlib, sys
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import numpy as np
-import ng
-from ng import check
+#!/usr/bin/env python3
+"""16 差分放大：ngspice + TI LM358B 官方模型复核页面数值。从仓库根运行：python spice/16/run.py"""
+# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
+import subprocess, re, sys, pathlib, math
+HERE = pathlib.Path(__file__).resolve().parent
+ROWS = []
 
+def ngspice(cir, need=()):
+    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
+    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
+    out = r.stdout + r.stderr
+    vals = {}
+    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
+        try:
+            vals[k] = float(v)
+        except ValueError:
+            vals[k] = float("nan")
+    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
+    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
+        print(out[-3000:])
+        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
+    return vals
 
-def load(r, name):
-    return np.loadtxt(pathlib.Path(r["_dir"]) / name)
+def row(loc, item, page, spice, unit="", note=""):
+    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
+    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
+    ROWS.append((loc, item, page, spice, unit, dev, note))
 
+def fmt(x):
+    if x is None:
+        return "—"
+    a = abs(x)
+    if a == 0:
+        return "0"
+    if a >= 1000 or a < 0.01:
+        return f"{x:.4g}"
+    return f"{x:.4g}"
 
-def edges(t, y, level, rising=True):
-    s = y > level
-    idx = np.where((~s[:-1] & s[1:]) if rising else (s[:-1] & ~s[1:]))[0]
-    return t[idx] + (level - y[idx]) / (y[idx + 1] - y[idx]) * (t[idx + 1] - t[idx])
+def report(title):
+    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
+    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
+    for loc, item, page, spice, unit, dev, note in ROWS:
+        d = "   —  " if dev is None else f"{dev:+7.2f}%"
+        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
+    print(f"共 {len(ROWS)} 项。")
+# ---- 工具结束 ----
 
+d = ngspice("dc.cir", need=["o_p1a", "o_p1b", "o_p2d", "p_p2d", "o_e1b", "p_e1b", "o_e2", "p_e2", "o_x1", "o_bal", "o_x4", "p_x4", "o_z0"])
+row("p1 §二 代数", "2.01/2.00 V → 输出", 0.1, d["o_p1a"], "V", "含失调 ×11 ≈ 3.3 mV")
+row("p1 §二 / p2 例1①", "3.01/3.00 V → 输出", 0.1, d["o_p1b"], "V")
+row("p2 例1②", "5.01/5.00 V → 输出", 0.1, d["o_e1b"], "V")
+row("p2 例1 第4步", "同相端电压", 4.55, d["p_e1b"], "V")
+row("p2 §一 第一步", "V2=2.2 V 同相端", 2.0, d["p_p2d"], "V")
+row("p2 §一 第三步", "V1=2.1 V 输出", 1.0, d["o_p2d"], "V")
+row("p2 例2", "20k/60k 同相端", 1.125, d["p_e2"], "V")
+row("p2 例2", "输出", 0.9, d["o_e2"], "V")
+row("p3 练习1", "5k/50k 0.82/0.80 → 输出", 0.2, d["o_x1"], "V")
+row("p1 平衡线", "四只 10k，1.3 与 −0.7 相减", 2.0, d["o_bal"], "V")
+row("p3 练习4", "共模 12 V 差 0.2 V → 输出（±15 V）", 2.0, d["o_x4"], "V")
+row("p3 练习4", "同相端", 10.9, d["p_x4"], "V")
+row("补充", "零输入输出偏移", None, d["o_z0"] * 1e3, "mV", "失调 ×(1+R2/R1)")
 
-def square_stats(t, y, t0):
-    k = t > t0
-    t, y = t[k], y[k]
-    hi, lo = np.percentile(y, 95), np.percentile(y, 5)
-    mid = (hi + lo) / 2
-    ru, fa = edges(t, y, mid, True), edges(t, y, mid, False)
-    T = np.mean(np.diff(ru))
-    fa = fa[fa > ru[0]][: len(ru) - 1]
-    duty = np.mean(fa - ru[: len(fa)]) / T
-    return hi, lo, T, duty
+a = ngspice("ac_cmrr.cir")
+def cm(n):
+    A1 = complex(a["a1r_" + n], a["a1i_" + n]); A2 = complex(a["a2r_" + n], a["a2i_" + n])
+    ad = (A2 - A1).real / 2; acm = abs(A1 + A2)
+    return ad, acm, 20 * math.log10(abs(ad) / acm)
+for n in ["m", "r4a", "r4b", "wa", "wb", "ga", "gb", "s100", "s1k", "s200"]:
+    if "a1r_" + n not in a:
+        sys.exit(f"ac_cmrr.cir 缺少 {n}")
+m = cm("m"); r4a = cm("r4a"); r4b = cm("r4b"); wa = cm("wa"); wb = cm("wb"); ga = cm("ga"); gb = cm("gb")
+s100 = cm("s100"); s1k = cm("s1k"); s200 = cm("s200")
+row("补充", "四只匹配：运放自身 CMRR", None, m[2], "dB")
+row("p2 §一", "R4 偏 1%：共模倍数", 0.009, r4a[1], "")
+row("p2 §一 / p3 §一", "R4 偏 1%：CMRR", 61, r4a[2], "dB")
+row("p2 §一", "R4 偏 1%：共模 2 V 漏出", 18, r4a[1] * 2 * 1e3, "mV")
+row("p3 图16-p3-1", "只 R4 偏 0.1%：CMRR", 81, r4b[2], "dB", "运放自身 CMRR 开始起作用")
+row("p3 图16-p3-1", "四只 1% 最坏：CMRR", 49, wa[2], "dB")
+row("p3 图16-p3-1", "四只 0.1% 最坏：CMRR", 69, wb[2], "dB")
+row("p3 §二 TI 例", "倍数 1，1% 最坏：CMRR", 34, ga[2], "dB")
+row("p3 §二 TI 例", "倍数 1，0.1% 最坏：CMRR", 54, gb[2], "dB")
+row("p3 图16-p3-2", "内阻 100 Ω：CMRR", 61, s100[2], "dB")
+row("p3 图16-p3-2", "内阻 1 kΩ：CMRR", 41, s1k[2], "dB")
+row("p3 图16-p3-2", "内阻 1 kΩ：差分倍数", 9.13, s1k[0], "")
+row("p3 练习3", "内阻 200 Ω：差分倍数", 9.81, s200[0], "")
+row("p3 练习3", "内阻 200 Ω：共模倍数", 0.018, s200[1], "")
+row("p3 练习3", "内阻 200 Ω：2 V 共模残留", 36, s200[1] * 2 * 1e3, "mV")
+row("p3 练习4", "1% 最坏 12 V 共模残留", 0.43, wa[1] * 12, "V")
+row("p3 练习4", "0.1% 最坏 12 V 共模残留", 0.04, wb[1] * 12, "V")
+row("p3 练习4", "0.1% 最坏 共模抑制倍数", 2800, abs(wb[0]) / wb[1], "")
 
+t = ngspice("t_mis.cir", need=["okmax", "bdmax", "shbmax", "shbmin", "shmax", "shmin"])
+row("p2 图16-p2-2", "匹配 输出峰值", 100, t["okmax"] * 1e3, "mV", "含失调 3.3 mV")
+row("p2 图16-p2-2", "R4 偏 1% 输出峰值", 118, t["bdmax"] * 1e3, "mV")
+row("p1 §四 第4步 / p2", "输入短接 R4 偏 1%：50 Hz 残留幅度", 18, (t["shbmax"] - t["shbmin"]) / 2 * 1e3, "mV")
+row("p1 §四 第5步", "输入短接 匹配：50 Hz 残留幅度", None, (t["shmax"] - t["shmin"]) / 2 * 1e3, "mV", "理想 0；另有 3.3 mV 直流偏移")
 
-def sine_stats(t, y, t0, t1):
-    k = (t > t0) & (t < t1)
-    t, y = t[k], y[k]
-    zc = edges(t, y, 0.0, True)
-    f = (len(zc) - 1) / (zc[-1] - zc[0])
-    # 同频率、最小二乘拟合的理想正弦，差值均方根 ÷ 正弦均方根（page3 图16-p3-1 的定义）
-    tt = np.linspace(t[0], t[-1], 20000); yy = np.interp(tt, t, y)
-    A = np.c_[np.sin(2 * np.pi * f * tt), np.cos(2 * np.pi * f * tt), np.ones_like(tt)]
-    c, *_ = np.linalg.lstsq(A, yy, rcond=None)
-    fit = A @ c
-    dist = np.sqrt(np.mean((yy - fit) ** 2)) / np.sqrt(np.mean((fit - c[2]) ** 2))
-    # 另一种读法：理想正弦取「同峰值」振幅（相位同上）
-    ph = np.arctan2(c[1], c[0]); pk = (yy.max() - yy.min()) / 2
-    ref = pk * np.sin(2 * np.pi * f * tt + ph) + (yy.max() + yy.min()) / 2
-    dist2 = np.sqrt(np.mean((yy - ref) ** 2)) / (pk / np.sqrt(2))
-    SINE2[0] = dist2
-    return np.max(np.abs(y)), y.max(), y.min(), f, dist
+i = ngspice("dc_ina.cir", need=["a1", "a2", "vo", "vrg"])
+row("p2 例3", "A2 输出", 2.11, i["a2"], "V")
+row("p2 例3", "A1 输出", 1.90, i["a1"], "V")
+row("p2 例3", "Rg 电流", 10, i["vrg"] / 1e3 * 1e6, "µA")
+row("p2 例3", "Vo（21 倍 × 10 mV）", 0.21, i["vo"], "V")
 
+s = ngspice("t_ss5.cir", need=["o5", "p5", "o3"])
+row("p2 例1 第4步", "5 V 单电源 5.01/5.00：输出（应 0.1 V）", None, s["o5"], "V", "共模 4.55 V 超限，输出错误，页面结论成立")
+row("对照", "5 V 单电源 3.01/3.00：输出", 0.1, s["o3"], "V")
 
-SINE2 = [0.0]
-
-
-print("== 16 振荡器 ==")
-# ---- 弛张振荡器 R=10k C=100n
-r = ng.run("relax.cir")
-d = load(r, "relax.txt"); t = d[:, 0]
-hiI, loI, TI, dI = square_stats(t, d[:, 7], 6e-3)
-k = t > 6e-3
-check("p1 图16-p1-2", "理想运放：上门限(电容最高)", 3.33, d[k, 9].max(), "V")
-check("p1 图16-p1-2", "理想运放：下门限(电容最低)", 1.67, d[k, 9].min(), "V")
-check("p1/p2 代数", "理想运放：周期 T≈1.39RC", 1.39, TI * 1e3, "ms")
-check("p1 图16-p1-2", "理想运放：频率", 721, 1 / TI, "Hz")
-check("p1 图16-p1-2", "理想运放：高电平占比", 50, dI * 100, "%")
-e = edges(t, d[:, 7], 2.5, False)
-check("p1 示波器第1步", "第一次翻转时刻(从 0 V 充到 3.33 V，RC·ln3)", None, e[0] * 1e3, "ms",
-      "比稳定后的半周期 0.69 ms 长，与页面描述一致")
-hiL, loL, TL, dL = square_stats(t, d[:, 1], 6e-3)
-check("p1 示波器第5步 / p3 §LM358B", "LM358B 5 V 单电源：输出高电平", 3.5, hiL, "V")
-check("p3 §LM358B", "LM358B：输出低电平", 0.1, loL, "V",
-      "输出要吸收约 0.3 mA(电容放电 + 门限电阻)，LM358B 吸电流超过几十 µA 时低电平停在约 0.6 V", v="⚠️")
-check("p3 §LM358B", "LM358B：上门限", 2.83, d[k, 3].max(), "V")
-check("p3 §LM358B", "LM358B：下门限", 1.70, d[k, 3].min(), "V")
-check("p3 图16-p3-2", "LM358B：周期", 1.53, TL * 1e3, "ms")
-check("p3 图16-p3-2", "LM358B：高电平占比", 65, dL * 100, "%",
-      "低电平不是 0.1 V 而是约 0.6 V，放电变慢，占空比只偏到约 57%；方向正确", v="⚠️")
-# ---- R=20k（示波器第 3 步）
-r = ng.run("relax.cir", {"R": "20k"})
-d = load(r, "relax.txt"); t = d[:, 0]
-_, _, T20, _ = square_stats(t, d[:, 7], 8e-3)
-check("p1 示波器第3步", "R 换 20k：周期(理想运放)", 2.8, T20 * 1e3, "ms")
-_, _, T20L, _ = square_stats(t, d[:, 1], 8e-3)
-check("p1 示波器第3步", "R 换 20k：周期(LM358B)", None, T20L * 1e3, "ms", "仍约为 10k 时的 2 倍")
-# ---- 例 2：R=10k C=1µF
-r = ng.run("relax.cir", {"C": "1u", "TSTOP": "120m", "TSTEP": "5u"})
-d = load(r, "relax.txt"); t = d[:, 0]
-_, _, T2, _ = square_stats(t, d[:, 7], 40e-3)
-check("p2 例2", "R=10k C=1µF 周期(理想)", 13.9, T2 * 1e3, "ms")
-check("p2 例2", "R=10k C=1µF 频率(理想)", 72, 1 / T2, "Hz")
-# ---- 练习 4：R=75k C=10µF
-r = ng.run("relax.cir", {"R": "75k", "C": "10u", "TSTOP": "8", "TSTEP": "200u"})
-d = load(r, "relax.txt"); t = d[:, 0]
-_, _, T4, _ = square_stats(t, d[:, 7], 2.5)
-check("p3 练习4", "R=75k C=10µF 周期(理想)", 1.04, T4, "s")
-_, _, T4L, d4L = square_stats(t, d[:, 1], 2.5)
-check("p3 练习4", "同上，LM358B 周期", 1.15, T4L, "s")
-check("p3 练习4", "同上，LM358B LED 亮的时间占比", 65, d4L * 100, "%",
-      "同图16-p3-2", v="⚠️")
-
-# ---- 文氏桥
-r = ng.run("wien.cir")
-d = load(r, "wien.txt"); t = d[:, 0]
-late = (t > 35e-3)
-check("p2 代码输出", "Rf=19k(倍数 2.9)：最后 5 ms 峰值", 0.0, np.max(np.abs(d[late, 1])), "V",
-      "只剩约 1 mV 失调直流", v="✅")
-pkB, hB, lB, fB, distB = sine_stats(t, d[:, 3], 25e-3, 40e-3)
-check("p2 图16-p2-3 第2行", "Rf=22k：削顶正峰", 4.0, hB, "V")
-check("p2 图16-p2-3 第2行", "Rf=22k：削顶负峰", -4.0, lB, "V")
-dist2B = SINE2[0]
-pkD, hD, lD, fD, distD = sine_stats(t, d[:, 5], 25e-3, 40e-3)
-dist2D = SINE2[0]
-check("p2 代码输出 / 图16-p2-3 第3行", "二极管稳幅：稳定峰值", 1.85, pkD, "V",
-      "页面用 0.6·tanh 近似二极管；真实 1N4148 在约 0.5 V 就开始导通，幅度更小", v="⚠️")
-check("p2 代码输出", "二极管稳幅：振荡频率(理论 1592 Hz，仿真约 1600)", 1592, fD, "Hz")
-check("p3 图16-p3-1 左", "无稳幅削顶：频率", 1562, fB, "Hz")
-check("p3 图16-p3-1 左", "无稳幅削顶：偏离正弦(最小二乘拟合正弦)", 8.6, distB * 100, "%",
-      "LM358B ±5 V 下削顶不对称(+3.8/−4.4 V)，比 ±4 V 对称削顶更难看；趋势与页面一致", v="⚠️")
-check("p3 图16-p3-1 左", "无稳幅削顶：偏离正弦(同峰值正弦)", None, dist2B * 100, "%")
-check("p3 图16-p3-1 右", "二极管稳幅：偏离正弦(最小二乘拟合正弦)", 2.9, distD * 100, "%",
-      "真实二极管 + LM358B 交越失真；仍比削顶小约 4 倍", v="⚠️")
-check("p3 图16-p3-1 右", "二极管稳幅：偏离正弦(同峰值正弦)", None, dist2D * 100, "%")
-check("p3 图16-p3-1 右", "二极管稳幅：频率", 1589, fD, "Hz")
-# 起振时间：第 2 行「大约 4 ms 就长到 ±4 V」
-env = np.abs(d[:, 3]); tc = t[np.argmax(env > 0.95 * hB)]
-check("p2 图16-p2-3 第2行", "Rf=22k：长到削顶所需时间", 4.0, tc * 1e3, "ms",
-      "页面写「大约 4 ms」", v="✅")
-# 练习 2：Rf=18k
-r = ng.run("wien.cir", {"RFA": "18k"})
-d = load(r, "wien.txt"); t = d[:, 0]
-check("p3 练习2", "Rf=18k(倍数 2.8)：最后 5 ms 峰值", 0.0, np.max(np.abs(d[t > 35e-3, 1])), "V",
-      "不起振", v="✅")
-# 练习 1：R=4.7k（三个电路都换 R）
-r = ng.run("wien.cir", {"R": "4.7k", "TSTOP": "25m"})
-d = load(r, "wien.txt"); t = d[:, 0]
-_, _, _, f1, _ = sine_stats(t, d[:, 5], 15e-3, 25e-3)
-check("p3 练习1", "R=4.7k：频率(二极管稳幅版)", 3386, f1, "Hz",
-      "公式值正确；LM358B 相位延迟使实际频率偏低近 10%，页面练习 3 已提到此现象", v="✅")
-ng.save()
+report("16 差分放大")

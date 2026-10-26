@@ -1,145 +1,120 @@
-#!/usr/bin/env python3
-"""11 过载保护：ngspice + TI LM393A、Infineon IRLZ44N、Vishay 1N5822 官方模型复核页面数值。从仓库根运行：python spice/11/run.py"""
-# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
-import subprocess, re, sys, pathlib, math
-HERE = pathlib.Path(__file__).resolve().parent
-ROWS = []
-
-def ngspice(cir, need=()):
-    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
-    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
-    out = r.stdout + r.stderr
-    vals = {}
-    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
-        try:
-            vals[k] = float(v)
-        except ValueError:
-            vals[k] = float("nan")
-    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
-    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
-        print(out[-3000:])
-        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
-    return vals
-
-def row(loc, item, page, spice, unit="", note=""):
-    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
-    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
-    ROWS.append((loc, item, page, spice, unit, dev, note))
-
-def fmt(x):
-    if x is None:
-        return "—"
-    a = abs(x)
-    if a == 0:
-        return "0"
-    if a >= 1000 or a < 0.01:
-        return f"{x:.4g}"
-    return f"{x:.4g}"
-
-def report(title):
-    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
-    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
-    for loc, item, page, spice, unit, dev, note in ROWS:
-        d = "   —  " if dev is None else f"{dev:+7.2f}%"
-        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
-    print(f"共 {len(ROWS)} 项。")
-# ---- 工具结束 ----
-
+"""11 互锁：低压（12 V 继电器）版正反转控制回路。在仓库根目录运行：python spice/11/run.py
+380 V 主电路与电动机不仿真（市电）；「相间短路」= KM1、KM2 主触点同时闭合。"""
+import math, pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import numpy as np
+import ng
+from ng import check
 
-# ---- 图 11-p2-2 的负载：完全照页面代码（同一算法、同一随机种子 3）生成，写成 PWL 给 SPICE ----
-def lowpass(x, dt, tau, y0):
-    y = np.empty_like(x); v = y0
-    for k in range(len(x)):
-        v += (x[k] - v) * dt / tau; y[k] = v
-    return y
+TAU = 10e-3
+COLS = ["N1", "N2", "E1", "E2", "D1", "D2", "B1", "B2", "Ec1", "Ec2", "Dc1", "Bc1", "Q1", "Q2"]
 
-dt = 1e-3
-t = np.arange(0, 12, dt)
-base = np.interp(t, [0, 1, 6, 11, 12], [1.0, 1.0, 2.6, 1.0, 1.0])
-rng = np.random.default_rng(3)
-w = lowpass(rng.normal(0, 1, len(t)), dt, 0.01, 0.0)
-i_load = base + w * 0.15 / w.std()
-with open(HERE / "noise_pwl.inc", "w") as f:
-    f.write("* 由 run.py 按 11 原理与实现篇 图 11-p2-2 的页面代码生成：采样电压 = i_load × 0.1 Ω\nVS s 0 PWL(\n")
-    for a, b in zip(t, i_load * 0.1):
-        f.write(f"+ {a:.4f} {b:.6f}\n")
-    f.write("+ )\n")
 
-def flips(fname, t0=None, t1=None):
-    d = np.loadtxt(HERE / fname); tt, v = d[:, 0], d[:, 1]
-    m = np.ones(len(tt), bool)
-    if t0 is not None: m &= tt >= t0
-    if t1 is not None: m &= tt <= t1
-    tt, v = tt[m], v[m]
-    idx = np.nonzero(np.diff((v > 2.5).astype(int)))[0]
-    return len(idx), tt[idx]
+def pwl(iv):
+    pts = [(0, 0)]
+    for t0, t1 in iv:
+        pts += [(t0, 0), (t0 + 1e-5, 1), (t1, 1), (t1 + 1e-5, 0)]
+    return " ".join(f"{a:.6g} {b:.6g}" for a, b in pts)
 
-th = ngspice("th_sweep.cir", need=["vh", "vl", "vh2", "voh", "vol", "ib"])
-inv = ngspice("inv_time.cir", need=["a10_5", "a10_20", "a47_5", "a47_20", "a100_5", "a100_20", "ex3"])
-sf = ngspice("start_filter.cir", need=["raw", "p10", "p47", "p100", "q47", "q100", "tq47", "i2t"])
-st = ngspice("cl_stall.cir", need=["ttrip", "toff", "tper", "ton", "ipk", "irun", "iavg", "vfmax", "vfmin"])
-st47 = ngspice("cl_stall47.cir", need=["ttrip", "toff", "tper"])
-c3 = ngspice("cl_3a.cir", need=["ttrip", "i3"])
-nh = ngspice("cl_nohyst.cir", need=["ttrip", "iavg", "irsavg", "pmos", "vgmin", "vgmax"])
-s10 = ngspice("cl_start10.cir", need=["vgmin", "vfpk"])
-s47 = ngspice("cl_start47.cir", need=["vgmin", "vfpk"])
-dm = ngspice("dmm.cir", need=["run_s", "run_f", "run_p", "run_g", "run_d", "off_s", "off_f", "off_p", "off_g", "off_d"])
-ngspice("n_hyst.cir", need=["vgend"]); ngspice("n_nohyst.cir", need=["vgend"])
-n_h, t_h = flips("n_hyst_vg.txt")
-n_p, t_p = flips("n_nohyst_vg.txt")
-n_cl, _ = flips("nohyst_vg.txt", 0.1, 0.5)
 
-VH, VL = th["vh"], th["vl"]
-# 直觉篇
-row("p1 图11-p1-1", "堵转电流（电机建模前提）", 5, st["ipk"], "A", "电机模型按 5 A 堵转标定")
-row("p1 图11-p1-1", "堵转后切断时间", 26, st["ttrip"] * 1e3, "ms", "闭环全电路")
-row("p1 §三 图11-p1-2 说明", "1 A 时采样电压", 0.1, dm["run_s"], "V", "闭环电路正常运行")
-row("p2 前置知识", "IRLZ44N 导通电阻（栅 5 V，最大）", 25, (dm["run_d"] - dm["run_s"]) / 1.0 * 1e3, "mΩ", "1 A 时 V_DS ÷ 1 A；页面给的是最大值")
-# 原理与实现篇
-row("p2 推导一", "跳闸门限 V_H", 193, VH * 1e3, "mV", "三角波慢扫")
-row("p2 推导一", "恢复门限 V_L", 146, VL * 1e3, "mV", f"LM393 输出低 {th['vol']*1e3:.0f} mV 抬高了 V_L")
-row("p2 推导一", "回差", 47, (VH - VL) * 1e3, "mV")
-row("p2 推导一", "跳闸电流 V_H/0.1Ω", 1.93, VH / 0.1, "A")
-row("p2 推导一", "恢复电流 V_L/0.1Ω", 1.46, VL / 0.1, "A")
-row("p2 推导二", "堵转 5 A 切断时间（τ=0.1 s）", 26, inv["a100_5"] * 1e3, "ms", "电流源阶跃，开环判")
-row("p2 图11-p2-2", "无回差翻转次数", 10, n_p, "次", "翻转时刻 " + " ".join(f"{x:.2f}" for x in t_p))
-row("p2 图11-p2-2", "有回差翻转次数", 2, n_h, "次")
-row("p2 图11-p2-2", "有回差跳低时刻", 3.95, t_h[0], "s")
-row("p2 图11-p2-2", "有回差恢复时刻", 9.65, t_h[1], "s", "对 V_L 很敏感：V_L 高 2 mV → 提前 0.24 s")
-row("p2 例题1(2)", "1 A→3 A 跳闸时间", 62, c3["ttrip"] * 1e3, "ms", f"闭环，3 A 实测 {c3['i3']:.2f} A")
-row("p2 例题2", "R_S 0.05 Ω 跳闸电流", 3.86, VH / 0.05, "A", "SPICE 门限 ÷ R_S")
-row("p2 例题2", "R_S 0.05 Ω 恢复电流", 2.92, VL / 0.05, "A")
-row("p2 例题3", "R_S 0.2 Ω 跳闸电流", 0.96, VH / 0.2, "A")
-row("p2 例题3", "R_S 0.2 Ω 恢复电流", 0.73, VL / 0.2, "A")
-row("p2 例题3", "0.5 A→3 A 切断时间", 20, inv["ex3"] * 1e3, "ms", "R_S 0.2 Ω，电流源阶跃")
-# 参数与调试篇
-row("p3 §一 读表", "R_F 10k 上偏置电流压降（最大）", 2.5, (th["vh2"] - VH) * 1e3, "mV", f"模型为典型偏置（总 {th['ib']*1e9:.0f} nA）；页面写的是最大值")
-row("p3 图11-p3-1 第一行", "无回差首次切断", 26, nh["ttrip"] * 1e3, "ms")
-row("p3 图11-p3-1 第一行", "0.4 s 内翻转次数", 28803, n_cl, "次", f"栅极在 {nh['vgmin']:.2f}～{nh['vgmax']:.2f} V 间摆动")
-row("p3 图11-p3-1 第一行", "平均（采样）电流", 1.93, nh["irsavg"], "A", f"电机电流含续流 {nh['iavg']:.2f} A")
-row("p3 图11-p3-1 第一行", "MOS 管平均功耗", None, nh["pmos"], "W", "页面只说“发热”")
-row("p3 图11-p3-1 第二行", "打嗝断开时间", 28, st["toff"] * 1e3, "ms")
-row("p3 图11-p3-1 第二行", "打嗝导通时间", 14, st["ton"] * 1e3, "ms")
-row("p3 图11-p3-1 第二行", "打嗝周期", 42, st["tper"] * 1e3, "ms")
-row("p3 图11-p3-1 第二行", "导通占比", 34, st["ton"] / st["tper"] * 100, "%")
-row("p3 图11-p3-1 第二行", "平均电流", 1.73, st["iavg"], "A")
-row("p3 图11-p3-1 第二行", "打嗝中滤波电压上沿", 193, st["vfmax"] * 1e3, "mV")
-row("p3 图11-p3-1 第二行", "打嗝中滤波电压下沿", 146, st["vfmin"] * 1e3, "mV")
-for tau, k in ((10, "a10"), (47, "a47"), (100, "a100")):
-    pg = {10: (2.6, 0.50), 47: (12.4, 2.35), 100: (26.4, 5.00)}[tau]
-    row("p3 图11-p3-2(a)", f"τ={tau} ms 5 A 切断", pg[0], inv[k + "_5"] * 1e3, "ms")
-    row("p3 图11-p3-2(a)", f"τ={tau} ms 20 A 切断", pg[1], inv[k + "_20"] * 1e3, "ms")
-row("p3 图11-p3-2(b)", "未滤波尖峰", 500, sf["raw"] * 1e3, "mV")
-row("p3 图11-p3-2(b)", "τ=10 ms 滤波峰值", 278, sf["p10"] * 1e3, "mV")
-row("p3 图11-p3-2(b)", "τ=47 ms 滤波峰值", 144, sf["p47"] * 1e3, "mV")
-row("p3 图11-p3-2(b)", "τ=100 ms 滤波峰值", 100, sf["p100"] * 1e3, "mV")
-row("p3 图11-p3-2(b) 闭环", "τ=10 ms 启动误跳（栅极最低）", None, s10["vgmin"], "V", f"会跳闸，滤波电压被切在 {s10['vfpk']*1e3:.0f} mV")
-row("p3 图11-p3-2(b) 闭环", "τ=47 ms 启动峰值", 144, s47["vfpk"] * 1e3, "mV", f"不跳，栅极最低 {s47['vgmin']:.2f} V")
-row("p3 练习1", "τ=47 ms 打嗝断开时间", 13, st47["toff"] * 1e3, "ms", f"周期 {st47['tper']*1e3:.1f} ms")
-row("p3 练习2", "τ=47 ms 峰值（50 ms 衰减）", 220, sf["q47"] * 1e3, "mV")
-row("p3 练习2", "峰值出现时刻", 60, sf["tq47"] * 1e3, "ms")
-row("p3 练习2", "τ=100 ms 峰值", 156, sf["q100"] * 1e3, "mV")
-row("p3 练习3", "R_S 0.033 Ω 跳闸电流", 5.84, VH / 0.033, "A")
-row("p3 练习4", "启动冲击多出的 I²t", 0.32, sf["i2t"], "A²s", "ngspice 积分")
-report("11 过载保护")
+def thr(tp, td):
+    vp, vd = 1 - math.exp(-tp / TAU), math.exp(-td / TAU)
+    return f"{(vp + vd) / 2:.5f}", f"{(vp - vd) / 2:.5f}"
+
+
+def run(p, tp1=20e-3, td1=10e-3, tp2=20e-3, td2=10e-3):
+    full = dict(SB1="0 0", SB2="0 0", SB3="0 0", SB4="0 0", WELD="0 0", TSTOP="9")
+    full["VT1"], full["VH1"] = thr(tp1, td1)
+    full["VT2"], full["VH2"] = thr(tp2, td2)
+    full.update(p)
+    r = ng.run("interlock.cir", full)
+    d = np.loadtxt(pathlib.Path(r["_dir"]) / "il.txt")
+    t = d[:, 0]
+    return t, {n: d[:, 1 + 2 * i] for i, n in enumerate(COLS)}
+
+
+def at(t, y, x):
+    return np.interp(x, t, y) > 0.5
+
+
+def overlap(t, a, b):
+    m = (a > 0.5) & (b > 0.5)
+    return float(np.sum(np.diff(t)[m[:-1]]))
+
+
+def state(t, y, X, x):
+    return ("吸" if at(t, y[X + "1"], x) else "放") + "/" + ("吸" if at(t, y[X + "2"], x) else "放")
+
+
+print("== 11 互锁（低压 12 V 继电器版）==")
+P = dict(SB2=pwl([(1.0, 1.3), (5.000, 5.300)]),
+         SB3=pwl([(2.0, 2.3), (4.0, 4.3), (5.005, 5.305)]),
+         SB1=pwl([(3.0, 3.3), (4.6, 4.9), (7.0, 7.3)]))
+t, y = run(P)
+page = {"N": ["吸/放", "吸/吸", "放/放", "放/吸", "吸/吸"],
+        "E": ["吸/放", "吸/放", "放/放", "放/吸", "吸/放"],
+        "D": ["吸/放", "放/吸", "放/放", "放/吸", "放/放"]}
+names = {"N": "不互锁", "E": "接触器互锁", "D": "双重互锁"}
+for X in "NED":
+    for x, want in zip((1.5, 2.5, 3.5, 4.4, 5.5), page[X]):
+        s = state(t, y, X, x)
+        check("p2 代码输出 图11-p2-2", f"{names[X]} t={x} s KM1/KM2 页面「{want}」", None, 1.0 if s == want else 0.0, "",
+              f"SPICE：{s}", v="✅" if s == want else "❌")
+ov = {X: overlap(t, y[X + "1"], y[X + "2"]) * 1e3 for X in "NED"}
+check("p2 代码输出", "不互锁：两只同时吸合总时长", 2975, ov["N"], "ms")
+check("p2 代码输出", "接触器互锁：同时吸合总时长", 0, ov["E"], "ms", v="✅" if ov["E"] == 0 else "❌")
+check("p2 代码输出", "双重互锁：同时吸合总时长", 0, ov["D"], "ms", v="✅" if ov["D"] == 0 else "❌")
+# 竞赛（图11-p2-3）
+k = (t > 4.99)
+on1 = t[k][np.argmax(y["E1"][k] > 0.5)]
+check("p2 图11-p2-3", "竞赛：KM1 吸合时刻", 5.020, on1, "s")
+m = (t > 5.0) & (t < 5.1) & (y["Ec2"] > 6)
+w2 = np.sum(np.diff(t)[m[:-1]]) * 1e3
+check("p2 图11-p2-3", "竞赛：KM2 线圈白白通电时长", 15, w2, "ms")
+# 双重互锁换向空档
+k = t > 2.0
+off = t[k][np.argmax(y["D1"][k] < 0.5)]
+sw = t[k][np.argmax(y["D2"][k] > 0.5)]
+check("p2 §双重互锁", "2 s 按 SB3：KM1 释放时刻", 2.010, off, "s")
+check("p2 §双重互锁", "KM2 吸合时刻", 2.030, sw, "s")
+check("p2 §双重互锁", "换向空档", 20, (sw - off) * 1e3, "ms")
+check("p2 例1", "正转中按反转(接触器互锁)：KM1/KM2", None, 1.0, "", f"SPICE：{state(t, y, 'E', 2.2)}",
+      v="✅" if state(t, y, "E", 2.2) == "吸/放" else "❌")
+
+# ---- page3 §1：只做按钮互锁的换向空档（2 s 按 SB3）
+01 = dict(SB2=pwl([(1.0, 1.3)]), SB3=pwl([(2.0, 2.3)]), TSTOP="2.5")
+for tp2, td1, pg in ((12e-3, 19e-3, -7), (17e-3, 19e-3, -2), (22e-3, 4e-3, 18), (15e-3, 18e-3, -3)):
+    t, y = run(01, td1=td1, tp2=tp2)
+    k = t > 2.0
+    off = t[k][np.argmax(y["B1"][k] < 0.5)]
+    on = t[k][np.argmax(y["B2"][k] > 0.5)]
+    where = "p3 练习1" if pg == -3 else "p3 图11-p3-1"
+    check(where, f"按钮互锁：KM2 吸合 {tp2*1e3:.0f} ms、KM1 释放 {td1*1e3:.0f} ms 的空档", pg, (on - off) * 1e3, "ms",
+          f"两只同时闭合 {overlap(t, y['B1'], y['B2'])*1e3:.1f} ms", tol=10)
+    if pg == -3:
+        tD = t[k][np.argmax(y["D2"][k] > 0.5)] - t[k][np.argmax(y["D1"][k] < 0.5)]
+        check("p3 练习1", "改成双重互锁后的空档(=KM2 吸合时间)", 15, tD * 1e3, "ms")
+
+# ---- page3 §2：KM1 0.8 s 熔焊，1.0 s 按停止，1.6 s 按反转
+03 = dict(SB2=pwl([(0.2, 0.5)]), WELD=pwl([(0.8, 3.0)]), SB1=pwl([(1.0, 1.3)]), SB3=pwl([(1.6, 1.9)]), TSTOP="2.5")
+t, y = run(03)
+check("p3 图11-p3-2", "按钮互锁：熔焊后按反转，KM2 是否吸合(页面：吸合，短路)", None, 1.0, "",
+      f"SPICE：KM2 {'吸合' if at(t, y['B2'], 2.2) else '释放'}，同时闭合 {overlap(t, y['B1'], y['B2']):.2f} s",
+      v="✅" if at(t, y["B2"], 2.2) else "❌")
+check("p3 图11-p3-2", "双重互锁：熔焊后按反转，KM2 是否吸合(页面：一直断开)", None, 0.0, "",
+      f"SPICE：KM2 {'吸合' if at(t, y['D2'], 2.2) else '释放'}", v="✅" if not at(t, y["D2"], 2.2) else "❌")
+reon = (y["Dc1"][(t > 1.35) & (t < 1.55)] > 6).any()
+check("p3 图11-p3-2", "松开停止后 KM1 线圈重新通电(自锁触点也粘住)", None, 1.0 if reon else 0.0, "",
+      "SPICE：" + ("重新通电" if reon else "未通电"), v="✅" if reon else "❌")
+
+# ---- page3 练习4：顺序控制
+P4 = dict(SB4=pwl([(0.5, 0.8)]), SB2=pwl([(1.0, 1.3)]), SB3=pwl([(2.0, 2.3)]))
+P4["SB4"] = pwl([(0.5, 0.8), (2.5, 2.8)])
+P4["SB1"] = pwl([(3.5, 3.8)])
+P4["TSTOP"] = "4.2"
+t, y = run(P4)
+for x, want, why in [(0.7, 0, "KM1 未吸合时按 M2 启动：KM2 不吸"), (1.5, 0, "M1 启动后 M2 仍停（需再按 SB4）"),
+                     (3.0, 1, "M1 运行中按 SB4：KM2 吸合"), (4.0, 0, "M1 停止：M2 跟着停")]:
+    s = at(t, y["Q2"], x)
+    check("p3 练习4", why, None, float(s), "", f"SPICE：KM2 {'吸' if s else '放'}", v="✅" if s == bool(want) else "❌")
+ng.save()

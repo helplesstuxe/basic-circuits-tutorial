@@ -1,4 +1,4 @@
-* SOURCE: https://www.ti.com/lit/zip/slvmc40  (-> slvmc40.zip, LM317_TRANS.LIB unencrypted; downloaded 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* SOURCE: https://www.ti.com/lit/zip/slvmc40  (-> slvmc40.zip, LM317_TRANS.LIB unencrypted; downloaded 2026-10-23 by reviewer A (nodes 01-03, 05, 08, 09, 12-14, 16, 17, 19, 21, 22, 25))
 * TI LM317 transient model, unmodified. Pins: IN ADJ OUT_0 OUT_1
 * PSpice Model Editor - Version 16.2.0
 *$

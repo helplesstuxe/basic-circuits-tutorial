@@ -1,120 +1,108 @@
-"""18 互锁：低压（12 V 继电器）版正反转控制回路。在仓库根目录运行：python spice/18/run.py
-380 V 主电路与电动机不仿真（市电）；「相间短路」= KM1、KM2 主触点同时闭合。"""
-import math, pathlib, sys
+"""18 微分电路：用 ngspice + TI LM358B 官方模型核对页面数值。在仓库根目录运行：python spice/18/run.py"""
+import pathlib, sys
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 import numpy as np
 import ng
 from ng import check
 
-TAU = 10e-3
-COLS = ["N1", "N2", "E1", "E2", "D1", "D2", "B1", "B2", "Ec1", "Ec2", "Dc1", "Bc1", "Q1", "Q2"]
+def wave(r, fname="out.txt"):
+    d = np.loadtxt(pathlib.Path(r["_dir"]) / fname)
+    return d[:, 0], d[:, 1]
 
+def npp(cir, flat=False, **p):
+    """与 code/18_sim.py 的 noise_pp 相同：同一电路有/无干扰两次结果相减，取 t>1 ms 的峰峰值。"""
+    r0 = ng.run(cir, dict(p, AN=0)); r1 = ng.run(cir, dict(p, AN="10m"))
+    t0, v0 = wave(r0); t1, v1 = wave(r1)
+    tg = np.arange(1e-3, 8e-3, 0.2e-6)
+    d = np.interp(tg, t1, v1) - np.interp(tg, t0, v0)
+    if flat:   # 只看平顶（每个拐角后 0.5 ms 到下一个拐角前），避开拐角处 LM358B 输出级交越
+        ph = (tg % 1e-3) / 1e-3
+        d = d[(ph > 0.5) & (ph < 0.98)]
+    return float(d.max() - d.min())
 
-def pwl(iv):
-    pts = [(0, 0)]
-    for t0, t1 in iv:
-        pts += [(t0, 0), (t0 + 1e-5, 1), (t1, 1), (t1 + 1e-5, 0)]
-    return " ".join(f"{a:.6g} {b:.6g}" for a, b in pts)
+print("== 18 微分电路 ==")
+# --- page1 图18-p1-3 / page2 结论一：±0.5 V 500 Hz 三角波 -> ±1 V 方波 ---
+# 实用微分器（R1=1k, Cf=10n）在平顶后段的值
+r = ng.run("diff_tri.cir", dict(R1="1k", CF="10n"))
+t, v = wave(r)
+hi = v[(t > 5.6e-3) & (t < 6.0e-3)].mean()   # 输入下降段 -> 输出 +1 V
+lo = v[(t > 6.6e-3) & (t < 7.0e-3)].mean()   # 输入上升段 -> 输出 -1 V
+check("p1 图18-p1-3", "实用微分器 输入下降段输出", 1.0, hi, "V")
+check("p1 图18-p1-3", "实用微分器 输入上升段输出", -1.0, lo, "V")
+s = (t > 4e-3)
+vrms = np.sqrt(np.mean(v[s] ** 2))
+check("面包板", "实用版输出 真有效值(参考)", None, vrms, "V")
+# 理想微分器（无 R1/Cf）+ LM358B：平顶均值、拐角过冲、振铃频率（page3 图18-p3-1）
+r = ng.run("diff_tri.cir")
+t, v = wave(r)
+s = (t > 1e-3) & (t < 2e-3)
+check("p3 图18-p3-1", "理想微分器拐角后过冲峰值", 2.80, v[s].max(), "V", "LM358B 宏模型", v="⚠️")
+x = v[s] - v[s].mean(); tt = t[s]
+zc = tt[1:][np.diff(np.sign(x)) != 0]
+fring = 1 / (2 * np.mean(np.diff(zc)))
+check("p3 图18-p3-1", "理想微分器振铃频率", 13.8e3, fring, "Hz")
+s2 = (t > 1.7e-3) & (t < 2.0e-3)
+check("p1 示波器第1步", "理想版(无R1/Cf)平顶上叠加的振铃峰峰", 0.0, np.ptp(v[s2]), "V", "页面说通道2是±1 V方波", v="❌")
 
+# --- page2 图18-p2-3 / 代码输出：10 mV 20 kHz 干扰（有/无干扰相减） ---
+check("p2 图18-p2-3", "理想微分器干扰峰峰(理想运放)", 2.51, npp("diff_tri_idealop.cir"), "V")
+check("p2 图18-p2-3", "理想微分器干扰峰峰(LM358B)", 2.51, npp("diff_tri.cir"), "V", "20 kHz 靠近 14.6 kHz 谐振峰", v="⚠️")
+check("p2 代码输出", "只串 R1=1k 干扰峰峰(理想运放)", 0.21, npp("diff_tri_idealop.cir", R1="1k"), "V")
+check("p2 代码输出", "只串 R1=1k 干扰峰峰(LM358B)", 0.21, npp("diff_tri.cir", R1="1k"), "V", v="⚠️")
+check("p2 图18-p2-3", "实用微分器(R1+Cf)干扰峰峰(理想运放)", 0.016, npp("diff_tri_idealop.cir", R1="1k", CF="10n"), "V")
+check("p2 图18-p2-3", "实用微分器(R1+Cf)干扰峰峰(LM358B, 平顶段)", 0.016, npp("diff_tri.cir", True, R1="1k", CF="10n"), "V", v="⚠️")
+check("p2 图18-p2-3", "实用微分器(R1+Cf)干扰峰峰(LM358B, 含拐角)", 0.016, npp("diff_tri.cir", R1="1k", CF="10n"), "V", "拐角输出过零处交越失真", v="ℹ️")
 
-def thr(tp, td):
-    vp, vd = 1 - math.exp(-tp / TAU), math.exp(-td / TAU)
-    return f"{(vp + vd) / 2:.5f}", f"{(vp - vd) / 2:.5f}"
+# --- page3 扫描图二：R1 扫描（理想运放，无 Cf） ---
+table = {"100": (1.573, 0.02e-3), "300": (0.645, 0.07e-3), "1k": (0.199, 0.23e-3), "3k": (0.067, 0.69e-3)}
+for r1, (pp, t90) in table.items():
+    check("p3 R1 扫描表", f"R1={r1} 干扰峰峰", pp * 1e3, npp("diff_tri_idealop.cir", R1=r1) * 1e3, "mV")
+    r = ng.run("diff_tri_idealop.cir", dict(R1=r1))
+    t, v = wave(r)
+    k = (t > 3e-3) & (v > 0.8)        # 3 ms 拐角后输出 -1 -> +1，到 0.8 V 即 90%
+    check("p3 R1 扫描表", f"R1={r1} 边沿 90% 用时", t90 * 1e3, (t[k][0] - 3e-3) * 1e3, "ms", tol=20)
 
+# --- page2 结论二 / page1 示波器第 3 步：正弦增益（AC，LM358B） ---
+r = ng.run("ac_gain.cir")
+check("p2 结论二", "理想微分器 159 Hz 增益", 1.0, r["g159"], "倍")
+check("p2 结论二", "理想微分器 1.59 kHz 增益", 10.0, r["g1590"], "倍")
+check("p2 结论二", "理想微分器 20 kHz 增益", 126, r["g20k"], "倍", "接近 LM358B 谐振峰", v="⚠️")
+check("p2 结论二", "理想微分器 AC 增益峰值(谐振)", None, r["gpk"], "倍", "≈14.6 kHz 处")
+check("p1 示波器第3步", "159 Hz 0.5 V 正弦输出幅度(理想版瞬态)", 0.5, r["tran_amp"], "V", "叠加了持续振铃", v="❌")
+r = ng.run("ac_gain.cir", dict(R1="1k", CF="10n"))
+check("p1 示波器第3步", "同上，实用版(R1+Cf)", 0.5, r["tran_amp"], "V")
+r = ng.run("ac_gain.cir", dict(R1="1k"))
+check("p3 练习2", "只串 R1=1k 时 50 kHz 增益(LM358B)", 10.0, r["g50k"], "倍", "页面：封顶约 Rf/R1=10")
+check("p3 练习2", "5 mV 50 kHz 干扰输出幅度(只串R1)", 50, 5 * r["g50k"], "mV", "页面：不超过约 50 mV")
 
-def run(p, tp1=20e-3, td1=10e-3, tp2=20e-3, td2=10e-3):
-    full = dict(SB1="0 0", SB2="0 0", SB3="0 0", SB4="0 0", WELD="0 0", TSTOP="9")
-    full["VT1"], full["VH1"] = thr(tp1, td1)
-    full["VT2"], full["VH2"] = thr(tp2, td2)
-    full.update(p)
-    r = ng.run("interlock.cir", full)
-    d = np.loadtxt(pathlib.Path(r["_dir"]) / "il.txt")
-    t = d[:, 0]
-    return t, {n: d[:, 1 + 2 * i] for i, n in enumerate(COLS)}
+# --- page1 图18-p1-5：三种接法 ---
+r = ng.run("three_circuits.cir")
+d = np.loadtxt(pathlib.Path(r["_dir"]) / "three.txt"); t = d[:, 0]
+s = (t > 6e-3) & (t < 10e-3)
+check("p1 图18-p1-5", "积分电路三角波峰峰", 0.45, np.ptp(d[s, 3]), "V")
+check("p1 图18-p1-5", "微分电路边沿脉冲正峰(LM358B)", 5.0, d[s, 5].max(), "V", "理想运放才是 5 V", v="⚠️")
+check("p1 图18-p1-5", "微分电路边沿脉冲负峰(LM358B)", -5.0, d[s, 5].min(), "V", v="⚠️")
+check("p1 图18-p1-5", "电容–电容接法 高电平", 0.0, d[s, 7].max(), "V")
+check("p1 图18-p1-5", "电容–电容接法 低电平", -2.0, d[s, 7].min(), "V")
 
+# --- page1 偏置电流漂移 ---
+r = ng.run("capcap_drift.cir")
+check("p1 附图第二格", "电容–电容接法漂移速度 |dVo/dt|", 0.40, abs(r["slope"]), "V/s", "页面 20 nA 示意值；TI 模型 Ib≈10 nA", v="⚠️")
+t, v = wave(r, "drift.txt")
+i = np.argmax(np.abs(v) > 13.5)
+check("p1 附图第二格", "漂到 13.5 V 用时", 34, t[i], "s", v="⚠️")
+check("p1 附图第二格", "最终饱和电压(负向)", -13.5, v[-1], "V", "LM358 输出可接近负轨", v="⚠️")
 
-def at(t, y, x):
-    return np.interp(x, t, y) > 0.5
-
-
-def overlap(t, a, b):
-    m = (a > 0.5) & (b > 0.5)
-    return float(np.sum(np.diff(t)[m[:-1]]))
-
-
-def state(t, y, X, x):
-    return ("吸" if at(t, y[X + "1"], x) else "放") + "/" + ("吸" if at(t, y[X + "2"], x) else "放")
-
-
-print("== 18 互锁（低压 12 V 继电器版）==")
-P = dict(SB2=pwl([(1.0, 1.3), (5.000, 5.300)]),
-         SB3=pwl([(2.0, 2.3), (4.0, 4.3), (5.005, 5.305)]),
-         SB1=pwl([(3.0, 3.3), (4.6, 4.9), (7.0, 7.3)]))
-t, y = run(P)
-page = {"N": ["吸/放", "吸/吸", "放/放", "放/吸", "吸/吸"],
-        "E": ["吸/放", "吸/放", "放/放", "放/吸", "吸/放"],
-        "D": ["吸/放", "放/吸", "放/放", "放/吸", "放/放"]}
-names = {"N": "不互锁", "E": "接触器互锁", "D": "双重互锁"}
-for X in "NED":
-    for x, want in zip((1.5, 2.5, 3.5, 4.4, 5.5), page[X]):
-        s = state(t, y, X, x)
-        check("p2 代码输出 图18-p2-2", f"{names[X]} t={x} s KM1/KM2 页面「{want}」", None, 1.0 if s == want else 0.0, "",
-              f"SPICE：{s}", v="✅" if s == want else "❌")
-ov = {X: overlap(t, y[X + "1"], y[X + "2"]) * 1e3 for X in "NED"}
-check("p2 代码输出", "不互锁：两只同时吸合总时长", 2975, ov["N"], "ms")
-check("p2 代码输出", "接触器互锁：同时吸合总时长", 0, ov["E"], "ms", v="✅" if ov["E"] == 0 else "❌")
-check("p2 代码输出", "双重互锁：同时吸合总时长", 0, ov["D"], "ms", v="✅" if ov["D"] == 0 else "❌")
-# 竞赛（图18-p2-3）
-k = (t > 4.99)
-on1 = t[k][np.argmax(y["E1"][k] > 0.5)]
-check("p2 图18-p2-3", "竞赛：KM1 吸合时刻", 5.020, on1, "s")
-m = (t > 5.0) & (t < 5.1) & (y["Ec2"] > 6)
-w2 = np.sum(np.diff(t)[m[:-1]]) * 1e3
-check("p2 图18-p2-3", "竞赛：KM2 线圈白白通电时长", 15, w2, "ms")
-# 双重互锁换向空档
-k = t > 2.0
-off = t[k][np.argmax(y["D1"][k] < 0.5)]
-sw = t[k][np.argmax(y["D2"][k] > 0.5)]
-check("p2 §双重互锁", "2 s 按 SB3：KM1 释放时刻", 2.010, off, "s")
-check("p2 §双重互锁", "KM2 吸合时刻", 2.030, sw, "s")
-check("p2 §双重互锁", "换向空档", 20, (sw - off) * 1e3, "ms")
-check("p2 例1", "正转中按反转(接触器互锁)：KM1/KM2", None, 1.0, "", f"SPICE：{state(t, y, 'E', 2.2)}",
-      v="✅" if state(t, y, "E", 2.2) == "吸/放" else "❌")
-
-# ---- page3 §1：只做按钮互锁的换向空档（2 s 按 SB3）
-P1 = dict(SB2=pwl([(1.0, 1.3)]), SB3=pwl([(2.0, 2.3)]), TSTOP="2.5")
-for tp2, td1, pg in ((12e-3, 19e-3, -7), (17e-3, 19e-3, -2), (22e-3, 4e-3, 18), (15e-3, 18e-3, -3)):
-    t, y = run(P1, td1=td1, tp2=tp2)
-    k = t > 2.0
-    off = t[k][np.argmax(y["B1"][k] < 0.5)]
-    on = t[k][np.argmax(y["B2"][k] > 0.5)]
-    where = "p3 练习1" if pg == -3 else "p3 图18-p3-1"
-    check(where, f"按钮互锁：KM2 吸合 {tp2*1e3:.0f} ms、KM1 释放 {td1*1e3:.0f} ms 的空档", pg, (on - off) * 1e3, "ms",
-          f"两只同时闭合 {overlap(t, y['B1'], y['B2'])*1e3:.1f} ms", tol=10)
-    if pg == -3:
-        tD = t[k][np.argmax(y["D2"][k] > 0.5)] - t[k][np.argmax(y["D1"][k] < 0.5)]
-        check("p3 练习1", "改成双重互锁后的空档(=KM2 吸合时间)", 15, tD * 1e3, "ms")
-
-# ---- page3 §2：KM1 0.8 s 熔焊，1.0 s 按停止，1.6 s 按反转
-P2 = dict(SB2=pwl([(0.2, 0.5)]), WELD=pwl([(0.8, 3.0)]), SB1=pwl([(1.0, 1.3)]), SB3=pwl([(1.6, 1.9)]), TSTOP="2.5")
-t, y = run(P2)
-check("p3 图18-p3-2", "按钮互锁：熔焊后按反转，KM2 是否吸合(页面：吸合，短路)", None, 1.0, "",
-      f"SPICE：KM2 {'吸合' if at(t, y['B2'], 2.2) else '释放'}，同时闭合 {overlap(t, y['B1'], y['B2']):.2f} s",
-      v="✅" if at(t, y["B2"], 2.2) else "❌")
-check("p3 图18-p3-2", "双重互锁：熔焊后按反转，KM2 是否吸合(页面：一直断开)", None, 0.0, "",
-      f"SPICE：KM2 {'吸合' if at(t, y['D2'], 2.2) else '释放'}", v="✅" if not at(t, y["D2"], 2.2) else "❌")
-reon = (y["Dc1"][(t > 1.35) & (t < 1.55)] > 6).any()
-check("p3 图18-p3-2", "松开停止后 KM1 线圈重新通电(自锁触点也粘住)", None, 1.0 if reon else 0.0, "",
-      "SPICE：" + ("重新通电" if reon else "未通电"), v="✅" if reon else "❌")
-
-# ---- page3 练习4：顺序控制
-P4 = dict(SB4=pwl([(0.5, 0.8)]), SB2=pwl([(1.0, 1.3)]), SB3=pwl([(2.0, 2.3)]))
-P4["SB4"] = pwl([(0.5, 0.8), (2.5, 2.8)])
-P4["SB1"] = pwl([(3.5, 3.8)])
-P4["TSTOP"] = "4.2"
-t, y = run(P4)
-for x, want, why in [(0.7, 0, "KM1 未吸合时按 M2 启动：KM2 不吸"), (1.5, 0, "M1 启动后 M2 仍停（需再按 SB4）"),
-                     (3.0, 1, "M1 运行中按 SB4：KM2 吸合"), (4.0, 0, "M1 停止：M2 跟着停")]:
-    s = at(t, y["Q2"], x)
-    check("p3 练习4", why, None, float(s), "", f"SPICE：KM2 {'吸' if s else '放'}", v="✅" if s == bool(want) else "❌")
+# --- page3 练习1：Rf·C=1 ms，±2 V 三角波 ---
+r = ng.run("diff_tri_idealop.cir", dict(VM=2, FT=1000, TSTOP="6m"))
+t, v = wave(r)
+check("p3 练习1", "±2 V 1 kHz：输出方波 +幅度(理想运放)", 8.0, v[(t > 4.8e-3) & (t < 4.95e-3)].mean(), "V")
+check("p3 练习1", "±2 V 1 kHz：输出方波 −幅度(理想运放)", -8.0, v[(t > 4.3e-3) & (t < 4.45e-3)].mean(), "V")
+r = ng.run("diff_tri.cir", dict(VM=2, FT=1000, R1="100", TSTOP="6m"))
+t, v = wave(r)
+check("p3 练习1", "±2 V 1 kHz：+幅度(LM358B, 加 R1=100Ω 抑振)", 8.0, v[(t > 4.8e-3) & (t < 4.95e-3)].mean(), "V", "假设：R1=100Ω 仅为消除振铃")
+r = ng.run("diff_tri.cir", dict(VM=2, FT=2000, R1="100", TSTOP="6m"))
+t, v = wave(r); s = t > 3e-3
+check("p3 练习1", "±2 V 2 kHz：正向削顶电平(LM358B)", 13.5, v[s].max(), "V")
+check("p3 练习1", "±2 V 2 kHz：负向削顶电平(LM358B)", -13.5, v[s].min(), "V")
 ng.save()

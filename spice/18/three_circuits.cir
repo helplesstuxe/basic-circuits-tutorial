@@ -1,0 +1,31 @@
+* 18 微分电路：page1 图18-p1-5 同一个方波（±0.5 V、500 Hz、边沿 0.2 ms）送进三种接法
+* (a) 积分电路 R=10k、C=100n；(b) 微分电路 C=100n、Rf=10k（Rf*C=1 ms）；(c) 电容–电容接法 C=100n、Cf=50n。
+* 运放均为 LM358B（TI 官方模型），±15 V。
+* (c) 没有直流通路：用一个开关 S 在 t<0.4 ms（此时输入处于 −0.5 V 低电平） 时把 Cf 短接（相当于页面说的"定时用开关放电"），之后断开，
+*     这样直流工作点确定，输出从 0 V 开始。积分电路页面没有给 Rf 并联电阻，这里同样不加。
+.include ../models/LMx58B_LM2904B.lib
+VP vp 0 15
+VN vn 0 -15
+VI in 0 PULSE(-0.5 0.5 0.5m 0.2m 0.2m 0.8m 2m)
+VR rst 0 PWL(0 1 0.399m 1 0.4m 0)
+.model SRST SW(RON=10 ROFF=1e15 VT=0.5 VH=0.1)
+* (a) 积分
+RI in mi 10k
+CI mi oi 100n
+SI mi oi rst 0 SRST
+XI 0 mi vp vn oi LMX58B_LM2904B
+* (b) 微分
+CD in md 100n
+RD md od 10k
+XD 0 md vp vn od LMX58B_LM2904B
+* (c) 电容-电容
+CC in mc 100n
+CCF mc oc 50n
+SC mc oc rst 0 SRST
+XC 0 mc vp vn oc LMX58B_LM2904B
+.control
+tran 1u 10m 0 1u
+wrdata three.txt v(in) v(oi) v(od) v(oc)
+echo "RESULT done 1"
+.endc
+.end

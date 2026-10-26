@@ -1,138 +1,80 @@
-# 19 星三角降压启动的最小仿真：控制回路沿用 17、18 的逐毫秒推演，再接一个"示意"电动机模型，看启动电流和转速。
-# 控制回路（L → SB1 停止 → [SB2 启动 并联 KM 自锁] 之后叫"公共点"）：
-#   KM 线圈：公共点 → KM 线圈
-#   KT 线圈：公共点 → KM△ 常闭 → KT 线圈（时间继电器，通电延时）
-#   KMY 线圈：公共点 → KT 延时断开常闭 → KM△ 常闭（互锁）→ KMY 线圈
-#   KM△ 线圈：公共点 → [KT 延时闭合常开 并联 KM△ 自锁] → KMY 常闭（互锁）→ KM△ 线圈
+# 19 射极跟随器最小仿真：运放（输出电流有限）直接带 50 Ω 负载，和"运放 → NPN 射极跟随器 → 负载"对比。
+# 三极管用指数模型 I_C = I_S·e^(V_BE/V_T)（与 03 相同的思路），β 取 50；运放按 LM358 典型拉电流 30 mA 限流。
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path("code/figs").resolve()))  # 在仓库根目录运行
 import numpy as np                                 # 数组运算
 import matplotlib.pyplot as plt                    # 画图
 import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
 
-dt = 1e-3                                          # 每一小段 1 ms
-t = np.arange(0, 10, dt)                           # 一共仿真 10 s
-T_PICK, T_DROP = 0.020, 0.010                      # 接触器：线圈通电 20 ms 吸合到位，断电 10 ms 释放到位（同 18）
-T_SET = 6.0                                        # 时间继电器 KT 的延时整定值：6 s（示意值）
-sb2 = (t >= 0.5) & (t < 0.8)                       # 0.5 s 按下启动按钮 SB2，按 0.3 s
-sb1 = np.zeros_like(t, dtype=bool)                 # 本次不按停止
+VT, IS, BETA = 0.02585, 1e-13, 50.0                # 热电压 25.85 mV；I_S 示意值；β 示意值（TIP31 在 1 A 时 ≥ 25）
+VCC, I_LIM = 12.0, 0.030                           # 集电极电源 12 V；LM358 在 15 V 供电时典型拉电流 30 mA
+V_OH = 12.0 - 1.5                                  # 运放输出最高约到正电源下 1.5 V（按 12 V 供电估）
 
-# ---------- 示意电动机：每相"简化等效电路"，全部用标幺值（额定电流 = 1、额定转矩 = 1） ----------
-R1, R2, X, XM = 0.03, 0.03, 0.16, 3.0              # 定子电阻、转子电阻、漏电抗、励磁电抗（示意值）
-def i_rotor(s):                                    # 转子支路电流（三角形全压时），s 是转差率 = 1 − 转速
-    return 1 / (R1 + R2 / s + 1j * X)              # 欧姆定律：电压 1 除以支路阻抗
-def i_line(s):                                     # 三角形全压时的线电流（转子支路 + 励磁支路）
-    return abs(1 / (1j * XM) + i_rotor(s))         # 两条支路的电流相加后取大小
-def torque(s):                                     # 三角形全压时的电磁转矩
-    return abs(i_rotor(s)) ** 2 * R2 / s           # 转子电阻上"等效功率"除以同步转速（标幺值）
-S_N = 0.03                                         # 额定转差率 3%：额定转速 = 同步转速的 97%
-I_N, T_N = i_line(S_N), torque(S_N)                # 额定电流、额定转矩，用来做标幺化
-J = 2.0                                            # 转动惯量（示意值，单位已折算成标幺）
-def load(w):                                       # 负载转矩：风机类，转得越快阻力越大
-    return 0.1 + 0.75 * w ** 2                     # 静止时 0.1，额定转速附近约 0.8 倍额定转矩
+def direct(vi, rl):                                # 运放直接接负载：电流不超过 I_LIM 时输出 = V_i，否则被限流
+    return np.minimum(vi, I_LIM * rl)              # 负载电压 = min(想要的电压, 限流 × 负载电阻)
 
-def motor(conn):                                   # conn[k] = 0 断电、1 星形、2 三角形；返回线电流和转速
-    w = 0.0; I = np.zeros_like(t); W = np.zeros_like(t)  # 从静止开始
-    for k in range(len(t)):                        # 逐毫秒推演
-        s = max(1 - w, 1e-4)                       # 转差率（避免除以 0）
-        f = {0: 0.0, 1: 1 / 3, 2: 1.0}[conn[k]]    # 星形：线电流和转矩都是三角形的 1/3（推导见正文）
-        I[k] = f * i_line(s) / I_N                 # 线电流（额定电流的倍数）
-        Tm = f * torque(s) / T_N                   # 电动机转矩（额定转矩的倍数）
-        w = max(w + (Tm - load(w)) / J * dt, 0.0)  # 牛顿第二定律：转矩差使转速变化
-        W[k] = w                                   # 记录转速（同步转速的倍数）
-    return I, W
+def follower(vb, rl):                              # 射极跟随器：已知基极电压 vb，二分法解出发射极电压 V_o
+    lo, hi = 0.0, vb                               # V_o 一定在 0 和 vb 之间
+    for _ in range(60):                            # 二分 60 次，精度远小于 1 μV
+        vo = (lo + hi) / 2                         # 猜一个 V_o
+        ic = vo / rl * BETA / (BETA + 1)           # 负载电流就是发射极电流 I_E，其中 β/(β+1) 是 I_C
+        vbe = VT * np.log(ic / IS + 1)             # 管子流这么多电流需要的 V_BE
+        lo, hi = (vo, hi) if vb - vo > vbe else (lo, vo)   # 基极—发射极电压还有富余，说明 V_o 可以更高
+    return vo, vbe, vo / rl                        # 返回 V_o、V_BE、I_E
 
-# ---------- 控制回路状态机（写法同 18：先按上一刻的线圈状态更新衔铁，再按此刻的触点算线圈） ----------
-names = ["KM", "KMY", "KMD"]                       # KMD 代表 KM△
-arm = {n: np.zeros_like(t, dtype=bool) for n in names}   # 衔铁（主触点、辅助触点跟着它）
-coil = {n: np.zeros_like(t, dtype=bool) for n in names}  # 线圈是否有电
-cnt = {n: 0.0 for n in names}                      # 每只接触器"线圈与衔铁不一致"已经持续了多久
-kt_coil = np.zeros_like(t, dtype=bool); kt_done = np.zeros_like(t, dtype=bool)  # KT 线圈、KT 延时是否已到
-kt_cnt = 0.0                                       # KT 已经计了多久
-for k in range(1, len(t)):                         # 逐毫秒推演
-    for n in names:                                # 第一步：更新三只接触器的衔铁
-        cnt[n] = cnt[n] + dt if coil[n][k - 1] != arm[n][k - 1] else 0.0  # 不一致就累加，一致就清零
-        a = arm[n][k - 1]                          # 上一刻衔铁的位置
-        arm[n][k] = (not a and cnt[n] >= T_PICK - 1e-9) or (a and cnt[n] < T_DROP - 1e-9)  # 够时间才动
-    kt_cnt = kt_cnt + dt if kt_coil[k - 1] else 0.0  # KT：线圈有电就计时，断电立刻清零（通电延时型）
-    kt_done[k] = kt_cnt >= T_SET - 1e-9            # 计满 T_SET：延时常闭断开、延时常开闭合
-    node = (not sb1[k]) and (sb2[k] or arm["KM"][k])  # 公共点有没有电：停止没按，并且（启动按着或 KM 自锁）
-    coil["KM"][k] = node                           # KM 线圈
-    kt_coil[k] = node and not arm["KMD"][k]        # KT 线圈：KM△ 吸合后被它的常闭切断，KT 复位
-    coil["KMY"][k] = node and not kt_done[k] and not arm["KMD"][k]  # KMY 线圈：KT 延时断开常闭 + KM△ 常闭互锁
-    coil["KMD"][k] = node and (kt_done[k] or arm["KMD"][k]) and not arm["KMY"][k]  # KM△：KT 延时闭合或自锁，KMY 常闭互锁
+# ---------- ① 正弦输入：V_i = 5 V ± 2 V，50 Hz，负载 50 Ω ----------
+R_L = 50.0
+t = np.linspace(0, 0.04, 801)                      # 0 ~ 40 ms，两个周期
+vi = fs.sine(t, 50, amp=2.0, offset=5.0)           # 输入正弦
+res = np.array([follower(v, R_L) for v in vi])     # 每一点解一次
+vo, vbe, ie = res[:, 0], res[:, 1], res[:, 2]
+vd = direct(vi, R_L)                               # 运放直接带 50 Ω
+gain = (vo.max() - vo.min()) / (vi.max() - vi.min())
+print(f"[正弦] 输入 {vi.min():.1f}~{vi.max():.1f} V；跟随器输出 {vo.min():.2f}~{vo.max():.2f} V；V_BE {vbe.min():.3f}~{vbe.max():.3f} V；交流增益 {gain:.3f}")
+print(f"[正弦] 运放直接带 50 Ω：输出被限在 {vd.max():.2f} V（30 mA × 50 Ω）")
+assert 0.6 < vbe.min() and vbe.max() < 0.8         # 结论 1：输出比输入低 0.6~0.8 V，即一个 V_BE
+assert gain > 0.98                                 # 结论 2：交流增益约等于 1
+assert vd.max() < 0.35 * vi.max()                  # 结论 3：直接带负载时输出被限流压扁
 
-conn = np.where(arm["KM"] & arm["KMY"] & ~arm["KMD"], 1, 0)   # KM 与 KMY 吸合：星形
-conn = np.where(arm["KM"] & arm["KMD"] & ~arm["KMY"], 2, conn)  # KM 与 KM△ 吸合：三角形
-short = arm["KMY"] & arm["KMD"]                    # KMY 与 KM△ 同时吸合 = 三相短路
-assert not short.any()                             # 结论 1：互锁让 KMY、KM△ 永远不会同时吸合
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, vi, **fs.LS["vin"], label="输入 $V_i$（基极）")
+ax.plot(t * 1e3, vo, **fs.LS["vout"], label="跟随器输出 $V_o$（发射极）")
+ax.plot(t * 1e3, vd, **fs.LS["bad"], label="运放直接带 50 Ω")
+k = np.argmax(vi)                                  # 在输入最高点标出两条线的差
+fs.mark(ax, t[k] * 1e3, vi[k], "{:.2f}", " V", dx=6, dy=2)
+fs.mark(ax, t[k] * 1e3, vo[k], "{:.2f}", " V", dx=6, dy=-12)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(0, 8.5)
+ax.legend(loc="upper right", fontsize=8, ncol=3)
+fs.save(fig, "19", "19_p2_2_sine.png")
 
-dol = np.where(t >= 0.5 + T_PICK, 2, 0)            # 对照组：直接启动，0.5 s 按下后 KM 吸合就接成三角形
-I_d, W_d = motor(dol)                              # 直接启动的电流和转速
-I_y, W_y = motor(conn)                             # 星三角启动的电流和转速
+# ---------- ② 负载扫描：V_i = 5 V，R_L 从 10 Ω 到 1 kΩ ----------
+RL = np.logspace(1, 3, 200)
+v_dir = direct(5.0, RL)                            # 运放直接带
+v_fol = np.array([follower(5.0, r)[0] for r in RL])   # 运放 → 跟随器（反馈只取运放自己的输出）
+v_loop = np.full_like(RL, 5.0)                     # 反馈取自发射极：运放自动多给一个 V_BE，V_o = V_i
+for r in (1000, 100, 50, 20):
+    vf, vb_, ie_ = follower(5.0, r)
+    p = (VCC - vf) * ie_ * BETA / (BETA + 1)       # 管子功耗 = V_CE × I_C
+    print(f"[负载] R_L = {r:>4} Ω：直接 {float(direct(5.0, r)):.2f} V；跟随器 {vf:.2f} V（I_E {ie_*1e3:.0f} mA，I_B {ie_/(BETA+1)*1e3:.2f} mA，管耗 {p:.2f} W）")
+vf50, vbe50, ie50 = follower(5.0, 50.0)
+p50 = (VCC - vf50) * ie50 * BETA / (BETA + 1)
+vf20 = follower(5.0, 20.0)[0]; vf1k = follower(5.0, 1000.0)[0]
+print(f"[负载] 直接接法要 R_L ≥ {5.0 / I_LIM:.0f} Ω（电流 ≤ 30 mA）才不被限流")
+print(f"[负载] 负载从 1 kΩ 变到 20 Ω（电流变 50 倍），跟随器输出只变 {(vf1k - vf20)*1e3:.0f} mV")
+print(f"[反馈] 反馈取自发射极时，50 Ω 负载下运放输出 = {5.0 + vbe50:.2f} V（低于上限 {V_OH:.1f} V），基极电流 {ie50/(BETA+1)*1e3:.2f} mA（低于 30 mA）")
+assert vf1k - vf20 < 0.2                           # 结论 4：负载变 50 倍，输出只变一百多毫伏
+assert ie50 / (BETA + 1) < I_LIM and 5.0 + vbe50 < V_OH   # 结论 5：反馈接发射极时运放完全带得动
+P_3904, RTH_3904 = 0.625, 200.0                   # onsemi 2N3904（TO-92）：环境 25 °C 时额定 625 mW；结到环境热阻 200 °C/W
+print(f"[功耗] 50 Ω 时管耗 {p50:.2f} W，超过 2N3904 额定 {P_3904 * 1e3:.0f} mW（25 °C）；温升 {p50:.2f} × {RTH_3904:.0f} = {p50 * RTH_3904:.0f} °C，25 °C 环境下结温约 {25 + p50 * RTH_3904:.0f} °C，超过 150 °C 上限")
+assert P_3904 < p50 < 2.0 and 25 + p50 * RTH_3904 > 150   # 结论 6：管耗超过 2N3904 的额定值，但在 TIP31 不加散热片的 2 W 以内
 
-def first(x):                                      # 某个布尔数组第一次为真的时刻
-    return t[np.argmax(x)]
-t_y_on = first(arm["KMY"]); t_y_off = first(~arm["KMY"] & (t > 1))   # KMY 吸合、释放的时刻
-t_d_on = first(arm["KMD"]); t_kt_off = first(~kt_coil & (t > 1))    # KM△ 吸合、KT 线圈断电的时刻
-print(f"[时序] KM、KMY 在 {first(arm['KM']):.3f} s 吸合（星形启动）；KT 在 {0.5 + T_SET:.3f} s 到时")  # 打印时序
-print(f"[时序] KMY 在 {t_y_off:.3f} s 释放，KM△ 在 {t_d_on:.3f} s 吸合，中间空档 {(t_d_on - t_y_off) * 1e3:.0f} ms；KT 线圈在 {t_kt_off:.3f} s 断电复位")  # 打印切换
-assert abs(t_d_on - t_y_off - T_PICK) < 1.5e-3     # 空档 = KM△ 的吸合时间（KMY 常闭复位后 KM△ 线圈才通电）
-
-pk_d = I_d.max(); pk_y = I_y[t < 0.5 + T_SET].max()  # 直接启动峰值、星形阶段峰值
-print(f"[电流] 直接启动峰值 {pk_d:.1f} 倍额定电流；星形启动峰值 {pk_y:.1f} 倍，是直接启动的 {pk_y / pk_d:.3f}")  # 1/3
-assert abs(pk_y / pk_d - 1 / 3) < 0.01             # 结论 2：星形启动电流 = 直接启动的 1/3
-k95 = np.argmax(W_d > 0.95 * W_d[-1])              # 直接启动转速到 95% 的时刻
-print(f"[转速] 直接启动 {t[k95] - 0.5:.1f} s 转到最终转速的 95%；星三角在切换前转到同步转速的 {W_y[np.searchsorted(t, t_y_off)] * 100:.0f}%")  # 打印转速
-k_sw = np.searchsorted(t, t_d_on)                  # 三角形接通的下标
-pk_sw = I_y[k_sw:k_sw + 200].max()                 # 切换到三角形后的电流尖峰
-print(f"[电流] 切换前 {I_y[np.searchsorted(t, t_y_off) - 1]:.2f} 倍；空档里 0；接成三角形瞬间 {pk_sw:.1f} 倍（稳态模型的示意值），最后稳定在 {I_y[-1]:.2f} 倍")  # 打印切换电流
-assert pk_sw < pk_d and I_y[k_sw - 5] == 0         # 结论 3：切换尖峰比直接启动小；空档里电流为 0
-ratio_sw = pk_sw / pk_d                             # 切换尖峰 ÷ 直接启动峰值（无残余电压的模型）
-print(f"[电流] 切换尖峰 / 直接启动峰值 = {pk_sw:.1f} / {pk_d:.1f} = {ratio_sw:.2f}；西门子 24499345：℘ 理论最大 2，实测有利接法 0.8、不利接法 1.37")
-assert abs(ratio_sw - 0.45) < 0.01 and ratio_sw < 0.8 < 1.37 < 2  # 模型值小于实测：因为模型里没有残余电压
-assert abs(I_y[-1] - I_d[-1]) < 0.01               # 结论 4：最后两种启动方式的运行电流一样
-
-fig, axs = plt.subplots(3, 1, figsize=(9.5, 6.0), sharex=True, gridspec_kw=dict(height_ratios=[1.1, 1.4, 1.0]))  # 三行
-ax = axs[0]                                        # 第一行：接触器状态
-ax.plot(t, arm["KM"] * 0.7 + 2.0, **fs.LS["vout"], label="KM 主接触器")     # KM 橙色
-ax.plot(t, arm["KMY"] * 0.7 + 1.0, **fs.LS["vin"], label="KMY 星形接触器")   # KMY 蓝色
-ax.plot(t, arm["KMD"] * 0.7 + 0.0, **fs.LS["fb"], label="KM△ 三角形接触器")  # KM△ 蓝绿色虚线
-ax.set_yticks([0.35, 1.35, 2.35]); ax.set_yticklabels(["KM△", "KMY", "KM"]); ax.set_ylim(-0.3, 3.0)  # 纵轴
-ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例放到右侧
-ax = axs[1]                                        # 第二行：线电流
-ax.plot(t, I_d, **fs.LS["third"], label="直接启动（三角形）")              # 直接启动：红紫色点划线
-ax.plot(t, I_y, **fs.LS["cur"], label="星三角启动")                       # 星三角：天蓝色
-fs.mark(ax, t[np.argmax(I_d)], pk_d, "{:.1f}", "倍", dx=12, dy=-4)        # 标直接启动峰值
-fs.mark(ax, t[np.argmax(I_y[t < 6])], pk_y, "{:.1f}", "倍", dx=12, dy=4)  # 标星形峰值
-fs.mark(ax, t[k_sw + np.argmax(I_y[k_sw:k_sw + 200])], pk_sw, "{:.1f}", "倍", dx=10, dy=6)  # 标切换尖峰
-fs.ref_h(ax, 1.0, "额定电流", x=0.99)                                      # 额定电流参考线
-fs.axlabels(ax, None, None, "线电流 / 额定电流")                          # 纵轴
-ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例
-ax = axs[2]                                        # 第三行：转速
-ax.plot(t, W_d * 100, **fs.LS["third"], label="直接启动")                  # 直接启动转速
-ax.plot(t, W_y * 100, **fs.LS["cur"], label="星三角启动")                  # 星三角转速
-fs.ref_v(ax, t_d_on, "切换到三角形", y=0.3)                               # 切换时刻
-fs.axlabels(ax, "时间", "s", "转速 / 同步转速", "%")                       # 坐标
-ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例
-fs.save(fig, "19", "19_p2_4_sim.png")              # 保存
-
-z = (t >= t_y_off - 0.03) & (t < t_d_on + 0.06)    # 放大切换前后约 0.1 s
-tm = (t[z] - (0.5 + T_SET)) * 1e3                  # 横轴：从 KT 到时算起的毫秒数
-fig, axs = plt.subplots(2, 1, figsize=(8.6, 4.4), sharex=True)  # 两行：状态、电流
-ax = axs[0]                                        # 状态
-ax.plot(tm, coil["KMY"][z] * 0.6 + 3.0, drawstyle="steps-post", **{**fs.LS["cur"], "alpha": 0.6}, label="KMY 线圈有电")  # KMY 线圈
-ax.plot(tm, arm["KMY"][z] * 0.6 + 2.0, drawstyle="steps-post", **fs.LS["vin"], label="KMY 主触点闭合")   # KMY 主触点
-ax.plot(tm, coil["KMD"][z] * 0.6 + 1.0, drawstyle="steps-post", **fs.LS["cur"], label="KM△ 线圈有电")    # KM△ 线圈
-ax.plot(tm, arm["KMD"][z] * 0.6 + 0.0, drawstyle="steps-post", **fs.LS["fb"], label="KM△ 主触点闭合")    # KM△ 主触点
-ax.set_yticks([0.3, 1.3, 2.3, 3.3]); ax.set_yticklabels(["KM△ 主", "KM△ 线圈", "KMY 主", "KMY 线圈"]); ax.set_ylim(-0.3, 4.0)  # 纵轴
-ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例
-ax = axs[1]                                        # 电流
-ax.plot(tm, I_y[z], drawstyle="steps-post", **fs.LS["cur"], label="星三角线电流")  # 电流
-ax.axvspan((t_y_off - 0.5 - T_SET) * 1e3, (t_d_on - 0.5 - T_SET) * 1e3, color="0.85", lw=0, label="空档：两只都断开")  # 空档
-fs.ref_v(axs[0], 0, "KT 到时", y=0.98)                                    # KT 到时的竖线
-fs.ref_v(axs[1], (t_y_off - 0.5 - T_SET) * 1e3, "KMY 断开", y=0.98)        # KMY 主触点断开
-fs.ref_v(axs[1], (t_d_on - 0.5 - T_SET) * 1e3, "KM△ 闭合", y=0.75)        # KM△ 主触点闭合
-fs.axlabels(ax, "从 KT 到时起的时间", "ms", "线电流 / 额定电流", None)          # 坐标
-ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)      # 图例
-fs.save(fig, "19", "19_p2_5_switch.png")           # 保存
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.semilogx(RL, v_dir, **fs.LS["bad"], label="运放直接带负载")
+ax.semilogx(RL, v_fol, **fs.LS["vout"], label="运放 → 跟随器")
+ax.semilogx(RL, v_loop, **fs.LS["fb"], label="反馈取自发射极")
+fs.ref_h(ax, 5.0 - 0.7, "比 5 V 低 0.7 V", x=0.02, ha="left")
+fs.mark(ax, 50, vf50, "{:.2f}", " V", dx=4, dy=-12)
+fs.mark(ax, 50, float(direct(5.0, 50)), "{:.2f}", " V", dx=8, dy=-10)
+fs.axlabels(ax, "负载电阻 $R_L$", "Ω", "负载电压", "V"); ax.set_ylim(0, 6)
+ax.legend(loc="lower right", fontsize=8)
+fs.save(fig, "19", "19_p2_3_load.png")

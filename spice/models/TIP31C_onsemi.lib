@@ -1,4 +1,4 @@
-* SOURCE: https://www.onsemi.com/pub/Collateral/TIP31C.LIB  (opened 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* SOURCE: https://www.onsemi.com/pub/Collateral/TIP31C.LIB  (opened 2026-10-23 by reviewer A (nodes 01-03, 05, 08, 09, 12-14, 16, 17, 19, 21, 22, 25))
 * onsemi TIP31C NPN power transistor model (Dec 21 2003). Used for TIP31/TIP31C. Parameters unmodified.
 .MODEL Qtip31c npn
 +IS=1e-09 BF=2530.91 NF=1.26029 VAF=10

@@ -6,7 +6,7 @@
         d += elm.SourceSin().up().label("$V_i$")
         d += elm.Resistor().right().label("$R_1$ 10 kΩ")
         ...
-    save_schem(d, "01", "01_p1_1_inverting.png")   # → 01-inverting-amp/img/，≤ 200 KB
+    save_schem(d, "05", "05_p1_1_inverting.png")   # → 05-inverting-amp/img/，≤ 200 KB
 **只由总纲（协调者）修改本文件**；需要新元件时向总纲提出。
 
 schemdraw 自带并已验证可用（见 `python schem.py --demo`）：
@@ -14,9 +14,9 @@ schemdraw 自带并已验证可用（见 `python schem.py --demo`）：
     elm.BjtNpn / BjtPnp     三极管     elm.NFet / elm.PFet / elm.NMos（MOSFET）
     elm.Resistor / Capacitor / Inductor2 / Potentiometer / Transformer / Fuse / FuseIEC
     elm.Switch / SwitchSpdt / SwitchSpdt2（双控开关）/ Button / Relay（继电器：线圈 + 触点）
-    elm.Optocoupler（光耦：LED + 光敏三极管，扩展篇 23）/ elm.Transformer（变压器，06、24）/ elm.Schottky（续流、H 桥）
+    elm.Optocoupler（光耦：LED + 光敏三极管，扩展篇 23）/ elm.Transformer（变压器，13、28）/ elm.Schottky（续流、H 桥）
     elm.SourceV / SourceSin / SourceSquare / Battery / Ground / Vdd / Vss / Dot / Line / Lamp（白炽灯）
-本文件补充的国标（GB/T 4728，与 IEC 60617 一致）风格元件，用于继电-接触器控制电路（17–19）、过载保护（11）、双控开关（20）：
+本文件补充的国标（GB/T 4728，与 IEC 60617 一致）风格元件，用于继电-接触器控制电路（04、11、15）、过载保护（22）、双控开关（27）：
     Coil(label="KM1")             接触器 / 继电器 / 时间继电器线圈（矩形框）
     ContactNO / ContactNC         常开 / 常闭触点（主触点、辅助触点都用它，标签写 KM1 等）
     PushNO / PushNC               常开按钮（启动 SB2）/ 常闭按钮（停止 SB1），带虚线推杆
@@ -25,7 +25,7 @@ schemdraw 自带并已验证可用（见 `python schem.py --demo`）：
     ThermalNC                     热继电器常闭触点 FR（控制电路）
     Motor3(text="M\\n3~")          三相（或单相）电动机：圆圈内写 M 3~
     LampX                         指示灯 / 照明灯（圆圈加 ×，国标画法）
-辅助函数（扩展篇 23、24 隔离电路用）：
+辅助函数（扩展篇 23、28 隔离电路用）：
     barrier(d, x, y0, y1)         画一条竖直灰色虚线「隔离带」，两侧的地要分别标 GND1 / GND2
     module(name, left, right)     画一个带引脚名的方框模块（隔离 DC-DC、数字隔离器、单片机等），返回 elm.Ic
 """

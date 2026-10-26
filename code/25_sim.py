@@ -1,130 +1,232 @@
-"""25 仿真：H 桥驱动直流电机——正转/反转/刹车/滑行的电流与转速、PWM 占空比与平均电压、死区与直通电流。
-运行：/workspace/circuits-venv/bin/python code/25_sim.py   → 25-h-bridge/img/25_p2_2_pwm.png
-code/figs/25_figs.py 会调用这里的函数画其余的图。
-电机参数是示意值（12 V 小型有刷直流电机的量级）；桥臂导通电阻取 TI DRV8871 数据手册典型值
-（高边 307 mΩ + 低边 258 mΩ），死区仿真的分立 MOS 管导通电阻取 IRLZ44N 的 25 mΩ。
+"""25 开关电源：降压（Buck）电路的时域仿真与效率估算，生成 25-switching-power-supply/img/ 里的曲线图。
+运行：/workspace/circuits-venv/bin/python code/25_sim.py
+主例（见 25 page2）：V_in = 12 V → V_o = 5 V，负载 5 Ω（1 A），开关频率 200 kHz，L = 47 µH，C = 47 µF。
+异步降压：上管 MOSFET 导通电阻 50 mΩ、续流肖特基二极管压降 0.4 V、电感直流电阻 50 mΩ（均为示意值）。
+所有仿真都是低压直流电路，不涉及市电。图上的每个数字都由本脚本打印；关键结论用 assert 检查。
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
+import figstyle as fs
 import numpy as np
+import matplotlib.pyplot as plt
 
-# ---- 电机与电源（示意值）----
-VM = 12.0        # 电源电压（V）
-R_M = 2.0        # 电枢电阻（Ω）
-L_M = 1e-3       # 电枢电感（H）
-KE = 0.02        # 反电动势常数 = 转矩常数（V·s/rad = N·m/A）
-J = 1e-5         # 转子转动惯量（kg·m²）
-B = 1e-5         # 摩擦系数（N·m·s/rad）
-R_HS, R_LS = 0.307, 0.258   # DRV8871 高边、低边导通电阻典型值（Ω）
-V_D = 0.8        # 体二极管压降（V，示意）
-
-# 桥的四种状态：F 正转、R 反转、B 刹车（两个低边同时导通）、C 滑行（四管全关）
-def step(i, w, state, dt):
-    """前进一个时间步，返回新的电流 i（A）、角速度 w（rad/s）和电机两端电压 v（V）。"""
-    e = KE * w                                    # 反电动势
-    if state == "F":
-        v, r = VM, R_M + R_HS + R_LS
-    elif state == "R":
-        v, r = -VM, R_M + R_HS + R_LS
-    elif state == "B":
-        v, r = 0.0, R_M + 2 * R_LS
-    else:                                         # 滑行：电流只能经体二极管回灌电源（快衰减）
-        if abs(i) < 1e-4:
-            i = 0.0
-            return i, w + dt * (-B * w) / J, e
-        v, r = -np.sign(i) * (VM + 2 * V_D), R_M
-    i_new = i + dt * (v - e - r * i) / L_M
-    if state == "C" and np.sign(i_new) != np.sign(i):
-        i_new = 0.0                               # 二极管不让电流反向
-    w_new = w + dt * (KE * i - B * w) / J
-    return i_new, w_new, v
+N = "25"
+VIN, VO_SET, R_LOAD = 12.0, 5.0, 5.0
+IO = VO_SET / R_LOAD
+FSW = 200e3
+T = 1 / FSW
+L0, C0 = 47e-6, 47e-6
+RDS, VF, DCR = 0.05, 0.4, 0.05            # 上管导通电阻、肖特基压降、电感直流电阻（示意值）
+TSW = 20e-9                               # 每次开关的过渡时间之和（上升 + 下降，示意值）
+I_CTL = 0.005                             # 控制芯片自身耗电 5 mA（示意值）
+STEPS = 200                               # 每个开关周期的计算步数
 
 
-def run(schedule, t_end, dt=2e-6, i0=0.0, w0=0.0):
-    """schedule(t) 返回该时刻的状态字母；返回 t、i、w、v 数组。"""
-    n = int(round(t_end / dt))
-    t = np.arange(n) * dt
-    I, W, V = np.empty(n), np.empty(n), np.empty(n)
-    i, w = i0, w0
-    for k in range(n):
-        i, w, v = step(i, w, schedule(t[k]), dt)
-        I[k], W[k], V[k] = i, w, v
-    return t, I, W, V
-
-
-def pwm_schedule(duty, f, on="F", off="B"):
-    """PWM：每个周期前 duty 部分为 on 状态，其余为 off 状态（默认「驱动—刹车」交替）。"""
-    T = 1.0 / f
-    return lambda t: on if ((t / T + 1e-6) % 1.0) < duty else off   # 加 1e-6 防止浮点误差丢掉周期起点
-
-
-def avg_speed(duty):
-    """平均模型：平均电压 = 占空比 × VM 时的稳态转速（rad/s）与电流（A）。"""
-    r = R_M + duty * (R_HS + R_LS) + (1 - duty) * 2 * R_LS   # 驱动/刹车交替时的平均电阻
-    w = KE * duty * VM / (r * B + KE ** 2)
-    return w, B * w / KE
-
-
-def ripple_pp(duty, f):
-    """小纹波近似：电流峰峰纹波 ≈ VM·D·(1−D)/(L·f)。"""
-    return VM * duty * (1 - duty) / (L_M * f)
-
-
-# ---- 死区与直通：同一桥臂高边关断、低边开通的交接过程 ----
-R_ON_D = 0.025   # 分立 MOS 管导通电阻（Ω，IRLZ44N 5 V 驱动）
-T_SW = 200e-9    # 每只管子从全通到全断（或反之）的过渡时间（s，示意值）
-L_S = 20e-9      # 桥臂走线的杂散电感（H，示意值）
-R_S = 0.01       # 走线与电源内阻（Ω，示意值）
-
-def shoot_through(t_dead, t_end=800e-9, dt=0.1e-9):
-    """高边在 t=0 开始关断，低边在 t=t_dead 开始开通；返回 t、直通电流、峰值（A）和一次交接的能量（J）。"""
-    t = np.arange(0, t_end, dt)
-    gH = 1 - np.clip(t / T_SW, 0, 1)                    # 高边导通程度 1→0
-    gL = np.clip((t - t_dead) / T_SW, 0, 1)             # 低边导通程度 0→1
-    i = np.zeros_like(t)
-    for k in range(1, len(t)):
-        if gH[k] <= 0 or gL[k] <= 0:
-            r = 1e6
+def buck(D, vin=VIN, L=L0, periods=600, ideal=False, Lfun=None, keep=3, il0=None, vc0=None):
+    """异步降压的逐步仿真。ideal=True 时开关、二极管、电感都没有损耗。
+    返回最后 keep 个周期的 (t, 开关节点电压, 电感电流, 输出电压)，以及全程的平均输出。"""
+    rds, vf, dcr = (0.0, 0.0, 0.0) if ideal else (RDS, VF, DCR)
+    dt = T / STEPS
+    il = IO if il0 is None else il0
+    vc = D * vin if vc0 is None else vc0
+    n = periods * STEPS
+    rec = keep * STEPS
+    ts, vs, is_, vo = (np.zeros(rec) for _ in range(4))
+    k0 = n - rec
+    def sub(il, vc, on, h):
+        if on:
+            vsw = vin - il * rds
         else:
-            r = R_ON_D / gH[k] + R_ON_D / gL[k] + R_S
-        di = (VM - r * i[k - 1]) / L_S * dt
-        i[k] = max(i[k - 1] + di, 0.0) if r < 1e5 else max(i[k - 1] - i[k - 1] * dt / 2e-9, 0.0)
-    return t, i, i.max(), np.trapezoid(VM * i, t)
+            vsw = -vf if il > 0 else vc            # 电流降到 0 后二极管截止（断续模式）
+        Lk = Lfun(il) if Lfun else L
+        il_new = il + (vsw - vc - il * dcr) / Lk * h
+        if not on and il_new < 0:
+            il_new = 0.0
+        vc = vc + (il - vc / R_LOAD) / C0 * h
+        return il_new, vc, vsw
+
+    for k in range(n):
+        j = k % STEPS
+        fon = min(max(D * STEPS - j, 0.0), 1.0)    # 这一步里上管导通的比例（开关边沿落在步内时拆成两段）
+        vsw = 0.0
+        if fon > 0:
+            il, vc, v1 = sub(il, vc, True, fon * dt)
+            vsw += v1 * fon
+        if fon < 1:
+            il, vc, v2 = sub(il, vc, False, (1 - fon) * dt)
+            vsw += v2 * (1 - fon)
+        if k >= k0:
+            r = k - k0
+            ts[r], vs[r], is_[r], vo[r] = k * dt, vsw, il, vc
+    return ts - ts[0], vs, is_, vo
 
 
-if __name__ == "__main__":
-    import matplotlib
-    matplotlib.use("Agg")
-    import matplotlib.pyplot as plt
-    import figstyle as fs
+def duty_real(vin, io=IO, vo=VO_SET):
+    """考虑损耗后实际需要的占空比：D(V_in − I·R_DS) − (1 − D)V_F = V_o + I·DCR。"""
+    return (vo + io * DCR + VF) / (vin - io * RDS + VF)
 
-    f = 20e3
-    fig, axes = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=False)
-    ax = axes[0]
-    styles = [("third", 0.25), ("vin", 0.50), ("vout", 0.75)]
-    for key, d in styles:
-        t, I, W, V = run(pwm_schedule(d, f), 0.4, dt=0.5e-6)   # 每个 PWM 周期正好 100 步
-        ax.plot(t * 1e3, W * 60 / (2 * np.pi), **{**fs.LS[key], "lw": 1.3}, label=f"占空比 {d:.0%}：稳定在 {W[-20000:].mean()*60/2/np.pi:.0f} rpm")
-        w_avg, _ = avg_speed(d)
-        print(f"占空比 {d:.0%}：仿真末段转速 {W[-20000:].mean()*60/2/np.pi:.0f} rpm，平均模型 {w_avg*60/2/np.pi:.0f} rpm，"
-              f"平均电流 {I[-20000:].mean():.3f} A，纹波 {np.ptp(I[-20000:]):.3f} A（近似式 {ripple_pp(d, f):.3f} A）")
-        if d == 0.5:
-            t50, I50, V50 = t, I, V
-    fs.axlabels(ax, "时间", "ms", "转速", "rpm")
-    ax.legend(loc="lower right", fontsize=8)
-    ax.set_title("(a) 20 kHz PWM、不同占空比下电机的起动与稳定转速", fontsize=9)
-    ax = axes[1]
-    m = (t50 >= 0.35) & (t50 < 0.35 + 3 / f)
-    ax.plot((t50[m] - 0.35) * 1e6, V50[m], **fs.LS["vin"], label="电机两端电压（左轴）")
-    ax2 = ax.twinx()
-    ax2.plot((t50[m] - 0.35) * 1e6, I50[m], **fs.LS["vout"], label="电机电流（右轴）")
-    fs.axlabels(ax, "时间", "µs", "电压", "V")
-    ax2.set_ylabel(fs.qlabel("电流", "A"))
-    ax.set_ylim(-1, 18)
-    ax.axhline(6.0, **fs.LS["ref"], label="平均电压 6 V（= 50% × 12 V）")
-    h1, l1 = ax.get_legend_handles_labels(); h2, l2 = ax2.get_legend_handles_labels()
-    ax.legend(h1 + h2, l1 + l2, loc="upper center", ncol=3, fontsize=7.5)
-    ax2.set_ylim(0.0, 0.3)
-    ax.set_title("(b) 占空比 50%：稳定后三个 PWM 周期的放大", fontsize=9)
-    fig.tight_layout()
-    fs.save(fig, 25, "25_p2_2_pwm.png")
+
+def losses(vin, io=IO, vo=VO_SET, sync=False):
+    D = duty_real(vin, io, vo) if not sync else (vo + io * DCR) / (vin - 0 * io)   # 同步：下管压降很小，近似用理想式
+    p = dict(
+        上管导通=io ** 2 * RDS * D,
+        续流元件=(io ** 2 * RDS * (1 - D)) if sync else VF * io * (1 - D),
+        电感铜损=io ** 2 * DCR,
+        开关过渡=0.5 * vin * io * TSW * FSW,
+        控制芯片=vin * I_CTL,
+    )
+    return D, p
+
+
+# ---------- 主例数值 ----------
+D_ideal = VO_SET / VIN
+D_r = duty_real(VIN)
+dIL = (VIN - VO_SET) * D_ideal / (FSW * L0)
+dVO = dIL / (8 * FSW * C0)
+print(f"[数值] 理想占空比 D = V_o/V_in = {D_ideal:.3f}（{D_ideal*100:.1f}%）；考虑损耗后 D = {D_r:.3f}（{D_r*100:.1f}%）")
+print(f"[数值] 电感电流纹波 ΔI_L = (V_in − V_o)·D/(f·L) = {dIL:.3f} A（输出电流的 {dIL/IO*100:.0f}%）；输出纹波 ΔI_L/(8fC) = {dVO*1e3:.1f} mV")
+t, vs, il, vo = buck(D_r)
+for _ in range(2):                          # 真实电源靠反馈自动微调占空比；这里用两次修正代替
+    D_r += (VO_SET - vo.mean()) / (VIN + VF)
+    t, vs, il, vo = buck(D_r)
+print(f"[数值] 反馈微调后占空比 D = {D_r:.3f}（{D_r*100:.1f}%）")
+il_pk, il_min = il.max(), il.min()
+vo_avg, vo_pp = vo.mean(), vo.max() - vo.min()
+print(f"[数值] 仿真：V_o 平均 {vo_avg:.3f} V，纹波 {vo_pp*1e3:.1f} mV；电感电流 {il_min:.3f}–{il_pk:.3f} A（峰峰 {il_pk-il_min:.3f} A，平均 {il.mean():.3f} A）")
+assert abs(vo_avg - 5.0) < 0.05
+assert abs((il_pk - il_min) - dIL) < 0.05
+# 斜率
+s_on = (VIN - VO_SET) / L0
+s_off = -VO_SET / L0
+print(f"[数值] 斜率：开关导通 (12 − 5)/L = {s_on/1e3:.0f} A/ms ；断开 −5/L = {s_off/1e3:.0f} A/ms")
+
+# ---------- 图 25-p1-2 开关节点、电感电流、输出（三个周期） ----------
+fig, axs = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=True)
+tu = t * 1e6
+axs[0].plot(tu, vs, **fs.LS["vin"], label="开关节点电压（电感左端）")
+axs[0].plot(tu, vo, **fs.LS["vout"], label="输出电压 $V_o$")
+axs[0].text(tu[-1], 6.3, f"开关节点平均 ≈ {vs.mean():.2f} V", ha="right", fontsize=9)
+print(f"[数值] 开关节点平均 ≈ {vs.mean():.2f} V")
+axs[0].set_ylim(-2, 14.5)
+axs[0].legend(loc="upper right", fontsize=8, ncol=2)
+fs.axlabels(axs[0], "时间", "µs", "电压", "V")
+axs[1].plot(tu, il, **fs.LS["cur"], label="电感电流")
+fs.ref_h(axs[1], IO, f"负载电流 {IO:.1f} A", x=0.99)
+fs.mark(axs[1], tu[np.argmax(il)], il_pk, "{:.2f}", " A", dx=4, dy=2)
+fs.mark(axs[1], tu[np.argmin(il)], il_min, "{:.2f}", " A", dx=4, dy=-10)
+axs[1].set_ylim(0.7, 1.3)
+axs[1].legend(loc="upper left", fontsize=8)
+fs.axlabels(axs[1], "时间", "µs", "电流", "A")
+fs.save(fig, N, "25_p1_2_waveforms.png")
+
+# ---------- 图 25-p1-3 效率对比 ----------
+vins = np.linspace(7, 24, 69)
+eta_lin = VO_SET * IO / (vins * (IO + 0.0042))            # 7805 静态电流 4.2 mA（TI uA78xx 手册典型值）
+eta_buck = np.array([VO_SET * IO / (VO_SET * IO + sum(losses(v)[1].values())) for v in vins])
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(vins, eta_buck * 100, **fs.LS["vout"], label="开关降压（Buck）")
+ax.plot(vins, eta_lin * 100, **fs.LS["bad"], label="线性稳压（7805）")
+for v in (12.0, 24.0):
+    i = np.argmin(abs(vins - v))
+    fs.mark(ax, v, eta_buck[i] * 100, "{:.0f}", " %", dx=-8, dy=-14)
+    fs.mark(ax, v, eta_lin[i] * 100, "{:.0f}", " %", dx=4, dy=4)
+ax.set_ylim(0, 100)
+ax.legend(loc="center right", fontsize=8)
+fs.axlabels(ax, "输入电压", "V", "效率", "%")
+fs.save(fig, N, "25_p1_3_efficiency.png")
+e12 = eta_buck[np.argmin(abs(vins - 12))]
+l12 = eta_lin[np.argmin(abs(vins - 12))]
+print(f"[数值] 12 V → 5 V、1 A：线性 {l12*100:.1f}%（发热 {(12-5)*1:.1f} W），开关 {e12*100:.1f}%（损耗 {5/e12-5:.2f} W）")
+assert e12 > 0.88 and l12 < 0.45
+assert eta_buck.min() > 0.88
+
+# ---------- 图 25-p2-2 一个周期内的斜率（放大） ----------
+fig, axs = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=True)
+m = tu <= 2 * T * 1e6
+axs[0].plot(tu[m], vs[m], **fs.LS["vin"], label="开关节点电压")
+fs.ref_h(axs[0], VIN, "12 V（上管导通）", x=0.99)
+fs.ref_h(axs[0], -VF, "−0.4 V（二极管续流）", x=0.99)
+axs[0].set_ylim(-3, 15)
+axs[0].legend(loc="center right", fontsize=8)
+fs.axlabels(axs[0], "时间", "µs", "电压", "V")
+axs[1].plot(tu[m], il[m], **fs.LS["cur"], label="电感电流")
+fs.ref_v(axs[1], D_r * T * 1e6, f"D·T = {D_r*T*1e6:.2f} µs", y=0.98)
+print(f"[数值] D·T = {D_r*T*1e6:.2f} µs，T = {T*1e6:.1f} µs")
+axs[1].text(D_r * T * 1e6 * 0.5, 0.82, f"上升 {s_on/1e3:.0f} A/ms", ha="center", fontsize=9)
+axs[1].text(D_r * T * 1e6 + (1 - D_r) * T * 1e6 * 0.5, 0.82, f"下降 {abs(s_off)/1e3:.0f} A/ms", ha="center", fontsize=9)
+axs[1].set_ylim(0.75, 1.25)
+axs[1].legend(loc="upper right", fontsize=8)
+fs.axlabels(axs[1], "时间", "µs", "电流", "A")
+fs.save(fig, N, "25_p2_2_slopes.png")
+
+# ---------- 图 25-p2-3 占空比与输出 ----------
+Ds = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+vo_ideal, vo_loss = [], []
+for D in Ds:
+    _, _, _, v1 = buck(D, ideal=True, periods=500, il0=D * VIN / R_LOAD)
+    _, _, _, v2 = buck(D, periods=500, il0=D * VIN / R_LOAD)
+    vo_ideal.append(v1.mean()); vo_loss.append(v2.mean())
+vo_ideal, vo_loss = np.array(vo_ideal), np.array(vo_loss)
+for D, a, b in zip(Ds, vo_ideal, vo_loss):
+    print(f"[数值] D = {D:.1f}：D·V_in = {D*VIN:.2f} V，理想元件仿真 {a:.2f} V，含损耗 {b:.2f} V")
+assert np.all(abs(vo_ideal - Ds * VIN) < 0.05)
+assert np.all(vo_loss < vo_ideal)
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+dd = np.linspace(0, 1, 11)
+ax.plot(dd, dd * VIN, **fs.LS["good"], label="公式 $V_o = D \\cdot V_{in}$")
+ax.plot(Ds, vo_ideal, "o", color=fs.C["vout"], label="仿真：理想元件")
+ax.plot(Ds, vo_loss, **fs.LS["third"], marker="s", ms=4, label="仿真：含二极管压降等损耗")
+fs.mark(ax, D_r, VO_SET, "{:.1f}", " V", dx=-38, dy=6)
+fs.ref_v(ax, D_r, f"D = {D_r:.2f}", y=0.15)
+ax.set_xlim(0, 1); ax.set_ylim(0, 12.5)
+ax.legend(loc="upper left", fontsize=8)
+fs.axlabels(ax, "占空比 D", None, "输出电压", "V")
+fs.save(fig, N, "25_p2_3_duty.png")
+
+# ---------- 图 25-p3-1 电感饱和 ----------
+def Lsat(isat):
+    ik = isat / (0.4286 ** (1 / 6))           # L 在 I_sat 处降到 70%（下降 30%）
+    return lambda i: max(L0 / (1 + min(abs(i) / ik, 10.0) ** 6), 0.2 * L0)   # 最低降到标称的 20%
+
+for isat in (2.0, 0.8):
+    print(f"[数值] 饱和电流 {isat:.1f} A 的电感：在 {isat:.1f} A 处电感量 {Lsat(isat)(isat)*1e6:.1f} µH（标称 {L0*1e6:.0f} µH）")
+_, _, ig, _ = buck(D_r, Lfun=Lsat(2.0), periods=600)
+tb, _, ib, vb = buck(D_r, Lfun=Lsat(0.8), periods=600)
+print(f"[数值] 合适电感（I_sat 2.0 A）：峰值 {ig.max():.2f} A，峰峰 {ig.max()-ig.min():.2f} A")
+print(f"[数值] 偏小电感（I_sat 0.8 A）：峰值 {ib.max():.2f} A，峰峰 {ib.max()-ib.min():.2f} A")
+assert ib.max() > ig.max() + 0.1
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+tbu = tb * 1e6
+ax.plot(tbu, ig, **fs.LS["cur"], label="电感饱和电流 2.0 A：三角波")
+ax.plot(tbu, ib, **fs.LS["bad"], label="电感饱和电流 0.8 A：尖峰")
+fs.ref_h(ax, 1.0, "1.0 A", x=0.99)
+fs.mark(ax, tbu[np.argmax(ig)], ig.max(), "{:.2f}", " A", dx=4, dy=0)
+fs.mark(ax, tbu[np.argmax(ib)], ib.max(), "{:.2f}", " A", dx=4, dy=0)
+ax.set_ylim(0.4, max(1.9, ib.max() + 0.2))
+ax.legend(loc="upper left", fontsize=8, ncol=2)
+fs.axlabels(ax, "时间", "µs", "电感电流", "A")
+fs.save(fig, N, "25_p3_1_saturation.png")
+
+# ---------- 图 25-p3-2 损耗分布：异步 vs 同步 ----------
+Da, pa = losses(VIN)
+Ds_, ps = losses(VIN, sync=True)
+names = list(pa.keys())
+for k in names:
+    print(f"[数值] {k}：异步 {pa[k]:.3f} W，同步 {ps[k]:.3f} W")
+ta, tsy = sum(pa.values()), sum(ps.values())
+ea, es = 5 / (5 + ta), 5 / (5 + tsy)
+print(f"[数值] 总损耗：异步 {ta:.2f} W（效率 {ea*100:.1f}%），同步 {tsy:.2f} W（效率 {es*100:.1f}%）")
+assert pa["续流元件"] > 5 * ps["续流元件"] and es > ea
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+x = np.arange(len(names))
+ax.bar(x - 0.2, [pa[k] for k in names], 0.4, color=fs.C["bad"], label=f"异步（二极管续流），共 {ta:.2f} W")
+ax.bar(x + 0.2, [ps[k] for k in names], 0.4, color=fs.C["vout"], label=f"同步（下管续流），共 {tsy:.2f} W")
+for i, k in enumerate(names):
+    ax.text(i - 0.2, pa[k] + 0.004, f"{pa[k]:.3f}", ha="center", fontsize=8)
+    ax.text(i + 0.2, ps[k] + 0.004, f"{ps[k]:.3f}", ha="center", fontsize=8)
+ax.set_xticks(x); ax.set_xticklabels(names)
+ax.set_ylim(0, 0.28)
+ax.legend(loc="upper right", fontsize=8)
+fs.axlabels(ax, "损耗来源", None, "功率", "W")
+fs.save(fig, N, "25_p3_2_losses.png")
+print("[完成] 25_sim.py 全部断言通过")

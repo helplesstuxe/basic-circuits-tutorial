@@ -105,7 +105,7 @@ def check_cjk(text="反相同相放大电压跟随器差分精密整流桥式射
 
 # ---------------- 保存 ----------------
 def node_dir(prefix):
-    """prefix 如 '03' 或 'P1'，返回 03-voltage-follower/img 的绝对路径；prefix='00' 返回仓库根目录 img/。"""
+    """prefix 如 '12' 或 '01'，返回 12-voltage-follower/img 的绝对路径；prefix='00' 返回仓库根目录 img/。"""
     if prefix in ("00", "", None):
         img = os.path.join(ROOT, "img")
     else:

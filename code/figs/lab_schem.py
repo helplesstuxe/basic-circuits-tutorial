@@ -2,7 +2,7 @@
 
 用法（仓库根目录）：
     python code/figs/lab_schem.py            # 画全部已登记节点
-    python code/figs/lab_schem.py P1 05      # 只画指定节点（键名见 NODES）
+    python code/figs/lab_schem.py 01 09      # 只画指定节点（键名见 NODES）
 可重复运行：每次都覆盖同名 PNG，不动面包板图和其他图。
 
 约定（后续节点照此添加）：
@@ -61,14 +61,14 @@ def note(d, xy, text):
 
 
 # ======================================================================================
-# P1 元件速成：图 P1-p4-1（P1_p4_1_breadboard.png）→ 图 P1-p4-3（A 分压 / B RC 充放电 / C 继电器）
-# 面包板连线依据 code/figs/P1_figs.py 的 p4_1_breadboard()：
+# 01 元件速成：图 01-p4-1（01_p4_1_breadboard.png）→ 图 01-p4-3（A 分压 / B RC 充放电 / C 继电器）
+# 面包板连线依据 code/figs/01_figs.py 的 p4_1_breadboard()：
 #   A：+5 V→a3；R1 b3–b7；R2 c7–c11；a11→GND；RL e7–e11（后插）；① 第 7 列
 #   B：SW c13(充)/c14(公共)/c15(放)；+5 V→a13；a15→GND；R e14–e18；C b18(+)–b19；a19→GND；② 第 18 列
 #   C：+5 V→j18；SB i18–i21；KA 线圈+ g21、线圈− g24、COM g26、NO g28；1N4007 阴极 f21、阳极 f24；j24→GND；
 #      +5 V→j26；LED i28(长脚)→i30；1k j30→GND；③ 第 21 列
 # ======================================================================================
-def node_P1():
+def node_01():
     top, mid, bot = 4.0, 1.25, -1.5           # +5 V 线、中间节点、GND 线的 y
     with drawing(fontsize=11) as d:
         # ---------------- A 区：分压（第 3～11 列） ----------------
@@ -180,14 +180,14 @@ def node_P1():
                 "灰色小字 = 面包板列号。所有 +5 V 符号都是同一个 +5 V 轨，所有 GND 符号都是同一个 GND 轨。",
                 "RL 画成虚线：先不插，量完空载再插。天蓝色箭头 = 电流方向；点线表示线圈靠磁力带动触点，两者之间没有导线。")):
             note(d, (-1.6, y_led - 3.3 - 0.6 * k), line)
-    print("[图 P1-p4-3] A：+5 V–R1 10k–①(第 7 列)–R2 10k–GND，RL 并在 R2 上；B：SW 充→+5 V、放→GND、公共→R 10k→②(第 18 列)→C 100μF(+)→GND；"
+    print("[图 01-p4-3] A：+5 V–R1 10k–①(第 7 列)–R2 10k–GND，RL 并在 R2 上；B：SW 充→+5 V、放→GND、公共→R 10k→②(第 18 列)→C 100μF(+)→GND；"
           "C：+5 V→SB→③(第 21 列，线圈+)→KA 线圈→线圈−(第 24 列)→GND，1N4007 阴极第 21 列/阳极第 24 列；+5 V→COM→NO→LED→1k→GND")
-    save_schem(d, "P1", "P1_p4_3_schem_lab.png")
+    save_schem(d, "01", "01_p4_3_schem_lab.png")
 
 
 # ======================================================================================
-# P2 半导体入门：图 P2-p4-1（P2_p4_1_breadboard.png）→ 图 P2-p4-3（A 二极管 / B 三极管开关 + 电位器 / C 稳压管）
-# 面包板连线依据 code/figs/P2_figs.py 的 p4_1_breadboard()：
+# 03 半导体入门：图 03-p4-1（03_p4_1_breadboard.png）→ 图 03-p4-3（A 二极管 / B 三极管开关 + 电位器 / C 稳压管）
+# 面包板连线依据 code/figs/03_figs.py 的 p4_1_breadboard()：
 #   电源：T1 +5 V、T2 GND；B1 +9 V（电池）、B2 GND；只有 T2-2↔B2-2 一根黑线，+5 V 与 +9 V 不相连
 #   A：+5 V→a3；1k b3–b7；1N4148 阳极 c7、阴极 c10；a10→GND；① 第 7 列
 #   B：蓝色控制线 a13→+5 V（改插 GND = 关）；RB 10k b13–b17；2N3904 E d16 / B d17 / C d18；a16→GND；
@@ -195,7 +195,7 @@ def node_P1():
 #   电位器 10k：+ c27（+5 V→a27）、滑 c28、− c29（a29→GND）；④ 第 28 列
 #   C：+9 V→j20；R 560 i20–i24；1N4733A 阴极 h24、阳极 h27；j27→GND；RL（后插）f24–f29、j29→GND；⑤ 第 24 列
 # ======================================================================================
-def node_P2():
+def node_03():
     top, bot = 5.8, -1.5                       # 电源线、GND 线的 y
     ytl = top + 1.7                            # 分区标题的 y
     cur = dict(color=C["cur"])
@@ -315,18 +315,18 @@ def node_P2():
                 "B 区的「开关」其实就是第 13 列那根蓝线换插 +5 V 或 GND；RL 画成虚线表示先不插。天蓝色箭头 = 电流方向。",
                 "逐点测伏安特性时：拔掉 A 区 +5 V → 第 3 列的红线，改用蓝线把电位器滑动端④（第 28 列）接到第 3 列。")):
             note(d, (-1.6, bot - 2.2 - 0.6 * k), line)
-    print("[图 P2-p4-3] A：+5 V–1k–①(第 7 列)–1N4148–GND；B：蓝线(+5 V/GND)–RB 10k–②基极(第 17 列)，2N3904 E→GND，"
+    print("[图 03-p4-3] A：+5 V–1k–①(第 7 列)–1N4148–GND；B：蓝线(+5 V/GND)–RB 10k–②基极(第 17 列)，2N3904 E→GND，"
           "③集电极(第 18 列)–RC 220–LED–+5 V；电位器 +5 V/④滑动端(第 28 列)/GND；C：+9 V–R 560–⑤(第 24 列)–1N4733A(阴极朝上)–GND，RL 并联后插")
-    save_schem(d, "P2", "P2_p4_3_schem_lab.png")
+    save_schem(d, "03", "03_p4_3_schem_lab.png")
 
 
 # ======================================================================================
-# P3 / 01 / 02 共用：LM358 放大电路 + 另一半跟随器 + 三种电源接法（原理图里 M = 中点地，V+ / V− = 电源轨）
-# 三个节点的面包板是同一套布局（code/figs/P3_figs.py、01_figs.py、02_figs.py 的 p4_1_breadboard()）：
+# 02 / 05 / 08 共用：LM358 放大电路 + 另一半跟随器 + 三种电源接法（原理图里 M = 中点地，V+ / V− = 电源轨）
+# 三个节点的面包板是同一套布局（code/figs/02_figs.py、05_figs.py、08_figs.py 的 p4_1_breadboard()）：
 #   LM358 1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚 a14→V+，4 脚 j17→V−；另一半 7、6 脚 c15–c16 短接，5 脚 a17→M
 #   电位器 g3（端）/ g4（滑）/ g5（端，j5→M）；1.5 V 电池盒 + → j3、− → M；滑动端 i4→i9（蓝线）；① 第 9 列
-#   反相（P3、01）：Rin/R1 h9–h12；j12→j15 接 2 脚；Rf i12–i14；3 脚 j16→M；② 第 12 列，③ 第 14 列
-#   同相（02）：g9→g16 接 3 脚；R1 h10–h12、j10→M；j12→j15 接 2 脚；Rf i12–i14；② 第 12 列，③ 第 14 列
+#   反相（02、05）：Rin/R1 h9–h12；j12→j15 接 2 脚；Rf i12–i14；3 脚 j16→M；② 第 12 列，③ 第 14 列
+#   同相（08）：g9→g16 接 3 脚；R1 h10–h12、j10→M；j12→j15 接 2 脚；Rf i12–i14；② 第 12 列，③ 第 14 列
 #   灰框（单 9 V）：a21→V+；Rm1 b21–b24；a24→M；Rm2 c24–c27；47μF d24(+)–d27；e27→V−（B1 第 29 列）
 # ======================================================================================
 BLUE, TEAL = "#0072B2", "#009E73"
@@ -338,7 +338,7 @@ def _pin(d, xy, n, dx=0.0, dy=0.22):
 
 
 def _lm358_amp(d, kind, r_in, r_f, wire_note, ttl):
-    """kind = "inv"（反相，P3/01）或 "non"（同相，02）。原点附近画放大电路，返回右边界 x。"""
+    """kind = "inv"（反相，02/05）或 "non"（同相，08）。原点附近画放大电路，返回右边界 x。"""
     yM = -2.0                                         # 电位器、电池盒那一侧 M 的高度
     title(d, (6.5, 4.4), ttl)
     # 1.5 V 电池盒 + 电位器 10k（第 3～5 列）
@@ -529,33 +529,33 @@ _OP_NOTES = (
 )
 
 
-def node_P3():
-    _opamp_node("P3", "inv", "Rin 10k", "Rf 100k", "蓝线 i4→i9", "反相 ×10（第 3～17 列）", None,
+def node_02():
+    _opamp_node("02", "inv", "Rin 10k", "Rf 100k", "蓝线 i4→i9", "反相 ×10（第 3～17 列）", None,
                 _OP_NOTES + ("放大电路的第 12 列（②）就是 2 脚：面包板上它们隔了两列，靠底下那根绿线 j12→j15 连成一个节点。",),
-                "P3_p4_3_schem_lab.png",
-                "[图 P3-p4-3] 电池盒+电位器→滑动端→蓝线→①(第 9 列)→Rin 10k→②(第 12 列)→2 脚；Rf 100k ②↔③(第 14 列，1 脚)；3 脚→M；8 脚 V+，4 脚 V−；"
+                "02_p4_3_schem_lab.png",
+                "[图 02-p4-3] 电池盒+电位器→滑动端→蓝线→①(第 9 列)→Rin 10k→②(第 12 列)→2 脚；Rf 100k ②↔③(第 14 列，1 脚)；3 脚→M；8 脚 V+，4 脚 V−；"
                 "B 半边 7-6 短接、5→M；电源：两节 9 V / 一节 9 V + Rm1、Rm2 1k + 47μF")
 
 
-def node_01():
-    _opamp_node("01", "inv", "R1 10k", "Rf 100k（47k / 10k）", "蓝线 i4→i9（第 10 步换 Rs 10k）", "反相放大（第 3～17 列）",
+def node_05():
+    _opamp_node("05", "inv", "R1 10k", "Rf 100k（47k / 10k）", "蓝线 i4→i9（第 10 步换 Rs 10k）", "反相放大（第 3～17 列）",
                 "错误接法（第 16、17 步）",
                 _OP_NOTES + ("Rf 先用 100 kΩ，第 7、8 步换 47 kΩ、10 kΩ；第 10 步把滑动端到①的蓝线换成 Rs 10k。错误接法：拔掉灰框，黑线把 M 轨直接接到 V− 轨。",),
-                "01_p4_3_schem_lab.png",
-                "[图 01-p4-3] 同 P3 反相接法，R1 10k、Rf 100k(47k/10k)，蓝线 i4→i9 第 10 步换 Rs；电源三种：双 9 V / 单 9 V 分压 / 错误接法 M 接 V−")
+                "05_p4_3_schem_lab.png",
+                "[图 05-p4-3] 同 02 反相接法，R1 10k、Rf 100k(47k/10k)，蓝线 i4→i9 第 10 步换 Rs；电源三种：双 9 V / 单 9 V 分压 / 错误接法 M 接 V−")
 
 
-def node_02():
-    _opamp_node("02", "non", "R1 10k", "Rf 20k（39k / 导线 / 100k）", "蓝线 i4→i9（第 10 步换 Rs 100k）", "同相放大（第 3～17 列）",
+def node_08():
+    _opamp_node("08", "non", "R1 10k", "Rf 20k（39k / 导线 / 100k）", "蓝线 i4→i9（第 10 步换 Rs 100k）", "同相放大（第 3～17 列）",
                 "M 直接接电池负极（第 16～18 步）",
                 _OP_NOTES + ("Rf 先用 20 kΩ，后面换 39 kΩ、导线、100 kΩ；第 10 步把滑动端到①的蓝线换成 Rs 100k。最后一种接法：拔掉灰框，黑线把 M 轨接到 V− 轨（例如 B2、B1 第 28 列）。",),
-                "02_p4_3_schem_lab.png",
-                "[图 02-p4-3] ①(第 9 列)→蓝线 g9→g16→3 脚；R1 10k 第 12 列→第 10 列→M；②(第 12 列)→2 脚；Rf 20k ②↔③(第 14 列，1 脚)；电源三种：双 9 V / 单 9 V 分压 / M 接 V−")
+                "08_p4_3_schem_lab.png",
+                "[图 08-p4-3] ①(第 9 列)→蓝线 g9→g16→3 脚；R1 10k 第 12 列→第 10 列→M；②(第 12 列)→2 脚；Rf 20k ②↔③(第 14 列，1 脚)；电源三种：双 9 V / 单 9 V 分压 / M 接 V−")
 
 
 # ======================================================================================
-# 03 电压跟随器：图 03-p4-1（03_p4_1_breadboard.png）→ 图 03-p4-3
-# 依据 code/figs/03_figs.py 的 p4_1_breadboard()：T1 = V+，T2、B2 = M，B1 = V−；T2-1↔B2-1 黑线
+# 12 电压跟随器：图 12-p4-1（12_p4_1_breadboard.png）→ 图 12-p4-3
+# 依据 code/figs/12_figs.py 的 p4_1_breadboard()：T1 = V+，T2、B2 = M，B1 = V−；T2-1↔B2-1 黑线
 #   分压：T1-6→a6；Rd1 10k b6–b10；Rd2 10k c10–c12；a12→M；① 第 10 列
 #   e10→f10、g10→g16 蓝线 → 3 脚；a14→V+（8 脚）；j17→V−（4 脚）；h14→h15 绿短线（1 脚→2 脚）；③ 第 14 列
 #   B 半边：c15–c16、a17→M；RL 1k h22–h25，j25→M；负载线 j22→j14（或改插 j10）
@@ -565,7 +565,7 @@ def _vplus(d, xy, text="V+"):
     d += elm.Vdd().at(xy).label(text)
 
 
-def node_03():
+def node_12():
     with drawing(fontsize=11) as d:
         title(d, (6.0, 5.6), "跟随器（第 6～25 列）")
         top, y1, bot = 3.6, 0.0, -3.0                     # V+ 线、① 节点、M 的 y
@@ -640,19 +640,19 @@ def node_03():
             "负载线只有一根：实线 = 插 j14（③，经跟随器），虚线 = 改插 j10（①，直接接分压点），两种插法不同时用。",
         )):
             note(d, (-3.0, ys - 6.4 - 0.6 * k), line)
-    print("[图 03-p4-3] V+→Rd1 10k→①(第 10 列)→Rd2 10k→M；①→蓝线→3 脚；1 脚→h14→h15→2 脚；③(第 14 列)→负载线→RL 1k(j22–j25)→M；或负载线改插 j10")
-    save_schem(d, "03", "03_p4_3_schem_lab.png")
+    print("[图 12-p4-3] V+→Rd1 10k→①(第 10 列)→Rd2 10k→M；①→蓝线→3 脚；1 脚→h14→h15→2 脚；③(第 14 列)→负载线→RL 1k(j22–j25)→M；或负载线改插 j10")
+    save_schem(d, "12", "12_p4_3_schem_lab.png")
 
 
 # ======================================================================================
-# 04 差分放大：图 04-p4-1（04_p4_1_breadboard.png）→ 图 04-p4-3
-# 依据 code/figs/04_figs.py 的面包板图：T1 = V+，T2、B2 = M，B1 = V−；LM358 在第 14～17 列（同 01）
+# 16 差分放大：图 16-p4-1（16_p4_1_breadboard.png）→ 图 16-p4-3
+# 依据 code/figs/16_figs.py 的面包板图：T1 = V+，T2、B2 = M，B1 = V−；LM358 在第 14～17 列（同 05）
 #   1.5 V 电池盒：+ → j3，− → B2-2（M）；电位器 A g3/g4（滑）/g5，j5→M；e3→f3 橙线；电位器 B c3/c4（滑）/c5，a5→M
 #   A 滑片 i4→i9 蓝线 → ①（第 9 列）→ R1 10k h9–h12 → 第 12 列 → j12→j15 绿线 → 2 脚；R2 100k i12–i14 → ③（第 14 列，1 脚）
 #   B 滑片 d4→d20 蓝线，e20→f20 → ②（第 20 列）→ R3 10k g16–g20 → ④（第 16 列，3 脚）→ R4 100k i16–i19 → j19→M（第 13、14 步换 10k）
-#   灰框（单 9 V）同 01
+#   灰框（单 9 V）同 05
 # ======================================================================================
-def node_04():
+def node_16():
     with drawing(fontsize=11) as d:
         title(d, (6.5, 6.6), "差分放大（第 3～20 列）")
         yMa = 1.2                                          # 电位器 A 下端 M 的高度
@@ -757,13 +757,13 @@ def node_04():
             "共模线（图中没画，第 8～14、18、19 步）：拔掉 i4–i9 和 e20–f20，插 j9→j20 把①②连成一点，再从 f20 拉一根长线到要加的共模电压。",
         )):
             note(d, (-3.0, ys - 6.4 - 0.6 * k), line)
-    print("[图 04-p4-3] 1.5 V→电位器 A/B；A 滑片→①(第 9 列)→R1 10k→第 12 列→2 脚，R2 100k→③(第 14 列)；B 滑片→②(第 20 列)→R3 10k→④(第 16 列，3 脚)→R4 100k→j19→M")
-    save_schem(d, "04", "04_p4_3_schem_lab.png")
+    print("[图 16-p4-3] 1.5 V→电位器 A/B；A 滑片→①(第 9 列)→R1 10k→第 12 列→2 脚，R2 100k→③(第 14 列)；B 滑片→②(第 20 列)→R3 10k→④(第 16 列，3 脚)→R4 100k→j19→M")
+    save_schem(d, "16", "16_p4_3_schem_lab.png")
 
 
 # ======================================================================================
-# 05 精密整流（LM741）：图 05-p4-1 → 图 05-p4-3（基本型），图 05-p4-2 → 图 05-p4-4（改进型）
-# 依据 code/figs/05_figs.py 的 bb05()：tp = +9 V，tn = 0 V，bp = 0 V，bn = −9 V；tn29↔bp29
+# 09 精密整流（LM741）：图 09-p4-1 → 图 09-p4-3（基本型），图 09-p4-2 → 图 09-p4-4（改进型）
+# 依据 code/figs/09_figs.py 的 bb05()：tp = +9 V，tn = 0 V，bp = 0 V，bn = −9 V；tn29↔bp29
 #   LM741 在第 12～15 列：a13→+9 V（7 脚），j15→−9 V（4 脚）；RA 8.2k g5–g9，h5→+9 V（改进型 / 输入为负：→ −9 V）
 #   RB 100 j9→bp9；Vi 第 9 列下半区；g13（2 脚）→e8；D1 阳极 c14（6 脚）、阴极 c11；RL 10k a11→tn11；Vo 第 11 列上半区
 #   基本型：i9→i14（→3 脚），b8→b11；改进型：g14→bp14，R1 10k h9–h13，D2 阳极 d8、阴极 d14，Rf 20k b8–b11
@@ -835,8 +835,8 @@ _N05 = (
 )
 
 
-def node_05():
-    # ---------------- 图 05-p4-3：基本型 ----------------
+def node_09():
+    # ---------------- 图 09-p4-3：基本型 ----------------
     with drawing(fontsize=11) as d:
         title(d, (6.5, 5.8), "基本型精密整流（输入为正的接法）")
         top, y1, bot = 3.6, 0.0, -3.0
@@ -899,10 +899,10 @@ def node_05():
         note(d, (6.6, -10.6), "D1 截止，Vo ≈ 0，6 脚掉到约 −8 V。")
         for k, line in enumerate(_N05):
             note(d, (-3.0, -14.0 - 0.6 * k), line)
-    print("[图 05-p4-3] +9 V→RA 8.2k→Vi(第 9 列)→RB 100→0 V；Vi→i9→i14→3 脚；6 脚→D1(阳 c14、阴 c11)→Vo(第 11 列)→RL 10k→0 V；Vo→b11→b8→e8→g13→2 脚")
-    save_schem(d, "05", "05_p4_3_schem_lab.png")
+    print("[图 09-p4-3] +9 V→RA 8.2k→Vi(第 9 列)→RB 100→0 V；Vi→i9→i14→3 脚；6 脚→D1(阳 c14、阴 c11)→Vo(第 11 列)→RL 10k→0 V；Vo→b11→b8→e8→g13→2 脚")
+    save_schem(d, "09", "09_p4_3_schem_lab.png")
 
-    # ---------------- 图 05-p4-4：改进型 ----------------
+    # ---------------- 图 09-p4-4：改进型 ----------------
     with drawing(fontsize=11) as d:
         title(d, (6.5, 6.6), "改进型精密整流（输入为负的接法）")
         top, y1, bot = 3.6, 0.0, -3.0
@@ -974,13 +974,13 @@ def node_05():
         note(d, (6.6, -10.6), "3 脚直接接 0 V，所以 2 脚（虚地）也在 0 V 附近。")
         for k, line in enumerate(_N05):
             note(d, (-3.0, -14.0 - 0.6 * k), line)
-    print("[图 05-p4-4] −9 V→RA→Vi→RB→0 V；Vi→R1 10k→2 脚(虚地，g13→e8 到第 8 列)；3 脚→0 V；D2 阳 d8、阴 d14；6 脚→D1→Vo→RL；Rf 20k Vo↔虚地")
-    save_schem(d, "05", "05_p4_4_schem_lab.png")
+    print("[图 09-p4-4] −9 V→RA→Vi→RB→0 V；Vi→R1 10k→2 脚(虚地，g13→e8 到第 8 列)；3 脚→0 V；D2 阳 d8、阴 d14；6 脚→D1→Vo→RL；Rf 20k Vo↔虚地")
+    save_schem(d, "09", "09_p4_4_schem_lab.png")
 
 
 # ======================================================================================
-# 06 桥式整流：图 06-p4-1（06_p4_1_bb_bridge.png）→ 图 06-p4-2
-# 依据 code/figs/06_figs.py 的 bb06()：tp = 直流 +，tn = 直流 −（下方两条轨不用）
+# 13 桥式整流：图 13-p4-1（13_p4_1_bb_bridge.png）→ 图 13-p4-2
+# 依据 code/figs/13_figs.py 的 bb06()：tp = 直流 +，tn = 直流 −（下方两条轨不用）
 #   ~1 → a12，~2 → j12；D3 c8→c12，D1 d12→d16，D4 g8→g12，D2 h12→h16（阳极→阴极，色环全朝右）
 #   e8–f8 黑线（− 端），e16–f16 橙线（+ 端）；a16→直流 +，a8→直流 −；a22→直流 +，a26→直流 −
 #   C1 b22(+)–b26（先不插，100 µF 后换 470 µF）；RL 470 Ω（方案 B 1 kΩ）d22–d26；测量点 ~1 b12、~2 i12、V+ e22、V− e26
@@ -1011,7 +1011,7 @@ def _par_arrow(d, a, b, off, dashed=False):
     d += e
 
 
-def node_06():
+def node_13():
     POS, NEG, ACW = C["vout"], "black", TEAL
     with drawing(fontsize=11) as d:
         title(d, (4.5, 6.0), "桥式整流 + 电容滤波（第 8～26 列）")
@@ -1087,13 +1087,13 @@ def node_06():
             "量 V+、V− 时表笔接直流 + 轨和直流 − 轨（也就是第 22、26 列）；直流 − 不是大地，交流输入两根线可以互换。",
         )):
             note(d, (-5.5, -7.8 - 0.6 * kk), line)
-    print("[图 06-p4-2] ~1(a12)、~2(j12)；D1 ~1→+、D2 ~2→+、D3 −→~1、D4 −→~2；+ 第 16 列→直流 + 轨→a22；− 第 8 列→直流 − 轨→a26；C1(+ b22)、RL d22–d26")
-    save_schem(d, "06", "06_p4_2_schem_lab.png")
+    print("[图 13-p4-2] ~1(a12)、~2(j12)；D1 ~1→+、D2 ~2→+、D3 −→~1、D4 −→~2；+ 第 16 列→直流 + 轨→a22；− 第 8 列→直流 − 轨→a26；C1(+ b22)、RL d22–d26")
+    save_schem(d, "13", "13_p4_2_schem_lab.png")
 
 
 # ======================================================================================
-# 07 射极跟随器：图 07-p4-1（07_p4_1_bb_follower.png）→ 图 07-p4-3；图 07-p4-2（07_p4_2_bb_direct.png）→ 图 07-p4-4
-# 依据 code/figs/07_figs.py 的 bb07()：tp = +9 V，tn = 0 V（下方两条轨不用）；电池正极 → tp1，负极 → tn2
+# 19 射极跟随器：图 19-p4-1（19_p4_1_bb_follower.png）→ 图 19-p4-3；图 19-p4-2（19_p4_2_bb_direct.png）→ 图 19-p4-4
+# 依据 code/figs/19_figs.py 的 bb07()：tp = +9 V，tn = 0 V（下方两条轨不用）；电池正极 → tp1，负极 → tn2
 #   RP 1k：端 1 e3（a3 → +9 V），滑片 W e4，端 3 e5（a5 → 0 V）
 #   follower：2N3904 平面朝自己 E e13、B e14、C e15；绿线 c4 → c14；橙线 a15 → +9 V；RL a13 → 0 V 轨；测量点 V_B b14、V_E b13、V_C c15
 #   direct：拿掉三极管，220 Ω（RX）a4 → 0 V 轨；测量点「滑片」c4
@@ -1186,23 +1186,23 @@ def _ef07(mode):
     return d
 
 
-def node_07():
+def node_19():
     d = _ef07("follower")
-    print("[图 07-p4-3] 9 V：+ → tp1、− → tn2；RP 端 1 e3(a3→+9 V)、W e4、端 3 e5(a5→0 V)；W→绿线 c4→c14→B；C e15→a15→+9 V；E e13→RL a13→0 V")
-    save_schem(d, "07", "07_p4_3_schem_lab.png")
+    print("[图 19-p4-3] 9 V：+ → tp1、− → tn2；RP 端 1 e3(a3→+9 V)、W e4、端 3 e5(a5→0 V)；W→绿线 c4→c14→B；C e15→a15→+9 V；E e13→RL a13→0 V")
+    save_schem(d, "19", "19_p4_3_schem_lab.png")
     d = _ef07("direct")
-    print("[图 07-p4-4] RP 同上；RX 220 Ω a4→0 V 轨；测量点 滑片 c4")
-    save_schem(d, "07", "07_p4_4_schem_lab.png")
+    print("[图 19-p4-4] RP 同上；RX 220 Ω a4→0 V 轨；测量点 滑片 c4")
+    save_schem(d, "19", "19_p4_4_schem_lab.png")
 
 
 # ======================================================================================
-# 08 线性稳压：图 08-p4-1（08_p4_1_bb_regulator.png）→ 图 08-p4-2
-# 面包板连线依据 code/figs/08_figs.py 的 bb08()：
+# 21 线性稳压：图 21-p4-1（21_p4_1_bb_regulator.png）→ 图 21-p4-2
+# 面包板连线依据 code/figs/21_figs.py 的 bb08()：
 #   12 V +→bn1（下方外侧轨）、−→bp2（下方内侧轨）；bn28→tp28、bp29→tn29；LM358 1～4 脚 f13～f16、8～5 脚 e13～e16
 #   a13→+12 V（8 脚）；j16→0 V（4 脚）；c14–c15（7 接 6）；a16→0 V（5 脚）；TIP31 B f8、C f9、E f10；j9→+12 V；g8→g13
 #   Rf i10–i14；R1 j14→0 V；j17→+12 V；RZ i17–i19；1N4733A 阴极 g19、阳极 g20；j20→0 V；h15→h19；负载 j10 / bp5（板外）
 # ======================================================================================
-def node_08():
+def node_21():
     POS, SIG = C["vout"], TEAL
     yP, yN = 4.6, -5.2
     with drawing(fontsize=11) as d:
@@ -1331,12 +1331,12 @@ def node_08():
         )
         for k, line in enumerate(notes):
             note(d, (xs - 2.6, yb0 - 1.8 - 0.6 * k), line)
-    print("[图 08-p4-2] 12 V：+→bn1、−→bp2；RZ i17–i19(j17→+12 V)；DZ 阴极 g19、阳极 g20(j20→0 V)；h15→h19→3 脚；1 脚 g13→g8→B；C f9(j9→+12 V)；E f10→Rf i10–i14→2 脚，R1 j14→0 V；RL j10/bp5")
-    save_schem(d, "08", "08_p4_2_schem_lab.png")
+    print("[图 21-p4-2] 12 V：+→bn1、−→bp2；RZ i17–i19(j17→+12 V)；DZ 阴极 g19、阳极 g20(j20→0 V)；h15→h19→3 脚；1 脚 g13→g8→B；C f9(j9→+12 V)；E f10→Rf i10–i14→2 脚，R1 j14→0 V；RL j10/bp5")
+    save_schem(d, "21", "21_p4_2_schem_lab.png")
 
 # ======================================================================================
-# 09 开关电源：图 09-p4-1（09_p4_1_bb_buck.png）→ 图 09-p4-2
-# 面包板连线依据 code/figs/09_figs.py 的 bb09()：
+# 25 开关电源：图 25-p4-1（25_p4_1_bb_buck.png）→ 图 25-p4-2
+# 面包板连线依据 code/figs/25_figs.py 的 bb09()：
 #   12 V +→tp1（+12 V 输入轨）、−→tn2（0 V）；tn28→bp28（上下 0 V 轨相连）；模块 IN+ e4、IN− f4、OUT+ e20、OUT− f20
 #   a4→+12 V 轨；j4→bp4；j20→bp20；a20→板外 RL；RL 另一端→bp16；测量点 V_in c4、V_o c20
 # ======================================================================================
@@ -1345,7 +1345,7 @@ def _dbox(d, x0, y0, x1, y1, color=GRAY):
         d += elm.Line().endpoints(a, b).color(color).linestyle("--").linewidth(1.2)
 
 
-def node_09():
+def node_25():
     POS, SIG, IN = C["vout"], TEAL, "#7a7a7a"
     yP, yG, yt, yb = 3.8, -3.8, 1.2, -1.2
     with drawing(fontsize=11) as d:
@@ -1430,16 +1430,16 @@ def node_09():
         )
         for k, line in enumerate(notes):
             note(d, (xs - 2.8, yG - 1.3 - 0.6 * k), line)
-    print("[图 09-p4-2] 12 V：+→tp1、−→tn2；tn28→bp28；IN+ e4(a4→+12 V)、IN− f4(j4→0 V)；OUT+ e20(a20→RL)、OUT− f20(j20→0 V)；RL→bp16")
-    save_schem(d, "09", "09_p4_2_schem_lab.png")
+    print("[图 25-p4-2] 12 V：+→tp1、−→tn2；tn28→bp28；IN+ e4(a4→+12 V)、IN− f4(j4→0 V)；OUT+ e20(a20→RL)、OUT− f20(j20→0 V)；RL→bp16")
+    save_schem(d, "25", "25_p4_2_schem_lab.png")
 
 # ======================================================================================
-# 10 稳压管稳压：图 10-p4-1（10_p4_1_bb_zener.png）→ 图 10-p4-2
-# 面包板连线依据 code/figs/10_figs.py 的 bb10()：
+# 17 稳压管稳压：图 17-p4-1（17_p4_1_bb_zener.png）→ 图 17-p4-2
+# 面包板连线依据 code/figs/17_figs.py 的 bb10()：
 #   电源 +→tp1（+V_in 9～12 V）、−→tn2（0 V）；a3→tp3；R 180 Ω c3–c7；1N4733A 阴极 b7、阳极 b10；a10→0 V；RL d7–d13；a13→0 V
 #   测量点 V_in b3、V_o e7
 # ======================================================================================
-def node_10():
+def node_17():
     POS = C["vout"]
     yP, yo, ym, yG = 3.4, 1.2, -1.6, -3.8
     with drawing(fontsize=11) as d:
@@ -1502,18 +1502,18 @@ def node_10():
         )
         for k, line in enumerate(notes):
             note(d, (xs - 2.4, yG - 1.0 - 0.6 * k), line)
-    print("[图 10-p4-2] 电源 +→tp1、−→tn2；a3→+V_in；R c3–c7；DZ 阴极 b7、阳极 b10(a10→0 V)；RL d7–d13(a13→0 V)；V_in b3、V_o e7")
-    save_schem(d, "10", "10_p4_2_schem_lab.png")
+    print("[图 17-p4-2] 电源 +→tp1、−→tn2；a3→+V_in；R c3–c7；DZ 阴极 b7、阳极 b10(a10→0 V)；RL d7–d13(a13→0 V)；V_in b3、V_o e7")
+    save_schem(d, "17", "17_p4_2_schem_lab.png")
 
 # ======================================================================================
-# 11 过载保护：图 11-p4-1（11_p4_1_bb_protect.png）→ 图 11-p4-2
-# 面包板连线依据 code/figs/11_figs.py 的 bb11()：
+# 22 过载保护：图 22-p4-1（22_p4_1_bb_protect.png）→ 图 22-p4-2
+# 面包板连线依据 code/figs/22_figs.py 的 bb11()：
 #   12 V +→bn1、−→bp2；tn1–bp1；7805 IN f2(j2→bn2)、GND f3(j3→bp3)、OUT f4(g4→tp8)；Cin h2–h3、Cout i3–i4
 #   LM393 第 20～23 列：8 脚 a20→tp20，4 脚 j23→0 V，2、3 脚 j21、j22→0 V；RPU b17–b21(a17→+5 V)；RH a21–a23；
 #   RA b23–b27(a27→+5 V)；RB d23–d25(a25→0 V)；IRLZ44N S f13、D f14、G f15；c21→g15；c22→g16；
 #   RS j13→bp13；RF i13–i16；CF j16(+)→bp16；h14→h8；RN j8→bn8；LED 阳极 g10、阴极 g8；RLED j10→bn10；RO i8→bn5
 # ======================================================================================
-def node_11():
+def node_22():
     POS, SIG = C["vout"], TEAL
     y12, y5, yG, ydn, ys = 7.0, 5.0, -5.0, 3.0, -2.2
     xs, xE = -13.0, 17.2
@@ -1663,18 +1663,18 @@ def node_11():
         )
         for k, line in enumerate(notes):
             note(d, (xs - 2.2, yG - 1.0 - 0.6 * k), line)
-    print("[图 11-p4-2] 7805 IN f2/GND f3/OUT f4；LM393 5/6/7/8/4；IRLZ44N S f13 D f14 G f15；RS j13、RF i13–i16、CF j16；负载 RN/LED/RLED/RO 在 +12 V 与第 8 列之间")
-    save_schem(d, "11", "11_p4_2_schem_lab.png")
+    print("[图 22-p4-2] 7805 IN f2/GND f3/OUT f4；LM393 5/6/7/8/4；IRLZ44N S f13 D f14 G f15；RS j13、RF i13–i16、CF j16；负载 RN/LED/RLED/RO 在 +12 V 与第 8 列之间")
+    save_schem(d, "22", "22_p4_2_schem_lab.png")
 
 # ======================================================================================
-# 12 积分电路：图 12-p4-1（12_p4_1_bb_integrator.png）→ 图 12-p4-2
-# 面包板连线依据 code/figs/12_figs.py 的 bb12()：
+# 14 积分电路：图 14-p4-1（14_p4_1_bb_integrator.png）→ 图 14-p4-2
+# 面包板连线依据 code/figs/14_figs.py 的 bb12()：
 #   电池 A + → tp1（+9 V），A− 与 B+ → tn2（0 V），B − → bn1（−9 V）；tn3–bp3
 #   a5→+9 V，R1 82k b5–b9，R2 1k c9–c11，a11→0 V；j5→−9 V，R3 82k i5–i9，R4 1k h9–h11，j11→0 V
 #   LM358 1 脚 f16：a16→+9 V（8 脚），j19→−9 V（4 脚），d17–d18（7–6），a19→0 V（5 脚）
 #   R 1M i13–i17，C 1µF g16–g17，RP 1M j18→bp17，清零线 j16–j17，输入线 f13→e9（或 f9 / 0 V 轨）
 # ======================================================================================
-def node_12():
+def node_14():
     SIG = TEAL
     with drawing(fontsize=11) as d:
         title(d, (-2.0, 6.9), "慢动作积分器：R = 1 MΩ、C = 1 μF（RC = 1 s），LM358 A 组，±9 V")
@@ -1810,8 +1810,8 @@ def node_12():
         )
         for k, line in enumerate(notes):
             note(d, (-16.0, -6.6 - 0.6 * k), line)
-    print("[图 12-p4-2] ±9 V；+0.108 V 分压 b5–b9/c9–c11，−0.108 V 分压 i5–i9/h9–h11；R i13–i17、C g16–g17、清零线 j16–j17、RP j18→0 V；LM358 8/4/1/2/3，B 组 5/6/7")
-    save_schem(d, "12", "12_p4_2_schem_lab.png")
+    print("[图 14-p4-2] ±9 V；+0.108 V 分压 b5–b9/c9–c11，−0.108 V 分压 i5–i9/h9–h11；R i13–i17、C g16–g17、清零线 j16–j17、RP j18→0 V；LM358 8/4/1/2/3，B 组 5/6/7")
+    save_schem(d, "14", "14_p4_2_schem_lab.png")
 
 # ---------------- 13 以后共用的小工具 ----------------
 def _bat2(d, x, yt, yb, n_top, n_mid, n_bot, n_gnd, gname="GND", t1="电池 A", t2="电池 B"):
@@ -1870,12 +1870,12 @@ def _follower_b(d, bx, by, short_note, gnd_note, gname="GND", ttl="不用的 B �
 
 
 # ======================================================================================
-# 13 微分电路：图 13-p4-1（13_p4_1_breadboard.png）→ 图 13-p4-3
-# 面包板连线依据 code/figs/13_figs.py：LM358 1–4 脚 f14–f17、8–5 脚 e14–e17；a14→+9 V，j17→−9 V，j16→GND，
+# 18 微分电路：图 18-p4-1（18_p4_1_breadboard.png）→ 图 18-p4-3
+# 面包板连线依据 code/figs/18_figs.py：LM358 1–4 脚 f14–f17、8–5 脚 e14–e17；a14→+9 V，j17→−9 V，j16→GND，
 #   a17→GND，c15–c16；R1 h4–h8，C i8–i12，j12–j15，h15–h20，Rf i20–i24，Cf j20–j24，g14–g24；T-28–B-28；
 #   信号源 → j4，地 → B-2；电池 + → T+1，中点 → T-3，− → B+1
 # ======================================================================================
-def node_13():
+def node_18():
     SIG, OUT, INP = TEAL, C["vout"], BLUE
     with drawing(fontsize=11) as d:
         title(d, (-2.0, 6.9), "实用微分器：R1 1 kΩ + C 100 nF 输入，Rf 10 kΩ ∥ Cf 10 nF 反馈，LM358 A 组，±9 V")
@@ -1969,16 +1969,16 @@ def node_13():
         )
         for k, line in enumerate(notes):
             note(d, (-19.0, -7.4 - 0.6 * k), line)
-    print("[图 13-p4-3] ±9 V；R1 h4–h8、C i8–i12、j12–j15 → 2 脚；Rf i20–i24 ∥ Cf j20–j24；g14–g24；3 脚 j16 → GND；B 组 c15–c16、a17")
-    save_schem(d, "13", "13_p4_3_schem_lab.png")
+    print("[图 18-p4-3] ±9 V；R1 h4–h8、C i8–i12、j12–j15 → 2 脚；Rf i20–i24 ∥ Cf j20–j24；g14–g24；3 脚 j16 → GND；B 组 c15–c16、a17")
+    save_schem(d, "18", "18_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 14 电压比较器：图 14-p4-1（14_p4_1_breadboard.png）→ 图 14-p4-2
-# 面包板连线依据 code/figs/14_figs.py：LM393 1–4 脚 f12–f15、8–5 脚 e12–e15；a12→+5 V，g15→GND；
+# 10 电压比较器：图 10-p4-1（10_p4_1_breadboard.png）→ 图 10-p4-2
+# 面包板连线依据 code/figs/10_figs.py：LM393 1–4 脚 f12–f15、8–5 脚 e12–e15；a12→+5 V，g15→GND；
 #   R2 g12–g14，R3 h8–h12 + j8→+5 V，h13–h22，R1 i14–i18，Ra i22–i26 + j26→+5 V，Rb g22–g28 + j28→GND；
 #   f22→d14，j12→b15（橙），a4→+5 V，R4 b4–b8，LED c8(+)–c13；T+30–B+30，T-29–B-29；电源 + T+1、− T-3；电位器滑动端→j18
 # ======================================================================================
-def node_14():
+def node_10():
     SIG, OUT, INP = TEAL, C["vout"], BLUE
     with drawing(fontsize=11) as d:
         title(d, (0.0, 6.4), "施密特比较器 + LED 指示：LM393 A 组做比较、B 组点 LED，5 V 单电源")
@@ -2095,16 +2095,16 @@ def node_14():
         )
         for k, line in enumerate(notes):
             note(d, (-18.0, -8.0 - 0.6 * k), line)
-    print("[图 14-p4-2] 5 V；R1 i14–i18、R2 g12–g14、R3 h8–h12；Ra/Rb 第 22 列 → h13–h22、f22–d14；j12–b15；R4 b4–b8、LED c8–c13")
-    save_schem(d, "14", "14_p4_2_schem_lab.png")
+    print("[图 10-p4-2] 5 V；R1 i14–i18、R2 g12–g14、R3 h8–h12；Ra/Rb 第 22 列 → h13–h22、f22–d14；j12–b15；R4 b4–b8、LED c8–c13")
+    save_schem(d, "10", "10_p4_2_schem_lab.png")
 
 # ======================================================================================
-# 15 有源滤波：图 15-p4-1（15_p4_1_breadboard.png）→ 图 15-p4-3
-# 面包板连线依据 code/figs/15_figs.py：LM358 1–4 脚 f14–f17、8–5 脚 e14–e17；a14→+9 V，j17→−9 V；
+# 20 有源滤波：图 20-p4-1（20_p4_1_breadboard.png）→ 图 20-p4-3
+# 面包板连线依据 code/figs/20_figs.py：LM358 1–4 脚 f14–f17、8–5 脚 e14–e17；a14→+9 V，j17→−9 V；
 #   a17→GND，c15–c16；g14–g15；g16–g20；R h20–h24；C j20–B-20；h14–h8；R 1 kΩ i8–i4；T-28–B-28；
 #   耳机 → j4、地 → B-2；手机 → j24、地 → B-29；电池 + → T+1，中点 → T-3，− → B+1
 # ======================================================================================
-def node_15():
+def node_20():
     SIG, OUT, INP = TEAL, C["vout"], BLUE
     with drawing(fontsize=11) as d:
         title(d, (-2.0, 7.0), "一阶有源低通：R 16 kΩ + C 10 nF，LM358 A 组接成跟随器，±9 V（fc ≈ 995 Hz）")
@@ -2182,16 +2182,16 @@ def node_15():
         )
         for k, line in enumerate(notes):
             note(d, (-20.0, -6.6 - 0.6 * k), line)
-    print("[图 15-p4-3] ±9 V；R h20–h24、C j20–GND、g16–g20、g14–g15、h14–h8、1 kΩ i8–i4；耳机 j4、手机 j24")
-    save_schem(d, "15", "15_p4_3_schem_lab.png")
+    print("[图 20-p4-3] ±9 V；R h20–h24、C j20–GND、g16–g20、g14–g15、h14–h8、1 kΩ i8–i4；耳机 j4、手机 j24")
+    save_schem(d, "20", "20_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 16 振荡器：图 16-p4-1（16_p4_1_breadboard.png）→ 图 16-p4-3
-# 面包板连线依据 code/figs/16_figs.py：LM358 1–4 脚 f14–f17、8–5 脚 e14–e17；a14→+5 V，j17→GND；a17→GND，c15–c16；
+# 24 振荡器：图 24-p4-1（24_p4_1_breadboard.png）→ 图 24-p4-3
+# 面包板连线依据 code/figs/24_figs.py：LM358 1–4 脚 f14–f17、8–5 脚 e14–e17；a14→+5 V，j17→GND；a17→GND，c15–c16；
 #   g14–g11（橙）；R h11–h15；C j15–B-15；Rc i11–i16；Ra h16–h20 + j20→+5 V；g16–g22；Rb h22–h26 + j26→GND；
 #   10 µF j11(+)–j7；1 kΩ i7–i3；T-29–B-29，T+30–B+30；电源 + → T+1，GND → T-3；耳机 → j3，地 → B-1
 # ======================================================================================
-def node_16():
+def node_24():
     SIG, OUT = TEAL, C["vout"]
     with drawing(fontsize=11) as d:
         title(d, (0.0, 6.6), "弛张振荡器：R 10 kΩ + C 100 nF 定时，Ra、Rb、Rc 三只 10 kΩ 定门限，LM358 A 组，5 V 单电源")
@@ -2281,16 +2281,16 @@ def node_16():
         )
         for k, line in enumerate(notes):
             note(d, (-15.0, -8.6 - 0.6 * k), line)
-    print("[图 16-p4-3] 5 V；g14–g11、R h11–h15、C j15–GND、Rc i11–i16、Ra h16–h20、g16–g22、Rb h22–h26；10 µF j11–j7、1 kΩ i7–i3、耳机 j3")
-    save_schem(d, "16", "16_p4_3_schem_lab.png")
+    print("[图 24-p4-3] 5 V；g14–g11、R h11–h15、C j15–GND、Rc i11–i16、Ra h16–h20、g16–g22、Rb h22–h26；10 µF j11–j7、1 kΩ i7–i3、耳机 j3")
+    save_schem(d, "24", "24_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 17 自锁：图 17-p4-1（17_p4_1_breadboard.png）→ 图 17-p4-3
-# 面包板连线依据 code/figs/17_figs.py：继电器 1 COM1 f12、2 NO1 f13、3 线圈+ f14、4 NC1 f15；8 线圈− e12、7 COM2 e13、6 NO2 e14、5 NC2 e15；
+# 04 自锁：图 04-p4-1（04_p4_1_breadboard.png）→ 图 04-p4-3
+# 面包板连线依据 code/figs/04_figs.py：继电器 1 COM1 f12、2 NO1 f13、3 线圈+ f14、4 NC1 f15；8 线圈− e12、7 COM2 e13、6 NO2 e14、5 NC2 e15；
 #   a12→0 V；g13–g14；1N4007 B-14(阳)–j14(阴)；HL1 h14–h19 + j19→0 V；a13→+12 V；M c14–c19 + a19→0 V；HL2 b15–b24 + a24→0 V；
 #   B+3 → SB1 → i12；SB2 j12–j13；T+29–B+29，T-30–B-30；电源 + → T+1，− → T-3
 # ======================================================================================
-def node_17():
+def node_04():
     SIG, POS = TEAL, "#D55E00"
     yT, yB = 5.0, -5.0
     with drawing(fontsize=11) as d:
@@ -2382,18 +2382,18 @@ def node_17():
         )
         for k, line in enumerate(notes):
             note(d, (-14.0, -6.9 - 0.6 * k), line)
-    print("[图 17-p4-3] +12 V→SB1(B+3→i12)→COM1→SB2(j12–j13)∥KA NO1→g13–g14→线圈+(f14)→线圈−(e12)→a12→0 V；1N4007、HL1 并在线圈；a13→COM2→NO2→M、NC2→HL2")
-    save_schem(d, "17", "17_p4_3_schem_lab.png")
+    print("[图 04-p4-3] +12 V→SB1(B+3→i12)→COM1→SB2(j12–j13)∥KA NO1→g13–g14→线圈+(f14)→线圈−(e12)→a12→0 V；1N4007、HL1 并在线圈；a13→COM2→NO2→M、NC2→HL2")
+    save_schem(d, "04", "04_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 18 互锁：图 18-p4-1（18_p4_1_breadboard.png）→ 图 18-p4-3
-# 面包板连线依据 code/figs/18_figs.py：KA1 第 6 列（f6 COM1、f7 NO1、f8 线圈+、f9 NC1；e6 线圈−、e7 COM2、e8 NO2、e9 NC2），KA2 第 30 列同理；
+# 11 互锁：图 11-p4-1（11_p4_1_breadboard.png）→ 图 11-p4-3
+# 面包板连线依据 code/figs/11_figs.py：KA1 第 6 列（f6 COM1、f7 NO1、f8 线圈+、f9 NC1；e6 线圈−、e7 COM2、e8 NO2、e9 NC2），KA2 第 30 列同理；
 #   a6、a30→0 V；j6、j30→下边「+12 V 经 SB1」；SB2 i6–i7，SB3 i30–i31；VD1 B-8(阳)–j8(阴)，VD2 B-32–j32；HL1 h8–h3 + j3→0 V，HL2 g32–g37 + j37→0 V；
 #   KA1 回路（蓝）g7→g12→d12→c12→c33（KA2 NC2）…b31（KA2 COM2）→b14→d14→f14→i14→i8；
 #   KA2 回路（紫）g31→g26→d26→a26→a9（KA1 NC2）…b7（KA1 COM2）→b10→d10→f10→h10→h32；
 #   电源 − → T-3，+ → SB1 → T+11；T+39–B+39，T-40–B-40
 # ======================================================================================
-def node_18():
+def node_11():
     POS, MAG, GR = "#D55E00", PURPLE, "#737373"
     yT, yB, yc, yn, y14 = 5.6, -5.6, 3.4, 1.2, -2.4
     with drawing(fontsize=11) as d:
@@ -2501,18 +2501,18 @@ def node_18():
         )
         for k, line in enumerate(notes):
             note(d, (-15.5, -7.3 - 0.6 * k), line)
-    print("[图 18-p4-3] +12 V 经 SB1 → COM1 → (SB2∥KA1 NO1) → KA2 NC2(c33…b31) → KA1 线圈+(j8)；KA2 同理经 KA1 NC2(a9…b7) → j32")
-    save_schem(d, "18", "18_p4_3_schem_lab.png")
+    print("[图 11-p4-3] +12 V 经 SB1 → COM1 → (SB2∥KA1 NO1) → KA2 NC2(c33…b31) → KA1 线圈+(j8)；KA2 同理经 KA1 NC2(a9…b7) → j32")
+    save_schem(d, "11", "11_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 19 星三角：图 19-p4-1（19_p4_1_breadboard.png）→ 图 19-p4-3
-# 面包板连线依据 code/figs/19_figs.py：KM 第 8 列、KM△ 第 18 列、KMY 第 32 列（下排 COM1、NO1、线圈+、NC1，上排 线圈−、COM2、NO2、NC2）；
+# 15 星三角：图 15-p4-1（15_p4_1_breadboard.png）→ 图 15-p4-3
+# 面包板连线依据 code/figs/15_figs.py：KM 第 8 列、KM△ 第 18 列、KMY 第 32 列（下排 COM1、NO1、线圈+、NC1，上排 线圈−、COM2、NO2、NC2）；
 #   a8、a18、a32→0 V；j8→「+12 V 经 SB1」；SB2 i8–i9；g9–g10；公共点 C：i10→i13、f13→d13、a13→上边外侧轨；
 #   KM△ COM1：h18→h15、f15→d15、a15→C；COM2：a19→C；X = KM△ NC2（第 21 列上）= KT V+ a21 = KT COM a22（b21–b22）；KT V−→0 V；
 #   Y：KT NO a28→d28…f28，g19→g28，i28→i32（KMY COM1）；Z：h35（KMY NC1）→h20（KM△ 线圈+）；W：KT NC a36→d36…f36→i36→i34（KMY 线圈+）；
 #   VD1 j10、VD2 j20、VD3 j34；HL1 h10–h5、HL3 i20–i25、HL2 g34–g39；电源 −→B-12，+→SB1→B+17；T-40–B-40
 # ======================================================================================
-def node_19():
+def node_15():
     RED, MAG, ORG, GR = "#D55E00", PURPLE, C["vout"], "#737373"
     yT, yB, yc, yC, yX, yY, yZ = 7.0, -7.5, 5.4, 3.2, 1.0, -1.4, -3.6
     fsl = 9
@@ -2647,15 +2647,15 @@ def node_19():
         )
         for k, line in enumerate(notes):
             note(d, (-18.5, -8.9 - 0.6 * k), line)
-    print("[图 19-p4-3] SB1→COM1(j8)→SB2∥KM NO1→C；C→KM△ NC2→X→KT(V+、COM)；KT NC→W→KMY；KT NO∥KM△ NO1→Y→KMY NC1→Z→KM△")
-    save_schem(d, "19", "19_p4_3_schem_lab.png")
+    print("[图 15-p4-3] SB1→COM1(j8)→SB2∥KM NO1→C；C→KM△ NC2→X→KT(V+、COM)；KT NC→W→KMY；KT NO∥KM△ NO1→Y→KMY NC1→Z→KM△")
+    save_schem(d, "15", "15_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 20 双控开关：图 20-p4-1（20_p4_1_breadboard.png）→ 图 20-p4-3
-# 面包板连线依据 code/figs/20_figs.py：S1 f5(1)、f6(COM)、f7(2)；S2 f15(1)、f16(COM)、f17(2)；
+# 27 双控开关：图 27-p4-1（27_p4_1_breadboard.png）→ 图 27-p4-3
+# 面包板连线依据 code/figs/27_figs.py：S1 f5(1)、f6(COM)、f7(2)；S2 f15(1)、f16(COM)、f17(2)；
 #   跨线 A g5→g17（蓝）；跨线 B h7→h15（绿）；j6→B+（+9 V，红）；R1 i16–i21；LED h21(+)–h24；j24→B−（黑）
 # ======================================================================================
-def node_20():
+def node_27():
     RED, GRN, MAG = "#D55E00", TEAL, PURPLE
 
     with drawing(fontsize=11) as d:
@@ -2718,10 +2718,10 @@ def node_20():
         )
         for k, line in enumerate(notes):
             note(d, (-1.5, -4.6 - 0.6 * k), line)
-    print("[图 20-p4-3] +9 V→S1 COM(f6)；S1 1(f5)─A─S2 2(f17)，S1 2(f7)─B─S2 1(f15)；S2 COM(f16)→R1→M(第21列)→LED→0 V")
-    save_schem(d, "20", "20_p4_3_schem_lab.png")
-    # ---------------- 图 20-p4-4：三地控制扩展（20_p4_2_three_way.png）----------------
-    # 依据 20_figs.py：S1 f5(1)、f6(COM)、f7(2)；跨线 A g5→g14（入1），B h7→h16（入2）；中途开关引线 j14 入1、j16 入2、j20 出1、j22 出2（紫）；
+    print("[图 27-p4-3] +9 V→S1 COM(f6)；S1 1(f5)─A─S2 2(f17)，S1 2(f7)─B─S2 1(f15)；S2 COM(f16)→R1→M(第21列)→LED→0 V")
+    save_schem(d, "27", "27_p4_3_schem_lab.png")
+    # ---------------- 图 27-p4-4：三地控制扩展（27_p4_2_three_way.png）----------------
+    # 依据 27_figs.py：S1 f5(1)、f6(COM)、f7(2)；跨线 A g5→g14（入1），B h7→h16（入2）；中途开关引线 j14 入1、j16 入2、j20 出1、j22 出2（紫）；
     #   跨线 C g20→g31（出1→S3 的 2），D h22→h29（出2→S3 的 1）；S3 f29(1)、f30(COM)、f31(2)；R1 i30–i34；LED h34(+)–h37；j37→0 V；j6→+9 V
     with drawing(fontsize=11) as d:
         title(d, (10.0, 4.8), "三地控制（低压版）：S1、S3 两只三脚拨动开关，中间加中途开关 S2")
@@ -2796,15 +2796,15 @@ def node_20():
         )
         for k, line in enumerate(notes):
             note(d, (-1.5, -4.8 - 0.6 * k), line)
-    print("[图 20-p4-4] +9 V→S1 COM；A、B→中途开关入1、入2；出1、出2→C、D→S3 的 2、1；S3 COM→R1→LED→0 V")
-    save_schem(d, "20", "20_p4_4_schem_lab.png")
+    print("[图 27-p4-4] +9 V→S1 COM；A、B→中途开关入1、入2；出1、出2→C、D→S3 的 2、1；S3 COM→R1→LED→0 V")
+    save_schem(d, "27", "27_p4_4_schem_lab.png")
 
 # ======================================================================================
-# 21 MOS 管开关：图 21-p4-1（21_p4_1_breadboard.png）→ 图 21-p4-3
-# 面包板连线依据 code/figs/21_figs.py fig_p4_1：IRLZ44N G a15、D a16、S a17；R_G b11–b15；R_GS e15–f15，j15→GND；e17→GND；
+# 06 MOS 管开关：图 06-p4-1（06_p4_1_breadboard.png）→ 图 06-p4-3
+# 面包板连线依据 code/figs/06_figs.py fig_p4_1：IRLZ44N G a15、D a16、S a17；R_G b11–b15；R_GS e15–f15，j15→GND；e17→GND；
 #   LED 阳极 d21、阴极 d16；220 Ω a21–上边 +5 V 轨；电位器 f5(1)、f6(滑臂)、f7(3)，j5→+5 V，j7→GND，蓝线 i6→c11
 # ======================================================================================
-def node_21():
+def node_06():
     RED = "#D55E00"
     yP, yN = 6.4, -4.2
     with drawing(fontsize=11) as d:
@@ -2873,16 +2873,16 @@ def node_21():
         )
         for k, line in enumerate(notes):
             note(d, (-3.0, -5.4 - 0.6 * k), line)
-    print("[图 21-p4-3] 滑臂(f6)→蓝线→驱动(第11列)→R_G→G(a15)；R_GS→GND；+5 V→220 Ω→A(第21列)→LED→D(a16)；S(a17)→GND")
-    save_schem(d, "21", "21_p4_3_schem_lab.png")
+    print("[图 06-p4-3] 滑臂(f6)→蓝线→驱动(第11列)→R_G→G(a15)；R_GS→GND；+5 V→220 Ω→A(第21列)→LED→D(a16)；S(a17)→GND")
+    save_schem(d, "06", "06_p4_3_schem_lab.png")
 
 # ======================================================================================
-# 22 三极管驱动继电器：图 22-p4-1（22_p4_1_breadboard.png）→ 图 22-p4-2
-# 面包板连线依据 code/figs/22_figs.py fig_p4_1：2N3904 E a15、B a16、C a17；e15→GND；R_B b11–b16；D1 阳极 d17、阴极 d22；
+# 07 三极管驱动继电器：图 07-p4-1（07_p4_1_breadboard.png）→ 图 07-p4-2
+# 面包板连线依据 code/figs/07_figs.py fig_p4_1：2N3904 E a15、B a16、C a17；e15→GND；R_B b11–b16；D1 阳极 d17、阴极 d22；
 #   a22→+5 V 轨；线圈 1 ← c22、线圈 2 ← e17（绿线）；电位器 f5/f6/f7，j5→+5 V，j7→GND，蓝线 i6→c11；
 #   触点侧（橙线，板外）：12 V+ → 小灯泡 → NO，COM → 12 V−，NC 悬空
 # ======================================================================================
-def node_22():
+def node_07():
     RED, ORG = "#D55E00", C["vout"]
     yP, yN = 7.8, -4.2
     with drawing(fontsize=11) as d:
@@ -2992,8 +2992,8 @@ def node_22():
         )
         for k, line in enumerate(notes):
             note(d, (-3.0, -5.4 - 0.6 * k), line)
-    print("[图 22-p4-2] 滑臂(f6)→蓝线→驱动(第11列)→R_B→B(a16)；E(a15)→GND；+5 V→a22→+5(第22列)→线圈→C(a17)；D1 阳极 d17、阴极 d22；12 V+→灯泡→NO，COM→12 V−")
-    save_schem(d, "22", "22_p4_2_schem_lab.png")
+    print("[图 07-p4-2] 滑臂(f6)→蓝线→驱动(第11列)→R_B→B(a16)；E(a15)→GND；+5 V→a22→+5(第22列)→线圈→C(a17)；D1 阳极 d17、阴极 d22；12 V+→灯泡→NO，COM→12 V−")
+    save_schem(d, "07", "07_p4_2_schem_lab.png")
 
 # ======================================================================================
 # 23 光耦隔离（PC817）：图 23-p4-1 → 图 23-p4-3
@@ -3097,12 +3097,12 @@ def node_23():
 
 
 # ======================================================================================
-# 24 隔离电源（B0505S）：图 24-p4-1 → 图 24-p4-3
-# 依据 code/figs/24_figs.py 的 fig_p4_1()：上两条轨 = +5 V / GND（输入侧），下两条轨 = 0V / +Vo（隔离侧），上下两组轨不相连
+# 28 隔离电源（B0505S）：图 28-p4-1 → 图 28-p4-3
+# 依据 code/figs/28_figs.py 的 fig_p4_1()：上两条轨 = +5 V / GND（输入侧），下两条轨 = 0V / +Vo（隔离侧），上下两组轨不相连
 #   B0505S 1 脚 GND c8、2 脚 Vin c9、3 脚 0V c10、4 脚 +Vo c11；黑线 a8→GND 轨，红线 a9→+5 V 轨；C_in 4.7 μF 第 4 列（两条上方轨之间）
 #   紫线 e10→f10、j10→0V 轨；绿线 e11→f11、j11→+Vo 轨；C_out 10 μF 第 14 列、R_L 第 20 列（两条下方轨之间）；A/B 在上方轨第 13 列，C/D 在下方轨第 26 列
 # ======================================================================================
-def node_24():
+def node_28():
     RED, GRN = C["bad"], C["fb"]
     yP, yN = 4.6, -2.2
     with drawing(fontsize=11) as d:
@@ -3177,12 +3177,12 @@ def node_24():
         )
         for k, line in enumerate(notes):
             note(d, (-13.5, -4.0 - 0.6 * k), line)
-    print("[图 24-p4-3] +5 V 轨→红线 a9→2 脚 Vin c9；1 脚 GND c8→黑线 a8→GND 轨；C_in 第 4 列；4 脚 +Vo c11→绿线 e11/f11/j11→+Vo 轨；"
+    print("[图 28-p4-3] +5 V 轨→红线 a9→2 脚 Vin c9；1 脚 GND c8→黑线 a8→GND 轨；C_in 第 4 列；4 脚 +Vo c11→绿线 e11/f11/j11→+Vo 轨；"
           "3 脚 0V c10→紫线 e10/f10/j10→0V 轨；C_out 第 14 列、R_L 第 20 列；A/B 第 13 列，C/D 第 26 列")
-    save_schem(d, "24", "24_p4_3_schem_lab.png")
+    save_schem(d, "28", "28_p4_3_schem_lab.png")
 
 
-def node_25():
+def node_26():
     RED, BLU, ORG = C["bad"], C["vin"], C["vout"]
     yP, yG, yB = 7.5, -2.5, -4.5
     with drawing(fontsize=11) as d:
@@ -3279,15 +3279,15 @@ def node_25():
         )
         for k, line in enumerate(notes):
             note(d, (-7.5, -5.6 - 0.6 * k), line)
-    print("[图 25-p4-3] f6/f12/f18 → ENA/IN1/IN2（6/5/7 脚）；i6、i12 → +5 V 轨，i18 → GND 轨；Arduino 5V → +5 V 轨与 +5V 端子；"
+    print("[图 26-p4-3] f6/f12/f18 → ENA/IN1/IN2（6/5/7 脚）；i6、i12 → +5 V 轨，i18 → GND 轨；Arduino 5V → +5 V 轨与 +5V 端子；"
           "GND 三处共地；6 V 电池 → +12V/GND 端子；OUT1/OUT2 → 电机")
-    save_schem(d, "25", "25_p4_3_schem_lab.png")
+    save_schem(d, "26", "26_p4_3_schem_lab.png")
 
 
-def node_26():
+def node_29():
     import schemdraw.logic as _lg
     ORG, BLU, GRN = C["vout"], C["vin"], C["fb"]
-    # ================= 图 26-p4-3：慢动作去抖（对应 26-p4-1） =================
+    # ================= 图 29-p4-3：慢动作去抖（对应 29-p4-1） =================
     yP, yG = 6.0, -3.0
     with drawing(fontsize=11) as d:
         title(d, (6.5, 7.6), "慢动作去抖：5 V 经 R1 到 A 点，按键从 A 接地；A 经 R2 到 B 点，B 点对地接 C1 并送进 74HC14 的 1 脚")
@@ -3372,11 +3372,11 @@ def node_26():
         )
         for k, line in enumerate(notes):
             note(d, (-7.0, -4.4 - 0.6 * k), line)
-    print("[图 26-p4-3] R1 tp8–a9；K1 c7–c9、a7→0 V；A=第 9 列；R2 g9–g13；C1 j13(+)–0 V；1 脚 f13=B；i9→i15 到 3 脚；"
+    print("[图 29-p4-3] R1 tp8–a9；K1 c7–c9、a7→0 V；A=第 9 列；R2 g9–g13；C1 j13(+)–0 V；1 脚 f13=B；i9→i15 到 3 脚；"
           "2 脚→h14→h21→R3→LED1 j25；4 脚→i16→i27→R4→LED2 j29；14 脚 a13→5 V，7 脚 j19→0 V，5/9/11/13 脚接地")
-    save_schem(d, "26", "26_p4_3_schem_lab.png")
+    save_schem(d, "29", "29_p4_3_schem_lab.png")
 
-    # ================= 图 26-p4-4：BSS138 电平转换（对应 26-p4-2） =================
+    # ================= 图 29-p4-4：BSS138 电平转换（对应 29-p4-2） =================
     yP, yG = 6.0, -3.0
     with drawing(fontsize=11) as d:
         title(d, (5.0, 7.6), "BSS138 双向电平转换：栅极接 3.3 V，源极接 L 线（3.3 V 侧），漏极接 H 线（5 V 侧）")
@@ -3437,41 +3437,41 @@ def node_26():
         )
         for k, line in enumerate(notes):
             note(d, (-7.0, -4.4 - 0.6 * k), line)
-    print("[图 26-p4-4] G e13←a13←3.3 V；S e14←d14←d6=L；D e15→c15→g19=H；RPL b2–b6（a2→3.3 V）；RPH h19–h23（j23→5 V）；拉低线 a6、j19")
-    save_schem(d, "26", "26_p4_4_schem_lab.png")
+    print("[图 29-p4-4] G e13←a13←3.3 V；S e14←d14←d6=L；D e15→c15→g19=H；RPL b2–b6（a2→3.3 V）；RPH h19–h23（j23→5 V）；拉低线 a6、j19")
+    save_schem(d, "29", "29_p4_4_schem_lab.png")
 
 
 # ---------------- 登记表：键 = 节点编号（与 save_schem 的 prefix 相同） ----------------
 NODES = {
-    "P1": node_P1,
-    "P2": node_P2,
-    "P3": node_P3,
     "01": node_01,
-    "02": node_02,
     "03": node_03,
-    "04": node_04,
+    "02": node_02,
     "05": node_05,
+    "08": node_08,
+    "12": node_12,
+    "16": node_16,
+    "09": node_09,
+    "13": node_13,
+    "19": node_19,
+    "21": node_21,
+    "25": node_25,
+    "17": node_17,
+    "22": node_22,
+    "14": node_14,
+    "18": node_18,
+    "10": node_10,
+    "20": node_20,
+    "24": node_24,
+    "04": node_04,
+    "11": node_11,
+    "15": node_15,
+    "27": node_27,
     "06": node_06,
     "07": node_07,
-    "08": node_08,
-    "09": node_09,
-    "10": node_10,
-    "11": node_11,
-    "12": node_12,
-    "13": node_13,
-    "14": node_14,
-    "15": node_15,
-    "16": node_16,
-    "17": node_17,
-    "18": node_18,
-    "19": node_19,
-    "20": node_20,
-    "21": node_21,
-    "22": node_22,
     "23": node_23,
-    "24": node_24,
-    "25": node_25,
+    "28": node_28,
     "26": node_26,
+    "29": node_29,
 }
 
 

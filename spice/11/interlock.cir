@@ -1,0 +1,161 @@
+* 11 互锁：低压版（12 V 继电器代替接触器）正反转控制回路
+* 核对：page1 图11-p1-3；page2 图11-p2-2、图11-p2-3、§双重互锁换向空档、例1；page3 §1 图11-p3-1 与练习1、§2 图11-p3-2 熔焊、练习2、练习4
+* 不仿真 380 V 主电路和电动机（市电，按规则跳过）；主电路「相间短路」用 KM1、KM2 主触点同时闭合的时长表示。
+* 继电器行为模型：线圈 400 Ω（假设）；线圈电压/12 V 经 τ=10 ms RC 后进入带回差的开关。
+*   吸合门限 VP、释放门限 VD 由 run.py 按页面的吸合时间 tp、释放时间 td 算出：VP=1-exp(-tp/τ)，VD=exp(-td/τ)
+*   默认 tp=20 ms、td=10 ms（page2 取值）→ VP=0.8647、VD=0.3679（落在手册 0.85 吸合 / 0.3～0.6 释放的范围内）
+* 四套回路共用按钮：N=不互锁，E=接触器互锁，D=双重互锁，B=只做按钮互锁；另有 Q=顺序控制（练习4，KM2 串 KM1 常开）
+* WELD：KM1 主触点与镜像的辅助触点熔焊（1 = 粘死在吸合位置）
+*@def VT1=0.6163
+*@def VH1=0.2484
+*@def VT2=0.6163
+*@def VH2=0.2484
+*@def SB1=0 0
+*@def SB2=0 0
+*@def SB3=0 0
+*@def SB4=0 0
+*@def WELD=0 0
+*@def TSTOP=9
+.model SWN SW(VT=0.5 VH=0.01 RON=0.01 ROFF=1e9)
+.model SWK1 SW(VT=@VT1@ VH=@VH1@ RON=1 ROFF=1e9)
+.model SWK2 SW(VT=@VT2@ VH=@VH2@ RON=1 ROFF=1e9)
+VS vs 0 12
+VONE one 0 1
+VSB1 s1 0 PWL(@SB1@)
+VSB2 s2 0 PWL(@SB2@)
+VSB3 s3 0 PWL(@SB3@)
+VSB4 s4 0 PWL(@SB4@)
+VWELD weld 0 PWL(@WELD@)
+Bn1 ns1 0 V=1-v(s1)
+Bn2 ns2 0 V=1-v(s2)
+Bn3 ns3 0 V=1-v(s3)
+* ---------- 回路 N
+BAN1 aN1 0 V=max(v(aN1r),v(weld))
+BAN2 aN2 0 V=v(aN2r)
+BNN1 naN1 0 V=1-v(aN1)
+BNN2 naN2 0 V=1-v(aN2)
+SN0 vs Nx ns1 0 SWN
+SN11 Nx Ny1 s2 0 SWN
+SN12 Nx Ny1 aN1 0 SWN
+RN13 Ny1 Nz1 0.01
+RN14 Nz1 Nc1 0.01
+SN21 Nx Ny2 s3 0 SWN
+SN22 Nx Ny2 aN2 0 SWN
+RN23 Ny2 Nz2 0.01
+RN24 Nz2 Nc2 0.01
+RCN1 Nc1 0 400
+BFN1 fN10 0 V=v(Nc1)/12
+RFN1 fN10 fN1 10k
+CFN1 fN1 0 1u IC=0
+SAN1 one aN1r fN1 0 SWK1
+RAN1 aN1r 0 1k
+RCN2 Nc2 0 400
+BFN2 fN20 0 V=v(Nc2)/12
+RFN2 fN20 fN2 10k
+CFN2 fN2 0 1u IC=0
+SAN2 one aN2r fN2 0 SWK2
+RAN2 aN2r 0 1k
+* ---------- 回路 E
+BAE1 aE1 0 V=max(v(aE1r),v(weld))
+BAE2 aE2 0 V=v(aE2r)
+BNE1 naE1 0 V=1-v(aE1)
+BNE2 naE2 0 V=1-v(aE2)
+SE0 vs Ex ns1 0 SWN
+SE11 Ex Ey1 s2 0 SWN
+SE12 Ex Ey1 aE1 0 SWN
+RE13 Ey1 Ez1 0.01
+SE14 Ez1 Ec1 naE2 0 SWN
+SE21 Ex Ey2 s3 0 SWN
+SE22 Ex Ey2 aE2 0 SWN
+RE23 Ey2 Ez2 0.01
+SE24 Ez2 Ec2 naE1 0 SWN
+RCE1 Ec1 0 400
+BFE1 fE10 0 V=v(Ec1)/12
+RFE1 fE10 fE1 10k
+CFE1 fE1 0 1u IC=0
+SAE1 one aE1r fE1 0 SWK1
+RAE1 aE1r 0 1k
+RCE2 Ec2 0 400
+BFE2 fE20 0 V=v(Ec2)/12
+RFE2 fE20 fE2 10k
+CFE2 fE2 0 1u IC=0
+SAE2 one aE2r fE2 0 SWK2
+RAE2 aE2r 0 1k
+* ---------- 回路 D
+BAD1 aD1 0 V=max(v(aD1r),v(weld))
+BAD2 aD2 0 V=v(aD2r)
+BND1 naD1 0 V=1-v(aD1)
+BND2 naD2 0 V=1-v(aD2)
+SD0 vs Dx ns1 0 SWN
+SD11 Dx Dy1 s2 0 SWN
+SD12 Dx Dy1 aD1 0 SWN
+SD13 Dy1 Dz1 ns3 0 SWN
+SD14 Dz1 Dc1 naD2 0 SWN
+SD21 Dx Dy2 s3 0 SWN
+SD22 Dx Dy2 aD2 0 SWN
+SD23 Dy2 Dz2 ns2 0 SWN
+SD24 Dz2 Dc2 naD1 0 SWN
+RCD1 Dc1 0 400
+BFD1 fD10 0 V=v(Dc1)/12
+RFD1 fD10 fD1 10k
+CFD1 fD1 0 1u IC=0
+SAD1 one aD1r fD1 0 SWK1
+RAD1 aD1r 0 1k
+RCD2 Dc2 0 400
+BFD2 fD20 0 V=v(Dc2)/12
+RFD2 fD20 fD2 10k
+CFD2 fD2 0 1u IC=0
+SAD2 one aD2r fD2 0 SWK2
+RAD2 aD2r 0 1k
+* ---------- 回路 B
+BAB1 aB1 0 V=max(v(aB1r),v(weld))
+BAB2 aB2 0 V=v(aB2r)
+BNB1 naB1 0 V=1-v(aB1)
+BNB2 naB2 0 V=1-v(aB2)
+SB0 vs Bx ns1 0 SWN
+SB11 Bx By1 s2 0 SWN
+SB12 Bx By1 aB1 0 SWN
+SB13 By1 Bz1 ns3 0 SWN
+RB14 Bz1 Bc1 0.01
+SB21 Bx By2 s3 0 SWN
+SB22 Bx By2 aB2 0 SWN
+SB23 By2 Bz2 ns2 0 SWN
+RB24 Bz2 Bc2 0.01
+RCB1 Bc1 0 400
+BFB1 fB10 0 V=v(Bc1)/12
+RFB1 fB10 fB1 10k
+CFB1 fB1 0 1u IC=0
+SAB1 one aB1r fB1 0 SWK1
+RAB1 aB1r 0 1k
+RCB2 Bc2 0 400
+BFB2 fB20 0 V=v(Bc2)/12
+RFB2 fB20 fB2 10k
+CFB2 fB2 0 1u IC=0
+SAB2 one aB2r fB2 0 SWK2
+RAB2 aB2r 0 1k
+* ---------- 回路 Q：顺序控制（练习4）。KM1：SB1 停/SB2 启；KM2：SB3 停/SB4 启，并串 KM1 常开
+SQ0 vs Qx ns1 0 SWN
+SQ11 Qx Qc1 s2 0 SWN
+SQ12 Qx Qc1 aQ1r 0 SWN
+SQ20 vs Qx2 ns3 0 SWN
+SQ21 Qx2 Qy2 s4 0 SWN
+SQ22 Qx2 Qy2 aQ2r 0 SWN
+SQ23 Qy2 Qc2 aQ1r 0 SWN
+RCQ1 Qc1 0 400
+BFQ1 fQ10 0 V=v(Qc1)/12
+RFQ1 fQ10 fQ1 10k
+CFQ1 fQ1 0 1u IC=0
+SAQ1 one aQ1r fQ1 0 SWK1
+RAQ1 aQ1r 0 1k
+RCQ2 Qc2 0 400
+BFQ2 fQ20 0 V=v(Qc2)/12
+RFQ2 fQ20 fQ2 10k
+CFQ2 fQ2 0 1u IC=0
+SAQ2 one aQ2r fQ2 0 SWK2
+RAQ2 aQ2r 0 1k
+.control
+tran 0.2m @TSTOP@ 0 0.2m uic
+wrdata il.txt v(aN1) v(aN2) v(aE1) v(aE2) v(aD1) v(aD2) v(aB1) v(aB2) v(Ec1) v(Ec2) v(Dc1) v(Bc1) v(aQ1r) v(aQ2r)
+echo "RESULT done 1"
+.endc
+.end

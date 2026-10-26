@@ -1,89 +1,80 @@
-"""14 仿真：带噪声的慢变输入分别送进「普通比较器」和「施密特比较器（同相回差）」，比较输出翻转次数。
-运行：/workspace/circuits-venv/bin/python code/14_sim.py   → 14-voltage-comparator/img/14_p2_2_noise_compare.png
+"""14 仿真：反相积分器。方波输入 → 三角波输出；输入带一点直流偏置时，理想积分器慢慢漂到饱和，
+并联 R_f 的实用积分器则停在一个固定的直流电平上。
+运行：/workspace/circuits-venv/bin/python code/14_sim.py   → 14-integrator/img/14_p2_3_drift.png
 page2 的代码块是本文件的精简版（不依赖 figstyle）；code/figs/14_figs.py 会调用这里的函数。
-电路：5 V 单电源，开集电极比较器（如 LM393）+ 上拉电阻 R3；V_ref = 2.5 V 接反相端；
-      输入经 R1 接同相端，R2 从输出接回同相端（正反馈）。温度传感器按示意值 0.1 V/°C（25 °C 对应 2.5 V）。
+模型：理想运放（虚短、虚断），输出被限制在 ±13.5 V（±15 V 供电的示意值，见 02）。
+    电容电流 = 输入电流 − 流过 R_f 的电流： C·ΔV_o/Δt = −V_in/R − V_o/R_f
 """
 import os, sys
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), "figs"))
 import numpy as np
 
-VCC = 5.0          # 电源与上拉电压（V）
-VREF = 2.5         # 反相端基准电压（V）
-R1 = 10e3          # 输入电阻（Ω）
-R2 = 100e3         # 正反馈电阻（Ω）
-R3 = 2.2e3         # 上拉电阻（Ω），输出为高时与 R2 串联
+R = 10e3           # 输入电阻（Ω）
+C = 100e-9         # 反馈电容（F）→ RC = 1 ms
+RF = 1e6           # 实用积分器并联在电容上的电阻（Ω）
+VSAT = 13.5        # 输出上下限（V）
+F_SQ = 500.0       # 方波频率（Hz），半周期 1 ms
+OFFSET = 0.02      # 输入里混入的直流偏置（V）
 
 
-def thresholds(vref=VREF, r1=R1, r2=R2, vpu=VCC, r3=R3):
-    """同相施密特比较器的上、下门限（输出低电平按 0 V）。
-    上门限 V_H：输出为低（0 V）时，输入要把同相端抬到 V_ref： V_H = V_ref (R1 + R2) / R2
-    下门限 V_L：输出为高时，R2 + R3 这一路接到 V_pu，用叠加原理解出 V_L。"""
-    v_h = vref * (r1 + r2) / r2
-    r2h = r2 + r3
-    v_l = (vref * (r1 + r2h) - vpu * r1) / r2h
-    return v_h, v_l
+def square(t, f=F_SQ, amp=1.0, offset=0.0):
+    """±amp 的方波，先正后负，再加上直流偏置。"""
+    return np.where((t * f) % 1.0 < 0.5, amp, -amp) + offset
 
 
-def make_input(sigma=0.04, seed=1, t_end=20.0, dt=1e-2):
-    """慢慢升温再降温的传感器电压（2.0 V → 3.0 V → 2.0 V，三角形）加上高斯噪声。"""
-    t = np.arange(0, t_end, dt)
-    clean = 2.0 + 1.0 * (1 - np.abs(t - t_end / 2) / (t_end / 2))
-    rng = np.random.default_rng(seed)
-    return t, clean, clean + sigma * rng.standard_normal(len(t))
+def integrate(t, vin, r=R, c=C, rf=None, vsat=VSAT, v0=0.0):
+    """逐小段计算积分器输出。rf=None 表示理想积分器（没有并联电阻）。"""
+    dt = t[1] - t[0]
+    vo = np.empty_like(vin)
+    v = v0
+    g = 0.0 if rf is None else 1.0 / rf
+    for k in range(len(t)):
+        vo[k] = v
+        i_c = -vin[k] / r - v * g          # 流进电容（从虚地流向输出一侧）的电流
+        v = v + i_c * dt / c               # 电压变化 = 电流 × 时间 ÷ 电容（小段面积 ÷ C）
+        v = min(max(v, -vsat), vsat)       # 输出顶到电源附近就不能再变
+    return vo
 
 
-def comp_plain(vin, vref=VREF):
-    """普通比较器（开环）：V+ > V− 输出高（5 V），否则输出低（0 V）。"""
-    return np.where(vin > vref, VCC, 0.0)
-
-
-def comp_schmitt(vin, v_h, v_l, start_high=False):
-    """施密特比较器：输出为低时要超过 V_H 才翻高；输出为高时要低于 V_L 才翻低。"""
-    out = np.empty_like(vin)
-    high = start_high
-    for k, v in enumerate(vin):
-        if not high and v > v_h:
-            high = True
-        elif high and v < v_l:
-            high = False
-        out[k] = VCC if high else 0.0
-    return out
-
-
-def edges(out):
-    """输出跳变次数。"""
-    return int(np.count_nonzero(np.diff(out) != 0))
+def time_to_sat(t, vo, vsat=VSAT):
+    """输出第一次碰到饱和电压的时刻（s），没碰到返回 None。"""
+    idx = np.flatnonzero(np.abs(vo) >= vsat - 1e-9)
+    return None if len(idx) == 0 else float(t[idx[0]])
 
 
 if __name__ == "__main__":
     import matplotlib.pyplot as plt
     import figstyle as fs
-    v_h, v_l = thresholds()
-    t, clean, vin = make_input()
-    o1 = comp_plain(vin)
-    o2 = comp_schmitt(vin, v_h, v_l)
-    n1, n2 = edges(o1), edges(o2)
-    print(f"[数值] 上门限 V_H = {v_h:.3f} V，下门限 V_L = {v_l:.3f} V，回差 = {v_h - v_l:.3f} V")
-    print(f"[数值] 噪声 σ = 40 mV：普通比较器翻转 {n1} 次，施密特比较器翻转 {n2} 次")
-    assert abs(v_h - 2.75) < 1e-9
-    assert n2 == 2, "施密特比较器一升一降只翻转两次"
-    assert n1 > 20, "普通比较器在门限附近反复抖动"
-    fig, axs = plt.subplots(3, 1, figsize=fs.SIZE["tall"], sharex=True,
-                            gridspec_kw=dict(height_ratios=[1.6, 1, 1]))
-    a0, a1, a2 = axs
-    a0.plot(t, vin, **fs.LS["vin"], label="传感器电压 $V_{in}$（含噪声）")
-    a0.plot(t, clean, **fs.LS["good"], label="无噪声时")
-    fs.ref_h(a0, VREF, f"$V_{{ref}}$ {VREF:.1f} V", x=0.01, ha="left")
-    fs.ref_h(a0, v_h, f"$V_H$ {v_h:.2f} V", x=0.01, ha="left")
-    fs.ref_h(a0, v_l, f"$V_L$ {v_l:.2f} V", x=0.01, ha="left")
-    a0.set_ylabel(fs.qlabel("电压", "V")); a0.legend(loc="upper right", fontsize=8)
-    a1.plot(t, o1, **fs.LS["bad"], label=f"普通比较器：翻转 {n1} 次")
-    a1.set_ylabel(fs.qlabel("输出", "V")); a1.legend(loc="center right", fontsize=8); a1.set_ylim(-0.6, 5.9)
-    a2.plot(t, o2, **fs.LS["vout"], label=f"施密特比较器：翻转 {n2} 次")
-    a2.set_ylabel(fs.qlabel("输出", "V")); a2.legend(loc="center right", fontsize=8); a2.set_ylim(-0.6, 5.9)
-    a2.set_xlabel(fs.qlabel("时间", "s"))
-    up = t[np.flatnonzero(np.diff(o2) > 0)[0]]; dn = t[np.flatnonzero(np.diff(o2) < 0)[0]]
-    fs.ref_v(a2, up, f"{up:.2f} s"); fs.ref_v(a2, dn, f"{dn:.2f} s")
-    print(f"[参考线] 施密特输出翻高 {up:.2f} s，翻低 {dn:.2f} s")
-    fs.save(fig, "14", "14_p2_2_noise_compare.png")
+    t = np.arange(0, 1.0, 2e-6)
+    vin = square(t, offset=OFFSET)
+    vo_ideal = integrate(t, vin)
+    vo_prac = integrate(t, vin, rf=RF)
+    ts = time_to_sat(t, vo_ideal)
+    last = t > 0.9                                   # 最后 0.1 s 已稳定
+    mean_p = vo_prac[last].mean()
+    pp_p = vo_prac[last].max() - vo_prac[last].min()
+    print(f"[数值] RC = {R*C*1e3:.1f} ms，方波 ±1 V {F_SQ:.0f} Hz，直流偏置 {OFFSET*1e3:.0f} mV")
+    print(f"[数值] 理想积分器漂移速度 ≈ {OFFSET/(R*C):.0f} V/s，{ts:.3f} s 撞到 −{VSAT} V")
+    print(f"[数值] 并联 R_f = {RF/1e6:.0f} MΩ：稳定后平均 {mean_p:.2f} V，峰峰值 {pp_p:.2f} V；"
+          f"直流理论值 −R_f/R × 偏置 = {-RF/R*OFFSET:.1f} V")
+    assert ts is not None and 0.6 < ts < 0.75
+    assert abs(pp_p - 1.0) < 0.02 and abs(mean_p - (-RF / R * OFFSET)) < 0.1
+    fig, axs = plt.subplots(3, 1, figsize=fs.SIZE["tall"])
+    z = t < 8e-3                                     # 第一行只放大前 8 ms，看清波形形状
+    axs[0].plot(t[z] * 1e3, vin[z], **fs.LS["vin"], label="输入：±1 V 方波（+20 mV 偏置，肉眼看不出）")
+    axs[0].plot(t[z] * 1e3, vo_ideal[z], **fs.LS["vout"], label="理想积分器输出：三角波")
+    axs[0].set_ylabel(fs.qlabel("电压", "V")); axs[0].set_ylim(-1.6, 2.3)
+    axs[0].legend(loc="upper right", fontsize=8, ncol=2); axs[0].set_xlabel(fs.qlabel("时间（放大前 8 ms）", "ms"))
+    tm = t * 1e3
+    axs[1].plot(tm, vo_ideal, **{**fs.LS["bad"], "lw": 0.6, "marker": None}, label="理想积分器（只有 C），1 s 全程")
+    fs.ref_h(axs[1], -VSAT, f"−{VSAT} V 饱和", x=0.45)
+    fs.ref_v(axs[1], ts * 1e3, f"{ts*1e3:.0f} ms 撞到饱和", y=0.6)
+    axs[1].set_ylabel(fs.qlabel("输出", "V")); axs[1].set_ylim(-15, 2.5); axs[1].legend(loc="upper right", fontsize=8)
+    axs[2].plot(tm, vo_prac, **{**fs.LS["vout"], "lw": 0.6}, label="实用积分器（C 旁并 $R_f$ = 1 MΩ），1 s 全程")
+    fs.ref_h(axs[2], mean_p)
+    axs[2].text(500, -3.5, f"三角波的中心稳定在 {mean_p:.2f} V（灰色点线）", ha="center", fontsize=9, color="0.3")
+    axs[2].set_ylabel(fs.qlabel("输出", "V")); axs[2].set_ylim(-4, 1.5); axs[2].legend(loc="upper right", fontsize=8)
+    axs[2].set_xlabel(fs.qlabel("时间", "ms"))
+    print(f"[参考线] 饱和时刻 {ts*1e3:.0f} ms，实用积分器中心 {mean_p:.2f} V")
+    fig.tight_layout()
+    fs.save(fig, "14", "14_p2_3_drift.png")

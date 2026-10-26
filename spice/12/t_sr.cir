@@ -1,0 +1,68 @@
+* 12 page3 §3 压摆率：LM358B 跟随器，±15 V（假设），输出无外接负载
+* 页面：SR 约 0.5 V/µs；峰值 1 V 时 fmax ≈ 80 kHz，峰值 3 V 时约 27 kHz；练习4：峰值 2 V 时约 40 kHz，100 kHz 时峰值最多约 0.8 V
+* 每种情况跑 6 个周期，读最后 2 个周期的输出峰值、最大斜率（deriv）以及与输入的最大偏差
+* page1 第4步：1 kHz、峰值 1 V 正弦，看输出与输入是否重合（读最后 1 个周期的输出峰值与最大偏差）
+* 另：±5 V 大阶跃（输入 −5→+5 V，上升 10 ns）测上升压摆率（输出 −2.5 V→+2.5 V 的平均斜率）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VS i 0 SIN(0 1 80k)
+X1 i o vcc vee o LMX58B_LM2904B
+.control
+tran 5n 75u
+let s = deriv(v(o))/1e6
+let e = abs(v(o)-v(i))
+meas tran a1 max v(o) from=50u to=75u
+meas tran s1 max s from=50u to=75u
+meas tran e1 max e from=50u to=75u
+echo "RES a1 $&a1"
+echo "RES s1 $&s1"
+echo "RES e1 $&e1"
+alter @VS[sin] = [ 0 3 27k ]
+tran 10n 222u
+let s = deriv(v(o))/1e6
+let e = abs(v(o)-v(i))
+meas tran a3 max v(o) from=148u to=222u
+meas tran s3 max s from=148u to=222u
+meas tran e3 max e from=148u to=222u
+echo "RES a3 $&a3"
+echo "RES s3 $&s3"
+echo "RES e3 $&e3"
+alter @VS[sin] = [ 0 2 40k ]
+tran 10n 150u
+let s = deriv(v(o))/1e6
+let e = abs(v(o)-v(i))
+meas tran a2 max v(o) from=100u to=150u
+meas tran s2 max s from=100u to=150u
+meas tran e2 max e from=100u to=150u
+echo "RES a2 $&a2"
+echo "RES s2 $&s2"
+echo "RES e2 $&e2"
+alter @VS[sin] = [ 0 0.8 100k ]
+tran 2n 60u
+let s = deriv(v(o))/1e6
+let e = abs(v(o)-v(i))
+meas tran a8 max v(o) from=40u to=60u
+meas tran s8 max s from=40u to=60u
+meas tran e8 max e from=40u to=60u
+echo "RES a8 $&a8"
+echo "RES s8 $&s8"
+echo "RES e8 $&e8"
+alter @VS[sin] = [ 0 3 80k ]
+tran 5n 75u
+let s = deriv(v(o))/1e6
+let e = abs(v(o)-v(i))
+meas tran ax max v(o) from=50u to=75u
+meas tran ex max e from=50u to=75u
+echo "RES ax $&ax"
+echo "RES ex $&ex"
+alter @VS[sin] = [ 0 1 1k ]
+tran 200n 3m
+let e = abs(v(o)-v(i))
+meas tran ak max v(o) from=2m to=3m
+meas tran ek max e from=2m to=3m
+echo "RES ak $&ak"
+echo "RES ek $&ek"
+.endc
+.end

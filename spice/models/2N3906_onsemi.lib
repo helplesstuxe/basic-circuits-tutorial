@@ -1,4 +1,4 @@
-* SOURCE: https://www.onsemi.com/pub/Collateral/2N3906.LIB  (opened 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* SOURCE: https://www.onsemi.com/pub/Collateral/2N3906.LIB  (opened 2026-10-23 by reviewer A (nodes 01-03, 05, 08, 09, 12-14, 16, 17, 19, 21, 22, 25))
 * onsemi 2N3906 PNP model. Parameters copied unmodified.
 .MODEL q2n3906 pnp
 +IS=7.75521e-12 BF=194.093 NF=1.35509 VAF=156.436

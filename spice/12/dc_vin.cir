@@ -1,0 +1,35 @@
+* 12 跟随器基本输入输出（LM358B，±15 V，假设电源同上）
+* page1 代数 5 V→5 V、−1.2 V→−1.2 V；page2 代数 2.5 V→2.5 V；page2 A=10万时 5 V 输入输出少约 0.05 mV（倍数 0.99999）
+* page3 练习1：输入 1.8 V，负载 3.6 kΩ → 输出 1.8 V、负载电流 0.5 mA
+* 直接 op 不收敛，改用瞬态：VR 0.1 ms 内 0→1 V，ES 按倍数得到输入，2 ms 时读稳态；负载 RL 不接时取 1e12
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VR r 0 PWL(0 0 100u 1)
+ES i 0 r 0 5
+X1 i o vcc vee o LMX58B_LM2904B
+RL o 0 1e12
+.control
+tran 1u 2m
+meas tran o5 find v(o) at=1.9m
+echo "RES o5 $&o5"
+alter ES gain=0
+tran 1u 2m
+meas tran o0 find v(o) at=1.9m
+echo "RES o0 $&o0"
+alter ES gain=-1.2
+tran 1u 2m
+meas tran om12 find v(o) at=1.9m
+echo "RES om12 $&om12"
+alter ES gain=2.5
+tran 1u 2m
+meas tran o25 find v(o) at=1.9m
+echo "RES o25 $&o25"
+alter ES gain=1.8
+alter RL resistance=3.6k
+tran 1u 2m
+meas tran o18 find v(o) at=1.9m
+echo "RES o18 $&o18"
+.endc
+.end

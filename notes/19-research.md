@@ -1,33 +1,50 @@
-# 19 星三角降压启动 · 资料笔记（作者 D）
+# 19 射极跟随器 · 资料笔记（作者 D）
 
 以下每条都打开过原网页。
 
-1. 电工天下《电机星三角降压启动的控制电路图详解》<https://www.dgjs123.com/diandongji/7411.html>
-   - Y—△ 起动只能用于正常运行时为 △ 接法的电动机；三只接触器（主 KM、星 KMY、角 KM△）+ 一个时间继电器 + 热继电器。
-   - 降压起动电流为直接起动的 1/3。
-   - 控制过程：SB2 → KM 自锁；KT 线圈、KMY 线圈通电；KT 通电延时断开常闭在 Y 回路，通电延时闭合常开在 △ 回路；KMY 常闭闭锁 △ 回路，KM△ 常闭切断 Y 回路，另一个 KM△ 常闭切断 KT。"Y-△两回路都要有闭锁"。
-   - 时间继电器触点分通电延时 / 断电延时，要记清。
-2. 电工天下《电动机星三角启动的接线图》<https://www.dgjs123.com/diandongji/2281.html>
-   - △ 接法：U1 与 W2、V1 与 U2、W1 与 V2 分别联结；Y 接法把尾端（U2、V2、W2）短接（"锁尾"）。
-3. 电工天下《星三角控制电路原理图及星三角启动说明》<https://www.dgjs123.com/diandongji/13701.html>
-   - 启动电流、启动力矩都只有全压启动的 1/3；适合轻载启动。
-   - 鼠笼电机启动电流通常是运行电流的 5–7 倍；电网电压要求一般 ±10%。
-4. Siemens 白皮书 Starting Motors <https://assets.new.siemens.com/siemens/assets/api/uuid:6ba7593d-d8d0-481c-b029-a5987c11366f/startingmotors-whitepaper.pdf>
-   - 星三角需要三只接触器（星、角、主）；星形使启动电流降到约 1/3；切换到三角形时还会有一个较小的电流尖峰，但总体明显低于直接启动；电机接线 6 根。
-5. 施耐德中国 FAQ FA421304 <https://www.schneider-electric.cn/zh/faqs/FA421304/>
-   - 星形启动时间 T：过短 → 转速太低，失去优势；过长 → 重载时转速可能下降，启动失败。设定：观察启动电流，电流随转速上升而下降，不再下降时就是最佳切换时刻。
-   - 转换间隙 t：防止星接触器没断开导致相间短路；过长 → 电流中断，转速急降，再以角形直接启动，冲击大。影响因素：主触点机械动作 + 灭弧时间。
-6. 施耐德 FAQ FA24956 <https://www.se.com/uk/en/faqs/FA24956/>
-   - LADS2 延时模块在常闭断开与常开闭合之间的切换时间是 40 ms ± 15 ms；LC1D80 及以下够用，更大的接触器不够，有短路风险。
-7. 网易 / 防爆云平台《电机星三角启动时间确定及启动电流计算方法》<https://www.163.com/dy/article/HDRJC87G0518L5FC.html>
-   - 经验公式：切换时间 ≈ 2√(容量) + 4 秒（容量 kVA），但必须按实际调整；全压启动电流为额定 4–7 倍；星形每相绕组 220 V，三角形 380 V。
-   - 负荷重时星形转速停止上升、电流仍在额定 1.2 倍以上，不及时切换会让热继电器动作。
-8. Tutorialspoint 星形 / 三角形线、相关系 <https://www.tutorialspoint.com/article/voltage-and-currents-in-star-and-delta-connected-systems>
-   - 星形：线电压 = √3 × 相电压，线电流 = 相电流；三角形：线电压 = 相电压，线电流 = √3 × 相电流。
-9. 18 节点笔记（互锁、TeSys D 吸合 / 释放时间）见 notes/18-research.md。
+## 原理（厂家应用笔记 / 数据手册）
 
-10. （本轮补）Siemens 应用实例 24499345 *Star-delta (Wye-delta) Switching of 3-Phase Motors* V2.0 https://cache.industry.siemens.com/dl/files/345/24499345/att_1039101/v1/CD_FE_III_001_V20_EN.pdf （条目页 https://support.industry.siemens.com/cs/ww/en/view/24499345 ，已下载打开）
-   - 切换空档里转子落后于相序，磁场在定子中感应出衰减的残余电压；接成三角形时残余电压与线电压的相位关系决定差值 ΔU，从而决定暂态电流峰值。
-   - ℘ = 暂态电流峰值 / 启动电流峰值，理论最大 2；实测有利接法 0.8，不利接法 1.37。
-   - 对调两相改变转向时，接法会自动在有利/不利之间互换。
-   原核实标记（切换尖峰真实大小）据此改写：本模型无残余电压，2.6/5.8 ≈ 0.45 标为"无残余电压时的示意值"，19_sim.py 打印并断言；标记已删除。
+1. ADI 大学课程 Chapter 9 Single Transistor Amplifier Stages，9.4 Voltage followers <https://wiki.analog.com/university/courses/electronics/text/chapter-9>
+   - 射极跟随器 = 共集电极：输入阻抗远高于输出阻抗，叫"缓冲"。
+   - 增益总小于 1（r_E 与 R_L 分压）；输入输出之间差一个 V_BE，约 0.65 V。
+   - 作用是电流 / 功率增益和阻抗匹配，不是电压增益；基极电流约是发射极电流的 1/β（约 1/100）。
+   - 例题：V_in 5.6 V、V_BE 按 0.6 V 估，V_out 5 V；R_L 1 kΩ → I_E 5 mA、r_E 5 Ω。
+2. TI LM358 数据手册 SLOS068AB（2024-10 修订）<https://www.ti.com/lit/ds/symlink/lm358.pdf>
+   - LM358（5.7 节表）：V_S = 15 V、V_O = 0 V 时输出拉电流（Source）最小 20 mA、典型 30 mA；短路电流典型 ±40 mA、最大 ±60 mA。
+   - LM358B（5.5 节表）：输出高电平离正电源 1.4 V（1 mA，典型）。
+3. TI AN-272 Op Amp Booster Designs <https://www.ti.com/lit/an/snoa600b/snoa600b.pdf>
+   - IC 工艺限制运放输出功率，需要"助推级"；通常把助推级放进运放的反馈环里，以保住低漂移和稳定的增益。
+   - 助推级有自己的相移，要注意振荡。互补射极跟随器用 D2、D3 补偿两管 V_BE，避免交越失真。
+4. TI AN-4 Monolithic Op Amp—The Universal Linear Component <https://www.ti.com/lit/an/snoa650b/snoa650b.pdf>
+   - 不在反馈环里的射极跟随器接长电缆时常常振荡；接在运放输出后也可能振荡，常用磁珠串在跟随器与电缆之间解决。
+   - 50 mA 的缓冲器至少要 0.1 μF 的电源旁路电容。
+5. Central Semiconductor TIP31 系列数据手册（Mouser 托管）<https://www.mouser.com/datasheet/2/68/tip31-845511.pdf>
+   - I_C 连续 3 A；P_D 40 W（管壳 25 °C，需散热片）、2.0 W（环境 25 °C，不加散热片）；θ_JA 62.5 °C/W；T_J 最高 150 °C。
+   - h_FE ≥ 25（V_CE 4 V、I_C 1 A），10–50（3 A）；V_BE(on) ≤ 1.8 V（3 A）。
+6. Semelab 2N3904 数据手册（Farnell 托管）<https://www.farnell.com/datasheets/1686115.pdf>
+   - I_C 200 mA；P_D 350 mW（T_A 25 °C）；h_FE 100–300（V_CE 1 V、I_C 10 mA）。
+   - 注意：不同厂家的 2N3904 功耗额定不同。全书统一采用 onsemi 2N3903/2N3904 手册：TO-92、环境 25 °C 时 625 mW（每升高 1 °C 减 5 mW），θ_JA 200 °C/W；h_FE 最小值 10 mA 时 100、50 mA 时 60、100 mA 时 30（https://www.onsemi.com/download/data-sheet/pdf/2n3903-d.pdf）。本节点页面按 onsemi 625 mW 举例，Semelab 的 350 mW 只作对比记录。
+
+## 推导 / 教程
+
+7. Wikipedia Common collector <https://en.wikipedia.org/wiki/Common_collector>
+   - 可看成"全部输出串联负反馈"：V_BE = V_in − V_out，晶体管自动调整让发射极 = 输入 − 近似恒定的 V_BE。
+   - A_v ≈ 1；r_in ≈ β·R_E；r_out ≈ R_source/β（R_E 大时）；电流增益 β + 1。
+   - 共集电极常用作 B 类、AB 类输出级。
+8. Electronics Tutorials Common Collector Amplifier <https://www.electronics-tutorials.ws/amplifier/common-collector-amplifier.html>
+   - 输出比基极低约 0.7 V，同相；r'_e = 25 mV / I_e；输出幅度一般是输入的 98%–99%；电流增益 γ = I_E/I_B = β + 1。
+9. Electronics Tutorials Crossover Distortion <https://www.electronics-tutorials.ws/amplifier/amp_7.html>
+   - 推挽（B 类）在过零附近两管都不导通，出现"平台 / 死区"，因为硅管 V_BE 要到约 0.7 V 才导通；小信号时更严重。
+   - 用两只二极管给两管预偏置（AB 类）可大大减小。
+
+## 代码
+
+10. PySpice 1.5 例子 Bipolar Transistor <https://pyspice.fabrice-salvaire.fr/releases/v1.5/examples/transistor/transistor.html>
+    - 用 SPICE 模型（2n2222a）做 DC 扫描画 I_B–V_BE 曲线，0.65 V 处画参考线；本节点没有用 SPICE，而是在 code/19_sim.py 里用指数模型 I_C = I_S·e^(V_BE/V_T) 自己解，思路相同。
+
+## 常见错误（汇总）
+
+- 忘记 V_BE：想要 5 V，实际只有约 4.3 V（ADI 例题、Electronics Tutorials）。解决：把运放反馈取自发射极（AN-272）。
+- 管子功耗过大：P = V_CE × I_C；小管子 2N3904 只有 625 mW（onsemi，环境 25 °C；Semelab 版只有 350 mW），要换 TIP31 这类功率管并估算温升（θ_JA）。
+- 单电源下输入低于约 0.7 V 时管子截止，输出削到 0（Wikipedia：输出只能从 V_BE 跟到 V+）。
+- 跟随器接长线 / 容性负载振荡（AN-4），加磁珠或基极串小电阻。基极电阻阻值已核实：AN-4（SNOA650B）第 6 页图 8 High Current Output Buffer 中 LM101 输出经 R1 = 470 Ω 接 2N2222/2N2905 互补管基极，正文 "R1 is included to eliminate parasitic oscillations from the output transistors"；同段建议集电极各串 50 Ω 限流。正文 page3 按此取 470 Ω，压降数字由 code/figs/19_figs.py 的 rout_rin_rb() 打印。

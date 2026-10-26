@@ -1,0 +1,272 @@
+[
+ {
+  "where": "p2 [A] / p1 真值表",
+  "desc": "正确接法 S1=0 S2=0 页面「灭」",
+  "page": null,
+  "spice": 1.79625e-08,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：灭",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [A] / p1 真值表",
+  "desc": "正确接法 S1=0 S2=1 页面「亮」",
+  "page": null,
+  "spice": 7.131410000000001,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [A] / p1 真值表",
+  "desc": "正确接法 S1=1 S2=0 页面「亮」",
+  "page": null,
+  "spice": 7.131410000000001,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [A] / p1 真值表",
+  "desc": "正确接法 S1=1 S2=1 页面「灭」",
+  "page": null,
+  "spice": 1.7962300000000002e-08,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：灭",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "正确接法：亮几种",
+  "page": 2,
+  "spice": 2.0,
+  "unit": "/4",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "正确接法：拨开关有效",
+  "page": 8,
+  "spice": 8.0,
+  "unit": "/8",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "跨线一端对调：亮几种",
+  "page": 2,
+  "spice": 2.0,
+  "unit": "/4",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "跨线一端对调：拨开关有效",
+  "page": 8,
+  "spice": 8.0,
+  "unit": "/8",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "公共端接错：亮几种",
+  "page": 1,
+  "spice": 1.0,
+  "unit": "/4",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "公共端接错：拨开关有效",
+  "page": 4,
+  "spice": 4.0,
+  "unit": "/8",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "开关接在零线：亮几种",
+  "page": 2,
+  "spice": 2.0,
+  "unit": "/4",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "开关接在零线：拨开关有效",
+  "page": 8,
+  "spice": 8.0,
+  "unit": "/8",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 [C]",
+  "desc": "开关接在零线：灯灭时灯头带电",
+  "page": 2,
+  "spice": 2.0,
+  "unit": "/4",
+  "dev": 0.0,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 例3",
+  "desc": "跨线对调、两只都在 0：灯",
+  "page": null,
+  "spice": 1.0,
+  "unit": "",
+  "dev": null,
+  "note": "页面：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §六 第2步",
+  "desc": "LED 电流 (9−2)/1k",
+  "page": 7.0,
+  "spice": 7.131410000000001,
+  "unit": "mA",
+  "dev": 1.877285714285724,
+  "note": "LED 正向压降 SPICE 1.87 V（页面约 2 V）",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §六 第2步",
+  "desc": "红 LED 压降",
+  "page": 2.0,
+  "spice": 1.86787,
+  "unit": "V",
+  "dev": -6.606500000000004,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §六 第6步",
+  "desc": "开关接零线、LED 灭：R-LED 相接点对负极（10 MΩ 表）",
+  "page": 9.0,
+  "spice": 8.9991,
+  "unit": "V",
+  "dev": -0.009999999999996432,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p2 §六 第6步",
+  "desc": "正确接法、LED 灭：同一点对负极",
+  "page": 0.0,
+  "spice": 0.000179995,
+  "unit": "V",
+  "dev": null,
+  "note": "",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=0 中途=0 S3=0 页面「灭」",
+  "page": null,
+  "spice": 3.59531e-08,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：灭",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=0 中途=0 S3=1 页面「亮」",
+  "page": null,
+  "spice": 7.13106,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=0 中途=1 S3=0 页面「亮」",
+  "page": null,
+  "spice": 7.13106,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=0 中途=1 S3=1 页面「灭」",
+  "page": null,
+  "spice": 3.59247e-08,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：灭",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=1 中途=0 S3=0 页面「亮」",
+  "page": null,
+  "spice": 7.13106,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=1 中途=0 S3=1 页面「灭」",
+  "page": null,
+  "spice": 3.59535e-08,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：灭",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=1 中途=1 S3=0 页面「灭」",
+  "page": null,
+  "spice": 3.5925e-08,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：灭",
+  "v": "✅"
+ },
+ {
+  "where": "p3 变体1 [D]",
+  "desc": "三地控制 S1=1 中途=1 S3=1 页面「亮」",
+  "page": null,
+  "spice": 7.13106,
+  "unit": "mA",
+  "dev": null,
+  "note": "SPICE：亮",
+  "v": "✅"
+ },
+ {
+  "where": "p3 练习1",
+  "desc": "三地：依次拨 S2、S3、S2 → (0,0,1)",
+  "page": null,
+  "spice": 7.13106,
+  "unit": "mA",
+  "dev": null,
+  "note": "页面：亮",
+  "v": "✅"
+ }
+]

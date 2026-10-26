@@ -1,0 +1,44 @@
+* 24 振荡器：文氏桥正弦振荡器（page2 图24-p2-1、图24-p2-3；page3 图24-p3-1、练习 1/2）
+* 串联 R=10k + C=10n 从输出到同相端；同相端对地并联 R=10k // C=10n；Rg=10k；Rf 三种：
+*   A: Rf=@RFA@（倍数 1+Rf/Rg）   B: Rf=22k（无稳幅）   D: Rf=12k + (10k // 一对反向并联 1N4148)
+* 运放：TI LM358B 官方模型，±5 V 双电源（page2 写明 ±5 V）。并联电容初值 10 mV 模拟上电扰动。
+*@def RFA=19k
+*@def R=10k
+*@def TSTOP=40m
+.include ../models/LMx58B_LM2904B.lib
+.include ../models/1N4148_nexperia.lib
+VP vp 0 5
+VN vn 0 -5
+* A
+RsA oA sA @R@
+CsA sA pA 10n IC=0
+RpA pA 0 @R@
+CpA pA 0 10n IC=10m
+RgA nA 0 10k
+RfA oA nA @RFA@
+XA pA nA vp vn oA LMX58B_LM2904B
+* B
+RsB oB sB @R@
+CsB sB pB 10n IC=0
+RpB pB 0 @R@
+CpB pB 0 10n IC=10m
+RgB nB 0 10k
+RfB oB nB 22k
+XB pB nB vp vn oB LMX58B_LM2904B
+* D
+RsD oD sD @R@
+CsD sD pD 10n IC=0
+RpD pD 0 @R@
+CpD pD 0 10n IC=10m
+RgD nD 0 10k
+Rf1D oD mD 12k
+Rf2D mD nD 10k
+XD1 mD nD 1N4148
+XD2 nD mD 1N4148
+XD pD nD vp vn oD LMX58B_LM2904B
+.control
+tran 0.5u @TSTOP@ 0 0.5u uic
+wrdata wien.txt v(oA) v(oB) v(oD)
+echo "RESULT done 1"
+.endc
+.end

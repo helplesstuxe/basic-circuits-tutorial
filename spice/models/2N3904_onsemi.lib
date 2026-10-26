@@ -1,4 +1,4 @@
-* SOURCE: https://www.onsemi.com/pub/Collateral/2N3904.LIB  (opened 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* SOURCE: https://www.onsemi.com/pub/Collateral/2N3904.LIB  (opened 2026-10-23 by reviewer A (nodes 01-03, 05, 08, 09, 12-14, 16, 17, 19, 21, 22, 25))
 * onsemi 2N3904 NPN model (MODPEX, generated Aug 7 01). Parameters copied unmodified.
 .MODEL Q2n3904 npn
 +IS=1.26532e-10 BF=206.302 NF=1.5 VAF=1000

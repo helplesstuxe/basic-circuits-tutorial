@@ -1,189 +1,143 @@
-"""20 双控开关：除 20_sim.py 那两张以外的所有配图。运行：python code/figs/20_figs.py
-开关模型与 code/20_sim.py 相同：位置 0 = 出厂位置，S1 在 0 时接上面的触点，S2 在 0 时接下面的触点。"""
-import sys, os
+"""20 有源滤波：全部配图（图 20-p2-2 由 code/20_sim.py 生成）。
+运行：/workspace/circuits-venv/bin/python code/figs/20_figs.py
+图上的每个数字都由本脚本打印；关键结论用 assert 检查。
+"""
+import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import matplotlib.pyplot as plt
-from matplotlib.patches import Circle, Rectangle
+from schem import *            # noqa: F401,F403
 import figstyle as fs
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy import signal
 
-P = "20"
-K = fs.C["edge"]          # 普通导线颜色
-LIVE = fs.C["bad"]        # 带电（连着火线）的导线
-CUR = fs.C["cur"]         # 电流路径
-
-
-def wire(ax, pts, color=K, lw=1.4, ls="-", z=2):
-    xs, ys = zip(*pts)
-    ax.plot(xs, ys, color=color, lw=lw, ls=ls, zorder=z, solid_capstyle="round")
-
-
-def dot(ax, p, open_=True):
-    ax.add_patch(Circle(p, 0.07, fc="white" if open_ else K, ec=K, lw=1.2, zorder=5))
+N = "20"
+R, C = 16e3, 10e-9                                     # 一阶：fc ≈ 995 Hz
+R1, R2, C1, C2 = 4.22e3, 18.4e3, 10e-9, 33e-9          # Sallen-Key 巴特沃斯 1 kHz（TI SLOA049 表 10-1）
+first = ([1.0], [R * C, 1.0])                          # 一阶低通：1/(sRC + 1)
+sk = ([1.0], [R1 * R2 * C1 * C2, C1 * (R1 + R2), 1.0])  # Sallen-Key：1/(s²R1R2C1C2 + sC1(R1+R2) + 1)
 
 
-def lamp(ax, c, r=0.3, color=K):
-    """国标灯符号：圆圈加 ×。"""
-    ax.add_patch(Circle(c, r, fc="white", ec=color, lw=1.4, zorder=4))
-    d = r * 0.7
-    wire(ax, [(c[0] - d, c[1] - d), (c[0] + d, c[1] + d)], color=color, z=5)
-    wire(ax, [(c[0] - d, c[1] + d), (c[0] + d, c[1] - d)], color=color, z=5)
+def follower_tail(d, node, out_len=1.0):
+    """从 node 引线到运放同相端，运放接成跟随器，返回运放。"""
+    d += elm.Line().right().at(node).length(1.0)
+    d += (op := elm.Opamp(leads=True).right().anchor("in2"))
+    d += elm.Line().left().at(op.in1).length(0.4)
+    d += elm.Line().up().length(1.2)
+    d += elm.Line().right().tox(op.out.x + 0.4)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    d += elm.Line().right().at(op.out).length(out_len)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    return op
 
 
-def spdt(ax, com, t_up, t_dn, up, color=K):
-    """单刀双掷：公共端 com，两个触点；up=True 时刀接上面的触点。"""
-    for p in (com, t_up, t_dn):
-        dot(ax, p)
-    wire(ax, [com, t_up if up else t_dn], color=color, lw=2.0, z=4)
+# ---------- 图 20-p1-1 带高频噪声的信号经过低通 ----------
+t = np.linspace(0, 40e-3, 40001)
+clean = fs.sine(t, 50, amp=1.0)
+noisy = clean + 0.3 * np.sin(2 * np.pi * 10e3 * t)
+_, y, _ = signal.lsim(first, noisy, t)
+ripple = np.max(np.abs(y[20000:] - signal.lsim(first, clean, t)[1][20000:]))
+print(f"输入：50 Hz 1 V 信号 + 10 kHz 0.3 V 噪声；经 fc ≈ 995 Hz 一阶低通后噪声剩约 {ripple:.2f} V")
+assert ripple < 0.04
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, noisy, **{**fs.LS["vin"], "lw": 0.8}, label="$V_i$ 输入（带 10 kHz 噪声）")
+ax.plot(t * 1e3, y, **fs.LS["vout"], label="$V_o$ 低通输出")
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-1.8, 2.2)
+ax.legend(loc="upper right", fontsize=8, ncol=2)
+fs.save(fig, N, "20_p1_1_denoise.png")
 
+# ---------- 图 20-p1-2 一阶有源低通 ----------
+with drawing() as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    follower_tail(d, n.center)
+save_schem(d, N, "20_p1_2_first_order.png")
+print(f"一阶低通 fc = 1/(2π × 16 kΩ × 10 nF) = {1 / (2 * np.pi * R * C):.0f} Hz")
 
-def two_way(ax, ox, oy, s1, s2, show_path=False, title=None, labels=True):
-    """正确接法的双控电路，左上角是火线 L。返回灯亮不亮。"""
-    L, N = (ox, oy), (ox, oy - 2.2)
-    c1, u1, d1 = (ox + 1.2, oy), (ox + 2.2, oy + 0.6), (ox + 2.2, oy - 0.6)
-    u2, d2, c2 = (ox + 4.0, oy + 0.6), (ox + 4.0, oy - 0.6), (ox + 5.0, oy)
-    lx = ox + 6.0
-    up1, up2 = (s1 == 0), (s2 == 1)            # S1 在 0 接上面；S2 在 1 接上面
-    on = up1 == up2                             # 两把刀指向同一根跨线才通
-    if show_path and on:                        # 先画一条粗的天蓝色电流路径垫在下面
-        t = oy + 0.6 if up1 else oy - 0.6
-        wire(ax, [L, c1, (ox + 2.2, t), (ox + 4.0, t), c2, (lx, oy), (lx, oy - 2.2), N], color=CUR, lw=6, z=1)
-    wire(ax, [L, c1]); wire(ax, [u1, u2]); wire(ax, [d1, d2])
-    wire(ax, [c2, (lx, oy), (lx, oy - 0.95)]); wire(ax, [(lx, oy - 1.55), (lx, oy - 2.2), N])
-    spdt(ax, c1, u1, d1, up1); spdt(ax, c2, u2, d2, up2)
-    lamp(ax, (lx, oy - 1.25))
-    dot(ax, L); dot(ax, N)
-    if on:
-        ax.add_patch(Circle((lx, oy - 1.25), 0.42, fc=fs.C["hi"], ec="none", alpha=0.6, zorder=3))
-    if labels:
-        ax.text(L[0] - 0.12, L[1], "L 火线", ha="right", va="center", fontsize=10)
-        ax.text(N[0] - 0.12, N[1], "N 零线", ha="right", va="center", fontsize=10)
-        ax.text(ox + 3.1, oy + 0.7, "跨线 A", ha="center", va="bottom", fontsize=9)
-        ax.text(ox + 3.1, oy - 0.7, "跨线 B", ha="center", va="top", fontsize=9)
-        ax.text(lx + 0.45, oy - 1.25, "灯", va="center", fontsize=10)
-    ax.text(ox + 1.6, oy + 0.95, f"S1（楼下）" + (f" = {s1}" if title else ""), ha="center", fontsize=9)
-    ax.text(ox + 4.6, oy + 0.95, f"S2（楼上）" + (f" = {s2}" if title else ""), ha="center", fontsize=9)
-    if title:
-        ax.text(ox + 3.0, oy - 2.55, title, ha="center", va="top", fontsize=10)
-    return on
+# ---------- 图 20-p2-1 Sallen-Key 二阶低通 ----------
+with drawing() as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R_1$ 4.22 kΩ")
+    d += (a := elm.Dot())
+    d += elm.Resistor().right().label("$R_2$ 18.4 kΩ")
+    d += (b := elm.Dot())
+    d += elm.Capacitor().down().label("$C_1$ 10 nF", "bottom")
+    d += elm.Ground()
+    op = follower_tail(d, b.center, out_len=2.4)
+    d += elm.Line().up().at(a.center).length(3.6)
+    d += elm.Capacitor().right().label("$C_2$ 33 nF").tox(op.out.x + 1.4)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+save_schem(d, N, "20_p2_1_sallen_key.png")
+f0 = 1 / (2 * np.pi * np.sqrt(R1 * R2 * C1 * C2))
+Q = np.sqrt(R1 * R2 * C1 * C2) / (C1 * (R1 + R2))
+print(f"Sallen-Key：f0 = {f0:.0f} Hz，Q = {Q:.3f}")
+assert abs(Q - 0.707) < 0.01 and abs(f0 - 1000) < 20
 
+# ---------- 图 20-p2-3 一阶有源高通 ----------
+with drawing() as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Capacitor().right().label("$C$ 100 nF")
+    d += (n := elm.Dot())
+    d += elm.Resistor().down().label("$R$ 15.9 kΩ", "bottom")
+    d += elm.Ground()
+    follower_tail(d, n.center)
+save_schem(d, N, "20_p2_3_highpass.png")
+print(f"一阶高通 fc = 1/(2π × 15.9 kΩ × 100 nF) = {1 / (2 * np.pi * 15.9e3 * 100e-9):.0f} Hz")
 
-def problem():
-    """图 20-p1-1：只有一个开关的楼梯 vs 两头各一个开关。"""
-    fig, ax = fs.diagram(8.4, 3.4)
-    for ox, txt, both in ((0.3, "① 普通开关只装在楼下", False), (4.5, "② 双控：楼上楼下各一个", True)):
-        steps = [(ox, 0.4)]
-        for i in range(6):                      # 画一段楼梯
-            x, y = steps[-1]
-            steps += [(x + 0.5, y), (x + 0.5, y + 0.38)]
-        wire(ax, steps, lw=1.6)
-        ax.text(ox + 1.8, 3.15, txt, ha="center", fontsize=10)
-        lamp(ax, (ox + 1.9, 2.75), r=0.18)
-        ax.add_patch(Circle((ox + 1.9, 2.75), 0.3, fc=fs.C["hi"], ec="none", alpha=0.6, zorder=3))
-        ax.add_patch(Rectangle((ox + 0.05, 0.75), 0.22, 0.32, fc="white", ec=K, lw=1.2))
-        ax.text(ox + 0.4, 0.9, "开关", va="center", fontsize=9)
-        if both:
-            ax.add_patch(Rectangle((ox + 3.05, 3.0 - 0.6), 0.22, 0.32, fc="white", ec=K, lw=1.2))
-            ax.text(ox + 3.0, 2.56, "开关", ha="right", va="center", fontsize=9)
-            ax.text(ox + 1.9, 0.15, "在哪头都能开、能关", ha="center", fontsize=9, color=fs.C["good"])
-        else:
-            ax.text(ox + 3.15, 2.45, "楼上：没开关", ha="center", va="center", fontsize=9, color=fs.C["bad"])
-            ax.text(ox + 1.9, 0.15, "上楼后只能开着灯不管", ha="center", fontsize=9, color=fs.C["bad"])
-    fs.save(fig, P, "20_p1_1_problem.png")
+# ---------- 图 20-p3-1 方波经过两种低通 ----------
+t = np.linspace(0, 4e-3, 8001)
+sq = fs.square(t, 500, amp=0.5, offset=0.5)            # 0～1 V、500 Hz 方波
+_, y1, _ = signal.lsim(first, sq, t)
+_, y2, _ = signal.lsim(sk, sq, t)
+os2 = y2.max() - 1
+print(f"500 Hz 方波（0～1 V）：一阶输出最高 {y1.max():.2f} V，二阶最高 {y2.max():.2f} V（过冲 {os2*100:.0f}%）")
+assert 0.0 < os2 < 0.06
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, sq, **fs.LS["vin"], label="$V_i$ 方波 500 Hz")
+ax.plot(t * 1e3, y1, **fs.LS["third"], label="一阶低通输出")
+ax.plot(t * 1e3, y2, **fs.LS["vout"], label="二阶 Sallen-Key 输出")
+k = np.argmax(y2)
+fs.mark(ax, t[k] * 1e3, y2[k], fmt="{:.2f}", unit=" V", dx=6, dy=4)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-0.1, 1.45)
+ax.legend(loc="upper right", fontsize=8, ncol=3)
+fs.save(fig, N, "20_p3_1_square.png")
 
+# ---------- 图 20-p3-2 漏了 2π：截止频率低了 6 倍多 ----------
+f = np.logspace(1, 5, 600)
+R_bad = 1 / (1e3 * C)                                   # 错误：R = 1/(fC) = 100 kΩ
+fc_ok, fc_bad = 1 / (2 * np.pi * R * C), 1 / (2 * np.pi * R_bad * C)
+h = lambda fx, fc: 20 * np.log10(1 / np.sqrt(1 + (fx / fc) ** 2))
+print(f"漏了 2π：R 取成 {R_bad/1e3:.0f} kΩ，实际 fc = {fc_bad:.0f} Hz；1 kHz 处 {h(1e3, fc_bad):.0f} dB（应为 {h(1e3, fc_ok):.0f} dB）")
+assert abs(fc_bad - 159) < 1
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.semilogx(f, h(f, fc_ok), **fs.LS["vout"], label="正确：R = 16 kΩ")
+ax.semilogx(f, h(f, fc_bad), **fs.LS["bad"], label="漏了 2π：R = 100 kΩ")
+fs.ref_v(ax, 1e3, "1 kHz（设计目标）")
+fs.ref_v(ax, fc_bad, f"{fc_bad:.0f} Hz", y=0.12)
+fs.mark(ax, 1e3, h(1e3, fc_bad), fmt="{:.0f}", unit=" dB", dx=-40, dy=-14)
+fs.mark(ax, 1e3, h(1e3, fc_ok), fmt="{:.0f}", unit=" dB", dx=8, dy=-14)
+fs.axlabels(ax, "频率", "Hz", "输出/输入 幅度", "dB")
+ax.set_xticks([10, 100, 1e3, 1e4, 1e5]); ax.set_xticklabels(["10", "100", "1 k", "10 k", "100 k"])
+ax.set_ylim(-60, 8); ax.legend(loc="lower left", fontsize=8)
+fs.save(fig, N, "20_p3_2_missing_2pi.png")
 
-def railway():
-    """图 20-p1-2：铁路道岔类比。两个道岔指向同一条轨道，火车才过得去。"""
-    fig, ax = fs.diagram(8.4, 2.6)
-    for row, (a, b) in enumerate(((True, True), (True, False))):
-        oy = 1.85 - row * 1.3
-        ok = a == b
-        ax.text(0.1, oy, "进站", va="center", fontsize=9)
-        wire(ax, [(0.7, oy), (1.4, oy)], lw=2.2)
-        wire(ax, [(2.2, oy + 0.3), (5.4, oy + 0.3)], lw=2.2); wire(ax, [(2.2, oy - 0.3), (5.4, oy - 0.3)], lw=2.2)
-        wire(ax, [(1.4, oy), (2.2, oy + 0.3 if a else oy - 0.3)], color=fs.C["third"], lw=3)
-        wire(ax, [(5.4, oy + 0.3 if b else oy - 0.3), (6.2, oy)], color=fs.C["third"], lw=3)
-        wire(ax, [(6.2, oy), (6.9, oy)], lw=2.2)
-        ax.text(1.8, oy + 0.42, "道岔 1", ha="center", fontsize=8); ax.text(5.8, oy + 0.42, "道岔 2", ha="center", fontsize=8)
-        ax.text(7.0, oy, "出站：" + ("通" if ok else "不通"), va="center", fontsize=10,
-                color=fs.C["good"] if ok else fs.C["bad"])
-        ax.text(3.8, oy + 0.38, "上轨", ha="center", fontsize=8); ax.text(3.8, oy - 0.22, "下轨", ha="center", fontsize=8)
-    fs.save(fig, P, "20_p1_2_railway.png")
+# ---------- 参数与调试篇引用的经验数字（无图，只打印并断言） ----------
+GBW_LM358 = 1.2e6                                       # LM358B 增益带宽积
+need = lambda gain, fc: 100 * gain * fc                 # Microchip ADN003：Sallen-Key 要 GBW ≥ 100 × 倍数 × fc
+n1, n2 = need(1, 1e3), need(10, 100e3)
+print(f"GBW 经验要求：1 kHz 跟随型 {n1/1e3:.0f} kHz（LM358B {GBW_LM358/1e6:.1f} MHz 够用）；100 kHz × 10 倍 {n2/1e6:.0f} MHz（是 LM358B 的 {n2/GBW_LM358:.0f} 倍）")
+assert n1 == 100e3 and n1 <= GBW_LM358 and n2 == 100e6 and round(n2 / GBW_LM358) == 83
+drift = 30e-6 * 100                                     # C0G：±30 ppm/°C，温度变 100 °C
+print(f"C0G 温度变 100 °C：容量最多变 {drift*100:.1f}%")
+assert abs(drift - 0.003) < 1e-12
+shift = 1 / np.sqrt(0.85 * 0.85) - 1                    # Sallen-Key：fc ∝ 1/√(C1·C2)，两只 X7R 都 −15%
+print(f"两只电容都少 15%：截止频率高出 {shift*100:.1f}%")
+assert abs(shift - 0.176) < 0.001
 
-
-def circuit():
-    """图 20-p1-3：双控电路，两只单刀双掷开关加两根跨线。"""
-    fig, ax = fs.diagram(8.0, 3.4, xlim=(-1.2, 6.8), ylim=(-2.6, 0.8 + 0.4 + 0.2))
-    two_way(ax, 0, 0, 0, 1)
-    fs.save(fig, P, "20_p1_3_circuit.png")
-
-
-def path():
-    """图 20-p2-1：同一个电路的两种状态，天蓝色是电流路径。"""
-    fig, ax = fs.diagram(9.6, 3.6, xlim=(-1.2, 14.4), ylim=(-3.2, 1.4))
-    a = two_way(ax, 0, 0, 1, 0, show_path=True, title="S1=1，S2=0：两把刀都指向跨线 B，灯亮")
-    b = two_way(ax, 8.0, 0, 1, 1, show_path=True, title="再拨 S2：刀离开跨线 B，灯灭", labels=False)
-    print(f"[图 20-p2-1] 左图灯亮={a}，右图灯亮={b}")
-    fs.save(fig, P, "20_p2_1_path.png")
-
-
-def neutral():
-    """图 20-p3-1：灯灭时，开关断火线（左）和开关断零线（右）的对比。朱红色是带电导线。"""
-    fig, ax = fs.diagram(9.6, 3.6, xlim=(-1.2, 14.4), ylim=(-3.3, 1.4))
-    # 左：正确接法，状态 (0,0)，灯灭；带电的只有 L → S1 → 跨线 A
-    two_way(ax, 0, 0, 0, 0)
-    wire(ax, [(0, 0), (1.2, 0), (2.2, 0.6), (4.0, 0.6)], color=LIVE, lw=2.4, z=4)
-    ax.text(6.0 + 0.45, -1.75, "灯头约 0 V", fontsize=9, color=fs.C["good"])
-    ax.text(3.0, -2.55, "① 开关断火线：灯灭时灯头不带电", ha="center", va="top", fontsize=10)
-    # 右：开关接在零线一侧，火线直接到灯
-    ox = 8.0
-    L, N = (ox, 0), (ox, -2.2)
-    lx = ox + 6.0
-    wire(ax, [L, (lx, 0), (lx, -0.95)], color=LIVE, lw=2.4, z=3)
-    wire(ax, [(lx, -1.55), (lx, -2.2), (ox + 5.0, -2.2)], color=LIVE, lw=2.4, z=3)
-    c1, u1, d1 = (ox + 5.0, -2.2), (ox + 4.0, -1.6), (ox + 4.0, -2.8)
-    u2, d2, c2 = (ox + 2.2, -1.6), (ox + 2.2, -2.8), (ox + 1.2, -2.2)
-    wire(ax, [u1, u2], color=LIVE, lw=2.4, z=3); wire(ax, [d1, d2]); wire(ax, [c2, N])
-    spdt(ax, c1, u1, d1, True, color=LIVE); spdt(ax, c2, u2, d2, False)
-    lamp(ax, (lx, -1.25), color=LIVE)
-    dot(ax, L); dot(ax, N)
-    ax.text(L[0] - 0.12, 0, "L", ha="right", va="center", fontsize=10)
-    ax.text(N[0] - 0.12, -2.2, "N", ha="right", va="center", fontsize=10)
-    ax.text(lx + 0.45, -0.8, "灯头 220 V", fontsize=9, color=LIVE)
-    ax.text(ox + 3.1, -1.5, "开关在零线一侧", ha="center", va="bottom", fontsize=9)
-    ax.text(ox + 3.0, 0.9, "② 开关断零线：灯同样会灭，但灯头仍带电", ha="center", fontsize=10, color=LIVE)
-    ax.text(11.0, -3.05, "朱红色 = 连着火线的导线（两图都处在灯灭状态）", ha="center", fontsize=9)
-    fs.save(fig, P, "20_p3_1_neutral.png")
-
-
-def three_way():
-    """图 20-p3-2：三地控制，中间加一只中途开关（四个端子，直通或交叉）。"""
-    fig, ax = fs.diagram(9.0, 3.3, xlim=(-1.2, 10.4), ylim=(-2.7, 1.55))
-    L, N = (0, 0), (0, -2.2)
-    c1, u1, d1 = (1.0, 0), (1.9, 0.6), (1.9, -0.6)
-    a1, b1, a2, b2 = (3.4, 0.6), (3.4, -0.6), (5.4, 0.6), (5.4, -0.6)
-    u3, d3, c3 = (6.9, 0.6), (6.9, -0.6), (7.8, 0)
-    lx = 8.8
-    wire(ax, [L, c1]); wire(ax, [u1, a1]); wire(ax, [d1, b1]); wire(ax, [a2, u3]); wire(ax, [b2, d3])
-    wire(ax, [c3, (lx, 0), (lx, -0.95)]); wire(ax, [(lx, -1.55), (lx, -2.2), N])
-    spdt(ax, c1, u1, d1, True); spdt(ax, c3, u3, d3, False)
-    ax.add_patch(Rectangle((3.15, -0.95), 2.5, 1.9, fc="none", ec=K, ls="--", lw=1.0))
-    for p in (a1, b1, a2, b2):
-        dot(ax, p)
-    wire(ax, [a1, b2], lw=2.0, z=4); wire(ax, [b1, a2], lw=2.0, z=4)            # 交叉位置（实线）
-    wire(ax, [a1, a2], color=fs.C["ref"], ls=":", lw=1.6); wire(ax, [b1, b2], color=fs.C["ref"], ls=":", lw=1.6)  # 直通位置
-    lamp(ax, (lx, -1.25))
-    ax.add_patch(Circle((lx, -1.25), 0.42, fc=fs.C["hi"], ec="none", alpha=0.6, zorder=3))   # 此刻 S1=0、S2 交叉、S3 接下触点：灯亮
-    dot(ax, L); dot(ax, N)
-    ax.text(-0.12, 0, "L", ha="right", va="center", fontsize=10); ax.text(-0.12, -2.2, "N", ha="right", va="center", fontsize=10)
-    ax.text(1.45, 0.95, "S1 双控", ha="center", fontsize=9); ax.text(7.35, 0.95, "S3 双控", ha="center", fontsize=9)
-    ax.text(4.4, 1.1, "S2 中途开关", ha="center", fontsize=9)
-    ax.text(4.4, -1.2, "实线：交叉　点线：直通", ha="center", va="top", fontsize=8)
-    ax.text(lx + 0.45, -1.25, "灯", va="center", fontsize=10)
-    fs.save(fig, P, "20_p3_2_three_way.png")
-
-
-if __name__ == "__main__":
-    problem(); railway(); circuit(); path(); neutral(); three_way()
 
 
 # ======================= page4 动手实验篇：面包板接线图 =======================
@@ -321,348 +275,169 @@ class Breadboard:
     def save(self, prefix, name):
         return fs.save(self.fig, prefix, name)
 
-# ---------- page4 动手实验篇：9 V 双控 / 三地控制面包板 ----------
-import itertools as _it
-
-V_BAT, R1, V_LED = 9.0, 1000.0, 1.868            # 电池、限流电阻；红 LED 压降取 review/spice/20.md 的 SPICE 值
-I_LED = (V_BAT - V_LED) / R1
-print(f"[数值] LED 电流 ({V_BAT:.0f} − {V_LED:.2f}) / {R1 / 1000:.0f} kΩ = {I_LED * 1000:.2f} mA，1 kΩ 两端 {I_LED * R1:.2f} V")
-assert abs(I_LED * 1000 - 7.13) < 0.01            # 与 SPICE 7.131 mA 一致
-
-
-def _find_factory(links):
-    par = {}
-    def f(x):
-        par.setdefault(x, x)
-        while par[x] != x:
-            x = par[x]
-        return x
-    for a, b in links:
-        par[f(a)] = f(b)
-    return f
-
-
-def _lit(links):
-    f = _find_factory(links)
-    return f("LED+") == f("+9V") and f("LED-") == f("0V")
-
-
-def _slide(bb, c, label):
-    """三脚单刀双掷拨动开关插在 f 排 c−1、c、c+1（中间是 COM，以实测为准）。"""
-    ax = bb.ax
-    ax.add_patch(FancyBboxPatch((c - 1.35, -1.05), 2.7, 0.7, boxstyle="round,pad=0.05",
-                                fc="#cfd8e3", ec="0.25", lw=1.0, zorder=6))
-    ax.add_patch(Rectangle((c - 0.85, -0.85), 0.6, 0.3, fc="0.3", ec="none", zorder=7))   # 拨杆
-    ax.text(c + 0.35, -0.7, label, ha="left", va="center", fontsize=7.5, zorder=8)
-    for x in (c - 1, c, c + 1):
-        bb._hole(f"f{x}")
-    ax.text(c - 1, -0.15, "1", ha="center", va="bottom", fontsize=7, color="0.25", zorder=8)
-    ax.text(c, -0.15, "COM", ha="center", va="bottom", fontsize=7, color="0.25", zorder=8)
-    ax.text(c + 1, -0.15, "2", ha="center", va="bottom", fontsize=7, color="0.25", zorder=8)
-
-
-def _grey_unused(bb):
-    for t in bb.ax.texts:
-        if t.get_text() == "（未用）":
-            t.set_color("0.6"); t.set_fontweight("normal"); t.set_fontsize(8.5)
-    for ln in bb.ax.lines:
-        ys = ln.get_ydata()
-        if len(ys) == 2 and ys[0] == ys[1] and ys[0] in (BB_Y["T+"] + 0.42, BB_Y["T-"] + 0.42):
-            ln.set_color("0.75")
-
-
-WIRE["pos"] = (fs.C["bad"], "+9 V")
-WIRE["gnd"] = ("#000000", "0 V（电池负极）")
-WIRE["sig"] = (fs.C["vin"], "跨线 A")
-WIRE["fb"] = (fs.C["fb"], "跨线 B")
-WIRE["out"] = (fs.C["vout"], "S2 公共端 → 1 kΩ")
-
-# ---------- 图 20-p4-1：两地控制（page2 第六节第 2 步的正确接法） ----------
-bb = Breadboard(30, "双控开关面包板俯视图（9 V 电池、两只三脚拨动开关、1 kΩ + 红 LED）",
-                size=(10, 6.4), rails=("（未用）", "（未用）", "0 V", "+9 V"))
-_grey_unused(bb)
-_slide(bb, 6, "S1")
-_slide(bb, 16, "S2")
-bb.wire("j6", "B+6", "pos")                        # +9 V → S1 公共端
-bb.wire("g5", "g17", "sig")                        # 跨线 A：S1 的 1 → S2 的 2（与原理篇仿真的正确接法相同）
-bb.wire("h7", "h15", "fb")                         # 跨线 B：S1 的 2 → S2 的 1
-bb.part("i16", "i21", "R1 1 kΩ", "R", lab_side=-1)
-bb.part("h21", "h24", "LED", "L", lab_side=1)      # 长脚（阳极）在第 21 列
-bb.wire("j24", "B-24", "gnd")
-bb.module(0.6, -10.4, 3.2, 1.3, "9 V 电池", fc="#e6f0f8")
-bb.wire((3.2, -9.1), "B+3", "pos")
-bb.wire((1.4, -9.1), "B-1", "gnd")
-bb.note(1.0, 3.6, "上半区不用。开关引脚以蜂鸣挡实测为准；\n测量点 M：第 21 列（R1 与 LED 长脚相接处）", va="center",
-        bbox=dict(fc="#f7f5ef", ec="none", pad=1.5))
-bb.ax.text(21, BB_Y["g"], "M", ha="center", va="center", fontsize=9, color="k", fontweight="bold", zorder=9,
-           bbox=dict(fc="w", ec="0.3", boxstyle="circle,pad=0.15"))
+# ---------- 图 20-p4-1：一阶有源低通的面包板接线（LM358，±9 V） ----------
+bb = Breadboard(30, "一阶有源低通面包板俯视图（LM358 跟随器，±9 V）", rails=("+9 V", "GND", "GND", "−9 V"))
+bb.chip(14, "LM358", names={1: "OUT", 2: "IN−", 3: "IN+", 4: "V−", 8: "V+"})
+bb.wire("a14", "T+14", "pos")                      # 第 8 脚 → +9 V
+bb.wire("j17", "B+17", "neg")                      # 第 4 脚 → −9 V
+bb.wire("a17", "T-17", "gnd")                      # 第 5 脚（B 路同相端）→ 地
+bb.wire("c15", "c16", "fb")                        # 第 6、7 脚短接：B 路接成跟随器
+bb.wire("g14", "g15", "fb")                        # 第 1、2 脚短接：A 路接成跟随器
+bb.wire("g16", "g20", "fb")                        # 第 3 脚 → 第 20 列（滤波节点）
+bb.part("h20", "h24", "R 16 kΩ", "R", lab_side=1)
+bb.part("j20", "B-20", "C 10 nF", "C", lab_side=1)
+bb.wire("h14", "h8", "out")                        # 输出 → 第 8 列
+bb.part("i8", "i4", "R 1 kΩ（耳机限流）", "R", lab_side=-1)
+bb.wire("T-28", "B-28", "gnd")
+bb.module(-3.2, 9.4, 4.0, 1.4, "9 V 电池 ×2 串联\n中点 = GND")
+bb.wire((1.4, 9.9), "T+1", "pos")
+bb.wire((0.8, 9.6), "T-3", "gnd")
+bb.wire((-3.2, 10.1), "B+1", "neg", via=[(-3.3, 10.1), (-3.3, -8.6), (1.0, -8.6)])
+bb.module(-3.2, -4.4, 3.0, 1.6, "耳机\n3.5 mm 转接板")
+bb.wire((-0.2, -3.6), "j4", "out")
+bb.wire((-1.5, -4.4), "B-2", "gnd", via=[(-1.5, -6.7)])
+bb.module(31.3, -4.4, 3.2, 1.6, "手机音频输出\n信号 / 地")
+bb.wire((31.3, -4.0), "j24", "sig", via=[(25.0, -4.9)])
+bb.wire((32.9, -4.4), "B-29", "gnd", via=[(32.9, -6.7)])
+bb.note(9.0, -0.3, "测输出：g8", va="center")
+bb.note(21.0, -0.3, "测输入：g24", va="center")
+bb.ax.set_ylim(-12.0, 11.6)                        # 底部多一行注记，往下多留一点（不动孔位）
+bb.note(0.5, -9.4, "慢速实验：C 换 100 µF 电解（+ 脚插 j20，− 脚接地），输入换成一节 1.5 V 电池", ha="left")
+bb.note(0.5, -10.2, "负载对照：拔掉耳机，1 kΩ 插 j8 到下边 GND 轨，红表笔仍插 g8", ha="left")
+bb.note(0.5, -11.0, "对照实验：去掉运放的作用——把 1 kΩ 改并在 C 上（i20 到地），红表笔改插 f20", ha="left")
 bb.legend()
-bb.save(P, "20_p4_1_breadboard.png")
+bb.save(N, "20_p4_1_breadboard.png")
 
-# 按图 20-p4-1 的插法逐个列出连通关系，核对真值表：两亮两灭、拨任一只都翻转
-def board2(s1, s2):
-    L = [("+9V", "S1.COM"), ("S1.1", "S2.2"), ("S1.2", "S2.1"), ("S2.COM", "R"), ("R", "LED+"), ("LED-", "0V")]
-    L += [("S1.COM", f"S1.{1 + s1}"), ("S2.COM", f"S2.{1 + s2}")]
-    return _lit(L)
-tab2 = {s: board2(*s) for s in _it.product((0, 1), repeat=2)}
-assert sum(tab2.values()) == 2 and all(tab2[s] == bool(s[0] ^ s[1]) for s in tab2)
-print("[数值] 两地控制：", "，".join(f"S1={a} S2={b} {'亮' if v else '灭'}" for (a, b), v in tab2.items()))
-
-# ---------- 图 20-p4-2：扩展——三地控制，中间加一只中途开关 ----------
-WIRE["sig"] = (fs.C["vin"], "跨线 A / C")
-WIRE["fb"] = (fs.C["fb"], "跨线 B / D")
-WIRE["neg"] = (fs.C["third"], "中途开关引线")
-bb = Breadboard(38, "三地控制扩展：S1、S3 两只三脚拨动开关 + 中途开关 S2（9 V）",
-                size=(11.5, 6.6), rails=("（未用）", "（未用）", "0 V", "+9 V"))
-_grey_unused(bb)
-_slide(bb, 6, "S1")
-_slide(bb, 30, "S3")
-bb.wire("j6", "B+6", "pos")
-bb.wire("g5", "g14", "sig")                        # 跨线 A：S1 的 1 → 中途开关入 1
-bb.wire("h7", "h16", "fb")                         # 跨线 B：S1 的 2 → 中途开关入 2
-bb.wire("g20", "g31", "sig")                       # 跨线 C：中途开关出 1 → S3 的 2
-bb.wire("h22", "h29", "fb")                        # 跨线 D：中途开关出 2 → S3 的 1
-bb.part("i30", "i34", "R1 1 kΩ", "R", lab_side=-1)
-bb.part("h34", "h37", "LED", "L", lab_side=1)
-bb.wire("j37", "B-37", "gnd")
-bb.module(12.4, -10.6, 11.2, 1.0, "S2 中途开关（六脚双刀双掷，外侧四脚对角交叉）", fc="#efe6f3")
-for c, name in ((14, "入1"), (16, "入2"), (20, "出1"), (22, "出2")):
-    bb.wire((c, -9.5), f"j{c}", "neg")
-    bb.ax.text(c + 0.15, -9.0, name, ha="left", va="center", fontsize=7, zorder=8)
-bb.module(0.6, -10.4, 3.2, 1.3, "9 V 电池", fc="#e6f0f8")
-bb.wire((3.2, -9.1), "B+3", "pos")
-bb.wire((1.4, -9.1), "B-1", "gnd")
-bb.note(1.0, 3.6, "上半区不用；中途开关的四根引线可用鳄鱼夹线或焊好的杜邦线", va="center",
-        bbox=dict(fc="#f7f5ef", ec="none", pad=1.5))
-bb.legend()
-_lg = bb.ax.get_legend(); _lg.set_loc("upper center"); _lg.set_bbox_to_anchor((0.5, 0.995))
-bb.save(P, "20_p4_2_three_way.png")
-
-def board3(s1, s2, s3):
-    L = [("+9V", "S1.COM"), ("S1.1", "M.入1"), ("S1.2", "M.入2"), ("M.出1", "S3.2"), ("M.出2", "S3.1"),
-         ("S3.COM", "R"), ("R", "LED+"), ("LED-", "0V")]
-    L += [("S1.COM", f"S1.{1 + s1}"), ("S3.COM", f"S3.{1 + s3}")]
-    L += [("M.入1", "M.出1"), ("M.入2", "M.出2")] if s2 == 0 else [("M.入1", "M.出2"), ("M.入2", "M.出1")]
-    return _lit(L)
-tab3 = {s: board3(*s) for s in _it.product((0, 1), repeat=3)}
-assert sum(tab3.values()) == 4 and all(tab3[s] == bool(s[0] ^ s[1] ^ s[2]) for s in tab3)
-for s in tab3:                                     # 任拨一只，灯都翻转
-    for k in range(3):
-        t = list(s); t[k] ^= 1
-        assert tab3[s] != tab3[tuple(t)]
-print("[数值] 三地控制 8 种组合亮 4 种，任拨一只都翻转；全 0 时", "亮" if tab3[(0, 0, 0)] else "灭")
+# ---------- 图 20-p4-2：没有示波器时——用耳朵听衰减，用秒级 RC 看充电 ----------
+fc = 1 / (2 * np.pi * R * C)
+tones = np.array([100, 200, 500, 1000, 2000, 5000, 10000])
+h = 1 / np.sqrt(1 + (tones / fc) ** 2)
+for f_, h_ in zip(tones, h):
+    print(f"[数值] 一阶低通 {f_:>5d} Hz：输出/输入 {h_:.3f}，{20*np.log10(h_):+.1f} dB")
+print(f"[数值] 截止频率 {fc:.0f} Hz；100 Hz 时 0.707 V 输入 → 输出 {0.707*h[0]:.3f} V；"
+      f"1 kΩ 直接并在电容上（100 Hz）→ {0.707*1e3/np.hypot(R + 1e3, 2*np.pi*100*R*1e3*C):.3f} V")
+assert abs(fc - 995) < 1 and abs(h[0] - 0.995) < 0.001 and abs(h[-1] - 0.099) < 0.001
+TAU_S = R * 100e-6
+VB = 1.5
+ts = np.linspace(0, 10, 501)
+vs_ = fs.rc_step(ts, TAU_S, 0.0, VB)
+print(f"[数值] 慢速版 R·C = {TAU_S:.1f} s；1.5 V 电池接入后 1τ {VB*(1-np.exp(-1)):.2f} V、"
+      f"3τ {VB*(1-np.exp(-3)):.2f} V、5τ {VB*(1-np.exp(-5)):.2f} V")
+fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
+a1.bar(range(len(tones)), 20 * np.log10(h), color=fs.C["vout"], width=0.6)
+for i, h_ in enumerate(h):
+    a1.text(i, 20 * np.log10(h_) - 0.6, f"{int(round(20*np.log10(h_)))} dB", ha="center", va="top", fontsize=8)
+a1.set_xticks(range(len(tones)))
+a1.set_xticklabels(["100", "200", "500", "1k", "2k", "5k", "10k"])
+a1.set_ylim(-25, 2); fs.ref_h(a1, -3, "−3 dB", x=0.99, ha="right")
+fs.axlabels(a1, "手机放的音调频率", "Hz", "输出比输入小多少", "dB")
+a1.set_title("用耳朵听：每小 6 dB，幅度减一半", fontsize=10)
+a2.plot(ts, np.full_like(ts, VB), label="输入：1.5 V 电池", **fs.LS["vin"])
+a2.plot(ts, vs_, label="输出：16 kΩ × 100 µF", **fs.LS["vout"])
+for k in (1, 3):
+    fs.mark(a2, k * TAU_S, VB * (1 - np.exp(-k)), "{:.2f}", " V", dy=-0.15)
+fs.ref_v(a2, TAU_S, "1τ = 1.6 s")
+a2.set_ylim(0, 1.75); a2.legend(loc="lower right", fontsize=8)
+fs.axlabels(a2, "时间", "s", "万用表直流读数", "V")
+a2.set_title("用万用表看：电容慢慢充电", fontsize=10)
+fs.save(fig, N, "20_p4_2_no_scope.png")
 
 
-# ======================= page1–3 补充原理图（schem.py 国标元件） =======================
-from schem import *
+# ======================= 第 8 轮补图：正文讲到具体连接、附近却没有电路图的地方 =======================
 ACC = fs.C["bad"]
-TY = 0.6                     # 两个触点 / 两根跨线离中线的高度
 
 
-def spdt_at(d, com, side, up, color="black", label=None, lab_up=True):
-    """单刀双掷开关：公共端 com，触点在 side 方向（+1 右、-1 左）1.2 处，上下各一；up=True 刀搭上触点。"""
-    cx, cy = com
-    tx = cx + 1.2 * side
-    d += elm.Dot().at(com).color(color)
-    d += elm.Dot(open=True).at((tx, cy + TY)).color(color)
-    d += elm.Dot(open=True).at((tx, cy - TY)).color(color)
-    ty = cy + (TY if up else -TY)
-    d += elm.Line().at(com).to((tx - 0.12 * side, ty)).color(color)
-    if label:
-        d += elm.Label().at((cx + 0.6 * side, cy + (1.25 if lab_up else -1.25))).label(label, color=color)
-    return (tx, cy + TY), (tx, cy - TY)
+def load_to_ground(d, at, label="1 kΩ 负载", color=ACC):
+    """从 at 点往下接一只负载电阻到地（强调色），标签放在电阻右侧。"""
+    d += (rl := elm.Resistor().down().at(at).color(color))
+    d += elm.Ground().color(color)
+    d += elm.Label().at((rl.center.x + 0.5, rl.center.y)).label(label, color=color, halign="left")
 
 
-def two_way_sch(d, ox, oy, s1_up=True, s2_up=False, mode="ok", title=None):
-    """双控电路原理图。mode："ok"；"swap" 跨线在 S2 端对调；"com" S2 公共端与下触点接反；
-    "neutral" 开关在零线一侧；"broken" 跨线 A 断了。"""
+# ---------- 图 20-p1-3 1 kΩ 负载接在哪里：无源 RC 直接带负载 vs 有源（跟随器）带负载 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).at((0, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(2.0)
+    d += (m := elm.Dot())
+    d += elm.Line().right().length(0.8)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    load_to_ground(d, m.center)
+    d += elm.Label().at((-0.5, 3.4)).label("（a）无源 RC：负载直接并在电容上", fontsize=12, halign="left")
+    d += elm.Dot(open=True).at((10.5, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    op = follower_tail(d, n.center, out_len=1.8)
+    load_to_ground(d, (op.out.x + 0.9, op.out.y))
+    d += elm.Dot().at((op.out.x + 0.9, op.out.y))
+    d += elm.Label().at((10.0, 3.4)).label("（b）有源：负载接在运放输出端", fontsize=12, halign="left")
+save_schem(d, N, "20_p1_3_load_position.png")
+print(f"[数值] 无源 RC 直接带 1 kΩ：低频输出只剩 1/(1 + 16) = {1 / 17:.2f} 倍；有源版不变")
+
+# ---------- 图 20-p2-4 一阶低通推导用：同一个电流 I 流过 R 和 C ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += (r := elm.Resistor().right().label("$R$ 16 kΩ"))
+    d += (n := elm.Dot())
+    d += (c := elm.Capacitor().down().label("$C$ 10 nF", "bottom"))
+    d += elm.Ground()
+    follower_tail(d, n.center)
+    d += elm.Arrow().right().at((r.start.x + 0.4, r.start.y + 1.1)).length(2.2).color(ACC).label("$I$", "top", color=ACC)
+    d += elm.Label().at((r.center.x, r.center.y - 0.6)).label("$V_R = I R$", color=ACC)
+    d += elm.Label().at((c.center.x - 0.6, c.center.y)).label("$V_C = I X_C$", color=ACC, halign="right")
+    d += elm.Label().at((n.center.x + 1.0, n.center.y - 1.9)).label("跟随器：$V_o = V_C$", halign="left", fontsize=10)
+save_schem(d, N, "20_p2_4_first_order_derive.png")
+
+
+# ---------- 图 20-p3-3 Sallen-Key：正确接法 vs 两个电容接反（排查表第三行） ----------
+def sallen(d, x0, y0, c_gnd="10 nF", c_fb="33 nF", hl=False, title=None):
+    col = ACC if hl else "black"
+    d += elm.Dot(open=True).at((x0, y0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R_1$ 4.22 kΩ")
+    d += (a := elm.Dot())
+    d += elm.Resistor().right().label("$R_2$ 18.4 kΩ")
+    d += (b := elm.Dot())
+    d += elm.Capacitor().down().label(c_gnd, "bottom").color(col)
+    d += elm.Ground()
+    op = follower_tail(d, b.center, out_len=2.4)
+    d += elm.Line().up().at(a.center).length(3.6)
+    d += elm.Capacitor().right().label(c_fb).tox(op.out.x + 1.4).color(col)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
     if title:
-        d += elm.Label().at((ox - 0.8, oy + 2.1)).label(title, halign="left", fontsize=11)
-    xL, x1, x2, xN = ox, ox + 1.2, ox + 7.2, ox + 11.4
-    d += elm.Dot(open=True).at((xL, oy)).label("L", "left")
-    if mode == "neutral":
-        d += elm.Line().at((xL, oy)).right(0.3)
-        d += LampX().right(2.0).label("灯", ofst=0.3)
-        x1 = d.here[0] + 0.3
-        x2 = x1 + 6.0
-        d += elm.Line().right().tox(x1)
-    else:
-        d += elm.Line().at((xL, oy)).to((x1, oy))
-    a1, b1 = spdt_at(d, (x1, oy), +1, s1_up, label="S1")
-    cs = ACC if mode == "com" else "black"
-    a2, b2 = spdt_at(d, (x2, oy), -1, s2_up, label="S2", color=cs)
-    # 跨线
-    if mode == "swap":
-        xm = (a1[0] + a2[0]) / 2
-        d += elm.Line().at(a1).to((xm - 0.4, a1[1]))
-        d += elm.Line().to((xm + 0.4, b2[1])).color(ACC)
-        d += elm.Line().to(b2).color(ACC)
-        d += elm.Line().at(b1).to((xm - 0.4, b1[1]))
-        d += elm.Line().to((xm + 0.4, a2[1])).color(ACC)
-        d += elm.Line().to(a2).color(ACC)
-        d += elm.Label().at((xm - 1.4, a1[1] + 0.35)).label("跨线 A", fontsize=9)
-        d += elm.Label().at((xm - 1.4, b1[1] - 0.35)).label("跨线 B", fontsize=9)
-        d += elm.Label().at((xm + 0.4, oy + 1.25)).label("在 S2 端对调", color=ACC, fontsize=9)
-    elif mode == "com":
-        d += elm.Line().at(a1).to(a2)
-        d += elm.Label().at(((a1[0] + a2[0]) / 2, a1[1] + 0.35)).label("跨线 A", fontsize=9)
-        xm = (b1[0] + b2[0]) / 2
-        d += elm.Line().at(b1).to((xm, b1[1]))
-        d += elm.Label().at((xm - 1.0, b1[1] - 0.35)).label("跨线 B", fontsize=9)
-        d += elm.Line().at((xm, b1[1])).to((xm, oy - 1.5)).color(ACC)
-        d += elm.Line().to((x2 + 0.5, oy - 1.5)).color(ACC)
-        d += elm.Line().to((x2 + 0.5, oy)).color(ACC)
-        d += elm.Line().to((x2, oy)).color(ACC)
-        d += elm.Line().at(b2).to((b2[0], oy - 2.1)).color(ACC)
-        d += elm.Line().to((x2 + 1.1, oy - 2.1)).color(ACC)
-        d += elm.Line().to((x2 + 1.1, oy)).color(ACC)
-        d += elm.Label().at((x2 + 1.2, oy - 2.5)).label("灯线接到了触点上，跨线 B 接到了公共端", color=ACC, fontsize=9)
-    elif mode == "broken":
-        xm = (a1[0] + a2[0]) / 2
-        d += elm.Line().at(a1).to((xm - 0.25, a1[1]))
-        d += elm.Line().at((xm + 0.25, a2[1])).to(a2)
-        d += elm.Label().at((xm, a1[1])).label("×", color=ACC, fontsize=14)
-        d += elm.Label().at((xm, a1[1] + 0.45)).label("跨线 A 断了", color=ACC, fontsize=9)
-        d += elm.Line().at(b1).to(b2)
-        d += elm.Label().at((xm, b1[1] - 0.35)).label("跨线 B", fontsize=9)
-    else:
-        d += elm.Line().at(a1).to(a2)
-        d += elm.Line().at(b1).to(b2)
-        d += elm.Label().at(((a1[0] + a2[0]) / 2, a1[1] + 0.35)).label("跨线 A", fontsize=9)
-        d += elm.Label().at(((b1[0] + b2[0]) / 2, b1[1] - 0.35)).label("跨线 B", fontsize=9)
-    # 右端
-    xr = x2 + (1.1 if mode == "com" else 0.0)
-    if mode == "neutral":
-        d += elm.Line().at((x2, oy)).right().tox(x2 + 0.8)
-        d += elm.Dot(open=True).label("N", "right")
-        d += elm.Label().at((x2 + 1.0, oy - 0.9)).label("开关断的是零线", color=ACC, fontsize=9)
-    else:
-        d += elm.Line().at((xr, oy)).right(0.4)
-        d += LampX().right(2.0).label("灯", ofst=0.3)
-        d += elm.Line().right(0.4)
-        d += elm.Dot(open=True).label("N", "right")
+        d += elm.Label().at((x0 - 0.5, y0 + 4.6)).label(title, fontsize=12, halign="left")
 
 
-def two_switches():
-    """图 20-p1-4：两个普通开关（a）串联（b）并联控制一盏灯。"""
-    with drawing(fontsize=10) as d:
-        d += elm.Label().at((-0.6, 1.8)).label("（a）串联：两个都合上灯才亮", halign="left", fontsize=11)
-        d += elm.Dot(open=True).at((0, 0)).label("L", "left")
-        d += elm.Line().right(0.4)
-        d += elm.Switch().right().label("楼下开关", ofst=0.3)
-        d += elm.Line().right(0.6)
-        d += elm.Switch().right().label("楼上开关", ofst=0.3)
-        d += elm.Line().right(0.6)
-        d += LampX().right(2.0).label("灯", ofst=0.3)
-        d += elm.Line().right(0.4)
-        d += elm.Dot(open=True).label("N", "right")
-        oy = -4.0
-        d += elm.Label().at((-0.6, oy + 1.8)).label("（b）并联：只要一个合着灯就亮", halign="left", fontsize=11)
-        d += elm.Dot(open=True).at((0, oy)).label("L", "left")
-        d += elm.Line().right(0.6)
-        a = d.here
-        d += elm.Dot()
-        d += elm.Switch().right().label("楼下开关", ofst=0.3)
-        b = d.here
-        d += elm.Dot()
-        d += elm.Line().at(a).down(1.4)
-        d += elm.Switch().right().label("楼上开关", "bottom", ofst=0.3)
-        d += elm.Line().up(1.4)
-        d += elm.Line().at(b).right(0.6)
-        d += LampX().right(2.0).label("灯", ofst=0.3)
-        d += elm.Line().right(0.4)
-        d += elm.Dot(open=True).label("N", "right")
-    print("[图 20-p1-4] 两个普通开关串联 / 并联")
-    save_schem(d, P, "20_p1_4_two_switches.png")
+with drawing(fontsize=11) as d:
+    sallen(d, 0, 0, title="（a）正确：接地的是 10 nF，接输出的是 33 nF")
+    sallen(d, 15, 0, c_gnd="33 nF", c_fb="10 nF", hl=True, title="（b）接反：接地的成了 33 nF，接输出的成了 10 nF")
+save_schem(d, N, "20_p3_3_sk_caps_swapped.png")
+Qs = np.sqrt(R1 * R2 * C1 * C2) / (C2 * (R1 + R2))
+print(f"[数值] 电容接反：Q = {Qs:.2f}")
 
-
-def mistakes_sch():
-    """图 20-p2-4：三种接错的原理图（开关都在出厂位置：S1 搭跨线 A，S2 搭跨线 B）。"""
-    with drawing(fontsize=10) as d:
-        two_way_sch(d, 0, 0, mode="swap", title="（a）跨线一端对调")
-        two_way_sch(d, 0, -5.0, mode="com", title="（b）公共端接错：S2 的公共端和一个触点接反")
-        two_way_sch(d, 0, -10.6, mode="neutral", title="（c）开关接在零线：灯在火线一侧")
-    print("[图 20-p2-4] 三种接错：跨线对调、公共端接错、开关接在零线")
-    save_schem(d, P, "20_p2_4_mistakes.png")
-
-
-def lab_sch():
-    """图 20-p2-5：低压实验。（a）第 2 步正确接法；（b）第 6 步模拟开关接在零线。标出红表笔测量点。"""
-    def sw_pair(d, x1, oy, up1, up2):
-        a1, b1 = spdt_at(d, (x1, oy), +1, up1, label="S1")
-        a2, b2 = spdt_at(d, (x1 + 5.0, oy), -1, up2, label="S2")
-        d += elm.Line().at(a1).to(a2); d += elm.Line().at(b1).to(b2)
-        d += elm.Label().at(((a1[0] + a2[0]) / 2, a1[1] + 0.35)).label("跨线", fontsize=9)
-        d += elm.Label().at(((b1[0] + b2[0]) / 2, b1[1] - 0.35)).label("跨线", fontsize=9)
-        return x1 + 5.0
-    with drawing(fontsize=10) as d:
-        d += elm.Label().at((-1.2, 2.1)).label("（a）第 2 步：正确接法（开关在正极一侧）", halign="left", fontsize=11)
-        d += elm.Dot(open=True).at((0, 0)).label("9 V 正极", "left")
-        x2 = sw_pair(d, 0, 0, True, False)
-        d += elm.Line().at((x2, 0)).right(0.4)
-        d += elm.Resistor().right(1.8).label("1 kΩ", ofst=0.2)
-        p = d.here
-        d += elm.LED().right(1.8).label("LED", ofst=0.2)
-        d += elm.Line().right(0.4)
-        d += elm.Dot(open=True).label("9 V 负极", "right")
-        d += elm.Dot().at(p).color(ACC)
-        d += elm.Label().at((p[0], p[1] - 1.15)).label("测量点：LED 灭时接近 0 V", color=ACC, fontsize=9)
-        oy = -4.6
-        d += elm.Label().at((-1.2, oy + 2.1)).label("（b）第 6 步：模拟开关接在零线（开关在负极一侧）", halign="left", fontsize=11)
-        d += elm.Dot(open=True).at((0, oy)).label("9 V 正极", "left")
-        d += elm.Line().right(0.4)
-        d += elm.Resistor().right(1.8).label("1 kΩ", ofst=0.2)
-        p = d.here
-        d += elm.LED().right(1.8).label("LED", ofst=0.2)
-        d += elm.Line().right(0.4)
-        x1 = d.here[0]
-        x2 = sw_pair(d, x1, oy, True, False)
-        d += elm.Line().at((x2, oy)).right(0.6)
-        d += elm.Dot(open=True).label("9 V 负极", "right")
-        d += elm.Dot().at(p).color(ACC)
-        d += elm.Label().at((p[0], p[1] - 1.15)).label("测量点：LED 灭时接近 9 V", color=ACC, fontsize=9)
-    print("[图 20-p2-5] 实验第 2 步与第 6 步；测量点 LED 灭时接近 0 V / 约 9 V（模型估算）")
-    save_schem(d, P, "20_p2_5_lab.png")
-
-
-def broken_sch():
-    """图 20-p3-3：跨线 A 断了。只有两把刀都搭在跨线 B 上时灯才亮。"""
-    with drawing(fontsize=10) as d:
-        two_way_sch(d, 0, 0, s1_up=False, s2_up=False, mode="broken")
-    print("[图 20-p3-3] 跨线 A 断：只有两把刀都在 B 上才亮")
-    save_schem(d, P, "20_p3_3_broken.png")
-
-
-def five_way_sch():
-    """图 20-p3-4：练习 3 五地控制：两只双控开关在两头，中间三只中途开关（画在直通位置）。"""
-    with drawing(fontsize=10) as d:
-        d += elm.Dot(open=True).at((0, 0)).label("L", "left")
-        d += elm.Line().right(0.8)
-        a, b = spdt_at(d, (0.8, 0), +1, True, label="S1 双控")
-        x = a[0]
-        for k in range(3):
-            d += elm.Line().at((x, TY)).right(0.8); d += elm.Line().at((x, -TY)).right(0.8)
-            xa = x + 0.8; xb = xa + 1.4
-            for yy in (TY, -TY):
-                d += elm.Dot(open=True).at((xa, yy)).color(ACC); d += elm.Dot(open=True).at((xb, yy)).color(ACC)
-                d += elm.Line().at((xa, yy)).to((xb, yy)).color(ACC)
-            d += elm.Line().at((xa, TY)).to((xb, -TY)).color(ACC).linestyle(":")
-            d += elm.Line().at((xa, -TY)).to((xb, TY)).color(ACC).linestyle(":")
-            d += elm.Label().at(((xa + xb) / 2, 1.25)).label(f"S{k + 2} 中途", color=ACC)
-            x = xb
-        d += elm.Line().at((x, TY)).right(0.8); d += elm.Line().at((x, -TY)).right(0.8)
-        a2, b2 = spdt_at(d, (x + 2.0, 0), -1, False, label="S5 双控")
-        d += elm.Line().at((x + 2.0, 0)).right(0.4)
-        d += LampX().right(2.0).label("灯", ofst=0.3)
-        d += elm.Line().right(0.4)
-        d += elm.Dot(open=True).label("N", "right")
-        d += elm.Label().at((6.0, -1.5)).label("中途开关：实线 = 直通，点线 = 拨一下后的交叉", color=ACC, fontsize=9)
-    print("[图 20-p3-4] 五地控制：2 只双控 + 3 只中途开关")
-    save_schem(d, P, "20_p3_4_five_way.png")
-
-
-two_switches()
-mistakes_sch()
-lab_sch()
-broken_sch()
-five_way_sch()
+# ---------- 图 20-p3-4 练习 4 答案：一阶有源高通 + 2 倍同相放大 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Capacitor().right().label("$C$ 100 nF")
+    d += (n := elm.Dot())
+    d += elm.Resistor().down().label("$R$ 15.9 kΩ", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.0)
+    d += (op := elm.Opamp(leads=True).right().anchor("in2"))
+    d += elm.Line().left().at(op.in1).length(0.4)
+    d += elm.Line().up().length(1.4).color(ACC)
+    d += (k2 := elm.Dot().color(ACC))
+    d += elm.Resistor().right().label("$R_f$ 10 kΩ").tox(op.out.x + 0.6).color(ACC)
+    d += elm.Line().down().toy(op.out).color(ACC)
+    d += elm.Dot()
+    d += elm.Resistor().left().at(k2.center).label("$R_1$ 10 kΩ").color(ACC)
+    d += elm.Line().down().length(0.6).color(ACC)
+    d += elm.Ground().color(ACC)
+    d += elm.Line().right().at(op.out).length(1.2)
+    d += elm.Dot(open=True).label("$V_o$（通带内约 2 倍）", "right")
+save_schem(d, N, "20_p3_4_highpass_gain2.png")

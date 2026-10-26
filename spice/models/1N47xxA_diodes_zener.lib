@@ -1,4 +1,4 @@
-* SOURCE: https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt  (opened 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* SOURCE: https://ltwiki.org/files/LTspiceIV/Vendor%20List/Diodes%20Incorporated/Spice/spicemodels_zener_diodes.txt  (opened 2026-10-23 by reviewer A (nodes 01-03, 05, 08, 09, 12-14, 16, 17, 19, 21, 22, 25))
 * Diodes Incorporated 1N47xxA zener models (vendor file as archived in LTspice 'Vendor List'; 1N4733A is obsolete at Diodes and no longer on diodes.com).
 * Pins: 1 = anode, 2 = cathode. Subckt bodies copied unmodified.
 *SRC=1N4728A;DI_1N4728A;Diodes;Zener <=10V; 3.30V  1.00W   Diodes Inc.

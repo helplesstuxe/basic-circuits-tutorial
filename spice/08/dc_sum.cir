@@ -1,0 +1,17 @@
+* 08 page2 例3 同相加法器：0.5 V、0.2 V 各经 10k 接同相端，后接 R1=10k/Rf=10k（2 倍）→ 同相端 0.35 V、输出 0.7 V
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VA ia 0 0.5
+VB ib 0 0.2
+RA ia p 10k
+RB ib p 10k
+X1 p m vcc vee o LMX58B_LM2904B
+R1 m 0 10k
+RF o m 10k
+.control
+op
+echo "RES vpl $&v(p)"
+echo "RES vol $&v(o)"
+.endc
+.end

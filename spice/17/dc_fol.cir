@@ -1,0 +1,34 @@
+* 17 稳压管稳压 · 原理与实现篇 图 17-p2-2 / 图 17-p2-3：稳压管 + 射极跟随器（R 180 Ω、1N4733A、2N3904），10 V 输入，负载 0→100 mA
+* 2N3904：onsemi 官方模型；页面按 V_BE 固定 0.7 V、β=30 估算；负载按电流源处理
+.include ../models/1N47xxA_diodes_zener.lib
+.include ../models/2N3904_onsemi.lib
+VIN in 0 DC 10
+R1 in b 180
+XZ za b DI_1N4733A
+VZM za 0 0
+VCM in c 0
+Q1 c b o Q2N3904
+IL o 0 DC 0
+.control
+dc IL 0 0.1 0.0005
+meas dc vo0 find v(o) at=0
+meas dc vo100 find v(o) at=0.1
+meas dc vo1 find v(o) at=0.001
+meas dc iz0 find i(VZM) at=0
+meas dc iz100 find i(VZM) at=0.1
+meas dc vb100 find v(b) at=0.1
+echo "RES vo0 $&vo0"
+echo "RES vo100 $&vo100"
+echo "RES vo1 $&vo1"
+echo "RES iz0 $&iz0"
+echo "RES iz100 $&iz100"
+echo "RES vb100 $&vb100"
+alter VIN dc = 12
+alter IL dc = 0.1
+op
+let x = (v(c) - v(o)) * i(VCM)
+echo "RES pc12 $&x"
+let x = v(o)
+echo "RES vo12 $&x"
+.endc
+.end

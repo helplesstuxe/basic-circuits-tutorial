@@ -1,0 +1,90 @@
+* 12 page1 图12-p1-1 / 图12-p1-3、page2 图12-p2-2 / 例1 / 例2、page3 练习2：分压器直接接负载 vs 经跟随器接负载
+* 运放 LM358B，±15 V 供电（假设：page1/page2 没写运放电源，取前面节点一贯的 ±15 V）
+* 负载电流由 run.py 用负载两端电压 ÷ 电阻算出
+* 分压器：10 V 经 RA=10k、RB=10k；RLd = 直接接在分压点的负载，RLo = 接在跟随器输出的负载（不接时取 1e12）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+* 直接 op 不收敛（TI 模型），改用瞬态：VR 0.1 ms 内从 0 升到 1 V，ES 按倍数放大成电源电压，2 ms 时读稳态
+VR r 0 PWL(0 0 100u 1)
+ES s 0 r 0 10
+RA s d 10k
+RB d 0 10k
+RLd d 0 1e12
+X1 d o vcc vee o LMX58B_LM2904B
+RLo o 0 1e12
+.control
+tran 1u 2m
+meas tran d0 find v(d) at=1.9m
+echo "RES d0 $&d0"
+meas tran o0 find v(o) at=1.9m
+echo "RES o0 $&o0"
+* page1 第2步：1 kΩ 接在跟随器输出
+alter RLo resistance=1k
+tran 1u 2m
+meas tran d1 find v(d) at=1.9m
+echo "RES d1 $&d1"
+meas tran o1 find v(o) at=1.9m
+echo "RES o1 $&o1"
+meas tran il1 find v(o) at=1.9m
+echo "RES il1_v $&il1"
+* page1 第3步 / 图12-p1-1：1 kΩ 改接到分压点
+alter RLo resistance=1e12
+alter RLd resistance=1k
+tran 1u 2m
+meas tran d2 find v(d) at=1.9m
+echo "RES d2 $&d2"
+meas tran o2 find v(o) at=1.9m
+echo "RES o2 $&o2"
+* page2 图12-p2-2：直接接 10k、100k
+alter RLd resistance=10k
+tran 1u 2m
+meas tran d10k find v(d) at=1.9m
+echo "RES d10k $&d10k"
+alter RLd resistance=100k
+tran 1u 2m
+meas tran d100k find v(d) at=1.9m
+echo "RES d100k $&d100k"
+* page2 例1：5 V 经 10k/20k，模块 2 kΩ；先空载、再直接接、再经跟随器（±15 V）
+alter ES gain=5
+alter RB resistance=20k
+alter RLd resistance=1e12
+tran 1u 2m
+meas tran e1d0 find v(d) at=1.9m
+echo "RES e1d0 $&e1d0"
+alter RLd resistance=2k
+tran 1u 2m
+meas tran e1d find v(d) at=1.9m
+echo "RES e1d $&e1d"
+alter RLd resistance=1e12
+alter RLo resistance=2k
+tran 1u 2m
+meas tran e1o find v(o) at=1.9m
+echo "RES e1o $&e1o"
+meas tran e1i find v(o) at=1.9m
+echo "RES e1i_v $&e1i"
+* page2 例2：传感器 50k 内阻、后级 200k（开路电压取 1 V）
+alter ES gain=1
+alter RA resistance=50k
+alter RB resistance=1e12
+alter RLo resistance=200k
+alter RLd resistance=200k
+tran 1u 2m
+meas tran e2d find v(d) at=1.9m
+echo "RES e2d $&e2d"
+meas tran e2o find v(o) at=1.9m
+echo "RES e2o $&e2o"
+* page3 练习2：内阻 20k、后级 20k（开路电压 1 V）：直接接、经跟随器
+alter RA resistance=20k
+alter RLd resistance=20k
+alter RLo resistance=20k
+tran 1u 2m
+meas tran x2d find v(d) at=1.9m
+echo "RES x2d $&x2d"
+alter RLd resistance=1e12
+tran 1u 2m
+meas tran x2o find v(o) at=1.9m
+echo "RES x2o $&x2o"
+.endc
+.end

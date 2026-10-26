@@ -1,266 +1,280 @@
-"""18 互锁：除 18_sim.py 那两张以外的所有配图，以及正文、练习要用到的数字。运行：python code/figs/18_figs.py
-图上出现的每个数字都由本脚本打印（fs.mark 自动打印；其余用 print）。"""
-import sys, os
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+"""18 微分电路：全部配图（图 18-p2-3 由 code/18_sim.py 生成）。
+运行：/workspace/circuits-venv/bin/python code/figs/18_figs.py
+图上的每个数字都由本脚本打印；关键结论用 assert 检查。
+"""
+import os, sys
+import importlib.util
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+from schem import *            # noqa: F401,F403
+import figstyle as fs
 import numpy as np
 import matplotlib.pyplot as plt
-from schem import *
-import figstyle as fs
 
-P = "18"
-
-
-def main_circuit():
-    """图 18-p1-1：正反转主电路。KM1 上下口一一对应；KM2 上口一致、下口把 L1、L3 对调。"""
-    with drawing(fontsize=11) as d:
-        X1 = [0, 1.5, 3.0]                 # KM1 三列
-        X2 = [5.0, 6.5, 8.0]               # KM2 三列
-        tap_y = [-2.6, -2.2, -1.8]         # L1、L2、L3 引到 KM2 的三条横线高度（错开，避免假交点）
-        for i, x in enumerate(X1):
-            d += elm.Dot(open=True).at((x, 0)).label(f"L{i + 1}", "top")
-            d += elm.Fuse().down().length(1.4)
-            d += elm.Line().down().toy(tap_y[i])
-            d += elm.Dot()
-            d += elm.Line().right().tox(X2[i])
-            d += elm.Line().down().toy(-2.8)
-            d += ContactNO().down().length(1.6)
-            d += elm.Line().at((x, tap_y[i])).down().toy(-2.8)
-            d += ContactNO().down().length(1.6)
-            d += elm.Line().down().toy(-5.8)
-        # KM2 下口调相：L1 列 → T3，L2 列 → T2，L3 列 → T1（三条横线错开高度）
-        for x2, xt, y in [(X2[0], X1[2], -5.4), (X2[1], X1[1], -4.8), (X2[2], X1[0], -5.1)]:
-            d += elm.Line().at((x2, -4.4)).down().toy(y)
-            d += elm.Line().left().tox(xt)
-            d += elm.Dot()
-        for x2, tname in [(X2[0], "去 T3"), (X2[1], "去 T2"), (X2[2], "去 T1")]:   # 给 KM2 下口每根线标去向
-            d += elm.Label().at((x2 + 0.45, -4.55)).label(tname, fontsize=9)
-        for i, x in enumerate(X1):
-            d += ThermalHeater().at((x, -5.8)).down().length(1.4)
-            d += elm.Line().down(0.3)
-            d += elm.Label().at((x + 0.4, -6.95)).label(f"T{i + 1}", fontsize=10)
-        d += elm.Line().at((X1[1], -7.5)).down(0.4)
-        d += (m := Motor3().down().length(1.0))
-        d += elm.Line().at((X1[0], -7.5)).right().tox(X1[1] - 0.35)
-        d += elm.Line().to((X1[1] - 0.35, -8.2))
-        d += elm.Line().at((X1[2], -7.5)).left().tox(X1[1] + 0.35)
-        d += elm.Line().to((X1[1] + 0.35, -8.2))
-        for xs, txt in [(X1, "KM1 正转"), (X2, "KM2 反转")]:
-            y_c = -2.8 - 0.8 - 0.05
-            d += elm.Line().at((xs[0] + 0.25, y_c)).to((xs[2] + 0.25, y_c)).linestyle("--").color("#808080")
-            d += elm.Label().at(((xs[0] - 1.3) if xs is X1 else (xs[2] + 1.3), -3.6)).label(txt.replace(" ", "\n"), fontsize=10)
-        d += elm.Label().at((10.6, -5.1)).label("KM2 下口调相：\nL1 → T3，L3 → T1\nL2 不动", fontsize=9, color="#4d4d4d")
-        d += elm.Label().at((m.center[0] + 1.6, m.center[1])).label("电动机 M", fontsize=11)
-        d += elm.Label().at((-1.3, -0.7)).label("熔断器\nFU1", fontsize=10)
-        d += elm.Label().at((-1.3, -6.5)).label("热继电器\nFR", fontsize=10)
-    print("[图 18-p1-1] 主电路：KM1 L1→T1、L2→T2、L3→T3；KM2 L1→T3、L2→T2、L3→T1")
-    save_schem(d, P, "18_p1_1_main.png")
+N = "18"
+_spec = importlib.util.spec_from_file_location("sim13", os.path.join(HERE, "..", "18_sim.py"))
+sim = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(sim)
+TAU = sim.RF * sim.C
+print(f"[数值] C {sim.C*1e9:.0f} nF，R_f {sim.RF/1e3:.0f} kΩ → R_f·C {TAU*1e3:.1f} ms")
 
 
-def rung(d, y, items, x0, x1):
-    """在高度 y 上从 x0 起依次画 items = [(元件类, 标签)]，最后连到 x1。'||' 开头表示并联块。"""
-    d += elm.Line().at((x0, y)).right(0.4)
-    for E, lab in items:
-        if E == "par":                      # 并联块：上面一个元件，下面一个元件
-            (E1, l1), (E2, l2) = lab
-            a = d.here
-            d += E1().right().label(l1, ofst=0.6)
-            b = d.here
-            d += elm.Line().at(a).down(1.5)
-            d += E2().right().tox(b[0]).label(l2, "bottom", ofst=0.25)
-            d += elm.Line().up(1.5)
-            d += elm.Dot().at(a); d += elm.Dot().at(b)
-            d += elm.Line().at(b).right(0.4)
-        else:
-            d += E().right().label(lab, ofst=0.6 if E is not Coil else 0.4)
-            d += elm.Line().right(0.4)
-    d += elm.Line().right().tox(x1)
+def differentiator(d, practical=False, cur=False):
+    """反相微分器：把积分器的 R 和 C 对调——输入串电容 C，反馈接电阻 R_f。
+    practical=True 时输入再串 R1，反馈 R_f 旁并 C_f。"""
+    d += (op := elm.Opamp(leads=True))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot().label("虚地 0 V", "bottom", ofst=0.15) if cur else elm.Dot())
+    c = elm.Capacitor().left().label("$C$ 100 nF")
+    if cur:
+        c.label("$I \\rightarrow$", "bottom")
+    d += c
+    if practical:
+        d += elm.Resistor().left().label("$R_1$ 1 kΩ\n（限高频）")
+    d += elm.Dot(open=True).label("$V_i$ 输入", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    if practical:
+        d += (a := elm.Dot())
+    r = elm.Resistor().right().label("$R_f$ 10 kΩ").tox(op.out.x + 0.5)
+    if cur:
+        r.label("$I \\rightarrow$", "bottom")
+    d += r
+    if practical:
+        d += (b := elm.Dot())
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    if practical:
+        d += elm.Line().up().at(a.center).length(1.5)
+        d += elm.Capacitor().right().label("$C_f$ 10 nF（压高频）").tox(b.center.x)
+        d += elm.Line().down().toy(b.center)
+    d += elm.Line().left().at(op.in2).length(0.5)
+    d += elm.Line().down().length(0.5)
+    d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(1.25)
+    d += elm.Dot(open=True).label("$V_o$ 输出", "right")
 
 
-def control(name, double=False):
-    """控制回路。double=False：接触器互锁（图 18-p1-2）；True：按钮 + 接触器双重互锁（图 18-p2-1）。"""
-    with drawing(fontsize=10) as d:
-        d += elm.Dot(open=True).at((-7.0, 0)).label("L", "left")
-        d += elm.Line().right(0.4)
-        d += PushNC().right().label("SB1 停止", ofst=0.6)
-        d += elm.Line().right(0.4)
-        d += ThermalNC().right().label("FR", ofst=0.6)
-        d += elm.Line().right().tox(0)
-        d += elm.Dot()
-        X1 = 15.5 if double else 12.0
-        r1 = [("par", ((PushNO, "SB2 正转"), (ContactNO, "KM1 自锁")))]
-        r2 = [("par", ((PushNO, "SB3 反转"), (ContactNO, "KM2 自锁")))]
-        if double:
-            r1 = [(PushNC, "SB3 常闭")] + r1
-            r2 = [(PushNC, "SB2 常闭")] + r2
-        r1 += [(ContactNC, "KM2 常闭"), (Coil, "KM1 线圈")]
-        r2 += [(ContactNC, "KM1 常闭"), (Coil, "KM2 线圈")]
-        rung(d, 0, r1, 0, X1)
-        d += elm.Line().at((0, 0)).down(4.4)
-        rung(d, -4.4, r2, 0, X1)
-        d += elm.Line().at((X1, 0)).down(4.4)
-        d += elm.Dot().at((X1, 0))
-        d += elm.Line().at((X1, -4.4)).right(0.6)
-        d += elm.Dot(open=True).label("N", "right")
-    print(f"[图] {name}：控制回路" + ("（双重互锁）" if double else "（接触器互锁）"))
-    save_schem(d, P, name)
+# ---------- 图 18-p1-1 斜率直觉：输出 = −(输入的斜率) × R_f·C ----------
+t = np.arange(0, 6e-3, 1e-6)
+vin = np.interp(t, [0, 1e-3, 2e-3, 4e-3, 6e-3], [0.0, 2.0, 2.0, 1.0, 1.0])
+vo = sim.ideal(t, vin)
+fig, (a0, a1) = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=True)
+tm = t * 1e3
+a0.plot(tm, vin, **fs.LS["vin"], label="输入电压 $V_i$")
+a0.text(0.55, 0.35, "陡：每 ms +2 V", fontsize=9)
+a0.text(1.2, 2.1, "平：斜率 0", fontsize=9)
+a0.text(2.9, 1.65, "缓：每 ms −0.5 V", fontsize=9)
+print("[数值] 斜率 +2 V/ms、0、−0.5 V/ms")
+a0.set_ylim(-0.3, 2.6); a0.set_ylabel(fs.qlabel("输入", "V")); a0.legend(loc="lower right", fontsize=8)
+a1.plot(tm, vo, **fs.LS["vout"], label="微分器输出 $V_o$（$R_f C$ = 1 ms）")
+for x in (0.5, 1.5, 3.0):
+    fs.mark(a1, x, round(float(vo[int(round(x * 1e3))]), 6) + 0.0, "{:.1f}", " V", dx=4, dy=6)
+assert abs(vo[500] + 2) < 1e-6 and abs(vo[1500]) < 1e-6 and abs(vo[3000] - 0.5) < 1e-6
+fs.ref_h(a1, 0)
+a1.set_ylim(-2.6, 1.2); a1.set_ylabel(fs.qlabel("输出", "V")); a1.legend(loc="lower right", fontsize=8)
+a1.set_xlabel(fs.qlabel("时间", "ms"))
+fs.save(fig, N, "18_p1_1_slope.png")
+
+# ---------- 图 18-p1-2 微分器电路 ----------
+with drawing() as d:
+    differentiator(d)
+save_schem(d, N, "18_p1_2_differentiator.png")
+
+# ---------- 图 18-p1-3 三角波进、方波出 ----------
+t = np.arange(0, 6e-3, 1e-6)
+vin = sim.triangle(t)
+vo = sim.ideal(t, vin)
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, vin, **fs.LS["vin"], label="输入：±0.5 V、500 Hz 三角波（斜率 ±1 V/ms）")
+ax.plot(t * 1e3, vo, **fs.LS["vout"], label="输出：±1 V 方波")
+hi, lo = vo[(t > 1.2e-3) & (t < 1.8e-3)].mean(), vo[(t > 0.2e-3) & (t < 0.8e-3)].mean()
+print(f"[数值] 上升段输出 {lo:.2f} V，下降段输出 {hi:.2f} V")
+assert abs(hi - 1) < 1e-6 and abs(lo + 1) < 1e-6
+fs.ref_h(ax, 0)
+ax.set_ylim(-1.5, 2.0)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.legend(loc="upper right", fontsize=8, ncol=2)
+fs.save(fig, N, "18_p1_3_triangle_square.png")
+
+# ---------- 图 18-p2-1 推导用：电流 I 和虚地 ----------
+with drawing() as d:
+    differentiator(d, cur=True)
+save_schem(d, N, "18_p2_1_analysis.png")
+
+# ---------- 图 18-p2-2 实用微分器 ----------
+with drawing() as d:
+    differentiator(d, practical=True)
+save_schem(d, N, "18_p2_2_practical.png")
+
+# ---------- 图 18-p3-1 运放带宽有限时：理想微分器振铃 ----------
+t = np.arange(0, 2.4e-3, 2e-8)
+vin = sim.triangle(t)
+y_i = sim.simulate(t, vin, gbw=sim.GBW)
+y_p = sim.simulate(t, vin, r1=sim.R1, cf=sim.CF, gbw=sim.GBW)
+k = (t > 1e-3) & (t < 2e-3)
+peak_i, peak_p = y_i[k].max(), y_p[k].max()
+z = np.flatnonzero(np.diff(np.sign(y_i[k] - 1.0)) != 0)
+f_ring = (len(z) - 1) / 2 / (t[k][z[-1]] - t[k][z[0]])
+f_th = np.sqrt(2 * np.pi * sim.GBW / TAU) / (2 * np.pi)
+print(f"[数值] GBW {sim.GBW/1e6:.1f} MHz：理想微分器拐点后最高 {peak_i:.2f} V（应为 1 V），振铃约 {f_ring/1e3:.1f} kHz"
+      f"（估算 √(2π·GBW/R_fC)/2π = {f_th/1e3:.1f} kHz）；实用版最高 {peak_p:.2f} V")
+assert peak_i > 2.5 and peak_p < 1.01 and abs(f_ring - f_th) / f_th < 0.05
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+w = (t > 0.8e-3) & (t < 2.2e-3)
+ax.plot(t[w] * 1e3, y_i[w], **{**fs.LS["bad"], "lw": 0.9, "marker": None}, label=f"理想微分器 + 真实运放：冲到 {peak_i:.2f} V，振铃 {f_ring/1e3:.1f} kHz")
+ax.plot(t[w] * 1e3, y_p[w], **fs.LS["vout"], label=f"实用微分器 + 同一运放：最高 {peak_p:.2f} V，无振铃")
+fs.ref_h(ax, 1.0, "应有的 +1 V", x=0.01, ha="left")
+ax.set_ylim(-1.5, 4.3)
+fs.axlabels(ax, "时间", "ms", "输出", "V"); ax.legend(loc="upper right", fontsize=8)
+fs.save(fig, N, "18_p3_1_ringing.png")
+
+# ---------- 图 18-p3-2 R1 扫描：抗干扰 vs 边沿变慢 ----------
+t = np.arange(0, 4e-3, 1e-7)
+clean = sim.triangle(t)
+noisy = clean + sim.noise(t)
+r1s = [100.0, 300.0, 1e3, 3e3]
+n_ideal = sim.noise_pp(t, sim.ideal(t, noisy), sim.ideal(t, clean), 1e-3)
+nps, t90s, waves = [], [], []
+for r1 in r1s:
+    y0 = sim.simulate(t, clean, r1=r1)
+    nps.append(sim.noise_pp(t, sim.simulate(t, noisy, r1=r1), y0, 1e-3))
+    kk = (t > 1e-3) & (t < 2e-3)
+    t90s.append(float(t[kk][np.argmax(y0[kk] > 0.8)] - 1e-3))   # 从 −1 V 爬到 +0.8 V（90% 摆幅）用时
+    waves.append(y0)
+    print(f"[数值] R1 {r1:g} Ω：干扰峰峰 {nps[-1]*1e3:.0f} mV，边沿 90% 用时 {t90s[-1]*1e3:.2f} ms（R1·C = {r1*sim.C*1e3:.2f} ms）")
+print(f"[数值] 理想微分器干扰峰峰 {n_ideal:.2f} V")
+assert all(np.diff(nps) < 0) and all(np.diff(t90s) > 0)
+fig, (a0, a1) = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
+a0.semilogx(r1s, np.array(nps) * 1e3, **{**fs.LS["vout"], "marker": "o"})
+for r1, n in zip(r1s, nps):
+    a0.annotate(f"{n*1e3:.0f} mV", (r1, n * 1e3), xytext=(5, 4), textcoords="offset points", fontsize=8)
+fs.ref_h(a0, n_ideal * 1e3, f"理想微分器 {n_ideal*1e3:.0f} mV", x=0.98)
+a0.set_xlim(60, 6e3); a0.set_ylim(0, 2900)
+fs.axlabels(a0, "$R_1$", "Ω", "20 kHz 干扰在输出的峰峰值", "mV")
+a0.set_title("(a) $R_1$ 越大，干扰越小", fontsize=10)
+w = (t > 0.8e-3) & (t < 2e-3)
+for r1, y, st, t9 in zip(r1s[1:], waves[1:], [fs.LS["third"], fs.LS["vout"], fs.LS["bad"]], t90s[1:]):
+    a1.plot(t[w] * 1e3, y[w], **st, label=f"$R_1$ = {r1:g} Ω：90% 用时 {t9*1e3:.2f} ms")
+a1.set_ylim(-1.3, 1.6)
+fs.axlabels(a1, "时间", "ms", "输出", "V"); a1.legend(loc="lower right", fontsize=7)
+a1.set_title("(b) $R_1$ 越大，方波边沿越慢", fontsize=10)
+fig.tight_layout()
+fs.save(fig, N, "18_p3_2_r1_sweep.png")
 
 
-# ---------------- 简化逻辑（不计吸合 / 释放延时），给直觉篇的时序图 ----------------
-t = np.arange(0, 6, 0.001)
-def pressed(a, b):
-    return (t >= a) & (t < b)
+# ---------- 图 18-p1-4 附图第二格：输入、反馈都是电容 ----------
+def cap_cap(d):
+    """附图第二格的画法：输入串电容 C，反馈支路也只有一只电容 C_f（没有电阻）。"""
+    d += (op := elm.Opamp(leads=True))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Capacitor().left().label("$C$ 100 nF")
+    d += elm.Dot(open=True).label("$V_i$ 输入", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    d += elm.Capacitor().right().label("$C_f$ 50 nF（反馈也是电容）").tox(op.out.x + 0.5)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    d += elm.Line().left().at(op.in2).length(0.5)
+    d += elm.Line().down().length(0.5)
+    d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(1.25)
+    d += elm.Dot(open=True).label("$V_o$ 输出", "right")
 
 
-def logic(sb2, sb3, sb1, elec):
-    k1 = np.zeros_like(t, dtype=bool); k2 = np.zeros_like(t, dtype=bool)
-    for k in range(1, len(t)):
-        p1 = (not sb1[k]) and (sb2[k] or k1[k - 1]) and (not (elec and k2[k - 1]))
-        p2 = (not sb1[k]) and (sb3[k] or k2[k - 1]) and (not (elec and k1[k - 1]))
-        k1[k], k2[k] = p1, p2
-    return k1, k2
+with drawing() as d:
+    cap_cap(d)
+save_schem(d, N, "18_p1_4_cap_cap.png")
 
+# ---------- 图 18-p1-5 同一个方波，三种接法的输出 ----------
+CF2 = 50e-9                                   # 附图第二格的反馈电容
+R_INT = 10e3                                  # 对照用积分器的输入电阻：R·C = 1 ms
+t = np.arange(0, 4e-3, 1e-6)
+dt = t[1] - t[0]
+ph = (t * 500) % 1                            # 500 Hz
+edge = 0.1                                    # 每个边沿占周期的 1/10 = 0.2 ms
+vin = np.interp(ph, [0, edge, 0.5, 0.5 + edge, 1.0], [-0.5, 0.5, 0.5, -0.5, -0.5])
+vo_int = -np.cumsum(vin) * dt / (R_INT * sim.C)          # 积分器：−面积 ÷ RC
+vo_dif = sim.ideal(t, vin)                               # 微分器：−斜率 × R_f·C
+vo_cc = -(sim.C / CF2) * (vin - vin[0])                  # 电容–电容：−(C/C_f)·（输入的变化量）
+k_flat = (t > 0.5e-3) & (t < 0.9e-3)
+pk_dif = float(np.abs(vo_dif).max())
+cc_flat = float(vo_cc[k_flat].mean())
+int_pp = float(np.ptp(vo_int[t > 1e-3]))
+print(f"[数值] 方波 ±0.5 V、500 Hz，边沿 0.2 ms：积分器（RC 1 ms）三角波峰峰 {int_pp:.2f} V；"
+      f"微分器（R_f·C 1 ms）边沿脉冲 {pk_dif:.1f} V、平顶 0 V；电容–电容（C/C_f = {sim.C/CF2:.0f}）平顶 {cc_flat:.1f} V")
+assert abs(pk_dif - 5.0) < 0.05 and abs(cc_flat + 2.0) < 1e-6 and abs(vo_dif[k_flat]).max() < 1e-6
+for IB in (10e-9, 20e-9):                     # LM358 输入偏置电流典型约 10～20 nA（TI 模型约 10 nA）
+    drift = IB / CF2
+    print(f"[数值] 电容–电容接法：偏置电流 {IB*1e9:.0f} nA 只能流进 C_f，输出漂移 {drift:.2f} V/s，"
+          f"约 {13.5 / drift:.0f} s 漂过 13.5 V")
+fig, axs = plt.subplots(4, 1, figsize=(7, 6.2), sharex=True)
+tm = t * 1e3
+axs[0].plot(tm, vin, **fs.LS["vin"], label="输入：±0.5 V 方波（边沿 0.2 ms）")
+axs[1].plot(tm, vo_int, **fs.LS["vout"], label=f"积分器（输入 R、反馈 C）：三角波，峰峰 {int_pp:.2f} V")
+axs[2].plot(tm, vo_dif, **fs.LS["third"], label=f"微分器（输入 C、反馈 R）：只在边沿出 ±{pk_dif:.0f} V 脉冲")
+axs[3].plot(tm, vo_cc, **fs.LS["fb"], label=f"附图第二格（输入 C、反馈 C）：反相 {sim.C/CF2:.0f} 倍的方波")
+for a, lim in zip(axs, [(-0.9, 1.1), (-0.8, 0.5), (-6.5, 7.5), (-2.8, 1.6)]):
+    fs.ref_h(a, 0)
+    a.set_ylim(*lim); a.set_ylabel(fs.qlabel("电压", "V"), fontsize=8)
+    a.legend(loc="upper right", fontsize=7.5)
+axs[3].set_xlabel(fs.qlabel("时间", "ms"))
+fs.save(fig, N, "18_p1_5_three_circuits.png")
 
-def timeline_intuition():
-    """图 18-p1-3：正转运行中误按反转——不互锁 vs 接触器互锁。"""
-    sb2 = pressed(1, 1.3); sb3 = pressed(2.5, 2.8); sb1 = pressed(4.5, 4.8)
-    n1, n2 = logic(sb2, sb3, sb1, False); e1, e2 = logic(sb2, sb3, sb1, True)
-    fig, ax = plt.subplots(figsize=(8.6, 4.6))
-    ax.plot(t, sb2 * 0.6 + 8.4, **fs.LS["fb"], label="SB2 正转按钮")
-    ax.plot(t, sb3 * 0.6 + 7.4, **fs.LS["third"], label="SB3 反转按钮")
-    ax.plot(t, n1 * 0.6 + 5.2, **fs.LS["vout"], label="KM1 正转")
-    ax.plot(t, n2 * 0.6 + 4.2, **fs.LS["vin"], label="KM2 反转")
-    s = n1 & n2
-    ax.plot(t[s][::120], np.full(s.sum(), 6.1)[::120], color=fs.C["bad"], ls="none", marker="x", label="两只同时吸合 = 相间短路")
-    ax.plot(t, e1 * 0.6 + 1.6, **fs.LS["vout"])
-    ax.plot(t, e2 * 0.6 + 0.6, **fs.LS["vin"])
-    fs.ref_v(ax, 2.5, "误按反转", y=0.99)
-    ax.text(0.05, 6.5, "不互锁", fontsize=10); ax.text(0.05, 2.5, "接触器互锁", fontsize=10)
-    assert s.sum() > 0 and not (e1 & e2).any() and e1[np.searchsorted(t, 3.5)] and not e2[np.searchsorted(t, 3.5)]
-    print(f"[图 18-p1-3] 1 s 按正转、2.5 s 误按反转、4.5 s 按停止：不互锁时同时吸合 {s.sum() / 1000:.1f} s；接触器互锁时 KM2 始终不吸合")
-    ax.set_yticks([0.9, 1.9, 4.5, 5.5, 7.7, 8.7]); ax.set_yticklabels(["KM2", "KM1", "KM2", "KM1", "SB3", "SB2"])
-    ax.set_ylim(0.2, 9.8); fs.axlabels(ax, "时间", "s")
-    ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)
-    fs.save(fig, P, "18_p1_3_timeline.png")
+# ---------- 图 18-p1-6 用 LM358B 搭理想微分器会自己振；加小电阻 R1 或小电容 C_f 就压住了（ngspice + TI 官方模型） ----------
+TRI = "PULSE(-0.5 0.5 0 1m 1m 1n 2m)"          # ±0.5 V、500 Hz 三角波（与图 18-p1-3 相同）
+cases = [("只有 C 和 $R_f$（理想微分器）", None, None, {**fs.LS["bad"], "lw": 0.7, "marker": None}),
+         ("只串小电阻 $R_1$ = 1 kΩ", sim.R1, None, fs.LS["third"]),
+         ("只并小电容 $C_f$ = 10 nF", None, sim.CF, fs.LS["fb"]),
+         ("$R_1$、$C_f$ 都加（实用微分器）", sim.R1, sim.CF, fs.LS["vout"])]
+res = []
+for name, r1, cf, st in cases:
+    t, v = sim.lm358(TRI, r1=r1, cf=cf)
+    k1 = (t > 1e-3) & (t < 2e-3)                 # 1 ms 拐角之后的半个周期（输出应为 +1 V）
+    k2 = (t > 1.7e-3) & (t < 2.0e-3)             # 平顶后段
+    pk, pp = float(v[k1].max()), float(np.ptp(v[k2]))
+    pps = f"{pp:.2f} V" if pp >= 0.1 else f"{pp*1e3:.0f} mV"
+    res.append((t, v, pk, pp, pps))
+    print(f"[数值] LM358B，{name.replace('$', '')}：拐角后最高 {pk:.2f} V，平顶后段（1.7～2.0 ms）峰峰 {pps}")
+t0, v0, pk0, pp0, _ = res[0]
+x = v0[(t0 > 1e-3) & (t0 < 2e-3)]; x = x - x.mean(); tt = t0[(t0 > 1e-3) & (t0 < 2e-3)]
+zc = tt[1:][np.diff(np.sign(x)) != 0]
+f_ring_lm = 1 / (2 * np.mean(np.diff(zc)))
+print(f"[数值] LM358B 理想微分器振铃频率约 {f_ring_lm/1e3:.1f} kHz；每个拐角都重新激发，整段平顶上一直在振")
+assert pk0 > 4.0 and pp0 > 4.0 and 12e3 < f_ring_lm < 14.5e3
+assert all(r[2] < 1.7 and r[3] < 0.05 for r in res[1:])
+fig, axs = plt.subplots(4, 1, figsize=(7, 6.4), sharex=True)
+for a, (name, r1, cf, st), (t, v, pk, pp, pps) in zip(axs, cases, res):
+    w = (t > 0.8e-3) & (t < 4.2e-3)
+    a.plot(t[w] * 1e3, v[w], **st, label=(f"{name}：拐角后冲到 {pk:.2f} V，平顶上一直振（峰峰 {pps}）" if a is axs[0]
+           else f"{name}：最高 {pk:.2f} V，没有振铃"))
+    fs.ref_h(a, 1.0); fs.ref_h(a, -1.0)
+    a.set_ylim(-3.5, 8.0 if a is axs[0] else 2.6); a.set_ylabel(fs.qlabel("输出", "V"), fontsize=8)
+    a.legend(loc="upper right", fontsize=7.5)
+fs.ref_h(axs[3], 1.0, "+1 V", x=0.01, ha="left"); fs.ref_h(axs[3], -1.0, "−1 V", x=0.01, ha="left")
+axs[3].set_xlabel(fs.qlabel("时间", "ms"))
+print("[参考线] ±1 V（理想微分器应有的方波电平）")
+fig.tight_layout()
+fs.save(fig, N, "18_p1_6_ringing_fix.png")
 
-
-def phase_check():
-    """换相：一种接法 = 三根进线 L1/L2/L3 分别接到电动机哪个端子。相序方向 = 置换的奇偶性。"""
-    def direction(perm):                    # perm[i] = 第 i 根进线接到的端子编号（0、1、2）
-        inv = sum(1 for i in range(3) for j in range(i + 1, 3) if perm[i] > perm[j])
-        return "正转" if inv % 2 == 0 else "反转"
-    def name(perm):
-        return "、".join(f"L{i + 1}→T{p + 1}" for i, p in enumerate(perm))
-    cases = [("KM1 正转", (0, 1, 2)), ("KM2 对调 L1、L3", (2, 1, 0)), ("对调 L1、L2", (1, 0, 2)),
-             ("三根轮换一格", (1, 2, 0)), ("三根轮换两格", (2, 0, 1))]
-    out = {}
-    for lab, p in cases:
-        out[lab] = direction(p)
-        print(f"[换相] {lab}：{name(p)} → {out[lab]}")
-    assert out["KM2 对调 L1、L3"] == "反转" and out["三根轮换一格"] == "正转" and out["三根轮换两格"] == "正转"
-    fwd, rev = (0, 1, 2), (2, 1, 0)
-    pairs = [f"L{i + 1}–L{rev.index(fwd[i]) + 1}" for i in range(3) if rev[i] != fwd[i]]
-    print(f"[短路] KM1、KM2 同时闭合：端子 T1 同时接 L1 和 L3 → 被短接的两相：{pairs[0]}")
-    U, Z = 380.0, 0.1
-    print(f"[短路] 示意：线电压 {U:.0f} V，整个短路回路阻抗只有 {Z} Ω（示意值）时，电流 ≈ {U / Z:.0f} A")
-
-
-# ---------------- 带延时的状态机（同 18_sim.py 的写法），给参数与调试篇 ----------------
-def machine(t_pick, t_drop, mode, t_end=0.6, weld_at=None, ev=None):
-    """mode: 'button' 只做按钮互锁；'double' 双重互锁。返回 KM1/KM2 主触点、KM1 线圈。
-    ev = dict(sb2=(a,b), sb3=(a,b), sb1=(a,b))，weld_at：KM1 主触点在此刻之后熔焊（不再释放）。"""
-    dt = 1e-3; tt = np.arange(0, t_end, dt)
-    pr = lambda ab: (tt >= ab[0]) & (tt < ab[1]) if ab else np.zeros_like(tt, dtype=bool)
-    sb2, sb3, sb1 = pr(ev.get("sb2")), pr(ev.get("sb3")), pr(ev.get("sb1"))
-    k1 = np.zeros_like(tt, dtype=bool); k2 = k1.copy(); c1 = k1.copy(); c2 = k1.copy()
-    n1 = n2 = 0.0
-    for k in range(1, len(tt)):
-        n1 = n1 + dt if c1[k - 1] != k1[k - 1] else 0.0
-        n2 = n2 + dt if c2[k - 1] != k2[k - 1] else 0.0
-        k1[k] = (not k1[k - 1] and n1 >= t_pick - 1e-9) or (k1[k - 1] and n1 < t_drop - 1e-9)
-        if weld_at is not None and tt[k] >= weld_at and k1[k - 1]:
-            k1[k] = True                       # 主触点焊死：衔铁回不去，常闭辅助触点也保持断开（镜像触点）
-        k2[k] = (not k2[k - 1] and n2 >= t_pick - 1e-9) or (k2[k - 1] and n2 < t_drop - 1e-9)
-        p1 = (not sb1[k]) and (sb2[k] or k1[k]) and not sb3[k]
-        p2 = (not sb1[k]) and (sb3[k] or k2[k]) and not sb2[k]
-        if mode == "double":
-            p1 = p1 and not k2[k]; p2 = p2 and not k1[k]
-        c1[k], c2[k] = p1, p2
-    return tt, k1, k2, c1
-
-
-def gap_sweep():
-    """图 18-p3-1：直接反转时，'KM1 主触点断开' 到 'KM2 主触点闭合' 之间的空档（负数 = 重叠 = 短路）。"""
-    td = np.arange(4, 20, 1)                    # KM1 释放时间 4~19 ms（TeSys D 手册范围）
-    ev = dict(sb2=(0.05, 0.10), sb3=(0.30, 0.45))
-    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-    ax.axhspan(-12, 0, color=fs.C["bad"], alpha=0.10, lw=0)
-    for tp, ls in [(12, "bad"), (17, "third"), (22, "fb")]:
-        gaps = []
-        for x in td:
-            tt, k1, k2, _ = machine(tp / 1e3, x / 1e3, "button", ev=ev)
-            off = tt[np.flatnonzero(k1)[-1] + 1]; on = tt[np.argmax(k2)]
-            gaps.append((on - off) * 1e3)
-            assert abs(gaps[-1] - (tp - x)) < 1.01      # 状态机结果 = 吸合时间 − 释放时间
-        sty = {**fs.LS[ls], **({"markevery": 3} if ls == "bad" else {})}
-        ax.plot(td, gaps, **sty, label=f"只做按钮互锁，KM2 吸合 {tp} ms")
-        print(f"[图 18-p3-1] 按钮互锁、KM2 吸合 {tp} ms：空档从 {gaps[0]:.0f} ms（KM1 释放 4 ms）到 {gaps[-1]:.0f} ms（释放 19 ms）")
-    worst = 12 - 19
-    fs.mark(ax, 19, worst, fmt="{:.0f}", unit=" ms", dx=-48, dy=-4, color=fs.C["bad"])
-    tt, k1, k2, _ = machine(0.012, 0.019, "double", ev=ev)
-    gd = (tt[np.argmax(k2)] - tt[np.flatnonzero(k1)[-1] + 1]) * 1e3
-    ax.axhline(gd, **fs.LS["good"], label=f"双重互锁（最快的 KM2）：空档 = 吸合时间")
-    print(f"[图 18-p3-1] 双重互锁、最快 KM2（12 ms）、最慢 KM1（19 ms）：空档 {gd:.0f} ms，与 KM1 释放时间无关")
-    assert gd >= 11.99 and worst < 0
-    fs.ref_h(ax, 0, "0：再往下就是两只同时闭合", x=0.02, ha="left")
-    ax.set_ylim(-12, 22); fs.axlabels(ax, "KM1 释放时间", "ms", "换向空档", "ms")
-    ax.legend(loc="upper right", fontsize=8)
-    fs.save(fig, P, "18_p3_1_gap.png")
-
-
-def welded():
-    """图 18-p3-2：KM1 主触点熔焊后按反转——只做按钮互锁 vs 双重互锁。"""
-    ev = dict(sb2=(0.2, 0.4), sb1=(1.0, 1.2), sb3=(1.6, 1.9))
-    fig, ax = plt.subplots(figsize=(8.6, 4.6))
-    rows = []
-    for j, mode in enumerate(["button", "double"]):
-        tt, k1, k2, c1 = machine(0.020, 0.010, mode, t_end=2.5, weld_at=0.8, ev=ev)
-        y0 = 4.6 if mode == "button" else 0.4
-        ax.plot(tt, c1 * 0.6 + y0 + 2.0, **fs.LS["cur"], label="KM1 线圈有电" if j == 0 else None)
-        ax.plot(tt, k1 * 0.6 + y0 + 1.0, **fs.LS["vout"], label="KM1 主触点闭合" if j == 0 else None)
-        ax.plot(tt, k2 * 0.6 + y0, **fs.LS["vin"], label="KM2 主触点闭合" if j == 0 else None)
-        s = k1 & k2
-        if s.any():
-            ax.plot(tt[s][::80], np.full(s.sum(), y0 + 3.0)[::80], color=fs.C["bad"], ls="none", marker="x", label="相间短路")
-        rows.append((mode, s.sum() / 1000))
-        print(f"[图 18-p3-2] KM1 熔焊、1.0 s 按停止、1.6 s 按反转：{'只做按钮互锁' if mode == 'button' else '双重互锁'} → 同时闭合 {s.sum() / 1000:.2f} s")
-    assert rows[0][1] > 0 and rows[1][1] == 0
-    fs.ref_v(ax, 1.0, "按停止", y=0.99); fs.ref_v(ax, 1.6, "按反转", y=0.99)
-    ax.text(0.02, 8.1, "只做按钮互锁", fontsize=10); ax.text(0.02, 3.6, "双重互锁", fontsize=10)
-    ax.set_yticks([0.7, 1.7, 2.7, 4.9, 5.9, 6.9]); ax.set_yticklabels(["KM2", "KM1 主", "KM1 线圈"] * 2)
-    ax.set_ylim(0, 9.2); fs.axlabels(ax, "时间", "s")
-    ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)
-    fs.save(fig, P, "18_p3_2_welded.png")
-
-
-def exercises():
-    """练习用数字。"""
-    tp, tdr = 15, 18
-    print(f"[练习 1] 按钮互锁：KM2 吸合 {tp} ms、KM1 释放 {tdr} ms → 空档 {tp - tdr} ms（重叠 {tdr - tp} ms）；双重互锁 → 空档 {tp} ms")
-    tt, k1, k2, _ = machine(tp / 1e3, tdr / 1e3, "button", ev=dict(sb2=(0.05, 0.1), sb3=(0.3, 0.45)))
-    ov = (k1 & k2).sum()
-    print(f"[练习 1] 状态机核对：同时闭合 {ov} ms")
-    assert ov == tdr - tp
-
-
-if __name__ == "__main__":
-    main_circuit()
-    control("18_p1_2_control.png", double=False)
-    timeline_intuition()
-    control("18_p2_1_double.png", double=True)
-    phase_check()
-    gap_sweep()
-    welded()
-    exercises()
+# ---------- page1「在示波器上会看到什么」各步的读数（实用微分器 R1 1 kΩ + C_f 10 nF，LM358B） ----------
+t, v = sim.lm358(TRI, r1=sim.R1, cf=sim.CF)
+s1_hi = float(v[(t > 5.6e-3) & (t < 6.0e-3)].mean()); s1_lo = float(v[(t > 4.6e-3) & (t < 5.0e-3)].mean())
+t, v = sim.lm358("PULSE(-0.5 0.5 0 0.5m 0.5m 1n 1m)", r1=sim.R1, cf=sim.CF)
+s2_lo = float(v[(t > 5.42e-3) & (t < 5.49e-3)].mean()); s2_hi = float(v[(t > 5.92e-3) & (t < 5.99e-3)].mean())  # 每半个周期的末尾
+SIN = "SIN(0 0.5 159.155)"                      # 159 Hz、幅度 0.5 V 正弦
+t, v = sim.lm358(SIN, r1=sim.R1, cf=sim.CF, tstop=40e-3, tstep=2e-6)
+s3_p = float(v[t > 20e-3].max())
+t, v = sim.lm358(SIN, tstop=40e-3, tstep=2e-6)
+s3_i_hi, s3_i_lo = float(v[t > 20e-3].max()), float(v[t > 20e-3].min())
+t, v = sim.lm358("PULSE(-0.5 0.5 0.5m 1u 1u 1m 2m)", r1=sim.R1, cf=sim.CF)   # ±0.5 V、500 Hz 方波，边沿 1 µs
+s4_hi, s4_lo = float(v[t > 2e-3].max()), float(v[t > 2e-3].min())
+s4_flat = float(np.abs(v[(t > 3.2e-3) & (t < 3.5e-3)]).max())
+print(f"[数值] 示波器第 1 步（500 Hz 三角波，实用版）：方波 {s1_hi:+.2f} V / {s1_lo:+.2f} V")
+print(f"[数值] 示波器第 2 步（1 kHz 三角波，实用版）：每半个周期末尾 {s2_hi:+.2f} V / {s2_lo:+.2f} V")
+print(f"[数值] 示波器第 3 步（159 Hz、0.5 V 正弦）：实用版输出幅度 {s3_p:.3f} V；"
+      f"拆掉 R1、C_f 后峰值 {s3_i_hi:+.2f} V / {s3_i_lo:+.2f} V（叠着振铃）")
+print(f"[数值] 示波器第 4 步（±0.5 V 方波，实用版）：边沿脉冲 {s4_hi:+.2f} V / {s4_lo:+.2f} V，"
+      f"边沿后 0.7～1.0 ms 平顶处 |V_o| ≤ {s4_flat:.3f} V")
+assert abs(s1_hi - 1) < 0.03 and abs(s1_lo + 1) < 0.03 and abs(s3_p - 0.5) < 0.02
+assert s3_i_hi > 0.55 and s4_hi < 5
 
 
 # ======================= page4 动手实验篇：面包板接线图 =======================
@@ -398,284 +412,178 @@ class Breadboard:
     def save(self, prefix, name):
         return fs.save(self.fig, prefix, name)
 
-# ---------- 图 18-p4-1：12 V 低压互锁实验的面包板接线 ----------
-WIRE["sig"] = (fs.C["vin"], "KA1 线圈回路（经 KA2 常闭）")
-WIRE["neg"] = (fs.C["third"], "KA2 线圈回路（经 KA1 常闭）")
-WIRE["fb"] = (fs.C["fb"], "按钮引线")
-bb = Breadboard(40, "互锁低压版面包板俯视图（12 V 直流，两只 12 V 继电器代替正反转接触器）",
-                size=(12, 6.8), rails=("+12 V 经SB1", "0 V", "0 V", "+12 V 经SB1"))
-pins = {1: "COM1", 2: "NO1", 3: "线圈+", 4: "NC1", 8: "线圈−", 7: "COM2", 6: "NO2", 5: "NC2"}
-bb.chip(6, "KA1 正转", npin=8, names=pins)
-bb.chip(30, "KA2 反转", npin=8, names=pins)
-for c in (6, 30):
-    bb.wire(f"a{c}", f"T-{c}", "gnd")             # 线圈− → 0 V
-    bb.wire(f"j{c}", f"B+{c}", "pos")             # COM1 → SB1 之后的 +12 V
-bb.part("B-8", "j8", "VD1", "D", lab_side="r")    # 续流二极管：阳极 0 V，阴极线圈+
-bb.part("B-32", "j32", "VD2", "D", lab_side="r")
-bb.part("h8", "h3", "HL1", "P", lab_side=1)
-bb.wire("j3", "B-3", "gnd")
-bb.part("g32", "g37", "HL2", "P", lab_side=1)
-bb.wire("j37", "B-37", "gnd")
-# KA1 回路：NO1（第 7 列下）→ KA2 的 NC2（第 33 列上）→ KA2 的 COM2（第 31 列上）→ KA1 线圈+（第 8 列下）
-bb.wire("g7", "g12", "sig"); bb.wire("f12", "d12", "sig"); bb.wire("c12", "c33", "sig")
-bb.wire("b31", "b14", "sig"); bb.wire("d14", "f14", "sig"); bb.wire("i14", "i8", "sig")
-# KA2 回路：NO1（第 31 列下）→ KA1 的 NC2（第 9 列上）→ KA1 的 COM2（第 7 列上）→ KA2 线圈+（第 32 列下）
-bb.wire("g31", "g26", "neg"); bb.wire("f26", "d26", "neg"); bb.wire("a26", "a9", "neg")
-bb.wire("b7", "b10", "neg"); bb.wire("d10", "f10", "neg"); bb.wire("h10", "h32", "neg")
-bb.wire("T+39", "B+39", "pos")
-bb.wire("T-40", "B-40", "gnd")
-bb.module(-3.2, 9.4, 4.4, 1.4, "12 V 直流电源")
-bb.wire((0.4, 9.4), "T-3", "gnd")
-bb.module(4.0, 9.5, 5.0, 1.2, "SB1 停止（常闭，红）", fc="#f6dede")
-bb.wire((1.2, 10.1), (4.0, 10.1), "pos")
-bb.wire((9.0, 10.1), "T+11", "pos", via=[(11.0, 10.1)])
-bb.module(4.4, -9.8, 3.6, 1.2, "SB2 正转（常开）", fc="#def0de")
-bb.wire((6.0, -8.6), "i6", "fb"); bb.wire((7.0, -8.6), "i7", "fb")
-bb.module(28.4, -9.8, 3.6, 1.2, "SB3 反转（常开）", fc="#def0de")
-bb.wire((30.0, -8.6), "i30", "fb"); bb.wire((31.0, -8.6), "i31", "fb")
-bb.note(14.5, 10.0, "引脚排列以继电器手册为准（本图为示意）", va="center")
+# ---------- 图 18-p4-1：实用微分器的面包板接线（±9 V，两节 9 V 电池） ----------
+bb = Breadboard(30, "实用微分器面包板俯视图（LM358，±9 V）", rails=("+9 V", "GND", "GND", "−9 V"))
+bb.chip(14, "LM358", names={1: "OUT", 2: "IN−", 3: "IN+", 4: "V−", 8: "V+"})
+bb.wire("a14", "T+14", "pos")                      # 第 8 脚 → +9 V
+bb.wire("j17", "B+17", "neg")                      # 第 4 脚 → −9 V
+bb.wire("j16", "B-16", "gnd")                      # 第 3 脚 → 地
+bb.wire("a17", "T-17", "gnd")                      # 第 5 脚（B 路同相端）→ 地
+bb.wire("c15", "c16", "fb")                        # 第 6、7 脚短接：B 路接成跟随器，不让它乱振
+bb.part("h4", "h8", "R1 1 kΩ", "R", lab_side=1)
+bb.part("i8", "i12", "C 100 nF", "C", lab_side=-1)
+bb.wire("j12", "j15", "fb")                        # C 的右脚 → 第 2 脚（反相端）
+bb.wire("h15", "h20", "fb")                        # 反相端引到第 20 列，方便接反馈元件
+bb.part("i20", "i24", "Rf 10 kΩ", "R", lab_side=1)
+bb.part("j20", "j24", "Cf 10 nF", "C", lab_side="r")
+bb.wire("g14", "g24", "out")                       # 第 1 脚（输出）→ 第 24 列
+bb.wire("T-28", "B-28", "gnd")                     # 上下两条地轨连起来
+src = bb.module(-3.2, -4.4, 3.0, 1.6, "信号源\n手机/电位器")
+bb.wire((0.6, -3.6), "j4", "sig")
+bb.wire((0.6, -4.2), "B-2", "gnd")
+bat = bb.module(-3.2, 9.4, 4.0, 1.4, "9 V 电池 ×2 串联\n中点 = GND")
+bb.wire((1.4, 9.9), "T+1", "pos")
+bb.wire((0.8, 9.6), "T-3", "gnd")
+bb.wire((-3.2, 10.1), "B+1", "neg", via=[(-3.3, 10.1), (-3.3, -8.6), (1.0, -8.6)])
+bb.note(25.2, -2.6, "测输出：\n红表笔 h24\n黑表笔 GND", va="center")
+bb.note(5.0, -9.6, "慢速实验：C 换 100 µF 电解（+ 脚插 i8 朝输入），Rf 换 100 kΩ，信号源换电位器", ha="left")
+bb.note(5.0, -10.4, "对比振铃：拔掉 R1（改用导线连 h4–h8）、拔掉 Cf", ha="left")
 bb.legend()
-bb.save(P, "18_p4_1_breadboard.png")
+bb.save(N, "18_p4_1_breadboard.png")
+print("[接线] LM358 第 1–4 脚在 f14–f17，第 8–5 脚在 e14–e17；R1 h4–h8，C i8–i12，导线 j12–j15、h15–h20、g14–g24，Rf i20–i24，Cf j20–j24")
+
+# ---------- 图 18-p4-2：没有示波器时，手拧电位器做「秒级微分」，万用表读数随时间的样子 ----------
+R1s, Cs, RFs, CFs = 1e3, 100e-6, 100e3, 10e-9        # 慢速版：R_f·C = 10 s
+V_TOP = 9.0 * 10e3 / (82e3 + 10e3)                     # 82 kΩ 串 10 kΩ 电位器，电位器顶端电压
+print(f"[数值] 慢速版 R_f·C {RFs*Cs:.0f} s，R1·C {R1s*Cs:.2f} s，R_f·C_f {RFs*CFs*1e3:.0f} ms；"
+      f"电位器顶端 {V_TOP:.3f} V（9 V × 10/92）")
 
 
-# ---------- 图 18-p4-2：按实验顺序推演两只继电器的状态 ----------
-def interlock_steps(seq, bypass=False):
-    """seq：每步 (S1, S2, S3)；按 K1' = 非S1·(S2+K1)·非K2、K2' = 非S1·(S3+K2)·非K1 迭代到稳定。
-    bypass=True 表示两只互锁常闭都被跳线短接（式子里去掉 非K2、非K1）。"""
-    k1 = k2 = 0
-    out = []
-    for s1, s2, s3 in seq:
-        for _ in range(4):
-            n1 = int((not s1) and (s2 or k1) and (bypass or not k2))
-            n2 = int((not s1) and (s3 or k2) and (bypass or not k1))
-            k1, k2 = n1, n2
-        out.append((k1, k2))
+def slow_run(t, vin):
+    """理想运放下的实用微分器：状态 = C 上电压 vc、C_f 上电压 vo（反相端为虚地）。
+    i = (vin − vc)/R1 流过 C；同一电流流入 R_f ∥ C_f：C_f·dvo/dt = −i − vo/R_f。"""
+    vc = vo = 0.0
+    out = np.zeros_like(t); dt = t[1] - t[0]
+    for k in range(1, len(t)):
+        i = (vin[k] - vc) / R1s
+        vc += i / Cs * dt
+        vo += (-i - vo / RFs) / CFs * dt
+        out[k] = vo
     return out
 
 
-steps = ["上电", "按住 SB2", "松开 SB2", "按住 SB3", "松开 SB3", "按住 SB1", "松开 SB1",
-         "按住 SB3", "松开 SB3", "按住 SB2", "按 SB1 停", "短接后按 SB2", "再按 SB3", "按 SB1 停"]
-seq = [(0, 0, 0), (0, 1, 0), (0, 0, 0), (0, 0, 1), (0, 0, 0), (1, 0, 0), (0, 0, 0),
-       (0, 0, 1), (0, 0, 0), (0, 1, 0), (1, 0, 0)]
-seq_b = [(0, 1, 0), (0, 0, 1), (1, 0, 0)]
-res = interlock_steps(seq) + interlock_steps(seq_b, bypass=True)
-k1s = [a for a, _ in res]; k2s = [b for _, b in res]
-print("[数值] 推演结果（KA1 KA2）：" + "，".join(f"{s} {a}{b}" for s, a, b in zip(steps, k1s, k2s)))
-assert k1s == [0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0]
-assert k2s == [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 0]
-allseq = seq + seq_b
-fig, ax = plt.subplots(figsize=(10.4, 3.2))
-rows = [("SB1 按下", [s[0] for s in allseq], fs.C["bad"]), ("SB2 按下", [s[1] for s in allseq], fs.C["vin"]),
-        ("SB3 按下", [s[2] for s in allseq], fs.C["third"]),
-        ("KA1 吸合 / HL1 亮", k1s, fs.C["vout"]), ("KA2 吸合 / HL2 亮", k2s, fs.C["fb"])]
-for r, (name, v, c) in enumerate(rows[::-1]):
-    for i, x in enumerate(v):
-        ax.add_patch(plt.Rectangle((i + 0.08, r + 0.15), 0.84, 0.7, fc=c if x else "white", ec=c, lw=1.0))
-        if x and r < 2:
-            ax.text(i + 0.5, r + 0.5, "亮", ha="center", va="center", fontsize=8, color="w")
-    ax.text(-0.1, r + 0.5, name, ha="right", va="center", fontsize=9)
-ax.axvline(len(seq), color="0.3", ls="--", lw=1.0)
-ax.text(len(seq) + 0.15, len(rows) + 0.15, "断电后短接两只互锁常闭", ha="left", va="bottom", fontsize=8.5,
-        color=fs.C["bad"])
-ax.text(len(seq) / 2, len(rows) + 0.15, "正常互锁", ha="center", va="bottom", fontsize=8.5)
-ax.set_xlim(-3.4, len(steps)); ax.set_ylim(0, len(rows) + 0.8)
-ax.set_xticks(np.arange(len(steps)) + 0.5); ax.set_xticklabels(steps, fontsize=8, rotation=30, ha="right")
-ax.set_yticks([]); [ax.spines[s].set_visible(False) for s in ("left", "top", "right")]
-fs.save(fig, P, "18_p4_2_sequence.png")
+dt = 2e-5
+t = np.arange(0, 40, dt)
+ramp10 = np.clip((t - 2) / 10, 0, 1) * V_TOP                                   # 10 s 匀速拧到底
+ramp5 = np.clip((t - 2) / 5, 0, 1) * V_TOP                                     # 5 s 拧到底
+back = np.where(t < 22, ramp10, np.clip(1 - (t - 22) / 10, 0, 1) * V_TOP)      # 再用 10 s 拧回来
+o10, o5, ob = slow_run(t, ramp10), slow_run(t, ramp5), slow_run(t, back)
+p10 = float(o10[(t > 6) & (t < 10)].mean()); p5 = float(o5[(t > 4) & (t < 6.5)].mean())
+pb = float(ob[(t > 26) & (t < 30)].mean()); rest = float(np.abs(o10[(t > 14) & (t < 20)]).max())
+print(f"[数值] 10 s 拧到底：平台 {p10:+.3f} V（公式 −R_f·C·V/T = {-RFs*Cs*V_TOP/10:+.3f} V）；"
+      f"5 s 拧到底：{p5:+.3f} V；10 s 拧回来：{pb:+.3f} V；停手 2 s 后 |V_o| ≤ {rest:.4f} V")
+assert abs(p10 + RFs * Cs * V_TOP / 10) < 0.01 and abs(p5 - 2 * p10) < 0.02 and abs(pb + p10) < 0.01
+assert rest < 0.005
+fig, (a1, a2) = plt.subplots(2, 1, figsize=fs.SIZE["tall"], sharex=True)
+a1.plot(t, back, label="输入：10 s 拧到底，停 10 s，再 10 s 拧回", **fs.LS["vin"])
+a1.plot(t, ramp5, label="输入：5 s 拧到底", **fs.LS["third"])
+a1.set_ylabel(fs.qlabel("电位器电压", "V")); a1.legend(loc="upper right", fontsize=8)
+a2.plot(t, ob, label="输出：对应 10 s 拧到底再拧回", **fs.LS["vout"])
+a2.plot(t, o5, label="输出：对应 5 s 拧到底", **fs.LS["fb"])
+fs.ref_h(a2, 0)
+fs.mark(a2, 8, p10, "{:+.2f}", " V", dy=-0.35)
+fs.mark(a2, 5, p5, "{:+.2f}", " V", dy=-0.35)
+fs.mark(a2, 28, pb, "{:+.2f}", " V", dy=0.2)
+a2.set_ylim(-2.6, 1.3); a2.legend(loc="lower right", fontsize=8)
+fs.axlabels(a2, "时间", "s", "万用表读数（输出）", "V")
+fig.tight_layout()
+fs.save(fig, N, "18_p4_2_slow_ramp.png")
 
-# ---------- 测量表里的计算值 ----------
-V, RC, P_LAMP = 12.0, 400.0, 1.0
-i_coil = V / RC * 1000
-i_lamp = P_LAMP / V * 1000
-print(f"[数值] 线圈电流 {V:.0f} V ÷ {RC:.0f} Ω = {i_coil:.0f} mA；1 W 灯泡电流约 {i_lamp:.0f} mA；"
-      f"一路合计约 {i_coil + i_lamp:.0f} mA；短接实验两路同时吸合约 {2 * (i_coil + i_lamp):.0f} mA")
-assert round(i_coil) == 30 and round(i_lamp) == 83
+# ---------- page4 测量表：±9 V 供电时的交流读数（LM358B 模型） ----------
+for lab, r1, cf in (("实用版（R1 + Cf）", sim.R1, sim.CF), ("拆掉 R1、Cf", None, None)):
+    t, v = sim.lm358(TRI, r1=r1, cf=cf, vs=9)
+    m = t > 2e-3
+    dc, ac = float(v[m].mean()), float(np.sqrt(((v[m] - v[m].mean()) ** 2).mean()))
+    print(f"[数值] ±9 V，±0.5 V、500 Hz 三角波，{lab}：输出直流 {dc*1e3:+.0f} mV，真有效值 {ac:.2f} V，"
+          f"最高 {v[m].max():+.2f} V，最低 {v[m].min():+.2f} V")
+    if r1:
+        assert abs(ac - 0.82) < 0.02 and abs(dc) < 0.02
+    else:
+        assert v[m].max() > 4
+print(f"[数值] 输入三角波 ±0.5 V 的真有效值 {0.5/np.sqrt(3):.3f} V（峰值 ÷ √3）")
 
 
-# ======================= page1–3 补充原理图（国标元件） =======================
+# ======================= 第 8 轮补图：正文讲到具体连接、附近却没有电路图的地方 =======================
 ACC = fs.C["bad"]
-
-
-def rung_c(d, y, items, x0, x1, gap=0.4):
-    """rung 的带颜色版：items 里每项 (类, 标签[, 颜色])，或 ("par", (类, 标签[, 颜色]), (类, 标签[, 颜色]))。"""
-    def put(E, lab, c=None, **kw):
-        e = E().right(**kw)
-        if c:
-            e = e.color(c)
-        return e.label(lab, ofst=0.6 if E is not Coil else 0.4, color=c or "black")
-    d += elm.Line().at((x0, y)).right(gap)
-    for it in items:
-        if it[0] == "par":
-            t1, t2 = it[1], it[2]
-            a = d.here
-            d += put(*t1)
-            b = d.here
-            c2 = t2[2] if len(t2) > 2 else None
-            d += elm.Line().at(a).down(1.5).color(c2 or "black")
-            e = t2[0]().right().tox(b[0])
-            if c2:
-                e = e.color(c2)
-            d += e.label(t2[1], "bottom", ofst=0.25, color=c2 or "black")
-            d += elm.Line().up(1.5).color(c2 or "black")
-            d += elm.Dot().at(a); d += elm.Dot().at(b)
-            d += elm.Line().at(b).right(gap)
-        else:
-            d += put(*it)
-            d += elm.Line().right(gap)
-    if x1 is not None:
-        d += elm.Line().right().tox(x1)
-
-
-def lowvolt_interlock():
-    """图 18-p2-4：12 V 低压互锁实验。继电器线圈两端各并 1 kΩ + LED 和反并的 1N4007。"""
-    XN = 17.6
-    with drawing(fontsize=10) as d:
-        d += elm.Dot(open=True).at((-1.0, 2.2)).label("+12 V（代替 L）", "top")
-        d += elm.Line().down().toy(-10.6)
-        d += elm.Dot(open=True).at((XN, 2.2)).label("−（代替 N）", "top")
-        d += elm.Line().down().toy(-10.6)
-        d += elm.Dot().at((-1.0, 0))
-        d += elm.Line().at((-1.0, 0)).right(0.6)
-        d += PushNC().right().label("SB1 停止（常闭）", ofst=0.6)
-        d += elm.Line().right(0.4)
-        d += elm.Dot()
-        xs = d.here[0]
-        for k, (y, sb, me, other) in enumerate([(0, "SB2 正转", "KM1", "KM2"), (-5.6, "SB3 反转", "KM2", "KM1")]):
-            if k:
-                d += elm.Line().at((xs, 0)).down().toy(y)
-            items = [("par", (PushNO, sb + "（常开）"), (ContactNO, me + " 第一组常开（自锁）")),
-                     (ContactNC, other + " 第二组常闭（互锁）")]
-            d += elm.Line().at((xs, y)).right(0.4)
-            rung_c(d, y, items, xs, None, gap=0.4)
-            d += elm.Line().right().tox(11.0)
-            # 线圈 + 两条并联支路
-            a = d.here
-            d += (c := Coil().right(4.2).label(me + " 线圈 12 V", ofst=0.4))
-            b = d.here
-            d += elm.Dot().at(a); d += elm.Dot().at(b)
-            d += elm.Line().at(b).right().tox(XN)
-            d += elm.Dot()
-            d += elm.Line().at(a).down(1.4).color(ACC)
-            d += elm.Line().right(0.4).color(ACC)
-            d += elm.Resistor().right(1.6).color(ACC).label("1 kΩ", "bottom", ofst=0.2, color=ACC)
-            d += elm.LED().right(2.2).color(ACC).label("LED", "bottom", ofst=0.2, color=ACC)
-            d += elm.Line().up(1.4).color(ACC)
-            d += elm.Line().at((a[0], y - 1.4)).down(1.4).color(ACC)
-            d += elm.Diode().at((b[0], y - 2.8)).to((a[0], y - 2.8)).color(ACC)   # 阴极朝 + 端：反并
-            d += elm.Line().at((b[0], y - 1.4)).down(1.4).color(ACC)
-            d += elm.Label().at(((a[0] + b[0]) / 2, y - 3.35)).label("1N4007", color=ACC)
-            d += elm.Dot().at((a[0], y - 1.4)).color(ACC); d += elm.Dot().at((b[0], y - 1.4)).color(ACC)
-    print("[图 18-p2-4] 12 V 互锁实验：LED 串 1 kΩ 并在线圈两端，1N4007 反并在线圈两端，FR 省略")
-    save_schem(d, P, "18_p2_4_lowvolt.png")
-
-
-def control_at(d, oy, items1, items2, X1=13.5, title=None):
-    """在高度 oy 画一套两行控制回路：L — SB1 — FR — 分两路 — N。"""
+def diff_var(d, x0, y0, r1=False, cf=False, title=None, hl=True, vals=("100 nF", "10 kΩ", "1 kΩ", "10 nF")):
+    d += (op := elm.Opamp(leads=True).right().at((x0, y0)).anchor("center"))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Capacitor().left().label(f"$C$ {vals[0]}")
+    if r1:
+        d += elm.Resistor().left().label(f"$R_1$ {vals[2]}").color(ACC if hl else "black")
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    if cf: d += (a := elm.Dot())
+    d += elm.Resistor().right().label(f"$R_f$ {vals[1]}").tox(op.out.x + 0.5)
+    if cf: d += (b := elm.Dot())
+    d += elm.Line().down().toy(op.out); d += elm.Dot()
+    if cf:
+        d += elm.Line().up().at(a.center).length(1.4).color(ACC if hl else "black")
+        d += elm.Capacitor().right().label(f"$C_f$ {vals[3]}").tox(b.center.x).color(ACC if hl else "black")
+        d += elm.Line().down().toy(b.center).color(ACC if hl else "black")
+    d += elm.Line().left().at(op.in2).length(0.5); d += elm.Line().down().length(0.5); d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(0.75)
+    d += elm.Dot(open=True).label("$V_o$", "right")
     if title:
-        d += elm.Label().at((-7.0, oy + 2.6)).label(title, halign="left", fontsize=11)
-    d += elm.Dot(open=True).at((-7.0, oy)).label("L", "left")
-    d += elm.Line().right(0.4)
-    d += PushNC().right().label("SB1 停止", ofst=0.6)
-    d += elm.Line().right(0.4)
-    d += ThermalNC().right().label("FR", ofst=0.6)
-    d += elm.Line().right().tox(0)
-    d += elm.Dot()
-    rung_c(d, oy, items1, 0, X1)
-    d += elm.Line().at((0, oy)).down(4.4)
-    rung_c(d, oy - 4.4, items2, 0, X1)
-    d += elm.Line().at((X1, oy)).down(4.4)
-    d += elm.Dot().at((X1, oy))
-    d += elm.Line().at((X1, oy - 4.4)).right(0.6)
-    d += elm.Dot(open=True).label("N", "right")
+        d += elm.Label().at((x0 - 1.5, y0 + (4.3 if cf else 3.0))).label(title, fontsize=12)
+    return op
 
 
-def button_only_vs_double():
-    """图 18-p3-3：（a）只做按钮互锁（没有接触器常闭）；（b）双重互锁。"""
-    with drawing(fontsize=10) as d:
-        p1 = ("par", (PushNO, "SB2 正转"), (ContactNO, "KM1 自锁"))
-        p2 = ("par", (PushNO, "SB3 反转"), (ContactNO, "KM2 自锁"))
-        control_at(d, 0, [(PushNC, "SB3 常闭"), p1, (Coil, "KM1 线圈")],
-                   [(PushNC, "SB2 常闭"), p2, (Coil, "KM2 线圈")], X1=13.5,
-                   title="（a）只做按钮互锁：线圈前面没有对方接触器的常闭触点")
-        control_at(d, -9.2, [(PushNC, "SB3 常闭"), p1, (ContactNC, "KM2 常闭", ACC), (Coil, "KM1 线圈")],
-                   [(PushNC, "SB2 常闭"), p2, (ContactNC, "KM1 常闭", ACC), (Coil, "KM2 线圈")], X1=13.5,
-                   title="（b）双重互锁：再串入对方接触器的常闭辅助触点")
-    print("[图 18-p3-3] （a）只做按钮互锁 （b）双重互锁")
-    save_schem(d, P, "18_p3_3_button_only.png")
+# ---------- 图 18-p1-7 无源 RC 微分 vs 运放微分（page1「痛点」第三段） ----------
+def passive_rc(d, x0, y0):
+    d += elm.Dot(open=True).at((x0, y0)).label("$V_i$", "left")
+    d += elm.Capacitor().right().label("$C$").label("$V_i - V_o$", "bottom", fontsize=10)
+    d += (n := elm.Dot())
+    d += elm.Line().right().length(1.5)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    d += (r := elm.Resistor().down().at(n.center))
+    d += elm.Ground()
+    d += elm.Label().at((r.center.x + 0.6, r.center.y)).label("$R$", halign="left")
+    d += elm.Label().at((r.center.x + 0.6, r.center.y - 0.7)).label("输出 = R 上的电压", fontsize=10, halign="left")
+    d += elm.Label().at((x0 + 0.5, y0 + 2.2)).label("（a）无源 RC：电容右端跟着输出变", fontsize=12, halign="left")
+with drawing(fontsize=11) as d:
+    passive_rc(d, 0, 0)
+    op = diff_var(d, 12.5, -0.7, hl=False)
+    d += elm.Label().at((9.5, 3.0)).label("（b）运放版：电容右端钉在虚地 0 V", fontsize=12, halign="left")
+    d += elm.Label().at((op.in1.x - 0.45, op.in1.y - 0.45)).label("0 V", fontsize=10, color=ACC)
+save_schem(d, N, "18_p1_7_passive_vs_opamp.png")
 
 
-def self_lock_nc():
-    """图 18-p3-4：练习 2。（a）KM1 回路误串自己的常闭；（b）正确：串 KM2 常闭。"""
-    with drawing(fontsize=10) as d:
-        for k, (oy, nc, c, t) in enumerate([(0, "KM1 常闭（接错：自己的）", ACC, "（a）错误：KM1 线圈回路里串的是 KM1 自己的常闭触点"),
-                                             (-5.4, "KM2 常闭（对方的）", None, "（b）正确：串 KM2 的常闭辅助触点")]):
-            d += elm.Label().at((0, oy + 2.4)).label(t, halign="left", fontsize=11)
-            d += elm.Dot(open=True).at((0, oy)).label("L", "left")
-            item = (ContactNC, nc, c) if c else (ContactNC, nc)
-            rung_c(d, oy, [(PushNC, "SB1 停止"), ("par", (PushNO, "SB2 正转"), (ContactNO, "KM1 自锁")),
-                           item, (Coil, "KM1 线圈")], 0, 16.5)
-            d += elm.Dot(open=True).label("N", "right")
-    print("[图 18-p3-4] 练习 2：自己锁自己 vs 正确互锁")
-    save_schem(d, P, "18_p3_4_self_nc.png")
+# ---------- 图 18-p1-8 四种接法：理想 / 只串 R1 / 只并 Cf / 都加（与图 18-p1-6 的四行波形一一对应） ----------
+with drawing(fontsize=11) as d:
+    diff_var(d, 0, 0, title="① 只有 C 和 $R_f$（理想微分器）")
+    diff_var(d, 11, 0, r1=True, title="② 只串小电阻 $R_1$")
+    diff_var(d, 0, -9, cf=True, title="③ 只并小电容 $C_f$")
+    diff_var(d, 11, -9, r1=True, cf=True, title="④ 两个都加（实用微分器）")
+save_schem(d, N, "18_p1_8_four_variants.png")
+print("[电路图] 18-p1-8：新加的 R1 1 kΩ、Cf 10 nF 用强调色")
 
-
-def phase_swap_vs_rotate():
-    """图 18-p3-5：练习 3。KM2 下口（a）对调 L1、L3；（b）轮换一格 L1→T2、L2→T3、L3→T1。"""
-    with drawing(fontsize=10) as d:
-        for ox, perm, t in [(0, (2, 1, 0), "（a）对调两相：L1→T3，L3→T1\n（反转）"),
-                            (8.0, (1, 2, 0), "（b）轮换一格：L1→T2，L2→T3，L3→T1\n（仍是正转）")]:
-            X = [ox + 0, ox + 1.5, ox + 3.0]
-            d += elm.Label().at((ox + 1.8, 1.7)).label(t, fontsize=10)
-            for i, x in enumerate(X):
-                d += elm.Dot(open=True).at((x, 0)).label(f"L{i + 1}", "top")
-                d += ContactNO().at((x, -0.3)).down().length(1.6)
-                d += elm.Line().at((x, 0)).down(0.3)
-            yc = -0.3 - 0.8 - 0.05
-            d += elm.Line().at((X[0] + 0.25, yc)).to((X[2] + 0.25, yc)).linestyle("--").color("#808080")
-            d += elm.Label().at((ox + 3.9, -1.1)).label("KM2", fontsize=10)
-            hs = [-2.4, -2.9, -3.4]
-            XT = [x + 0.6 for x in X]
-            for i, x in enumerate(X):
-                t_ = perm[i]
-                c = ACC if t_ != i else "black"
-                d += elm.Line().at((x, -1.9)).to((x, hs[i])).color(c)
-                d += elm.Line().to((XT[t_], hs[i])).color(c)
-                d += elm.Line().to((XT[t_], -4.5)).color(c)
-            for i, x in enumerate(XT):
-                d += elm.Label().at((x + 0.4, -4.2)).label(f"T{i + 1}", fontsize=10)
-            X = XT
-            d += elm.Line().at((X[1], -4.5)).down(0.4)
-            d += (m := Motor3().down().length(1.0))
-            d += elm.Line().at((X[0], -4.5)).right().tox(X[1] - 0.35)
-            d += elm.Line().to((X[1] - 0.35, -5.2))
-            d += elm.Line().at((X[2], -4.5)).left().tox(X[1] + 0.35)
-            d += elm.Line().to((X[1] + 0.35, -5.2))
-    print("[图 18-p3-5] 练习 3：对调两相（反转） vs 轮换一格（正转）")
-    save_schem(d, P, "18_p3_5_phase.png")
-
-
-def sequence_control():
-    """图 18-p3-6：练习 4 顺序控制。KM2 线圈回路串 KM1 常开辅助触点。"""
-    XN = 17.0
-    with drawing(fontsize=10) as d:
-        d += elm.Dot(open=True).at((0, 1.4)).label("L", "top")
-        d += elm.Line().down().toy(-6.6)
-        d += elm.Dot(open=True).at((XN, 1.4)).label("N", "top")
-        d += elm.Line().down().toy(-6.6)
-        d += elm.Dot().at((0, 0))
-        rung_c(d, 0, [(PushNC, "SB1 停止 M1"), ("par", (PushNO, "SB2 启动 M1"), (ContactNO, "KM1 自锁")),
-                      (Coil, "KM1 线圈")], 0, XN)
-        d += elm.Dot()
-        d += elm.Dot().at((0, -4.2))
-        rung_c(d, -4.2, [(PushNC, "SB3 停止 M2"), ("par", (PushNO, "SB4 启动 M2"), (ContactNO, "KM2 自锁")),
-                         (ContactNO, "KM1 常开（顺序）", ACC), (Coil, "KM2 线圈")], 0, XN)
-        d += elm.Dot()
-    print("[图 18-p3-6] 练习 4：KM2 回路串 KM1 常开 → K2' = S3' (S4 + K2) K1")
-    save_schem(d, P, "18_p3_6_sequence.png")
-
-
-lowvolt_interlock()
-button_only_vs_double()
-self_lock_nc()
-phase_swap_vs_rotate()
-sequence_control()
+# ---------- 图 18-p3-3 本教程双电源实用微分器 vs TI SBOA276C 单电源示例（page3 参数表） ----------
+def ti_single(d, x0, y0):
+    d += (op := elm.Opamp(leads=True).right().at((x0, y0)).anchor("center"))
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j := elm.Dot())
+    d += elm.Capacitor().left().label("C1 15 nF")
+    d += elm.Resistor().left().label("R1 1 kΩ")
+    d += elm.Dot(open=True).label("$V_i$", "left")
+    d += elm.Line().up().at(j.center).length(1.5)
+    d += elm.Resistor().right().label("R2（即 $R_f$）499 kΩ").tox(op.out.x + 0.5)
+    d += elm.Line().down().toy(op.out); d += elm.Dot()
+    d += elm.Line().left().at(op.in2).length(0.5).color(ACC)
+    d += elm.Line().down().length(1.0).color(ACC)
+    d += (k := elm.Dot().color(ACC).label("2.5 V", "right", color=ACC))
+    d += elm.Resistor().left().label("R3 100 kΩ").color(ACC)
+    d += elm.Line().up().length(0.4).color(ACC)
+    d += elm.Vdd().label("+5 V").color(ACC)
+    d += (r4 := elm.Resistor().down().at(k.center).color(ACC))
+    d += elm.Label().at((r4.center.x + 0.5, r4.center.y)).label("R4 100 kΩ", halign="left", color=ACC)
+    d += elm.Ground().color(ACC)
+    d += elm.Line().right().at(op.out).length(0.75)
+    d += elm.Dot(open=True).label("$V_o$（围绕 2.5 V 摆动）", "right")
+with drawing(fontsize=11) as d:
+    diff_var(d, 0, 0, r1=True, cf=True, hl=False)
+    d += elm.Label().at((-5.5, 4.4)).label("（a）本教程：±15 V 双电源，同相端接地", fontsize=12, halign="left")
+    ti_single(d, 14, 0)
+    d += elm.Label().at((6.5, 4.4)).label("（b）TI SBOA276C 示例（TLV9061）：5 V 单电源，同相端接 2.5 V", fontsize=12, halign="left")
+save_schem(d, N, "18_p3_3_supply_variants.png")

@@ -1,38 +1,36 @@
-# 22 三极管开关与继电器驱动 · 资料笔记（作者 D）
+# 22 过载保护 · 调研笔记（作者 C）
 
-下面每条都是作者真的打开过的来源；没找到出处的数值在正文标「[待核实]」或写明「示意值」。
+## 已打开并引用的资料
+- TI SBOA285A *Single-Supply, Low-Side, Unidirectional Current-Sensing Circuit*：https://www.ti.com/lit/an/sboa285a/sboa285a.pdf（本地 /workspace/authorC/refs/sboa285a.pdf）
+  - 1 A 满量程、R1 = 250 mΩ 采样电阻（满量程 250 mV），增益 1 + R3/R2 = 19.6（715 Ω / 13.3 kΩ），输出 50 mV–4.9 V，TLV9062。
+  - 采样电阻容差直接成为增益误差；小电流端失调电压的相对误差最大（Vos 0.3 mV 在 IiMin 10.2 mA 时约 12%）；R3 并电容可滤波。
+- TI SBOA169B *Precision, low-side current measurement*：https://www.ti.com/lit/an/sboa169b/sboa169b.pdf
+  - 高边 / 低边采样对比；低边共模电压接近地、电路简单；缺点是采样电阻压降使负载地相对电源地偏移，Rs 越小偏移越小。
+- TI LM393 数据手册（SLCS005）：https://www.ti.com/lit/ds/symlink/lm393.pdf
+  - 无后缀 LM393：VIO 典型 2 mV、25 °C 最大 5 mV；IIB 最大 250 nA；输入共模范围含地；开集电极输出。
+- TI DRV8871 数据手册：https://www.ti.com/lit/ds/symlink/drv8871.pdf
+  - OCP：电流超过 IOCP 持续 tOCP（1.5 μs）后关断全部 FET，tRETRY（3 ms）后自动重试，故障仍在则重复——打嗝式保护的实例。
+- Infineon IRLZ44N 数据手册：https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf（Rds(on) 最大 25 mΩ @ VGS 5 V，沿用 06 节）
+- ABB 热过载继电器手册：https://library.e.abb.com/public/a9cd1c3f07dc1870852573a300738595/1SXU106043B0201.pdf
+  - 电机电流流过双金属片发热弯曲而脱扣；1.05 Ie 不脱扣、1.2 Ie 2 h 内脱扣；7.2 Ie 下 Class 10 为 4–10 s（10A/20/30 级另有规定）；手动 / 自动复位。
+- Littelfuse *Fuseology Design Guide*：https://nationalfuse.com/wp-content/uploads/2023/03/Fuseology-Design-Guide.pdf
+  - 正常负载不超过额定电流 75%（25 °C）；脉冲（启动冲击）I²t 不超过熔化 I²t 额定值的 20%；TCC 为平均曲线，规格给 135% / 200% 下最长熔断时间。
+- 04 节 page3 引用的「热继电器不能做短路保护」出处，本节只转述并指回 04 节。
 
-1. **onsemi 2N3904 数据手册** https://www.onsemi.com/download/data-sheet/pdf/2n3904-d.pdf
-   - $V_{CEO}$ 40 V； $I_C$ 连续 200 mA；功耗 625 mW（TO-92，环境 25 °C，每升高 1 °C 减 5 mW）；结到环境热阻 $\theta_{JA}$ 200 °C/W（与 07 一致）；"useful dynamic range extends to 100 mA as a switch"。
-   - $h_{FE}$ 最小：0.1 mA 时 40、1 mA 时 70、10 mA 时 100（最大 300）、50 mA 时 60、100 mA 时 30。
-   - $V_{CE(sat)}$ ≤ 0.2 V（10 mA / 1 mA）、≤ 0.3 V（50 mA / 5 mA），即强制 β = 10 的测试条件； $V_{BE(sat)}$ 0.65–0.85 V（10 mA）、≤ 0.95 V（50 mA）。
-2. **松乐 SRD 系列继电器数据手册**（alldatasheet 镜像）https://www.alldatasheet.com/html-pdf/1132639/SONGLERELAY/SRD-05VDC-SL-C/1713/2/SRD-05VDC-SL-C.html
-   - 高灵敏型 5 V：71.4 mA、70 Ω ±10%、0.36 W；12 V：30 mA、400 Ω。标准型 5 V：89.3 mA、55 Ω、0.45 W。
-   - 吸合电压最大 75%、释放电压最小 10%、最大允许电压 120%（标准型 110%）。
-   - 触点 10 A 250 VAC / 10 A 28 VDC；吸合时间最大 10 ms、释放时间最大 5 ms。
-   - 绝缘耐压：线圈与触点之间 1500 VAC，触点之间 1000 VAC。寿命：机械 10^7 次，电气 10^5 次。
-   - 手册**没有给线圈电感**，仿真里的 0.1 H 是示意值。
-3. **TI ULN2003A 数据手册** https://www.ti.com/lit/ds/symlink/uln2003a.pdf
-   - 7 路达林顿；每路 500 mA；输出耐压 50 V；内置钳位二极管，COM 端接线圈电源。
-   - 每路输入串了 2.7 kΩ 基极电阻，可直接接 5 V TTL / CMOS（3.3 V 也可用）。
-   - $V_{CE(sat)}$ 典型 / 最大：100 mA 时 0.9 / 1.1 V、200 mA 时 1.0 / 1.3 V、350 mA 时 1.2 / 1.6 V。
-   - 应用示例： $I_{COIL} = (V_{SUP} - V_{CE(SAT)})/R_{COIL}$ ，12–48 V 线圈、20–300 mA。
-4. **TE Connectivity：线圈抑制与继电器寿命** https://www.te.com/en/products/relays-and-contactors/electromechanical-relays/intersection/coil-suppression-relay-life.html
-   - 不加抑制时线圈感应电压可达数百甚至上千伏。
-   - 只并二极管能把电压钳到二极管压降，但电流衰减慢，衔铁释放变慢，触点粘连、熔焊的风险变大。
-   - 二极管串稳压管（齐纳管）衰减更快，稳压值按开关器件的耐压选。继电器的参数是在不加抑制时测的。
-5. **Microchip ATmega48A/88A/168A/328/328P 数据手册** https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf
-   - 绝对最大额定值：每个 I/O 引脚 DC 电流 40.0 mA；VCC、GND 引脚 200.0 mA。
-   - $V_{OH}$ 的测试条件： $I_{OH}$ = −20 mA、VCC = 5 V（85 °C 时最小 4.2 V）； $I_{OH}$ = −10 mA、VCC = 3 V（85 °C 时最小 2.3 V）。正文里「建议 20 mA」指这个测试条件。
-6. **Finder 62 系列功率继电器样本** https://cdn.findernet.com/app/uploads/S62EN.pdf
-   - "Reinforced insulation between coil and contacts according to EN 60335-1, with 6 mm clearance & 8 mm creepage distance"。用来说明：线圈侧到触点侧要留几毫米的电气间隙和爬电距离。
+## 设计取值（本节）
+12 V / 1 A 直流电机，堵转 5 A；低边 RS 0.1 Ω / 1 W；LM393 反相施密特：RA 33 kΩ（接 5 V）/ RB 1 kΩ，RH 100 kΩ，RPU 2.2 kΩ，输出直接驱动 IRLZ44N 栅极（正常 = 输出高 = 导通）；RF 10 kΩ、CF 10 μF，τ = 0.1 s。
+门限：V_T = 0.147 V、R_T = 0.971 kΩ → V_H 193 mV（1.93 A）、V_L 146 mV（1.46 A），回差 47 mV。
+启动模型：I = 1 + 4·e^(−t/20 ms) A。
 
-7. **欧姆龙 G5V-1 数据手册** https://xonstorage.z8.web.core.windows.net/pdf/Omron/4226465XON.pdf （本轮下载打开）
-   - Coil Data 表（参考值）：5 V 款 167 Ω、30 mA，线圈电感 0.15 H（Armature OFF）/ 0.29 H（Armature ON）。page2 用它说明仿真取 0.1 H 与真实 5 V 小继电器同一量级。
-8. **TI SLUAAR5《Circuit Board Insulation Design According to IEC60664 for Motor Drive Applications》** https://www.ti.com/lit/wp/sluaar5/sluaar5.pdf （本轮下载打开）
-   - Clearance：按包括瞬态在内的最大峰值电压（overvoltage category [OVC] level）确定，污染等级、温度、湿度有影响。
-   - Creepage：与 RMS/DC 电压有关，取决于污染等级和绝缘材料的 CTI。
+## 仿真结果（code/22_sim.py、code/figs/22_figs.py）
+- 开环慢变（1→2.6→1 A，σ 0.15 A 随机起伏，种子 3）：无回差翻转 10 次，有回差 2 次（3.95 s 跳、9.65 s 恢复）；page2 代码块结果相同。
+- 堵转 5 A：26 ms 切断（公式 τ·ln((I−I0)/(I−Itrip)) 26.4 ms）。
+- 闭环堵转：无回差每个 10 μs 步翻转（0.4 s 内 28803 次），平均电流 1.93 A；有回差打嗝：断 28.0 ms（= τ·ln(V_H/V_L)）、通 14.3 ms、占空比 34%、平均 1.73 A；锁存：1 次翻转，0 A。
+- 反时限：τ = 10/47/100 ms → 5 A 堵转 2.6/12.4/26.4 ms，20 A 短路 0.50/2.35/5.00 ms。
+- 启动（从 0 起）滤波后峰值：τ = 10/47/100 ms → 278/144/100 mV（10 ms 误跳）。
+- RS 表（跳闸 1.93 A 不变）：0.01/0.05/0.1/0.5 Ω → 门限 19.3/96.4/192.7/963.6 mV，跳闸功耗 0.04/0.19/0.37/1.86 W，5 mV 失调占比 25.9/5.2/2.6/0.5%。
+- LM393 IIB 250 nA × 10 kΩ = 2.5 mV。
+- 练习 4：启动冲击超出稳态部分的 I²t = 16·τ_start = 0.32 A²s。
 
-## 原「待核实」项处理结果
-- 线圈电感：仍用 0.1 H 示意值，正文改为引用 G5V-1 的 5 V 款 0.15～0.29 H 作量级依据；杂散电容 100 pF 在正文写明是示意值。
-- 自制 PCB 上 220V 与低压走线的间距：正文引用 TI SLUAAR5 说明 IEC 60664-1 按哪些条件确定间距，明确本页不给具体毫米数。
+## 未用 / 待核实
+无「待核实」标记。page3 提到「实际产品常再串保险丝作最后防线」「锁存可用 LM393 另一半 / 单片机 / 自锁继电器实现」为一般工程常识，未单独引用。

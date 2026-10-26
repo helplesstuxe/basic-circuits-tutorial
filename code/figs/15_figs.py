@@ -1,143 +1,326 @@
-"""15 有源滤波：全部配图（图 15-p2-2 由 code/15_sim.py 生成）。
-运行：/workspace/circuits-venv/bin/python code/figs/15_figs.py
-图上的每个数字都由本脚本打印；关键结论用 assert 检查。
-"""
-import os, sys
+"""15 星三角降压启动：除 15_sim.py 那两张以外的所有配图，以及正文、练习要用到的数字。运行：python code/figs/15_figs.py
+图上出现的每个数字都由本脚本打印（fs.mark 自动打印；其余用 print）。电动机模型与 15_sim.py 相同（示意值）。"""
+import sys, os
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from schem import *            # noqa: F401,F403
-import figstyle as fs
 import numpy as np
 import matplotlib.pyplot as plt
-from scipy import signal
+from matplotlib.patches import Rectangle
+from schem import *
+import figstyle as fs
 
-N = "15"
-R, C = 16e3, 10e-9                                     # 一阶：fc ≈ 995 Hz
-R1, R2, C1, C2 = 4.22e3, 18.4e3, 10e-9, 33e-9          # Sallen-Key 巴特沃斯 1 kHz（TI SLOA049 表 10-1）
-first = ([1.0], [R * C, 1.0])                          # 一阶低通：1/(sRC + 1)
-sk = ([1.0], [R1 * R2 * C1 * C2, C1 * (R1 + R2), 1.0])  # Sallen-Key：1/(s²R1R2C1C2 + sC1(R1+R2) + 1)
+P = "15"
+U_LINE = 380.0
+U_PH_Y = U_LINE / np.sqrt(3)
 
-
-def follower_tail(d, node, out_len=1.0):
-    """从 node 引线到运放同相端，运放接成跟随器，返回运放。"""
-    d += elm.Line().right().at(node).length(1.0)
-    d += (op := elm.Opamp(leads=True).right().anchor("in2"))
-    d += elm.Line().left().at(op.in1).length(0.4)
-    d += elm.Line().up().length(1.2)
-    d += elm.Line().right().tox(op.out.x + 0.4)
-    d += elm.Line().down().toy(op.out)
-    d += elm.Dot()
-    d += elm.Line().right().at(op.out).length(out_len)
-    d += elm.Dot(open=True).label("$V_o$", "right")
-    return op
+# ---------------- 与 15_sim.py 相同的示意电动机 ----------------
+R1, R2, X, XM = 0.03, 0.03, 0.16, 3.0
+S_N, J = 0.03, 2.0
+def i_rotor(s): return 1 / (R1 + R2 / s + 1j * X)
+def i_line(s): return abs(1 / (1j * XM) + i_rotor(s))
+def torque(s): return abs(i_rotor(s)) ** 2 * R2 / s
+I_N, T_N = i_line(S_N), torque(S_N)
+def load(w): return 0.1 + 0.75 * w ** 2
+DT = 1e-3
 
 
-# ---------- 图 15-p1-1 带高频噪声的信号经过低通 ----------
-t = np.linspace(0, 40e-3, 40001)
-clean = fs.sine(t, 50, amp=1.0)
-noisy = clean + 0.3 * np.sin(2 * np.pi * 10e3 * t)
-_, y, _ = signal.lsim(first, noisy, t)
-ripple = np.max(np.abs(y[20000:] - signal.lsim(first, clean, t)[1][20000:]))
-print(f"输入：50 Hz 1 V 信号 + 10 kHz 0.3 V 噪声；经 fc ≈ 995 Hz 一阶低通后噪声剩约 {ripple:.2f} V")
-assert ripple < 0.04
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(t * 1e3, noisy, **{**fs.LS["vin"], "lw": 0.8}, label="$V_i$ 输入（带 10 kHz 噪声）")
-ax.plot(t * 1e3, y, **fs.LS["vout"], label="$V_o$ 低通输出")
-fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-1.8, 2.2)
-ax.legend(loc="upper right", fontsize=8, ncol=2)
-fs.save(fig, N, "15_p1_1_denoise.png")
+def run(t_star, gap, t_end=None):
+    """理想切换：0 ~ t_star 星形，空档 gap 秒（<0 表示重叠，按短路处理，不算电动机），之后三角形。
+    返回 (切换前电流, 切换后尖峰, 切换时转速, 空档内转速下降量)。"""
+    t_end = t_end or t_star + max(gap, 0) + 1.0
+    w = 0.0; n = int(round(t_end / DT)); I = np.zeros(n); W = np.zeros(n)
+    for k in range(n):
+        tk = k * DT; s = max(1 - w, 1e-4)
+        f = 1 / 3 if tk < t_star else (0.0 if tk < t_star + max(gap, 0) else 1.0)
+        I[k] = f * i_line(s) / I_N
+        w = max(w + (f * torque(s) / T_N - load(w)) / J * DT, 0.0)
+        W[k] = w
+    ks = int(round(t_star / DT)); kd = int(round((t_star + max(gap, 0)) / DT))
+    return I[ks - 1], I[kd:kd + 200].max(), W[ks - 1], W[ks - 1] - W[kd - 1]
 
-# ---------- 图 15-p1-2 一阶有源低通 ----------
-with drawing() as d:
-    d += elm.Dot(open=True).label("$V_i$", "left")
-    d += elm.Resistor().right().label("$R$ 16 kΩ")
-    d += (n := elm.Dot())
-    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
-    d += elm.Ground()
-    follower_tail(d, n.center)
-save_schem(d, N, "15_p1_2_first_order.png")
-print(f"一阶低通 fc = 1/(2π × 16 kΩ × 10 nF) = {1 / (2 * np.pi * R * C):.0f} Hz")
 
-# ---------- 图 15-p2-1 Sallen-Key 二阶低通 ----------
-with drawing() as d:
-    d += elm.Dot(open=True).label("$V_i$", "left")
-    d += elm.Resistor().right().label("$R_1$ 4.22 kΩ")
-    d += (a := elm.Dot())
-    d += elm.Resistor().right().label("$R_2$ 18.4 kΩ")
-    d += (b := elm.Dot())
-    d += elm.Capacitor().down().label("$C_1$ 10 nF", "bottom")
-    d += elm.Ground()
-    op = follower_tail(d, b.center, out_len=2.4)
-    d += elm.Line().up().at(a.center).length(3.6)
-    d += elm.Capacitor().right().label("$C_2$ 33 nF").tox(op.out.x + 1.4)
-    d += elm.Line().down().toy(op.out)
-    d += elm.Dot()
-save_schem(d, N, "15_p2_1_sallen_key.png")
-f0 = 1 / (2 * np.pi * np.sqrt(R1 * R2 * C1 * C2))
-Q = np.sqrt(R1 * R2 * C1 * C2) / (C1 * (R1 + R2))
-print(f"Sallen-Key：f0 = {f0:.0f} Hz，Q = {Q:.3f}")
-assert abs(Q - 0.707) < 0.01 and abs(f0 - 1000) < 20
+def windings():
+    """图 15-p1-1：三相绕组的星形接法与三角形接法。每段绕组画成一个小方框。"""
+    fig, ax = fs.diagram(w=8.6, h=3.6, xlim=(0, 10), ylim=(-0.2, 4.4))
+    def wind(p, q, lab, ends):
+        p, q = np.array(p), np.array(q); m = (p + q) / 2; d = q - p; L = np.hypot(*d); u = d / L
+        a = m - u * 0.45; b = m + u * 0.45
+        ax.plot(*zip(p, a), color="k", lw=1.3); ax.plot(*zip(b, q), color="k", lw=1.3)
+        ang = np.degrees(np.arctan2(d[1], d[0]))
+        r = Rectangle(a - np.array([-u[1], u[0]]) * 0.14, 0.9, 0.28, angle=ang, rotation_point=(a[0] - (-u[1]) * 0.14, a[1] - u[0] * 0.14),
+                      fc="white", ec="k", lw=1.3)
+        ax.add_patch(r)
+        nrm = np.array([-u[1], u[0]])
+        ax.text(*(m + nrm * 0.42), lab, ha="center", va="center", fontsize=9, color="#4d4d4d")
+        for pt, e in zip((p, q), ends):
+            if e:
+                ax.text(*(pt + (pt - m) / np.linalg.norm(pt - m) * 0.32), e, ha="center", va="center", fontsize=9)
+    # 星形：尾端 U2 V2 W2 接在一起
+    c = np.array([2.3, 1.6]); R = 1.5
+    pts = [c + R * np.array([np.cos(a), np.sin(a)]) for a in np.radians([90, 210, 330])]
+    for p, nm, e in zip(pts, "UVW", ["U", "V", "W"]):
+        wind(p, c, f"{U_PH_Y:.0f} V", (f"{e}1", None))
+    ax.plot(*c, "ko", ms=4)
+    ax.annotate("星点：尾端 U2 V2 W2 接在一起", xy=c, xytext=(2.3, 0.05), ha="center", fontsize=8, color="#4d4d4d",
+                arrowprops=dict(arrowstyle="->", lw=0.8, color="#808080"))
+    for p, L in zip(pts, ["L1", "L2", "L3"]):
+        ax.plot(*p, "ko", ms=4, mfc="white")
+    ax.text(2.3, 4.15, f"星形（Y）：每段绕组 {U_PH_Y:.0f} V（常说 220 V）", ha="center", fontsize=10)
+    # 三角形：首尾相接
+    tri = [np.array([7.5, 3.4]), np.array([5.9, 0.6]), np.array([9.1, 0.6])]
+    wind(tri[0], tri[1], f"{U_LINE:.0f} V", (None, None)); wind(tri[1], tri[2], f"{U_LINE:.0f} V", (None, None))
+    wind(tri[2], tri[0], f"{U_LINE:.0f} V", (None, None))
+    ax.text(7.5, 3.6, "U1 W2", ha="center", fontsize=9); ax.text(5.5, 0.35, "V1 U2", ha="center", fontsize=9); ax.text(9.5, 0.35, "W1 V2", ha="center", fontsize=9)
+    for p in tri:
+        ax.plot(*p, "ko", ms=4, mfc="white")
+    ax.text(7.5, 4.15, "三角形（△）：每段绕组 380 V", ha="center", fontsize=10)
+    ax.text(7.5, -0.1, "两种接法接的都是线电压 380 V 的三相电源", ha="center", fontsize=9, color="#4d4d4d")
+    print(f"[图 15-p1-1] 线电压 {U_LINE:.0f} V；星形每段绕组 {U_LINE:.0f}/√3 = {U_PH_Y:.1f} V ≈ {U_PH_Y:.0f} V；三角形每段 {U_LINE:.0f} V；比值 {U_PH_Y / U_LINE:.3f}")
+    assert abs(U_PH_Y - 219.4) < 0.1
+    fs.save(fig, P, "15_p1_1_windings.png")
 
-# ---------- 图 15-p2-3 一阶有源高通 ----------
-with drawing() as d:
-    d += elm.Dot(open=True).label("$V_i$", "left")
-    d += elm.Capacitor().right().label("$C$ 100 nF")
-    d += (n := elm.Dot())
-    d += elm.Resistor().down().label("$R$ 15.9 kΩ", "bottom")
-    d += elm.Ground()
-    follower_tail(d, n.center)
-save_schem(d, N, "15_p2_3_highpass.png")
-print(f"一阶高通 fc = 1/(2π × 15.9 kΩ × 100 nF) = {1 / (2 * np.pi * 15.9e3 * 100e-9):.0f} Hz")
 
-# ---------- 图 15-p3-1 方波经过两种低通 ----------
-t = np.linspace(0, 4e-3, 8001)
-sq = fs.square(t, 500, amp=0.5, offset=0.5)            # 0～1 V、500 Hz 方波
-_, y1, _ = signal.lsim(first, sq, t)
-_, y2, _ = signal.lsim(sk, sq, t)
-os2 = y2.max() - 1
-print(f"500 Hz 方波（0～1 V）：一阶输出最高 {y1.max():.2f} V，二阶最高 {y2.max():.2f} V（过冲 {os2*100:.0f}%）")
-assert 0.0 < os2 < 0.06
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(t * 1e3, sq, **fs.LS["vin"], label="$V_i$ 方波 500 Hz")
-ax.plot(t * 1e3, y1, **fs.LS["third"], label="一阶低通输出")
-ax.plot(t * 1e3, y2, **fs.LS["vout"], label="二阶 Sallen-Key 输出")
-k = np.argmax(y2)
-fs.mark(ax, t[k] * 1e3, y2[k], fmt="{:.2f}", unit=" V", dx=6, dy=4)
-fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-0.1, 1.45)
-ax.legend(loc="upper right", fontsize=8, ncol=3)
-fs.save(fig, N, "15_p3_1_square.png")
+def bars():
+    """图 15-p1-2：直接启动与星形启动的启动电流、启动转矩（示意电动机，额定值的倍数）。"""
+    i_d = i_line(1.0) / I_N; t_d = torque(1.0) / T_N
+    vals = [(i_d, i_d / 3), (t_d, t_d / 3)]
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    xs = np.array([0, 1])
+    ax.bar(xs - 0.18, [vals[0][0], vals[1][0]], 0.34, color=fs.C["third"], label="直接启动（三角形）")
+    ax.bar(xs + 0.18, [vals[0][1], vals[1][1]], 0.34, color=fs.C["cur"], label="星形启动")
+    for x, (a, b) in zip(xs, vals):
+        fs.mark(ax, x - 0.18, a, "{:.1f}", "倍", dy=4, marker="")
+        fs.mark(ax, x + 0.18, b, "{:.1f}", "倍", dy=4, marker="")
+    fs.ref_h(ax, 1.0, "额定值", x=0.99)
+    ax.set_xticks(xs); ax.set_xticklabels(["启动电流", "启动转矩"])
+    ax.set_ylabel("额定值的倍数"); ax.set_ylim(0, 7)
+    ax.legend(loc="upper right", fontsize=8)
+    print(f"[图 15-p1-2] 示意电动机：直接启动电流 {i_d:.1f} 倍、星形 {i_d / 3:.1f} 倍；直接启动转矩 {t_d:.2f} 倍、星形 {t_d / 3:.2f} 倍（都是 1/3）")
+    assert 5 <= i_d <= 7                         # 落在资料给的 5～7 倍范围里
+    fs.save(fig, P, "15_p1_2_bars.png")
 
-# ---------- 图 15-p3-2 漏了 2π：截止频率低了 6 倍多 ----------
-f = np.logspace(1, 5, 600)
-R_bad = 1 / (1e3 * C)                                   # 错误：R = 1/(fC) = 100 kΩ
-fc_ok, fc_bad = 1 / (2 * np.pi * R * C), 1 / (2 * np.pi * R_bad * C)
-h = lambda fx, fc: 20 * np.log10(1 / np.sqrt(1 + (fx / fc) ** 2))
-print(f"漏了 2π：R 取成 {R_bad/1e3:.0f} kΩ，实际 fc = {fc_bad:.0f} Hz；1 kHz 处 {h(1e3, fc_bad):.0f} dB（应为 {h(1e3, fc_ok):.0f} dB）")
-assert abs(fc_bad - 159) < 1
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.semilogx(f, h(f, fc_ok), **fs.LS["vout"], label="正确：R = 16 kΩ")
-ax.semilogx(f, h(f, fc_bad), **fs.LS["bad"], label="漏了 2π：R = 100 kΩ")
-fs.ref_v(ax, 1e3, "1 kHz（设计目标）")
-fs.ref_v(ax, fc_bad, f"{fc_bad:.0f} Hz", y=0.12)
-fs.mark(ax, 1e3, h(1e3, fc_bad), fmt="{:.0f}", unit=" dB", dx=-40, dy=-14)
-fs.mark(ax, 1e3, h(1e3, fc_ok), fmt="{:.0f}", unit=" dB", dx=8, dy=-14)
-fs.axlabels(ax, "频率", "Hz", "输出/输入 幅度", "dB")
-ax.set_xticks([10, 100, 1e3, 1e4, 1e5]); ax.set_xticklabels(["10", "100", "1 k", "10 k", "100 k"])
-ax.set_ylim(-60, 8); ax.legend(loc="lower left", fontsize=8)
-fs.save(fig, N, "15_p3_2_missing_2pi.png")
 
-# ---------- 参数与调试篇引用的经验数字（无图，只打印并断言） ----------
-GBW_LM358 = 1.2e6                                       # LM358B 增益带宽积
-need = lambda gain, fc: 100 * gain * fc                 # Microchip ADN003：Sallen-Key 要 GBW ≥ 100 × 倍数 × fc
-n1, n2 = need(1, 1e3), need(10, 100e3)
-print(f"GBW 经验要求：1 kHz 跟随型 {n1/1e3:.0f} kHz（LM358B {GBW_LM358/1e6:.1f} MHz 够用）；100 kHz × 10 倍 {n2/1e6:.0f} MHz（是 LM358B 的 {n2/GBW_LM358:.0f} 倍）")
-assert n1 == 100e3 and n1 <= GBW_LM358 and n2 == 100e6 and round(n2 / GBW_LM358) == 83
-drift = 30e-6 * 100                                     # C0G：±30 ppm/°C，温度变 100 °C
-print(f"C0G 温度变 100 °C：容量最多变 {drift*100:.1f}%")
-assert abs(drift - 0.003) < 1e-12
-shift = 1 / np.sqrt(0.85 * 0.85) - 1                    # Sallen-Key：fc ∝ 1/√(C1·C2)，两只 X7R 都 −15%
-print(f"两只电容都少 15%：截止频率高出 {shift*100:.1f}%")
-assert abs(shift - 0.176) < 0.001
+def relay():
+    """图 15-p1-3：三只接触器像接力一样分工（示意，不按比例）。"""
+    fig, ax = fs.diagram(w=8.6, h=2.8, xlim=(-1.6, 10.4), ylim=(-0.4, 3.6))
+    rows = [("KM 主接触器", 2.7, [(0.5, 10.0)], fs.C["vout"]), ("KMY 星形", 1.8, [(0.5, 5.0)], fs.C["vin"]),
+            ("KM△ 三角形", 0.9, [(5.6, 10.0)], fs.C["fb"]), ("KT 计时", 0.0, [(0.5, 5.0)], "#9e9e9e")]
+    for name, y, segs, col in rows:
+        ax.text(0.3, y + 0.15, name, ha="right", va="center", fontsize=9)
+        for a, b in segs:
+            ax.add_patch(Rectangle((a, y), b - a, 0.32, fc=col, ec="none", alpha=0.85))
+    ax.text(2.75, 1.3, "星形降压启动", ha="center", fontsize=9)
+    ax.text(7.8, 0.4, "三角形全压运行", ha="center", fontsize=9)
+    ax.annotate("", xy=(5.6, 1.45), xytext=(5.0, 1.45), arrowprops=dict(arrowstyle="<->", lw=1))
+    ax.text(5.3, 1.55, "空档", ha="center", fontsize=8)
+    ax.text(0.5, -0.35, "按启动", ha="center", fontsize=8); ax.text(5.0, -0.35, "延时到", ha="center", fontsize=8)
+    print("[图 15-p1-3] 示意：KM 全程吸合；KMY 从按启动到延时到；KM△ 在空档之后接上")
+    fs.save(fig, P, "15_p1_3_relay.png")
 
+
+def three_phase():
+    """图 15-p2-1：三相电压一个周期的波形，以及两相之差（线电压）为什么是相电压的 √3 倍。"""
+    U_PH = 220.0                                   # 相电压有效值（V）
+    UM = U_PH * np.sqrt(2)                         # 相电压峰值（V）：有效值 × √2
+    t = np.linspace(0, 20e-3, 20001)               # 50 Hz 的一个周期 = 20 ms
+    w = 2 * np.pi * 50
+    u1 = UM * np.sin(w * t)                        # L1
+    u2 = UM * np.sin(w * t - 2 * np.pi / 3)        # L2：比 L1 晚 1/3 个周期
+    u3 = UM * np.sin(w * t - 4 * np.pi / 3)        # L3：比 L1 晚 2/3 个周期
+    u12 = u1 - u2                                  # L1 与 L2 之间的电压（线电压）
+    fig, ax = plt.subplots(figsize=fs.SIZE["tall"])
+    ax.plot(t * 1e3, u1, **fs.LS["vin"], label="$u_1$（L1 对零线）")
+    ax.plot(t * 1e3, u2, **fs.LS["vout"], label="$u_2$（L2 对零线）")
+    ax.plot(t * 1e3, u3, **fs.LS["third"], label="$u_3$（L3 对零线）")
+    ax.plot(t * 1e3, u12, **fs.LS["fb"], label="$u_1 - u_2$（L1 与 L2 之间）")
+    fs.ref_h(ax, 0.0)
+    k1 = np.argmax(u1); k12 = np.argmax(u12)
+    fs.mark(ax, t[k1] * 1e3, u1[k1], "{:.0f}", "V", dy=6)
+    fs.mark(ax, t[k12] * 1e3, u12[k12], "{:.0f}", "V", dy=6)
+    fs.mark(ax, t[k1] * 1e3, u2[k1], "{:.0f}", "V", dy=-14)
+    ax.set_ylim(-650, 750)
+    fs.axlabels(ax, "时间", "ms", "电压", "V")
+    ax.legend(loc="upper right", fontsize=8, ncol=2)
+    ratio = u12.max() / u1.max()
+    print(f"[图 15-p2-1] 相电压有效值 {U_PH:.0f} V，峰值 {UM:.0f} V；L2、L3 依次晚 1/3 个周期（{20 / 3:.2f} ms）")
+    print(f"[图 15-p2-1] u1 在 {t[k1] * 1e3:.1f} ms 到最高 {u1[k1]:.0f} V，这一刻 u2 = {u2[k1]:.0f} V（不是 -{UM:.0f} V），所以两者之差不是 2 倍")
+    print(f"[图 15-p2-1] u1 - u2 的最大值 {u12.max():.0f} V，出现在 {t[k12] * 1e3:.2f} ms；比值 {ratio:.3f} ≈ √3 = {np.sqrt(3):.3f}；有效值 {U_PH:.0f} × {ratio:.3f} = {U_PH * ratio:.0f} V ≈ 380 V")
+    assert abs(ratio - np.sqrt(3)) < 1e-3 and abs(u2[k1] + UM / 2) < 1
+    fs.save(fig, P, "15_p2_1_threephase.png")
+
+
+def main_circuit():
+    """图 15-p2-2：星三角主电路。三段绕组单独画出：上端 U1 V1 W1，下端 U2 V2 W2。"""
+    with drawing(fontsize=10) as d:
+        XS = [0, 1.8, 3.6]; XD = [6.0, 7.4, 8.8]
+        tap = [-5.0, -5.4, -5.8]
+        for i, x in enumerate(XS):
+            d += elm.Dot(open=True).at((x, 0)).label(f"L{i + 1}", "top")
+            d += elm.Fuse().down().length(1.3)
+            d += elm.Line().down(0.2)
+            d += ContactNO().down().length(1.5)
+            d += elm.Line().down(0.2)
+            d += ThermalHeater().down().length(1.3)
+            d += elm.Line().down().toy(tap[i])
+            d += elm.Dot()
+            d += elm.Line().right().tox(XD[i])
+            d += elm.Line().at((x, tap[i])).down().toy(-6.6)
+            d += elm.Dot(open=True).label(["U1", "V1", "W1"][i], "left")
+            d += elm.Inductor2(loops=3).down().length(1.6)
+            d += elm.Dot(open=True).label(["U2", "V2", "W2"][i], "left")
+            d += elm.Line().down().toy(-9.4)
+            d += ContactNO().down().length(1.5)
+        d += elm.Line().at((XS[0], -10.9)).right().tox(XS[2])
+        d += elm.Label().at((XS[1], -11.3)).label("星点（KMY 闭合时三个尾端接在一起）", fontsize=9, color="#4d4d4d")
+        # KM△：L1 列 → W2，L2 列 → U2，L3 列 → V2（三条横线错开高度）
+        for xd, xt, y in [(XD[0], XS[2], -8.7), (XD[1], XS[0], -9.1), (XD[2], XS[1], -8.9)]:
+            d += elm.Line().at((xd, -5.0 if xd == XD[0] else (-5.4 if xd == XD[1] else -5.8))).down().toy(-6.4)
+            d += ContactNO().down().length(1.5)
+            d += elm.Line().down().toy(y)
+            d += elm.Line().left().tox(xt)
+            d += elm.Dot()
+        for xs, txt, yc in [(XS, "KM 主", -2.25), (XD, "KM△", -7.15), (XS, "KMY", -10.15)]:
+            d += elm.Line().at((xs[0] + 0.25, yc)).to((xs[2] + 0.25, yc)).linestyle("--").color("#808080")
+        d += elm.Label().at((-1.6, -2.3)).label("KM\n主接触器", fontsize=9)
+        d += elm.Label().at((-1.6, -4.0)).label("热继电器\nFR", fontsize=9)
+        d += elm.Label().at((-1.6, -0.8)).label("熔断器\nFU1", fontsize=9)
+        d += elm.Label().at((-1.6, -7.4)).label("电动机\n三段绕组", fontsize=9)
+        d += elm.Label().at((-1.6, -10.2)).label("KMY\n星形", fontsize=9)
+        d += elm.Label().at((10.4, -7.2)).label("KM△\n三角形", fontsize=9)
+        d += elm.Label().at((10.6, -9.6)).label("KM△ 下口：\nL1 列 → W2\nL2 列 → U2\nL3 列 → V2", fontsize=8, color="#4d4d4d")
+    print("[图 15-p2-2] 主电路：KM△ 闭合时 U1–W2、V1–U2、W1–V2 相连（三角形）；KMY 闭合时 U2、V2、W2 相连（星形）")
+    save_schem(d, P, "15_p2_2_main.png")
+
+
+def rung(d, y, items, x0, x1):
+    """在高度 y 上从 x0 起依次画 items = [(元件类, 标签)]，('par', ((E1,l1),(E2,l2))) 表示并联块，最后连到 x1。"""
+    d += elm.Line().at((x0, y)).right(0.4)
+    for E, lab in items:
+        if E == "par":
+            (E1, l1), (E2, l2) = lab
+            a = d.here
+            d += E1().right().label(l1, ofst=0.6)
+            b = d.here
+            d += elm.Line().at(a).down(1.4)
+            d += E2().right().tox(b[0]).label(l2, "bottom", ofst=0.25)
+            d += elm.Line().up(1.4)
+            d += elm.Dot().at(a); d += elm.Dot().at(b)
+            d += elm.Line().at(b).right(0.4)
+        else:
+            d += E().right().label(lab, ofst=0.6 if E is not Coil else 0.4)
+            d += elm.Line().right(0.4)
+    d += elm.Line().right().tox(x1)
+
+
+def control():
+    """图 15-p2-3：星三角控制回路（四条支路：KM、KT、KMY、KM△）。"""
+    with drawing(fontsize=10) as d:
+        d += elm.Dot(open=True).at((-9.6, 0)).label("L", "left")
+        d += elm.Line().right(0.4)
+        d += PushNC().right().label("SB1 停止", ofst=0.6)
+        d += elm.Line().right(0.4)
+        d += ThermalNC().right().label("FR", ofst=0.6)
+        d += elm.Line().right(0.4)
+        a = d.here
+        d += PushNO().right().label("SB2 启动", ofst=0.6)
+        b = d.here
+        d += elm.Line().at(a).down(1.4)
+        d += ContactNO().right().tox(b[0]).label("KM 自锁", "bottom", ofst=0.25)
+        d += elm.Line().up(1.4)
+        d += elm.Dot().at(a); d += elm.Dot().at(b)
+        d += elm.Line().at(b).right().tox(0)
+        d += elm.Dot()
+        X1 = 9.5; ys = [0, -2.6, -5.2, -7.8]
+        rung(d, ys[0], [(Coil, "KM 线圈")], 0, X1)
+        rung(d, ys[1], [(ContactNC, "KM△ 常闭"), (Coil, "KT 线圈")], 0, X1)
+        rung(d, ys[2], [(TimerNC, "KT 延时断开"), (ContactNC, "KM△ 常闭"), (Coil, "KMY 线圈")], 0, X1)
+        rung(d, ys[3], [("par", ((TimerNO, "KT 延时闭合"), (ContactNO, "KM△ 自锁"))), (ContactNC, "KMY 常闭"), (Coil, "KM△ 线圈")], 0, X1)
+        d += elm.Line().at((0, 0)).down(-ys[3])
+        d += elm.Line().at((X1, 0)).down(-ys[3])
+        for y in ys[1:3]:
+            d += elm.Dot().at((0, y)); d += elm.Dot().at((X1, y))
+        d += elm.Dot().at((X1, 0))
+        d += elm.Line().at((X1, ys[3])).right(0.6)
+        d += elm.Dot(open=True).label("N", "right")
+    print("[图 15-p2-3] 控制回路：KM 自锁；KT 经 KM△ 常闭；KMY 经 KT 延时断开 + KM△ 常闭；KM△ 经 KT 延时闭合（并 KM△ 自锁）+ KMY 常闭")
+    save_schem(d, P, "15_p2_3_control.png")
+
+
+def delay_sweep():
+    """图 15-p3-1：星形时间 T 从 1 s 到 12 s，切换瞬间的电流尖峰和切换时的转速。"""
+    Ts = np.arange(1, 13, 1.0)
+    res = [run(T, 0.020) for T in Ts]
+    spike = np.array([r[1] for r in res]); wsw = np.array([r[2] for r in res]) * 100; ibefore = np.array([r[0] for r in res])
+    i_dol = i_line(1.0) / I_N
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    ax.plot(Ts, spike, **fs.LS["cur"], marker="o", ms=3, label="切换到三角形瞬间的电流")
+    ax.plot(Ts, ibefore, **fs.LS["vin"], marker="s", ms=3, label="切换前（星形）的电流")
+    fs.ref_h(ax, i_dol, f"直接启动的峰值", x=0.99)
+    fs.ref_h(ax, 1.0, "额定电流", x=0.99)
+    k_flat = int(np.argmax(np.abs(np.diff(ibefore)) < 0.02))   # 星形电流"不再下降"的第一个点（它和下一个点几乎一样）
+    fs.mark(ax, Ts[k_flat], spike[k_flat], "{:.1f}", "倍", dx=8, dy=6)
+    fs.mark(ax, Ts[0], spike[0], "{:.1f}", "倍", dx=8, dy=0)
+    ax.axvspan(Ts[k_flat], Ts[-1], color=fs.C["good"], alpha=0.06, lw=0)
+    ax.text(Ts[k_flat] + 0.2, 4.1, "星形电流已不再下降：\n这一段切换都可以", fontsize=8, color="#4d4d4d")
+    ax.set_ylim(0, 6.6); ax.legend(loc="center left", bbox_to_anchor=(1.01, 0.5), fontsize=8)
+    fs.axlabels(ax, "星形启动时间 T", "s", "线电流 / 额定电流", None)
+    for T, s, w, ib in zip(Ts, spike, wsw, ibefore):
+        print(f"[图 15-p3-1] T = {T:.0f} s：切换前 {ib:.2f} 倍，转速 {w:.0f}%，切换尖峰 {s:.1f} 倍")
+    print(f"[图 15-p3-1] 星形电流从 T = {Ts[k_flat]:.0f} s 起不再明显下降（相邻两点相差 < 0.02 倍）；直接启动峰值 {i_dol:.1f} 倍")
+    assert spike[0] > 0.9 * i_dol and spike[-1] < spike[0] / 2
+    fs.save(fig, P, "15_p3_1_delay.png")
+    return Ts[k_flat]
+
+
+def gap_sweep():
+    """图 15-p3-2：切换空档从 0 到 400 ms：空档里转速下降多少、接上三角形时电流尖峰多大。负空档 = 重叠 = 短路。"""
+    gaps = np.array([0, 20, 40, 60, 100, 150, 200, 300, 400])
+    res = [run(6.0, g / 1e3) for g in gaps]
+    spike = np.array([r[1] for r in res]); drop = np.array([r[3] for r in res]) * 100
+    fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+    ax.axvspan(-90, 0, color=fs.C["bad"], alpha=0.10, lw=0)
+    ax.text(-86, 4.6, "空档 < 0：\nKMY 还没断开\nKM△ 已闭合\n= 三相短路", fontsize=8, color=fs.C["bad"])
+    ax.plot(gaps, spike, **fs.LS["cur"], marker="o", ms=3, label="接上三角形瞬间的电流")
+    fs.ref_h(ax, i_line(1.0) / I_N, "直接启动的峰值", x=0.99)
+    fs.ref_v(ax, 20, "本页电路 20 ms", y=0.55)
+    fs.ref_v(ax, 40, None)
+    ax.text(44, 0.5, "施耐德延时模块\n40 ms ± 15 ms", fontsize=8, color="#4d4d4d")
+    fs.mark(ax, 400, spike[-1], "{:.1f}", "倍", dx=-34, dy=6)
+    fs.mark(ax, 20, spike[1], "{:.1f}", "倍", dx=6, dy=-14)
+    ax.set_xlim(-90, 420); ax.set_ylim(0, 6.6); ax.legend(loc="upper center", fontsize=8)
+    fs.axlabels(ax, "切换空档", "ms", "线电流 / 额定电流", None)
+    for g, s, dr in zip(gaps, spike, drop):
+        print(f"[图 15-p3-2] 空档 {g:.0f} ms：空档里转速下降 {dr:.1f} 个百分点，接上三角形尖峰 {s:.1f} 倍")
+    assert spike[-1] > spike[1] and drop[-1] > drop[1]
+    fs.save(fig, P, "15_p3_2_gap.png")
+
+
+def exercises():
+    """练习和正文用数字。"""
+    I_rated = 30.0; k = 6
+    print(f"[练习 1] 额定电流 {I_rated:.0f} A、直接启动按 {k} 倍算：直接启动 {I_rated * k:.0f} A；星形启动 {I_rated * k / 3:.0f} A")
+    tp, tdr = 12, 19
+    print(f"[练习 3] KM△ 线圈不经 KMY 常闭、只靠 KT 同时切换：KM△ 吸合 {tp} ms、KMY 释放 {tdr} ms → 空档 {tp - tdr} ms（重叠 {tdr - tp} ms，三相短路）；"
+          f"有 KMY 常闭互锁 → 空档 = {tp} ms")
+    print(f"[练习 4] 铭牌 380 V 星形接法的电动机：每段绕组额定 {U_PH_Y:.0f} V；若接成三角形，每段要承受 {U_LINE:.0f} V，是额定的 {U_LINE / U_PH_Y:.2f} 倍")
+    assert abs(U_LINE / U_PH_Y - np.sqrt(3)) < 1e-9
+    for tag, Ir, kk in [("例题 1", 20.0, 7), ("例题 2", 16.0, 5)]:
+        print(f"[{tag}] 额定 {Ir:.0f} A、直接启动 {kk} 倍：直接启动 {Ir * kk:.0f} A；星形 {Ir * kk / 3:.1f} A；"
+              f"星形相电流 = 线电流 = {Ir * kk / 3:.1f} A，三角形相电流 = {Ir * kk / np.sqrt(3):.1f} A")
+    td, need = 1.8, 0.7
+    print(f"[例题 3] 直接启动转矩 {td} 倍额定、负载起步要 {need} 倍：星形只有 {td / 3:.1f} 倍 < {need} 倍，推不动")
+    assert td / 3 < need
+
+
+if __name__ == "__main__":
+    windings()
+    bars()
+    relay()
+    three_phase()
+    main_circuit()
+    control()
+    delay_sweep()
+    gap_sweep()
+    exercises()
 
 
 # ======================= page4 动手实验篇：面包板接线图 =======================
@@ -275,169 +458,209 @@ class Breadboard:
     def save(self, prefix, name):
         return fs.save(self.fig, prefix, name)
 
-# ---------- 图 15-p4-1：一阶有源低通的面包板接线（LM358，±9 V） ----------
-bb = Breadboard(30, "一阶有源低通面包板俯视图（LM358 跟随器，±9 V）", rails=("+9 V", "GND", "GND", "−9 V"))
-bb.chip(14, "LM358", names={1: "OUT", 2: "IN−", 3: "IN+", 4: "V−", 8: "V+"})
-bb.wire("a14", "T+14", "pos")                      # 第 8 脚 → +9 V
-bb.wire("j17", "B+17", "neg")                      # 第 4 脚 → −9 V
-bb.wire("a17", "T-17", "gnd")                      # 第 5 脚（B 路同相端）→ 地
-bb.wire("c15", "c16", "fb")                        # 第 6、7 脚短接：B 路接成跟随器
-bb.wire("g14", "g15", "fb")                        # 第 1、2 脚短接：A 路接成跟随器
-bb.wire("g16", "g20", "fb")                        # 第 3 脚 → 第 20 列（滤波节点）
-bb.part("h20", "h24", "R 16 kΩ", "R", lab_side=1)
-bb.part("j20", "B-20", "C 10 nF", "C", lab_side=1)
-bb.wire("h14", "h8", "out")                        # 输出 → 第 8 列
-bb.part("i8", "i4", "R 1 kΩ（耳机限流）", "R", lab_side=-1)
-bb.wire("T-28", "B-28", "gnd")
-bb.module(-3.2, 9.4, 4.0, 1.4, "9 V 电池 ×2 串联\n中点 = GND")
-bb.wire((1.4, 9.9), "T+1", "pos")
-bb.wire((0.8, 9.6), "T-3", "gnd")
-bb.wire((-3.2, 10.1), "B+1", "neg", via=[(-3.3, 10.1), (-3.3, -8.6), (1.0, -8.6)])
-bb.module(-3.2, -4.4, 3.0, 1.6, "耳机\n3.5 mm 转接板")
-bb.wire((-0.2, -3.6), "j4", "out")
-bb.wire((-1.5, -4.4), "B-2", "gnd", via=[(-1.5, -6.7)])
-bb.module(31.3, -4.4, 3.2, 1.6, "手机音频输出\n信号 / 地")
-bb.wire((31.3, -4.0), "j24", "sig", via=[(25.0, -4.9)])
-bb.wire((32.9, -4.4), "B-29", "gnd", via=[(32.9, -6.7)])
-bb.note(9.0, -0.3, "测输出：g8", va="center")
-bb.note(21.0, -0.3, "测输入：g24", va="center")
-bb.ax.set_ylim(-12.0, 11.6)                        # 底部多一行注记，往下多留一点（不动孔位）
-bb.note(0.5, -9.4, "慢速实验：C 换 100 µF 电解（+ 脚插 j20，− 脚接地），输入换成一节 1.5 V 电池", ha="left")
-bb.note(0.5, -10.2, "负载对照：拔掉耳机，1 kΩ 插 j8 到下边 GND 轨，红表笔仍插 g8", ha="left")
-bb.note(0.5, -11.0, "对照实验：去掉运放的作用——把 1 kΩ 改并在 C 上（i20 到地），红表笔改插 f20", ha="left")
+# ---------- 图 15-p4-1：12 V 低压星三角控制回路的面包板接线 ----------
+WIRE["neg"] = (fs.C["third"], "公共点 C（KM 自锁之后）")
+WIRE["sig"] = (fs.C["vin"], "KM△ 支路")
+WIRE["out"] = (fs.C["vout"], "KT、KMY 支路")
+WIRE["fb"] = (fs.C["fb"], "按钮引线")
+bb = Breadboard(40, "星三角低压版面包板俯视图（12 V 直流，三只 12 V 继电器 + 延时模块）",
+                size=(12, 6.8), rails=("公共点 C", "0 V", "0 V", "+12 V 经SB1"))
+pins = {1: "COM1", 2: "NO1", 3: "线圈+", 4: "NC1", 8: "线圈−", 7: "COM2", 6: "NO2", 5: "NC2"}
+bb.chip(8, "KM", npin=8, names=pins)
+bb.chip(18, "KM△", npin=8, names=pins)
+bb.chip(32, "KMY", npin=8, names=pins)
+for c in (8, 18, 32):
+    bb.wire(f"a{c}", f"T-{c}", "gnd")                  # 三只线圈负端 → 0 V
+# KM：COM1 接「+12 V 经 SB1」，NO1 = 线圈+ = 公共点 C（自锁）
+bb.wire("j8", "B+8", "pos")
+bb.wire("g9", "g10", "neg")
+bb.wire("i10", "i13", "neg"); bb.wire("f13", "d13", "neg"); bb.wire("a13", "T+13", "neg")
+bb.part("B-10", "j10", "VD1", "D", lab_side="r")
+bb.part("h10", "h5", "HL1", "P", lab_side=1); bb.wire("j5", "B-5", "gnd")
+# KM△：COM1、COM2 接公共点；NO1 = Y；线圈+ = Z；NC2 = X
+bb.wire("h18", "h15", "neg"); bb.wire("f15", "d15", "neg"); bb.wire("a15", "T+15", "neg")
+bb.wire("a19", "T+19", "neg")
+bb.part("B-20", "j20", "VD2", "D", lab_side="r")
+bb.part("i20", "i25", "HL3", "P", lab_side=1); bb.wire("j25", "B-25", "gnd")
+# Y：KT 常开 / KM△ NO1 → KMY COM1；Z：KMY NC1 → KM△ 线圈+
+bb.wire("g19", "g28", "sig"); bb.wire("f28", "d28", "sig"); bb.wire("i28", "i32", "sig")
+bb.wire("h20", "h35", "sig")
+# X：KM△ NC2 → KT 模块 V+、COM；W：KT 常闭 → KMY 线圈+
+bb.wire("b21", "b22", "out")
+bb.wire("d36", "f36", "out"); bb.wire("i36", "i34", "out")
+bb.part("B-34", "j34", "VD3", "D", lab_side="r")
+bb.part("g34", "g39", "HL2", "P", lab_side=1); bb.wire("j39", "B-39", "gnd")
+bb.wire("T-40", "B-40", "gnd")
+# KT 延时模块（面包板外），五根引线垂直落到上半区
+bb.module(20.3, 9.65, 16.4, 1.45, "", fc="#fdf1dc")
+bb.ax.text(28.5, 10.75, "KT 通电延时模块（12 V，设成通电延时）", ha="center", va="center", fontsize=8.5, zorder=8)
+for x, name, kind, dst in [(21, "V+", "out", "a21"), (22, "COM", "out", "a22"), (25, "V−", "gnd", "T-25"),
+                           (28, "NO", "sig", "a28"), (36, "NC", "out", "a36")]:
+    bb.ax.text(x, 9.95, name, ha="center", va="center", fontsize=6.5, zorder=8)
+    bb.wire((x, 9.65), dst, kind)
+# 电源、按钮
+bb.module(11.2, -10.0, 3.0, 1.3, "12 V 电源")
+bb.wire((12.2, -8.7), "B-12", "gnd")
+bb.module(15.2, -10.0, 3.6, 1.3, "SB1 停止（常闭）", fc="#f6dede")
+bb.wire((14.2, -9.35), (15.2, -9.35), "pos")
+bb.wire((17.0, -8.7), "B+17", "pos")
+bb.module(6.6, -10.0, 3.6, 1.3, "SB2 启动（常开）", fc="#def0de")
+bb.wire((8.0, -8.7), "i8", "fb"); bb.wire((9.0, -8.7), "i9", "fb")
+bb.note(0.8, 10.3, "继电器、模块引脚以手册为准（本图为示意）", va="center")
 bb.legend()
-bb.save(N, "15_p4_1_breadboard.png")
-
-# ---------- 图 15-p4-2：没有示波器时——用耳朵听衰减，用秒级 RC 看充电 ----------
-fc = 1 / (2 * np.pi * R * C)
-tones = np.array([100, 200, 500, 1000, 2000, 5000, 10000])
-h = 1 / np.sqrt(1 + (tones / fc) ** 2)
-for f_, h_ in zip(tones, h):
-    print(f"[数值] 一阶低通 {f_:>5d} Hz：输出/输入 {h_:.3f}，{20*np.log10(h_):+.1f} dB")
-print(f"[数值] 截止频率 {fc:.0f} Hz；100 Hz 时 0.707 V 输入 → 输出 {0.707*h[0]:.3f} V；"
-      f"1 kΩ 直接并在电容上（100 Hz）→ {0.707*1e3/np.hypot(R + 1e3, 2*np.pi*100*R*1e3*C):.3f} V")
-assert abs(fc - 995) < 1 and abs(h[0] - 0.995) < 0.001 and abs(h[-1] - 0.099) < 0.001
-TAU_S = R * 100e-6
-VB = 1.5
-ts = np.linspace(0, 10, 501)
-vs_ = fs.rc_step(ts, TAU_S, 0.0, VB)
-print(f"[数值] 慢速版 R·C = {TAU_S:.1f} s；1.5 V 电池接入后 1τ {VB*(1-np.exp(-1)):.2f} V、"
-      f"3τ {VB*(1-np.exp(-3)):.2f} V、5τ {VB*(1-np.exp(-5)):.2f} V")
-fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
-a1.bar(range(len(tones)), 20 * np.log10(h), color=fs.C["vout"], width=0.6)
-for i, h_ in enumerate(h):
-    a1.text(i, 20 * np.log10(h_) - 0.6, f"{int(round(20*np.log10(h_)))} dB", ha="center", va="top", fontsize=8)
-a1.set_xticks(range(len(tones)))
-a1.set_xticklabels(["100", "200", "500", "1k", "2k", "5k", "10k"])
-a1.set_ylim(-25, 2); fs.ref_h(a1, -3, "−3 dB", x=0.99, ha="right")
-fs.axlabels(a1, "手机放的音调频率", "Hz", "输出比输入小多少", "dB")
-a1.set_title("用耳朵听：每小 6 dB，幅度减一半", fontsize=10)
-a2.plot(ts, np.full_like(ts, VB), label="输入：1.5 V 电池", **fs.LS["vin"])
-a2.plot(ts, vs_, label="输出：16 kΩ × 100 µF", **fs.LS["vout"])
-for k in (1, 3):
-    fs.mark(a2, k * TAU_S, VB * (1 - np.exp(-k)), "{:.2f}", " V", dy=-0.15)
-fs.ref_v(a2, TAU_S, "1τ = 1.6 s")
-a2.set_ylim(0, 1.75); a2.legend(loc="lower right", fontsize=8)
-fs.axlabels(a2, "时间", "s", "万用表直流读数", "V")
-a2.set_title("用万用表看：电容慢慢充电", fontsize=10)
-fs.save(fig, N, "15_p4_2_no_scope.png")
+bb.save(P, "15_p4_1_breadboard.png")
 
 
-# ======================= 第 8 轮补图：正文讲到具体连接、附近却没有电路图的地方 =======================
+# ---------- 图 15-p4-2：按 0.01 s 一步推演指示灯的先后 ----------
+def star_delta_lamps(t_set=5.0, t_sb2=(1.0, 1.3), t_sb1=(11.0, 11.3), t_end=13.0, dt=0.01):
+    """不计继电器动作时间的理想逻辑（接线同 图 15-p4-1）：
+    KM' = 非SB1·(SB2+KM)；X = KM'·非KM△（KT 线圈）；KMY' = X·非T；
+    KM△' = KM'·(X·T + KM△)·非KMY。T 是 KT 已计满整定时间。"""
+    km = kmy = kmd = 0; tk = 0.0
+    tt, rec = np.arange(0, t_end, dt), []
+    for t in tt:
+        sb2 = t_sb2[0] <= t < t_sb2[1]; sb1 = t_sb1[0] <= t < t_sb1[1]
+        km = int((not sb1) and (sb2 or km))
+        x = int(km and not kmd)
+        tk = tk + dt if x else 0.0
+        T = tk >= t_set - 1e-9
+        kmd_new = int(km and ((x and T) or kmd) and not kmy)
+        kmy = int(x and not T)
+        kmd = kmd_new
+        rec.append((km, kmy, kmd, x))
+    return tt, np.array(rec)
+
+
+tt, rec = star_delta_lamps()
+def first_on(k): return tt[np.argmax(rec[:, k] == 1)]
+def last_on(k): return tt[np.nonzero(rec[:, k])[0][-1]] + 0.01
+t_y_off, t_d_on = last_on(1), first_on(2)
+print(f"[数值] 1.00 s 按 SB2：KM {first_on(0):.1f} s 亮，KMY {first_on(1):.1f} s 亮、{t_y_off:.1f} s 灭；"
+      f"KM△ {t_d_on:.1f} s 亮；KT 线圈 {last_on(3):.1f} s 断电；11.00 s 按 SB1 全灭")
+assert abs(t_y_off - 6.0) < 0.02 and abs(t_d_on - 6.0) < 0.03 and abs(last_on(3) - 6.0) < 0.03
+assert not (rec[:, 1] & rec[:, 2]).any() and rec[-1].sum() == 0
+fig, ax = plt.subplots(figsize=(8.8, 3.4))
+names = ["HL1 / KM", "HL2 / KMY（星形）", "HL3 / KM△（三角形）", "KT 线圈"]
+cols = [fs.C["vout"], fs.C["vin"], fs.C["fb"], "0.45"]
+for r, (nm, c) in enumerate(zip(names, cols)):
+    y0 = 3 - r
+    ax.fill_between(tt, y0, y0 + 0.7 * rec[:, r], step="post", color=c, alpha=0.85, lw=0)
+    ax.text(-0.2, y0 + 0.35, nm, ha="right", va="center", fontsize=9)
+for t0, lab in [(1.0, "按 SB2"), (6.0, "KT 到时（整定 5 s）"), (11.0, "按 SB1")]:
+    ax.axvline(t0, color="0.3", ls=":", lw=1.0)
+    ax.text(t0 + 0.08, 4.05, lab, fontsize=8.5, va="bottom")
+ax.set_xlim(0, 13); ax.set_ylim(-0.2, 4.6)
+ax.set_yticks([]); [ax.spines[s].set_visible(False) for s in ("left", "top", "right")]
+fs.axlabels(ax, "时间", "s")
+fs.save(fig, P, "15_p4_2_sequence.png")
+
+# ---------- 测量表里的计算值 ----------
+V, RC, P_LAMP = 12.0, 400.0, 1.0
+i_coil, i_lamp = V / RC * 1000, P_LAMP / V * 1000
+print(f"[数值] 每只线圈 {i_coil:.0f} mA；三角形稳态（KM + KM△）线圈合计 {2 * i_coil:.0f} mA，"
+      f"加两只 1 W 灯泡共约 {2 * (i_coil + i_lamp):.0f} mA")
+assert round(2 * i_coil) == 60 and round(2 * (i_coil + i_lamp)) == 227
+
+
+# ======================= page1–3 补充原理图（国标元件） =======================
 ACC = fs.C["bad"]
 
 
-def load_to_ground(d, at, label="1 kΩ 负载", color=ACC):
-    """从 at 点往下接一只负载电阻到地（强调色），标签放在电阻右侧。"""
-    d += (rl := elm.Resistor().down().at(at).color(color))
-    d += elm.Ground().color(color)
-    d += elm.Label().at((rl.center.x + 0.5, rl.center.y)).label(label, color=color, halign="left")
-
-
-# ---------- 图 15-p1-3 1 kΩ 负载接在哪里：无源 RC 直接带负载 vs 有源（跟随器）带负载 ----------
-with drawing(fontsize=11) as d:
-    d += elm.Dot(open=True).at((0, 0)).label("$V_i$", "left")
-    d += elm.Resistor().right().label("$R$ 16 kΩ")
-    d += (n := elm.Dot())
-    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
-    d += elm.Ground()
-    d += elm.Line().right().at(n.center).length(2.0)
-    d += (m := elm.Dot())
-    d += elm.Line().right().length(0.8)
-    d += elm.Dot(open=True).label("$V_o$", "right")
-    load_to_ground(d, m.center)
-    d += elm.Label().at((-0.5, 3.4)).label("（a）无源 RC：负载直接并在电容上", fontsize=12, halign="left")
-    d += elm.Dot(open=True).at((10.5, 0)).label("$V_i$", "left")
-    d += elm.Resistor().right().label("$R$ 16 kΩ")
-    d += (n := elm.Dot())
-    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
-    d += elm.Ground()
-    op = follower_tail(d, n.center, out_len=1.8)
-    load_to_ground(d, (op.out.x + 0.9, op.out.y))
-    d += elm.Dot().at((op.out.x + 0.9, op.out.y))
-    d += elm.Label().at((10.0, 3.4)).label("（b）有源：负载接在运放输出端", fontsize=12, halign="left")
-save_schem(d, N, "15_p1_3_load_position.png")
-print(f"[数值] 无源 RC 直接带 1 kΩ：低频输出只剩 1/(1 + 16) = {1 / 17:.2f} 倍；有源版不变")
-
-# ---------- 图 15-p2-4 一阶低通推导用：同一个电流 I 流过 R 和 C ----------
-with drawing(fontsize=11) as d:
-    d += elm.Dot(open=True).label("$V_i$", "left")
-    d += (r := elm.Resistor().right().label("$R$ 16 kΩ"))
-    d += (n := elm.Dot())
-    d += (c := elm.Capacitor().down().label("$C$ 10 nF", "bottom"))
-    d += elm.Ground()
-    follower_tail(d, n.center)
-    d += elm.Arrow().right().at((r.start.x + 0.4, r.start.y + 1.1)).length(2.2).color(ACC).label("$I$", "top", color=ACC)
-    d += elm.Label().at((r.center.x, r.center.y - 0.6)).label("$V_R = I R$", color=ACC)
-    d += elm.Label().at((c.center.x - 0.6, c.center.y)).label("$V_C = I X_C$", color=ACC, halign="right")
-    d += elm.Label().at((n.center.x + 1.0, n.center.y - 1.9)).label("跟随器：$V_o = V_C$", halign="left", fontsize=10)
-save_schem(d, N, "15_p2_4_first_order_derive.png")
-
-
-# ---------- 图 15-p3-3 Sallen-Key：正确接法 vs 两个电容接反（排查表第三行） ----------
-def sallen(d, x0, y0, c_gnd="10 nF", c_fb="33 nF", hl=False, title=None):
-    col = ACC if hl else "black"
-    d += elm.Dot(open=True).at((x0, y0)).label("$V_i$", "left")
-    d += elm.Resistor().right().label("$R_1$ 4.22 kΩ")
-    d += (a := elm.Dot())
-    d += elm.Resistor().right().label("$R_2$ 18.4 kΩ")
-    d += (b := elm.Dot())
-    d += elm.Capacitor().down().label(c_gnd, "bottom").color(col)
-    d += elm.Ground()
-    op = follower_tail(d, b.center, out_len=2.4)
-    d += elm.Line().up().at(a.center).length(3.6)
-    d += elm.Capacitor().right().label(c_fb).tox(op.out.x + 1.4).color(col)
-    d += elm.Line().down().toy(op.out)
+def yd_branches(d, oy, mode, title):
+    """从「公共点」画 KMY、KM△ 两条支路到 N。mode："ok" 正常；"short" KMY 常闭被跳线短接；"none" 去掉 KMY 常闭。"""
+    X1 = 11.0
+    d += elm.Label().at((-1.6, oy + 2.4)).label(title, halign="left", fontsize=11)
+    d += elm.Dot(open=True).at((-0.8, oy)).label("公共点\n（KM 自锁之后）", "left")
+    d += elm.Line().right(0.8)
     d += elm.Dot()
-    if title:
-        d += elm.Label().at((x0 - 0.5, y0 + 4.6)).label(title, fontsize=12, halign="left")
+    rung(d, oy, [(TimerNC, "KT 延时断开"), (ContactNC, "KM△ 常闭"), (Coil, "KMY 线圈")], 0, X1)
+    y2 = oy - 3.0
+    d += elm.Line().at((0, oy)).down(3.0)
+    d += elm.Line().at((0, y2)).right(0.4)
+    a = d.here
+    d += TimerNO().right().label("KT 延时闭合", ofst=0.6)
+    b = d.here
+    d += elm.Line().at(a).down(1.4)
+    d += ContactNO().right().tox(b[0]).label("KM△ 自锁", "bottom", ofst=0.25)
+    d += elm.Line().up(1.4)
+    d += elm.Dot().at(a); d += elm.Dot().at(b)
+    d += elm.Line().at(b).right(0.4)
+    if mode == "none":
+        d += elm.Line().right(1.6).linestyle("--").color(ACC).label("（KMY 常闭被去掉）", ofst=0.3, color=ACC)
+        d += elm.Line().right(0.4)
+    else:
+        c0 = d.here
+        col = ACC if mode == "ok_acc" else "black"
+        d += ContactNC().right().color(col).label("KMY 常闭", ofst=0.6, color=col)
+        c1 = d.here
+        if mode == "short":
+            d += elm.Dot().at(c0).color(ACC); d += elm.Dot().at(c1).color(ACC)
+            d += elm.Wire("n", k=-1.0).at(c0).to(c1).color(ACC).linestyle("--")
+            d += elm.Label().at(((c0[0] + c1[0]) / 2 + 0.6, y2 - 1.75)).label("跳线（短接 KMY 常闭）", color=ACC)
+        d += elm.Line().at(c1).right(0.4)
+    d += (c := Coil().right().label("KM△ 线圈", ofst=0.4))
+    d += elm.Line().right().tox(X1)
+    d += elm.Line().at((X1, oy)).down(3.0)
+    d += elm.Dot().at((X1, oy))
+    d += elm.Line().at((X1, y2)).right(0.6)
+    d += elm.Dot(open=True).label("N", "right")
 
 
-with drawing(fontsize=11) as d:
-    sallen(d, 0, 0, title="（a）正确：接地的是 10 nF，接输出的是 33 nF")
-    sallen(d, 15, 0, c_gnd="33 nF", c_fb="10 nF", hl=True, title="（b）接反：接地的成了 33 nF，接输出的成了 10 nF")
-save_schem(d, N, "15_p3_3_sk_caps_swapped.png")
-Qs = np.sqrt(R1 * R2 * C1 * C2) / (C2 * (R1 + R2))
-print(f"[数值] 电容接反：Q = {Qs:.2f}")
+def lowvolt_lamps():
+    """图 15-p2-6：12 V 实验。（a）三只指示灯各接在一组常开触点上；（b）每只继电器线圈反并 1N4007。"""
+    XN = 9.0
+    with drawing(fontsize=10) as d:
+        d += elm.Label().at((-1.0, 3.0)).label("（a）指示灯：LED 串 1 kΩ，接在各自的一组常开触点上", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((0, 1.6)).label("+12 V", "top")
+        d += elm.Line().down().toy(-6.0)
+        d += elm.Dot(open=True).at((XN, 1.6)).label("−", "top")
+        d += elm.Line().down().toy(-6.0)
+        for i, k in enumerate(["KM", "KMY", "KM△"]):
+            y = -2.4 * i
+            d += elm.Dot().at((0, y))
+            d += elm.Line().at((0, y)).right(0.6)
+            d += ContactNO().right().label(f"{k} 常开", ofst=0.5)
+            d += elm.Line().right(0.4)
+            d += elm.Resistor().right(1.6).label("1 kΩ", ofst=0.2)
+            d += elm.Line().right(0.4)
+            d += elm.LED().right(1.6).color(ACC).label(f"{k} 灯", ofst=0.2, color=ACC)
+            d += elm.Line().right().tox(XN)
+            d += elm.Dot()
+        oy = -9.0
+        d += elm.Label().at((-1.0, oy + 2.4)).label("（b）KM、KMY、KM△ 三只继电器线圈都这样反并一只 1N4007", halign="left", fontsize=11)
+        d += elm.Dot(open=True).at((1.0, oy)).label("接 + 的一端", "left")
+        d += elm.Line().right(1.0)
+        a = d.here
+        d += elm.Dot()
+        d += Coil().right(3.0).label("继电器线圈 12 V", ofst=0.4)
+        b = d.here
+        d += elm.Dot()
+        d += elm.Line().right(1.0)
+        d += elm.Dot(open=True).label("接 − 的一端", "right")
+        d += elm.Line().at(a).down(1.4).color(ACC)
+        d += elm.Diode().at((b[0], oy - 1.4)).to((a[0], oy - 1.4)).color(ACC).label("1N4007（阴极朝 +）", "bottom", ofst=0.2, color=ACC)
+        d += elm.Line().at(b).down(1.4).color(ACC)
+    print("[图 15-p2-6] 12 V 实验：三只 LED 各串 1 kΩ 接在 KM、KMY、KM△ 常开上；线圈反并 1N4007")
+    save_schem(d, P, "15_p2_6_lowvolt.png")
 
-# ---------- 图 15-p3-4 练习 4 答案：一阶有源高通 + 2 倍同相放大 ----------
-with drawing(fontsize=11) as d:
-    d += elm.Dot(open=True).label("$V_i$", "left")
-    d += elm.Capacitor().right().label("$C$ 100 nF")
-    d += (n := elm.Dot())
-    d += elm.Resistor().down().label("$R$ 15.9 kΩ", "bottom")
-    d += elm.Ground()
-    d += elm.Line().right().at(n.center).length(1.0)
-    d += (op := elm.Opamp(leads=True).right().anchor("in2"))
-    d += elm.Line().left().at(op.in1).length(0.4)
-    d += elm.Line().up().length(1.4).color(ACC)
-    d += (k2 := elm.Dot().color(ACC))
-    d += elm.Resistor().right().label("$R_f$ 10 kΩ").tox(op.out.x + 0.6).color(ACC)
-    d += elm.Line().down().toy(op.out).color(ACC)
-    d += elm.Dot()
-    d += elm.Resistor().left().at(k2.center).label("$R_1$ 10 kΩ").color(ACC)
-    d += elm.Line().down().length(0.6).color(ACC)
-    d += elm.Ground().color(ACC)
-    d += elm.Line().right().at(op.out).length(1.2)
-    d += elm.Dot(open=True).label("$V_o$（通带内约 2 倍）", "right")
-save_schem(d, N, "15_p3_4_highpass_gain2.png")
+
+def short_test():
+    """图 15-p2-7：实验第 4 步，KM△ 支路里的 KMY 常闭被跳线短接。"""
+    with drawing(fontsize=10) as d:
+        yd_branches(d, 0, "short", "实验第 4 步：只改 KM△ 线圈支路，其余照图 15-p2-3 不变")
+    print("[图 15-p2-7] 实验第 4 步：跳线短接 KM△ 支路里的 KMY 常闭")
+    save_schem(d, P, "15_p2_7_short.png")
+
+
+def ex2_branches():
+    """图 15-p3-3：练习 2。（a）去掉 KMY 常闭，只靠 KT 转换触点；（b）装回 KMY 常闭。"""
+    with drawing(fontsize=10) as d:
+        yd_branches(d, 0, "none", "（a）去掉 KMY 常闭：只靠 KT 的转换触点同时断 KMY、通 KM△")
+        yd_branches(d, -8.0, "ok_acc", "（b）装回 KMY 常闭：KM△ 线圈要等 KMY 释放才通电")
+    print("[图 15-p3-3] 练习 2：空档 (a) 12 - 19 = -7 ms，(b) 12 ms")
+    save_schem(d, P, "15_p3_3_ex2.png")
+
+
+lowvolt_lamps()
+short_test()
+ex2_branches()

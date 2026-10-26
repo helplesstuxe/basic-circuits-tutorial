@@ -1,0 +1,18 @@
+* 10 电压比较器：page1「在示波器上会看到什么」第 3、5 步：1 kHz 正弦（中心 VC、幅度 AMP）送入基本比较器 / 施密特比较器
+* LM393A，5 V，R3=2.2k 上拉；基本比较器用 R1=1m、R2=1e12。
+.include ../models/LM393A.lib
+.param R1=10k R2=100k VC=2.5 AMP=0.5
+VCC vcc 0 5
+RA vcc ref 10k
+RB ref 0 10k
+VIN in 0 SIN({VC} {AMP} 1k)
+RR1 in p {R1}
+RR2 p out {R2}
+RR3 vcc out 2.2k
+XU p ref vcc 0 out LM393A
+.control
+tran 0.5u 6m 0 0.5u
+wrdata sine.txt v(in) v(out)
+echo "RESULT done 1"
+.endc
+.end

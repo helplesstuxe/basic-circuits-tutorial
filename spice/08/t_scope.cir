@@ -1,0 +1,24 @@
+* 08 page1 §四 第1、2步 / 图 08-p1-3：±15 V，峰值 0.5 V、1 kHz 正弦 → R1=10k、Rf=20k 时输出峰值 1.5 V，同时到顶；Rf=40k 时 2.5 V
+* 输出无外接负载；读 0.25 ms 处（第 2 个周期 1.25 ms）的峰值时刻和峰值
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 15
+VN vee 0 -15
+VS in 0 SIN(0 0.5 1k)
+X1 in m vcc vee o LMX58B_LM2904B
+R1 m 0 10k
+RF o m 20k
+.control
+tran 1u 3m
+meas tran omax max v(o) from=1m to=2m
+meas tran tpk when v(o)=omax from=1m to=2m
+meas tran omin min v(o) from=1m to=2m
+echo "RES omax $&omax"
+echo "RES omin $&omin"
+echo "RES tpk $&tpk"
+alter RF resistance=40k
+tran 1u 3m
+meas tran omax2 max v(o) from=1m to=2m
+echo "RES omax40 $&omax2"
+.endc
+.end

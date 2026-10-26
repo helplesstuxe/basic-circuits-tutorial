@@ -1,113 +1,102 @@
-#!/usr/bin/env python3
-"""07 射极跟随器：ngspice + onsemi 2N3904 / 2N3906 / TIP31C、TI LM358（LMx58）/ LM358B 官方模型复核页面数值。从仓库根运行：python spice/07/run.py"""
-# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
-import subprocess, re, sys, pathlib, math
-HERE = pathlib.Path(__file__).resolve().parent
-ROWS = []
+"""07 三极管开关与继电器驱动：2N3904（onsemi）+ SRD-05VDC 线圈（70 Ω + 0.1 H 示意电感）+ 1N4148（Nexperia）/1N4749A（Diodes）。
+220 V 触点侧不仿真（市电）。在仓库根目录运行：python spice/07/run.py"""
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import numpy as np
+import ng
+from ng import check
 
-def ngspice(cir, need=()):
-    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
-    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
-    out = r.stdout + r.stderr
-    vals = {}
-    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
-        try:
-            vals[k] = float(v)
-        except ValueError:
-            vals[k] = float("nan")
-    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
-    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
-        print(out[-3000:])
-        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
-    return vals
+print("== 07 三极管继电器驱动（2N3904）==")
 
-def row(loc, item, page, spice, unit="", note=""):
-    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
-    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
-    ROWS.append((loc, item, page, spice, unit, dev, note))
 
-def fmt(x):
-    if x is None:
-        return "—"
-    a = abs(x)
-    if a == 0:
-        return "0"
-    if a >= 1000 or a < 0.01:
-        return f"{x:.4g}"
-    return f"{x:.4g}"
+def tran(params):
+    r = ng.run("relay.cir", params)
+    a = np.loadtxt(r["_dir"] + "/tr.dat")
+    return r, a[:, 0], a[:, 1], a[:, 3]
 
-def report(title):
-    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
-    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
-    for loc, item, page, spice, unit, dev, note in ROWS:
-        d = "   —  " if dev is None else f"{dev:+7.2f}%"
-        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
-    print(f"共 {len(ROWS)} 项。")
-# ---- 工具结束 ----
 
-d = ngspice("dc_ef.cir", need=["r50_e1", "r1000_e1", "r100_e1", "r20_e1", "r50_ib1", "r20_ib1", "x1_e1", "x2_e1", "x3_e1", "p1_e2", "pmx2", "pmx1"])
-note = lambda k: f"TIP31C: {d[k.replace('_e1', '_e2')]:.3f} V"
-for r, pv in ((1000, 4.37), (100, 4.31), (50, 4.29), (20, 4.27)):
-    row("p2 §3 负载扫描", f"5 V 输入, R_L {r} Ω 输出 (2N3904)", pv, d[f"r{r}_e1"], "V", note(f"r{r}_e1"))
-row("p2 §3 负载扫描", "1 kΩ→20 Ω 输出变化 (2N3904)", 101, (d["r1000_e1"] - d["r20_e1"]) * 1e3, "mV",
-    f"TIP31C: {(d['r1000_e2'] - d['r20_e2']) * 1e3:.0f} mV；R_out ≈ {(d['r1000_e1'] - d['r20_e1']) / (d['r20_ic1'] + d['r20_ib1'] - d['r1000_ic1'] - d['r1000_ib1']):.2f} Ω（页面 0.48 Ω）")
-row("p1 图07-p1-2 / p2 推导二", "50 Ω 时基极电流 (2N3904)", 1.68, d["r50_ib1"] * 1e3, "mA", f"TIP31C: {d['r50_ib2'] * 1e3:.2f} mA")
-row("p2 §3 负载扫描", "20 Ω 时基极电流 (2N3904)", 4.18, d["r20_ib1"] * 1e3, "mA", f"β 掉到 {d['r20_ic1'] / d['r20_ib1']:.0f}；TIP31C: {d['r20_ib2'] * 1e3:.2f} mA")
-for r, pv in ((1000, 0.03), (100, 0.32), (50, 0.65), (20, 1.62)):
-    row("p2 §3 负载扫描", f"R_L {r} Ω 管耗 (2N3904)", pv, (12 - d[f"r{r}_e1"]) * d[f"r{r}_ic1"], "W")
-p50 = (12 - d["r50_e1"]) * d["r50_ic1"]
-row("p2 §4", "50 Ω 时 2N3904 结温 (25 °C + P×200)", 155, 25 + p50 * 200, "°C", "仍超过 150 °C，结论不变")
-row("p2 §4 R_in", "从运放看进去 V_i/I_B (2N3904)", 2550, 5 / d["r50_ib1"], "Ω")
-row("p2 例1", "V_o", 5.3, d["x1_e1"], "V", note("x1_e1"))
-row("p2 例1", "I_E", 53.0, (d["x1_ic1"] + d["x1_ib1"]) * 1e3, "mA")
-row("p2 例1", "I_B（题设 β=50）", 1.04, d["x1_ib1"] * 1e3, "mA", "2N3904 模型 β 约 60")
-row("p2 例1", "P_C", 0.348, (12 - d["x1_e1"]) * d["x1_ic1"], "W")
-row("p2 例2", "V_o", 2.6, d["x2_e1"], "V", note("x2_e1"))
-row("p2 例2", "I_E", 55.3, (d["x2_ic1"] + d["x2_ib1"]) * 1e3, "mA")
-row("p2 例2", "I_B（题设 β=50）", 1.08, d["x2_ib1"] * 1e3, "mA")
-row("p2 例2", "P_C", 0.510, (12 - d["x2_e1"]) * d["x2_ic1"], "W")
-row("p2 例3", "V_i = 5.7 V 时 50 Ω 上电压", 5.0, d["x3_e1"], "V", note("x3_e1"))
-row("p2 例3", "12 V 电源管耗", 0.693, (12 - d["x3_e1"]) * d["x3_ic1"], "W")
-row("p2 例3", "7 V 电源管耗", 0.198, (7 - d["x3b_e1"]) * d["x3b_ic1"], "W")
-row("p3 练习1 (TIP31C)", "V_o", 8.3, d["p1_e2"], "V")
-row("p3 练习1 (TIP31C)", "I_B（题设 β=50）", 8.14, d["p1_ib2"] * 1e3, "mA", "TIP31C 模型 β 约 180，实际更小")
-row("p3 练习1 (TIP31C)", "P_C", 2.73, (15 - d["p1_e2"]) * d["p1_ic2"], "W")
-row("p3 图07-p3-1", "12 V/50 Ω 最大管耗 (TIP31C)", 0.71, d["pmx2"], "W", f"2N3904: {d['pmx1']:.3f} W")
+T0 = 10e-3
+# ---------- A 部分：饱和检查 ----------
+r, t, il, vc = tran({"RB": "680", "DMODE": "1"})
+check("p2 §2 第一步", "I_C(max) = 4.8/70（SPICE 为实际 I_C）", 68.6, r["IC"] * 1e3, "mA",
+      "SPICE 的 V_CE(sat) 为 0.27 V，比 0.2 V 稍大，I_C 略小")
+check("p2 例1 / A 部分", "5 V 引脚、R_B=680 Ω 的 I_B", 6.32, r["IB"] * 1e3, "mA", "模型 V_BE≈0.87 V（大电流饱和），比 0.7 V 高")
+check("p2 动手 步骤2", "680 Ω 时 V_CE（万用表 20 V 档）", 0.2, r["VCE"], "V",
+      "0.27 V 仍在手册 ≤0.3 V（50 mA/5 mA）内；页面写「0.2 V 左右」合适", v="✅")
+check("p1 图07-p1-2", "开到底时线圈拿到的额定电压比例", 96, r["VCOIL"] / 5 * 100, "%")
+check("p1 图07-p1-2 / A 部分", "开到底时三极管功耗 V_CE·I_C", 13.7, r["VCE"] * r["IC"] * 1e3, "mW",
+      "SPICE V_CE(sat)=0.27 V（手册上限 0.3 V → 20.6 mW），在器件公差内；远小于 625 mW", v="✅")
+check("p1 图07-p1-2 / A 部分", "另加基极功耗 I_B·V_BE 后的总功耗（页面未计）", None, r["PQ"] * 1e3, "mW", "基极再加约 5 mW，不影响结论", v="ℹ️")
+check("p2 §2", "饱和裕量 β_forced 下 I_B/I_C(max)/30 倍数", 2.8, r["IB"] / (r["IC"] / 30), "倍")
 
-s = ngspice("t_sine.cir", need=["mx1", "mn1", "mx2", "mn2", "bx1", "bn1", "bx2", "bn2"])
-row("p2 图07-p2-2", "正弦输出最高 (2N3904)", 6.28, s["mx1"], "V", f"TIP31C: {s['mx2']:.3f} V")
-row("p2 图07-p2-2", "正弦输出最低 (2N3904)", 2.31, s["mn1"], "V", f"TIP31C: {s['mn2']:.3f} V")
-row("p2 图07-p2-2", "交流增益 (2N3904)", 0.994, (s["mx1"] - s["mn1"]) / 4, "", f"TIP31C: {(s['mx2'] - s['mn2']) / 4:.3f}")
-row("p1 §4 / p2 图07-p2-2", "V_BE 最大（峰值处台阶）(2N3904)", 0.720, s["bx1"], "V", f"范围 {s['bn1']:.3f}~{s['bx1']:.3f}；TIP31C {s['bn2']:.3f}~{s['bx2']:.3f}")
-row("p2 推导三", "3→7 V 时 V_BE 变化 (2N3904)", 26, (s["bx1"] - s["bn1"]) * 1e3, "mV", f"TIP31C: {(s['bx2'] - s['bn2']) * 1e3:.0f} mV")
+r3 = ng.run("relay.cir", {"RB": "470", "VPIN": "3.3", "DMODE": "1", "TSTOP": "10.1m"})
+check("p2 例2", "3.3 V 引脚、R_B=470 Ω 的 I_B", 5.53, r3["IB"] * 1e3, "mA")
+check("p2 例2", "3.3 V、470 Ω 时 V_CE（饱和）", 0.2, r3["VCE"], "V", "在手册 ≤0.3 V 内", v="✅")
+r3b = ng.run("relay.cir", {"RB": "680", "VPIN": "3.3", "DMODE": "1", "TSTOP": "10.1m"})
+check("p2 例2", "3.3 V 引脚仍用 680 Ω 的 I_B", 3.82, r3b["IB"] * 1e3, "mA", "V_BE 比 0.7 V 高，实际更小", v=None, tol=15)
 
-a = ngspice("t_opA.cir", need=["vo"])
-row("p1 §1 / p2 图07-p2-2", "LM358 直接带 50 Ω 的输出", 1.50, a["vo"], "V", f"约 {a['vo'] / 50 * 1e3:.0f} mA 限流")
-b = ngspice("t_opB.cir", need=["ve", "vo"])
-b3 = ngspice("t_opB3.cir", need=["ve", "vo"])
-row("p2 图07-p2-4", "反馈取自发射极 V_o (TIP31C)", 5.00, b["ve"], "V", f"2N3904: {b3['ve']:.4f} V")
-row("p2 图07-p2-4", "此时运放输出 (TIP31C)", 5.71, b["vo"], "V", f"2N3904: {b3['vo']:.3f} V")
-rb = ngspice("t_opRB.cir", need=["ve", "vo"])
-row("p3 §2", "环内串 470 Ω：V_o", 5.00, rb["ve"], "V")
-row("p3 §2", "环内串 470 Ω：运放输出", 6.50, rb["vo"], "V", "页面按 β=50；TIP31C 基极电流小")
-c = ngspice("t_opC.cir", need=["ve", "vo"])
-row("p3 §2", "环外串 470 Ω（反馈取运放输出）V_o", 3.5, c["ve"], "V", "页面按 β=50 估压降 0.79 V")
+r10 = ng.run("relay.cir", {"RB": "10k", "DMODE": "1", "TSTOP": "10.1m"})
+beta = r10["IC"] / r10["IB"]
+check("p2 A 部分 / 动手 步骤3", "R_B=10 kΩ：SPICE 典型 2N3904 的等效 β", 100, beta, "",
+      "页面说结果「看运气」，β 在 30～300 之间都可能；典型模型落在中间", v="ℹ️")
+check("p2 A 部分 β=100 行", "R_B=10 kΩ 时 V_CE（页面 β=100 → 1.99 V）", 1.99, r10["VCE"], "V",
+      "模型 β≈78，与页面 β=100 那一行同属「半开」，结论一致：线圈电压不够", v="✅")
+check("p2 A 部分 β=100 行", "R_B=10 kΩ 时线圈电压比例（页面 60%，<75% 吸不上）", 60, r10["VCOIL"] / 5 * 100, "%",
+      "同上，结论一致", v="✅")
+check("p2 A 部分", "R_B=10 kΩ 半开时三极管功耗（页面 β=100 → 85.6 mW）", 85.6, r10["PQ"] * 1e3, "mW",
+      "接近放大区最坏值 89 mW", v="✅")
+check("p2 A 部分", "放大区最坏功耗 V_CC²/(4R)", 89.3, r10["PQ"] * 1e3, "mW", "SPICE 半开点 V_CE=2.7 V 正好接近 V_CC/2", v="✅")
+check("p3 练习3", "10 kΩ 时 β≈100（SPICE 典型管 β 见上一行）", 100, beta, "", "练习是反推题，算术无误", v="ℹ️")
 
-l = ngspice("dc_lab.cir", need=["vb1k", "ve1k", "vw2", "vb220", "ve220", "ic220"])
-row("p2 §7 第2步", "V_E（1 kΩ）", 4.36, l["ve1k"], "V")
-row("p2 §7 第2步", "V_B − V_E（1 kΩ）", 0.7, l["vb1k"] - l["ve1k"], "V", "页面 0.6~0.7 V")
-row("p2 §7 第3步", "V_E（220 Ω）", 4.28, l["ve220"], "V", f"V_B−V_E = {l['vb220'] - l['ve220']:.3f} V")
-row("p1 §4", "220 Ω/1 kΩ 电流比", 4.5, (l["ve220"] / 220) / (l["ve1k"] / 1000), "")
-row("p2 §7 第4步", "去掉三极管 220 Ω 挂滑片", 2.36, l["vw2"], "V")
-row("p2 §7 第5步", "220 Ω 时管耗", 0.09, (9 - l["ve220"]) * l["ic220"], "W")
+# ---------- 图07-p3-1 扫 R_B ----------
+rbv = 100 * 10 ** (np.arange(121) / 40)
+pct = np.array([ng.run("sweep.cir", {"RB": f"{x:.4g}"})["PCT"] for x in rbv])
+k = np.where(pct < 75)[0][0]
+rb75 = np.interp(75, [pct[k], pct[k - 1]], [rbv[k], rbv[k - 1]])
+check("p3 图07-p3-1", "左端平台（饱和时线圈电压比例）", 96, pct[0], "%")
+check("p3 图07-p3-1", "跌破 75% 的 R_B（SPICE 典型管；页面三条线 2.41/8.03/24.08 kΩ）", None, rb75 / 1e3, "kΩ",
+      "典型管在 50 mA 附近 β≈60，拐点落在页面 β=30 与 β=100 两条线之间，图的结论成立", v="ℹ️")
+check("p3 图07-p3-1", "680 Ω 离典型管拐点的倍数（页面「好几倍」）", None, rb75 / 680, "倍", "", v="✅")
 
-q = ngspice("t_ss5.cir", need=["ve27", "vo27", "vemax", "vomax"])
-row("p3 练习2", "5 V 单电源 输入 2.7 V 输出", 2.0, q["ve27"], "V")
-row("p3 练习2", "LM358B 输出最高", 3.6, q["vomax"], "V")
-row("p3 练习2", "跟随器输出最高", 2.9, q["vemax"], "V")
+# ---------- B 部分：关断 ----------
+I0 = np.interp(T0 - 1e-6, t, il)
+check("p2 B 部分", "关断前线圈电流", 68.6, I0 * 1e3, "mA")
+check("p2 B 部分", "线圈储能 ½LI²", 0.235, 0.5 * 0.1 * I0 ** 2 * 1e3, "mJ", "L=0.1 H 为页面示意值")
 
-p = ngspice("t_pp.cir", need=["mx", "mn", "vth"])
-row("p3 练习4 图07-p3-2", "推挽输出峰值", 2.3, p["mx"], "V", f"负峰 {p['mn']:.3f} V")
-row("p3 练习4 图07-p3-2", "死区边界（输出达 10 mV 时的输入）", 0.7, p["vth"], "V", "1 kΩ 负载，假设")
+r0 = ng.run("relay.cir", {"DMODE": "0", "TSTOP": "10.02m", "TMAX": "1n"})
+a = np.loadtxt(r0["_dir"] + "/tr.dat")
+t0, v0 = a[:, 0], a[:, 3]
+check("p2 图07-p2-2", "无二极管：集电极尖峰（100 pF 杂散）", 2170, r0["VPK"], "V",
+      "SPICE 的 Gummel-Poon 模型不含击穿，所以和页面一样“冲到两千多伏”；页面已说明真实电路会在 40 V 以上先击穿", v="✅")
+tpk = t0[np.argmax(v0)] - T0
+check("p2 图07-p2-2", "尖峰出现时刻", 5.0, tpk * 1e6, "μs", "2N3904 自身 C_ob 并在 100 pF 上，谐振稍慢")
 
-report("07 射极跟随器")
+for mode, vpage, tpage, name in (("1", 5.7, 2.17, "只有二极管 1N4148"), ("2", 29.7, 0.23, "二极管 + 24 V 稳压管 1N4749A")):
+    rr, t, il, vc = tran({"DMODE": mode, "TSTOP": "16m"})
+    w = (t > T0 + 2e-6) & (t < T0 + 50e-6)
+    vcl = np.median(vc[w])
+    check("p2 图07-p2-3 右", f"{name}：集电极钳位电压", vpage, vcl, "V",
+          "1N4148 在 68 mA 时 V_F≈0.86 V（页面取 0.7 V）" if mode == "1" else "1N4749A 在 68 mA 时 V_Z 比标称 24 V 高")
+    k = np.where((t > T0) & (il < 0.1 * 5 / 70))[0][0]
+    trel = t[k] - T0
+    check("p2 图07-p2-3 左", f"{name}：电流降到 7.14 mA 用时", tpage, trel * 1e3, "ms",
+          "二极管压降比 0.7 V 大，电流掉得稍快" if mode == "1" else "")
+    if mode == "1":
+        t1 = trel
+    else:
+        check("p2 图07-p2-3", "加稳压管后快几倍", 9.7, t1 / trel, "倍")
+
+# ---------- 例 3 / 练习 2 / 练习 4 ----------
+e3 = ng.run("relay.cir", {"RCOIL": "55", "RB": "560", "DMODE": "1", "TSTOP": "10.1m"})
+check("p2 例3", "55 Ω 线圈的 I_C(max)", 87.3, e3["IC"] * 1e3, "mA")
+check("p2 例3", "560 Ω 给的 I_B", 7.68, e3["IB"] * 1e3, "mA", "V_BE 比 0.7 V 高")
+check("p2 例3", "560 Ω 时 V_CE（饱和）", 0.2, e3["VCE"], "V", "87 mA 下仍饱和，在手册 ≤0.3 V（50 mA）附近", v="✅" if e3["VCE"] < 0.4 else "⚠️")
+x2 = ng.run("relay.cir", {"VCC": "12", "RCOIL": "400", "RB": "1.5k", "VPIN": "3.3", "DMODE": "2", "TSTOP": "16m"}, )
+check("p3 练习2", "12 V/400 Ω 的 I_C", 29.5, x2["IC"] * 1e3, "mA")
+check("p3 练习2", "3.3 V、1.5 kΩ 给的 I_B", 1.73, x2["IB"] * 1e3, "mA", "V_BE 比 0.7 V 高")
+check("p3 练习2", "V_CE（饱和）", 0.2, x2["VCE"], "V", "", v="✅" if x2["VCE"] < 0.3 else "⚠️")
+check("p3 练习4", "12 V 继电器 + 24 V 稳压管关断钳位（≤40 V）", 36.7, x2["VPK"], "V",
+      "电感沿用 0.1 H 示意值；钳位电压只取决于 V_CC+V_F+V_Z，与电感无关")
+check("p3 练习5", "ULN2003A：TI 不提供 SPICE 模型，只核算术 82%/78%/91%", None, float("nan"), "",
+      "算术复核无误", v="ℹ️")
+ng.save()

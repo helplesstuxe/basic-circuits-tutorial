@@ -1,0 +1,24 @@
+* 28 数字隔离器 ISO7721：page1 §四 / page2 §四 第 1 条 / page3 参数表“传输延时 最小 6、典型 11、最大 17 ns（5 V）”；
+*   page1 图28-p1-2（5 kHz 方波经 ISO7721 和输入“几乎完全重合”）。
+* 模型：TI 官方 ISO7721 PSpice Transient Model（SLLM474），手册注明不模拟高压性能。两侧 5 V；负载 15 pF（手册延时测试条件）。
+* 模型内部的受控源以全局 0 为参考，所以 GND1、GND2 在仿真里都接 0（只看延时，不看隔离）。
+* 模型用到 PSpice 默认的 Dbreak，这里补一个 ngspice 的默认二极管。
+.include ../models/ISO7721_TI.lib
+.model Dbreak D
+*@def TR=1n
+VCC1 v1 0 5
+VCC2 v2 0 5
+VINA ina 0 PULSE(0 5 1u @TR@ @TR@ 99u 200u)
+XU v1 v1 ina outb 0 v2 v2 outa 0 0 ISO7721
+CL outa 0 15p
+RB outb 0 1Meg
+.control
+tran 0.1n 210u 0 0.1n
+meas tran tplh TRIG v(ina) VAL=2.5 RISE=1 TARG v(outa) VAL=2.5 RISE=1
+meas tran tphl TRIG v(ina) VAL=2.5 FALL=1 TARG v(outa) VAL=2.5 FALL=1
+meas tran vhi FIND v(outa) AT=50u
+echo "RESULT TPLH $&tplh"
+echo "RESULT TPHL $&tphl"
+echo "RESULT VHI $&vhi"
+.endc
+.end

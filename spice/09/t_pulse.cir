@@ -1,0 +1,26 @@
+* 09 page3 练习1：基本型 + LM741（±15 V），运放脚先躺在负饱和，再来一个宽 20 µs 的正脉冲
+* 页面：只按压摆率估算爬 14.2 V 要 28.4 µs，20 µs 的脉冲整流不出来；仿真（页面）60 µs
+* 假设：输入先为 −0.2 V（1 ms，运放脚到负饱和），再跳到 +0.2 V，脉宽 20 µs（第一段）；第二段用持续 +0.2 V 的阶跃量恢复时间
+.include ../models/LM741_TI.lib
+.include ../models/1N4148_nexperia.lib
+.options method=gear reltol=1e-4
+VP vcc 0 15
+VN vee 0 -15
+VI i 0 PWL(0 0 0.1m -0.2 1m -0.2 1.0001m 0.2 1.0201m 0.2 1.0202m -0.2 3m -0.2)
+X1 i o vcc vee oa LM741
+XD1 oa o 1N4148
+RL o 0 10k
+.control
+tran 0.1u 1.2m
+meas tran pmax max v(o) from=1m to=1.2m
+meas tran amin find v(oa) at=0.99m
+echo "RES pmax $&pmax"
+echo "RES sat $&amin"
+alter @VI[pwl] = [ 0 0 0.1m -0.2 1m -0.2 1.0001m 0.2 3m 0.2 ]
+tran 0.1u 1.2m
+meas tran trec when v(o)=0.01 rise=1 td=1m
+meas tran ton when v(oa)=0.3 rise=1 td=1m
+echo "RES trec $&trec"
+echo "RES ton $&ton"
+.endc
+.end

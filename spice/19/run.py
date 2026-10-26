@@ -1,107 +1,113 @@
-"""19 星三角：低压控制回路 + 低压等比例三相关系。在仓库根目录运行：python spice/19/run.py
-380 V 主电路和电动机不仿真（市电）。"""
-import math, pathlib, sys
-sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-import numpy as np
-import ng
-from ng import check
+#!/usr/bin/env python3
+"""19 射极跟随器：ngspice + onsemi 2N3904 / 2N3906 / TIP31C、TI LM358（LMx58）/ LM358B 官方模型复核页面数值。从仓库根运行：python spice/19/run.py"""
+# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
+import subprocess, re, sys, pathlib, math
+HERE = pathlib.Path(__file__).resolve().parent
+ROWS = []
 
-TAU = 10e-3
+def ngspice(cir, need=()):
+    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
+    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
+    out = r.stdout + r.stderr
+    vals = {}
+    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
+        try:
+            vals[k] = float(v)
+        except ValueError:
+            vals[k] = float("nan")
+    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
+    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
+        print(out[-3000:])
+        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
+    return vals
 
+def row(loc, item, page, spice, unit="", note=""):
+    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
+    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
+    ROWS.append((loc, item, page, spice, unit, dev, note))
 
-def thr(tp, td):
-    vp, vd = 1 - math.exp(-tp / TAU), math.exp(-td / TAU)
-    return f"{(vp + vd) / 2:.5f}", f"{(vp - vd) / 2:.5f}"
+def fmt(x):
+    if x is None:
+        return "—"
+    a = abs(x)
+    if a == 0:
+        return "0"
+    if a >= 1000 or a < 0.01:
+        return f"{x:.4g}"
+    return f"{x:.4g}"
 
+def report(title):
+    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
+    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
+    for loc, item, page, spice, unit, dev, note in ROWS:
+        d = "   —  " if dev is None else f"{dev:+7.2f}%"
+        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
+    print(f"共 {len(ROWS)} 项。")
+# ---- 工具结束 ----
 
-def pwl(iv):
-    pts = [(0, 0)]
-    for t0, t1 in iv:
-        pts += [(t0, 0), (t0 + 1e-5, 1), (t1, 1), (t1 + 1e-5, 0)]
-    return " ".join(f"{a:.6g} {b:.6g}" for a, b in pts)
+d = ngspice("dc_ef.cir", need=["r50_e1", "r1000_e1", "r100_e1", "r20_e1", "r50_ib1", "r20_ib1", "x1_e1", "x2_e1", "x3_e1", "p1_e2", "pmx2", "pmx1"])
+note = lambda k: f"TIP31C: {d[k.replace('_e1', '_e2')]:.3f} V"
+for r, pv in ((1000, 4.37), (100, 4.31), (50, 4.29), (20, 4.27)):
+    row("p2 §3 负载扫描", f"5 V 输入, R_L {r} Ω 输出 (2N3904)", pv, d[f"r{r}_e1"], "V", note(f"r{r}_e1"))
+row("p2 §3 负载扫描", "1 kΩ→20 Ω 输出变化 (2N3904)", 101, (d["r1000_e1"] - d["r20_e1"]) * 1e3, "mV",
+    f"TIP31C: {(d['r1000_e2'] - d['r20_e2']) * 1e3:.0f} mV；R_out ≈ {(d['r1000_e1'] - d['r20_e1']) / (d['r20_ic1'] + d['r20_ib1'] - d['r1000_ic1'] - d['r1000_ib1']):.2f} Ω（页面 0.48 Ω）")
+row("p1 图19-p1-2 / p2 推导二", "50 Ω 时基极电流 (2N3904)", 1.68, d["r50_ib1"] * 1e3, "mA", f"TIP31C: {d['r50_ib2'] * 1e3:.2f} mA")
+row("p2 §3 负载扫描", "20 Ω 时基极电流 (2N3904)", 4.18, d["r20_ib1"] * 1e3, "mA", f"β 掉到 {d['r20_ic1'] / d['r20_ib1']:.0f}；TIP31C: {d['r20_ib2'] * 1e3:.2f} mA")
+for r, pv in ((1000, 0.03), (100, 0.32), (50, 0.65), (20, 1.62)):
+    row("p2 §3 负载扫描", f"R_L {r} Ω 管耗 (2N3904)", pv, (12 - d[f"r{r}_e1"]) * d[f"r{r}_ic1"], "W")
+p50 = (12 - d["r50_e1"]) * d["r50_ic1"]
+row("p2 §4", "50 Ω 时 2N3904 结温 (25 °C + P×200)", 155, 25 + p50 * 200, "°C", "仍超过 150 °C，结论不变")
+row("p2 §4 R_in", "从运放看进去 V_i/I_B (2N3904)", 2550, 5 / d["r50_ib1"], "Ω")
+row("p2 例1", "V_o", 5.3, d["x1_e1"], "V", note("x1_e1"))
+row("p2 例1", "I_E", 53.0, (d["x1_ic1"] + d["x1_ib1"]) * 1e3, "mA")
+row("p2 例1", "I_B（题设 β=50）", 1.04, d["x1_ib1"] * 1e3, "mA", "2N3904 模型 β 约 60")
+row("p2 例1", "P_C", 0.348, (12 - d["x1_e1"]) * d["x1_ic1"], "W")
+row("p2 例2", "V_o", 2.6, d["x2_e1"], "V", note("x2_e1"))
+row("p2 例2", "I_E", 55.3, (d["x2_ic1"] + d["x2_ib1"]) * 1e3, "mA")
+row("p2 例2", "I_B（题设 β=50）", 1.08, d["x2_ib1"] * 1e3, "mA")
+row("p2 例2", "P_C", 0.510, (12 - d["x2_e1"]) * d["x2_ic1"], "W")
+row("p2 例3", "V_i = 5.7 V 时 50 Ω 上电压", 5.0, d["x3_e1"], "V", note("x3_e1"))
+row("p2 例3", "12 V 电源管耗", 0.693, (12 - d["x3_e1"]) * d["x3_ic1"], "W")
+row("p2 例3", "7 V 电源管耗", 0.198, (7 - d["x3b_e1"]) * d["x3b_ic1"], "W")
+row("p3 练习1 (TIP31C)", "V_o", 8.3, d["p1_e2"], "V")
+row("p3 练习1 (TIP31C)", "I_B（题设 β=50）", 8.14, d["p1_ib2"] * 1e3, "mA", "TIP31C 模型 β 约 180，实际更小")
+row("p3 练习1 (TIP31C)", "P_C", 2.73, (15 - d["p1_e2"]) * d["p1_ic2"], "W")
+row("p3 图19-p3-1", "12 V/50 Ω 最大管耗 (TIP31C)", 0.71, d["pmx2"], "W", f"2N3904: {d['pmx1']:.3f} W")
 
+s = ngspice("t_sine.cir", need=["mx1", "mn1", "mx2", "mn2", "bx1", "bn1", "bx2", "bn2"])
+row("p2 图19-p2-2", "正弦输出最高 (2N3904)", 6.28, s["mx1"], "V", f"TIP31C: {s['mx2']:.3f} V")
+row("p2 图19-p2-2", "正弦输出最低 (2N3904)", 2.31, s["mn1"], "V", f"TIP31C: {s['mn2']:.3f} V")
+row("p2 图19-p2-2", "交流增益 (2N3904)", 0.994, (s["mx1"] - s["mn1"]) / 4, "", f"TIP31C: {(s['mx2'] - s['mn2']) / 4:.3f}")
+row("p1 §4 / p2 图19-p2-2", "V_BE 最大（峰值处台阶）(2N3904)", 0.720, s["bx1"], "V", f"范围 {s['bn1']:.3f}~{s['bx1']:.3f}；TIP31C {s['bn2']:.3f}~{s['bx2']:.3f}")
+row("p2 推导三", "3→7 V 时 V_BE 变化 (2N3904)", 26, (s["bx1"] - s["bn1"]) * 1e3, "mV", f"TIP31C: {(s['bx2'] - s['bn2']) * 1e3:.0f} mV")
 
-def run(p, tpD=20e-3, tdY=10e-3):
-    full = dict(SB1="0 0", SB2=pwl([(0.5, 0.8)]), TSTOP="7.5", TSET="6", SHORTY="0")
-    full["VTM"], full["VHM"] = thr(20e-3, 10e-3)
-    full["VTY"], full["VHY"] = thr(20e-3, tdY)
-    full["VTD"], full["VHD"] = thr(tpD, 10e-3)
-    full.update(p)
-    r = ng.run("stardelta.cir", full)
-    d = np.loadtxt(pathlib.Path(r["_dir"]) / "sd.txt")
-    t = d[:, 0]
-    return t, dict(M=d[:, 1], Y=d[:, 3], D=d[:, 5], KT=d[:, 7], cY=d[:, 9], cD=d[:, 11])
+a = ngspice("t_opA.cir", need=["vo"])
+row("p1 §1 / p2 图19-p2-2", "LM358 直接带 50 Ω 的输出", 1.50, a["vo"], "V", f"约 {a['vo'] / 50 * 1e3:.0f} mA 限流")
+b = ngspice("t_opB.cir", need=["ve", "vo"])
+b3 = ngspice("t_opB3.cir", need=["ve", "vo"])
+row("p2 图19-p2-4", "反馈取自发射极 V_o (TIP31C)", 5.00, b["ve"], "V", f"2N3904: {b3['ve']:.4f} V")
+row("p2 图19-p2-4", "此时运放输出 (TIP31C)", 5.71, b["vo"], "V", f"2N3904: {b3['vo']:.3f} V")
+rb = ngspice("t_opRB.cir", need=["ve", "vo"])
+row("p3 §2", "环内串 470 Ω：V_o", 5.00, rb["ve"], "V")
+row("p3 §2", "环内串 470 Ω：运放输出", 6.50, rb["vo"], "V", "页面按 β=50；TIP31C 基极电流小")
+c = ngspice("t_opC.cir", need=["ve", "vo"])
+row("p3 §2", "环外串 470 Ω（反馈取运放输出）V_o", 3.5, c["ve"], "V", "页面按 β=50 估压降 0.79 V")
 
+l = ngspice("dc_lab.cir", need=["vb1k", "ve1k", "vw2", "vb220", "ve220", "ic220"])
+row("p2 §7 第2步", "V_E（1 kΩ）", 4.36, l["ve1k"], "V")
+row("p2 §7 第2步", "V_B − V_E（1 kΩ）", 0.7, l["vb1k"] - l["ve1k"], "V", "页面 0.6~0.7 V")
+row("p2 §7 第3步", "V_E（220 Ω）", 4.28, l["ve220"], "V", f"V_B−V_E = {l['vb220'] - l['ve220']:.3f} V")
+row("p1 §4", "220 Ω/1 kΩ 电流比", 4.5, (l["ve220"] / 220) / (l["ve1k"] / 1000), "")
+row("p2 §7 第4步", "去掉三极管 220 Ω 挂滑片", 2.36, l["vw2"], "V")
+row("p2 §7 第5步", "220 Ω 时管耗", 0.09, (9 - l["ve220"]) * l["ic220"], "W")
 
-def first(t, m):
-    return float(t[np.argmax(m)]) if m.any() else float("nan")
+q = ngspice("t_ss5.cir", need=["ve27", "vo27", "vemax", "vomax"])
+row("p3 练习2", "5 V 单电源 输入 2.7 V 输出", 2.0, q["ve27"], "V")
+row("p3 练习2", "LM358B 输出最高", 3.6, q["vomax"], "V")
+row("p3 练习2", "跟随器输出最高", 2.9, q["vemax"], "V")
 
+p = ngspice("t_pp.cir", need=["mx", "mn", "vth"])
+row("p3 练习4 图19-p3-2", "推挽输出峰值", 2.3, p["mx"], "V", f"负峰 {p['mn']:.3f} V")
+row("p3 练习4 图19-p3-2", "死区边界（输出达 10 mV 时的输入）", 0.7, p["vth"], "V", "1 kΩ 负载，假设")
 
-def ovl(t, a, b):
-    m = (a > 0.5) & (b > 0.5)
-    return float(np.sum(np.diff(t)[m[:-1]]))
-
-
-print("== 19 星三角（低压控制回路）==")
-t, y = run({})
-tM, tY = first(t, y["M"] > 0.5), first(t, y["Y"] > 0.5)
-tYoff = first(t, (y["Y"] < 0.5) & (t > 1))
-tD = first(t, y["D"] > 0.5)
-tKT = first(t, (y["KT"] < 6) & (t > 1))
-tKTdone = first(t, y["cY"] < 6) if False else first(t, (y["cY"] < 6) & (t > 1))
-check("p2 §三 [时序]", "KM 吸合时刻", 0.520, tM, "s")
-check("p2 §三 [时序]", "KMY 吸合时刻（星形启动）", 0.520, tY, "s")
-check("p2 §三 [时序]", "KT 到时（KMY 线圈断电时刻）", 6.500, tKTdone, "s")
-check("p2 §三 [时序] 图19-p2-5", "KMY 释放时刻", 6.510, tYoff, "s")
-check("p2 §三 [时序] 图19-p2-5", "KM△ 吸合时刻", 6.530, tD, "s")
-check("p2 §三 [时序] 图19-p2-5", "切换空档", 20, (tD - tYoff) * 1e3, "ms")
-check("p2 §三 [时序]", "KT 线圈断电复位时刻", 6.530, tKT, "s")
-o = ovl(t, y["Y"], y["D"])
-check("p2 §三 结论1", "KMY、KM△ 同时吸合时长", 0, o * 1e3, "ms", v="✅" if o == 0 else "❌")
-check("p3 关键参数表", "切换空档 = KM△ 吸合时间（仿真里 20 ms）", 20, (tD - tYoff) * 1e3, "ms")
-# 步骤 3：按 SB1 全灭，KT 复位，再按 SB2 重复
-t, y = run(dict(SB1=pwl([(7.5, 7.8)]), SB2=pwl([(0.5, 0.8), (8.5, 8.8)]), TSTOP="15"))
-off = all(y[k][(t > 7.7) & (t < 8.4)].max() < 0.5 for k in "MYD")
-check("p2 §五 步骤3", "按 SB1：三只全灭", None, float(off), "", "SPICE：" + ("全灭" if off else "未全灭"), v="✅" if off else "❌")
-kt0 = y["KT"][(t > 7.7) & (t < 8.4)].max()
-check("p2 §五 步骤3", "按 SB1 后 KT 线圈电压（复位）", 0, kt0, "V", v="✅" if kt0 < 0.1 else "❌")
-tY2 = first(t, (y["Y"] < 0.5) & (t > 9))
-tD2 = first(t, (y["D"] > 0.5) & (t > 9))
-check("p2 §五 步骤3", "再按 SB2(8.5 s)：KMY 释放时刻 8.5+6+0.01", 14.510, tY2, "s")
-check("p2 §五 步骤3", "再按 SB2：KM△ 吸合时刻", 14.530, tD2, "s")
-# 动手实验第 4 步：短接 KMY 常闭（页面时间 20/10 ms）
-t, y = run(dict(SHORTY="1"))
-tYoff = first(t, (y["Y"] < 0.5) & (t > 1)); tD = first(t, y["D"] > 0.5)
-o = ovl(t, y["Y"], y["D"])
-check("p2 §五 步骤4", "短接 KMY 常闭（tpick 20 ms、tdrop 10 ms）：空档", None, (tD - tYoff) * 1e3, "ms",
-      f"同时吸合 {o*1e3:.1f} ms：照页面的 20/10 ms 不会出现「一起亮」；只有吸合比释放快时才会重叠", v="⚠️")
-# page3 练习 2：KM△ 吸合 12 ms、KMY 释放 19 ms
-t, y = run(dict(SHORTY="1"), tpD=12e-3, tdY=19e-3)
-tYoff = first(t, (y["Y"] < 0.5) & (t > 1)); tD = first(t, y["D"] > 0.5)
-check("p3 练习2", "去掉 KMY 常闭：空档（负 = 重叠）", -7, (tD - tYoff) * 1e3, "ms",
-      f"重叠 {ovl(t, y['Y'], y['D'])*1e3:.1f} ms")
-t, y = run({}, tpD=12e-3, tdY=19e-3)
-tYoff = first(t, (y["Y"] < 0.5) & (t > 1)); tD = first(t, y["D"] > 0.5)
-check("p3 练习2", "装回 KMY 常闭：空档 = KM△ 吸合时间", 12, (tD - tYoff) * 1e3, "ms")
-
-print("== 19 三相关系（相电压 12 V 等比例缩小）==")
-r = ng.run("threephase.cir", {"VPH": "12"})
-s3 = math.sqrt(3)
-check("p1 图19-p1-1", "星形每段电压 / 线电压（页面 219/380）", 219 / 380, r["VPY"] / r["VLL"], "")
-check("p1 图19-p1-1", "三角形每段电压 / 线电压（页面 380/380）", 1.0, r["VPD"] / r["VLL"], "")
-check("p2 图19-p2-1", "相电压峰值 / 有效值（页面 311/220）", 311 / 220, r["VPA"] / 12, "")
-check("p2 图19-p2-1", "两相之差峰值 / 单相峰值（√3）", s3, r["VPAB"] / r["VPA"], "")
-dt = ((r["TB"] - r["TA"]) % 0.02) * 1e3
-check("p2 图19-p2-1", "L2 比 L1 晚（50 Hz）", 6.67, dt, "ms")
-check("p2 §二 推导", "I_L,Y / I_L,Δ", 1 / 3, r["ILY"] / r["ILD"], "")
-check("p2 §二 推导", "I_L,Δ / I_ph,Δ", s3, r["ILD"] / r["IPD"], "")
-check("p2 例题1", "星形绕组电流 / 三角形绕组电流（页面 46.7/80.8≈0.577）", 0.577, r["ILY"] / r["IPD"], "")
-check("p2 例题1", "按比例换算星形启动线电流（直接启动 140 A）", 46.7, 140 * r["ILY"] / r["ILD"], "A")
-check("p2 例题2", "按比例换算星形启动线电流（直接启动 80 A）", 26.7, 80 * r["ILY"] / r["ILD"], "A")
-check("p3 练习1", "按比例换算星形启动线电流（直接启动 180 A）", 60, 180 * r["ILY"] / r["ILD"], "A")
-check("p3 练习4", "Y 接法电机绕组额定电压 380/√3（按仿真比值）", 219, 380 * r["VPY"] / r["VLL"], "V")
-check("p3 关键参数表", "星形时间经验公式 2√13.2+4（算术）", 11.3, 2 * math.sqrt(1.732 * 0.38 * 20) + 4, "s", "纯算术，非 SPICE")
-check("p2 §三/p1 图19-p1-2", "示意电动机的 5.8 倍/1.9 倍/2.6 倍/0.83 倍、转速 91% 等", None, float("nan"), "",
-      "未仿真：页面自己声明是参数编造的示意模型，且属于 380 V 电动机；1/3 比例已由上面的三相电路核对", v="ℹ️")
-check("p3 图19-p3-1/19-p3-2", "T 扫描、空档扫描的尖峰倍数与转速", None, float("nan"), "", "未仿真：同上，示意电动机模型", v="ℹ️")
-ng.save()
+report("19 射极跟随器")

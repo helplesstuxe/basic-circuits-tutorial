@@ -1,37 +1,20 @@
-# 06 桥式整流 · 调研笔记
+# 06 MOS 管开关 · 调研笔记（作者 C）
 
-只记结论和出处；所有链接都已实际打开（2026-10-22）。
-
-## 器件参数
-
-- Vishay 1N4001–1N4007 数据手册（Doc 88503，Rev 29-Apr-2020）：https://www.vishay.com/docs/88503/1n4001.pdf
-  - 最大重复峰值反向电压 V_RRM：1N4001 50 V、1N4002 100 V、1N4003 200 V、1N4004 400 V、1N4005 600 V、1N4006 800 V、1N4007 1000 V。
-  - 平均正向整流电流 I_F(AV) 1.0 A；峰值正向浪涌电流 I_FSM 30 A（8.3 ms 单个半正弦）。
-  - 最大正向压降 V_F 1.1 V（1.0 A）。
-
-## 原理与设计经验
-
-- Rod Elliott（ESP）「Linear Power Supply Design」：https://sound-au.com/power-supplies.htm
-  - 桥式整流里，每个半周有两只二极管串联导通；二极管反向耐压只要超过交流峰值即可。
-  - 每只二极管压降约 0.7–0.9 V，两只串联，合计约 1.8 V 要从峰值里扣掉。
-  - 二极管只在峰值附近很短的时间里导通，峰值电流可以超过直流输出电流的 5 倍。
-  - 直流输出要从滤波电容的两端引出，而不是从整流桥引出。
-  - 经验公式 C = (I/ΔV)·k·1000 µF，100 Hz 纹波时 k = 7；对 2 Vpp 纹波约为每安培 3500 µF。电容加倍，纹波减半。
-  - 上电浪涌电流可能很大（文中给出浪涌电流表，实测市电内阻约 0.8 Ω）；市电电压有 ±10% 的波动，设计要留余量。
-  - 泄放电阻：让电容在约 10 s 内放到约 37%（一个时间常数）。
-  - 滤波电容是电源头号故障源：纹波电流、温度、ESR。
-- Wikipedia「Diode bridge」：https://en.wikipedia.org/wiki/Diode_bridge
-  - 四只二极管组成的桥，把交流的两个半周都变成同一极性；也可用作直流输入的反接保护。
-- Wikipedia「Ripple (electrical)」：https://en.wikipedia.org/wiki/Ripple_(electrical)
-  - 全波整流加电容滤波，峰峰纹波 V_pp ≈ I/(2fC)（半波为 I/(fC)）。
-- Wikipedia「Aluminum electrolytic capacitor」：https://en.wikipedia.org/wiki/Aluminum_electrolytic_capacitor
-  - 极性接反或加交流电压会使介质层损坏、内部短路，可能烧毁或爆裂（页面有炸开的电容照片）。
-
-## 运放全波整流
-
-- Fiore《Operational Amplifiers and Linear Integrated Circuits》7.2.2 Precision Full-Wave Rectifier（LibreTexts，链接同 notes/05-research.md）
-  - 又叫绝对值电路；由反相精密半波整流和加权加法器组成，用两只运放；除一只外所有电阻取同一个值（那一只是 R/2）。
-
-## 未采用
-
-- electronics-tutorials 的整流页面下载失败（HTTP 000），未引用。
+## 理论
+- TI SLUA618《Fundamentals of MOSFET and IGBT Gate Driver Circuits》 https://www.ti.com/lit/pdf/slua618
+  - 2.5/2.6 开通、关断四段；米勒平台；2.7 式 (9) P_GATE = V_DRV·Q_G·f，式 (11)–(14) 开关损耗线性近似 P_SW = V·I/2·(t2+t3)/T。
+  - 2.8 源极寄生电感与 C_ISS 谐振；R_GATE 小→过冲但快，大→拖慢开关。
+  - 5.1 P 沟道高边；5.2 高边 N 沟道需把栅极驱动到电源以上（自举等）。
+## 器件数据（均已打开核对）
+- IRLZ44N https://www.infineon.com/assets/row/public/documents/24/49/infineon-irlz44n-datasheet-en.pdf ：55 V；R_DS(on) max 22/25/35 mΩ @10/5/4 V；V_GS(th) 1.0–2.0 V；Qg 48 nC、Qgs 8.6 nC、Qgd 25 nC（V_DS 44 V、V_GS 5 V）；±16 V；RθJA 62 °C/W；T_J max 175 °C；图 4 导通电阻随温度上升。
+- IRF540N https://www.infineon.com/assets/row/public/documents/24/49/infineon-irf540n-datasheet-en.pdf ：100 V；44 mΩ 仅 @10 V；V_GS(th) 2.0–4.0 V。
+- AO3400A https://www.aosmd.com/sites/default/files/res/datasheets/AO3400A.pdf ：30 V；R_DS(on) max 26.5/32/48 mΩ @10/4.5/2.5 V；Qg 6 nC、Qgd 1.8 nC；±12 V；RθJA 稳态 100 典型 / 125 最大 °C/W（1 in² 铜皮）。
+## 实践代码 / 教程
+- Espruino MOSFETs https://www.espruino.com/mosfets ：栅极悬空、10 kΩ 下拉、门限≠完全导通、续流二极管。
+## 常见误区（写进 page3 排查表）
+- 以门限电压判断能否开到底（应看 R_DS(on) 的测试栅压）。
+- 栅极电阻越大越安全（实际开关损耗成倍上升）。
+- PWM 频率随意调高（开关损耗正比于 f）。
+- 感性负载不加续流二极管；高边用 N 沟道却没有自举驱动。
+## 模型说明
+- code/06_sim.py 为栅极电荷示意模型：V_TH 1.5 V、平台 2.8 V、Q_GS 8.6 nC、Q_GD 12 nC（只切换 12 V，小于手册 44 V 条件下的 25 nC，示意取值）。

@@ -1,4 +1,4 @@
-* SOURCE: https://assets.nexperia.com/documents/spice-model/1N4148.txt  (opened 2026-10-23 by reviewer A (nodes P1-P3, 01-12))
+* SOURCE: https://assets.nexperia.com/documents/spice-model/1N4148.txt  (opened 2026-10-23 by reviewer A (nodes 01-03, 05, 08, 09, 12-14, 16, 17, 19, 21, 22, 25))
 * Nexperia 1N4148 (SOD27/DO-35). Subckt pins: 1 = anode, 2 = cathode. Content unmodified.
 .SUBCKT 1N4148 1 2
 R1 1 2 5.827E+9

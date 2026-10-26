@@ -1,0 +1,37 @@
+* 02 闭环增益误差与带宽（LM358B，±15 V，无负载）
+* 对应：page3 图02-p3-2（G=1、10、100 时 A=14 万对应误差 0.0014%、0.0079%、0.072%）；page3 练习3（0.072% / 0.14%）
+*       page3 参数表 GBW 一行（放大 100 倍时信号到 12 kHz 附近实际倍数明显不足）
+* 反相放大，R1=10k，Rf=10k/100k/1M；在 0.001 Hz 读增益（避开失调），并读 G=100 的 −3 dB 频率
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VI in 0 DC 0 AC 1
+R1a in ma 10k
+RFa ma oa 10k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+R1b in mb 10k
+RFb mb ob 100k
+XB 0 mb vcc vee ob LMX58B_LM2904B
+R1c in mc 10k
+RFc mc oc 1Meg
+XC 0 mc vcc vee oc LMX58B_LM2904B
+.control
+ac dec 50 1e-3 1e7
+let ga=abs(v(oa))
+let gb=abs(v(ob))
+let gc=abs(v(oc))
+meas ac ga0 find ga at=1e-3
+meas ac gb0 find gb at=1e-3
+meas ac gc0 find gc at=1e-3
+meas ac gc12k find gc at=12e3
+meas ac f3c when gc=70.71 fall=1
+let ea=(1-ga0)*100
+let eb=(1-gb0/10)*100
+let ec=(1-gc0/100)*100
+echo "RES ea $&ea"
+echo "RES eb $&eb"
+echo "RES ec $&ec"
+echo "RES gc12k $&gc12k"
+echo "RES f3c $&f3c"
+.endc
+.end

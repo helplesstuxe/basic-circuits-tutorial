@@ -1,0 +1,97 @@
+* 05 反相放大 小信号交流（LM358B，±15 V）：用 AC 读倍数，避开失调电压
+* page3 图05-p3-1 信号源内阻：Rs=1k 时 R1=10k→9.09、R1=1k→5.00；Rs=100 Ω 时 R1=1k→9.09、R1=10k→9.90（Rf=10·R1）
+* page3 图05-p3-2 带宽：倍数 1/10/100 的 −3 dB 频率 600 kHz / 109 kHz / 11.9 kHz（R1=10k，Rf=10k/100k/1M）
+* page2 §一 1.2 kHz 时 A≈1000、输出 −4.946 V（误差 1.1%）、反相端约 5 mV（10k/100k，0.5 V 峰值）
+* （补充）10 倍电路在 50 kHz 的倍数，用于说明幅度真正开始下降的频率
+* page3 练习2 ±12 V，Rs=500 Ω，R1=51k，Rf=1 MΩ → 约 19.4 倍；带宽约 57 kHz（按 20 倍估）
+.include ../models/LMx58B_LM2904B.lib
+VP vcc 0 15
+VN vee 0 -15
+VP2 vcc2 0 12
+VN2 vee2 0 -12
+VI in 0 DC 0 AC 1
+* 内阻四组
+RSa in sa 1k
+R1a sa ma 10k
+RFa ma oa 100k
+XA 0 ma vcc vee oa LMX58B_LM2904B
+RSb in sb 1k
+R1b sb mb 1k
+RFb mb ob 10k
+XB 0 mb vcc vee ob LMX58B_LM2904B
+RSc in sc 100
+R1c sc mc 1k
+RFc mc oc 10k
+XC 0 mc vcc vee oc LMX58B_LM2904B
+RSd in sd 100
+R1d sd md 10k
+RFd md od 100k
+XD 0 md vcc vee od LMX58B_LM2904B
+* 带宽三组（无内阻）
+R1e in me 10k
+RFe me oe 10k
+XE 0 me vcc vee oe LMX58B_LM2904B
+R1f in mf 10k
+RFf mf of 100k
+XF 0 mf vcc vee of LMX58B_LM2904B
+R1g in mg 10k
+RFg mg og 1Meg
+XG 0 mg vcc vee og LMX58B_LM2904B
+* 练习2
+RSh in sh 500
+R1h sh mh 51k
+RFh mh oh 1Meg
+XH 0 mh vcc2 vee2 oh LMX58B_LM2904B
+* 开环增益（同相端加信号，反相端经大电感到输出：直流闭环、交流开环）
+XO in mo vcc vee oo LMX58B_LM2904B
+LO oo mo 1e6
+CO mo 0 1
+.control
+ac dec 100 10 1e7
+let ga=abs(v(oa))
+let gb=abs(v(ob))
+let gc=abs(v(oc))
+let gd=abs(v(od))
+let ge=abs(v(oe))
+let gf=abs(v(of))
+let gg=abs(v(og))
+let gh=abs(v(oh))
+let gm=abs(v(mf))
+let gol=abs(v(oo))
+meas ac g_a find ga at=100
+meas ac g_b find gb at=100
+meas ac g_c find gc at=100
+meas ac g_d find gd at=100
+meas ac g_e find ge at=100
+meas ac g_f find gf at=100
+meas ac g_g find gg at=100
+meas ac g_h find gh at=100
+meas ac f_f12 find gf at=1.2e3
+meas ac m_f12 find gm at=1.2e3
+meas ac a12 find gol at=1.2e3
+meas ac f_f50 find gf at=50e3
+let le=g_e*0.7071
+let lf=g_f*0.7071
+let lg=g_g*0.7071
+let lh=g_h*0.7071
+meas ac bwe when ge=le fall=1
+meas ac bwf when gf=lf fall=1
+meas ac bwg when gg=lg fall=1
+meas ac bwh when gh=lh fall=1
+let vo12=f_f12*0.5
+let vm12=m_f12*0.5e3
+echo "RES ga $&g_a"
+echo "RES gb $&g_b"
+echo "RES gc $&g_c"
+echo "RES gd $&g_d"
+echo "RES gh $&g_h"
+echo "RES bwe $&bwe"
+echo "RES bwf $&bwf"
+echo "RES bwg $&bwg"
+echo "RES bwh $&bwh"
+echo "RES a12 $&a12"
+echo "RES g50 $&f_f50"
+echo "RES vo12 $&vo12"
+echo "RES vm12 $&vm12"
+.endc
+.end

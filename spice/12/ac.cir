@@ -1,73 +1,18 @@
-* 12 积分电路 · 直觉篇 §示波器 第3步（159 Hz 时幅度≈1、错开四分之一周期）；参数与调试篇 §一 转角频率 f_c = 1/(2πR_fC) ≈ 1.6 Hz、练习 1
-* 用实用积分器（R 10 kΩ / C 100 nF / R_f 1 MΩ）做 AC 分析：理想积分器没有直流工作点，AC 分析做不了；R_f 在 159 Hz 处只引起约 0.6° 的相位差
+* 12 page3 §3 末段：跟随器倍数 1，闭环带宽约 GBW ÷ 1 ≈ 1.2 MHz（LM358B，±15 V，输出空载）
+* 同时读低频倍数（page2 "倍数 A/(1+A) ≈ 0.99999"）与最大增益（看有没有尖峰）
 .include ../models/LMx58B_LM2904B.lib
-.options method=gear reltol=1e-4 rshunt=1e12
 VP vcc 0 15
 VN vee 0 -15
-VR rst 0 PWL(0 1 49u 1 50u 0)
-.model swr sw vt=0.5 vh=0.1 ron=1 roff=1e15
-* 理想积分器：R 输入，C 反馈；电容旁的开关只在 t < 50 μs 时闭合，给电容清零（代替“初始输出 0 V”），之后断开（1e15 Ω）
-.subckt integ in o vcc vee rst r=10k c=100n
-R1 in m {r}
-C1 m o {c}
-S1 m o rst 0 swr
-XA 0 m vcc vee o LMX58B_LM2904B
-.ends
-* 实用积分器：C 旁并 R_f，有直流工作点，不需要清零
-.subckt pinteg in o vcc vee r=10k c=100n rf=1meg
-R1 in m {r}
-C1 m o {c}
-R2 m o {rf}
-XA 0 m vcc vee o LMX58B_LM2904B
-.ends
-VA a 0 DC 0 AC 1
-XI a o vcc vee pinteg
-* 参数与调试篇 §二 两步法 / 练习 1：R_f = 318 kΩ（f_c 应为 5 Hz）、31.8 kΩ（f_c 应为 50 Hz）
-X318 a o318 vcc vee pinteg rf=318k
-X31 a o31 vcc vee pinteg rf=31.8k
-* 参数表 GBW：同相放大 101 倍（R 100 kΩ / 1 kΩ），GBW ≈ 101 × −3 dB 频率
-VG ag 0 DC 0 AC 1
-XG ag mg vcc vee og LMX58B_LM2904B
-RG1 og mg 100k
-RG2 mg 0 1k
+VS i 0 DC 0 AC 1
+X1 i o vcc vee o LMX58B_LM2904B
 .control
-ac dec 200 0.05 100k
+ac dec 200 10 100Meg
 let g = mag(v(o))
-let ph = 180/pi*cph(v(o))
-meas ac g159 find g at=159.15
-meas ac p159 find ph at=159.15
-meas ac g0 find g at=0.05
-let gc = g0/sqrt(2)
-meas ac fc when g=gc
-echo "RES g159 $&g159"
-echo "RES p159 $&p159"
-echo "RES g0 $&g0"
-echo "RES fc $&fc"
-* 频率高一倍（318.3 Hz）输出应小一半
-meas ac g318 find g at=318.31
-echo "RES g318 $&g318"
-* 16 Hz（“可以放心积分 16 Hz 以上”）：与理想积分器 1/(2π f RC) 之比、相位
-meas ac g16 find g at=16
-let r16 = g16 * 2 * pi * 16 * 1e-3
-meas ac p16 find ph at=16
-echo "RES r16 $&r16"
-echo "RES p16 $&p16"
-let g3 = mag(v(o318))
-meas ac g3lo find g3 at=0.05
-let g3c = g3lo/sqrt(2)
-meas ac fc318 when g3=g3c
-echo "RES fc318 $&fc318"
-let g4 = mag(v(o31))
-meas ac g4lo find g4 at=0.05
-let g4c = g4lo/sqrt(2)
-meas ac fc31 when g4=g4c
-echo "RES fc31 $&fc31"
-let gg = mag(v(og))
-meas ac gglo find gg at=10
-let ggc = gglo/sqrt(2)
-meas ac fg when gg=ggc
-let gbw = fg * gglo
-echo "RES gglo $&gglo"
-echo "RES gbw $&gbw"
+meas ac g10 find g at=10
+meas ac gpk max g
+meas ac bw when g=0.70711 fall=last
+echo "RES g10 $&g10"
+echo "RES gpk $&gpk"
+echo "RES bw $&bw"
 .endc
 .end

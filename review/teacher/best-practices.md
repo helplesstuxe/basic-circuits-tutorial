@@ -38,9 +38,9 @@
   - RetrievalPractice.org：https://www.retrievalpractice.org/
   - Rosenshine 2012（"Begin a lesson with a short review"，"Engage students in weekly and monthly review"）：链接同上。
 - **本教程检查**：
-  - 每节 page2 开头的"用到的旧知识"是否回指正确的节点和页，例如 17 回指 P1 就是错的。
+  - 每节 page2 开头的"用到的旧知识"是否回指正确的节点和页，例如 04 回指 01 就是错的。
   - 练习是否考到了本节的关键结论，而不只是代一个公式。
-  - 后续节点是否回扣前面的概念（例如 24 回扣 23 的光耦、26 回扣 14 的回差）。
+  - 后续节点是否回扣前面的概念（例如 28 回扣 23 的光耦、29 回扣 10 的回差）。
 
 ## 4. 图文双编码（dual coding）
 
@@ -61,8 +61,8 @@
   - *Student conceptual resources for understanding electric circuits*，Phys. Rev. Phys. Educ. Res. 20, 020128（2024）：https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128
   - Pashler 等 2007（建议 7："Ask deep explanatory questions"）：链接同上。
 - **本教程检查**：
-  - 直觉篇的痛点和误区是否先于公式出现，例如 13 的误区先行、25 的"IN1 占空比 70%"误区、26 的"RC 接无回差引脚"。
-  - 本教程自己有没有制造新的误区，例如 19 的"串了两段"会让读者推出 ÷2，P3 把 14 也列入"用虚短的节点"。
+  - 直觉篇的痛点和误区是否先于公式出现，例如 18 的误区先行、26 的"IN1 占空比 70%"误区、29 的"RC 接无回差引脚"。
+  - 本教程自己有没有制造新的误区，例如 15 的"串了两段"会让读者推出 ÷2，02 把 10 也列入"用虚短的节点"。
 
 ## 6. 由具体到抽象（concrete to abstract）
 
@@ -72,9 +72,9 @@
   - Rosenshine 2012（"Provide models"）：链接同上。
 - **本教程检查**：
   - 是否按"类比 → 低压仿真/动手 → 公式 → 参数"的顺序展开。
-  - 公式后面是否有"中文意思"和具体数值，26 的每个推导都做到了。
-  - 有安全风险的"具体体验"必须改成仪表测量，例如 07 的"用手碰三极管"和 08 的"散热片不烫手"。
+  - 公式后面是否有"中文意思"和具体数值，29 的每个推导都做到了。
+  - 有安全风险的"具体体验"必须改成仪表测量，例如 19 的"用手碰三极管"和 21 的"散热片不烫手"。
 
 ## 附：与本教程直接相关的工程参考
 
-- TI 应用笔记 SLAA067。本审读只用它核对 P1 page2 引用的"约 10% 误差"原文：https://www.ti.com/lit/an/slaa067/slaa067.pdf
+- TI 应用笔记 SLAA067。本审读只用它核对 01 page2 引用的"约 10% 误差"原文：https://www.ti.com/lit/an/slaa067/slaa067.pdf

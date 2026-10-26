@@ -1,0 +1,21 @@
+* 08 page1 §四 第4步：5 V 单电源 3 倍同相放大，输入调到约 1.17 V 时输出约 3.5 V，再往上调输出就不动（假设：沿用图 08-p1-1 的 R1=10k、Rf=20k）
+* LM358B 单 5 V 供电（V− 脚接地），R1=10k、Rf=20k，同相端接一个慢慢升高的直流电压（0→2 V，20 ms 线性斜坡），输出无外接负载
+* 读：输出最高值（削顶电平）、输出比理想 3 倍低 1%（开始削顶）时的输入电压
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+VP vcc 0 5
+VS in 0 PWL(0 0 20m 2)
+X1 in m vcc 0 o LMX58B_LM2904B
+R1 m 0 10k
+RF o m 20k
+BE e 0 V=3*v(in)-v(o)-0.01*3*v(in)
+.control
+tran 10u 20m
+meas tran omax max v(o)
+meas tran vclip find v(in) when v(e)=0 cross=last
+meas tran oclip find v(o) when v(e)=0 cross=last
+echo "RES omax $&omax"
+echo "RES vclip $&vclip"
+echo "RES oclip $&oclip"
+.endc
+.end

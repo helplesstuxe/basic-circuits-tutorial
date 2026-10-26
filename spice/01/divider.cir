@@ -1,0 +1,86 @@
+* 01 分压与负载效应
+* 对应：page1 图01-p1-1（12 V，10k/10k → 6 V）；page2 §1 图01-p2-1（RL=10k → 4.00 V，100k → 5.71 V，1M 几乎不变）；
+*       page2 §7 戴维南（Rth=5 kΩ，短路电流 1.20 mA）；page2 §8 例1（12 V→4 V：R1=20k，R2=10k）；
+*       page3 图01-p3-2（12 V，RL=100k，R1=R2 总 2k/20k/200k 的误差与电流）；练习1（9 V→3 V，R1=20k，R2=10k，0.3 mA）；练习3（1k/1k 带 10k 负载 → 5.71 V）
+* 电阻为理想电阻（SPICE 中电阻本身就是精确模型，误差只来自公式简化与否）
+V1 v12 0 12
+* 空载 10k/10k
+Ra1 v12 a 10k
+Rb1 a 0 10k
+* 带 10k 负载
+Ra2 v12 b 10k
+Rb2 b 0 10k
+RLb b 0 10k
+* 带 100k 负载
+Ra3 v12 c 10k
+Rb3 c 0 10k
+RLc c 0 100k
+* 带 1M 负载
+Ra4 v12 d 10k
+Rb4 d 0 10k
+RLd d 0 1Meg
+* 戴维南：输出短路
+Ra5 v12 e 10k
+Rb5 e 0 10k
+Vsc e 0 0
+* 例1：20k/10k
+Ra6 v12 f 20k
+Rb6 f 0 10k
+* 图01-p3-2：R1=R2=1k,10k,100k，负载 100k
+Rg1 v12 g 1k
+Rg2 g 0 1k
+RLg g 0 100k
+Rh1 v12 h 10k
+Rh2 h 0 10k
+RLh h 0 100k
+Ri1 v12 i 100k
+Ri2 i 0 100k
+RLi i 0 100k
+* 练习3：1k/1k，负载 10k
+Rj1 v12 j 1k
+Rj2 j 0 1k
+RLj j 0 10k
+* 练习1：9 V，20k/10k
+V9 v9 0 9
+Rk1 v9 k 20k
+Rk2 k 0 10k
+.control
+op
+let va=v(a)
+let vb=v(b)
+let vc=v(c)
+let vd=v(d)
+let isc=i(vsc)
+let vf=v(f)
+let vg=v(g)
+let vh=v(h)
+let vi=v(i)
+let ig=-i(v1)
+let vj=v(j)
+let vk=v(k)
+let ik=-i(v9)
+echo "RES va $&va"
+echo "RES vb $&vb"
+echo "RES vc $&vc"
+echo "RES vd $&vd"
+echo "RES isc $&isc"
+echo "RES vf $&vf"
+echo "RES vg $&vg"
+echo "RES vh $&vh"
+echo "RES vi $&vi"
+echo "RES vj $&vj"
+echo "RES vk $&vk"
+echo "RES ik $&ik"
+* 单独求各支路电流：1k/1k 带 100k 负载时电源给出的电流 = 流过上电阻 Rg1 的电流
+let ig1=(12-v(g))/1k
+let ih1=(12-v(h))/10k
+let ii1=(12-v(i))/100k
+let ij1=(12-v(j))/1k
+let ia1=(12-v(a))/10k
+echo "RES ig1 $&ig1"
+echo "RES ih1 $&ih1"
+echo "RES ii1 $&ii1"
+echo "RES ij1 $&ij1"
+echo "RES ia1 $&ia1"
+.endc
+.end

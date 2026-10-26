@@ -1,108 +1,131 @@
-#!/usr/bin/env python3
-"""04 差分放大：ngspice + TI LM358B 官方模型复核页面数值。从仓库根运行：python spice/04/run.py"""
-# ---- 通用小工具：调用 ngspice -b，解析 .control 里 echo 出来的 "RES 名字 数值" ----
-import subprocess, re, sys, pathlib, math
-HERE = pathlib.Path(__file__).resolve().parent
-ROWS = []
+"""04 自锁：低压（12 V 继电器）版控制回路 + 24 V 导线压降。在仓库根目录运行：python spice/04/run.py
+主电路（380 V 三相）、220 V 控制回路不仿真：按任务规则跳过市电部分。"""
+import pathlib, sys
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
+import numpy as np
+import ng
+from ng import check
 
-def ngspice(cir, need=()):
-    """在本目录下以 batch 模式运行 cir，返回 {名字: 数值}；缺值或出错就报错退出。"""
-    r = subprocess.run(["ngspice", "-b", cir], cwd=HERE, capture_output=True, text=True, timeout=900)
-    out = r.stdout + r.stderr
-    vals = {}
-    for k, v in re.findall(r"^RES\s+(\S+)\s+(\S+)", out, re.M):
-        try:
-            vals[k] = float(v)
-        except ValueError:
-            vals[k] = float("nan")
-    miss = [n for n in need if n not in vals or math.isnan(vals[n])]
-    if r.returncode != 0 or miss or re.search(r"(?im)fatal error|error on line|aborted|timestep too small|op failed|failed!\s*$", out):
-        print(out[-3000:])
-        sys.exit(f"ngspice 运行 {cir} 失败（返回码 {r.returncode}，缺少 {miss}）")
-    return vals
 
-def row(loc, item, page, spice, unit="", note=""):
-    """记录一行：页面位置 / 项目 / 页面值 / SPICE 值 / 偏差%。page 可为 None（页面只给定性描述）。"""
-    dev = None if (page in (None, 0) or spice is None) else (spice - page) / abs(page) * 100
-    ROWS.append((loc, item, page, spice, unit, dev, note))
+def pwl(intervals, lo=0.0, hi=1.0, base=None):
+    """[(t0, t1, level), ...] -> PWL 字符串，边沿 10 µs"""
+    pts = [(0, lo)]
+    for iv in intervals:
+        t0, t1 = iv[0], iv[1]
+        lev = iv[2] if len(iv) > 2 else hi
+        pts += [(t0, lo), (t0 + 1e-5, lev), (t1, lev), (t1 + 1e-5, lo)]
+    return " ".join(f"{a:.6g} {b:.6g}" for a, b in pts)
 
-def fmt(x):
-    if x is None:
-        return "—"
-    a = abs(x)
-    if a == 0:
-        return "0"
-    if a >= 1000 or a < 0.01:
-        return f"{x:.4g}"
-    return f"{x:.4g}"
 
-def report(title):
-    print(f"==== {title}：页面值 / SPICE 值 / 偏差% ====")
-    w = max(len(r[0]) + len(r[1]) for r in ROWS) + 3
-    for loc, item, page, spice, unit, dev, note in ROWS:
-        d = "   —  " if dev is None else f"{dev:+7.2f}%"
-        print(f"{(loc + ' ' + item):<{w}} 页面 {fmt(page):>9} {unit:<3} | SPICE {fmt(spice):>9} {unit:<3} | {d}  {note}")
-    print(f"共 {len(ROWS)} 项。")
-# ---- 工具结束 ----
+def load(r):
+    d = np.loadtxt(pathlib.Path(r["_dir"]) / "sl.txt")
+    t = d[:, 0]
+    return t, {n: d[:, 1 + 2 * i] for i, n in enumerate(["A", "W1", "W2", "T", "coil", "hl2", "filt"])}
 
-d = ngspice("dc.cir", need=["o_p1a", "o_p1b", "o_p2d", "p_p2d", "o_e1b", "p_e1b", "o_e2", "p_e2", "o_x1", "o_bal", "o_x4", "p_x4", "o_z0"])
-row("p1 §二 代数", "2.01/2.00 V → 输出", 0.1, d["o_p1a"], "V", "含失调 ×11 ≈ 3.3 mV")
-row("p1 §二 / p2 例1①", "3.01/3.00 V → 输出", 0.1, d["o_p1b"], "V")
-row("p2 例1②", "5.01/5.00 V → 输出", 0.1, d["o_e1b"], "V")
-row("p2 例1 第4步", "同相端电压", 4.55, d["p_e1b"], "V")
-row("p2 §一 第一步", "V2=2.2 V 同相端", 2.0, d["p_p2d"], "V")
-row("p2 §一 第三步", "V1=2.1 V 输出", 1.0, d["o_p2d"], "V")
-row("p2 例2", "20k/60k 同相端", 1.125, d["p_e2"], "V")
-row("p2 例2", "输出", 0.9, d["o_e2"], "V")
-row("p3 练习1", "5k/50k 0.82/0.80 → 输出", 0.2, d["o_x1"], "V")
-row("p1 平衡线", "四只 10k，1.3 与 −0.7 相减", 2.0, d["o_bal"], "V")
-row("p3 练习4", "共模 12 V 差 0.2 V → 输出（±15 V）", 2.0, d["o_x4"], "V")
-row("p3 练习4", "同相端", 10.9, d["p_x4"], "V")
-row("补充", "零输入输出偏移", None, d["o_z0"] * 1e3, "mV", "失调 ×(1+R2/R1)")
 
-a = ngspice("ac_cmrr.cir")
-def cm(n):
-    A1 = complex(a["a1r_" + n], a["a1i_" + n]); A2 = complex(a["a2r_" + n], a["a2i_" + n])
-    ad = (A2 - A1).real / 2; acm = abs(A1 + A2)
-    return ad, acm, 20 * math.log10(abs(ad) / acm)
-for n in ["m", "r4a", "r4b", "wa", "wb", "ga", "gb", "s100", "s1k", "s200"]:
-    if "a1r_" + n not in a:
-        sys.exit(f"ac_cmrr.cir 缺少 {n}")
-m = cm("m"); r4a = cm("r4a"); r4b = cm("r4b"); wa = cm("wa"); wb = cm("wb"); ga = cm("ga"); gb = cm("gb")
-s100 = cm("s100"); s1k = cm("s1k"); s200 = cm("s200")
-row("补充", "四只匹配：运放自身 CMRR", None, m[2], "dB")
-row("p2 §一", "R4 偏 1%：共模倍数", 0.009, r4a[1], "")
-row("p2 §一 / p3 §一", "R4 偏 1%：CMRR", 61, r4a[2], "dB")
-row("p2 §一", "R4 偏 1%：共模 2 V 漏出", 18, r4a[1] * 2 * 1e3, "mV")
-row("p3 图04-p3-1", "只 R4 偏 0.1%：CMRR", 81, r4b[2], "dB", "运放自身 CMRR 开始起作用")
-row("p3 图04-p3-1", "四只 1% 最坏：CMRR", 49, wa[2], "dB")
-row("p3 图04-p3-1", "四只 0.1% 最坏：CMRR", 69, wb[2], "dB")
-row("p3 §二 TI 例", "倍数 1，1% 最坏：CMRR", 34, ga[2], "dB")
-row("p3 §二 TI 例", "倍数 1，0.1% 最坏：CMRR", 54, gb[2], "dB")
-row("p3 图04-p3-2", "内阻 100 Ω：CMRR", 61, s100[2], "dB")
-row("p3 图04-p3-2", "内阻 1 kΩ：CMRR", 41, s1k[2], "dB")
-row("p3 图04-p3-2", "内阻 1 kΩ：差分倍数", 9.13, s1k[0], "")
-row("p3 练习3", "内阻 200 Ω：差分倍数", 9.81, s200[0], "")
-row("p3 练习3", "内阻 200 Ω：共模倍数", 0.018, s200[1], "")
-row("p3 练习3", "内阻 200 Ω：2 V 共模残留", 36, s200[1] * 2 * 1e3, "mV")
-row("p3 练习4", "1% 最坏 12 V 共模残留", 0.43, wa[1] * 12, "V")
-row("p3 练习4", "0.1% 最坏 12 V 共模残留", 0.04, wb[1] * 12, "V")
-row("p3 练习4", "0.1% 最坏 共模抑制倍数", 2800, abs(wb[0]) / wb[1], "")
+def at(t, y, x):
+    return float(np.interp(x, t, y))
 
-t = ngspice("t_mis.cir", need=["okmax", "bdmax", "shbmax", "shbmin", "shmax", "shmin"])
-row("p2 图04-p2-2", "匹配 输出峰值", 100, t["okmax"] * 1e3, "mV", "含失调 3.3 mV")
-row("p2 图04-p2-2", "R4 偏 1% 输出峰值", 118, t["bdmax"] * 1e3, "mV")
-row("p1 §四 第4步 / p2", "输入短接 R4 偏 1%：50 Hz 残留幅度", 18, (t["shbmax"] - t["shbmin"]) / 2 * 1e3, "mV")
-row("p1 §四 第5步", "输入短接 匹配：50 Hz 残留幅度", None, (t["shmax"] - t["shmin"]) / 2 * 1e3, "mV", "理想 0；另有 3.3 mV 直流偏移")
 
-i = ngspice("dc_ina.cir", need=["a1", "a2", "vo", "vrg"])
-row("p2 例3", "A2 输出", 2.11, i["a2"], "V")
-row("p2 例3", "A1 输出", 1.90, i["a1"], "V")
-row("p2 例3", "Rg 电流", 10, i["vrg"] / 1e3 * 1e6, "µA")
-row("p2 例3", "Vo（21 倍 × 10 mV）", 0.21, i["vo"], "V")
+_run = ng.run
 
-s = ngspice("t_ss5.cir", need=["o5", "p5", "o3"])
-row("p2 例1 第4步", "5 V 单电源 5.01/5.00：输出（应 0.1 V）", None, s["o5"], "V", "共模 4.55 V 超限，输出错误，页面结论成立")
-row("对照", "5 V 单电源 3.01/3.00：输出", 0.1, s["o3"], "V")
 
-report("04 差分放大")
+def run_sl(params):
+    full = dict(SB1="0 0", SB2="0 0", SB3="0 0", SB4="0 0", FR="0 0", SUP="0 1", TSTOP="10")
+    full.update(params)
+    return _run("selflock.cir", full)
+
+
+ON = lambda y: "吸合" if y > 0.5 else "释放"
+print("== 04 自锁（低压 12 V 继电器版）==")
+# ---- page2 主仿真：七个事件
+p = dict(SB2=pwl([(1.0, 1.3), (4.0, 4.3), (8.0, 8.3), (9.0, 9.3)]),
+         SB1=pwl([(3.0, 3.3), (9.0, 9.3)]),
+         SUP=pwl([(5.0, 5.4, 0.70), (6.0, 6.5, 0.30)], lo=1.0))
+r = run_sl(p)
+t, y = load(r)
+ton = t[np.argmax(y["A"] > 0.5)]
+check("p2 代码输出 / p1 §吸合时间", "按下启动后多久吸合", 20, (ton - 1.0) * 1e3, "ms",
+      "模型的 τ 就是按 20 ms 定的，所以这一行只说明模型和页面一致")
+for x, want, why in [(2.0, 1, "① 松开启动后仍吸合（自锁）"), (3.5, 0, "② 按停止后释放"),
+                     (4.5, 1, "③ 再按启动"),
+                     (5.2, 1, "④ 电压跌到 70% 仍吸合"), (6.2, 0, "⑤ 电压跌到 30% 释放"),
+                     (7.5, 0, "⑤ 来电后不会自己再启动（失压保护）"), (8.5, 1, "⑥ 重新按启动"),
+                     (9.5, 0, "⑦ 启动、停止一起按：停止优先")]:
+    s = at(t, y["A"], x)
+    check("p2 图04-p2-2", f"t={x} s {why}", None, s, "", f"SPICE：KM {ON(s)}",
+          v="✅" if (s > 0.5) == bool(want) else "❌")
+# 释放时间（按停止 3.0 s 后，衔铁在滤波电压降到 0.45 时释放）
+toff = t[(t > 3.0) & (y["A"] < 0.5)][0]
+check("p3 参数表", "按停止到释放的时间(模型)", None, (toff - 3.0) * 1e3, "ms",
+      "落在手册的 4～19 ms 范围内")
+# 例 3：指示灯
+check("p2 例3", "运转时(t=2 s) HL1 两端电压", 12, at(t, y["coil"], 2.0), "V")
+check("p2 例3", "运转时(t=2 s) HL2 两端电压", 0, at(t, y["hl2"], 2.0), "V")
+check("p2 例3", "停机时(t=3.5 s) HL2 两端电压", 12, at(t, y["hl2"], 3.5), "V")
+check("p2 例3", "停机时(t=3.5 s) HL1 两端电压", 0, at(t, y["coil"], 3.5), "V")
+
+# ---- page2 图04-p2-3：错误接法（1 s 按启动，3.5 s 按停止）
+p = dict(SB2=pwl([(1.0, 1.3)]), SB1=pwl([(3.5, 3.8)]), TSTOP="5")
+r = run_sl(p)
+t, y = load(r)
+for key, x, want, why in [("A", 4.5, 0, "正确接法：按停止后停"), ("W1", 4.5, 1, "错误①：按停止停不下来"),
+                          ("W2", 2.0, 0, "错误②：停止按钮用常开，永远启动不了")]:
+    s = at(t, y[key], x)
+    check("p2 图04-p2-3", why, None, s, "", f"SPICE：KM {ON(s)}",
+          v="✅" if (s > 0.5) == bool(want) else "❌")
+
+# ---- p2 例1：FR 在 3.0~3.5 s 断开后自动复位
+p = dict(SB2=pwl([(1.0, 1.3)]), FR=pwl([(3.0, 3.5)]), TSTOP="5")
+r = run_sl(p)
+t, y = load(r)
+s = at(t, y["A"], 4.5)
+check("p2 例1", "FR 过载断开、复位后电机不会自己重启", None, s, "", f"SPICE：KM {ON(s)}",
+      v="✅" if s < 0.5 else "❌")
+
+# ---- p3 练习1：按住停止 1~3 s，期间按启动 1.5~2.0 s
+p = dict(SB1=pwl([(1.0, 3.0)]), SB2=pwl([(1.5, 2.0)]), TSTOP="4")
+r = run_sl(p)
+t, y = load(r)
+s = max(y["A"])
+check("p3 练习1", "先按住停止再按启动：全过程 KM 最大状态", None, s, "", f"SPICE：KM 从未{'吸合' if s < 0.5 else '……吸合过'}",
+      v="✅" if s < 0.5 else "❌")
+
+# ---- p3 练习2（低压版）：12 V 继电器电压跌到 82%
+p = dict(SB2=pwl([(1.0, 1.3), (3.0, 3.3)]), SB1=pwl([(2.0, 2.3)]),
+         SUP=pwl([(2.5, 4.0, 0.82)], lo=1.0), TSTOP="4.5")
+# 1 s 满压启动 → 2 s 停 → 2.5 s 起电压 82% → 3 s 再按启动：(a) 吸不上
+r = run_sl(p)
+t, y = load(r)
+s = at(t, y["A"], 3.8)
+check("p3 练习2(a)", "电压 82% 时按启动", None, s, "", f"SPICE：KM {ON(s)}（低于 85% 吸合门限）",
+      v="✅" if s < 0.5 else "❌")
+p = dict(SB2=pwl([(1.0, 1.3)]), SUP=pwl([(2.0, 4.0, 0.82)], lo=1.0), TSTOP="4.5")
+r = run_sl(p)
+t, y = load(r)
+s = at(t, y["A"], 3.8)
+check("p3 练习2(b)", "运转中电压跌到 82%", None, s, "", f"SPICE：KM {ON(s)}（高于 45% 释放门限）",
+      v="✅" if s > 0.5 else "❌")
+
+# ---- p3 练习4：两地控制
+p = dict(SB4=pwl([(1.0, 1.3)]), SB3=pwl([(3.0, 3.3)]), SB2=pwl([(5.0, 5.3)]), SB1=pwl([(7.0, 7.3)]),
+         TSTOP="8")
+r = run_sl(p)
+t, y = load(r)
+for x, want, why in [(2.0, 1, "乙地 SB4 启动"), (4.0, 0, "乙地 SB3 停止"), (6.0, 1, "甲地 SB2 启动"),
+                     (7.8, 0, "甲地 SB1 停止")]:
+    s = at(t, y["T"], x)
+    check("p3 练习4 图04-p3-3", why, None, s, "", f"SPICE：KM {ON(s)}",
+          v="✅" if (s > 0.5) == bool(want) else "❌")
+
+# ---- p3 §2 导线压降（24 V）
+r = ng.run("wire.cir")
+rw = r["rw85"]
+check("p3 §2 图04-p3-2", "24 V 控制：线圈电压降到 85% 的距离(1 mm²)", 42, rw / (2 * 0.01724 / 1.0), "m")
+check("p3 练习3", "同上，1.5 mm² 导线", 63, rw / (2 * 0.01724 / 1.5), "m")
+check("p3 §2", "24 V / 70 VA 等效线圈电阻(手算)", 8.2, 24 ** 2 / 70, "Ω", "核对页面的 8.2 Ω")
+check("p3 §2", "220 V / 70 VA 等效线圈电阻(手算，不仿真)", 691.4, 220 ** 2 / 70, "Ω", "市电：只做算术核对")
+Rw400 = 2 * 400 * 0.01724
+check("p3 §2", "220 V 400 m 处线圈电压比例(手算，不仿真)", 98.0, 100 * 691.4 / (691.4 + Rw400), "%",
+      "市电：只做算术核对")
+ng.save()

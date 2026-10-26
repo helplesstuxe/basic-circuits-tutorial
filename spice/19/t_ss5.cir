@@ -1,0 +1,25 @@
+* 19 page3 练习2：LM358B 与三极管集电极都接 5 V 单电源，β = 100（这里用 2N3904 模型），R_L = 100 Ω；运放接成跟随器（反馈取运放自己的输出，假设）推基极
+* 页面：输入 2.7 V → 输出 2.0 V、20 mA、I_B 0.20 mA；输出最高约 2.9 V（LM358B 最高约 3.6 V 再减 V_BE）
+* 输入用 PWL 从 0 慢升到 2.7 V，再改成 4.5 V 看最高输出
+.include ../models/LMx58B_LM2904B.lib
+.include ../models/2N3904_onsemi.lib
+.options method=gear reltol=1e-4
+V5 v 0 5
+VI i 0 PWL(0 0 5m 2.7)
+X1 i o v 0 o LMX58B_LM2904B
+Q1 v o e Q2n3904
+RL e 0 100
+.control
+tran 10u 10m 0 10u
+meas tran ve find v(e) at=9.9m
+meas tran vo find v(o) at=9.9m
+echo "RES ve27 $&ve"
+echo "RES vo27 $&vo"
+alter @VI[pwl] = [ 0 0 5m 4.5 ]
+tran 10u 10m 0 10u
+meas tran vex find v(e) at=9.9m
+meas tran vox find v(o) at=9.9m
+echo "RES vemax $&vex"
+echo "RES vomax $&vox"
+.endc
+.end

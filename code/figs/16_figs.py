@@ -1,4 +1,4 @@
-"""16 振荡器：全部配图（图 16-p2-3 由 code/16_sim.py 生成）。
+"""16 差分放大：全部配图（图 16-p2-2 由 code/16_sim.py 生成）。
 运行：/workspace/circuits-venv/bin/python code/figs/16_figs.py
 图上的每个数字都由本脚本打印；关键结论用 assert 检查。
 """
@@ -11,543 +11,611 @@ import matplotlib.pyplot as plt
 
 N = "16"
 
-def relax(d):
-    d += (op := elm.Opamp(leads=True, flip=True).right())
-    P = (op.out.x + 0.8, 0)
-    d += elm.Line().endpoints(op.out, P); d += elm.Dot().at(P)
-    d += elm.Line().right().at(P).length(0.8); d += elm.Dot(open=True).label("$V_o$", "right")
-    # + 端：三个电阻
-    B = (-1.6, op.in2.y); J = (-0.5, op.in2.y)
-    d += elm.Line().endpoints(op.in2, B); d += elm.Dot().at(B); d += elm.Dot().at(J)
-    d += elm.Resistor().up().at(B).length(2.0).label("$R_a$ 10 kΩ", "top")
-    d += elm.Vdd().label("+5 V")
-    d += elm.Line().endpoints(B, (-3.6, op.in2.y))
-    d += elm.Resistor().down().length(2.0).label("$R_b$ 10 kΩ", "top"); d += elm.Ground()
-    d += elm.Line().up().at(P).toy(2.0)
-    d += elm.Resistor().left().tox(J[0]).label("$R_c$ 10 kΩ")
-    d += elm.Line().down().toy(op.in2.y)
-    # − 端：R 和 C
-    A = (-1.3, op.in1.y); K = (-0.4, op.in1.y)
-    d += elm.Line().endpoints(op.in1, A); d += elm.Dot().at(K)
-    d += elm.Capacitor().down().at(A).length(1.8).label("$C$ 100 nF", "top"); d += elm.Ground()
-    d += elm.Dot().at(A).label("$V_C$", "left")
-    d += elm.Line().down().at(P).toy(-2.0)
-    d += elm.Resistor().left().tox(K[0]).label("$R$ 10 kΩ", "bottom")
-    d += elm.Line().up().toy(op.in1.y)
-    return op
 
-def wien(d, rf="$R_f$ 22 kΩ"):
-    d += (op := elm.Opamp(leads=True, flip=True).right())
-    P = (op.out.x + 0.8, 0)
-    d += elm.Line().endpoints(op.out, P); d += elm.Dot().at(P)
-    d += elm.Line().right().at(P).length(0.8); d += elm.Dot(open=True).label("$V_o$", "right")
-    y2 = op.in2.y
-    B = (-1.6, y2); J = (-0.6, y2); Cx = -4.0
-    d += elm.Line().endpoints(op.in2, (Cx, y2)); d += elm.Dot().at(B); d += elm.Dot().at(J)
-    d += elm.Resistor().down().at(B).length(1.6).label("$R$ 10 kΩ", "top"); d += elm.Ground()
-    d += elm.Capacitor().down().at((Cx, y2)).length(1.6).label("$C$ 10 nF", "top"); d += elm.Ground()
-    d += elm.Line().up().at(J).toy(2.0)
-    d += elm.Capacitor().right().length(1.8).label("$C$ 10 nF")
-    d += elm.Resistor().right().tox(P[0]).label("$R$ 10 kΩ")
-    d += elm.Line().down().toy(0)
-    y1 = op.in1.y; K = (-0.4, -2.4)
-    d += elm.Line().endpoints(op.in1, (-0.4, y1)); d += elm.Line().endpoints((-0.4, y1), K); d += elm.Dot().at(K)
-    d += elm.Resistor().right().at(K).tox(P[0]).label(rf, "bottom")
-    d += elm.Line().up().toy(0)
-    d += elm.Resistor().left().at(K).length(2.0).label("$R_g$ 10 kΩ", "bottom"); d += elm.Ground()
-    return op
+def diffamp(d, labs=("$R_1$ 10 kΩ", "$R_2$ 100 kΩ", "$R_3$ 10 kΩ", "$R_4$ 100 kΩ"),
+            v1="$V_1$", v2="$V_2$", vo="$V_o$ 输出", note_minus=None, note_plus=None, at=None, r4side="bottom"):
+    """四电阻差分放大。返回 (op, 左端 V1 点, 左端 V2 点)。"""
+    op = elm.Opamp(leads=True).right()
+    if at is not None:
+        op.at(at).anchor("in1")
+    d += op
+    d += elm.Line().left().at(op.in1).length(0.5)
+    d += (j1 := elm.Dot())
+    d += elm.Resistor().left().label(labs[0], "top")
+    p1 = d.here
+    if v1:
+        d += elm.Dot(open=True).label(v1, "left")
+    up = elm.Line().up().at(j1.center).length(1.5)
+    d += up
+    d += elm.Resistor().right().label(labs[1]).tox(op.out.x + 0.5)
+    d += elm.Line().down().toy(op.out)
+    d += elm.Dot()
+    d += elm.Line().left().at(op.in2).length(0.5)
+    d += (j2 := elm.Dot())
+    d += elm.Resistor().left().label(labs[2], "bottom")
+    p2 = d.here
+    if v2:
+        d += elm.Dot(open=True).label(v2, "left")
+    d += elm.Resistor().down().at(j2.center).label(labs[3], r4side)
+    d += elm.Ground()
+    d += elm.Line().right().at(op.out).length(1.25)
+    if vo:
+        d += elm.Dot(open=True).label(vo, "right")
+    if note_minus:
+        d += elm.Label().at((j1.center[0] + 0.15, j1.center[1] + 0.9)).label(note_minus, halign="left", fontsize=11)
+    if note_plus:
+        d += elm.Label().at((j2.center[0] + 0.5, j2.center[1] - 1.5)).label(note_plus, halign="left", fontsize=11)
+    return op, p1, p2
 
 
-def relax_sim(vh, vl, R=10e3, C=100e-9, vcc=5.0, T=6e-3):
-    """弛张振荡器：输出只有 vh、vl 两种；同相端门限 = (vcc + 0 + Vo)/3（三个等值电阻）。"""
-    dt = R * C / 2000
-    t = np.arange(0, T, dt)
-    vc, high = 0.0, True
-    VC, VO, edges = np.empty_like(t), np.empty_like(t), []
-    for k in range(len(t)):
-        vo = vh if high else vl
-        th = (vcc + vo) / 3                           # 当前门限
-        if high and vc >= th:                         # 电容涨到上门限 → 输出翻低
-            high = False; edges.append(t[k])
-        elif not high and vc <= th:                   # 电容降到下门限 → 输出翻高
-            high = True; edges.append(t[k])
-        vo = vh if high else vl
-        vc += (vo - vc) / (R * C) * dt                # 电容经 R 向输出电压充放电
-        VC[k], VO[k] = vc, vo
-    e = np.array(edges[1:])                           # 去掉第一次（从 0 V 起步）
-    t_high = np.mean(e[1::2] - e[0::2][:len(e[1::2])])   # 低→高 到 高→低：这里 e[0] 是翻高时刻
-    period = np.mean(np.diff(e[0::2]))
-    return t, VC, VO, period, t_high
-
-
-# ---------- 图 16-p1-1 弛张方波振荡器 ----------
+# ---------- 图 16-p1-2 差分放大电路 ----------
 with drawing() as d:
-    relax(d)
-save_schem(d, N, "16_p1_1_relaxation.png")
+    diffamp(d, v1="$V_1$ 输入 1", v2="$V_2$ 输入 2")
+save_schem(d, N, "16_p1_2_circuit.png")
+print("差分倍数 R2/R1 = 100 kΩ / 10 kΩ = 10，R4/R3 = 10（两组比例相同）")
 
-# ---------- 图 16-p1-2 电容电压与输出方波 ----------
-t, VC, VO, T, th = relax_sim(5.0, 0.0)
-vH, vL = 10 / 3, 5 / 3
-print(f"理想输出 0/5 V：门限 {vL:.2f} V 与 {vH:.2f} V；周期 {T*1e3:.2f} ms（{1/T:.0f} Hz），高电平占 {th/T*100:.0f}%")
-assert abs(T - 2 * np.log(2) * 10e3 * 100e-9) < 0.02e-3   # T = 2 ln2 · RC ≈ 1.39RC
-fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot(t * 1e3, VO, **fs.LS["vout"], label="$V_o$ 输出方波")
-ax.plot(t * 1e3, VC, **fs.LS["third"], label="$V_C$ 电容电压")
-fs.ref_h(ax, vH, f"上门限 {vH:.2f} V", x=0.99)
-fs.ref_h(ax, vL, f"下门限 {vL:.2f} V", x=0.99)
-fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-0.3, 6.3); ax.set_xlim(-0.2, 7.4)
-ax.legend(loc="upper left", fontsize=8, ncol=2)
-fs.save(fig, N, "16_p1_2_relax_wave.png")
+# ---------- 图 16-p1-1 两根线上同样的干扰，相减后只剩差值 ----------
+t = np.linspace(0, 0.2, 4001)
+vd = fs.sine(t, 10, amp=0.5)                          # 为了看得见，这里差分信号取 0.5 V
+vcm = fs.sine(t, 50, amp=2.0)
+V1, V2 = vcm - vd / 2, vcm + vd / 2
+vo = 1.0 * (V2 - V1)                                  # 取倍数 1，只看「相减」
+print(f"两根线都带 2 V、50 Hz 干扰；差值峰值 {vd.max():.1f} V；相减后输出峰值 {vo.max():.1f} V")
+assert np.allclose(vo, vd)
+fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE["pair"], sharey=True)
+a1.plot(t * 1e3, V1, **fs.LS["vin"], label="$V_1$")
+a1.plot(t * 1e3, V2, **fs.LS["third"], label="$V_2$")
+fs.axlabels(a1, "时间", "ms", "电压", "V"); a1.set_title("两根输入线（都带 50 Hz 干扰）", fontsize=10)
+a1.legend(loc="lower right", fontsize=8, ncol=2)
+a2.plot(t * 1e3, vo, **fs.LS["vout"], label="$V_2$ − $V_1$")
+fs.mark(a2, 25, 0.5, fmt="{:.1f}", unit=" V", dx=6, dy=2)
+fs.axlabels(a2, "时间", "ms", None, None); a2.set_title("相减之后（干扰抵消）", fontsize=10)
+a2.legend(loc="lower right", fontsize=8)
+for a in (a1, a2):
+    a.set_ylim(-3, 3)
+fs.save(fig, N, "16_p1_1_subtract.png")
 
-# ---------- 图 16-p2-1 文氏桥振荡器 ----------
+# ---------- 图 16-p2-1 推导用的差分放大 ----------
 with drawing() as d:
-    wien(d)
-save_schem(d, N, "16_p2_1_wien.png")
+    diffamp(d, v1="$V_1$", v2="$V_2$",
+            note_minus="$V_- = V_+$（虚短）",
+            note_plus="$V_+ = V_2 \\cdot R_4/(R_3+R_4)$", r4side="top")
+save_schem(d, N, "16_p2_1_analysis.png")
 
-# ---------- 图 16-p2-2 文氏桥网络的选频 ----------
-R, C = 10e3, 10e-9
-f0 = 1 / (2 * np.pi * R * C)
-f = np.logspace(2, np.log10(2e4), 600)
-beta = 1 / np.sqrt(9 + (f / f0 - f0 / f) ** 2)
-print(f"文氏桥 f0 = {f0:.0f} Hz，网络在 f0 处 V+/Vo = {1/3:.3f}；在 f0/10 和 10f0 处约 {1/np.sqrt(9 + 9.9**2):.3f}")
-assert abs(beta.max() - 1 / 3) < 1e-4
+# ---------- 图 16-p2-3 三运放仪表放大器 ----------
+with drawing() as d:
+    d.config(fontsize=11)
+    d += (a1 := elm.Opamp(leads=True).flip().label("A1", "center", fontsize=10))
+    d += elm.Line().left().at(a1.in2).length(0.8)
+    d += elm.Dot(open=True).label("$V_1$", "left")
+    d += elm.Line().left().at(a1.in1).length(0.5)
+    d += (n1 := elm.Dot())
+    d += elm.Line().down().length(1.8)
+    d += elm.Resistor().down().label("$R_g$ 1 kΩ", "top")
+    d += elm.Line().down().length(1.8)
+    d += (n2 := elm.Dot())
+    d += elm.Line().right().length(0.5)
+    d += (a2 := elm.Opamp(leads=True).anchor("in1").label("A2", "center", fontsize=10))
+    d += elm.Line().left().at(a2.in2).length(0.8)
+    d += elm.Dot(open=True).label("$V_2$", "left")
+    xo = a1.out[0] + 0.6
+    # A1 反馈：n1 → 向下 → 电阻 R → 上到 A1 输出
+    d += elm.Line().at(n1.center).to((n1.center[0], n1.center[1] - 1.5))
+    d += elm.Resistor().right().label("$R$ 10 kΩ", "bottom").tox(xo)
+    d += elm.Line().up().toy(a1.out)
+    d += elm.Dot()
+    d += elm.Line().left().tox(a1.out)
+    d += elm.Line().at(n2.center).to((n2.center[0], n2.center[1] + 1.5))
+    d += elm.Resistor().right().label("$R$ 10 kΩ", "top").tox(xo)
+    d += elm.Line().down().toy(a2.out)
+    d += elm.Dot()
+    d += elm.Line().left().tox(a2.out)
+    # 后级：四个 10 kΩ 的差分放大（倍数 1）
+    ymid = (a1.out[1] + a2.out[1]) / 2
+    op, p1, p2 = diffamp(d, labs=("10 kΩ", "10 kΩ", "10 kΩ", "10 kΩ"), v1=None, v2=None,
+                         vo="$V_o$", at=(xo + 4.6, ymid + 0.6))
+    d += elm.Line().at((xo, a1.out[1])).to((p1[0] - 0.5, a1.out[1]))
+    d += elm.Line().down().toy(p1[1])
+    d += elm.Line().right().tox(p1[0])
+    d += elm.Line().at((xo, a2.out[1])).to((p2[0] - 0.5, a2.out[1]))
+    d += elm.Line().up().toy(p2[1])
+    d += elm.Line().right().tox(p2[0])
+save_schem(d, N, "16_p2_3_ina.png")
+R, Rg = 10e3, 1e3
+G = 1 + 2 * R / Rg
+print(f"仪表放大器：倍数 = 1 + 2R/Rg = 1 + 2 × 10 kΩ / 1 kΩ = {G:.0f}（后级 4 个 10 kΩ，倍数 1）")
+assert G == 21
+
+
+def gains(R1, R2, R3, R4):
+    """返回 (差分倍数, 共模倍数)。"""
+    a = R4 / (R3 + R4) * (1 + R2 / R1)                  # V2 到输出的倍数
+    b = R2 / R1                                         # V1 到输出的倍数（取负号）
+    return (a + b) / 2, a - b
+
+
+# ---------- 图 16-p3-1 电阻误差与共模抑制比 ----------
+eps = np.logspace(-4, np.log10(0.05), 300)              # 电阻误差 0.01% ～ 5%
+one = np.array([20 * np.log10(abs(g[0] / g[1])) for g in (gains(10e3, 100e3, 10e3, 100e3 * (1 + e)) for e in eps)])
+worst = np.array([20 * np.log10(abs(g[0] / g[1])) for g in
+                  (gains(10e3 * (1 + e), 100e3 * (1 - e), 10e3 * (1 - e), 100e3 * (1 + e)) for e in eps)])
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.semilogx(f, beta, **fs.LS["fb"], label="文氏桥网络 $V_+/V_o$")
-fs.mark(ax, f0, 1 / 3, fmt="{:.3f}", dx=8, dy=4)
-fs.ref_v(ax, f0, f"{f0:.0f} Hz", y=0.12)
-fs.axlabels(ax, "频率", "Hz", "同相端/输出 幅度", None)
-ax.set_xticks([100, 1e3, 1e4]); ax.set_xticklabels(["100", "1 k", "10 k"])
-ax.set_ylim(0, 0.4); ax.legend(loc="upper left", fontsize=8)
-fs.save(fig, N, "16_p2_2_wien_select.png")
+ax.semilogx(eps * 100, one, **fs.LS["third"], label="只有 $R_4$ 偏差")
+ax.semilogx(eps * 100, worst, **fs.LS["bad"], label="四只电阻都按最坏方向偏差")
+for e in (0.001, 0.01):
+    g1 = gains(10e3, 100e3, 10e3, 100e3 * (1 + e)); c1 = 20 * np.log10(abs(g1[0] / g1[1]))
+    g4 = gains(10e3 * (1 + e), 100e3 * (1 - e), 10e3 * (1 - e), 100e3 * (1 + e)); c4 = 20 * np.log10(abs(g4[0] / g4[1]))
+    print(f"电阻误差 {e*100:g}%：只偏一只 CMRR {c1:.0f} dB，四只最坏 {c4:.0f} dB")
+    fs.mark(ax, e * 100, c1, fmt="{:.0f}", unit=" dB", dx=6, dy=4)
+    fs.mark(ax, e * 100, c4, fmt="{:.0f}", unit=" dB", dx=-40, dy=-14)
+g = gains(10e3 * 1.01, 100e3 * 0.99, 10e3 * 0.99, 100e3 * 1.01)
+assert 40 < 20 * np.log10(abs(g[0] / g[1])) < 50                 # 1% 电阻最坏只有 40 多 dB
+fs.axlabels(ax, "电阻误差", "%", "共模抑制比 CMRR", "dB")
+ax.set_ylim(20, 110); ax.legend(loc="upper right", fontsize=8)
+ax.set_xticks([0.01, 0.1, 1]); ax.set_xticklabels(["0.01", "0.1", "1"])
+fs.save(fig, N, "16_p3_1_cmrr_tolerance.png")
 
-
-# ---------- 文氏桥数值仿真（与 code/16_sim.py 相同的模型）----------
-Rg, VMAX, dt = 10e3, 4.0, 0.2e-6
-tw = np.arange(0, 20e-3, dt)
-def run(amp):
-    vc, vx = 0.0, 0.01
-    out = np.empty_like(tw)
-    for k in range(len(tw)):
-        vo = amp(vx); i = (vo - vx - vc) / R
-        vc += i / C * dt; vx += (i - vx / R) / C * dt; out[k] = vo
-    return out
-clip = run(lambda v: np.clip(3.2 * v, -VMAX, VMAX))
-diode = run(lambda v: np.clip(v + v / Rg * 12e3 + 0.6 * np.tanh(v / Rg * 10e3 / 0.6), -VMAX, VMAX))
-
-# ---------- 图 16-p2-4 正弦变方波：接一个比较器 ----------
-w = tw > 17e-3
-ts, vs = tw[w], diode[w]
-sq = np.where(vs > 0, 4.0, -4.0)                      # 比较器：同相端接正弦，反相端接 0 V，输出 ±4 V
-print(f"整形：正弦峰值 {vs.max():.2f} V → 比较器（门限 0 V）输出 ±4.0 V 方波")
+# ---------- 图 16-p3-2 信号源内阻（只在 V1 一侧）破坏平衡 ----------
+Rs = np.logspace(0, 4, 300)                              # 1 Ω ～ 10 kΩ
+cm = np.array([20 * np.log10(abs(g[0] / g[1])) for g in (gains(10e3 + r, 100e3, 10e3, 100e3) for r in Rs)])
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
-ax.plot((ts - ts[0]) * 1e3, vs, **fs.LS["vin"], label="$V_i$ 文氏桥正弦（送进比较器）")
-ax.plot((ts - ts[0]) * 1e3, sq, **fs.LS["vout"], label="$V_o$ 比较器输出方波")
-fs.ref_h(ax, 0, "门限 0 V", x=0.99)
-fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-5, 6.2)
-ax.legend(loc="upper left", fontsize=8, ncol=2)
-fs.save(fig, N, "16_p2_4_shaping.png")
-
-
-# ---------- 图 16-p3-1 削顶与稳幅的波形对比 ----------
-def distortion(y, tt):
-    """在 1400～1800 Hz 里逐个试频率，用最小二乘拟合基波正弦，返回（拟合曲线，偏离正弦的比例，频率）。"""
-    best = None
-    for fz in np.arange(1400, 1801, 1.0):
-        M = np.column_stack([np.sin(2 * np.pi * fz * tt), np.cos(2 * np.pi * fz * tt), np.ones_like(tt)])
-        coef, *_ = np.linalg.lstsq(M, y, rcond=None)
-        fit = M @ coef
-        r = np.sqrt(np.mean((y - fit) ** 2) / np.mean((fit - coef[2]) ** 2))
-        if best is None or r < best[1]:
-            best = (fit, r, fz)
-    return best
-w = tw > 15e-3
-tt = tw[w]
-fit_c, d_c, f_c = distortion(clip[w], tt)
-fit_d, d_d, f_d = distortion(diode[w], tt)
-print(f"偏离正弦的比例：削顶 {d_c*100:.1f}%（{f_c:.0f} Hz），二极管稳幅 {d_d*100:.1f}%（{f_d:.0f} Hz）")
-assert d_c > 2.5 * d_d
-k = tt < 15e-3 + 1.5e-3
-fig, axs = plt.subplots(1, 2, figsize=fs.SIZE["pair"], sharey=True)
-x = (tt[k] - tt[0]) * 1e3
-axs[0].plot(x, fit_c[k], **fs.LS["good"], label="理想正弦")
-axs[0].plot(x, clip[w][k], **fs.LS["bad"], label="增益 3.2 无稳幅")
-axs[0].set_title(f"削顶：偏离正弦 {d_c*100:.1f}%", fontsize=9)
-axs[1].plot(x, fit_d[k], **fs.LS["good"], label="理想正弦")
-axs[1].plot(x, diode[w][k], **fs.LS["vout"], label="二极管稳幅")
-axs[1].set_title(f"稳幅：偏离正弦 {d_d*100:.1f}%", fontsize=9)
-for ax in axs:
-    fs.axlabels(ax, "时间", "ms"); ax.legend(loc="lower left", fontsize=7)
-axs[0].set_ylabel("$V_o$ / V"); axs[0].set_ylim(-6.5, 5.5)
-fs.save(fig, N, "16_p3_1_distortion.png")
-
-# ---------- 图 16-p3-2 运放输出不到电源轨：占空比变歪 ----------
-fig, axs = plt.subplots(1, 2, figsize=fs.SIZE["pair"], sharey=True)
-for ax, (vh, vl, name) in zip(axs, [(5.0, 0.0, "理想：输出 0～5 V"), (3.5, 0.1, "LM358B：输出 0.1～3.5 V")]):
-    t, VC, VO, T, th = relax_sim(vh, vl)
-    up, dn = (5 + vh) / 3, (5 + vl) / 3
-    print(f"{name}：门限 {dn:.2f}/{up:.2f} V，周期 {T*1e3:.2f} ms，高电平占 {th/T*100:.0f}%")
-    ax.plot(t * 1e3, VO, **(fs.LS["vout"] if vh == 5 else fs.LS["bad"]), label="$V_o$")
-    ax.plot(t * 1e3, VC, **fs.LS["third"], label="$V_C$")
-    fs.ref_h(ax, up); fs.ref_h(ax, dn)
-    ax.set_title(f"{name}，高电平占 {th/T*100:.0f}%", fontsize=9)
-    fs.axlabels(ax, "时间", "ms"); ax.legend(loc="upper right", fontsize=7, ncol=2)
-    if vh == 3.5:
-        assert th / T > 0.6
-axs[0].set_ylabel("电压 / V"); axs[0].set_ylim(-0.3, 6.5)
-fs.save(fig, N, "16_p3_2_lm358_duty.png")
+ax.semilogx(Rs, cm, **fs.LS["bad"], label="$V_1$ 一侧串入内阻 $R_s$")
+for r in (100, 1000):
+    gg = gains(10e3 + r, 100e3, 10e3, 100e3); c = 20 * np.log10(abs(gg[0] / gg[1]))
+    print(f"内阻 {r} Ω：CMRR 降到 {c:.0f} dB，差分倍数 {gg[0]:.2f}")
+    fs.mark(ax, r, c, fmt="{:.0f}", unit=" dB", dx=6, dy=4)
+fs.ref_h(ax, 61, "61 dB（1% 电阻只偏一只）", x=0.02, ha="left")
+assert 20 * np.log10(abs(gains(11e3, 100e3, 10e3, 100e3)[0] / gains(11e3, 100e3, 10e3, 100e3)[1])) < 45
+fs.axlabels(ax, "信号源内阻 $R_s$", "Ω", "共模抑制比 CMRR", "dB")
+ax.set_ylim(20, 110); ax.legend(loc="upper right", fontsize=8)
+ax.set_xticks([1, 10, 100, 1e3, 1e4]); ax.set_xticklabels(["1", "10", "100", "1 k", "10 k"])
+fs.save(fig, N, "16_p3_2_source_resistance.png")
 
 # ---------- 正文里的其余数字（只打印 + 断言） ----------
-# 文氏桥在 f0 处：容抗 = R，串联支路与并联支路的"总阻碍"之比 2:1，相位相同，所以分到 1/3
-Rw, Cw = 10e3, 10e-9
-f0w = 1 / (2 * np.pi * Rw * Cw)
-Xc = 1 / (2 * np.pi * f0w * Cw)
-Zs = Rw - 1j * Xc                                    # 串联 R + C
-Zp = 1 / (1 / Rw + 1j * 2 * np.pi * f0w * Cw)        # 并联 R ∥ C
-print(f"f0 = {f0w:.0f} Hz：容抗 {Xc/1e3:.1f} kΩ；串联 |Z| = {abs(Zs)/Rw:.3f} R，并联 |Z| = {abs(Zp)/Rw:.3f} R，之比 {abs(Zs)/abs(Zp):.2f}")
-print(f"两支路相位 {np.degrees(np.angle(Zs)):.0f}° 和 {np.degrees(np.angle(Zp)):.0f}°，分压比 {abs(Zp/(Zs+Zp)):.4f}")
-assert abs(abs(Zs) / abs(Zp) - 2) < 1e-9 and abs(abs(Zp / (Zs + Zp)) - 1 / 3) < 1e-9
+for k in (10, 1):                                         # 倍数 10（本节）和倍数 1（TI 手册的例子）
+    for e in (0.01, 0.001):
+        g = gains(10e3 * (1 + e), k * 10e3 * (1 - e), 10e3 * (1 - e), k * 10e3 * (1 + e))
+        c = 20 * np.log10(abs(g[0] / g[1])); c_est = 20 * np.log10((1 + k) / (4 * e))
+        print(f"倍数 {k}、误差 {e*100:g}%：四只最坏 CMRR {c:.1f} dB，估算 (1+k)/(4ε) 给 {c_est:.1f} dB")
+        assert abs(c - c_est) < 0.5
+assert round(20 * np.log10(2 / 0.04)) == 34 and round(20 * np.log10(2 / 0.004)) == 54
+g = gains(10.2e3, 100e3, 10e3, 100e3)                     # 练习 3：V1 一侧 200 Ω 内阻
+print(f"200 Ω 内阻：V2 路 {g[0]+g[1]/2:.2f}、V1 路 {g[0]-g[1]/2:.2f}，差分倍数（平均）{g[0]:.2f}，共模倍数（差）{g[1]:.3f}")
+assert abs(g[0] - 9.81) < 0.01 and abs(g[1] - 0.018) < 0.001
 
 
-# ======================= page4 动手实验篇：面包板接线图 =======================
-# 面包板俯视图小工具（各节点脚本各带一份，互不依赖）。
-# 坐标：列号 1…ncol 从左到右；上半区 a–e、下半区 f–j（同一列的 a–e 五个孔互相连通，f–j 也连通）；
-# 上下各有两条电源轨：靠外的一条标「+」，靠里的一条标「−」，整条横向连通。
-from matplotlib.patches import Rectangle, FancyBboxPatch, Circle
+# ======================================================================================
+# 动手实验篇（page4）用的面包板俯视图小工具。
+# 各节点 figs 脚本里各带一份同样的代码（共享模块只由总纲修改）；以后可以挪进 code/figs/ 的共享模块。
+# 坐标：列号 1～30 从左到右；a～e 行在上半块，f～j 行在下半块，中间是隔离槽；
+# 上下各有两条电源轨，名字用 "T1"（最上）、"T2"、"B1"、"B2"（最下）加列号，例如 "T1-5"。
+# 同一列的 a～e 五个孔是连通的，f～j 五个孔是连通的；同一条电源轨整条连通。
+# ======================================================================================
+import matplotlib.pyplot as _bb_plt
+from matplotlib.patches import Rectangle as _BbRect, Polygon as _BbPoly, Wedge as _BbWedge
 
-BB_Y = {r: 5.6 - i for i, r in enumerate("abcde")}
-BB_Y.update({r: -1.4 - i for i, r in enumerate("fghij")})
-BB_Y.update({"T+": 8.6, "T-": 7.7, "B-": -6.7, "B+": -7.6})
-WIRE = dict(pos=(fs.C["bad"], "正电源"), gnd=("#000000", "地（0 V）"), neg=(fs.C["third"], "负电源"),
-            sig=(fs.C["vin"], "输入信号"), out=(fs.C["vout"], "输出"), fb=(fs.C["fb"], "反馈 / 其他连线"))
-
-
-class Breadboard:
-    def __init__(self, ncol=30, title=None, size=(10, 6.4), rails=("+", "−", "−", "+")):
-        self.ncol, self.used = ncol, set()
-        self.fig, self.ax = plt.subplots(figsize=size)
-        ax = self.ax
-        ax.add_patch(FancyBboxPatch((0.2, -8.3), ncol + 0.6, 17.6, boxstyle="round,pad=0.1",
-                                    fc="#f7f5ef", ec="0.55", lw=1.0))
-        ax.add_patch(Rectangle((0.4, -0.55), ncol + 0.2, 0.7, fc="#e4e0d6", ec="none"))   # 中间凹槽
-        for key, lab in zip(("T+", "T-", "B-", "B+"), rails):
-            y = BB_Y[key]
-            col = fs.C["bad"] if lab.startswith("+") else ("#000000" if lab in ("−", "GND", "0 V") else fs.C["third"])
-            ax.plot([0.6, ncol + 0.4], [y + 0.42, y + 0.42], color=col, lw=1.0)
-            ax.text(0.0, y, lab, ha="right", va="center", fontsize=10, color=col, fontweight="bold")
-            for c in range(1, ncol + 1):
-                if c % 6:
-                    ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
-        for r in "abcdefghij":
-            y = BB_Y[r]
-            ax.text(0.15, y, r, ha="right", va="center", fontsize=8, color="0.35")
-            ax.text(ncol + 0.85, y, r, ha="left", va="center", fontsize=8, color="0.35")
-            for c in range(1, ncol + 1):
-                ax.add_patch(Circle((c, y), 0.12, fc="0.72", ec="none"))
-        for c in range(1, ncol + 1):
-            if c == 1 or c % 5 == 0:
-                ax.text(c, 6.35, str(c), ha="center", va="bottom", fontsize=7.5, color="0.35")
-                ax.text(c, -6.15, str(c), ha="center", va="top", fontsize=7.5, color="0.35")
-        ax.set_xlim(-3.4, ncol + 4.8)
-        ax.set_ylim(-11.2, 11.6)
-        ax.set_aspect("equal")
-        ax.axis("off")
-        if title:
-            ax.set_title(title, fontsize=11)
-
-    def xy(self, h):
-        """'e10' → 第 10 列 e 排；'T+3' / 'B-7' → 上（T）/ 下（B）电源轨第 3 / 7 列。"""
-        if h[0] in "TB" and h[1] in "+-":
-            return float(h[2:]), BB_Y[h[:2]]
-        return float(h[1:]), BB_Y[h[0]]
-
-    def _hole(self, p):
-        x, y = self.xy(p) if isinstance(p, str) else p
-        if isinstance(p, str):
-            self.ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=4))
-        return x, y
-
-    def wire(self, a, b, kind="fb", via=None):
-        """导线：a、b 为孔名或 (x, y)；via 为中间拐点列表。颜色按 kind 取（见 WIRE）。"""
-        self.used.add(kind)
-        pts = [self._hole(a)] + list(via or []) + [self._hole(b)]
-        xs, ys = zip(*pts)
-        self.ax.plot(xs, ys, color=WIRE[kind][0], lw=2.4, solid_capstyle="round", zorder=5)
-
-    def part(self, a, b, label, kind="R", lab_side=1):
-        """两脚元件：R 电阻、C 电容、E 电解电容（+ 脚在 a）、D 二极管（a 阳 b 阴）、L LED（a 阳）、
-        S 按钮、P 小灯泡。画成方框简化符号，标签写在旁边。"""
-        (x1, y1), (x2, y2) = self._hole(a), self._hole(b)
-        ax = self.ax
-        mx, my = (x1 + x2) / 2, (y1 + y2) / 2
-        ax.plot([x1, x2], [y1, y2], color="0.35", lw=1.2, zorder=5)
-        fc = dict(R="#d9c7a3", C="#f2d27a", E="#6d8fb5", D="#555555", L="#ffffff", S="#bbbbbb",
-                  P="#fff7c2")[kind]
-        horiz = abs(x2 - x1) >= abs(y2 - y1)
-        w, h = (0.9, 0.5) if horiz else (0.5, 0.9)
-        if kind in "LP":
-            ax.add_patch(Circle((mx, my), 0.42, fc=fc, ec="0.2", lw=1.0, zorder=6))
-        else:
-            ax.add_patch(FancyBboxPatch((mx - w / 2, my - h / 2), w, h, boxstyle="round,pad=0.05",
-                                        fc=fc, ec="0.2", lw=1.0, zorder=6))
-        if kind in "EDL":
-            ax.text(x1 + (0.25 if horiz else 0.25), y1 + (0.3 if horiz else 0), "+", fontsize=8,
-                    ha="center", va="center", zorder=7, color=fs.C["bad"])
-        if lab_side == "r":
-            ax.text(max(x1, x2) + 0.3, my, label, ha="left", va="center", fontsize=8.5, zorder=7)
-        elif horiz:
-            ax.text(mx, my + 0.55 * lab_side, label, ha="center", va="bottom" if lab_side > 0 else "top",
-                    fontsize=8.5, zorder=7)
-        else:
-            ax.text(mx + 0.45 * lab_side, my, label, ha="left" if lab_side > 0 else "right",
-                    va="center", fontsize=8.5, zorder=7)
-
-    def chip(self, col, label, npin=8, names=None):
-        """DIP 芯片跨在中间凹槽上：第 1 脚在 f 排第 col 列（左下，缺口朝左），逆时针数，
-        第 npin 脚在 e 排第 col 列。脚号和脚名写在芯片体上。"""
-        half = npin // 2
-        ax = self.ax
-        y0, y1 = BB_Y["f"] + 0.22, BB_Y["e"] - 0.22
-        ax.add_patch(Rectangle((col - 0.5, y0), half, y1 - y0, fc="#2b2b2b", ec="k", zorder=6))
-        ax.add_patch(Circle((col - 0.5, (y0 + y1) / 2), 0.28, fc="#f7f5ef", ec="none", zorder=7))
-        ax.text(col + (half - 1) / 2, (y0 + y1) / 2, label, color="w", ha="center",
-                va="center", fontsize=9, zorder=8)
-        for i in range(half):
-            for p, row in ((i + 1, "f"), (npin - i, "e")):
-                x, y = col + i, BB_Y[row]
-                ax.add_patch(Circle((x, y), 0.17, fc="0.15", ec="none", zorder=7))
-                txt = str(p) + ("\n" + names[p] if names and p in names else "")
-                ax.text(x, y0 + 0.08 if row == "f" else y1 - 0.08, txt, ha="center",
-                        va="bottom" if row == "f" else "top", fontsize=6, color="w", zorder=8,
-                        linespacing=0.9)
-
-    def module(self, x, y, w, h, label, fc="#e6f0f8"):
-        """面包板外的模块（电池、信号源、继电器模块等），返回方框中心。"""
-        self.ax.add_patch(FancyBboxPatch((x, y), w, h, boxstyle="round,pad=0.08", fc=fc, ec="0.3",
-                                         lw=1.0, zorder=6))
-        self.ax.text(x + w / 2, y + h / 2, label, ha="center", va="center", fontsize=8.5, zorder=7)
-        return x + w / 2, y + h / 2
-
-    def note(self, x, y, text, **kw):
-        self.ax.text(x, y, text, fontsize=8, zorder=8, **kw)
-
-    def legend(self, loc="lower center"):
-        from matplotlib.lines import Line2D
-        cname = {fs.C["bad"]: "红", "#000000": "黑", fs.C["third"]: "紫", fs.C["vin"]: "蓝",
-                 fs.C["vout"]: "橙", fs.C["fb"]: "绿", fs.C["cur"]: "天蓝"}
-        def lab(c, t):                                # 图例写成「用途（色名）」；用途里已有括号时并进同一对括号
-            return t[:-1] + f"，{cname[c]}）" if t.endswith("）") else f"{t}（{cname[c]}）"
-        hs = [Line2D([], [], color=WIRE[k][0], lw=2.4, label=lab(*WIRE[k])) for k in WIRE if k in self.used]
-        self.ax.legend(handles=hs, loc=loc, ncol=len(hs), fontsize=8.5, frameon=False,
-                       bbox_to_anchor=(0.5, -0.01))
-
-    def save(self, prefix, name):
-        return fs.save(self.fig, prefix, name)
-
-# ---------- 图 16-p4-1：弛张振荡器的面包板接线（LM358，5 V 单电源） ----------
-bb = Breadboard(30, "弛张振荡器面包板俯视图（LM358，5 V 单电源）", rails=("+5 V", "GND", "GND", "+5 V"))
-bb.chip(14, "LM358", names={1: "OUT", 2: "IN−", 3: "IN+", 4: "GND", 8: "V+"})
-bb.wire("a14", "T+14", "pos")                      # 第 8 脚 → +5 V
-bb.wire("j17", "B-17", "gnd")                      # 第 4 脚 → 地
-bb.wire("a17", "T-17", "gnd")                      # B 路同相端接地
-bb.wire("c15", "c16", "fb")                        # B 路接成跟随器
-bb.wire("g14", "g11", "out")                       # 输出引到第 11 列
-bb.part("h11", "h15", "R 10 kΩ", "R", lab_side=1)  # 定时电阻：输出 → 反相端
-bb.part("j15", "B-15", "C 100 nF", "C", lab_side=-1)  # 定时电容：反相端 → 地
-bb.part("i11", "i16", "Rc 10 kΩ", "R", lab_side=-1)   # 正反馈：输出 → 同相端
-bb.part("h16", "h20", "Ra 10 kΩ", "R", lab_side=1)
-bb.wire("j20", "B+20", "pos")
-bb.wire("g16", "g22", "fb")
-bb.part("h22", "h26", "Rb 10 kΩ", "R", lab_side=1)
-bb.wire("j26", "B-26", "gnd")
-bb.part("j11", "j7", "10 µF", "E", lab_side=-1)    # 隔直电容：+ 脚朝输出（输出平均约 2.4 V）
-bb.part("i7", "i3", "R 1 kΩ", "R", lab_side=-1)
-bb.wire("T-29", "B-29", "gnd")
-bb.wire("T+30", "B+30", "pos")
-bb.module(-3.2, 9.4, 4.0, 1.4, "5 V 电源模块")
-bb.wire((0.8, 10.1), "T+1", "pos")
-bb.wire((0.2, 9.4), "T-3", "gnd")
-bb.module(-3.2, -4.4, 3.0, 1.6, "耳机\n3.5 mm 转接板")
-bb.wire((-0.2, -3.6), "j3", "out")
-bb.wire((-1.5, -4.4), "B-1", "gnd", via=[(-1.5, -6.7)])
-bb.note(8.5, -0.3, "测输出：f11", va="center")
-bb.note(20.0, -0.3, "测电容：i15　测同相端：j16", va="center")
-bb.note(0.5, -9.6, "慢速版：R 10 kΩ 换 75 kΩ，C 换 10 µF 电解（+ 脚插 j15）", ha="left")
-bb.legend()
-bb.save(N, "16_p4_1_breadboard.png")
-
-# ---------- 门限、周期（用 review/spice/16.md 的 LM358B 高低电平） ----------
-VCC, VOH, VOL = 5.0, 3.79, 0.63
-def thr(vo, ra=10e3, rb=10e3, rc=10e3, vcc=VCC):
-    return (vcc / ra + vo / rc) / (1 / ra + 1 / rb + 1 / rc)
-VTH, VTL = thr(VOH), thr(VOL)
-k_up = np.log((VOH - VTL) / (VOH - VTH))           # 充电半周 / RC
-k_dn = np.log((VTH - VOL) / (VTL - VOL))           # 放电半周 / RC
-k = k_up + k_dn
-print(f"[数值] 门限 {VTL:.2f} V / {VTH:.2f} V；周期 {k:.3f}·RC，占空比 {k_up/k*100:.0f}%")
-print(f"[数值] 10 kΩ × 100 nF：{1/(k*1e-3):.0f} Hz（未计压摆率；SPICE 670 Hz，理想 721 Hz）")
-T_SLOW = k * 75e3 * 10e-6
-print(f"[数值] 慢速版 75 kΩ × 10 µF：周期 {T_SLOW:.2f} s，高 {k_up*0.75:.2f} s、低 {k_dn*0.75:.2f} s")
-assert abs(VTH - 2.93) < 0.01 and abs(VTL - 1.88) < 0.01 and abs(k_up / k - 0.57) < 0.01
-assert abs(1 / (k * 1e-3) - 708) < 2
-
-# ---------- 图 16-p4-2：慢速版的读数和拍频 ----------
-RC = 0.75
-ts = np.linspace(0, 4, 4001)
-vc, vo = np.empty_like(ts), np.empty_like(ts)
-c, o = VTL, VOH
-for i, t_ in enumerate(ts):
-    vc[i], vo[i] = c, o
-    c += (o - c) / RC * (ts[1] - ts[0])
-    if o == VOH and c >= VTH: o = VOL
-    elif o == VOL and c <= VTL: o = VOH
-F_OSC, F_PHONE = 670.0, 660.0
-tb = np.linspace(0, 0.3, 30001)
-mix = np.sin(2 * np.pi * F_OSC * tb) + np.sin(2 * np.pi * F_PHONE * tb)
-env = 2 * np.abs(np.cos(np.pi * (F_OSC - F_PHONE) * tb))
-print(f"[数值] 拍频：{F_OSC:.0f} Hz 与 {F_PHONE:.0f} Hz 一起响，每秒忽大忽小 {F_OSC-F_PHONE:.0f} 次")
-fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
-a1.plot(ts, vo, label="输出（1 脚）", **fs.LS["vout"])
-a1.plot(ts, vc, label="电容（2 脚）", **fs.LS["vin"])
-fs.ref_h(a1, VTH, f"{VTH:.2f} V"); fs.ref_h(a1, VTL, f"{VTL:.2f} V")
-a1.set_ylim(0, 4.6); a1.legend(loc="upper right", fontsize=8, ncol=2)
-fs.axlabels(a1, "时间", "s", "电压", "V")
-a1.set_title(f"慢速版：约 {T_SLOW:.2f} s 一个来回，万用表跟得上", fontsize=10)
-a2.plot(tb * 1e3, mix, color=fs.C["vin"], lw=0.5, label="两个音叠加")
-a2.plot(tb * 1e3, env, label="响度包络", **fs.LS["vout"])
-a2.set_ylim(-2.4, 3.0); a2.legend(loc="upper right", fontsize=8, ncol=2)
-fs.axlabels(a2, "时间", "ms", "声音（相对）", None)
-a2.set_title("拍频：670 Hz 与 660 Hz 一起响，每秒忽大忽小 10 次", fontsize=10)
-fs.save(fig, N, "16_p4_2_no_scope.png")
+BB_ROWY = {r: y for r, y in zip("abcdefghij", [9, 8, 7, 6, 5, 3, 2, 1, 0, -1])}
+BB_RAILY = {"T1": 11.6, "T2": 10.8, "B1": -2.8, "B2": -3.6}
+BB_WIRE = dict(pos="#CC0000", gnd="#000000", neg=fs.C["third"], sig=fs.C["vin"], out=fs.C["vout"], fb=fs.C["fb"])
 
 
-# ======================= 补充原理图（图 16-p2-5 起） =======================
-ACC = fs.C["bad"]
+def bb_xy(h):
+    """孔名 → 坐标：'a5' → (5, 9)；'T1-5' → (5, 11.6)。"""
+    if h[:2] in BB_RAILY:
+        return float(h.split("-")[1]), BB_RAILY[h[:2]]
+    return float(h[1:]), float(BB_ROWY[h[0]])
 
 
-def wien_at(d, ox=0.0, oy=0.0, fb="plain", bias=False, out_label="$V_o$", out_dot=True):
-    """文氏桥（与 wien() 同尺寸），整体平移 (ox, oy)。fb="diode" 时 R_f = 12 kΩ + (10 kΩ ∥ 反向并联二极管)；
-    bias=True 时把 R_g、并联 RC 的「地」改接 2.5 V 偏置点。新增部分用朱红色。"""
-    p = lambda x, y: (x + ox, y + oy)
-    d += (op := elm.Opamp(leads=True, flip=True).right().anchor("in1").at(p(0, -0.625)))
-    P = p(op.out.x - ox + 0.8, 0)
-    d += elm.Line().endpoints(op.out, P); d += elm.Dot().at(P)
-    if out_dot:
-        d += elm.Line().right().at(P).length(0.8); d += elm.Dot(open=True).label(out_label, "right")
-    y2 = 0.625; B = p(-1.6, y2); J = p(-0.6, y2); Cx = -4.0
-    d += elm.Line().endpoints(op.in2, p(Cx, y2)); d += elm.Dot().at(B); d += elm.Dot().at(J)
-    d += elm.Resistor().down().at(B).length(1.6).label("$R$ 10 kΩ", "top")
-    if not bias:
-        d += elm.Ground()
-    d += elm.Capacitor().down().at(p(Cx, y2)).length(1.6).label("$C$ 10 nF", "top")
-    if not bias:
-        d += elm.Ground()
-    d += elm.Line().up().at(J).toy(oy + 2.0)
-    d += elm.Capacitor().right().length(1.8).label("$C$ 10 nF")
-    d += elm.Resistor().right().tox(P[0]).label("$R$ 10 kΩ")
-    d += elm.Line().down().toy(oy)
-    K = p(-0.4, -2.4)
-    d += elm.Line().endpoints(op.in1, p(-0.4, -0.625)); d += elm.Line().endpoints(p(-0.4, -0.625), K); d += elm.Dot().at(K)
-    if fb == "plain":
-        d += elm.Resistor().right().at(K).tox(P[0]).label("$R_f$ 22 kΩ", "bottom")
-        d += elm.Line().up().toy(oy)
+def bb_board(cols=30, rails=None, figsize=(10, 5.6)):
+    """画空白面包板。rails = {"T1": ("+9 V", 颜色), ...}，只画给出的电源轨。返回 (fig, ax)。"""
+    rails = rails or {}
+    fig, ax = _bb_plt.subplots(figsize=figsize)
+    ax.set_xlim(-1.6, cols + 4.2); ax.set_ylim(-5.5, 12.7)
+    ax.set_aspect("equal"); ax.axis("off")
+    ax.add_patch(_BbRect((0.2, -4.2), cols + 0.6, 16.4, fc="#f4f1ea", ec="0.6", lw=0.8, zorder=0))
+    ax.add_patch(_BbRect((0.2, 3.65), cols + 0.6, 0.7, fc="#e4e0d6", ec="none", zorder=0))   # 中间隔离槽
+    for c in range(1, cols + 1):
+        for r, y in BB_ROWY.items():
+            ax.plot(c, y, "s", ms=2.6, color="0.55", zorder=1)
+        if c == 1 or c % 5 == 0:
+            ax.text(c, 9.65, str(c), ha="center", va="bottom", fontsize=7, color="0.3")
+            ax.text(c, -1.75, str(c), ha="center", va="top", fontsize=7, color="0.3")
+    for r, y in BB_ROWY.items():
+        ax.text(0.45, y, r, ha="center", va="center", fontsize=7, color="0.3")
+        ax.text(cols + 0.55, y, r, ha="center", va="center", fontsize=7, color="0.3")
+    for name, y in BB_RAILY.items():
+        if name not in rails:
+            continue
+        text, col = rails[name]
+        ax.plot([0.7, cols + 0.3], [y + 0.32, y + 0.32], color=col, lw=0.9, zorder=1)
+        for c in range(1, cols + 1):
+            ax.plot(c, y, "s", ms=2.6, color="0.55", zorder=1)
+        ax.text(cols + 1.0, y, text, ha="left", va="center", fontsize=8, color=col)
+    return fig, ax
+
+
+def bb_wire(ax, a, b, kind="sig", via=()):
+    """跳线：kind 取 pos/gnd/neg/sig/out（红/黑/紫/蓝/橙）。via=[(x, y), ...] 时按这些拐点折线走，避免压住元件。"""
+    pts = [bb_xy(a)] + list(via) + [bb_xy(b)]
+    xs, ys = zip(*pts)
+    ax.plot(xs, ys, color=BB_WIRE[kind], lw=2.4, solid_capstyle="round", zorder=3)
+    ax.plot([xs[0], xs[-1]], [ys[0], ys[-1]], "o", ms=4, color=BB_WIRE[kind], zorder=4)
+
+
+def _bb_label(ax, x, y, text, fs_=7.5):
+    ax.text(x, y, text, ha="center", va="center", fontsize=fs_, zorder=6,
+            bbox=dict(boxstyle="round,pad=0.12", fc="white", ec="none", alpha=0.85))
+
+
+def bb_res(ax, a, b, text, dy=0.55):
+    """电阻：两条引脚 + 中间米色小方块，标签写在方块旁边。"""
+    (x0, y0), (x1, y1) = bb_xy(a), bb_xy(b)
+    ax.plot([x0, x1], [y0, y1], color="0.25", lw=1.2, zorder=4)
+    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+    horiz = abs(x1 - x0) >= abs(y1 - y0)
+    w, h = (0.9, 0.36) if horiz else (0.36, 0.9)
+    ax.add_patch(_BbRect((xm - w / 2, ym - h / 2), w, h, fc="#e8cf9c", ec="0.25", lw=0.8, zorder=5))
+    if horiz:
+        _bb_label(ax, xm, ym + dy, text)
     else:
-        d += elm.Resistor().right().at(K).length(1.5).label("12 kΩ", "bottom").color(ACC)
-        d += (n1 := elm.Dot().color(ACC))
-        d += elm.Resistor().right().length(2.2).label("10 kΩ", "top").color(ACC)
-        d += (n2 := elm.Dot().color(ACC))
-        d += elm.Line().right().tox(P[0]).color(ACC)
-        d += elm.Line().up().toy(oy).color(ACC)
-        a1 = (n1.center[0], n1.center[1] - 0.9); b1 = (n2.center[0], n2.center[1] - 0.9)
-        a2 = (n1.center[0], n1.center[1] - 1.8); b2 = (n2.center[0], n2.center[1] - 1.8)
-        d += elm.Line().endpoints(n1.center, a2).color(ACC); d += elm.Line().endpoints(n2.center, b2).color(ACC)
-        d += elm.Dot().at(a1).color(ACC); d += elm.Dot().at(b1).color(ACC)
-        d += elm.Diode().right().at(a1).to(b1).color(ACC).label("$D_1$", "top")
-        d += elm.Diode().left().at(b2).to(a2).color(ACC).label("$D_2$", "bottom")
-        d += elm.Label().at(p(1.9, -5.3)).label("$R_f$ = 12 kΩ + （10 kΩ ∥ $D_1$、$D_2$）", color=ACC)
-    d += elm.Resistor().left().at(K).length(2.0).label("$R_g$ 10 kΩ", "bottom")
-    if not bias:
-        d += elm.Ground()
+        _bb_label(ax, xm + (0.85 if dy > 0 else -0.85), ym, text)
+    for x, y in ((x0, y0), (x1, y1)):
+        ax.plot(x, y, "o", ms=3, color="0.25", zorder=5)
+
+
+def bb_part2(ax, a, b, text, kind="diode", dy=0.55, fc="white"):
+    """两脚元件：kind = diode（a 脚是阳极，b 脚是阴极，画竖杠）、led（同上，填色）、cap（电解电容，a 脚是正极）、box。"""
+    (x0, y0), (x1, y1) = bb_xy(a), bb_xy(b)
+    ax.plot([x0, x1], [y0, y1], color="0.25", lw=1.2, zorder=4)
+    xm, ym = (x0 + x1) / 2, (y0 + y1) / 2
+    L = max(((x1 - x0) ** 2 + (y1 - y0) ** 2) ** 0.5, 1e-9)
+    ux, uy = (x1 - x0) / L, (y1 - y0) / L          # 从 a 指向 b 的单位向量
+    nx, ny = -uy, ux
+    s = 0.32
+    if kind in ("diode", "led"):
+        tri = [(xm - ux * s + nx * s, ym - uy * s + ny * s), (xm - ux * s - nx * s, ym - uy * s - ny * s),
+               (xm + ux * s, ym + uy * s)]
+        ax.add_patch(_BbPoly(tri, closed=True, fc=(fc if kind == "led" else "0.25"), ec="0.2", lw=0.8, zorder=5))
+        ax.plot([xm + ux * s + nx * s, xm + ux * s - nx * s], [ym + uy * s + ny * s, ym + uy * s - ny * s],
+                color="0.1", lw=1.6, zorder=5)
+    elif kind == "cap":
+        ax.add_patch(_BbRect((xm - 0.32, ym - 0.32), 0.64, 0.64, fc="#3b5b92", ec="0.2", lw=0.8, zorder=5))
+        _bb_label(ax, x0 + ux * 0.35 + nx * 0.35, y0 + uy * 0.35 + ny * 0.35, "+", fs_=8)
     else:
-        yb = -3.1
-        d += elm.Line().down().toy(oy + yb).color(ACC)
-        d += elm.Line().endpoints(p(-1.6, y2 - 1.6), p(Cx, y2 - 1.6)).color(ACC)
-        d += elm.Dot().at(p(Cx, y2 - 1.6)).color(ACC)
-        d += elm.Line().endpoints(p(Cx, y2 - 1.6), p(Cx, yb)).color(ACC)
-        d += elm.Line().endpoints(p(Cx - 0.6, yb), p(-2.4, yb)).color(ACC)
-        d += elm.Dot().at(p(Cx, yb)).color(ACC)
-        d += elm.Dot(open=True).at(p(Cx - 0.6, yb)).color(ACC).label("2.5 V 偏置点", "left", color=ACC)
-    return op, P
+        ax.add_patch(_BbRect((xm - 0.4, ym - 0.3), 0.8, 0.6, fc=fc, ec="0.2", lw=0.8, zorder=5))
+    if abs(x1 - x0) >= abs(y1 - y0):
+        _bb_label(ax, xm, ym + dy, text)
+    else:
+        _bb_label(ax, xm + (0.85 if dy > 0 else -0.85), ym, text)
+    for x, y in ((x0, y0), (x1, y1)):
+        ax.plot(x, y, "o", ms=3, color="0.25", zorder=5)
 
 
-# ---------- 图 16-p2-5 双电源与单电源（2.5 V 偏置点）两种接法 ----------
+def bb_block(ax, holes, text, pins=None, fc="white", pad=0.38, fs_=7.5, tdy=0.0):
+    """多脚元件（三极管、继电器、电位器、按钮、电池盒等）：画一个盖住这些孔的方块，pins 给每只脚的小字。
+    tdy ≠ 0 时把元件名挪到方块上方（tdy > 0）或下方（tdy < 0），免得压住引脚。"""
+    pts = [bb_xy(h) for h in holes]
+    xs, ys = zip(*pts)
+    x0, x1, y0, y1 = min(xs) - pad, max(xs) + pad, min(ys) - pad, max(ys) + pad
+    ax.add_patch(_BbRect((x0, y0), x1 - x0, y1 - y0, fc=fc, ec="0.2", lw=0.9, alpha=0.92, zorder=5))
+    if tdy:
+        _bb_label(ax, (x0 + x1) / 2, (y1 + tdy) if tdy > 0 else (y0 + tdy), text, fs_=fs_)
+    else:
+        ax.text((x0 + x1) / 2, (y0 + y1) / 2, text, ha="center", va="center", fontsize=fs_, zorder=6)
+    for i, (x, y) in enumerate(pts):
+        ax.plot(x, y, "o", ms=3, color="0.2", zorder=6)
+        if pins:
+            ax.text(x, y - 0.42, pins[i], ha="center", va="top", fontsize=6, color="0.15", zorder=6)
+
+
+def bb_dip8(ax, col, text="LM358"):
+    """8 脚芯片跨在隔离槽上：1～4 脚在 f 行第 col～col+3 列，8～5 脚在 e 行第 col～col+3 列，缺口朝左。"""
+    ax.add_patch(_BbRect((col - 0.45, 3.25), 3.9, 2.15, fc="0.18", ec="0.1", zorder=5))
+    ax.add_patch(_BbWedge((col - 0.45, 4.3), 0.3, -90, 90, fc="#f4f1ea", ec="none", zorder=6))
+    ax.text(col + 1.5, 4.3, text, ha="center", va="center", fontsize=8, color="white", zorder=6)
+    for k in range(4):
+        ax.text(col + k, 3.55, str(k + 1), ha="center", va="center", fontsize=6.5, color="white", zorder=6)
+        ax.text(col + k, 5.05, str(8 - k), ha="center", va="center", fontsize=6.5, color="white", zorder=6)
+
+
+def bb_probe(ax, h, text, dx=0.0, dy=0.9):
+    """测量点：朱红色以外的黑框圆圈 + 编号，指向某个孔。"""
+    x, y = bb_xy(h)
+    ax.annotate(text, (x, y), (x + dx, y + dy), ha="center", va="center", fontsize=7.5, zorder=7,
+                bbox=dict(boxstyle="circle,pad=0.15", fc=fs.C["hi"], ec="0.2", lw=0.7),
+                arrowprops=dict(arrowstyle="-", color="0.2", lw=0.7))
+
+
+def bb_legend(ax, items, x=1.0, y=-5.0):
+    """底部图例：items = [(kind, 文字), ...]。"""
+    for i, (kind, text) in enumerate(items):
+        xx = x + i * 6.2
+        ax.plot([xx, xx + 1.0], [y, y], color=BB_WIRE[kind], lw=2.4)
+        ax.text(xx + 1.25, y, text, ha="left", va="center", fontsize=7.5)
+
+
+def bb_ng_op(body, exprs, includes=()):
+    """用 ngspice 跑一次直流工作点（.op），返回 {表达式: 数值}。body 是网表正文，exprs 如 ["v(out)", "i(v1)"]；
+    includes 是 spice/models/ 下的模型文件名。网表写在临时目录，跑完即删，仓库里不留文件。"""
+    import os as _os, re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
+    models = _os.path.abspath(_os.path.join(_os.path.dirname(fs.__file__), "..", "..", "spice", "models"))
+    inc = "\n".join(f".include {_os.path.join(models, m)}" for m in includes)
+    prints = "\n".join(f"print {e}" for e in exprs)
+    cir = f"* page4 工作点\n{inc}\n{body}\n.control\nop\n{prints}\n.endc\n.end\n"
+    tmp = _tf.mkdtemp(prefix="p4op_")
+    try:
+        with open(_os.path.join(tmp, ".spiceinit"), "w") as f:
+            f.write("set ngbehavior=psa\nset num_threads=1\n")      # 读入 PSpice 格式的厂家模型
+        with open(_os.path.join(tmp, "op.cir"), "w", encoding="utf-8") as f:
+            f.write(cir)
+        r = _sp.run([_sh.which("ngspice") or "/usr/bin/ngspice", "-b", "op.cir"], cwd=tmp,
+                    capture_output=True, text=True, timeout=300)
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
+    vals = {k.lower(): float(v) for k, v in _re.findall(r"^\s*(\S+)\s*=\s*([-+0-9.eE]+)\s*$", r.stdout, _re.M)}
+    out = {e: vals.get(e.lower()) for e in exprs}
+    assert r.returncode == 0 and None not in out.values(), f"ngspice 失败：{r.stdout[-800:]}{r.stderr[-800:]}"
+    return out
+
+
+def bb_ng_settle(body, exprs, includes=(), tstop=2e-3):
+    """含运放、输出可能顶到电源的电路，.op 常常不收敛；改用瞬态：信号源写成 PWL 从 0 慢慢升到目标值（1 ms），
+    电源保持恒定，读 tstop 前 0.1 ms 的稳定值。返回 {表达式: 数值}。网表写在临时目录，跑完即删。"""
+    import os as _os, re as _re, shutil as _sh, subprocess as _sp, tempfile as _tf
+    models = _os.path.abspath(_os.path.join(_os.path.dirname(fs.__file__), "..", "..", "spice", "models"))
+    inc = "\n".join(f".include {_os.path.join(models, m)}" for m in includes)
+    ctl = "\n".join(f"let e{k} = {e}\nmeas tran e{k}r find e{k} at={tstop - 1e-4:g}" for k, e in enumerate(exprs))
+    cir = f"* page4 稳态值\n{inc}\n{body}\n.control\ntran 1u {tstop:g} 0 1u\n{ctl}\n.endc\n.end\n"
+    tmp = _tf.mkdtemp(prefix="p4tr_")
+    try:
+        with open(_os.path.join(tmp, ".spiceinit"), "w") as f:
+            f.write("set ngbehavior=psa\nset num_threads=1\n")
+        with open(_os.path.join(tmp, "tr.cir"), "w", encoding="utf-8") as f:
+            f.write(cir)
+        r = _sp.run([_sh.which("ngspice") or "/usr/bin/ngspice", "-b", "tr.cir"], cwd=tmp,
+                    capture_output=True, text=True, timeout=300)
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
+    vals = dict(_re.findall(r"^\s*(e\d+r)\s*=\s*([-+0-9.eE]+)", r.stdout, _re.M))
+    out = {e: (float(vals[f"e{k}r"]) if f"e{k}r" in vals else None) for k, e in enumerate(exprs)}
+    assert None not in out.values(), f"ngspice 失败：{r.stdout[-800:]}{r.stderr[-800:]}"
+    return out
+
+
+# ---------------- 动手实验篇（page4）：LM358 + 9 V 电池，ngspice + TI LM358B 模型现算读数 ----------------
+P4_CM = [-9.0, -6.0, -3.0, 0.0, 1.5, 3.0, 6.0, 7.0, 7.5, 8.0, 8.5, 9.0]
+
+
+def p4_diff(v1, v2, r4x=0.0, mode="dual", src=None):
+    """四电阻差分放大（R1 = R3 = 10k，R2 = R4 = 100k）接 9 V 电池，读数都相对 M。
+    v1、v2：两路输入对 M 的电压（理想源，1 ms 从 0 升到目标值）；src = "vp"/"vn" 表示两路输入一起接 V+ 轨或 V− 轨。
+    r4x：R4 下端和 M 之间串的电阻（0 表示导线）。
+    mode：dual = 两节 9 V，M = A− 与 B+ 的连接点；single = 一节 9 V，M 由 1k/1k 分压（不接电池）。"""
+    if mode == "dual":
+        body = ["VP vp 0 9", "VN vn 0 -9", "RZ m 0 1m"]
+    else:
+        body = ["VP vp 0 9", "RVN vn 0 1m", "RM1 vp m 1k", "RM2 m 0 1k"]
+    if src is None:
+        body += [f"VA a m PWL(0 0 1m {v1})", f"VB b m PWL(0 0 1m {v2})"]
+        na, nb = "a", "b"
+    else:   # 两路输入一起接到电源轨：用一只从 M 附近慢慢挪到轨上的 PWL 源，最后正好等于轨电压
+        d = 9.0 if mode == "dual" else 4.5
+        body += [f"VA a {src} PWL(0 {-d if src == 'vp' else d} 1m 0)"]
+        na = nb = "a"
+    body += [f"R1 {na} s 10k", "R2 s o 100k", f"R3 {nb} p 10k", "R4 p x 100k", f"RX x m {max(r4x, 1e-3):g}",
+             "XU p s vp vn o LMX58B_LM2904B"]
+    ex = ["v(o)-v(m)", "v(p)-v(m)", "v(s)-v(p)", f"v({na})-v(m)", f"v({nb})-v(m)", "v(m)", "v(p)", "v(o)"]
+    r = bb_ng_settle("\n".join(body), ex, ["LMx58B_LM2904B.lib"])
+    return dict(out=r[ex[0]], vp_=r[ex[1]], dvin=r[ex[2]], v1=r[ex[3]], v2=r[ex[4]], m=r[ex[5]], p_abs=r[ex[6]], o_abs=r[ex[7]])
+
+
+def _ideal_diff(v1, v2, r1, r2, r3, r4):
+    return v2 * r4 / (r3 + r4) * (1 + r2 / r1) - v1 * r2 / r1
+
+
+def _rng_diff(v1, v2, tol=0.05):
+    vals = []
+    for k1 in (1 - tol, 1 + tol):
+        for k2 in (1 - tol, 1 + tol):
+            for k3 in (1 - tol, 1 + tol):
+                for k4 in (1 - tol, 1 + tol):
+                    vals.append(_ideal_diff(v1, v2, 10e3 * k1, 100e3 * k2, 10e3 * k3, 100e3 * k4))
+    return min(vals), max(vals)
+
+
+def _rng_mis(vcm, tol=0.05, extra=10e3):
+    """第 13、14 步：R4 下面串 10k 以后，输出比串之前多出多少（两次都接同一个共模电压），5% 电阻的范围。"""
+    vals = []
+    for k1 in (1 - tol, 1 + tol):
+        for k2 in (1 - tol, 1 + tol):
+            for k3 in (1 - tol, 1 + tol):
+                for k4 in (1 - tol, 1 + tol):
+                    for k5 in (1 - tol, 1 + tol):
+                        a = (10e3 * k1, 100e3 * k2, 10e3 * k3)
+                        vals.append(_ideal_diff(vcm, vcm, *a, 100e3 * k4 + extra * k5) - _ideal_diff(vcm, vcm, *a, 100e3 * k4))
+    return min(vals), max(vals)
+
+
+P4_CM_S = [-4.5, -3.0, -1.5, 0.0, 1.5, 3.0, 3.5, 4.0, 4.5]
+
+
+def p4_numbers():
+    r = {}
+    q = lambda key, *a, **k: r.setdefault(key, p4_diff(*a, **k))
+    for key, args in {"d56": (0.5, 0.6), "d54": (0.5, 0.4), "d1011": (1.0, 1.1), "c0": (0.0, 0.0), "c15": (1.5, 1.5)}.items():
+        x = q(key, *args)
+        lo, hi = _rng_diff(*args)
+        print(f"[16 page4] 两节 9 V，① {args[0]:.2f} V、② {args[1]:.2f} V：③ {x['out']:+.4f} V（5% 电阻、理想运放范围 {lo:+.3f}～{hi:+.3f} V），④ {x['vp_']:.3f} V")
+    assert abs(r["d56"]["out"] - 1.0) < 0.01 and abs(r["d54"]["out"] + 1.0) < 0.01 and abs(r["d1011"]["out"] - 1.0) < 0.01
+    assert abs(r["c0"]["out"]) < 0.01 and abs(r["c15"]["out"]) < 0.01
+    for s in ("vn", "vp"):
+        x = q(("rail", s), 0, 0, src=s)
+        print(f"[16 page4] 两节 9 V，两路一起接 {'V− 轨' if s == 'vn' else 'V+ 轨'}：④ {x['vp_']:+.3f} V，③ {x['out']:+.3f} V，2、3 脚之差 {x['dvin']:+.3f} V")
+    lo, hi = _rng_diff(-9, -9)
+    print(f"[16 page4] 共模 −9 V 时 5% 电阻的漏出范围 {lo:+.2f}～{hi:+.2f} V")
+    assert abs(r[("rail", "vn")]["out"]) < 0.01 and r[("rail", "vp")]["out"] < -3 and abs(r[("rail", "vp")]["vp_"] - 8.18) < 0.01
+    m15 = q("m15", 1.5, 1.5, r4x=10e3); m9 = q("m9", 0, 0, r4x=10e3, src="vn"); m0 = q("m0", 0, 0, r4x=10e3)
+    lo, hi = _rng_mis(1.5)
+    print(f"[16 page4] R4 串 10k：共模 1.5 V ③ {m15['out']:+.4f} V（比匹配时多 {m15['out'] - r['c15']['out']:+.4f}，5% 范围 {lo:+.3f}～{hi:+.3f}），"
+          f"接 V− 轨 ③ {m9['out']:+.3f} V，接 M ③ {m0['out']:+.4f} V；理想 1.5×(110/120×11−10) = {1.5 * (110 / 120 * 11 - 10):.3f}")
+    assert abs(m15["out"] - r["c15"]["out"] - 0.125) < 0.005 and abs(m9["out"] + 0.75) < 0.01 and abs(m0["out"]) < 0.01
+    # 单 9 V：M 由 1k/1k 分压
+    for key, args in {"s56": (0.5, 0.6), "s54": (0.5, 0.4)}.items():
+        x = q(key, *args, mode="single")
+        print(f"[16 page4] 一节 9 V（M 由分压造），① {args[0]:.2f}、② {args[1]:.2f}：③ {x['out']:+.4f} V，M 对 V− 轨 {x['m']:.3f} V")
+    for s in ("vn", "vp"):
+        x = q(("srail", s), 0, 0, src=s, mode="single")
+        print(f"[16 page4] 一节 9 V，两路一起接 {'V− 轨（0 V）' if s == 'vn' else 'V+ 轨'}：输入对 M {x['v1']:+.3f} V，④ 对 M {x['vp_']:+.3f}（对 V− 轨 {x['p_abs']:.3f}），"
+              f"③ 对 M {x['out']:+.3f} V（对 V− 轨 {x['o_abs']:.3f}），M {x['m']:.3f} V")
+    assert abs(r["s56"]["out"] - 1.0) < 0.01 and abs(r["s54"]["out"] + 1.0) < 0.01
+    assert abs(r[("srail", "vn")]["out"]) < 0.01 and r[("srail", "vp")]["out"] < -3
+    cm_d = [p4_diff(v, v)["out"] for v in P4_CM]
+    cm_dm = [p4_diff(v, v, r4x=10e3)["out"] for v in P4_CM]
+    cm_s = [p4_diff(v, v, mode="single")["out"] for v in P4_CM_S]
+    for v, a, b in zip(P4_CM, cm_d, cm_dm):
+        print(f"[16 page4] 两节 9 V 共模 {v:+.1f} V：匹配 ③ {a:+.4f} V，R4 串 10k ③ {b:+.4f} V")
+    for v, a in zip(P4_CM_S, cm_s):
+        print(f"[16 page4] 一节 9 V 共模（对 M）{v:+.1f} V：③ {a:+.4f} V")
+    return r, dict(d=cm_d, dm=cm_dm, s=cm_s)
+
+
+# ---------------- 图 16-p4-1：面包板俯视图 ----------------
+def p4_1_breadboard():
+    rails = {"T1": ("V+ = +9 V", BB_WIRE["pos"]), "T2": ("M（地，中点）", BB_WIRE["gnd"]),
+             "B1": ("V−（−9 V 或 0 V）", BB_WIRE["neg"]), "B2": ("M（地，中点）", BB_WIRE["gnd"])}
+    fig, ax = bb_board(30, rails, figsize=(10.6, 6.9))
+    bb_wire(ax, "T2-1", "B2-1", "gnd", via=[(-0.4, 10.8), (-0.4, -3.6)])
+    # 单电源才插（右上角灰框）：1 kΩ / 1 kΩ 分压 + 47 μF，造出中点 M
+    ax.add_patch(_BbRect((20.4, 5.45), 8.2, 4.35, fc="0.86", ec="0.45", ls="--", lw=0.9, zorder=0.5))
+    bb_wire(ax, "T1-21", "a21", "pos")
+    bb_res(ax, "b21", "b24", "Rm1 1k")
+    bb_wire(ax, "a24", "T2-24", "gnd")
+    bb_res(ax, "c24", "c27", "Rm2 1k")
+    bb_part2(ax, "d24", "d27", "C 47μF", kind="cap", dy=-0.55)
+    bb_wire(ax, "e27", "B1-29", "neg", via=[(27.0, 4.0), (29.0, 4.0)])
+    _bb_label(ax, 24.6, 4.0, "灰框：只在单 9 V 时插")
+    # LM358
+    bb_dip8(ax, 14)
+    bb_wire(ax, "a14", "T1-14", "pos")                      # 8 脚 V+
+    bb_wire(ax, "c15", "c16", "fb")                         # 另一半：7 脚接 6 脚
+    bb_wire(ax, "a17", "T2-17", "gnd")                      # 另一半：5 脚接 M
+    bb_wire(ax, "j17", "B1-17", "neg")                      # 4 脚 V−
+    # V1 一路：电位器 A（下半块），R1、R2
+    bb_block(ax, ["g3", "g4", "g5"], "", pins=["端", "滑", "端"], fc="#d7ccc8")
+    _bb_label(ax, 4, 3.05, "电位器 A")
+    bb_wire(ax, "j5", "B2-5", "gnd")
+    bb_wire(ax, "i4", "i9", "sig")
+    bb_res(ax, "h9", "h12", "R1 10k")
+    bb_wire(ax, "j12", "j15", "fb", via=[(12.0, -1.45), (15.0, -1.45)])
+    bb_res(ax, "i12", "i14", "R2 100k", dy=-0.55)
+    # V2 一路：电位器 B（上半块），R3、R4
+    bb_block(ax, ["c3", "c4", "c5"], "", pins=["端", "滑", "端"], fc="#d7ccc8")
+    _bb_label(ax, 4, 8.05, "电位器 B")
+    bb_wire(ax, "e3", "f3", "out")                          # 1.5 V 送到电位器 B 的一端
+    bb_wire(ax, "a5", "T2-5", "gnd")
+    bb_wire(ax, "d4", "d20", "sig", via=[(4.0, 6.5), (20.0, 6.5)])
+    bb_wire(ax, "e20", "f20", "sig")
+    bb_res(ax, "g16", "g20", "R3 10k")
+    bb_res(ax, "i16", "i19", "R4 100k", dy=-0.55)
+    bb_wire(ax, "j19", "B2-19", "gnd")
+    _bb_label(ax, 23.2, -2.15, "j19→M 第 13、14 步换成 10k")
+    # 1.5 V 电池盒画在板子外
+    ax.add_patch(_BbRect((0.8, -5.0), 3.4, 0.75, fc="#ffe082", ec="0.3", lw=0.8, zorder=5))
+    ax.text(2.5, -4.62, "1.5 V 电池盒", ha="center", va="center", fontsize=7.5, zorder=6)
+    ax.plot([3.0, 3.0], [-4.25, -1.0], color=BB_WIRE["pos"], lw=2.0, zorder=3)          # 电池 + → j3
+    ax.plot(3, -1, "o", ms=4, color=BB_WIRE["pos"], zorder=4)
+    ax.plot([2.0, 2.0], [-4.25, -3.6], color=BB_WIRE["gnd"], lw=2.0, zorder=3)          # 电池 − → M 轨
+    ax.plot(2.0, -3.6, "o", ms=4, color=BB_WIRE["gnd"], zorder=4)
+    ax.set_ylim(-5.9, 14.2)
+    ax.text(0.2, 13.55, "两节 9 V：A 的 + 接 V+ 轨；A 的 − 与 B 的 + 拧在一起接 M 轨；B 的 − 接 V− 轨（灰框不插）",
+            ha="left", va="center", fontsize=8)
+    ax.text(0.2, 12.85, "一节 9 V：+ 接 V+ 轨，− 接 V− 轨（此时 V− 就是 0 V）；M 轨只接灰框里分压出来的中点，不接电池",
+            ha="left", va="center", fontsize=8)
+    bb_probe(ax, "g9", "①", dx=0.0, dy=0.95)
+    bb_probe(ax, "i20", "②", dx=0.75, dy=0.6)
+    bb_probe(ax, "h14", "③", dx=-0.75, dy=0.6)
+    bb_probe(ax, "h16", "④", dx=0.0, dy=0.95)
+    bb_legend(ax, [("pos", "红：V+"), ("neg", "紫：V−"), ("gnd", "黑：M")], x=5.4, y=-4.7)
+    bb_legend(ax, [("sig", "蓝：输入"), ("fb", "绿：反馈"), ("out", "橙：1.5 V")], x=5.4, y=-5.4)
+    print("[图 16-p4-1] LM358 1～4 脚 f14～f17、8～5 脚 e14～e17；8 脚→V+，4 脚→V−；另一半 7、6 脚短接、5 脚→M；"
+          "电位器 A g3/g4/g5（j3 接电池 +，j5→M），滑动端 i4→i9；R1 h9–h12；j12→j15 接 2 脚；R2 i12–i14；"
+          "电位器 B c3/c4/c5（e3→f3 取 1.5 V，a5→M），滑动端 d4→d20、e20→f20；R3 g16–g20；R4 i16–i19；j19→M（第 13、14 步换 10k）；"
+          "单电源灰框同 05；测点① 第 9 列、② 第 20 列、③ 第 14 列、④ 第 16 列（3 脚）")
+    fs.save(fig, N, "16_p4_1_breadboard.png")
+
+
+# ---------------- 图 16-p4-2：没有示波器时，逐点测“两路一起抬高”的输出 ----------------
+def p4_2_common(cm):
+    fig, (a1, a2) = plt.subplots(1, 2, figsize=(10.4, 4.4))
+    a1.plot(P4_CM, cm["d"], color=fs.C["vout"], marker="o", ms=5, lw=1.5, label="四只电阻配对（R4 = 100k）")
+    a1.plot(P4_CM, cm["dm"], color=fs.C["third"], marker="s", ms=5, lw=1.3, ls="-.", label="R4 下面串 10k（110k）")
+    a1.axhline(0, **fs.LS["good"], label="理想：0 V")
+    a1.axvspan(8.25, 9.3, color="0.88", zorder=0)
+    a1.text(8.75, 1.3, "禁区\n约 8.25 V\n以上", ha="center", va="center", fontsize=8)
+    k = P4_CM.index(1.5)
+    a1.annotate(f"{cm['dm'][k]:+.2f} V", (1.5, cm["dm"][k]), (2.5, 1.6), fontsize=9,
+                arrowprops=dict(arrowstyle="-", color="0.4", lw=0.7))
+    a1.annotate(f"{cm['dm'][0]:+.2f} V", (-9, cm["dm"][0]), (-8.0, -2.4), fontsize=9,
+                arrowprops=dict(arrowstyle="-", color="0.4", lw=0.7))
+    a1.set_xlim(-9.5, 9.3); a1.set_ylim(-8.2, 2.4)
+    fs.axlabels(a1, "两路一起接的电压（对 M）", "V", "输出 ③（对 M）", "V")
+    a1.legend(loc="lower left", fontsize=8)
+    a1.set_title("两节 9 V", fontsize=10)
+    a2.plot(P4_CM_S, cm["s"], color=fs.C["vout"], marker="o", ms=5, lw=1.5, label="四只电阻配对")
+    a2.axhline(0, **fs.LS["good"], label="理想：0 V")
+    a2.axvspan(3.3, 4.7, color="0.88", zorder=0)
+    a2.text(4.0, 0.55, "禁区\n约 3.3 V 以上", ha="center", va="center", fontsize=8.5)
+    a2.set_xlim(-4.8, 4.7); a2.set_ylim(-4.8, 1.2)
+    fs.axlabels(a2, "两路一起接的电压（对 M）", "V", "输出 ③（对 M）", "V")
+    a2.legend(loc="lower left", fontsize=8)
+    a2.set_title("一节 9 V（M 由分压造）", fontsize=10)
+    i8, i85 = P4_CM.index(8.0), P4_CM.index(8.5)
+    print(f"[数值] 两节 9 V：共模 8.0 V ③ {cm['d'][i8]:+.3f} V、8.5 V ③ {cm['d'][i85]:+.2f} V；单 9 V：3.0 V ③ {cm['s'][P4_CM_S.index(3.0)]:+.3f}、"
+          f"3.5 V ③ {cm['s'][P4_CM_S.index(3.5)]:+.2f} V")
+    assert abs(cm["d"][i8]) < 0.02 and cm["d"][i85] < -1 and abs(cm["s"][P4_CM_S.index(3.0)]) < 0.02
+    fs.save(fig, N, "16_p4_2_common_mode.png")
+
+
+if __name__ == "__main__":
+    _r, _cm = p4_numbers()
+    p4_1_breadboard(); p4_2_common(_cm)
+
+
+# ====================== 第 8 轮补电路图（page1–3） ======================
+EMPH = fs.C["third"]          # 新出现的元件用强调色
+
+# ---------- 图 16-p3-3 V1 一侧的信号源内阻 R_s 与 R1 串联 ----------
 with drawing() as d:
-    wien_at(d, 0, 0)
-    d += elm.Label().at((-1.0, 3.6)).label("（a）±5 V 双电源：下端接地")
-    wien_at(d, 11.5, 0, bias=True)
-    d += elm.Label().at((10.5, 3.6)).label("（b）只有 5 V 单电源：下端改接 2.5 V 偏置点")
-save_schem(d, N, "16_p2_5_supply_variants.png")
+    op, p1, p2 = diffamp(d, v1=None, v2="$V_2$")
+    d += elm.Resistor().left().at(p1).label("$R_s$ 信号源内阻", "top").color(EMPH)
+    d += elm.Dot(open=True).label("$V_1$", "left")
+save_schem(d, N, "16_p3_3_rs_circuit.png")
 
-
-# ---------- 图 16-p2-6 二极管稳幅的文氏桥 ----------
+# ---------- 图 16-p3-4 练习 4：0.1 Ω 采样电阻测电机电流 ----------
 with drawing() as d:
-    wien_at(d, 0, 0, fb="diode")
-save_schem(d, N, "16_p2_6_diode_agc.png")
-
-# ---------- 图 16-p2-7 文氏桥 + 过零比较器 ----------
-with drawing() as d:
-    op1, P = wien_at(d, 0, 0, fb="diode", out_dot=False)
-    d += elm.Line().right().at(P).length(1.2)
-    d += (vi := elm.Dot().label("$V_i$（正弦）", "top"))
-    d += (cmp_ := elm.Opamp(leads=True, flip=True).right().anchor("in2").at((P[0] + 2.4, 0)).color(ACC))
-    d += elm.Line().endpoints(vi.center, cmp_.in2)
-    d += elm.Line().left().at(cmp_.in1).length(0.6).color(ACC)
-    d += elm.Line().down().length(0.7).color(ACC); d += elm.Ground().color(ACC)
-    d += elm.Label().at((cmp_.in1.x - 1.3, cmp_.in1.y - 0.9)).label("0 V", color=ACC)
-    d += elm.Line().right().at(cmp_.out).length(0.8).color(ACC)
-    d += elm.Dot(open=True).label("$V_o$（方波）", "right")
-    d += elm.Label().at((cmp_.out.x - 1.6, 1.9)).label("比较器（14 节）", color=ACC)
-save_schem(d, N, "16_p2_7_comparator.png")
-
-
-# ---------- 图 16-p3-3 削顶与稳幅：两种 R_f ----------
-with drawing() as d:
-    wien_at(d, 0, 0)
-    d += elm.Label().at((-0.5, 3.6)).label("（a）只用 $R_f$ 22 kΩ，没有稳幅")
-    wien_at(d, 11.5, 0, fb="diode")
-    d += elm.Label().at((11.0, 3.6)).label("（b）二极管稳幅")
-save_schem(d, N, "16_p3_3_stab_variants.png")
-
-
-def relax_led(d):
-    """直觉篇弛张振荡器换成 75 kΩ / 10 µF，输出端串限流电阻和 LED 到地（新增部分朱红色）。"""
-    d += (op := elm.Opamp(leads=True, flip=True).right())
-    P = (op.out.x + 0.8, 0)
-    d += elm.Line().endpoints(op.out, P); d += elm.Dot().at(P)
-    d += elm.Line().right().at(P).length(1.2); d += (vo := elm.Dot().label("$V_o$", "top"))
-    d += elm.Resistor().down().at(vo.center).length(1.8).label("限流电阻", "bottom").color(ACC)
-    d += elm.LED().down().length(1.6).label("LED", "bottom").color(ACC)
-    d += elm.Ground().color(ACC)
-    B = (-1.6, op.in2.y); J = (-0.5, op.in2.y)
-    d += elm.Line().endpoints(op.in2, B); d += elm.Dot().at(B); d += elm.Dot().at(J)
-    d += elm.Resistor().up().at(B).length(2.0).label("$R_a$ 10 kΩ", "top")
-    d += elm.Vdd().label("+5 V")
-    d += elm.Line().endpoints(B, (-3.6, op.in2.y))
-    d += elm.Resistor().down().length(2.0).label("$R_b$ 10 kΩ", "top"); d += elm.Ground()
-    d += elm.Line().up().at(P).toy(2.0)
-    d += elm.Resistor().left().tox(J[0]).label("$R_c$ 10 kΩ")
-    d += elm.Line().down().toy(op.in2.y)
-    A = (-1.3, op.in1.y); K = (-0.4, op.in1.y)
-    d += elm.Line().endpoints(op.in1, A); d += elm.Dot().at(K)
-    d += elm.Capacitor().down().at(A).length(1.8).label("$C$ 10 µF", "top").color(ACC); d += elm.Ground()
-    d += elm.Dot().at(A).label("$V_C$", "left")
-    d += elm.Line().down().at(P).toy(-2.0)
-    d += elm.Resistor().left().tox(K[0]).label("$R$ 75 kΩ", "bottom").color(ACC)
-    d += elm.Line().up().toy(op.in1.y)
-
-
-# ---------- 图 16-p3-4 练习 4：1 Hz LED 闪烁 ----------
-T_led = 1.39 * 75e3 * 10e-6
-print(f"练习 4：R = 75 kΩ、C = 10 µF，T ≈ {T_led:.2f} s（{1/T_led:.2f} Hz）")
-with drawing() as d:
-    relax_led(d)
-save_schem(d, N, "16_p3_4_led_1hz.png")
+    op, p1, p2 = diffamp(d, labs=("$R_1$", "$R_2$", "$R_3$", "$R_4$"), v1=None, v2=None, vo="$V_o$ 去单片机")
+    xa = p1[0] - 0.8
+    xs = xa - 1.8
+    yT, yB = p1[1] + 1.0, p2[1] - 1.5
+    d += elm.Line().endpoints(p1, (xa, p1[1]))
+    d += elm.Line().endpoints((xa, p1[1]), (xa, yT))
+    d += elm.Line().endpoints((xa, yT), (xs, yT))
+    d += elm.Line().endpoints(p2, (xa, p2[1]))
+    d += elm.Line().endpoints((xa, p2[1]), (xa, yB))
+    d += elm.Line().endpoints((xa, yB), (xs, yB))
+    d += elm.Dot().at((xs, yT)); d += elm.Dot().at((xs, yB))
+    d += elm.Resistor().endpoints((xs, yB), (xs, yT)).color(EMPH)
+    d += elm.Label().at((xs + 0.55, (yT + yB) / 2)).label("采样电阻\n0.1 Ω", halign="left", fontsize=11, color=EMPH)
+    yg = yB - 3.0
+    xb = xs - 1.6                                       # 12 V 电源：+ 端接采样电阻下端
+    d += elm.Line().endpoints((xs, yB), (xb, yB))
+    d += elm.SourceV().endpoints((xb, yg), (xb, yB))
+    d += elm.Label().at((xb - 0.6, (yg + yB) / 2)).label("12 V", halign="right", fontsize=11)
+    d += elm.Ground().at((xb, yg))
+    xm = xs - 3.6                                       # 电机：接采样电阻上端
+    d += elm.Line().endpoints((xs, yT), (xm, yT))
+    d += elm.Motor().endpoints((xm, yT), (xm, yg))
+    d += elm.Label().at((xm - 0.7, (yT + yg) / 2)).label("电机", halign="right", fontsize=11)
+    d += elm.Ground().at((xm, yg))
+save_schem(d, N, "16_p3_4_shunt_exercise.png")
+print("练习 4：2 A × 0.1 Ω = 0.2 V，两端对地约 12 V")
