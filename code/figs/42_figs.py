@@ -349,7 +349,7 @@ def p3_1():
     fs.save(fig, N, "42_p3_1_dp_error.png")
 
 
-def p3_2():
+def p3_3():
     f = np.logspace(-1, 4, 400)
     H = np.abs(S.bp_H(f))
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
@@ -363,10 +363,10 @@ def p3_2():
     ax.text(31, 0.12, "风扇 10–100 Hz", ha="center", fontsize=8.5)
     fs.axlabels(ax, "频率", "Hz", "增益", ""); ax.set_ylim(0, 0.65); ax.legend(fontsize=8, loc="lower center")
     assert abs(g - 0.512) < 0.001 and abs(fl - 0.78) < 0.01 and abs(fh - 3108) < 2
-    fs.save(fig, N, "42_p3_2_bp_sweep.png")
+    fs.save(fig, N, "42_p3_3_bp_sweep.png")
 
 
-def p3_3():
+def p3_4():
     f = np.linspace(0, 130, 1301)
     ma = [S.ma_of(x) for x in f]
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
@@ -378,7 +378,7 @@ def p3_3():
     ax.set_xlim(0, 130); ax.set_ylim(0, 27)
     fs.axlabels(ax, "测速频率", "Hz", "电流", "mA"); ax.legend(fontsize=8, loc="lower right")
     assert S.ma_of(3) == 4.0 and S.ma_of(120) == 20.0
-    fs.save(fig, N, "42_p3_3_cutoff.png")
+    fs.save(fig, N, "42_p3_4_cutoff.png")
 
 
 # ======================================================================
@@ -552,11 +552,13 @@ def _lm317(d, holes=False, x0=0.0, y0=0.0):
     return F
 
 
-def p4_2():
+def p4_2(name="42_p4_2_schem_lab.png", holes=True, notes=None, tag="图 42-p4-2"):
+    """holes=False 时不标孔位（直觉篇 / 参数篇对照用）。"""
+    H = (lambda t: t) if holes else (lambda t: "")
     d = schem.drawing(fontsize=10)
-    _lm317(d, holes=True, x0=0, y0=4.2)
+    _lm317(d, holes=holes, x0=0, y0=4.2)
     L.title(d, (4.5, 6.4), "① 风扇电源：LM317 可调稳压（直流，不用 PWM）")
-    r = _frontend(d, holes=True, x0=3.0, y0=-5.0)
+    r = _frontend(d, holes=holes, x0=3.0, y0=-5.0)
     L.title(d, (12.0, -1.6), "② 测速前端：上拉 → 宽带通 → LM393 施密特")
     L.probe(d, r["T"], "②", dx=-0.2, dy=1.2)
     L.probe(d, r["NB"], "③", dx=0.0, dy=1.1)
@@ -567,22 +569,40 @@ def p4_2():
     x4, y4 = 26.5, 3.0
     d += elm.Vdd().at((x4, y4 + 2.4)).label("+5 V", fontsize=9)
     d += elm.Resistor().endpoints((x4, y4 + 2.4), (x4, y4))
-    L.lab(d, (x4 + 0.35, y4 + 1.2), "R_Z 1 kΩ\nj39→+5 V", fs_=8.5)
+    L.lab(d, (x4 + 0.35, y4 + 1.2), "R_Z 1 kΩ" + H("\nj39→+5 V"), fs_=8.5)
     d += elm.Dot().at((x4, y4))
     d += elm.Zener().endpoints((x4, y4 - 2.4), (x4, y4))
     d += elm.Ground().at((x4, y4 - 2.4))
-    for k, t in enumerate(("LM4040 2.5 V（TO-92 平面朝自己）", "阴极 2 脚 f39", "阳极 3 脚 f40，j40 → 0 V", "1 脚 f38 悬空")):
+    for k, t in enumerate((("LM4040 2.5 V（TO-92 平面朝自己）", "阴极 2 脚 f39", "阳极 3 脚 f40，j40 → 0 V", "1 脚 f38 悬空") if holes else ("LM4040 2.5 V（TO-92）", "阴极 2 脚 → R_Z、AREF", "阳极 3 脚 → 0 V", "1 脚悬空"))):
         L.lab(d, (x4 + 0.5, y4 - 0.6 - 0.45 * k), t, fs_=8.5)
     d += elm.Line().at((x4, y4)).to((x4 + 1.8, y4)).color(C["fb"]).linewidth(1.6)
     d += elm.Dot(open=True).at((x4 + 1.8, y4))
-    L.lab(d, (x4 + 2.0, y4), "→ AREF\ng39", fs_=9, color=C["fb"])
+    L.lab(d, (x4 + 2.0, y4), "→ AREF" + H("\ng39"), fs_=9, color=C["fb"])
     L.probe(d, (x4, y4), "⑦", dx=-0.9, dy=0.6)
     L.title(d, (x4 + 0.8, 6.6), "③ ADC 基准 2.5 V")
-    L.note(d, (-2.5, -14.2), "对照图 42-p4-1：灰色小字是孔位。+12 V 只接 LM317 输入（a7）和 LM393 的 8 脚（a30）；其余「+5 V」全是下方那条 Arduino 5 V 轨。")
-    L.note(d, (-2.5, -14.9), "LM393 的 B 组不用：6、5 脚 a32、a33 → 0 V，7 脚空着。测速线绝不直接接 Arduino，只经过 LM393 再到 D2。")
-    L.note(d, (-2.5, -15.6), "测量点：① 风扇电压　② 测速线　③ NB　④ V_MID　⑤ 输出　⑥ REF　⑦ AREF；黑表笔插 0 V 轨。")
-    schem.save_schem(d, N, "42_p4_2_schem_lab.png")
-    print("[图 42-p4-2] 带孔位的原理图，与图 42-p4-1 一一对应")
+    if notes is None:
+        L.note(d, (-2.5, -14.2), "对照图 42-p4-1：灰色小字是孔位。+12 V 只接 LM317 输入（a7）和 LM393 的 8 脚（a30）；其余「+5 V」全是下方那条 Arduino 5 V 轨。")
+        L.note(d, (-2.5, -14.9), "LM393 的 B 组不用：6、5 脚 a32、a33 → 0 V，7 脚空着。测速线绝不直接接 Arduino，只经过 LM393 再到 D2。")
+        L.note(d, (-2.5, -15.6), "测量点：① 风扇电压　② 测速线　③ NB　④ V_MID　⑤ 输出　⑥ REF　⑦ AREF；黑表笔插 0 V 轨。")
+    else:
+        for n_, t in enumerate(notes):
+            L.note(d, (-2.5, -14.2 - 0.7 * n_), t)
+    schem.save_schem(d, N, name)
+    print(f"[{tag}] " + ("带孔位的原理图，与图 42-p4-1 一一对应" if holes else "不标孔位的整机原理图"))
+
+
+def p1_4():
+    p4_2("42_p1_4_schem.png", holes=False, tag="图 42-p1-4", notes=(
+        "+12 V 只接 LM317 输入和 LM393 的 8 脚；其余「+5 V」都来自 Arduino 的 5V 引脚。LM393 输出经 R_OUT 上拉到 5 V，再进 D2。",
+        "D2 测出频率 → 程序换算成码 → D9 PWM 送到 41 节的发送板（图中未画），输出 4–20 mA。",
+        "圆圈 ①～⑦ 是动手实验篇要量的点：① 风扇电压　② 测速线　③ NB　④ V_MID　⑤ 输出　⑥ REF　⑦ AREF。"))
+
+
+def p3_2():
+    p4_2("42_p3_2_schem.png", holes=False, tag="图 42-p3-2", notes=(
+        "参数表里的元件：R_PU、R_IN、C_HP、R_HP、C_LP 在测速前端左半；RM1/RM2 给 V_MID 2.5 V；RR1/RR2 给门限 REF；R_H 是回差电阻。",
+        "排查表里的点：① LM317 输出（风扇电压）、② 测速线、⑦ AREF；LM393 的 8 脚接 +12 V，4 脚接 0 V；LM4040 阴极接 R_Z 和 AREF。",
+        "LM393 的 B 组不用：5、6 脚接 0 V，7 脚空着。测速线不直接接 Arduino，只经过 LM393 再到 D2。"))
 
 
 def p4_3():
@@ -628,7 +648,145 @@ def p4_4():
     fs.save(fig, N, "42_p4_4_expect.png")
 
 
+# ---------- 图 42-p3-5：例 1 涡轮流量计前端（LM358 同相 ×34 + 高通 + 低通） ----------
+def p3_5():
+    """例 1 的电路：数值按 page3 例 1（1 + 33k/1k = 34，27k/1µF 高通 5.89 Hz，6.8k/10nF 低通 2341 Hz）。
+    中点 4.5 V 用 15 kΩ / 9.1 kΩ 分 12 V（≈ 4.53 V），经 LM358 B 组跟随后低阻输出。"""
+    fhp = 1 / (2 * np.pi * 27e3 * 1e-6); flp = 1 / (2 * np.pi * 6.8e3 * 10e-9); vmid = 12 * 9.1 / (15 + 9.1)
+    G = 1 + 33 / 1
+    # 施密特门限：本节 schmitt_th 的同一套方程，只把戴维南电压 2.5 V 换成 V_MID（内阻仍是 10k∥10k = 5 kΩ）
+    rth = S.R_R1 * S.R_R2 / (S.R_R1 + S.R_R2)
+    voh = (S.V5 / S.R_OUT + vmid / (S.R_H + rth)) / (1 / S.R_OUT + 1 / (S.R_H + rth))
+    vu = (vmid / rth + voh / S.R_H) / (1 / rth + 1 / S.R_H)
+    vl = (vmid / rth + S.VOL / S.R_H) / (1 / rth + 1 / S.R_H)
+    vpk = G * 0.020                                     # 2 L/min 时的最小峰值（放大后）
+    assert vmid - vpk < vl and vmid + vpk > vu          # 最小信号也能越过两条门限
+    d = schem.drawing(fontsize=10)
+    VM = C["fb"]
+    # 拾取线圈（信号源）
+    d += elm.SourceSin().endpoints((0, -2.6), (0, 0)).label("涡轮拾取线圈\n20–300 mV 峰\n30–450 Hz", loc="bottom", fontsize=9)
+    d += elm.Ground().at((0, -2.6))
+    # 高通：C_HP 串联，R_HP 拉到 V_MID
+    A = (3.6, 0)
+    d += elm.Capacitor().endpoints((0, 0), A)
+    L.lab(d, (1.8, 0.65), "C_HP 1 µF", ha="center", fs_=9)
+    d += elm.Dot().at(A)
+    d += elm.Resistor().endpoints(A, (A[0], -2.6))
+    L.lab(d, (A[0] + 0.35, -1.3), "R_HP 27 kΩ", fs_=9)
+    d += elm.Line().at((A[0], -2.6)).to((A[0], -3.1)).color(VM)
+    L.lab(d, (A[0], -3.45), "V_MID", ha="center", fs_=9, color=VM)
+    # LM358 A 同相放大
+    op = elm.Opamp(leads=True).theta(0).anchor("in2").at((5.6, 0))
+    d += op
+    o = op.absanchors
+    d += elm.Line().at(A).to(o["in2"])
+    L._pin(d, o["in2"], "3", dx=-0.2, dy=-0.25)
+    L._pin(d, o["in1"], "2", dx=-0.2, dy=0.25)
+    L._pin(d, o["out"], "1", dx=0.15, dy=0.25)
+    L.lab(d, (o["in1"][0] + 0.75, (o["in1"][1] + o["in2"][1]) / 2), "LM358\nA 组", fs_=8.5)
+    top, bot = (o["vd"], o["vs"]) if o["vd"][1] > o["vs"][1] else (o["vs"], o["vd"])
+    L.lab(d, (top[0] + 0.2, top[1] + 0.3), "8 → +12 V", fs_=8, color=GRAY)
+    L.lab(d, (bot[0] + 0.2, bot[1] - 0.3), "4 → GND", fs_=8, color=GRAY)
+    # 反馈：RF 33k 从输出回 2 脚；RG 1k 从 2 脚到 V_MID
+    xi = o["in1"][0] - 0.5; yi = o["in1"][1]; yf = yi + 1.8
+    X = (o["out"][0] + 0.8, o["out"][1])
+    d += elm.Line().at(o["in1"]).to((xi, yi))
+    d += elm.Dot().at((xi, yi))
+    d += elm.Line().at((xi, yi)).to((xi, yf))
+    d += elm.Resistor().endpoints((xi, yf), (X[0], yf))
+    L.lab(d, ((xi + X[0]) / 2, yf + 0.6), "R_F 33 kΩ", ha="center", fs_=9)
+    d += elm.Line().at(o["out"]).to(X)
+    d += elm.Dot().at(X)
+    d += elm.Line().at(X).to((X[0], yf))
+    d += elm.Resistor().endpoints((xi, yi), (xi - 2.4, yi))
+    L.lab(d, (xi - 1.2, yi + 0.55), "R_G 1 kΩ", ha="center", fs_=9)
+    d += elm.Line().at((xi - 2.4, yi)).to((xi - 2.4, yi + 0.6)).color(VM)
+    L.lab(d, (xi - 2.4, yi + 0.95), "V_MID", ha="center", fs_=9, color=VM)
+    # 低通：R_LP 6.8k 串联，C_LP 10 nF 到地
+    B = (X[0] + 3.0, X[1])
+    d += elm.Resistor().endpoints(X, B)
+    L.lab(d, ((X[0] + B[0]) / 2, X[1] + 0.6), "R_LP 6.8 kΩ", ha="center", fs_=9)
+    d += elm.Dot().at(B)
+    d += elm.Capacitor().endpoints(B, (B[0], B[1] - 2.2))
+    d += elm.Ground().at((B[0], B[1] - 2.2))
+    L.lab(d, (B[0] - 0.35, B[1] - 1.3), "C_LP\n10 nF", ha="right", fs_=9)
+    # 施密特（LM393 反相接法）：门限分压两端都改接 V_MID（10k∥10k = 5 kΩ），R_H 100 kΩ 正反馈
+    cp = elm.Opamp(leads=True).theta(0).anchor("in1").at((B[0] + 4.2, B[1]))
+    d += cp
+    k = cp.absanchors
+    d += elm.Line().at(B).to(k["in1"]).color(C["vout"]).linewidth(1.8)
+    L._pin(d, k["in1"], "2", dx=-0.2, dy=0.25)
+    L._pin(d, k["in2"], "3", dx=-0.2, dy=-0.25)
+    L._pin(d, k["out"], "1", dx=0.15, dy=0.25)
+    L.lab(d, (k["in1"][0] + 0.75, (k["in1"][1] + k["in2"][1]) / 2), "LM393", fs_=8.5)
+    ktop, kbot = (k["vd"], k["vs"]) if k["vd"][1] > k["vs"][1] else (k["vs"], k["vd"])
+    L.lab(d, (ktop[0] + 0.2, ktop[1] + 0.3), "8 → +12 V", fs_=8, color=GRAY)
+    L.lab(d, (kbot[0] + 0.25, kbot[1] - 0.25), "4 → GND", fs_=8, color=GRAY)
+    P = (k["in2"][0] - 0.8, k["in2"][1])
+    d += elm.Line().at(k["in2"]).to(P)
+    d += elm.Dot().at(P)
+    xT = B[0] + 1.0
+    d += elm.Resistor().endpoints(P, (xT, P[1]))
+    L.lab(d, ((P[0] + xT) / 2, P[1] + 0.55), "R_T 5 kΩ", ha="center", fs_=9)
+    d += elm.Line().at((xT, P[1])).to((xT, P[1] - 0.6)).color(VM)
+    L.lab(d, (xT, P[1] - 0.95), "V_MID", ha="center", fs_=9, color=VM)
+    O2 = (k["out"][0] + 0.9, k["out"][1]); yh = P[1] - 2.0
+    d += elm.Line().at(k["out"]).to(O2)
+    d += elm.Dot().at(O2)
+    d += elm.Line().at(P).to((P[0], yh))
+    d += elm.Resistor().endpoints((P[0], yh), (O2[0], yh))
+    L.lab(d, ((P[0] + O2[0]) / 2, yh - 0.6), "R_H 100 kΩ", ha="center", fs_=9)
+    d += elm.Line().at((O2[0], yh)).to(O2)
+    d += elm.Resistor().endpoints(O2, (O2[0], O2[1] + 2.2))
+    d += elm.Vdd().at((O2[0], O2[1] + 2.2)).label("+5 V", fontsize=9)
+    L.lab(d, (O2[0] + 0.55, O2[1] + 1.1), "R_OUT 4.7 kΩ", fs_=9)
+    Z = (O2[0] + 1.4, O2[1])
+    d += elm.Line().at(O2).to(Z)
+    d += elm.Dot(open=True).at(Z)
+    L.lab(d, (Z[0] + 0.2, Z[1]), "→ Arduino D2", fs_=9)
+    # 中点参考：15k / 9.1k 分 12 V，LM358 B 组跟随
+    y0 = -7.6; xr = 0.0
+    d += elm.Vdd().at((xr, y0 + 2.2)).label("+12 V", fontsize=9)
+    d += elm.Resistor().endpoints((xr, y0 + 2.2), (xr, y0))
+    L.lab(d, (xr - 0.55, y0 + 1.1), "R1 15 kΩ", ha="right", fs_=9)
+    d += elm.Resistor().endpoints((xr, y0), (xr, y0 - 2.2))
+    L.lab(d, (xr - 0.55, y0 - 1.1), "R2 9.1 kΩ", ha="right", fs_=9)
+    d += elm.Ground().at((xr, y0 - 2.2))
+    d += elm.Dot().at((xr, y0))
+    d += elm.Line().at((xr, y0)).to((1.4, y0))
+    d += elm.Dot().at((1.4, y0))
+    d += elm.Capacitor(polar=True).endpoints((1.4, y0), (1.4, y0 - 2.2))
+    L.lab(d, (1.75, y0 - 1.1), "10 µF", fs_=9)
+    d += elm.Ground().at((1.4, y0 - 2.2))
+    ob = elm.Opamp(leads=True).theta(0).anchor("in2").at((3.2, y0))
+    d += ob
+    b = ob.absanchors
+    d += elm.Line().at((1.4, y0)).to(b["in2"])
+    L._pin(d, b["in2"], "5", dx=-0.2, dy=-0.25)
+    L._pin(d, b["in1"], "6", dx=-0.2, dy=0.25)
+    L._pin(d, b["out"], "7", dx=0.15, dy=0.25)
+    L.lab(d, (b["in1"][0] + 0.75, (b["in1"][1] + b["in2"][1]) / 2), "LM358\nB 组", fs_=8.5)
+    yl = b["in1"][1] + 1.0; xo = b["out"][0] + 0.6
+    d += elm.Line().at(b["in1"]).to((b["in1"][0] - 0.3, b["in1"][1]))
+    d += elm.Line().at((b["in1"][0] - 0.3, b["in1"][1])).to((b["in1"][0] - 0.3, yl))
+    d += elm.Line().at((b["in1"][0] - 0.3, yl)).to((xo, yl))
+    d += elm.Line().at((xo, yl)).to((xo, b["out"][1]))
+    d += elm.Line().at(b["out"]).to((xo + 1.0, b["out"][1])).color(VM)
+    d += elm.Dot().at((xo, b["out"][1]))
+    L.lab(d, (xo + 1.1, b["out"][1]), "V_MID ≈ 4.5 V\n（送到上面两个 V_MID）", fs_=9, color=VM)
+    L.note(d, (-1.6, y0 - 4.4),
+           f"增益 1 + R_F/R_G = 1 + 33k/1k = {G:.0f}；高通 1/(2π·27k·1µF) = {fhp:.2f} Hz；低通 1/(2π·6.8k·10nF) = {flp:.0f} Hz。\n"
+           f"中点：12 V × 9.1/(15 + 9.1) = {vmid:.2f} V（示意取值），经 B 组跟随器输出，R_G、R_HP、R_T 接它不会把中点拉偏。\n"
+           f"施密特：门限以 V_MID 为中心（本节 10k/10k 两端都改接 V_MID，即 R_T = 10k∥10k = 5 kΩ），上门限 {vu:.3f} V、下门限 {vl:.3f} V、回差 {vu - vl:.3f} V；\n"
+           f"最小信号 {vmid:.2f} ± {vpk:.2f} V（{vmid - vpk:.2f}–{vmid + vpk:.2f} V）两条门限都越过。若照本节门限 2.614/2.384 V，比较器永不翻转。")
+    schem.save_schem(d, N, "42_p3_5_ex1_schem.png")
+    print(f"[图 42-p3-5] 例 1 前端：G = {G:.0f}，f_HP = {fhp:.2f} Hz，f_LP = {flp:.0f} Hz，V_MID = {vmid:.2f} V；施密特 {vu:.3f}/{vl:.3f} V，回差 {vu - vl:.3f} V，高电平 {voh:.3f} V；最小信号 {vmid - vpk:.3f}–{vmid + vpk:.3f} V")
+
+
 if __name__ == "__main__":
-    for fn in (p1_1, p1_2, p1_3, p2_1, p2_2, p2_3, p2_4, p3_1, p3_2, p3_3, bb42, p4_2, p4_3, p4_4):
-        fn()
+    import sys as _sys
+    _all = (p1_1, p1_2, p1_3, p1_4, p2_1, p2_2, p2_3, p2_4, p3_1, p3_2, p3_3, p3_4, p3_5, bb42, p4_2, p4_3, p4_4)
+    for fn in _all:
+        if len(_sys.argv) == 1 or fn.__name__ in _sys.argv[1:]:
+            fn()
     print("42_figs OK")

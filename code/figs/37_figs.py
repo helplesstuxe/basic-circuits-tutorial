@@ -296,9 +296,9 @@ def p3_3():
 
 
 # =====================================================================
-# 图 37-p3-4 发射电流：每次翻转一个尖峰，串电阻把它限在 40 mA 以下
+# 图 37-p3-5 发射电流：每次翻转一个尖峰，串电阻把它限在 40 mA 以下
 # =====================================================================
-def p3_4():
+def p3_5():
     t = np.linspace(0, 40e-6, 4001)
     fig, ax = plt.subplots(figsize=(7.2, 4.0))
     sps = {150: "发射 150 Ω：引脚峰值电流", 100: "发射 100 Ω：峰值电流（超 40 mA）", 220: "发射 220 Ω：峰值电流"}
@@ -314,9 +314,9 @@ def p3_4():
     ax.set_xlim(0, 40); ax.set_ylim(-58, 58)
     ax.legend(loc="lower right", fontsize=8.5)
     axl(ax, "时间 / µs（前 1.6 个周期）", "D3 引脚电流 / mA")
-    ax.set_title(f"图 37-p3-4 探头像一只 {sim.C_TR*1e12:.0f} pF 电容：每翻一次充一次电，τ = 2R × C 很短", fontsize=10.5)
-    fs.save(fig, N, "37_p3_4_tx_current.png")
-    print(f"[数值] 图 37-p3-4：峰值 100/150/220 Ω = {sim.drive(100)[0]*1e3:.1f}/{sim.drive(150)[0]*1e3:.1f}/{sim.drive(220)[0]*1e3:.1f} mA，τ150 = {sim.TAU150*US:.2f} µs")
+    ax.set_title(f"图 37-p3-5 探头像一只 {sim.C_TR*1e12:.0f} pF 电容：每翻一次充一次电，τ = 2R × C 很短", fontsize=10.5)
+    fs.save(fig, N, "37_p3_5_tx_current.png")
+    print(f"[数值] 图 37-p3-5：峰值 100/150/220 Ω = {sim.drive(100)[0]*1e3:.1f}/{sim.drive(150)[0]*1e3:.1f}/{sim.drive(220)[0]*1e3:.1f} mA，τ150 = {sim.TAU150*US:.2f} µs")
     assert SP[sps[150]] < 40 and SP[sps[100]] > 40
 
 
@@ -557,6 +557,15 @@ HC_NAMES = {1: "/CLR1", 2: "D1", 3: "CLK1", 4: "/PRE1", 5: "Q1", 6: "/Q1", 7: "G
             8: "/Q2", 9: "Q2", 10: "/PRE2", 11: "CLK2", 12: "D2", 13: "/CLR2", 14: "VCC"}
 
 
+def p3_4():
+    """图 37-p3-4：参数篇对照用的原理图（与图 37-p2-2 同一张，注释改成本页关心的器件）。"""
+    d = drawing(fontsize=10)
+    _schem(d)
+    ls.note(d, (-3.0, -4.2), "发射：D3、D11 各经 Rtx 150 Ω 接 MA40S4S（第四节）；+12 V 只给 TL072（8 脚）、LM393（8 脚）和 V_TH 分压，V_MID = 6.0 V（第五节）。")
+    ls.note(d, (-3.0, -4.9), "两只 LM393 输出的 2.2 kΩ 上拉和 74HC74（14 脚）只接 Arduino 5 V，Q2 直接接 D8。① 放大输出　② V_TH　③ V_MID　④ /Q2")
+    save_schem(d, N, "37_p3_4_schem.png")
+
+
 def p4_1():
     nc = 57
     bb = bbk.Breadboard(nc, "图 37-p4-1 面包板：上方两条轨是 12 V 电源，下方两条轨是 Arduino 5 V；74HC74 的 14 脚单独用跳线接 5 V",
@@ -761,5 +770,9 @@ def p4_4():
 
 
 if __name__ == "__main__":
-    for fn in (p1_1, p1_2, p2_1, p2_2, p2_3, p2_4, p3_1, p3_2, p3_3, p3_4, p4_1, p4_2, p4_3, p4_4):
+    if sys.argv[1:]:
+        for name in sys.argv[1:]:
+            globals()[name]()
+        sys.exit(0)
+    for fn in (p1_1, p1_2, p2_1, p2_2, p2_3, p2_4, p3_1, p3_2, p3_3, p3_4, p3_5, p4_1, p4_2, p4_3, p4_4):
         fn()

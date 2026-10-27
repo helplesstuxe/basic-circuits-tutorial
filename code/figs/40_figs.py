@@ -247,8 +247,8 @@ def p2_5_pt100():
 # ======================================================================
 # page3
 # ======================================================================
-def p3_1_onoff(O):
-    """图 40-p3-1：带回差的开关控温（主实验）。上：风速；中：温差与 1.8/2.2 K 两条门槛；下：加热开关与平均占空。"""
+def p3_2_onoff(O):
+    """图 40-p3-2：带回差的开关控温（主实验）。上：风速；中：温差与 1.8/2.2 K 两条门槛；下：加热开关与平均占空。"""
     r = O["onoff"]
     t = r["t"]
     fig, axs = plt.subplots(3, 1, figsize=(7, 5.4), sharex=True, gridspec_kw=dict(height_ratios=[0.8, 1.6, 1.6]))
@@ -260,7 +260,7 @@ def p3_1_onoff(O):
     axs[2].fill_between(t, 0, r["duty"] * 100, step="post", color=C["vout"], alpha=0.25, lw=0, label="加热开 / 关（100 % / 0 %）")
     axs[2].plot(t, r["avg"] * 100, color=C["third"], lw=1.8, label="最近 3 个开关周期的平均占空")
     for (lab, td, d0, df, per) in O["oo_steps"]:
-        print(f"[图 40-p3-1] {lab}：{d0 * 100:.1f}→{df * 100:.1f} %，t90 {td:.1f} s，周期 {per:.1f} s")
+        print(f"[图 40-p3-2] {lab}：{d0 * 100:.1f}→{df * 100:.1f} %，t90 {td:.1f} s，周期 {per:.1f} s")
     for x, (lab, td, d0, df, per) in zip((120, 300, 480), O["oo_steps"]):
         axs[2].text(x + 4, 104, f"→ {df * 100:.1f} %", fontsize=8, color=C["third"], va="bottom")
     axs[2].text(5, 104, f"{O['oo_steps'][0][2] * 100:.1f} %", fontsize=8, color=C["third"], va="bottom")
@@ -271,11 +271,11 @@ def p3_1_onoff(O):
     fs.axlabels(axs[2], "时间", "s", "占空", "%")
     axs[2].legend(loc="lower left", fontsize=7.5, ncol=2)
     axs[2].set_xlim(0, 660)
-    fs.save(fig, P, "40_p3_1_onoff.png")
+    fs.save(fig, P, "40_p3_2_onoff.png")
 
 
-def p3_2_calib(O):
-    """图 40-p3-2：标定。点 = 恒定风速下开关控温的平均占空；线 = 四点 / 五点三次多项式（占空 → 风速）。"""
+def p3_3_calib(O):
+    """图 40-p3-3：标定。点 = 恒定风速下开关控温的平均占空；线 = 四点 / 五点三次多项式（占空 → 风速）。"""
     cal = O["oo_cal"]
     vs = np.array(sorted(cal)); ds = np.array([cal[v] for v in vs])
     dd = np.linspace(ds.min(), ds.max(), 300)
@@ -285,7 +285,7 @@ def p3_2_calib(O):
     ax.plot(ds * 100, vs, "o", color="k", ms=5, label="仿真：恒定风速下的平均占空", zorder=5)
     for v in (0.5, 1.5):
         e4 = np.polyval(O["poly_oo"], cal[v]); e5 = np.polyval(O["poly5"], cal[v])
-        print(f"[图 40-p3-2] 真值 {v}：四点 {e4:.3f}（{(e4 - v) / v * 100:+.1f} %），五点 {e5:.3f}（{(e5 - v) / v * 100:+.1f} %）")
+        print(f"[图 40-p3-3] 真值 {v}：四点 {e4:.3f}（{(e4 - v) / v * 100:+.1f} %），五点 {e5:.3f}（{(e5 - v) / v * 100:+.1f} %）")
     e4 = np.polyval(O["poly_oo"], cal[0.5])
     ax.annotate(f"真值 0.5 m/s\n四点标定读成 {e4:.2f} m/s（{(e4 - 0.5) / 0.5 * 100:+.0f} %）", xy=(cal[0.5] * 100, e4),
                 xytext=(32, 1.4), fontsize=8.5, arrowprops=dict(arrowstyle="->", lw=0.8))
@@ -293,11 +293,11 @@ def p3_2_calib(O):
     fs.axlabels(ax, "平均占空", "%", "风速", "m/s")
     ax.set_xlim(25, 102); ax.set_ylim(-0.1, 3.1)
     ax.legend(loc="upper left", fontsize=7.5)
-    fs.save(fig, P, "40_p3_2_calib.png")
+    fs.save(fig, P, "40_p3_3_calib.png")
 
 
-def p3_3_amb(O):
-    """图 40-p3-3：环境温度 300 s 时升 1 K，风速一直 1 m/s。有 / 无环境补偿的平均占空。"""
+def p3_4_amb(O):
+    """图 40-p3-4：环境温度 300 s 时升 1 K，风速一直 1 m/s。有 / 无环境补偿的平均占空。"""
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
     for comp, ls, lab in ((True, "vout", "用环境 NTC 补偿（温差 = N1 − N2）"), (False, "bad", "不补偿（温差 = N1 − 开机时的环境温度）")):
         r = O[f"amb_oo_{comp}"]
@@ -312,30 +312,30 @@ def p3_3_amb(O):
     fs.axlabels(ax, "时间", "s", "平均占空", "%")
     ax.set_ylim(0, 90); ax.set_xlim(0, 600)
     ax.legend(loc="lower left", fontsize=8)
-    fs.save(fig, P, "40_p3_3_amb.png")
+    fs.save(fig, P, "40_p3_4_amb.png")
 
 
-def p3_4_pi(O):
-    """图 40-p3-4：0→1 m/s 台阶，PI 三组参数与开关控温（平均占空）对比。"""
+def p3_5_pi(O):
+    """图 40-p3-5：0→1 m/s 台阶，PI 三组参数与开关控温（平均占空）对比。"""
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
     for (Kp, Ti), ls in (((0.1, 10.0), "fb"), ((0.6, 10.0), "vout"), ((2.0, 10.0), "third")):
         r = O[f"pi_{Kp}_{Ti}"]
         ax.plot(r["t"], r["duty"] * 100, **LSk(ls), label=f"PI：K_p = {Kp}，T_i = {Ti:.0f} s（t90 = {O[f'pi_{Kp}_{Ti}_t90']:.1f} s）")
-        print(f"[图 40-p3-4] Kp={Kp}：t90 {O[f'pi_{Kp}_{Ti}_t90']:.1f} s")
+        print(f"[图 40-p3-5] Kp={Kp}：t90 {O[f'pi_{Kp}_{Ti}_t90']:.1f} s")
     r = S.simulate("ONOFF", t_end=300, vfun=lambda t: 0.0 if t < 120 else 1.0)
     a, _ = S.cycle_duty(r["t"], r["duty"])
     td, _, _ = S.t90(r["t"], np.nan_to_num(a), 120, 300)
     ax.plot(r["t"], a * 100, color="k", lw=1.4, label=f"开关控温的 3 周期平均（t90 = {td:.1f} s）")
-    print(f"[图 40-p3-4] 开关控温 t90 {td:.1f} s")
+    print(f"[图 40-p3-5] 开关控温 t90 {td:.1f} s")
     fs.ref_v(ax, 120, "120 s：风速 0 → 1 m/s")
     fs.axlabels(ax, "时间", "s", "占空", "%")
     ax.set_xlim(60, 300); ax.set_ylim(0, 105)
     ax.legend(loc="lower right", fontsize=7.5)
-    fs.save(fig, P, "40_p3_4_pi.png")
+    fs.save(fig, P, "40_p3_5_pi.png")
 
 
-def p3_5_cta_schem():
-    """图 40-p3-5：工业模拟 CTA：运放直接驱动电桥顶端，热膜 R_s 是电桥的一臂。"""
+def p3_6_cta_schem():
+    """图 40-p3-6：工业模拟 CTA：运放直接驱动电桥顶端，热膜 R_s 是电桥的一臂。"""
     with schem.drawing(fontsize=11) as d:
         xt, yt = 0.0, 7.0
         d += elm.Line().at((-2.0, yt)).to((2.0, yt))
@@ -362,11 +362,11 @@ def p3_5_cta_schem():
         L.lab(d, (xt + 0.35, yt + 0.45), "电桥顶端电压 $V_{top}$ = 输出信号", fs_=10, color=C["third"])
         L.lab(d, (-5.6, -1.1), "风一吹 → $R_s$ 变冷、阻值变小 → 运放输入差变号 → 输出升高、加大加热 → $R_s$ 又回到 22.31 Ω。", fs_=9.5)
         L.lab(d, (-5.6, -1.8), "电桥平衡条件 $R_s/R_A = R_C/R_B$：热膜永远被拉回同一个温度，风越大 $V_{top}$ 越高。", fs_=9.5)
-        schem.save_schem(d, P, "40_p3_5_cta_schem.png")
+        schem.save_schem(d, P, "40_p3_6_cta_schem.png")
 
 
-def p3_6_cta_spice():
-    """图 40-p3-6：SPICE：同一只热膜，模拟 CTA 与恒流（CP）对风速台阶的反应。"""
+def p3_7_cta_spice():
+    """图 40-p3-7：SPICE：同一只热膜，模拟 CTA 与恒流（CP）对风速台阶的反应。"""
     a = run_spice("40", "cta.cir", ["v(vel)", "v(top)", "v(th1)", "v(th2)"])
     t = a[:, 0] * 1e3
     m = (t > 400) & (t < 2000)
@@ -384,7 +384,7 @@ def p3_6_cta_spice():
     fs.mark(a0, t[i], a[i, 2], "{:.3f}", " V", dx=-120, dy=0.12)
     fs.mark(a1, t[i], a[i, 4], "{:.2f}", " K", dx=-120, dy=2.5)
     fs.mark(a1, t[i], a[i, 3], "{:.2f}", " K", dx=-120, dy=3.5)
-    fs.save(fig, P, "40_p3_6_cta_spice.png")
+    fs.save(fig, P, "40_p3_7_cta_spice.png")
 
 
 # ======================================================================
@@ -539,14 +539,80 @@ def p4_4_schem_lab():
         schem.save_schem(d, P, "40_p4_4_schem_lab.png")
 
 
+def sys_schem(name, notes):
+    """直觉篇 / 参数篇对照用的整机原理图：两路 NTC 分压（N2→A1、N1→A0）+ D9 → R_G → IRLZ44N 低边开关 + R_H（+9 V）。
+    元件名、阻值与图 40-p4-2、40-p4-4 相同，只是不标孔位、两段画在一张图上。"""
+    with schem.drawing(fontsize=11) as d:
+        # 环境 NTC N2 → A1（最左）
+        xa = -7.0
+        d += elm.Vdd().at((xa, 7.5)).label("+5 V")
+        d += elm.Resistor().at((xa, 7.5)).to((xa, 5.0)); L.lab(d, (xa + 0.45, 6.25), "R_S2 10k", fs_=10)
+        d += elm.Dot().at((xa, 5.0))
+        d += elm.Thermistor().at((xa, 5.0)).to((xa, 2.5)); L.lab(d, (xa + 0.5, 3.75), "N2 环境 NTC\n（上风处）", fs_=10)
+        d += elm.Ground().at((xa, 2.5))
+        d += elm.Line().at((xa, 5.0)).to((xa + 1.8, 5.0)).color(C["fb"]).linewidth(2.0)
+        d += elm.Dot(open=True).at((xa + 1.8, 5.0)).label("Arduino A1", "right")
+        # 加热器开关：D9 → R_G → Q1，R_PD 下拉，R_H 接 +9 V
+        xg, yg = 3.0, 2.0
+        d += elm.Dot(open=True).at((-1.5, yg)).label("Arduino D9", "left")
+        d += elm.Line().at((-1.5, yg)).to((-0.5, yg)).color(C["fb"]).linewidth(2.0)
+        d += elm.Resistor().at((-0.5, yg)).to((xg, yg))
+        L.lab(d, (1.25, yg + 0.55), "R_G 100 Ω", ha="center", fs_=10)
+        d += elm.Dot().at((xg, yg))
+        d += elm.Resistor().at((xg, yg)).to((xg, -1.0))
+        L.lab(d, (xg - 0.45, 0.5), "R_PD 100k", ha="right", fs_=10)
+        d += elm.Ground().at((xg, -1.0))
+        q = elm.NFet().theta(0).reverse().anchor("gate").at((xg + 1.4, yg))
+        d += q
+        d += elm.Line().at((xg, yg)).to(q.gate)
+        xq = q.drain[0]
+        L.lab(d, (xq + 0.5, yg + 0.25), "Q1 IRLZ44N", fs_=10)
+        L.lab(d, (xq - 1.3, yg - 0.45), "G", fs_=9.5, color="#666666")
+        L.lab(d, (xq + 0.2, q.drain[1] + 0.35), "D", fs_=9.5, color="#666666")
+        L.lab(d, (xq + 0.2, q.source[1] - 0.35), "S", fs_=9.5, color="#666666")
+        d += elm.Line().at(q.source).to((xq, -1.0)); d += elm.Ground().at((xq, -1.0))
+        d += elm.Resistor().at((xq, 7.5)).to(q.drain)
+        L.lab(d, (xq + 0.45, (7.5 + q.drain[1]) / 2 + 0.3), "R_H 560 Ω 2 W\n（加热器）", fs_=10)
+        d += elm.Vdd().at((xq, 7.5)).label("+9 V")
+        # 加热 NTC N1 → A0（最右，与 R_H 胶带包在一起）
+        xn = xq + 5.2
+        d += elm.Vdd().at((xn, 7.5)).label("+5 V")
+        d += elm.Resistor().at((xn, 7.5)).to((xn, 5.0)); L.lab(d, (xn + 0.45, 6.25), "R_S1 10k", fs_=10)
+        d += elm.Dot().at((xn, 5.0))
+        d += elm.Thermistor().at((xn, 5.0)).to((xn, 2.5)); L.lab(d, (xn + 0.5, 3.75), "N1 加热 NTC", fs_=10)
+        d += elm.Ground().at((xn, 2.5))
+        d += elm.Line().at((xn, 5.0)).to((xn + 1.8, 5.0)).color(C["fb"]).linewidth(2.0)
+        d += elm.Dot(open=True).at((xn + 1.8, 5.0)).label("Arduino A0", "right")
+        d += elm.Line().at((xq + 0.9, 4.2)).to((xn - 0.6, 3.75)).color(C["bad"]).linestyle("--")
+        L.lab(d, ((xq + xn) / 2 + 0.2, 3.1), "胶带包在一起\n（热量从 R_H 传到 N1）", ha="center", fs_=9, color=C["bad"])
+        for i, t in enumerate(notes):
+            L.note(d, (-8.5, -2.3 - 0.6 * i), t)
+        schem.save_schem(d, P, name)
+
+
+def p1_5_sys_schem():
+    """图 40-p1-5：直觉篇「两种测法」对照用的整机原理图。"""
+    sys_schem("40_p1_5_sys_schem.png", [
+        "A1 读环境温度（N2），A0 读加热电阻上的温度（N1），程序算温差 = N1 − N2。",
+        "D9 = 1：Q1 导通，+9 V 经 R_H 加热；D9 = 0：Q1 关断，R_PD 把栅极拉到 0 V。恒功率和恒温差用的是同一套电路，只是程序不同。"])
+
+
+def p3_1_sys_schem():
+    """图 40-p3-1：参数篇对照用的整机原理图（开关控温、标定、调试对照表）。"""
+    sys_schem("40_p3_1_sys_schem.png", [
+        "开关控温：温差 > 2.2 K 时 D9 = 0（关加热），< 1.8 K 时 D9 = 1（开加热）；平均占空 = 风速信号。",
+        "R_G 100 Ω 限制 D9 给栅极充电的电流；R_PD 100 kΩ 让 Arduino 复位、D9 悬空时 Q1 保持关断。"])
+
+
 if __name__ == "__main__":
     O = sim_all()
     p1_1_wind(O); p1_2_king(O); p1_3_rt(); p1_4_blocks()
     p2_1_ntc_div(); p2_2_ntc_curve(); p2_3_heater(); p2_4_cp_resp(O); p2_5_pt100()
-    p3_1_onoff(O); p3_2_calib(O); p3_3_amb(O); p3_4_pi(O); p3_5_cta_schem(); p3_6_cta_spice()
+    p3_2_onoff(O); p3_3_calib(O); p3_4_amb(O); p3_5_pi(O); p3_6_cta_schem(); p3_7_cta_spice()
     for st, name in ((1, "40_p4_1_breadboard_ntc.png"), (2, "40_p4_3_breadboard_heater.png")):
         bb = bb40(st)
         fs.save(bb.fig, P, name)
         plt.close("all")
     p4_2_schem_lab(); p4_4_schem_lab()
+    p1_5_sys_schem(); p3_1_sys_schem()
     print("40_figs OK")

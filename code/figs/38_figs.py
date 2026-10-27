@@ -299,6 +299,37 @@ def draw_pm1(d, x0=0.0, y0=0.0, holes=False):
     return p
 
 
+def p1_4():
+    """图 38-p1-4：直觉篇的「乘 ±1」电路：U3B + CD4053 A 组 + LM393 电平转换 + RC 求平均（RF、CF 与原理篇第 6 级相同）。"""
+    with drawing(fontsize=11) as d:
+        p = draw_pm1(d)
+        c = p["cmp"]
+        inp, inm = c.absanchors["in2"], c.absanchors["in1"]
+        d += elm.Line().at(inp).to((inp[0] - 0.8, inp[1])).color(fs.C["fb"])
+        ls.lab(d, (inp[0] - 0.95, inp[1]), "参考方波 D10（0/5 V）", ha="right", fs_=10, color=fs.C["fb"])
+        d += elm.Line().at(inm).to((inm[0] - 0.8, inm[1]))
+        ls.lab(d, (inm[0] - 0.95, inm[1]), "门限 2.5 V", ha="right", fs_=10)
+        ls.lab(d, (p["fo"][0] - 0.15, p["fo"][1]), "信号（对 V_MID）", ha="right", fs_=10, color=fs.C["vin"])
+        ox, oy = p["out"]
+        d += elm.Line().at((ox, oy)).to((ox, 2.2))
+        d += elm.Resistor().at((ox, 2.2)).to((ox + 3.4, 2.2))
+        ls.lab(d, (ox + 1.7, 2.75), "RF 100 kΩ", ha="center", fs_=10)
+        xj = ox + 3.4
+        d += elm.Dot().at((xj, 2.2))
+        d += elm.Line().at((xj, 2.2)).to((xj + 1.2, 2.2))
+        d += elm.Dot(open=True).at((xj + 1.2, 2.2))
+        ls.lab(d, (xj + 1.4, 2.2), "J → 万用表", fs_=10, color=fs.C["vout"])
+        d += elm.Capacitor().at((xj, 2.2)).to((xj, 0.0))
+        ls.lab(d, (xj + 0.35, 1.1), "CF 10 µF", fs_=10)
+        d += elm.Dot(open=True).at((xj, -0.3))
+        d += elm.Line().at((xj, 0.0)).to((xj, -0.3))
+        ls.lab(d, (xj + 0.25, -0.3), "K = V_MID（万用表另一支表笔）", fs_=10, color=fs.C["third"])
+        ls.lab(d, (ox + 0.15, 1.45), "×(+1) 或 ×(−1)", fs_=10, color=fs.C["vout"])
+        ls.note(d, (-3.5, -5.0), "D10 高 → LM393 输出管断开 → RU 把 CD4053 的 11 脚 A 拉到 9 V → 接 13 AY：U3B 同相端 = 信号，R11 两端同电位，输出 = 信号（×+1，相当于跟随器）。")
+        ls.note(d, (-3.5, -5.6), "D10 低 → 输出管导通 → 11 脚 ≈ 0 V → 接 12 AX（虚线）：同相端 = V_MID，U3B 变成 −R12/R11 = −1 倍反相放大。RF、CF 把翻来翻去的输出平均成直流（τ = 1 s）。")
+    save_schem(d, N, "38_p1_4_pm1_rc.png")
+
+
 def p2_4():
     with drawing(fontsize=11) as d:
         p = draw_pm1(d)
@@ -310,7 +341,7 @@ def p2_4():
         ls.lab(d, (inm[0] - 0.95, inm[1]), "门限 2.5 V", ha="right", fs_=10)
         ls.lab(d, (p["out"][0] + 0.15, p["out"][1] + 0.5), "dm = +fo 或 −fo", fs_=10, color=fs.C["vout"])
         ls.lab(d, (p["fo"][0] - 0.15, p["fo"][1]), "fo（输入，\n对 V_MID）", ha="right", fs_=10, color=fs.C["vin"])
-        ls.note(d, (-3.5, -5.0), "D10 高（5 V）→ LM393 输出管断开 → RU 把 A 拉到 9 V（CD4053 在 10 V 供电时要 ≥ 7 V 才认作 1）→ 接 AY：同相端 = fo，倍数 +1。")
+        ls.note(d, (-3.5, -5.0), "D10 高（5 V）→ LM393 输出管断开 → RU 把 A 拉到 9 V（CD4053 接 9 V 时约 6.3 V 以上才保证认作 1，即 0.7·VDD；按手册 10 V 档的 7 V 算也满足）→ 接 AY：同相端 = fo，倍数 +1。")
         ls.note(d, (-3.5, -5.6), "D10 低（0 V）→ 输出管导通 → A ≈ 0 V → 接 AX（虚线）：同相端 = V_MID，U3B 变成 −R12/R11 = −1 倍反相放大。")
     print("[图 38-p2-4] ±1 级：sel=1 → 同相端 fo（+1）；sel=0 → 同相端 V_MID（−R12/R11 = −1）")
     save_schem(d, N, "38_p2_4_pm1_stage.png")
@@ -489,7 +520,7 @@ def _vmid_buffer(d, x0, y0, out_note="V_MID ≈ 4.5 V\n紫线 d37→g46"):
     return fo
 
 
-def p4_2():
+def p4_2(name="38_p4_2_schem_a.png"):
     """板 A 对照原理图：模拟电极 + 仪表放大器（与图 38-p4-1 的孔位一一对应）。"""
     with drawing(fontsize=11) as d:
         ls.title(d, (1.0, 15.2), "板 A：模拟电极 + 仪表放大器（U1、U2 都是 LM358；9 V 电池；Arduino 用 USB 供电）")
@@ -581,7 +612,7 @@ def p4_2():
         ls.note(d, (-17.0, -6.6), "读图：一条线 = 一个节点；空心圆 = 同名的点（所有 V_MID 是同一点，所有 9 V、0 V 各是同一条轨）；黄色圆圈 A～D = 测量点（字母）；")
         ls.note(d, (-17.0, -7.2), "灰色或括号里的字 = 面包板孔位；运放旁的小黑字 = 引脚号。Arduino 的 GND 接上 0 V 轨（T2-6），和 9 V 电池负极连在一起。")
     print("[图 38-p4-2] 板 A 原理图：RS1/RS2/RN–CN/RD–RP → P（测点 A）→ U1 3 脚（仪放 +）；V_MID → U1 5 脚（仪放 −）；G = 21；C1、C2 去耦")
-    save_schem(d, N, "38_p4_2_schem_a.png")
+    save_schem(d, N, name)
 
 
 def p4_3():
@@ -673,7 +704,7 @@ def p4_3():
     fs.save(fig, N, "38_p4_3_board_b.png")
 
 
-def p4_4():
+def p4_4(name="38_p4_4_schem_b.png"):
     """板 B 对照原理图：隔直 + U3A 跟随 → ±1（U3B + U4 + U5B）→ RF/CF 平均；A0 分压；比较器阈值。"""
     with drawing(fontsize=11) as d:
         ls.title(d, (-2.0, 7.6), "板 B：隔直 → 跟随 → ×±1 → RC 平均（U3 = LM358，U4 = CD4053，U5 = LM393；都接 9 V 和 0 V）")
@@ -784,7 +815,7 @@ def p4_4():
         f30.decap(d, 10.1, -5.6, "C5", "U5：b32→上 0 V 轨")
         ls.note(d, (-14.0, -9.4), "测点字母 C～M 与板 B 面包板图的黄色圆圈一一对应；芯片旁的小黑字是引脚号；括号里是孔位。所有 V_MID 空心圆都是板 A 送来的同一条线。")
     print("[图 38-p4-4] 板 B 原理图：C→CH→E→U3A→F→U3B/U4 ×±1→G→RF→J，CF→K(V_MID)；A0 分压 L；比较器 D10→5 脚，M→6 脚；去耦 C3–C5")
-    save_schem(d, N, "38_p4_4_schem_b.png")
+    save_schem(d, N, name)
 
 def p1_3():
     """示意：恒定磁场 vs 换向磁场；线圈 L/R 让磁场变圆，只用每个半周期的后一半。任意单位。"""
@@ -921,8 +952,15 @@ def p4_6():
     save_schem(d, N, "38_p4_6_think.png")
 
 
+# 同一张板 A / 板 B 原理图在原理篇（§五）和参数篇（故障排查表）各放一份，手机上不用翻页
+COPIES = {"p2_5": (lambda: p4_2("38_p2_5_schem_a.png")), "p2_6": (lambda: p4_4("38_p2_6_schem_b.png")),
+          "p3_4": (lambda: p4_2("38_p3_4_schem_a.png")), "p3_5": (lambda: p4_4("38_p3_5_schem_b.png"))}
+
 if __name__ == "__main__":
     want = sys.argv[1:]
     for f in [k for k in list(globals()) if k.startswith("p") and k[1:2].isdigit()]:
         if not want or f in want:
             globals()[f]()
+    for f, fn in COPIES.items():
+        if not want or f in want:
+            fn()

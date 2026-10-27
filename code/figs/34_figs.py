@@ -840,7 +840,38 @@ def p4_7():
     fs.save(fig, N, "34_p4_7_expected.png")
 
 
+# =====================================================================
+# 图 34-p1-5 整板简化原理图（page1 同页原理图；画法同图 34-p2-2、34-p2-5）
+# =====================================================================
+def p1_5():
+    d = drawing(fontsize=11)
+    p = _sc_core(d, 0, 0, vin_label="Vin", show_ctrl=False)
+    xo = p["xo"]
+    d += elm.Line().at((xo, 0)).to((xo + 1.2, 0))
+    a = _follower(d, xo + 1.2, 0)
+    xv = a["out"][0] + 1.4
+    d += elm.Line().at(a["out"]).to((xv, a["out"][1]))
+    d += elm.Dot(open=True).at((xv, a["out"][1]))
+    ls.lab(d, (xv + 0.2, a["out"][1]), "Vout\n（接万用表）", fs_=10)
+    ls.lab(d, (xo + 0.2, -0.45), "输出节点", fs_=9.5)
+    ls.lab(d, (p["xm"] + 0.4, -2.7), "CD4053\n（只用 A 路开关）", fs_=9.5, color=ls.GRAY)
+    # 时钟在下方，输出用天蓝色线接到 CD4053 的 A（11 脚）
+    q = _clock(d, -3.0, -9.6)
+    xc, yc = q["out"]
+    yt = 1.9
+    xl = -2.6
+    pts = [(xc, yc), (xc + 1.4, yc), (xc + 1.4, -5.6), (xl, -5.6), (xl, yt), (p["xm"], yt), (p["xm"], 0.2)]
+    for p_, q_ in zip(pts[:-1], pts[1:]):
+        d += elm.Line().at(p_).to(q_).color(C["cur"]).linewidth(1.6)
+    ls.lab(d, (p["xm"] - 0.2, 1.0), "A 11 脚：低 → 接 AX，高 → 接 AY", ha="right", fs_=9, color=C["cur"])
+    ls.lab(d, (xc + 1.6, yc - 0.9), f"时钟方波（约 {F1} Hz）", fs_=9.5, color=C["cur"])
+    ls.note(d, (-7.0, -17.4), "LM358 一片：A 组当时钟（1、2、3 脚），B 组当跟随器（5、6、7 脚）；8 脚 +9 V，4 脚 GND。")
+    ls.note(d, (-7.0, -18.1), "CD4053：16 脚 +9 V；7、8、6 脚接 GND；不用的 B、C 两路控制脚 10、9 接 GND。整板一节 9 V 电池。")
+    save_schem(d, N, "34_p1_5_schem_board.png")
+    print("[图 34-p1-5] 整板简化原理图：LM358 A 时钟 → CD4053 A(11)；Vin→AX(12)，14→C1 10 nF，AY(13)→C2 1 µF→LM358 B 跟随器")
+
+
 if __name__ == "__main__":
-    for fn in (p1_1, p1_2, p1_3, p1_4, p2_1, p2_2, p2_3, p2_4, p2_5, p2_6, p3_1, p3_2, p3_3, p3_4, p3_5,
+    for fn in (p1_1, p1_2, p1_3, p1_4, p1_5, p2_1, p2_2, p2_3, p2_4, p2_5, p2_6, p3_1, p3_2, p3_3, p3_4, p3_5,
                p4_1, p4_2, p4_3, p4_4, p4_5, p4_6, p4_7):
         fn()

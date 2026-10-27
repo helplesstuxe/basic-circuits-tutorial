@@ -199,6 +199,24 @@ def _schem(d, holes=False):
     return dict(n2=(6, 0), out=(x3, yo), ref=(xc, yref))
 
 
+def p1_3():
+    """图 36-p1-3：直觉篇里的实验电路（与图 36-p2-1 同一张原理图）。"""
+    d = drawing(fontsize=11)
+    _schem(d)
+    ls.note(d, (-3.5, -7.7), "LM393 用 9 V 电池供电；R3 上拉、Ra 都接 Arduino 的 5 V，所以送进 D8 的高电平不超过 5 V。两边的 GND 连在一起。")
+    ls.note(d, (-3.5, -8.4), "① = 比较器输入 n2；② = 输出；③ = 参考 2.5 V。去掉 R2 就是「没有回差」的单门限比较器。")
+    save_schem(d, N, "36_p1_3_schem.png")
+
+
+def p3_1():
+    """图 36-p3-1：参数篇对照用的原理图（R1、R2、R3、信号源两级 RC、测量点①②③）。"""
+    d = drawing(fontsize=11)
+    _schem(d)
+    ls.note(d, (-3.5, -7.7), "信号源内阻 Rs = Rs1 + Rs2（两级 RC 的电阻，本图是 1 kΩ + 1 kΩ）；回差电流从输出经 R2、R1 流进 n2，再流过 Rs。")
+    ls.note(d, (-3.5, -8.4), "① = n2；② = 输出（R3 上拉到 Arduino 5 V）；③ = 参考 2.5 V。LM393 8 脚接 +9 V、4 脚接 GND，B 组 5、6 脚接 GND。")
+    save_schem(d, N, "36_p3_1_schem.png")
+
+
 def p2_1():
     d = drawing(fontsize=11)
     _schem(d)
@@ -327,9 +345,9 @@ def p2_5():
 
 
 # =====================================================================
-# 图 36-p3-1 R2 扫一遍：回差太小多数、太大不数
+# 图 36-p3-2 R2 扫一遍：回差太小多数、太大不数
 # =====================================================================
-def p3_1():
+def p3_2():
     fig, ax = plt.subplots(figsize=(7.6, 4.6))
     styles = {2.2e3: (C["vin"], "o"), 1e3: (C["vout"], "s"), 470: (C["third"], "^")}
     allres = {}
@@ -340,11 +358,11 @@ def p3_1():
         col, mk = styles[rn]
         ax.plot([dv * 1e3 for _, dv, _ in res], [e for _, _, e in res], marker=mk, color=col, lw=1.3,
                 label=f"Rn = {rn/1e3:g} kΩ（干扰峰峰值 {pp*1000:.0f} mV）")
-        print(f"[数值] 图 36-p3-1：Rn = {rn:g}：" + "，".join(f"{r2/1e3:.0f}k→{e}" for r2, _, e in res))
+        print(f"[数值] 图 36-p3-2：Rn = {rn:g}：" + "，".join(f"{r2/1e3:.0f}k→{e}" for r2, _, e in res))
     off = [(dv, sim.simulate(r2=r2, rn=1e12, noise=False)[0]) for r2, dv, _ in allres[2.2e3]]
     ax.plot([dv * 1e3 for dv, _ in off], [e for _, e in off], marker="x", color=C["good"], ls="--", lw=1.2,
             label="拔掉干扰（只有信号）")
-    print("[数值] 图 36-p3-1：拔掉干扰：" + "，".join(f"{r2/1e3:.0f}k→{e}" for (r2, _, _), (_, e) in zip(allres[2.2e3], off)))
+    print("[数值] 图 36-p3-2：拔掉干扰：" + "，".join(f"{r2/1e3:.0f}k→{e}" for (r2, _, _), (_, e) in zip(allres[2.2e3], off)))
     ax.axhline(100, **LS["ref"]); ax.text(130, 40, "正确：100 个", fontsize=9, color="0.35")
     for r2, dv, e in allres[2.2e3]:
         if r2 in (47e3, 220e3, 1e6):
@@ -353,17 +371,17 @@ def p3_1():
     ax.set_ylim(-30, 1050)
     ax.legend(loc="upper right", fontsize=8.5)
     axl(ax, "回差 ΔV / mV（对数刻度；R2 越小回差越大）", "1 s 内数到的上升沿 / 个")
-    ax.set_title("图 36-p3-1 回差要比干扰大、比信号小：否则不是多数，就是一个也数不到", fontsize=10.5)
-    fs.save(fig, N, "36_p3_1_r2_window.png")
+    ax.set_title("图 36-p3-2 回差要比干扰大、比信号小：否则不是多数，就是一个也数不到", fontsize=10.5)
+    fs.save(fig, N, "36_p3_2_r2_window.png")
     r = {r2: e for r2, _, e in allres[2.2e3]}
     assert r[220e3] == 100 and r[47e3] == 0 and dict((round(dv, 4), e) for dv, e in off)
     assert [e for _, e in off][4] == 0 and [e for _, e in off][6] == 100
 
 
 # =====================================================================
-# 图 36-p3-2 信号源内阻太大：回差电流把输入拉偏，永远到不了门限
+# 图 36-p3-3 信号源内阻太大：回差电流把输入拉偏，永远到不了门限
 # =====================================================================
-def p3_2():
+def p3_3():
     t0, t1 = 0.10, 0.13
     _, _, ra = sim.simulate(rn=1e12, noise=False, t_end=t1 + 0.001, keep=(t0, t1))
     _, _, rb = sim.simulate(rs=10e3, c=470e-9, rn=1e12, noise=False, t_end=t1 + 0.001, keep=(t0, t1))
@@ -381,9 +399,9 @@ def p3_2():
     axs[1].legend(loc="lower right", fontsize=8.5)
     axl(axs[1], "时间 / ms（拔掉干扰，只有信号；R2 = 220 kΩ）", None)
     i_h = (sim.VREF - VOL) / (sim.R1 + sim.R2)
-    fig.suptitle(f"图 36-p3-2 回差电流约 {i_h*1e6:.1f} µA：流过 20 kΩ 拉偏 {i_h*20e3*1000:.0f} mV，流过 2 kΩ 只拉偏 {i_h*2e3*1000:.0f} mV", fontsize=10.5)
-    fs.save(fig, N, "36_p3_2_source_resistance.png")
-    print(f"[数值] 图 36-p3-2：1k 网络 30 ms 内 {out[0]} 次；10k 网络 {out[1]} 次；回差电流 {i_h*1e6:.2f} µA")
+    fig.suptitle(f"图 36-p3-3 回差电流约 {i_h*1e6:.1f} µA：流过 20 kΩ 拉偏 {i_h*20e3*1000:.0f} mV，流过 2 kΩ 只拉偏 {i_h*2e3*1000:.0f} mV", fontsize=10.5)
+    fs.save(fig, N, "36_p3_3_source_resistance.png")
+    print(f"[数值] 图 36-p3-3：1k 网络 30 ms 内 {out[0]} 次；10k 网络 {out[1]} 次；回差电流 {i_h*1e6:.2f} µA")
     assert out[0] == 3 and out[1] == 0
 
 
@@ -490,9 +508,9 @@ def p4_2():
 
 
 # =====================================================================
-# 图 36-p3-3 变体：霍尔涡轮流量计（开集电极输出）直接接 Arduino
+# 图 36-p3-4 变体：霍尔涡轮流量计（开集电极输出）直接接 Arduino
 # =====================================================================
-def p3_3():
+def p3_4():
     d = drawing(fontsize=10.5)
     # 传感器方框
     bx, by, bw, bh = 0.0, -1.5, 3.2, 4.0
@@ -529,10 +547,14 @@ def p3_3():
     d += elm.Ground().at((xe + 1.2, yk - 0.8))
     ls.note(d, (-0.5, -3.4), "不需要 LM393：传感器里已经整形好了。上拉电阻绝不能接到传感器的 12 V 或 24 V 电源上，否则 D8 的保护二极管会被迫导通、电流倒灌，损坏引脚。")
     ls.note(d, (-0.5, -4.0), "传感器的黑线和 Arduino 的 GND 一定要连在一起；导线很长时，可以在 Arduino 一侧再加一级本节的施密特整形。")
-    save_schem(d, N, "36_p3_3_hall_variant.png")
-    print("[图 36-p3-3] 霍尔流量计变体：红线→传感器电源；黑线→GND（与 Arduino GND 相连）；黄线→4.7k 上拉到 Arduino 5 V→D8")
+    save_schem(d, N, "36_p3_4_hall_variant.png")
+    print("[图 36-p3-4] 霍尔流量计变体：红线→传感器电源；黑线→GND（与 Arduino GND 相连）；黄线→4.7k 上拉到 Arduino 5 V→D8")
 
 
 if __name__ == "__main__":
-    for fn in (p1_1, p1_2, p2_1, p2_2, p2_3, p2_4, p2_5, p3_1, p3_2, p3_3, p4_1, p4_2):
+    if sys.argv[1:]:
+        for name in sys.argv[1:]:
+            globals()[name]()
+        sys.exit(0)
+    for fn in (p1_1, p1_2, p1_3, p2_1, p2_2, p2_3, p2_4, p2_5, p3_1, p3_2, p3_3, p3_4, p4_1, p4_2):
         fn()

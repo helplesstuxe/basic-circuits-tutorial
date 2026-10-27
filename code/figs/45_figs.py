@@ -237,8 +237,8 @@ def p1_1():
     save(fig, "45_p1_1_supply.png")
 
 
-# ---------- 图 45-p1-2：单端（SE）与 BTL：同一个电源、同一只 8 Ω 喇叭 ----------
-def p1_2():
+# ---------- 图 45-p1-3：单端（SE）与 BTL：同一个电源、同一只 8 Ω 喇叭 ----------
+def p1_3():
     v = np.linspace(2, 14, 200)
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
     ax.plot(v, p_se(v, 8), **fs.LS["vin"], label="单端 SE（理想：峰值 = 电源/2）")
@@ -256,14 +256,14 @@ def p1_2():
     fs.axlabels(ax, "电源电压", "V", "8 Ω 上的最大正弦功率", "W")
     ax.legend(fontsize=7.6, loc="lower right")
     k = p_btl(9, 8) / p_se(9, 8)
-    print(f"[图 45-p1-2] 同电源 BTL/SE = {k:.1f} 倍；5 V/8 Ω：SE {p_se(5, 8):.3f} W，BTL {p_btl(5, 8):.3f} W，PAM8403 计算 {PAM[8]:.3f} W；"
+    print(f"[图 45-p1-3] 同电源 BTL/SE = {k:.1f} 倍；5 V/8 Ω：SE {p_se(5, 8):.3f} W，BTL {p_btl(5, 8):.3f} W，PAM8403 计算 {PAM[8]:.3f} W；"
           "黑点 = 数据手册 10 % THD 值")
     assert abs(k - 4) < 1e-9
-    save(fig, "45_p1_2_se_btl.png")
+    save(fig, "45_p1_3_se_btl.png")
 
 
-# ---------- 图 45-p1-3：效率随输出功率（18 Ω 负载：10 Ω + 8 Ω） ----------
-def p1_3():
+# ---------- 图 45-p1-4：效率随输出功率（18 Ω 负载：10 Ω + 8 Ω） ----------
+def p1_4():
     sw = SW
     m = sw["a"] <= 0.16 + 1e-9
     fig, ax = plt.subplots(figsize=fs.SIZE["single"])
@@ -282,9 +282,9 @@ def p1_3():
     fs.axlabels(ax, "10 Ω + 8 Ω 上的输出功率", "W", "效率", "%")
     ax.legend(fontsize=7.8, loc="lower right")
     assert round(100 * ETA_7805_01) == 25, "page1 正文写「约 25%」，与图上标注同步"
-    print(f"[图 45-p1-3] 0.1 W：LM386 {ETA386_01*100:.1f} %，PAM8403 {ETA_PAM01*100:.1f} %，+7805 {ETA_7805_01*100:.1f} %；"
+    print(f"[图 45-p1-4] 0.1 W：LM386 {ETA386_01*100:.1f} %，PAM8403 {ETA_PAM01*100:.1f} %，+7805 {ETA_7805_01*100:.1f} %；"
           f"LM386 削顶前 {sw['pl'][m][-1]:.3f} W 效率 {100*sw['pl'][m][-1]/sw['pin'][m][-1]:.1f} %")
-    save(fig, "45_p1_3_efficiency.png")
+    save(fig, "45_p1_4_efficiency.png")
 
 
 # =============================== page2 ===============================
@@ -458,8 +458,8 @@ def p2_4():
 
 
 # =============================== page3 ===============================
-# ---------- 图 45-p3-1：同一个手机信号，增益 20 和增益 200（SPICE） ----------
-def p3_1():
+# ---------- 图 45-p3-2：同一个手机信号，增益 20 和增益 200（SPICE） ----------
+def p3_2():
     ph = csv("phone.csv")
     t = (ph["t"] - ph["t"][0]) * 1e3
     fig, axs = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
@@ -485,14 +485,14 @@ def p3_1():
     ax.legend(fontsize=7.6, loc="upper center", ncol=2)
     ax.set_title("同样输入，增益 200 被电源轨削平", fontsize=10)
     a20 = (ph["out"].max() - ph["out"].min()) / 2
-    print(f"[图 45-p3-1] 手机峰值 1.48 V → 3 脚峰值 {ph['vin'].max():.3f} V；增益 20 输出峰值 {a20:.2f} V（中心 {(ph['out'].max()+ph['out'].min())/2:.2f} V）；"
+    print(f"[图 45-p3-2] 手机峰值 1.48 V → 3 脚峰值 {ph['vin'].max():.3f} V；增益 20 输出峰值 {a20:.2f} V（中心 {(ph['out'].max()+ph['out'].min())/2:.2f} V）；"
           f"增益 200 削在 {ph['outb'].max():.2f} / {ph['outb'].min():.2f} V")
     assert abs(ph["outb"].max() - 7.85) < 0.03 and abs(ph["outb"].min() - 1.15) < 0.03
-    save(fig, "45_p3_1_clipping.png")
+    save(fig, "45_p3_2_clipping.png")
 
 
-# ---------- 图 45-p3-2：三颗芯片出事时怎么办（保护功能对照） ----------
-def p3_2():
+# ---------- 图 45-p3-3：三颗芯片出事时怎么办（保护功能对照） ----------
+def p3_3():
     fig, ax = fs.diagram(10, 3.9)
     cols = [("LM386", 1.6, "数据手册没写\n过热、短路保护\n\n只能靠你：\n限流电源 + 10 Ω\n+ 控制温升", fs.C["fill2"]),
             ("PAM8403", 5.0, "输出短路 → 立即关输出\n短路去掉后自动恢复\n\n过温 140 °C → 关输出\n降 30 °C 后自动恢复\n\n欠压 ≤ 2.0 V → 关输出", fs.C["fill"]),
@@ -503,13 +503,13 @@ def p3_2():
         ax.text(x, 1.52, txt, ha="center", va="center", fontsize=10, linespacing=1.3)
         fs.arrow(ax, (x, 3.17), (x, 2.97))
     ax.set_xlim(-0.2, 10.2); ax.set_ylim(0, 3.85)
-    print("[图 45-p3-2] LM386 无保护说明；PAM8403 短路自恢复、OTP 140 °C（回差 30 °C）、UVLO 2.0 V；"
+    print("[图 45-p3-3] LM386 无保护说明；PAM8403 短路自恢复、OTP 140 °C（回差 30 °C）、UVLO 2.0 V；"
           "TPA3116D2 过流 7.5 A / 过温 150 °C / 直流检测锁存，UVLO/OVP 自恢复")
-    save(fig, "45_p3_2_protection.png")
+    save(fig, "45_p3_3_protection.png")
 
 
-# ---------- 图 45-p3-3：温升 = 发热 × 热阻 ----------
-def p3_3():
+# ---------- 图 45-p3-4：温升 = 发热 × 热阻 ----------
+def p3_4():
     rows = []
     for k, v, r in PD_ROWS:
         rows.append((f"LM386 DIP\n{k}", PD[k], TH_PDIP, PD_PDIP))
@@ -534,8 +534,8 @@ def p3_3():
     ax.set_xlim(0, 230)
     fs.axlabels(ax, "温升（比环境高多少）", "°C", None, None)
     for (nm, p, th, lim), d in zip(rows, dts):
-        print(f"[图 45-p3-3] {nm.replace(chr(10), ' ')}：{p:.3f} W × {th} = {d:.1f} °C" + (f"（封装上限 {lim} W）" if lim else ""))
-    save(fig, "45_p3_3_temp_rise.png")
+        print(f"[图 45-p3-4] {nm.replace(chr(10), ' ')}：{p:.3f} W × {th} = {d:.1f} °C" + (f"（封装上限 {lim} W）" if lim else ""))
+    save(fig, "45_p3_4_temp_rise.png")
 
 
 
@@ -875,6 +875,102 @@ def _lm386_schem(d, holes=False, blocks=False):
         blk(12.95, -3.1, 14.55, 0.25, "块 5　吸收网络", 14.65, -2.9)
         blk(14.7, 0.15, 18.0, 1.75, "块 4　输出电容", 14.75, 2.05)
     return u
+
+
+# ---------- 单端 / BTL 输出级原理图（图 45-p1-2 用两栏，图 45-p2-6 只用 BTL 一栏） ----------
+def _se_panel(d, x0=0.0):
+    """单端：LM386 的 5 脚 → C4 220 µF → 10 Ω → 8 Ω 喇叭 → GND。返回右端 x。"""
+    u = elm.Opamp(leads=True).right().at((x0 + 2.0, 1.25)).anchor("in1").label("U1\nLM386", loc="center", ofst=(0.25, 0), fontsize=9)
+    d += u
+    d += elm.Line().at((x0, u.in2[1])).to(u.in2)
+    lab(d, (x0, u.in2[1] - 0.45), "已分压的输入", fs_=8.5)
+    lab(d, (u.in2[0] + 0.25, u.in2[1] - 0.35), "3", ha="center", fs_=8, color=GRAY)
+    lab(d, (u.in1[0] + 0.25, u.in1[1] + 0.3), "2", ha="center", fs_=8, color=GRAY)
+    d += elm.Line().at(u.in1).to((u.in1[0] - 0.6, u.in1[1]))
+    d += elm.Ground().at((u.in1[0] - 0.6, u.in1[1]))
+    d += elm.Line().at(u.vd).to((u.vd[0], 3.0))
+    d += elm.Vdd().at((u.vd[0], 3.0)).label("+9 V", fontsize=9)
+    lab(d, (u.vd[0] + 0.15, 2.0), "6", fs_=8, color=GRAY)
+    d += elm.Line().at(u.vs).to((u.vs[0], -1.4))
+    d += elm.Ground().at((u.vs[0], -1.4))
+    lab(d, (u.vs[0] + 0.15, -0.8), "4", fs_=8, color=GRAY)
+    yo = u.out[1]
+    lab(d, (u.out[0] + 0.1, yo + 0.3), "5", fs_=8, color=GRAY)
+    d += elm.Line().at(u.out).to((u.out[0] + 0.5, yo))
+    xa = u.out[0] + 0.5
+    d += elm.Dot().at((xa, yo))
+    lab(d, (xa - 0.2, yo - 0.55), "静止 4.5 V", fs_=8.5, color=fs.C["vout"])
+    d += elm.Capacitor(polar=True).endpoints((xa, yo), (xa + 2.2, yo)).label("C4 220 µF", loc="top", fontsize=8.5)
+    d += elm.Resistor().endpoints((xa + 2.2, yo), (xa + 4.4, yo)).label("10 Ω", loc="top", fontsize=8.5)
+    sp = elm.Speaker().right().at((xa + 4.4, yo)).anchor("in1").label("8 Ω 喇叭", loc="right", fontsize=9)
+    d += sp
+    d += elm.Line().at(sp.in2).to((sp.in2[0], -1.4))
+    d += elm.Ground().at((sp.in2[0], -1.4))
+    lab(d, (sp.in2[0] + 0.15, -1.0), "一端接地", fs_=8.5)
+    return xa + 6.2, u
+
+
+def _btl_panel(d, x0=0.0, ron=True):
+    """BTL：+5 V 供两个半桥（每个 = 上管开关 + 下管开关），OUT+ → 10 Ω → 8 Ω 喇叭 → OUT−，两端都不接地。"""
+    xA, xB, yT, yO, yG = x0, x0 + 7.5, 4.0, 1.0, -2.2
+    d += elm.Line().at((xA, yT)).to((xB, yT))
+    d += elm.Vdd().at(((xA + xB) / 2, yT)).label("+5 V", fontsize=9)
+    d += elm.Dot().at(((xA + xB) / 2, yT))
+    tA = ("SA1 上管", "SA2 下管") if not ron else ("SA1 上管\n约 180 mΩ", "SA2 下管\n约 140 mΩ")
+    tB = ("SB1 上管", "SB2 下管") if not ron else ("SB1 上管\n约 180 mΩ", "SB2 下管\n约 140 mΩ")
+    for x, (t1, t2), side, nm in ((xA, tA, "top", "半桥 A"), (xB, tB, "bottom", "半桥 B")):
+        d += elm.Switch().endpoints((x, yT), (x, yO)).label(t1, loc=side, fontsize=8.5)
+        d += elm.Switch().endpoints((x, yO), (x, yG)).label(t2, loc=side, fontsize=8.5)
+        d += elm.Dot().at((x, yO))
+        lab(d, (x + (-1.9 if x == xA else 0.45), yT + 0.35), nm, fs_=9, color=fs.C["vin"])
+    d += elm.Line().at((xA, yG)).to((xB, yG))
+    d += elm.Ground().at(((xA + xB) / 2, yG))
+    lab(d, (xA + 0.15, yO + 0.3), "OUT+", fs_=9, color=fs.C["vout"])
+    lab(d, (xB - 0.15, yO + 0.3), "OUT−", ha="right", fs_=9, color=fs.C["vout"])
+    d += elm.Resistor().endpoints((xA, yO), (xA + 2.4, yO)).label("10 Ω", loc="bottom", fontsize=8.5)
+    sp = elm.Speaker().right().at((xA + 2.4, yO)).anchor("in1").label("8 Ω 喇叭", loc="top", fontsize=9)
+    d += sp
+    xr, yr = xA + 5.2, yO - 1.6         # 喇叭下脚先往下拉到喇叭下方，再绕到右边接 OUT−（不贴着喇叭走）
+    d += elm.Line().at(sp.in2).to((sp.in2[0], yr))
+    d += elm.Line().at((sp.in2[0], yr)).to((xr, yr))
+    d += elm.Line().at((xr, yr)).to((xr, yO))
+    d += elm.Line().at((xr, yO)).to((xB, yO))
+    lab(d, (xA + 2.6, yr - 0.4), "喇叭两端都不接地", fs_=8.5, color=fs.C["cur"])
+    return xB
+
+
+def p1_2():
+    with drawing(fontsize=10) as d:
+        xr, _ = _se_panel(d, 0.0)
+        lab(d, (0.0, 5.2), "单端（SE）：LM386", fs_=10.5)
+        lab(d, (xr + 2.6, 5.2), "BTL（桥接）：PAM8403 一个声道", fs_=10.5)
+        _btl_panel(d, xr + 4.6, ron=False)
+        note(d, (0.0, -3.3), "单端：5 脚静止 4.5 V，C4 挡住直流，喇叭上的峰值最多约电源的一半。")
+        note(d, (0.0, -3.85), "BTL：SA1、SB2 一起导通时电流从 OUT+ 流向 OUT−，SB1、SA2 一起导通时反过来；同一个半桥的上管、下管不会同时导通。"
+                              "喇叭两端的电压差最大接近整个 5 V。")
+        save_schem(d, N, "45_p1_2_se_btl_schem.png")
+    print("[图 45-p1-2] 单端 vs BTL 输出级原理图")
+
+
+def p2_6():
+    with drawing(fontsize=10) as d:
+        _btl_panel(d, 0.0, ron=True)
+        note(d, (-2.0, -3.3), "没有输入：两个半桥都以 50% 占空比切换，OUT+、OUT− 对 GND 平均都是 2.5 V，喇叭两端平均 0 V。")
+        note(d, (-2.0, -3.85), "电流每次都穿过一个上管和一个下管：约 180 mΩ + 140 mΩ ≈ 0.32 Ω，所以 8 Ω 上最多约 1.445 W。")
+        note(d, (-2.0, -4.4), "把 OUT+ 或 OUT− 接 GND：那一边的上管每次导通都把 +5 V 直接短到地。")
+        save_schem(d, N, "45_p2_6_btl_schem.png")
+    print("[图 45-p2-6] PAM8403 BTL 输出级：两个半桥、喇叭跨接")
+
+
+def p3_1():
+    with drawing(fontsize=10) as d:
+        _lm386_schem(d)
+        note(d, (0.0, -3.4), "块 1 = 本页第一节：Ra 10 kΩ、Rb 1 kΩ 分压（1 kΩ 还并着 RP 10 kΩ 和芯片 50 kΩ 输入电阻），分压比约 0.082；"
+                             "RP 滑动端接 3 脚，2 脚接地。")
+        note(d, (0.0, -3.95), "C5 插上 = 增益 200（容易削顶），拔掉 = 增益 20；C4 220 µF、10 Ω / 2 W、Rz + Cz 和 C1、C2、C3 对应参数一览表的各行。")
+        save_schem(d, N, "45_p3_1_schem.png")
+    _shrink("45_p3_1_schem.png")
+    print("[图 45-p3-1] 参数篇对照用的 LM386 完整电路")
 
 
 # ---------- 图 45-p2-1（page2）：完整外围电路，分 5 块 ----------

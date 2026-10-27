@@ -2,7 +2,7 @@
 运行：/workspace/circuits-venv/bin/python code/figs/32_figs.py [p1_1 p4_3 ...]
 图上的每个数字都来自 code/32_sim.py（用 importlib 载入并调用它的函数），运行时打印出来。
 面包板图用 code/30_bbkit.py 画，同时做「连通检查」（assert 每个节点真的连在一起、不该连的没连上）；
-p3_3 的「拿掉 R_I 会振荡」用 ngspice + TI LMC648x 宏模型现算（网表就是 spice/32/hold.cir）。SPICE 复核见 spice/32/run.py。
+p3_4 的「拿掉 R_I 会振荡」用 ngspice + TI LMC648x 宏模型现算（网表就是 spice/32/hold.cir）。SPICE 复核见 spice/32/run.py。
 """
 import os, sys, io, contextlib, importlib.util
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -268,6 +268,29 @@ def p1_2():
 
 
 def p1_3():
+    """直觉篇用的完整电路：压电片 → R_I → N，C_F ∥ R_F 10 MΩ，3 脚接 V_MID；V_MID = 两只 10 kΩ 分压 + U1B 跟随器。"""
+    with drawing(fontsize=11) as d:
+        ls.title(d, (4.0, 10.6), "单电源电荷放大器（9 V 电池，LMC6482 标 1～8 脚）")
+        t = camp(d, 6.0, 4.0, cf="C_F（存电荷）", rf="R_F 10 MΩ（给漏电流一条出路）", ri="R_I", src=False)
+        xs = t["si"][0]
+        d += elm.Line().at(t["si"]).to((xs - 1.2, 4.0))
+        d += elm.SourceI().at((xs - 1.2, 0.6)).to((xs - 1.2, 4.0))
+        ls.lab(d, (xs - 1.8, 2.3), "压电片\n（电荷 Q ∥ C_p）", ha="right", fs_=9.5)
+        d += elm.Line().at((xs - 1.2, 0.6)).to((xs - 1.2, -0.2)); d += elm.Dot(open=True).at((xs - 1.2, -0.2))
+        ls.lab(d, (xs - 1.2, -0.7), "V_MID", ha="center", fs_=10, color=fs.C["fb"])
+        pwr(d, t["op"], 15.5, 9.4)
+        o = t["out"]
+        d += elm.Line().at(o).to((o[0] + 1.0, o[1])); d += elm.Dot(open=True).at((o[0] + 1.0, o[1]))
+        ls.lab(d, (o[0] + 1.2, o[1]), "V_out\n（平时 4.5 V）", fs_=10, color=fs.C["vout"])
+        ls.lab(d, (5.7, 4.5), "N", ha="right", fs_=10)
+        vmid_gen(d, 2.0, -2.6, -7.4)
+        ls.note(d, (0.0, -9.0), "上半：N 点被负反馈钉在 V_MID，电荷 Q 只能存进 C_F，输出移动 Q/C_F；R_F 让漏电流有路可走，也让电荷慢慢放掉（τ = R_F·C_F）。")
+        ls.note(d, (0.0, -9.6), "下半：RM1、RM2 两只 10 kΩ 把 9 V 分成 4.5 V，CM 滤掉波动，U1B 跟随器缓冲后输出 V_MID，接到 U1A 的 3 脚和压电片的另一端。")
+    print("[图 32-p1-3] 直觉篇完整电路：C_F ∥ R_F 10 MΩ，V_MID = 10k/10k 分压 + U1B")
+    save_schem(d, N, "32_p1_3_schem.png")
+
+
+def p1_4():
     """9 V 单电源：0 V、V_MID、+9 V，以及 N 点在哪里。"""
     fig, ax = plt.subplots(figsize=(7.4, 2.8))
     ax.set_xlim(-0.9, 10.2); ax.set_ylim(0, 3.1); ax.axis("off")
@@ -281,8 +304,8 @@ def p1_3():
     ax.plot(VM, 1.45, "v", ms=9, color=fs.C["fb"])
     ax.text(VM + 0.25, 1.5, "N（2 脚）也在这里：被反馈钉在 V_MID，不是 0 V", fontsize=8.5, color=fs.C["fb"])
     ax.set_title("9 V 电池单电源：三个名字、三个地方", fontsize=10)
-    print(f"[图 32-p1-3] 0 V / V_MID {VM:.1f} V / +9 V；N 点被钉在 V_MID")
-    fs.save(fig, N, "32_p1_3_vmid.png")
+    print(f"[图 32-p1-4] 0 V / V_MID {VM:.1f} V / +9 V；N 点被钉在 V_MID")
+    fs.save(fig, N, "32_p1_4_vmid.png")
 
 
 # ======================================================================================
@@ -378,6 +401,48 @@ def p3_1():
 
 
 def p3_2():
+    """参数篇用的阶段二电路：钳位二极管 D1、D2 反并联在 N 与 V_MID 之间（不接电源轨），压电片冷端接 V_MID。"""
+    with drawing(fontsize=11) as d:
+        ls.title(d, (4.0, 13.6), "阶段二电路：钳位二极管接在 N 与 V_MID 之间")
+        t = camp(d, 6.0, 4.0, cf="CF 100 nF", rf="RF 10 MΩ", ri="RI 10 kΩ", src=False)
+        xs = t["si"][0]
+        xq, xc = xs - 1.4, xs - 2.8
+        d += elm.Line().at(t["si"]).to((xq, 4.0)); d += elm.Line().at((xq, 4.0)).to((xc, 4.0))
+        d += elm.SourceI().at((xq, 0.8)).to((xq, 4.0))
+        d += elm.Capacitor().at((xc, 0.8)).to((xc, 4.0))
+        d += elm.Dot().at((xq, 4.0)); d += elm.Dot().at((xq, 0.8))
+        d += elm.Line().at((xc, 0.8)).to((xq, 0.8))
+        ls.lab(d, (xc - 0.5, 2.4), "Cp\n10～30 nF", ha="right", fs_=9)
+        ls.lab(d, ((xq + xc) / 2, 4.6), "压电片", ha="center", fs_=9)
+        d += elm.Line().at((xq, 0.8)).to((xq, 0.0)); d += elm.Dot(open=True).at((xq, 0.0))
+        ls.lab(d, (xq, -0.5), "V_MID（冷端）", ha="center", fs_=9.5, color=fs.C["fb"])
+        nx, ny = t["n"]
+        yt, yb, ytop = ny + 1.3, ny + 1.7, ny + 3.5
+        x1, x2 = nx - 3.6, nx - 2.4
+        d += elm.Dot().at((nx, yt)); d += elm.Line().at((nx, yt)).to(((x1 + x2) / 2, yt))
+        d += elm.Line().at(((x1 + x2) / 2, yt)).to(((x1 + x2) / 2, yb))
+        d += elm.Line().at((x1, yb)).to((x2, yb))
+        d += elm.Diode().at((x1, yb)).to((x1, ytop))           # D1：阳极接 N，阴极接 V_MID
+        d += elm.Diode().at((x2, ytop)).to((x2, yb))           # D2：阳极接 V_MID，阴极接 N
+        d += elm.Line().at((x1, ytop)).to((x2, ytop))
+        d += elm.Line().at(((x1 + x2) / 2, ytop)).to(((x1 + x2) / 2, ytop + 0.6))
+        d += elm.Dot(open=True).at(((x1 + x2) / 2, ytop + 0.6))
+        ls.lab(d, ((x1 + x2) / 2, ytop + 1.05), "V_MID", ha="center", fs_=9.5, color=fs.C["fb"])
+        ls.lab(d, (x1 - 0.5, (yb + ytop) / 2), "D1 1N4148\n阳极 → N", ha="right", fs_=8.5)
+        ls.lab(d, (x2 + 0.5, (yb + ytop) / 2), "D2 1N4148\n阴极 → N", ha="left", fs_=8.5)
+        ls.lab(d, (5.7, 4.5), "N", ha="right", fs_=10)
+        pwr(d, t["op"], 15.5, 12.4)
+        o = t["out"]
+        d += elm.Line().at(o).to((o[0] + 1.0, o[1])); d += elm.Dot(open=True).at((o[0] + 1.0, o[1]))
+        ls.lab(d, (o[0] + 1.2, o[1]), "V_out", fs_=10, color=fs.C["vout"])
+        vmid_gen(d, 4.0, -4.0, -8.8)
+        ls.note(d, (0.0, -10.4), "D1、D2 的另一端接 V_MID：正常时 N ≈ V_MID，两只二极管两端只有零点几毫伏，几乎不漏电；接到 +9 V / 0 V 时每只常年反偏约 4.5 V。")
+        ls.note(d, (0.0, -11.0), "RI 10 kΩ 把压电片（几十 nF）和 N 点隔开，不加会振（第四节）；压电片冷端也接 V_MID，电池电压变了 C_p 两端也不变（第五节）。")
+    print("[图 32-p3-2] 参数篇阶段二电路：D1/D2 反并联 N–V_MID，RI 10 kΩ，CF 100 nF ∥ RF 10 MΩ，冷端接 V_MID")
+    save_schem(d, N, "32_p3_2_schem.png")
+
+
+def p3_3():
     """三种常见的错误接法（只画接法，不给结果）。"""
     with drawing(fontsize=11) as d:
         ls.title(d, (-1.5, 9.8), "（a）万用表一支表笔碰 N（2 脚）")
@@ -395,8 +460,8 @@ def p3_2():
         d += elm.Dot(open=True).at((12.0, 4.0)); ls.lab(d, (11.75, 4.0), "S", ha="right", fs_=10)
         ls.title(d, (6.0, -3.6), "（c）把 LMC6482 换成手边的 LM358，拔掉 R_F")
         camp(d, 7.0, -9.0, cf="C_F", rf=None, ri="R_I", src=True, opname="LM358")
-    print("[图 32-p3-2] 错误接法：(a) 万用表碰 N 到 0 V；(b) C_S 不经 R_I 直接接 N；(c) 换 LM358 并拔掉 R_F")
-    save_schem(d, N, "32_p3_2_miswire.png")
+    print("[图 32-p3-3] 错误接法：(a) 万用表碰 N 到 0 V；(b) C_S 不经 R_I 直接接 N；(c) 换 LM358 并拔掉 R_F")
+    save_schem(d, N, "32_p3_3_miswire.png")
 
 
 def _hold_body(ri):
@@ -406,7 +471,7 @@ def _hold_body(ri):
     return t.replace("ri=10k", f"ri={ri}")
 
 
-def p3_3():
+def p3_4():
     """SPICE：复位中，有 / 没有 R_I 时 U1A 输出（TI LMC648x 宏模型）。"""
     res = {}
     for ri in ("1m", "10k"):
@@ -424,8 +489,8 @@ def p3_3():
     fs.axlabels(ax, "时间（从 0.95 ms 起）", "µs", "U1A 输出（B 点）", "V")
     ax.set_ylim(4.1, 4.95); ax.legend(fontsize=8.5, loc="upper right")
     ax.set_title("SPICE（TI LMC648x 宏模型）：按住复位按钮，S1 不动", fontsize=10)
-    print(f"[SPICE 32-p3-3] 没有 R_I：峰峰值 {pp0:.1f} mV，约 {fo/1e3:.0f} kHz；有 R_I：峰峰值 {pp1:.2f} mV")
-    fs.save(fig, N, "32_p3_3_no_ri.png")
+    print(f"[SPICE 32-p3-4] 没有 R_I：峰峰值 {pp0:.1f} mV，约 {fo/1e3:.0f} kHz；有 R_I：峰峰值 {pp1:.2f} mV")
+    fs.save(fig, N, "32_p3_4_no_ri.png")
 
 
 # ======================================================================================

@@ -226,6 +226,14 @@ def _sender(d, lab=False, a1=True):
         L.lab(d, (xo + 0.4, po[1] - 4.6), "10 kΩ", fs_=9.5)
         d += elm.Line().at((xo, po[1] - 3.4)).to((xo - 1.2, po[1] - 3.4))
         d += elm.Dot(open=True).at((xo - 1.2, po[1] - 3.4)).label("Arduino A1", "left")
+    # 引脚号（灰色）：LM358 A 半 3 = +、2 = −、1 = 输出；2N3904 B / C / E
+    G9 = dict(fs_=9, color="#666666")
+    L.lab(d, (pp[0] + 0.25, pp[1] + 0.3), "3", **G9)
+    L.lab(d, (pm[0] + 0.25, pm[1] - 0.4), "2", **G9)
+    L.lab(d, (po[0] - 0.45, po[1] + 0.3), "1", **G9)
+    L.lab(d, (xb - 0.3, po[1] + 0.3), "B", **G9)
+    L.lab(d, (qc[0] - 0.45, qc[1] + 0.2), "C", **G9)
+    L.lab(d, (qe[0] - 0.45, qe[1] - 0.25), "E", **G9)
     if lab:
         L.probe(d, po, "①", dx=-0.6, dy=0.9)
         L.probe(d, (qe[0], ye), "②", dx=-0.45, dy=0.75)
@@ -648,8 +656,19 @@ def p4_2_schem_lab():
         schem.save_schem(d, P, "41_p4_2_schem_lab.png")
 
 
+
+def p1_5_sender():
+    """图 41-p1-5：直觉篇「本节要搭什么」对照用的原理图：PWM 经 RC → LM358 + 2N3904 + 100 Ω 恒流，12 V、R_x、250 Ω 串成一圈。"""
+    with schem.drawing(fontsize=11) as d:
+        g = _sender(d, lab=False, a1=False)
+        y0 = g["ye"] - 3.6
+        L.lab(d, (-1.6, y0), "(1) PWM → R1/R2/C1 滤成直流 $V_{SET}$；(2) 运放 + Q1 + R_S 让 R_S 上的电压 = $V_{SET}$，电流 = $V_{SET}$ / 100 Ω；", fs_=10)
+        L.lab(d, (-1.6, y0 - 0.65), "(3) 回路：+12 V → R_x → 250 Ω → Q1 的 C → E → R_S → 地（12 V 负端）；(4) 万用表量 250 Ω，Arduino 只经 10 kΩ 看 R_S 上端（A0）。", fs_=10)
+        schem.save_schem(d, P, "41_p1_5_sender.png")
+
+
 if __name__ == "__main__":
-    p1_1_error(); p1_2_loop(); p1_3_wires(); p1_4_ne43()
+    p1_1_error(); p1_2_loop(); p1_3_wires(); p1_4_ne43(); p1_5_sender()
     p2_1_budget(); p2_2_vi(); p2_3_fullloop(); p2_4_divider()
     A = _sweep()
     p3_1_compliance(A); p3_2_headroom(A); p3_3_fet(); p3_4_pulldown(); p3_5_wave(); p3_6_power(); p3_7_wronggnd()

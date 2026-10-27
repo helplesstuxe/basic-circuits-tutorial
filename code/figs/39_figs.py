@@ -78,7 +78,7 @@ fs.save(fig, N, "39_p1_1_temp_drift.png")
 
 
 # ---------- 恒流沉原理图（图 39-p1-2 简化版、图 39-p2-1 完整版、图 39-p4-2 实验版共用） ----------
-def ccs(d, full=True, x0=0.0, node_labels=True):
+def ccs(d, full=True, x0=0.0, node_labels=True, pins=True):
     """恒流沉电路：返回关键节点坐标。full=False 时省掉 RG/CF，基准写成 1 V 电源。"""
     yT = 6.5
     xm = x0 + 6.5                                  # MOSFET 所在竖线
@@ -129,6 +129,11 @@ def ccs(d, full=True, x0=0.0, node_labels=True):
     else:
         d += elm.SourceV().endpoints((xr, -1.6), (xr, O["in2"][1])).label("基准\n1 V", loc="bottom")
         d += elm.Ground().at((xr, -1.6))
+    # LM358 A 组引脚号：3 脚 +、2 脚 −、1 脚输出
+    if pins:                                        # 实验篇图 39-p4-2 自己标脚号，传 pins=False
+        lab(d, (O["in2"][0] + 0.15, O["in2"][1] + 0.25), "3", fs_=9, color=GRAY)
+        lab(d, (O["in1"][0] + 0.15, O["in1"][1] - 0.25), "2", fs_=9, color=GRAY)
+        lab(d, (O["out"][0] - 0.05, O["out"][1] + 0.3), "1", fs_=9, color=GRAY)
     vd, vs = O["vd"], O["vs"]
     top, bot = (vs, vd) if vs[1] > vd[1] else (vd, vs)      # 上面那根短线标 8 脚（+12 V），下面标 4 脚（地）
     d += elm.Line().at(top).to((top[0], top[1] + 0.4))
@@ -224,40 +229,46 @@ assert abs(P0 - 1.10) < 0.005 and abs(P47 - 0.63) < 0.005 and T_AMB + RTH_JA * P
 fs.save(fig, N, "39_p2_3_power_tj.png")
 
 # ---------- 图 39-p2-4：H 桥 + 恒流沉 驱动线圈 ----------
-with drawing(fontsize=11) as d:
-    xl, xr, yt, ym, yb = 0.0, 7.0, 6.0, 3.0, 0.0
-    d += elm.Line().at((xl, yt)).to((xr, yt))
-    d += elm.Vdd().at((3.5, yt)).label("+12 V")
-    d += elm.Switch().endpoints((xl, yt), (xl, ym)).label("S1", loc="bottom")
-    d += elm.Switch().endpoints((xr, yt), (xr, ym)).label("S2", loc="bottom")
-    d += elm.Switch().endpoints((xl, ym), (xl, yb)).label("S3", loc="bottom")
-    d += elm.Switch().endpoints((xr, ym), (xr, yb)).label("S4", loc="bottom")
-    for x in (xl, xr):
-        d += elm.Dot().at((x, ym))
-    d += elm.Line().at((xl, ym)).to((1.2, ym))
-    d += elm.Inductor2(loops=3).endpoints((1.2, ym), (3.6, ym)).label("线圈 L 100 mH", loc="top")
-    d += elm.Resistor().endpoints((3.6, ym), (6.0, ym)).label("线圈电阻 75 Ω", loc="top")
-    d += elm.Line().at((6.0, ym)).to((xr, ym))
-    _dbox(d, 1.0, ym - 0.55, 6.15, ym + 1.25)
-    lab(d, (3.6, ym + 1.55), "励磁线圈（一个元件，画成 L 加 R）", ha="center", fs_=9.5, color=GRAY)
-    lab(d, (xl - 0.3, ym + 0.35), "OUT1", ha="right", fs_=9.5, color=GRAY)
-    lab(d, (xr + 0.3, ym + 0.35), "OUT2", fs_=9.5, color=GRAY)
-    # RC 吸收
-    d += elm.Line().at((1.2, ym)).to((1.2, ym - 1.3))
-    d += elm.Resistor().endpoints((1.2, ym - 1.3), (3.8, ym - 1.3)).label("$R_{SN}$ 1 kΩ", loc="bottom")
-    d += elm.Capacitor().endpoints((3.8, ym - 1.3), (6.5, ym - 1.3)).label("$C_{SN}$ 100 nF", loc="bottom")
-    d += elm.Line().at((6.5, ym - 1.3)).to((6.5, ym))
-    d += elm.Dot().at((1.2, ym)); d += elm.Dot().at((6.5, ym))
-    d += elm.Line().at((xl, yb)).to((xr, yb))
-    d += elm.Dot().at((3.5, yb))
-    lab(d, (3.7, yb + 0.3), "桥底", fs_=9.5, color=GRAY)
-    d += elm.SourceI().endpoints((3.5, yb), (3.5, -2.6)).label("恒流沉 100 mA\n（图 39-p2-1 的电路，\n$R_L$ 处换成整个 H 桥）", loc="bottom")
-    d += elm.Ground().at((3.5, -2.6))
-    _par_arrow(d, (0.0, yt - 0.3), (0.0, ym + 0.3), (-0.5, 0))
-    lab(d, (8.6, 5.0), "阶段 A：S1、S4 闭合\n电流 OUT1 → OUT2（+）\n阶段 B：S2、S3 闭合\n电流 OUT2 → OUT1（−）", fs_=9.5)
-    lab(d, (8.6, 1.4), "S1～S4：四只分立 MOS 管\n（DRV8871 的下管源极在片内\n接地，桥底引不出，不能这样接）", fs_=9.5, color=GRAY)
-print("[图 39-p2-4] H 桥 + 恒流沉，线圈 100 mH / 75 Ω，RC 吸收 1k + 100n")
-save_schem(d, N, "39_p2_4_hbridge_ccs.png")
+def hbridge(ref, name, snubber=True):
+    with drawing(fontsize=11) as d:
+        xl, xr, yt, ym, yb = 0.0, 7.0, 6.0, 3.0, 0.0
+        d += elm.Line().at((xl, yt)).to((xr, yt))
+        d += elm.Vdd().at((3.5, yt)).label("+12 V")
+        d += elm.Switch().endpoints((xl, yt), (xl, ym)).label("S1", loc="bottom")
+        d += elm.Switch().endpoints((xr, yt), (xr, ym)).label("S2", loc="bottom")
+        d += elm.Switch().endpoints((xl, ym), (xl, yb)).label("S3", loc="bottom")
+        d += elm.Switch().endpoints((xr, ym), (xr, yb)).label("S4", loc="bottom")
+        for x in (xl, xr):
+            d += elm.Dot().at((x, ym))
+        d += elm.Line().at((xl, ym)).to((1.2, ym))
+        d += elm.Inductor2(loops=3).endpoints((1.2, ym), (3.6, ym)).label("线圈 L 100 mH", loc="top")
+        d += elm.Resistor().endpoints((3.6, ym), (6.0, ym)).label("线圈电阻 75 Ω", loc="top")
+        d += elm.Line().at((6.0, ym)).to((xr, ym))
+        _dbox(d, 1.0, ym - 0.55, 6.15, ym + 1.25)
+        lab(d, (3.6, ym + 1.55), "励磁线圈（一个元件，画成 L 加 R）", ha="center", fs_=9.5, color=GRAY)
+        lab(d, (xl - 0.3, ym + 0.35), "OUT1", ha="right", fs_=9.5, color=GRAY)
+        lab(d, (xr + 0.3, ym + 0.35), "OUT2", fs_=9.5, color=GRAY)
+        if snubber:  # RC 吸收（直觉篇还没讲，p1-4 不画）
+            d += elm.Line().at((1.2, ym)).to((1.2, ym - 1.3))
+            d += elm.Resistor().endpoints((1.2, ym - 1.3), (3.8, ym - 1.3)).label("$R_{SN}$ 1 kΩ", loc="bottom")
+            d += elm.Capacitor().endpoints((3.8, ym - 1.3), (6.5, ym - 1.3)).label("$C_{SN}$ 100 nF", loc="bottom")
+            d += elm.Line().at((6.5, ym - 1.3)).to((6.5, ym))
+            d += elm.Dot().at((1.2, ym)); d += elm.Dot().at((6.5, ym))
+        d += elm.Line().at((xl, yb)).to((xr, yb))
+        d += elm.Dot().at((3.5, yb))
+        lab(d, (3.7, yb + 0.3), "桥底", fs_=9.5, color=GRAY)
+        d += elm.SourceI().endpoints((3.5, yb), (3.5, -2.6)).label("恒流沉 100 mA\n（{ref} 的电路，\n$R_L$ 处换成整个 H 桥）".format(ref=ref), loc="bottom")
+        d += elm.Ground().at((3.5, -2.6))
+        _par_arrow(d, (0.0, yt - 0.3), (0.0, ym + 0.3), (-0.5, 0))
+        lab(d, (8.6, 5.0), "阶段 A：S1、S4 闭合\n电流 OUT1 → OUT2（+）\n阶段 B：S2、S3 闭合\n电流 OUT2 → OUT1（−）", fs_=9.5)
+        lab(d, (8.6, 1.4), ("S1～S4：四只分立 MOS 管\n（DRV8871 的下管源极在片内\n接地，桥底引不出，不能这样接）\n每只开关自带一只体二极管（图中未画）"
+                            if snubber else "S1～S4：四只分立 MOS 管"), fs_=9.5, color=GRAY)  # 直觉篇还没讲 DRV8871、体二极管
+    print(f"[{name}] H 桥 + 恒流沉，线圈 100 mH / 75 Ω" + ("，RC 吸收 1k + 100n" if snubber else "，不画 RC 吸收"))
+    save_schem(d, N, name)
+
+
+hbridge("图 39-p2-1", "39_p2_4_hbridge_ccs.png")
+hbridge("图 39-p1-2", "39_p1_4_hbridge.png", snubber=False)  # 直觉篇同页原理图
 
 # ---------- 图 39-p2-5：换向波形（电压驱动 vs 恒流驱动） ----------
 cv, ci = csv("coil_v.csv"), csv("coil_i.csv")
@@ -291,7 +302,7 @@ a2.legend(loc="upper right", fontsize=8)
 assert abs(vb[wc][-1] - 4.44) < 0.02
 fs.save(fig, N, "39_p2_5_reversal.png")
 
-# ---------- 图 39-p3-5：Howland 电流泵（page3 变体，只作了解） ----------
+# ---------- 图 39-p3-9：Howland 电流泵（page3 变体，只作了解） ----------
 with drawing(fontsize=11) as d:
     op = elm.Opamp(leads=True).right().anchor("out").at((6.0, 0.0)); d += op
     O = op.absanchors
@@ -319,8 +330,8 @@ with drawing(fontsize=11) as d:
     d += elm.Resistor().endpoints((xB, -2.4), (xB, -5.0)).label("$R_L$ 负载", loc="bottom")
     d += elm.Ground().at((xB, -5.0))
     lab(d, (xB + 2.6, -3.9), "$I_L$ = $V_{IN}$ / $R_3$\n（要求 $R_2/R_1 = R_4/R_3$）\n运放需要 ± 双电源", fs_=10)
-print("[图 39-p3-5] Howland 电流泵：四只 10 kΩ")
-save_schem(d, N, "39_p3_5_howland.png")
+print("[图 39-p3-9] Howland 电流泵：四只 10 kΩ")
+save_schem(d, N, "39_p3_9_howland.png")
 
 
 def z_howland(r1, r2, r3, r4):
@@ -335,7 +346,7 @@ assert abs(z_p - 1.01e6) < 1e3 and z_m < 0
 
 
 # =============================== page3 ===============================
-# ---------- 图 39-p3-1：采样电阻 R_S 怎么选 ----------
+# ---------- 图 39-p3-2：采样电阻 R_S 怎么选 ----------
 VOS_MAX = 3e-3                                    # LM358B 失调电压最大 3 mV（手册）
 rs = np.linspace(1, 20, 200)
 rlmax = (VCC - VDS_MIN - 0.1 * rs) / 0.1
@@ -352,9 +363,9 @@ for r, dy in ((1, -4), (10, 6)):
 fs.axlabels(a2, "采样电阻 $R_S$", "Ω", "失调电压造成的最大误差", "%")
 a2.set_title("$R_S$ 越小，3 mV 失调占比越大", fontsize=10)
 assert abs(VOS_MAX / 0.1 / 1 * 100 - 3.0) < 1e-9 and abs(VOS_MAX / 1.0 * 100 - 0.3) < 1e-9
-fs.save(fig, N, "39_p3_1_rs_choice.png")
+fs.save(fig, N, "39_p3_2_rs_choice.png")
 
-# ---------- 图 39-p3-2：阶跃响应 有/无 补偿 ----------
+# ---------- 图 39-p3-6：阶跃响应 有/无 补偿 ----------
 st = csv("step.csv")
 ts = (st["t_s"] - 3e-3) * 1e6
 fig, ax = plt.subplots(figsize=fs.SIZE["single"])
@@ -372,9 +383,9 @@ assert abs(os1 - 15.0) < 0.5 and abs(os0 - 28.7) < 0.5
 ax.set_xlim(-5, 60); ax.set_ylim(0.4, 1.45)
 fs.axlabels(ax, "基准跳变后的时间", "µs", "采样电阻电压 $V_S$", "V")
 ax.legend(loc="lower right", fontsize=8)
-fs.save(fig, N, "39_p3_2_step_comp.png")
+fs.save(fig, N, "39_p3_6_step_comp.png")
 
-# ---------- 图 39-p3-3：线圈两端 不加 / 加 RC 吸收 ----------
+# ---------- 图 39-p3-8：线圈两端 不加 / 加 RC 吸收 ----------
 ns = csv("coil_i_nosnub.csv")
 tn = (ns["t_s"] - 0.230) * 1e3
 m = (tc >= 70) & (tc <= 71.5)                     # 同一时间窗（230–231.5 ms）里加了 RC 的波形
@@ -400,7 +411,7 @@ assert abs(lo - 1.01) < 0.02 and abs(hi - 12.54) < 0.02
 ax.set_ylim(-0.5, 18)
 fs.axlabels(ax, "时间（换向后 70 ms 起）", "µs", "桥底电压", "V")
 ax.legend(loc="upper left", fontsize=8, ncol=2)
-fs.save(fig, N, "39_p3_3_snubber.png")
+fs.save(fig, N, "39_p3_8_snubber.png")
 
 
 # ---------- 图 39-p3-4：错误接法——采样电阻挪到高边（预测题，spice/39/39_wrong.cir） ----------
@@ -453,10 +464,10 @@ d = wrong_fig(False)
 print("[图 39-p3-4] 错误接法预测题：R_S 挪到高边（不含结论）")
 save_schem(d, N, "39_p3_4_wrong_highside.png")
 d = wrong_fig(True)
-print("[图 39-p3-6] 错误接法答案：R_S 在高边 → 电流几乎为 0")
-save_schem(d, N, "39_p3_6_wrong_answer.png")
+print("[图 39-p3-5] 错误接法答案：R_S 在高边 → 电流几乎为 0")
+save_schem(d, N, "39_p3_5_wrong_answer.png")
 
-# ---------- 图 39-p3-7：可选升级——TL431 基准代替 R1、R2 分压 ----------
+# ---------- 图 39-p3-3：可选升级——TL431 基准代替 R1、R2 分压 ----------
 VK = 2.495                                         # TL431 基准典型值（TI 手册）
 i_div = VK / 25e3
 i_tl = (VCC - VK) / 4.7e3 - i_div
@@ -489,8 +500,17 @@ with drawing(fontsize=11) as d:
     d += elm.Line().at((xd, 2.0)).to((xd + 2.2, 2.0))
     d += elm.Dot(open=True).at((xd + 2.2, 2.0)).label("$V_{REF}$ 0.998 V\n接 LM358 3 脚\n（取代 $R_1$、$R_2$）", "right")
     note(d, (xk - 2.6, -1.6), "TL431 电流约 1.92 mA（手册要求 1 mA 以上）；分压只取走约 0.1 mA。\n引脚顺序因封装而异：动手前对照你手里那只的数据手册，别把 A、K 接反。")
-print("[图 39-p3-7] TL431 基准接法")
-save_schem(d, N, "39_p3_7_tl431_ref.png")
+print("[图 39-p3-3] TL431 基准接法")
+save_schem(d, N, "39_p3_3_tl431_ref.png")
+
+# ---------- 图 39-p3-1 / 39-p3-7：参数篇本页对照用的原理图（与 p2-1、p2-4 同一电路） ----------
+with drawing(fontsize=11) as d:
+    P = ccs(d, full=True)
+    lab(d, (P["gate"][0] - 0.3, P["gate"][1] + 0.4), "$V_G$", ha="right", fs_=11, color=fs.C["vin"])
+    note(d, (P["xr"] - 0.8, -3.3), "V_CC = 12 V；V_REF = 12 V × 910 ÷ (10 k + 910) ≈ 1.0009 V；I = V_REF ÷ R_S ≈ 100 mA；R_G、R_F、C_F 是补偿网络")
+print("[图 39-p3-1] 参数篇对照：完整恒流沉（LM358 标 1/2/3/4/8 脚）")
+save_schem(d, N, "39_p3_1_ccs_params.png")
+hbridge("图 39-p3-1", "39_p3_7_hbridge_snubber.png")
 # ======================= page4 动手实验篇：面包板接线图 =======================
 # 面包板俯视图小工具（各节点脚本各带一份，互不依赖）。
 # 坐标：列号 1…ncol 从左到右；上半区 a–e、下半区 f–j（同一列的 a–e 五个孔互相连通，f–j 也连通）；
@@ -710,7 +730,7 @@ bb.save(N, "39_p4_1_breadboard_ccs.png")
 
 # ---------- 图 39-p4-2：实验 A 对照原理图 ----------
 with drawing(fontsize=11) as d:
-    P = ccs(d, full=True)
+    P = ccs(d, full=True, pins=False)
     lab(d, (P["gate"][0] - 0.3, P["gate"][1] + 0.4), "$V_G$", ha="right", fs_=11, color=fs.C["vin"])
     probe(d, P["vref"], "①", dx=-0.9, dy=-0.9)
     probe(d, P["s"], "②", dx=0.9, dy=-0.6)

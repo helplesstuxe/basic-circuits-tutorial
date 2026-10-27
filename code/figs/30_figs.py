@@ -342,11 +342,17 @@ def p3_3():
     fs.save(fig, N, "30_p3_4_dp_sqrt.png")
 
 
-def p3_4():
+def p3_4(fname="30_p3_5_ina_chip.png", tag="图 30-p3-5", r4="R4 10k"):
     with drawing(fontsize=11) as d:
         d += (ic := module("INA333（单片仪表放大器）", left=("+IN", "RG", "RG ", "−IN"), right=("V+", "VOUT", "REF", "V−"), w=3.6).right().at((0, 0)))
         A = ic.absanchors
-        va, vb, top, bot = draw_bridge(d, -10.5, A["−IN"][1] - 0.5, h=5.0, w=3.0, meter=False, vex="5 V")
+        # 引脚号：TI INA333 数据手册 Pin Functions（RG 1/8，−IN 2，+IN 3，V− 4，REF 5，VOUT 6，V+ 7）
+        for nm, pn in (("+IN", "3"), ("RG", "1"), ("RG ", "8"), ("−IN", "2")):
+            ls._pin(d, A[nm], pn, dx=0.25, dy=0.22)
+        for nm, pn in (("V+", "7"), ("VOUT", "6"), ("REF", "5"), ("V−", "4")):
+            ls._pin(d, A[nm], pn, dx=-0.25, dy=0.22)
+        va, vb, top, bot = draw_bridge(d, -10.5, A["−IN"][1] - 0.5, h=5.0, w=3.0, meter=False, vex="5 V",
+                                       rnames=("R1 10k", "R2 10k", "R3 10k", r4))
         xv = vb[0] + 1.5
         d += elm.Line().at(vb).to((xv, vb[1])).color(fs.C["vin"])
         d += elm.Line().at((xv, vb[1])).to((xv, A["+IN"][1])).color(fs.C["vin"])
@@ -386,9 +392,14 @@ def p3_4():
         ls.lab(d, (xdv + 0.35, ipf[1] - 1.1), "10k", fs_=9)
         ls.lab(d, (xdv + 0.35, ipf[1]), "2.5 V", fs_=9)
         ls.lab(d, (xr2 + 2.0, yr2 - 2.2), "REF = 2.5 V 低阻基准（分压 + 跟随器）", ha="center", fs_=9.5, color=ls.GRAY)
-        ls.note(d, (-11.5, A["−IN"][1] - 4.6), "外部只剩一只 RG：G = 1 + 100 kΩ / RG，RG = 5 kΩ 时 21 倍；内部那几只 R 由厂家在芯片里做好并匹配，比手挑的分立电阻好得多。引脚号见数据手册。")
-    print("[图 30-p3-5] INA333：G = 1 + 100k/RG，RG = 5k → %.0f" % (1 + 100e3 / 5e3))
-    save_schem(d, N, "30_p3_5_ina_chip.png")
+        ls.note(d, (-11.5, A["−IN"][1] - 4.6), "外部只剩一只 RG：G = 1 + 100 kΩ / RG，RG = 5 kΩ 时 21 倍；内部那几只 R 由厂家在芯片里做好并匹配，比手挑的分立电阻好得多。引脚号按 TI INA333 数据手册（8 脚封装）：RG 1、8，−IN 2，+IN 3，V− 4，REF 5，VOUT 6，V+ 7。")
+    print("[%s] INA333：G = 1 + 100k/RG，RG = 5k → %.0f" % (tag, 1 + 100e3 / 5e3))
+    save_schem(d, N, fname)
+
+
+def p2_6():
+    """page2 例 3 同页原理图：与图 30-p3-5 同一电路（INA333，5 V 电桥，RG 5 kΩ，REF 2.5 V）。"""
+    p3_4("30_p2_6_ina333_ex3.png", "图 30-p2-6", r4="R4 10k\n（变化 1% 的臂）")
 
 
 

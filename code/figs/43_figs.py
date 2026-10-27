@@ -61,7 +61,68 @@ EFF = csv("eff.csv")
 
 
 # ============================ 公用电路图：单 12 V 推挽 ============================
-def amp(d, bias="AB", loop="in", lab_cols=False, show_vm_box=True, show_meter=True, rl_text="$R_L$ 8 Ω", show_zobel=True, src="sin"):
+def bjt_pins(d, q, pnp=False, base_lab="below"):
+    """在三极管旁标灰色 B / C / E（NPN 集电极在上；PNP 发射极在上）。"""
+    G9 = dict(fs_=8.5, color=GRAY)
+    bx, by = q.base
+    lab(d, (bx - 0.2, by - 0.38 if base_lab == "below" else by + 0.38), "B", ha="right", **G9)
+    lab(d, (q.collector[0] + 0.15, q.collector[1] + (0.25 if not pnp else -0.25)), "C", **G9)
+    lab(d, (q.emitter[0] + 0.15, q.emitter[1] + (-0.25 if not pnp else 0.25)), "E", **G9)
+
+
+YNOTE = -13.8                         # 带 V_MID 跟随器的整图：注释行放在跟随器下面
+
+
+def _vmid_follower(d, P, bus, cols=False):
+    """在 V_MID 母线左端下方画中点参考：+12 V–R1 10 kΩ–节点–R2 10 kΩ–GND，节点并 Cd 10 µF 到地并接 TL072 A 的 3 脚（+），
+    1、2 脚短接（跟随器）输出 V_MID；TL072 的 8 脚接 +12 V、4 脚接 GND（A、B 两半共用）。"""
+    G = dict(fs_=8.5, color=GRAY)
+    xa, yb_ = bus                      # 母线左端
+    yF = yb_ - 4.2                     # 跟随器输出高度
+    opa = elm.Opamp(leads=True).right().anchor("out").at((xa, yF))
+    d += opa
+    o, im, ip = opa.out, opa.in1, opa.in2          # 未 flip：in1(−) 在上、in2(+) 在下
+    d += elm.Line().at(o).to((xa, yb_)).color(C["fb"])
+    d += elm.Dot().at((xa, yb_))
+    # 1 脚接 2 脚（从上面绕回）
+    yl = im[1] + 1.0
+    d += elm.Dot().at((xa, yl))
+    for u, v in (((xa, yl), (im[0] - 0.4, yl)), ((im[0] - 0.4, yl), (im[0] - 0.4, im[1])), ((im[0] - 0.4, im[1]), im)):
+        d += elm.Line().at(u).to(v)
+    lab(d, (o[0] - 0.45, o[1] + 0.3), "1", **G)
+    lab(d, (im[0] + 0.2, im[1] + 0.3), "2", **G)
+    lab(d, (ip[0] + 0.2, ip[1] - 0.4), "3", **G)
+    lab(d, (opa.center[0] + 0.45, opa.center[1] - 1.35), "TL072 A（跟随器）", ha="left", fs_=9.5)
+    # 8 脚 / 4 脚
+    vd, vs = opa.vd, opa.vs
+    d += elm.Line().at(vd).to((vd[0], vd[1] + 0.7))
+    d += elm.Vdd().at((vd[0], vd[1] + 0.7)).label("+12 V", fontsize=9)
+    lab(d, (vd[0] + 0.3, vd[1] + 0.3), "8", ha="left", **G)
+    d += elm.Line().at(vs).to((vs[0], vs[1] - 0.7))
+    d += elm.Ground().at((vs[0], vs[1] - 0.7))
+    lab(d, (vs[0] - 0.3, vs[1] - 0.3), "4", ha="right", **G)
+    # 分压 R1/R2 + Cd
+    xn = ip[0] - 1.4
+    d += elm.Line().at(ip).to((xn, ip[1]))
+    d += elm.Dot().at((xn, ip[1]))
+    d += elm.Resistor().endpoints((xn, ip[1]), (xn, ip[1] + 2.6)).label("R1\n10 kΩ", loc="bottom", fontsize=9.5)
+    d += elm.Vdd().at((xn, ip[1] + 2.6)).label("+12 V", fontsize=9)
+    yg = ip[1] - 2.6
+    d += elm.Resistor().endpoints((xn, ip[1]), (xn, yg)).label("R2\n10 kΩ", loc="bottom", fontsize=9.5)
+    xc_ = xn - 1.6
+    d += elm.Line().at((xn, ip[1])).to((xc_, ip[1]))
+    d += elm.Dot().at((xc_, ip[1]))
+    d += elm.Capacitor(polar=True).endpoints((xc_, ip[1]), (xc_, yg)).label("Cd\n10 µF", loc="bottom", fontsize=9.5)
+    d += elm.Line().at((xc_, yg)).to((xn, yg))
+    d += elm.Ground().at((xn, yg))
+    lab(d, (xn + 0.15, ip[1] + 0.3), "6 V", fs_=9, color=C["fb"])
+    P["vmg"] = dict(out=o, node=(xn, ip[1]), cd=(xc_, ip[1]), yg=yg, opa=opa)
+    if cols:
+        lab(d, (xn + 0.5, yg - 0.55), "R1 = j5 到 +12 V 轨，R2 = j8 到 GND 轨，h5→h8；Cd = i8–i10（+ 在第 8 列）；3 脚 = 第 5 列", **G)
+        colnote(d, (xa, yl), "1 脚接 2 脚：g3–g4；V_MID 经 h3→h1、g1→d1 送到第 1 列", "right", ofst=0.3)
+
+
+def amp(d, bias="AB", loop="in", lab_cols=False, show_vm_box=True, show_meter=True, rl_text="$R_L$ 8 Ω", show_zobel=True, src="sin", vmid_gen=False, vmid_cols=False):
     """画单 12 V 推挽功放。bias：'B' 乙类（两基极直接接运放输出）/ 'AB' 甲乙类（两只 1N4148 + 上下两个约 24 mA 恒流源）；
     loop：'open' 反馈取自运放输出 m（推挽在环外）/ 'in' 反馈取自推挽输出 OUT（推挽在环内）/ None 不画运放。
     返回关键点坐标字典。"""
@@ -82,6 +143,7 @@ def amp(d, bias="AB", loop="in", lab_cols=False, show_vm_box=True, show_meter=Tr
     d += elm.Resistor().endpoints((xm, yb1), q1.base).scale(0.45).label("22 Ω", loc="top", fontsize=8.5)
     d += elm.Resistor().endpoints((xm, yb2), q2.base).scale(0.45).label("22 Ω", loc="bottom", fontsize=8.5)
     lab(d, (q1.center[0] + 0.55, q1.center[1] + 0.1), "Q1\nBD139", fs_=10)
+    bjt_pins(d, q1, base_lab="below"); bjt_pins(d, q2, pnp=True, base_lab="above")
     lab(d, (q2.center[0] + 0.55, q2.center[1] - 0.1), "Q2\nBD140", fs_=10)
     # 集电极：Q1 经电流表到 +12 V；Q2 到地
     if show_meter:
@@ -147,6 +209,11 @@ def amp(d, bias="AB", loop="in", lab_cols=False, show_vm_box=True, show_meter=Tr
     d += elm.Line().at(op.out).to((xm, 0))
     lab(d, (op.center[0] - 0.2, op.center[1] + 1.25), "TL072 B", ha="center", fs_=9.5)
     P["op"] = op
+    # TL072 B 半的引脚：5 = +、6 = −、7 = 输出
+    _pp, _pn = (op.in2, op.in1) if op.in2[1] > op.in1[1] else (op.in1, op.in2)
+    lab(d, (_pp[0] + 0.2, _pp[1] + 0.3), "5", fs_=8.5, color=GRAY)
+    lab(d, (_pn[0] + 0.2, _pn[1] - 0.4), "6", fs_=8.5, color=GRAY)
+    lab(d, (op.out[0] - 0.45, op.out[1] + 0.3), "7", fs_=8.5, color=GRAY)
     # + 输入：Cin、Rbias；− 输入：RG 到中点参考 V_MID、RF 到 m 或 OUT
     pin, nin = op.in2, op.in1          # flip 之后 in2(+) 在上、in1(−) 在下
     if pin[1] < nin[1]:
@@ -158,7 +225,8 @@ def amp(d, bias="AB", loop="in", lab_cols=False, show_vm_box=True, show_meter=Tr
     d += elm.Line().at(pin).to((xinp, pin[1]))
     d += elm.Dot().at((xinp, pin[1]))
     if src == "sin":
-        d += elm.Capacitor(polar=True).endpoints((xinp - 2.4, pin[1]), (xinp, pin[1])).label("Cin 10 µF", loc="top", fontsize=10)
+        # 极性：「+」朝 inp（5 脚一侧经 Rbias 接 V_MID = 6 V；信号源一侧直流 0 V），与 page4 第 5 步「正极在第 6 列」一致
+        d += elm.Capacitor(polar=True).endpoints((xinp, pin[1]), (xinp - 2.4, pin[1])).label("Cin 10 µF", loc="bottom", fontsize=10)
         d += elm.SourceSin().endpoints((xinp - 2.4, yv + 0.8), (xinp - 2.4, pin[1])).label("信号源", loc="top", fontsize=9.5)
         d += elm.Ground().at((xinp - 2.4, yv + 0.8))
     else:                              # 实验 C：电位器分压慢扫，滑动端经 100 Ω 接 inp（信号源和 Cin 那一端拔掉）
@@ -181,6 +249,8 @@ def amp(d, bias="AB", loop="in", lab_cols=False, show_vm_box=True, show_meter=Tr
     d += elm.Dot().at((xinp, yv))
     lab(d, (xinp - 0.6, yv), "$V_{MID}$ = 6 V", ha="right", fs_=10, color=C["fb"])
     P["vm"] = (xinp, yv)
+    if vmid_gen:
+        _vmid_follower(d, P, (xinp - 0.5, yv), cols=vmid_cols)
     P["fb"] = (xf, nin[1])
     P["xg"] = xg
     if loop == "open":
@@ -303,9 +373,9 @@ fs.save(fig, N, "43_p1_4_efficiency.png")
 # =============================== page2 ===============================
 # ---------- 图 43-p2-1：完整电路（甲乙类 + 推挽在环内） ----------
 with drawing(fontsize=11) as d:
-    P = amp(d, "AB", "in")
-    note(d, (P["xinp"] - 3.4 if "xinp" in P else P["sig"][0] - 1.0, -8.0),
-         "$V_{MID}$（中点参考）由 TL072 另一半产生：两只 10 kΩ 把 12 V 分成 6 V，再接成跟随器输出。\n"
+    P = amp(d, "AB", "in", vmid_gen=True)
+    note(d, (P["sig"][0] - 1.0, YNOTE),
+         "$V_{MID}$（中点参考）由左下的 TL072 A 产生：R1、R2 两只 10 kΩ 把 12 V 分成 6 V，Cd 滤掉电源纹波，A 半 1、2 脚短接成跟随器输出。\n"
          "它只给运放输入定 6 V 的静止点，喇叭电流不走它；喇叭经 $C_o$ 回到真地。")
     lab(d, (P["m"][0] - 0.2, P["m"][1] + 0.45), "m", ha="right", fs_=11, color=fs.C["vin"])
     lab(d, (P["out"][0] + 0.2, P["out"][1] + 0.35), "OUT", fs_=11, color=fs.C["vout"])
@@ -408,52 +478,76 @@ V_D56, V_EB3 = 1.295, 0.654            # SPICE 工作点（spice/43/ccs_op.cir�
 I_EST = (V_D56 - V_EB3) / 27
 print(f"[图 43-p2-6] 恒流源：({V_D56} − {V_EB3}) / 27 Ω = {I_EST*1e3:.1f} mA；SPICE {ICCS*1e3:.1f} mA；二极管电流 ≈ (12 − {V_D56}) / 4.7 kΩ = {(12-V_D56)/4.7:.2f} mA")
 assert abs(I_EST - 23.7e-3) < 0.1e-3 and ICCS >= 22e-3
-with drawing(fontsize=11) as d:
-    xq = 0.0
-    yT, yG = 7.0, -7.0
-    q3 = elm.BjtPnp(circle=True).anchor("base").at((xq, 3.4))
-    d += q3
-    xe = q3.emitter[0]
-    d += elm.Resistor().endpoints((xe, yT), q3.emitter).label("Rx3 27 Ω", loc="bottom", fontsize=10)
-    d += elm.Vdd().at((xe, yT)).label("+12 V", fontsize=10)
-    d += elm.Line().at((xq - 2.2, yT)).to((xe, yT))
-    d += elm.Diode().endpoints((xq - 2.2, yT), (xq - 2.2, 5.2)).label("D5", loc="bottom", fontsize=9)
-    d += elm.Diode().endpoints((xq - 2.2, 5.2), (xq - 2.2, 3.4)).label("D6", loc="bottom", fontsize=9)
-    d += elm.Line().at((xq - 2.2, 3.4)).to(q3.base)
-    d += elm.Dot().at((xq - 2.2, 3.4))
-    d += elm.Resistor().endpoints((xq - 2.2, 3.4), (xq - 2.2, 1.2)).label("Rk3\n4.7 kΩ", loc="bottom", fontsize=9)
-    d += elm.Ground().at((xq - 2.2, 1.2))
-    lab(d, (q3.center[0] + 0.55, q3.center[1]), "Q3\nBD140", fs_=10)
-    yb1, yb2 = 1.6, -1.6
-    d += elm.Line().at(q3.collector).to((xe, yb1))
-    d += elm.Dot().at((xe, yb1))
-    d += elm.Diode().endpoints((xe, yb1), (xe, 0)).label("D1", loc="bottom", fontsize=9)
-    d += elm.Dot().at((xe, 0))
-    d += elm.Diode().endpoints((xe, 0), (xe, yb2)).label("D2", loc="bottom", fontsize=9)
-    d += elm.Dot().at((xe, yb2))
-    for y, t in ((yb1, "b1 → 22 Ω → Q1 基极"), (0, "m ← 运放输出"), (yb2, "b2 → 22 Ω → Q2 基极")):
-        d += elm.Line().at((xe, y)).to((xe + 1.6, y))
-        lab(d, (xe + 1.75, y), t, fs_=10)
-    q4 = elm.BjtNpn(circle=True).anchor("base").at((xq, -3.4))
-    d += q4
-    d += elm.Line().at(q4.collector).to((xe, yb2))
-    d += elm.Resistor().endpoints(q4.emitter, (xe, yG)).label("Rx4 27 Ω", loc="bottom", fontsize=10)
-    d += elm.Ground().at((xe, yG))
-    d += elm.Line().at((xq - 2.2, yG)).to((xe, yG))
-    d += elm.Diode().endpoints((xq - 2.2, -3.4), (xq - 2.2, -5.2)).label("D7", loc="bottom", fontsize=9)
-    d += elm.Diode().endpoints((xq - 2.2, -5.2), (xq - 2.2, yG)).label("D8", loc="bottom", fontsize=9)
-    d += elm.Line().at((xq - 2.2, -3.4)).to(q4.base)
-    d += elm.Dot().at((xq - 2.2, -3.4))
-    d += elm.Resistor().endpoints((xq - 2.2, -1.2), (xq - 2.2, -3.4)).label("Rk4\n4.7 kΩ", loc="bottom", fontsize=9)
-    d += elm.Vdd().at((xq - 2.2, -1.2))
-    lab(d, (xq - 2.6, -0.9), "+12 V", ha="right", fs_=9)
-    lab(d, (q4.center[0] + 0.55, q4.center[1]), "Q4\nBD139", fs_=10)
-    lab(d, (xe + 1.9, 4.6), "上恒流源：D5 + D6 把 Q3 基极钉在 +12 V 下面约 1.30 V，\nQ3 的发射结再吃掉约 0.65 V，Rx3 两端约 1.295 − 0.654 ≈ 0.64 V，\n电流 ≈ 0.64 V ÷ 27 Ω ≈ 23.7 mA（SPICE），和 b1 点电压几乎无关", fs_=9.5, color=C["cur"])
-    lab(d, (xe + 1.9, -4.6), "下恒流源：镜像。D7 + D8 把 Q4 基极钉在 GND 上面约 1.30 V，\n从 b2 点往下抽约 23.6 mA", fs_=9.5, color=C["cur"])
-save_schem(d, N, "43_p2_6_ccs_detail.png")
+def ccs_detail(name, notes=()):
+    with drawing(fontsize=11) as d:
+        xq = 0.0
+        yT, yG = 7.0, -7.0
+        q3 = elm.BjtPnp(circle=True).anchor("base").at((xq, 3.4))
+        d += q3
+        xe = q3.emitter[0]
+        d += elm.Resistor().endpoints((xe, yT), q3.emitter).label("Rx3 27 Ω", loc="bottom", fontsize=10)
+        d += elm.Vdd().at((xe, yT)).label("+12 V", fontsize=10)
+        d += elm.Line().at((xq - 2.2, yT)).to((xe, yT))
+        d += elm.Diode().endpoints((xq - 2.2, yT), (xq - 2.2, 5.2)).label("D5", loc="bottom", fontsize=9)
+        d += elm.Diode().endpoints((xq - 2.2, 5.2), (xq - 2.2, 3.4)).label("D6", loc="bottom", fontsize=9)
+        d += elm.Line().at((xq - 2.2, 3.4)).to(q3.base)
+        d += elm.Dot().at((xq - 2.2, 3.4))
+        d += elm.Resistor().endpoints((xq - 2.2, 3.4), (xq - 2.2, 1.2)).label("Rk3\n4.7 kΩ", loc="bottom", fontsize=9)
+        d += elm.Ground().at((xq - 2.2, 1.2))
+        lab(d, (q3.center[0] + 0.55, q3.center[1]), "Q3\nBD140", fs_=10)
+        bjt_pins(d, q3, pnp=True, base_lab="above")
+        yb1, yb2 = 1.6, -1.6
+        d += elm.Line().at(q3.collector).to((xe, yb1))
+        d += elm.Dot().at((xe, yb1))
+        d += elm.Diode().endpoints((xe, yb1), (xe, 0)).label("D1", loc="bottom", fontsize=9)
+        d += elm.Dot().at((xe, 0))
+        d += elm.Diode().endpoints((xe, 0), (xe, yb2)).label("D2", loc="bottom", fontsize=9)
+        d += elm.Dot().at((xe, yb2))
+        for y, t in ((yb1, "b1 → 22 Ω → Q1 基极"), (0, "m ← 运放输出"), (yb2, "b2 → 22 Ω → Q2 基极")):
+            d += elm.Line().at((xe, y)).to((xe + 1.6, y))
+            lab(d, (xe + 1.75, y), t, fs_=10)
+        q4 = elm.BjtNpn(circle=True).anchor("base").at((xq, -3.4))
+        d += q4
+        d += elm.Line().at(q4.collector).to((xe, yb2))
+        d += elm.Resistor().endpoints(q4.emitter, (xe, yG)).label("Rx4 27 Ω", loc="bottom", fontsize=10)
+        d += elm.Ground().at((xe, yG))
+        d += elm.Line().at((xq - 2.2, yG)).to((xe, yG))
+        d += elm.Diode().endpoints((xq - 2.2, -3.4), (xq - 2.2, -5.2)).label("D7", loc="bottom", fontsize=9)
+        d += elm.Diode().endpoints((xq - 2.2, -5.2), (xq - 2.2, yG)).label("D8", loc="bottom", fontsize=9)
+        d += elm.Line().at((xq - 2.2, -3.4)).to(q4.base)
+        d += elm.Dot().at((xq - 2.2, -3.4))
+        d += elm.Resistor().endpoints((xq - 2.2, -1.2), (xq - 2.2, -3.4)).label("Rk4\n4.7 kΩ", loc="bottom", fontsize=9)
+        d += elm.Vdd().at((xq - 2.2, -1.2))
+        lab(d, (xq - 2.6, -0.9), "+12 V", ha="right", fs_=9)
+        lab(d, (q4.center[0] + 0.55, q4.center[1]), "Q4\nBD139", fs_=10)
+        bjt_pins(d, q4, base_lab="below")
+        lab(d, (xe + 1.9, 4.6), "上恒流源：D5 + D6 把 Q3 基极钉在 +12 V 下面约 1.30 V，\nQ3 的发射结再吃掉约 0.65 V，Rx3 两端约 1.295 − 0.654 ≈ 0.64 V，\n电流 ≈ 0.64 V ÷ 27 Ω ≈ 23.7 mA（SPICE），和 b1 点电压几乎无关", fs_=9.5, color=C["cur"])
+        lab(d, (xe + 1.9, -4.6), "下恒流源：镜像。D7 + D8 把 Q4 基极钉在 GND 上面约 1.30 V，\n从 b2 点往下抽约 23.6 mA", fs_=9.5, color=C["cur"])
+        for k_, t_ in enumerate(notes):
+            note(d, (xq - 3.2, yG - 1.6 - 0.6 * k_), t_)
+    save_schem(d, N, name)
+
+
+ccs_detail("43_p2_6_ccs_detail.png")
 
 # =============================== page3 ===============================
-# ---------- 图 43-p3-1：偏置失配时 I_q 怎么涨（SPICE） ----------
+# ---------- 图 43-p3-1：参数篇对照用的完整电路（与图 43-p2-1 同一张电路，注释换成参数表 / 排错表的说法） ----------
+with drawing(fontsize=11) as d:
+    P = amp(d, "AB", "in", vmid_gen=True)
+    lab(d, (P["m"][0] - 0.2, P["m"][1] + 0.45), "m", ha="right", fs_=11, color=fs.C["vin"])
+    lab(d, (P["out"][0] + 0.2, P["out"][1] + 0.35), "OUT", fs_=11, color=fs.C["vout"])
+    note(d, (P["sig"][0] - 1.0, YNOTE),
+         "参数表：两只「恒流源 约 24 mA」= 偏置电流（内部见下一张图）；22 Ω = 基极阻尼电阻；RE1、RE2 = 发射极电阻 $R_E$；Rz + Cz = Zobel 网络。\n"
+         "排错表：喇叭（$R_L$）经 $C_o$ 回到真地，不接 $V_{MID}$；$C_o$ 正极接 OUT；静态电流看 RE1 两端的 mV（÷ 3.3 Ω）。")
+print("[图 43-p3-1] 参数篇对照完整电路")
+save_schem(d, N, "43_p3_1_full_schem.png")
+
+# ---------- 图 43-p3-2：参数篇对照用的恒流源内部 ----------
+ccs_detail("43_p3_2_ccs.png", notes=(
+    "参数表的「恒流源 $R_X$」就是 Rx3、Rx4（各 27 Ω）：电流 ≈ 0.64 V ÷ $R_X$；改成 33 Ω 约 19 mA，低于 22 mA 的要求。",
+    "排错表：量 Rx3、Rx4 两端应约 0.64 V；为 0 先查 Q3、Q4 的 E、C、B 有没有插错，再查 D5～D8 的方向。"))
+
+# ---------- 图 43-p3-4：偏置失配时 I_q 怎么涨（SPICE） ----------
 q = csv("iq.csv")
 fig, ax = plt.subplots(figsize=(7.0, 4.0))
 x = np.arange(len(q["dv_mV"]))
@@ -468,11 +562,11 @@ ax.set_xticks(x, [f"{int(v)} mV" for v in q["dv_mV"]])
 fs.axlabels(ax, "偏置失配：管子比二极管热，相当于偏置电压多出这么多", None, "静态电流 $I_q$", "mA")
 ax.set_ylim(0, 145)
 ax.legend(loc="upper left", fontsize=9)
-print("[图 43-p3-1] I_q（mA）R_E 3.3 Ω：", list(q["iq_RE3p3_mA"]), "；R_E 1 Ω：", list(q["iq_RE1_mA"]))
+print("[图 43-p3-4] I_q（mA）R_E 3.3 Ω：", list(q["iq_RE3p3_mA"]), "；R_E 1 Ω：", list(q["iq_RE1_mA"]))
 assert q["iq_RE3p3_mA"][2] < q["iq_RE1_mA"][2] and q["iq_RE3p3_mA"][2] < 50 and q["iq_RE1_mA"][0] > 50
-fs.save(fig, N, "43_p3_1_iq_mismatch.png")
+fs.save(fig, N, "43_p3_4_iq_mismatch.png")
 
-# ---------- 图 43-p3-2：四种接法的 THD（SPICE，1 kHz，V_p ≈ 2 V 那一档输入） ----------
+# ---------- 图 43-p3-5：四种接法的 THD（SPICE，1 kHz，V_p ≈ 2 V 那一档输入） ----------
 names = [("B_open", "乙类\n环外"), ("AB_open", "甲乙类\n环外"), ("B_loop", "乙类\n环内"), ("AB_loop", "甲乙类\n环内")]
 thd = []
 for nm, _ in names:
@@ -486,9 +580,9 @@ for i, v in enumerate(thd):
 ax.set_xticks(range(4), [n for _, n in names])
 fs.axlabels(ax, None, None, "THD（对数纵轴）", "%")
 ax.set_ylim(0.003, 80)
-print("[图 43-p3-2] THD %：", [f"{v:.4g}" for v in thd])
+print("[图 43-p3-5] THD %：", [f"{v:.4g}" for v in thd])
 assert 20 < thd[0] < 22 and 1.6 < thd[1] < 2.0 and 0.06 < thd[2] < 0.08 and 0.007 < thd[3] < 0.010
-fs.save(fig, N, "43_p3_2_thd_bars.png")
+fs.save(fig, N, "43_p3_5_thd_bars.png")
 
 
 # ---------- 图 43-p3-3：h_FE 按最坏 25 算：电阻偏置会「饿」，恒流源不会（SPICE） ----------
@@ -520,7 +614,7 @@ fs.save(fig, N, "43_p3_3_bias_starve.png")
 print("[图 43-p3-3] V_p@2/3 V：", [f"{v:.3f}" for v in ST["vp_2"]], [f"{v:.3f}" for v in ST["vp_3"]], "；运放 mA：", [f"{v:.1f}" for v in ST["io_2"]], [f"{v:.1f}" for v in ST["io_3"]])
 assert ST["vp_2"][1] < 1.8 and ST["vp_3"][2] > 2.8 and ST["io_3"][2] < 15 and ST["io_2"][1] > 19
 
-# ---------- 图 43-p3-4：乙类环内在 10 kHz：过零处残留尖刺 ----------
+# ---------- 图 43-p3-6：乙类环内在 10 kHz：过零处残留尖刺 ----------
 w = csv("w_B_loop10k.csv")
 t = (w["t_s"] - w["t_s"][0]) * 1e6
 fig, ax = plt.subplots(figsize=(7.4, 4.0))
@@ -530,12 +624,12 @@ ax2.plot(t, w["v_ld"], color=fs.C["vout"], lw=1, alpha=0.6, label="$v_L$（右�
 ax2.set_ylabel("$v_L$（V）")
 fs.ref_h(ax, 0)
 err = np.abs(w["v_ld"] - 3 * w["v_sig"]).max()
-print(f"[图 43-p3-4] 10 kHz 乙类环内：误差最大 {err*1e3:.0f} mV")
+print(f"[图 43-p3-6] 10 kHz 乙类环内：误差最大 {err*1e3:.0f} mV")
 fs.axlabels(ax, "时间", "µs", "误差", "V")
 h1, l1 = ax.get_legend_handles_labels()
 h2, l2 = ax2.get_legend_handles_labels()
 ax.legend(h1 + h2, l1 + l2, loc="upper right", fontsize=8.5)
-fs.save(fig, N, "43_p3_4_10k_spike.png")
+fs.save(fig, N, "43_p3_6_10k_spike.png")
 
 
 # =============================== page4 动手实验篇 ===============================
@@ -881,8 +975,8 @@ draw_bb(False)
 
 # ---------- 图 43-p4-2：对照原理图（测量点与面包板列号） ----------
 with drawing(fontsize=11) as d:
-    P = amp(d, "AB", "in")
-    probe(d, P["vm"], "①", dx=-0.2, dy=-0.9)
+    P = amp(d, "AB", "in", vmid_gen=True, vmid_cols=True)
+    probe(d, P["vm"], "①", dx=-1.3, dy=-0.9)
     probe(d, P["m"], "②", dx=-0.6, dy=-0.9)
     probe(d, (P["xe"], 1.15), "③", dx=1.6, dy=0.3)
     probe(d, P["out"], "④", dx=0.7, dy=0.9)
@@ -892,10 +986,10 @@ with drawing(fontsize=11) as d:
     colnote(d, (P["xm"], 4.3), "上恒流源：第 33～38 列", "left", ofst=0.3)
     colnote(d, (P["xm"], -4.3), "下恒流源：第 33～38 列", "left", ofst=0.3)
     colnote(d, (P["xc"], -3.0), "负载在板外", "right", ofst=0.4)
-    note(d, (P["sig"][0] - 1.0, -8.0),
+    note(d, (P["sig"][0] - 1.0, YNOTE),
          "③ = RE1 两端的电压（红表笔接 Q1 发射极那一端）：每 3.3 mV 就是 1 mA 静态电流。\n"
          "⑤⑥ = 两只 27 Ω 上的电压（恒流源内部见原理与实现篇），约 0.64 V 即约 24 mA。\n"
-         "$V_{MID}$ 由 TL072 的另一半产生（面包板第 3～5 列下半区），只给运放偏置，不接喇叭。")
+         "$V_{MID}$ 由左下的 TL072 A 跟随器产生（面包板下半区第 3～10 列，第 4 步），只给运放偏置，不接喇叭。TL072 的 8 脚 = a3 接 +12 V，4 脚 = j6 接 GND。")
 print("[图 43-p4-2] 对照原理图：①V_MID ②m ③RE1 两端 ④OUT")
 save_schem(d, N, "43_p4_2_schem_lab.png")
 

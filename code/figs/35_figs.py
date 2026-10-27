@@ -299,18 +299,18 @@ def p1_2_blocks():
 
 
 def p1_3_db():
-    """图 35-p1-3：倍数与 dB 的对照尺，标出六个档位（名义值）。"""
+    """图 35-p1-6：倍数与 dB 的对照尺，标出六个档位（名义值）。"""
     fig, ax = plt.subplots(figsize=fs.SIZE["diagram"])
     g = np.logspace(0, 3, 400)
     ax.plot(g, 20 * np.log10(g), **LSkey("vout"))
     for gn, lab in ((2, "×2"), (5.17, "×5.17"), (10.09, "×10.1"), (20.6, "×20.6"), (51, "×51"), (101, "×101")):
         ax.plot(gn, 20 * np.log10(gn), "o", color=C["vin"])
         ax.text(gn, 20 * np.log10(gn) + 4, f"{lab}\n{20*np.log10(gn):.1f} dB", ha="center", fontsize=8)
-        print(f"[图 35-p1-3] {lab} = {20*np.log10(gn):.2f} dB")
+        print(f"[图 35-p1-6] {lab} = {20*np.log10(gn):.2f} dB")
     ax.set_xscale("log")
     fs.axlabels(ax, "放大倍数 G", None, "20·lg G", "dB")
     ax.set_ylim(-2, 72)
-    fs.save(fig, P, "35_p1_3_db.png")
+    fs.save(fig, P, "35_p1_6_db.png")
 
 
 # ======================================================================
@@ -327,7 +327,7 @@ def _opamp_core(d, x0=0.0, y0=0.0):
     return op
 
 
-def p2_1_series(S):
+def p2_1_series(S, name="35_p2_1_series.png"):
     """图：CD4051（带引脚名方框）的 COM 接反相端，X0…X5 各串一个 R_g 到地。R_on 与 R_g 串联，进增益。"""
     with schem.drawing(fontsize=11) as d:
         op = _opamp_core(d, 2.0, 4.0)
@@ -335,6 +335,9 @@ def p2_1_series(S):
         d += elm.Line().at(pp).to((0.0, pp[1]))
         d += elm.Dot(open=True).at((0.0, pp[1])).label("$V_{in}$", "left")
         xo = po[0] + 1.0
+        for xy, t in (((pp[0] - 0.3, pp[1] + 0.3), "3"), ((pm[0] - 0.3, pm[1] + 0.3), "2"), ((po[0] + 0.35, po[1] + 0.3), "1")):
+            d += elm.Label().at(xy).label(t, fontsize=9)
+        d += elm.Label().at((op.center[0], op.center[1] + 1.9)).label("U1A（LM358，8 脚 +5 V、4 脚地）", fontsize=10)
         d += elm.Line().at(po).to((xo + 1.0, po[1]))
         d += elm.Dot(open=True).at((xo + 1.0, po[1])).label("$V_{out}$\n→ ADC", "right")
         d += elm.Dot().at((xo, po[1]))
@@ -371,7 +374,7 @@ def p2_1_series(S):
         d += elm.Ground().at((xg, a["5 X5"][1]))
         d += elm.Label().at((xo + 1.6, yt - 0.6)).label("$G = 1 + \\dfrac{R_f}{R_g + R_{on}}$", halign="left", fontsize=12)
         d += elm.Label().at((a["3 COM"][0] + 2.5, a["6 INH"][1] - 2.0)).label("16 VDD → +5 V；7 VEE、8 VSS → 0 V（图中略）", fontsize=9, color="#555555")
-        schem.save_schem(d, P, "35_p2_1_series.png")
+        schem.save_schem(d, P, name)
 
 
 def p2_2_ron_error(S):
@@ -641,7 +644,7 @@ def bb35():
     return bb
 
 
-def p4_2_schem_lab():
+def p4_2_schem_lab(name="35_p4_2_schem_lab.png"):
     import lab_schem as L
     with schem.drawing(fontsize=11) as d:
         # 输入网络
@@ -739,7 +742,7 @@ def p4_2_schem_lab():
             L.lab(d, (xc, ytop - 2.9), where, ha="center", fs_=8.5, color="#555555")
         # 不用的 B 组接成跟随器
         L._follower_b(d, xc0 + 0.6, tp[1] - 3.6, "c5–c6（7 脚接 6 脚）", "a7（5 脚）接地")
-        schem.save_schem(d, P, "35_p4_2_schem_lab.png")
+        schem.save_schem(d, P, name)
 
 
 # ======================================================================
@@ -900,11 +903,111 @@ def p4_3_ac_inject():
     print(f"[图 35-p4-3] d17 直流 {vdc*1e3:.1f} mV，等效电阻 {rth:.0f} Ω，10 µF@50 Hz 容抗 {xc:.0f} Ω")
 
 
+def p1_5_agc_schem(fname="35_p1_5_agc_schem.png"):
+    """图 35-p1-5（page2 同图另存为图 35-p2-9）：模拟 AGC 的简化原理图（与 code/35_sim.py analog_agc 的 τ_d = 20 ms、目标 1 V、τ_i = 5 ms 一致）。"""
+    W = 2.0
+    with schem.drawing(fontsize=11) as d:
+        vga = schem.module("U3　VGA（例如 AD8331）", left=("IN", "GAIN"), right=("OUT",), w=3.4)
+        d += vga.at((0, 0)).anchor("IN")
+        a = vga.absanchors
+        pin_in, pin_g, pin_o = a["IN"], a["GAIN"], a["OUT"]
+        d += elm.Line().at(pin_in).to((pin_in[0] - 1.6, pin_in[1]))
+        d += elm.Dot(open=True).at((pin_in[0] - 1.6, pin_in[1])).label("$V_{in}$", "left")
+        xo = pin_o[0] + 1.6
+        d += elm.Line().at(pin_o).to((xo + 2.4, pin_o[1]))
+        d += elm.Dot().at((xo, pin_o[1]))
+        d += elm.Dot(open=True).at((xo + 2.4, pin_o[1])).label("$V_{out}$", "right")
+        # U1A 精密峰值检波（+ 在上）
+        yA = pin_o[1] - 3.2
+        op = elm.Opamp(leads=True).theta(0).flip().anchor("in2").at((xo, yA))
+        d += op
+        pp, pm, po = op.absanchors["in2"], op.absanchors["in1"], op.absanchors["out"]
+        d += elm.Line().at((xo, pin_o[1])).to(pp)
+        d += elm.Label().at((pp[0] + 0.25, pp[1] + 0.3)).label("3", fontsize=9)
+        d += elm.Label().at((pm[0] + 0.25, pm[1] - 0.3)).label("2", fontsize=9)
+        d += elm.Label().at((po[0] - 0.3, po[1] + 0.3)).label("1", fontsize=9)
+        d += elm.Label().at((op.center[0] - 0.4, op.center[1] + 1.5)).label("U1A（LM358）", fontsize=10)
+        xd = po[0] + 2.4
+        d += elm.Diode().at(po).to((xd, po[1])).label("D1 1N4148", "top")
+        xk = xd + 5.8
+        d += elm.Line().at((xd, po[1])).to((xk, po[1]))
+        for x in (xd, xd + 1.6, xd + 3.4):
+            d += elm.Dot().at((x, po[1]))
+        xc, xr = xd + 1.6, xd + 3.4
+        yb = po[1] - 3.0
+        d += elm.Capacitor().at((xc, po[1])).to((xc, yb))
+        d += elm.Label().at((xc + 0.35, (po[1] + yb) / 2)).label("$C_d$ 1 µF", halign="left", fontsize=10)
+        d += elm.Resistor().at((xr, po[1])).to((xr, yb))
+        d += elm.Label().at((xr + 0.35, (po[1] + yb) / 2)).label("$R_d$ 20 kΩ", halign="left", fontsize=10)
+        d += elm.Line().at((xc, yb)).to((xr, yb))
+        d += elm.Ground().at((xc, yb))
+        d += elm.Label().at((xk - 0.2, po[1] + 0.45)).label("$V_{pk}$", fontsize=11)
+        # 反馈：从二极管后面回到 2 脚
+        yf = pm[1] - 1.0
+        for u, v in (((xd, po[1]), (xd, yf)), ((xd, yf), (pm[0] - 0.4, yf)),
+                     ((pm[0] - 0.4, yf), (pm[0] - 0.4, pm[1])), ((pm[0] - 0.4, pm[1]), pm)):
+            d += elm.Line().at(u).to(v).color(C["vout"]).linewidth(W)
+        # V_pk 往下、往左进积分器 U1B（运放朝左）
+        yI = yb - 3.6
+        d += elm.Line().at((xk, po[1])).to((xk, yI))
+        xri = xk - 3.4
+        d += elm.Resistor().at((xk, yI)).to((xri, yI)).label("$R_i$ 50 kΩ", "top")
+        ob = elm.Opamp(leads=True).theta(180).flip().anchor("in1").at((xri - 0.9, yI))
+        d += ob
+        bm, bp, bo = ob.absanchors["in1"], ob.absanchors["in2"], ob.absanchors["out"]
+        d += elm.Line().at((xri, yI)).to(bm)
+        d += elm.Dot().at((xri - 0.45, yI))
+        d += elm.Label().at((bm[0] - 0.25, bm[1] - 0.3)).label("6", fontsize=9)
+        d += elm.Label().at((bp[0] - 0.25, bp[1] + 0.3)).label("5", fontsize=9)
+        d += elm.Label().at((bo[0] + 0.3, bo[1] + 0.3)).label("7", fontsize=9)
+        d += elm.Label().at((ob.center[0] + 0.3, ob.center[1] - 1.6)).label("U1B（同一片 LM358）", fontsize=10)
+        # C_i 跨在 6 脚和 7 脚之间（上方）
+        yc = yI + 1.8
+        d += elm.Line().at((xri - 0.45, yI)).to((xri - 0.45, yc))
+        d += elm.Capacitor().at((xri - 0.45, yc)).to((bo[0] - 0.6, yc)).label("$C_i$ 100 nF", "top")
+        d += elm.Line().at((bo[0] - 0.6, yc)).to((bo[0] - 0.6, bo[1]))
+        d += elm.Dot().at((bo[0] - 0.6, bo[1]))
+        # 5 脚：目标 1 V（+5 V 经 40k/10k 分压）
+        xt = bp[0] + 0.9
+        d += elm.Line().at(bp).to((xt, bp[1]))
+        d += elm.Dot().at((xt, bp[1]))
+        d += elm.Resistor().at((xt, bp[1])).to((xt, bp[1] - 2.6))
+        d += elm.Label().at((xt + 0.35, bp[1] - 1.3)).label("$R_b$ 10 kΩ", halign="left", fontsize=10)
+        d += elm.Ground().at((xt, bp[1] - 2.6))
+        d += elm.Line().at((xt, bp[1])).to((xt + 2.2, bp[1]))
+        d += elm.Resistor().at((xt + 2.2, bp[1])).to((xt + 4.8, bp[1])).label("$R_a$ 40 kΩ", "bottom")
+        d += elm.Label().at((xt + 5.4, bp[1])).label("+5 V", fontsize=10)
+        d += elm.Label().at((xt + 1.1, bp[1] - 0.45)).label("$V_{TGT}$ = 1 V", fontsize=10, color=C["vout"])
+        # 7 脚输出 V_GAIN 回到 VGA 的 GAIN 脚
+        xg = pin_g[0] - 1.0
+        for u, v in ((bo, (xg, bo[1])), ((xg, bo[1]), (xg, pin_g[1])), ((xg, pin_g[1]), pin_g)):
+            d += elm.Line().at(u).to(v).color(C["vout"]).linewidth(W)
+        d += elm.Label().at((xg - 0.3, (bo[1] + pin_g[1]) / 2)).label("$V_{GAIN}$", halign="right", fontsize=11, color=C["vout"])
+        d += elm.Label().at((pin_o[0] - 1.7, pin_g[1] - 1.3)).label("GAIN 电压越高，增益越大", fontsize=9, color="#555555")
+        d += elm.Label().at((xc - 0.6, yb - 0.5)).label("$τ_d$ = 1 µF × 20 kΩ = 20 ms", halign="right", fontsize=10)
+        d += elm.Label().at(((xri + bo[0]) / 2 - 3.0, yI - 5.4)).label("$τ_i$ = 50 kΩ × 100 nF = 5 ms；LM358 8 脚接 +5 V、4 脚接地", fontsize=10)
+        schem.save_schem(d, P, fname)
+
+
 if __name__ == "__main__":
+    if sys.argv[1:]:
+        S = load_sim()
+        for name in sys.argv[1:]:
+            if name == "p1_3_series":
+                p2_1_series(S, "35_p1_3_cd4051.png")
+            elif name == "p3_5_schem":
+                p4_2_schem_lab("35_p3_5_schem_lab.png")
+            else:
+                f = globals()[name]
+                f(S) if name in ("p2_1_series", "p1_1_fixed_vs_auto", "p2_2_ron_error", "p2_5_digital_agc", "p3_2_hunting", "p3_3_agc_speed") else f()
+        sys.exit(0)
     S = load_sim()
     p1_1_fixed_vs_auto(S)
     p1_2_blocks()
     p1_3_db()
+    p2_1_series(S, "35_p1_3_cd4051.png")
+    p1_5_agc_schem()
+    p1_5_agc_schem("35_p2_9_agc_schem.png")
     p2_1_series(S)
     p2_2_ron_error(S)
     p2_3_kelvin()
@@ -917,6 +1020,7 @@ if __name__ == "__main__":
     fs.save(bb.fig, P, "35_p4_1_bb_pga.png")
     plt.close("all")
     p4_2_schem_lab()
+    p4_2_schem_lab("35_p3_5_schem_lab.png")
     p2_pins()
     p2_peak_schem()
     agc_loop()
