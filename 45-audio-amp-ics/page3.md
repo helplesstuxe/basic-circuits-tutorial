@@ -1,6 +1,6 @@
 # 45 集成功放芯片与散热保护 · 参数与调试篇
 
-[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [动手实验篇](page4.md) · [下一页：动手实验篇](page4.md) · 前置节点：[43 推挽功放 · 参数与调试篇](../43-push-pull-power-amp/page3.md)、44 节 D 类功放（即将上线）、[21 线性稳压 · 参数与调试篇](../21-linear-regulator/page3.md)
+[上一页：原理与实现篇](page2.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · 本页：参数与调试篇 · [动手实验篇](page4.md) · [下一页：动手实验篇](page4.md) · 前置节点：[43 推挽功放 · 参数与调试篇](../43-push-pull-power-amp/page3.md)、[44 D 类功放 · 参数与调试篇](../44-class-d-amp/page3.md)、[21 线性稳压 · 参数与调试篇](../21-linear-regulator/page3.md)
 
 ## 参数一览
 

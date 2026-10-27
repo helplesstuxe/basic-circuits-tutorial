@@ -3553,8 +3553,10 @@ node_34 = _part2_node("34", ("p4_2", "p4_4", "p4_5"))
 node_36 = _part2_node("36", ("p4_1", "p4_2"))
 node_37 = _part2_node("37", ("p4_1", "p4_2", "p4_3"))
 node_42 = _part2_node("42", ("bb42", "p4_2"))
+node_38 = _part2_node("38", ("p4_1", "p4_2", "p4_3", "p4_4"))
 node_39 = _part2_script("39")
 node_43 = _part2_script("43")
+node_44 = _part2_node("44", ("p4_1", "p4_2"))
 node_45 = _part2_node("45", ("p4_1", "p4_2", "p4_4"))
 node_35 = _part2_node("35", ("p4_2_schem_lab", "p4_3_ac_inject"))
 node_40 = _part2_node("40", ("p4_2_schem_lab", "p4_4_schem_lab"))
@@ -3598,11 +3600,13 @@ NODES = {
     "35": node_35,   # 转调 code/figs/35_figs.py
     "36": node_36,   # 转调 code/figs/36_figs.py
     "37": node_37,   # 转调 code/figs/37_figs.py
+    "38": node_38,   # 转调 code/figs/38_figs.py
     "39": node_39,   # 整个运行 code/figs/39_figs.py
     "40": node_40,   # 转调 code/figs/40_figs.py
     "41": node_41,   # 转调 code/figs/41_figs.py
     "42": node_42,   # 转调 code/figs/42_figs.py
     "43": node_43,   # 整个运行 code/figs/43_figs.py
+    "44": node_44,   # 转调 code/figs/44_figs.py
     "45": node_45,   # 转调 code/figs/45_figs.py
 }
 

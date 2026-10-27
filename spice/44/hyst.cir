@@ -1,0 +1,25 @@
+* 44 反例：静音电路 + 从 IN1 接 1 MΩ 到 s（旧版排错表里的「迟滞」改法，已从页面删掉）。看负载直流是否超过 50 mV
+* Cin 1 µF 经 Rin1 + Rin2 充电的时间常数约 15 ms，所以跑 40 ms，取 30～40 ms 的平均
+.include front.inc
+.include comp_ad.inc
+.include drv.inc
+.include lc.inc
+R10 x1 y 10
+R8 y x2 8
+VS sig 0 0
+Rhy in1 s 1Meg
+.ic v(sq)=10.5 v(tri)=6
+.options reltol=1e-3 method=gear
+.control
+tran 50n 40m 0 50n
+let vd = v(x1)-v(x2)
+meas tran vdavg avg vd from=30m to=40m
+meas tran vdavg2 avg vd from=20m to=30m
+meas tran in1avg avg v(in1) from=30m to=40m
+meas tran savg avg v(s) from=30m to=40m
+echo "RES hy_vdavg $&vdavg"
+echo "RES hy_vdavg2 $&vdavg2"
+echo "RES hy_in1avg $&in1avg"
+echo "RES hy_savg $&savg"
+.endc
+.end

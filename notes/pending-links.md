@@ -37,20 +37,8 @@
 
 | 文件 | 现在的行内容（片段） | 原链接 | 等哪节上线 | 记录批次 |
 |---|---|---|---|---|
-| `30-instrumentation-amp/page1.md`（第 84 行，图 30-p1-5 说明段） | `再交给后面的滤波和 38 节同步检波（电磁流量计）（即将上线）。下一行，差压流量计…` | `[38 同步检波（电磁流量计） · 直觉篇](../38-synchronous-demod/page1.md)` | 38 | 第 1 批（30） |
 | `30-instrumentation-amp/page4.md`（第 3 行，页首导航） | `本页：动手实验篇 · 下一页：31 节跨阻放大器（TIA）（即将上线） · 前置节点：…` | `[下一页：31 跨阻放大器（TIA） · 直觉篇](../31-transimpedance-amp/page1.md)` | 31 | 第 1 批（30） |
 | `33-bandpass-notch/page1.md`（第 3 行，页首导航） | `上一页：32 节电荷放大器（即将上线） · 本页：直觉篇 …` | `[上一页：32 电荷放大器 · 动手实验篇](../32-charge-amp/page4.md)` | 32 | 第 3 批（33/34） |
-| `39-constant-current-excitation/page1.md`（第 3 行，页首导航） | `…上一页：38 节同步检波（电磁流量计）（即将上线）…` | `[上一页：38 同步检波（电磁流量计） · 动手实验篇](../38-synchronous-demod/page4.md)` | 38 | 第 4 批（39/43） |
-| `39-constant-current-excitation/page1.md`（第 21 行） | `…38 节同步检波（电磁流量计）（即将上线）…` | `[38 同步检波（电磁流量计）](../38-synchronous-demod/page1.md)` | 38 | 第 4 批（39/43） |
-| `43-push-pull-power-amp/page4.md`（第 3 行，页首导航） | `…下一页：44 节 D 类功放（即将上线）…` | `[下一页：44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)` | 44 | 第 4 批（39/43） |
-| `37-zero-crossing-tof/page4.md`（第 3 行，页首导航） | `… · 本页：动手实验篇 · 下一页：38 节同步检波（即将上线） · 前置节点：…` | `[下一页：38 同步检波 · 直觉篇](../38-synchronous-demod/page1.md)` | 38 | 第 5 批（36/37/42） |
-| `45-audio-amp-ics/page1.md`（第 3 行） | `上一页：44 节 D 类功放（即将上线）` | `[上一页：44 D 类功放 · 动手实验篇](../44-class-d-amp/page4.md)` | 44 | 第 5 批（36/37/42/45） |
-| `45-audio-amp-ics/page1.md`（第 3 行） | `44 节 D 类功放（即将上线）` | `[44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)` | 44 | 第 5 批（36/37/42/45） |
-| `45-audio-amp-ics/page1.md`（第 8 行） | `44 节 D 类功放（即将上线）` | `[44 D 类功放](../44-class-d-amp/page1.md)` | 44 | 第 5 批（36/37/42/45） |
-| `45-audio-amp-ics/page2.md`（第 3 行） | `44 节 D 类功放（即将上线）` | `[44 D 类功放 · 原理与实现篇](../44-class-d-amp/page2.md)` | 44 | 第 5 批（36/37/42/45） |
-| `45-audio-amp-ics/page2.md`（第 137 行） | `44 节 D 类功放（即将上线）` | `[44 D 类功放](../44-class-d-amp/page2.md)` | 44 | 第 5 批（36/37/42/45） |
-| `45-audio-amp-ics/page3.md`（第 3 行） | `44 节 D 类功放（即将上线）` | `[44 D 类功放 · 参数与调试篇](../44-class-d-amp/page3.md)` | 44 | 第 5 批（36/37/42/45） |
-| `45-audio-amp-ics/page4.md`（第 3 行） | `44 节 D 类功放（即将上线）` | `[44 D 类功放 · 动手实验篇](../44-class-d-amp/page4.md)` | 44 | 第 5 批（36/37/42/45） |
 
 ## 已恢复
 
@@ -77,3 +65,15 @@
 | `41-current-loop-4-20ma/page4.md`（第 3 行） | `[下一页：42 流量计信号链总览 · 直觉篇（预告）](../42-flowmeter-signal-chains/page1.md)` | 第 5 批（36/37/42），本批提交（导航条去掉了原链接末尾的「（预告）」） |
 | `41-current-loop-4-20ma/page4.md`（第 398 行） | `[42 流量计信号链总览](../42-flowmeter-signal-chains/page1.md)` | 第 5 批（36/37/42），本批提交 |
 | `43-push-pull-power-amp/page1.md`（第 3 行，页首导航） | `[上一页：42 流量计信号链总览 · 动手实验篇](../42-flowmeter-signal-chains/page4.md)` | 第 5 批（36/37/42），本批提交 |
+| `30-instrumentation-amp/page1.md`（第 84 行，图 30-p1-5 说明段） | `[38 同步检波（电磁流量计） · 直觉篇](../38-synchronous-demod/page1.md)` | 第 6 批（38/44），本批提交 |
+| `39-constant-current-excitation/page1.md`（第 3 行，页首导航） | `[上一页：38 同步检波（电磁流量计） · 动手实验篇](../38-synchronous-demod/page4.md)` | 第 6 批（38/44），本批提交 |
+| `39-constant-current-excitation/page1.md`（第 21 行） | `[38 同步检波（电磁流量计）](../38-synchronous-demod/page1.md)` | 第 6 批（38/44），本批提交 |
+| `43-push-pull-power-amp/page4.md`（第 3 行，页首导航） | `[下一页：44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)` | 第 6 批（38/44），本批提交 |
+| `37-zero-crossing-tof/page4.md`（第 3 行，页首导航） | `[下一页：38 同步检波 · 直觉篇](../38-synchronous-demod/page1.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page1.md`（第 3 行） | `[上一页：44 D 类功放 · 动手实验篇](../44-class-d-amp/page4.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page1.md`（第 3 行） | `[44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page1.md`（第 8 行） | `[44 D 类功放](../44-class-d-amp/page1.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page2.md`（第 3 行） | `[44 D 类功放 · 原理与实现篇](../44-class-d-amp/page2.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page2.md`（第 137 行） | `[44 D 类功放](../44-class-d-amp/page2.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page3.md`（第 3 行） | `[44 D 类功放 · 参数与调试篇](../44-class-d-amp/page3.md)` | 第 6 批（38/44），本批提交 |
+| `45-audio-amp-ics/page4.md`（第 3 行） | `[44 D 类功放 · 动手实验篇](../44-class-d-amp/page4.md)` | 第 6 批（38/44），本批提交 |

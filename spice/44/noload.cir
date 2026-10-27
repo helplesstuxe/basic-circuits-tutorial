@@ -1,0 +1,32 @@
+* 44 空载（拔掉负载）上电：只剩 LC，没有电阻阻尼；无信号时看电容两端电压和电感电流，再加 8.8 kHz、0.3 V 峰值信号（落在 LC 谐振附近）看电感电流
+.include front.inc
+.include comp_ad.inc
+.include drv.inc
+.include lc.inc
+VS sig 0 sin(0 0 8.8k)
+.ic v(sq)=10.5 v(tri)=6
+.options reltol=1e-3 method=gear
+.control
+set wr_singlescale
+tran 20n 4m 0 50n
+let vd = v(x1)-v(x2)
+meas tran vdmax max vd from=0 to=4m
+meas tran vdmin min vd from=0 to=4m
+meas tran ilmax max i(L1) from=0 to=4m
+meas tran vdrms rms vd from=2m to=4m
+echo "RES nl0_vdmax $&vdmax"
+echo "RES nl0_vdmin $&vdmin"
+echo "RES nl0_ilmax $&ilmax"
+echo "RES nl0_vdrms $&vdrms"
+wrdata nl0_vg.txt vd i(L1)
+alter @VS[sin] = [ 0 0.3 8.8k ]
+tran 20n 3m 0 50n
+let vd = v(x1)-v(x2)
+meas tran vdmax max vd from=1m to=3m
+meas tran ilmax max i(L1) from=1m to=3m
+meas tran ilmin min i(L1) from=1m to=3m
+echo "RES nl9_vdmax $&vdmax"
+echo "RES nl9_ilmax $&ilmax"
+echo "RES nl9_ilmin $&ilmin"
+.endc
+.end

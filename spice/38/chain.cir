@@ -1,0 +1,92 @@
+* 38 page4 完整链路：夹具 → 30 节三运放 INA（G = 21）→ CH/RH 交流耦合 → U3A 跟随 → U3B ±1（CD4053 选择）→ RF/CF 低通
+* 运放除 U3A 外都用 LMx58B（TI 模型）；比较器 U5 在这里用同门限、同输出电平的行为源（LM393A 晶体管级模型单独在 comp.cir 里复核），CD4053 的一组开关用行为源 + r_ON 180 Ω（VDD=10 V 典型值）
+* 参数：ph = D10 超前 D9 的角度（度）；td 为 D10 方波的延时；run.py 生成 ph = 0/45/90/180 等副本
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4 rshunt=1e10
+.param ph=0
+.param td={160m*(1 - ph/360) - 160m*floor(1 - ph/360)}
+VCC vp 0 9
+* 分压与电位器在实物里就接电池 vp；仿真里改由同值的 VX 在 1 ms 内从 0 升到 9 V，稳态与接 vp 相同，只为避开 TI 模型在 t=0 的工作点不收敛（30 节同样做法）
+VX vx 0 PWL(0 0 1m 9)
+* 两路方波的上升/下降沿取 50 µs（只占 80 ms 半周期的 0.06%，为了收敛；Arduino 实际边沿远快于此）；都推迟 2 ms 起跳，等电源升好（只是整体平移时间，不影响结果）
+* Arduino 引脚：D9 = 励磁方波（0/5 V，6.25 Hz）；D10 = 参考方波；D5 = 50 Hz 干扰（默认关）
+VD9 d9 0 PULSE(0 5 2m 50u 50u 79.95m 160m)
+VD10 d10 0 PULSE(0 5 {td+2m} 50u 50u 79.95m 160m)
+VD5 d5 0 DC 0
+V5V a5 0 5
+* 中点参考 V_MID：10k/10k 分压 + U2B 跟随（30 节原样）
+RM1 vx md 10k
+RM2 md 0 10k
+XU2B md vmid vp 0 vmid LMX58B_LM2904B
+* 夹具：节点 p 接 INA 的 + 输入，INA 的 − 输入接 V_MID
+RS1 d9 p 1Meg
+RS2 p vmid 1k
+CN d5 nn 10u
+RN nn p 100k
+RPA vx w 5k
+RPB w 0 5k
+RD w p 100k
+* 30 节三运放 INA：R5=R6=10k，RG=1k，差分级 R7~R10 = 10k → G = 21；输出 vo − V_MID = 21 ×（A2 同相端 − A1 同相端）
+* 所以夹具节点 p 接 A2 的 3 脚（30 节里 Vb 的位置），A1 的 5 脚（30 节里 Va 的位置）接 V_MID
+* 与 page4 接线一致：P → U1(A2) 3 脚（蓝线 d11→g24），V_MID → U1(A1) 5 脚（紫线 i46→d25）
+XA1 vmid n1 vp 0 o1 LMX58B_LM2904B
+XA2 p n2 vp 0 o2 LMX58B_LM2904B
+R5 o1 n1 10k
+R6 o2 n2 10k
+RG n1 n2 1k
+R7 o1 n3 10k
+R8 n3 vo 10k
+R9 o2 n4 10k
+R10 n4 vmid 10k
+XA3 n4 n3 vp 0 vo LMX58B_LM2904B
+* 交流耦合 + U3A 跟随
+CH vo h 10u
+RH h vmid 100k
+* U3A 跟随器在这里用理想压控源（增益 1e5）代替 LM358B 模型：六个 LM358B 模型同时在场时，ngspice 在相位 90° 等情形下会在方波边沿报 timestep too small；
+* 跟随器在 CH 之后，它的失调只是一个直流，经 U3B 乘 ±1 后平均为 0，对读数影响可忽略。其余五只（A1、A2、A3、U2B、U3B）仍用 TI 模型
+EU3A fo 0 h fo 1e5
+* U5 LM393：IN+ = D10，IN− = Arduino 5 V 经 RT1/RT2 分出的 2.5 V；输出开集电极，RU 10k 上拉到 9 V → CD4053 选择脚 11
+RT1 a5 thr 10k
+RT2 thr 0 10k
+* LM393A 晶体管级模型在 12 s 长瞬态里 ngspice 反复报 timestep too small；电平转换本身由 comp.cir 用 LM393A 单独复核，
+* 这里换成同门限、同输出电平（0/9 V）的理想比较器
+BU5 sel 0 V = 4.5 * (1 + tanh((v(d10) - v(thr)) * 20))
+RU vp sel 10k
+* CSEL：选择脚对地电容（取 1 nF 只为收敛；BU5 是理想电压源，它其实不影响结果）
+CSEL sel 0 1n
+* CD4053 A 组：选择脚高 → COM(14) 接 AY(13) = fo（+1）；低 → 接 AX(12) = V_MID（−1）
+* 用行为源 + 串联 r_ON 表示「二选一」：选择脚电压过 4.5 V（VDD 的一半）就切换；tanh 只是让切换在约 0.2 V 内平滑完成，便于收敛
+* （直接用两个压控开关 S 时，TI 运放模型在开机瞬间不收敛）
+BSW sw 0 V = v(vmid) + (v(fo) - v(vmid)) * 0.5 * (1 + tanh((v(sel) - 4.5) * 10))
+RON sw com 180
+* CCOM：COM 端对地 1 nF，只为收敛（与 RON 180 Ω 构成 0.18 µs 时间常数，对 6.25 Hz 毫无影响）
+CCOM com 0 1n
+* U3B：R11 从 fo 到 −，R12 从 − 到输出 → 同相端 = V_MID 时 −1，= fo 时 +1
+R11 fo n5 10k
+R12 n5 dm 10k
+* CFB 100 pF 只为仿真收敛（时间常数 1 µs，对 6.25 Hz 毫无影响）；实物可以不装
+CFB n5 dm 100p
+XU3B com n5 vp 0 dm LMX58B_LM2904B
+* RC 低通：RF 100k + CF 10u 接 V_MID（τ = 1 s）；万用表 10 MΩ 并在 CF 上
+RF dm out 100k
+CF out vmid 10u
+RMET out vmid 10Meg
+.control
+* 12 s：CH（τ 1 s）与 RF/CF（τ 1 s）都从 0 开始充电，12 s 后剩余误差远小于 0.1 mV
+tran 0.5m 12 0 0.5m uic
+let vout = v(out) - v(vmid)
+let vina = v(vo) - v(vmid)
+* 万用表读数 = 最后约 1 s（6 个整周期 11.04～12.0 s）的平均；纹波取最后一个周期的峰峰
+meas tran vavg avg vout from=11.04 to=12.0
+meas tran vmax max vout from=11.84 to=12.0
+meas tran vmin min vout from=11.84 to=12.0
+* INA 输出：最后一个完整周期 D9 高（11.522～11.602 s）、低（11.602～11.682 s）各取后半段平均
+meas tran inahi avg vina from=11.562 to=11.602
+meas tran inalo avg vina from=11.642 to=11.682
+echo "RES vavg $&vavg"
+echo "RES vmax $&vmax"
+echo "RES vmin $&vmin"
+echo "RES inahi $&inahi"
+echo "RES inalo $&inalo"
+.endc
+.end

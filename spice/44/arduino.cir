@@ -1,0 +1,41 @@
+* 44 可选：Arduino Timer2 相位修正 PWM（16 MHz / 510 = 31372.5 Hz），D11 → IN1，D3 → IN2（反相比较输出，两路互补 = AD 调制）
+* 理想化：OCR = 128 + s，s = A·sin(2π·400 t)；占空比 D ≈ OCR/255，等效于把 c = 2D − 1 ≈ s/127.5 和 ±1 的三角波比较（忽略 8 位量化）
+.include drv.inc
+.include lc.inc
+R10 x1 y 10
+R8 y x2 8
+VCC vcc 0 12
+.param A=40
+Btri tri 0 V = (2/pi)*asin(sin(2*pi*31372.5*time))
+Bc c 0 V = A/127.5*sin(2*pi*400*time)
+Bd1 d1 0 V = 5*0.5*(1+tanh(500*(V(c)-V(tri))))
+Rd1 d1 in1 100
+Cd1 in1 0 100p
+Bd2 d2 0 V = 5-5*0.5*(1+tanh(500*(V(c)-V(tri))))
+Rd2 d2 in2 100
+Cd2 in2 0 100p
+.options reltol=1e-3 method=gear
+.control
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+echo "RES ard40_iavg $&iavg"
+echo "RES ard40_vdrms $&vdrms"
+echo "RES ard40_v8rms $&v8rms"
+echo "RES ard40_vdmax $&vdmax"
+alterparam A=0
+reset
+tran 20n 3m 0 50n
+let vd = v(x1)-v(x2)
+meas tran iavg avg i(Vam) from=1.5m to=3m
+meas tran vdrms rms vd from=1.5m to=3m
+meas tran vdavg avg vd from=1.5m to=3m
+echo "RES ard0_iavg $&iavg"
+echo "RES ard0_vdrms $&vdrms"
+echo "RES ard0_vdavg $&vdavg"
+.endc
+.end

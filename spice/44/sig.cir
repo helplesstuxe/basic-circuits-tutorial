@@ -1,0 +1,223 @@
+* 44 加信号：400 Hz 正弦，幅度扫描（信号源峰值），18 Ω 负载；量电源电流、负载电压，算效率
+.include front.inc
+.include comp_ad.inc
+.include drv.inc
+.include lc.inc
+R10 x1 y 10
+R8 y x2 8
+VS sig 0 sin(0 1.0 400)
+.ic v(sq)=10.5 v(tri)=6
+.options reltol=1e-3 method=gear
+.control
+set wr_singlescale
+alter @VS[sin] = [ 0 0.25 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_0_iavg $&iavg"
+echo "RES sig_0_vdrms $&vdrms"
+echo "RES sig_0_v8rms $&v8rms"
+echo "RES sig_0_vdmax $&vdmax"
+echo "RES sig_0_vdmin $&vdmin"
+echo "RES sig_0_ilmax $&ilmax"
+echo "RES sig_0_ilmin $&ilmin"
+echo "RES sig_0_a1 $&a1"
+echo "RES sig_0_b1 $&b1"
+echo "RES sig_0_amp 0.25"
+alter @VS[sin] = [ 0 0.5 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_1_iavg $&iavg"
+echo "RES sig_1_vdrms $&vdrms"
+echo "RES sig_1_v8rms $&v8rms"
+echo "RES sig_1_vdmax $&vdmax"
+echo "RES sig_1_vdmin $&vdmin"
+echo "RES sig_1_ilmax $&ilmax"
+echo "RES sig_1_ilmin $&ilmin"
+echo "RES sig_1_a1 $&a1"
+echo "RES sig_1_b1 $&b1"
+echo "RES sig_1_amp 0.5"
+alter @VS[sin] = [ 0 0.75 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_2_iavg $&iavg"
+echo "RES sig_2_vdrms $&vdrms"
+echo "RES sig_2_v8rms $&v8rms"
+echo "RES sig_2_vdmax $&vdmax"
+echo "RES sig_2_vdmin $&vdmin"
+echo "RES sig_2_ilmax $&ilmax"
+echo "RES sig_2_ilmin $&ilmin"
+echo "RES sig_2_a1 $&a1"
+echo "RES sig_2_b1 $&b1"
+echo "RES sig_2_amp 0.75"
+alter @VS[sin] = [ 0 1.0 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_3_iavg $&iavg"
+echo "RES sig_3_vdrms $&vdrms"
+echo "RES sig_3_v8rms $&v8rms"
+echo "RES sig_3_vdmax $&vdmax"
+echo "RES sig_3_vdmin $&vdmin"
+echo "RES sig_3_ilmax $&ilmax"
+echo "RES sig_3_ilmin $&ilmin"
+echo "RES sig_3_a1 $&a1"
+echo "RES sig_3_b1 $&b1"
+echo "RES sig_3_amp 1.0"
+wrdata sig_vg.txt v(sig) v(s) v(t) v(in1) v(o1) vd i(L1)
+alter @VS[sin] = [ 0 1.25 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_4_iavg $&iavg"
+echo "RES sig_4_vdrms $&vdrms"
+echo "RES sig_4_v8rms $&v8rms"
+echo "RES sig_4_vdmax $&vdmax"
+echo "RES sig_4_vdmin $&vdmin"
+echo "RES sig_4_ilmax $&ilmax"
+echo "RES sig_4_ilmin $&ilmin"
+echo "RES sig_4_a1 $&a1"
+echo "RES sig_4_b1 $&b1"
+echo "RES sig_4_amp 1.25"
+alter @VS[sin] = [ 0 1.5 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_5_iavg $&iavg"
+echo "RES sig_5_vdrms $&vdrms"
+echo "RES sig_5_v8rms $&v8rms"
+echo "RES sig_5_vdmax $&vdmax"
+echo "RES sig_5_vdmin $&vdmin"
+echo "RES sig_5_ilmax $&ilmax"
+echo "RES sig_5_ilmin $&ilmin"
+echo "RES sig_5_a1 $&a1"
+echo "RES sig_5_b1 $&b1"
+echo "RES sig_5_amp 1.5"
+alter @VS[sin] = [ 0 2.0 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_6_iavg $&iavg"
+echo "RES sig_6_vdrms $&vdrms"
+echo "RES sig_6_v8rms $&v8rms"
+echo "RES sig_6_vdmax $&vdmax"
+echo "RES sig_6_vdmin $&vdmin"
+echo "RES sig_6_ilmax $&ilmax"
+echo "RES sig_6_ilmin $&ilmin"
+echo "RES sig_6_a1 $&a1"
+echo "RES sig_6_b1 $&b1"
+echo "RES sig_6_amp 2.0"
+alter @VS[sin] = [ 0 2.5 400 ]
+tran 20n 5.5m 0 50n
+let vd = v(x1)-v(x2)
+let v8 = v(y)-v(x2)
+let vsn = vd*sin(2*pi*400*time)
+let vcs = vd*cos(2*pi*400*time)
+let isq = i(Vam)
+meas tran iavg avg i(Vam) from=3m to=5.5m
+meas tran vdrms rms vd from=3m to=5.5m
+meas tran v8rms rms v8 from=3m to=5.5m
+meas tran vdmax max vd from=3m to=5.5m
+meas tran vdmin min vd from=3m to=5.5m
+meas tran ilmax max i(L1) from=3m to=5.5m
+meas tran ilmin min i(L1) from=3m to=5.5m
+meas tran a1 integ vsn from=3m to=5.5m
+meas tran b1 integ vcs from=3m to=5.5m
+echo "RES sig_7_iavg $&iavg"
+echo "RES sig_7_vdrms $&vdrms"
+echo "RES sig_7_v8rms $&v8rms"
+echo "RES sig_7_vdmax $&vdmax"
+echo "RES sig_7_vdmin $&vdmin"
+echo "RES sig_7_ilmax $&ilmax"
+echo "RES sig_7_ilmin $&ilmin"
+echo "RES sig_7_a1 $&a1"
+echo "RES sig_7_b1 $&b1"
+echo "RES sig_7_amp 2.5"
+.endc
+.end

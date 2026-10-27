@@ -1,0 +1,23 @@
+* 38 U5 LM393 电平转换单独复核：D10（0/5 V）→ 选择脚 sel（0/9 V）
+.include ../models/LM393A.lib
+.options method=gear reltol=1e-4
+VCC vp 0 9
+V5V a5 0 5
+VD10 d10 0 PULSE(0 5 1m 100u 100u 4.9m 10m)
+RT1 a5 thr 10k
+RT2 thr 0 10k
+XU5 d10 thr vp 0 sel LM393A
+RU vp sel 10k
+CSEL sel 0 100p
+.control
+tran 2u 20m
+meas tran shi avg v(sel) from=14m to=15.5m
+meas tran slo avg v(sel) from=9m to=10.5m
+meas tran vthr avg v(thr) from=1m to=20m
+meas tran tdel trig v(d10) val=2.5 rise=2 targ v(sel) val=4.5 rise=2
+echo "RES shi $&shi"
+echo "RES slo $&slo"
+echo "RES vthr $&vthr"
+echo "RES tdel $&tdel"
+.endc
+.end

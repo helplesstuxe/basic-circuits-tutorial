@@ -1,11 +1,11 @@
 # 45 集成功放芯片与散热保护 · 直觉篇
 
-上一页：44 节 D 类功放（即将上线） · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[43 推挽功放 · 直觉篇](../43-push-pull-power-amp/page1.md)、44 节 D 类功放（即将上线）、[21 线性稳压 · 直觉篇](../21-linear-regulator/page1.md)、[25 开关电源 · 直觉篇](../25-switching-power-supply/page1.md)
+[上一页：44 D 类功放 · 动手实验篇](../44-class-d-amp/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[43 推挽功放 · 直觉篇](../43-push-pull-power-amp/page1.md)、[44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)、[21 线性稳压 · 直觉篇](../21-linear-regulator/page1.md)、[25 开关电源 · 直觉篇](../25-switching-power-supply/page1.md)
 
 ## 开头三问（先回忆，再往下读）
 
 1. [43 推挽功放](../43-push-pull-power-amp/page1.md) 里，乙类推挽在输出最大时效率最高约多少？输出很小时，效率是高还是低？
-2. 44 节 D 类功放（即将上线） 里，喇叭接成桥接（BTL）以后，为什么喇叭的任何一端都不能接地？
+2. [44 D 类功放](../44-class-d-amp/page1.md) 里，喇叭接成桥接（BTL）以后，为什么喇叭的任何一端都不能接地？
 3. [21 线性稳压](../21-linear-regulator/page1.md) 里，一只线性稳压器把 9 V 降到 5 V、输出 0.15 A 时，它自己大约要发多少热？
 
 <details><summary>答案</summary>

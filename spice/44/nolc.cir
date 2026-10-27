@@ -1,0 +1,24 @@
+* 44 错误示范：不加 LC，OUT1/OUT2 直接接 18 Ω 负载（无信号）
+.include front.inc
+.include comp_ad.inc
+.include drv.inc
+.include lc_none.inc
+R10 x1 y 10
+R8 y x2 8
+VS sig 0 0
+.ic v(sq)=10.5 v(tri)=6
+.options reltol=1e-3 method=gear
+.control
+tran 20n 3m 0 50n
+let v10 = v(x1)-v(y)
+let v8 = v(y)-v(x2)
+let pw10 = v10*v10/10
+meas tran p10 avg pw10 from=1.5m to=3m
+let pw8 = v8*v8/8
+meas tran p8 avg pw8 from=1.5m to=3m
+meas tran iavg avg i(Vam) from=1.5m to=3m
+echo "RES nolc_p10 $&p10"
+echo "RES nolc_p8 $&p8"
+echo "RES nolc_iavg $&iavg"
+.endc
+.end

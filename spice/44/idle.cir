@@ -1,0 +1,49 @@
+* 44 静态（无信号）：18 Ω 负载（10 Ω + 8 Ω），看三角波、PWM、OUT1/OUT2、负载残留纹波
+.include front.inc
+.include comp_ad.inc
+.include drv.inc
+.include lc.inc
+R10 x1 y 10
+R8 y x2 8
+VS sig 0 0
+.ic v(sq)=10.5 v(tri)=6
+.options reltol=1e-3 method=gear
+.control
+set wr_singlescale
+tran 20n 4m 0 50n
+let vd = v(x1)-v(x2)
+let vo = v(o1)-v(o2)
+meas tran tmax max v(tri) from=3m to=4m
+meas tran tmin min v(tri) from=3m to=4m
+meas tran sqmax max v(sq) from=3m to=4m
+meas tran sqmin min v(sq) from=3m to=4m
+meas tran tA when v(t)=6 rise=40
+meas tran tB when v(t)=6 rise=140
+meas tran tav avg v(t) from=2m to=4m
+meas tran iavg avg i(Vam) from=2m to=4m
+meas tran vdavg avg vd from=2m to=4m
+meas tran vdrms rms vd from=2m to=4m
+meas tran ilmax max i(L1) from=2m to=4m
+meas tran ilmin min i(L1) from=2m to=4m
+meas tran o1avg avg v(o1) from=2m to=4m
+meas tran in1avg avg v(in1) from=2m to=4m
+meas tran voavg avg vo from=2m to=4m
+echo "RES idle_tmax $&tmax"
+echo "RES idle_tmin $&tmin"
+echo "RES idle_sqmax $&sqmax"
+echo "RES idle_sqmin $&sqmin"
+echo "RES idle_tA $&tA"
+echo "RES idle_tB $&tB"
+echo "RES idle_tav $&tav"
+echo "RES idle_iavg $&iavg"
+echo "RES idle_vdavg $&vdavg"
+echo "RES idle_vdrms $&vdrms"
+echo "RES idle_ilmax $&ilmax"
+echo "RES idle_ilmin $&ilmin"
+echo "RES idle_o1avg $&o1avg"
+echo "RES idle_in1avg $&in1avg"
+echo "RES idle_voavg $&voavg"
+linearize v(tri) v(sq) v(t) v(in1) v(in2) v(o1) v(o2) vd i(L1)
+wrdata idle_vg.txt v(tri) v(sq) v(t) v(in1) v(in2) v(o1) v(o2) vd i(L1)
+.endc
+.end

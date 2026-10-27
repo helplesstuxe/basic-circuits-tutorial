@@ -1,6 +1,6 @@
 # 43 推挽功放：甲、乙、甲乙类 · 动手实验篇
 
-[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · 下一页：44 节 D 类功放（即将上线） · 前置节点：[19 射极跟随器 · 动手实验篇](../19-emitter-follower/page4.md)、[12 电压跟随器 · 动手实验篇](../12-voltage-follower/page4.md)
+[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [下一页：44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md) · 前置节点：[19 射极跟随器 · 动手实验篇](../19-emitter-follower/page4.md)、[12 电压跟随器 · 动手实验篇](../12-voltage-follower/page4.md)
 
 ## 这次实验要验证什么
 

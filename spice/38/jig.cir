@@ -1,0 +1,59 @@
+* 38 page4 测试夹具（模拟电极）：节点 p 对中点参考 V_MID（节点 vmid）的电压
+* RS1 1M 接 D9（0/5 V），RS2 1k 接 V_MID，RN 100k + CN 10u 接 D5（50 Hz 干扰），RD 100k 接 10k 电位器 RP 滑动端
+* V_MID 在实物里是 30 节的分压 + 跟随器，这里用理想 4.5 V 源；INA 输入电流（LM358 约几十 nA）忽略
+VCC vp 0 9
+VMID vmid 0 4.5
+VD9 d9 0 DC 5 PULSE(0 5 0 10u 10u 79.99m 160m)
+VD5 d5 0 DC 0 AC 1
+RS1 d9 p 1Meg
+RS2 p vmid 1k
+CN d5 n 10u
+RN n p 100k
+* 电位器 10k：上半 RPA、下半 RPB，滑动端 w；居中时各 5k
+RPA vp w 5k
+RPB w 0 5k
+RD w p 100k
+.control
+* 先跑瞬态：D9 是 6.25 Hz 方波，CN 对 6.25 Hz 已接近短路，所以 RN 也并在 P 点上（直流 .op 里 CN 是断开的，会把 E 算大约 1%）
+* 8 s 让 CN（τ ≈ 1 s）充好电，再取最后一个周期：高半周后半段、低半周后半段的平均
+tran 0.2m 8 0 0.2m
+let dp = v(p) - v(vmid)
+meas tran thi avg dp from=7.88 to=7.92
+meas tran tlo avg dp from=7.96 to=8.0
+echo "RES thi $&thi"
+echo "RES tlo $&tlo"
+op
+let hi = v(p) - v(vmid)
+echo "RES hi $&hi"
+alter VD9 dc = 0
+op
+let lo = v(p) - v(vmid)
+echo "RES lo $&lo"
+* 以下 hi/lo（V）由 run.py 换算成 E =(hi−lo)/2、直流 =(hi+lo)/2
+* 电位器拧到 9 V 端 / 0 V 端（滑动端内阻为 0）
+alter RPA resistance = 1m
+alter RPB resistance = 10k
+op
+let h2 = v(p) - v(vmid)
+echo "RES h2 $&h2"
+alter VD9 dc = 5
+op
+let h3 = v(p) - v(vmid)
+echo "RES h3 $&h3"
+alter RPA resistance = 10k
+alter RPB resistance = 1m
+op
+let h4 = v(p) - v(vmid)
+echo "RES h4 $&h4"
+alter VD9 dc = 0
+op
+let h5 = v(p) - v(vmid)
+echo "RES h5 $&h5"
+* 50 Hz：D5 的 0/5 V 方波对平均值是 ±2.5 V，所以 P 点幅度 = 2.5 × |v(p)/v(d5)|
+alter RPA resistance = 5k
+alter RPB resistance = 5k
+ac lin 1 50 50
+let n50_mv = 2500*mag(v(p))
+echo "RES n50_mv $&n50_mv"
+.endc
+.end

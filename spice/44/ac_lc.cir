@@ -1,0 +1,37 @@
+* 44 输出 LC 的频率响应：差分源（含 DRV8871 两管 0.565 Ω）→ 2×220 µH（各 0.453 Ω）+ 0.68 µF → 负载；带 18 Ω 和空载两种
+Vd o1 o2 dc 0 ac 1
+Rgnd o2 0 1e9
+Rds o1 o1r 0.565
+L1 o1r l1 220u
+RL1 l1 x1 0.453
+L2 o2 l2 220u
+RL2 l2 x2 0.453
+Cf x1 x2 0.68u
+Rld x1 x2 18
+.control
+set wr_singlescale
+ac dec 100 100 1meg
+let h = mag(v(x1)-v(x2))
+meas ac hpk max h
+meas ac h1k find h at=1k
+meas ac h20k find h at=20k
+meas ac hfs find h at=38.56k
+let hdb = db(h)
+let h0 = h[0]
+meas ac f3 when hdb=-3.0103
+echo "RES ac18_hpk $&hpk"
+echo "RES ac18_h1k $&h1k"
+echo "RES ac18_h20k $&h20k"
+echo "RES ac18_hfs $&hfs"
+echo "RES ac18_f3 $&f3"
+wrdata ac18_vg.txt h
+alter Rld 1e9
+ac dec 100 100 1meg
+let h = mag(v(x1)-v(x2))
+meas ac hpk max h
+meas ac hfs find h at=38.56k
+echo "RES acnl_hpk $&hpk"
+echo "RES acnl_hfs $&hfs"
+wrdata acnl_vg.txt h
+.endc
+.end

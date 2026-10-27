@@ -1,6 +1,6 @@
 # 37 过零检测与超声波时差 · 动手实验篇
 
-[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · 下一页：38 节同步检波（即将上线） · 前置节点：[10 电压比较器 · 动手实验篇](../10-voltage-comparator/page4.md)、[12 电压跟随器 · 动手实验篇](../12-voltage-follower/page4.md)、[29 上拉/下拉电阻与电平转换 · 动手实验篇](../29-pullup-level-shift/page4.md)、[36 施密特整形与频率/脉冲计数 · 动手实验篇](../36-schmitt-pulse-shaping/page4.md)
+[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [下一页：38 同步检波 · 直觉篇](../38-synchronous-demod/page1.md) · 前置节点：[10 电压比较器 · 动手实验篇](../10-voltage-comparator/page4.md)、[12 电压跟随器 · 动手实验篇](../12-voltage-follower/page4.md)、[29 上拉/下拉电阻与电平转换 · 动手实验篇](../29-pullup-level-shift/page4.md)、[36 施密特整形与频率/脉冲计数 · 动手实验篇](../36-schmitt-pulse-shaping/page4.md)
 
 ## 这次实验要验证什么
 

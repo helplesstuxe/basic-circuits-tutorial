@@ -1,0 +1,49 @@
+* 44 故障：IN2 不跟 IN1 互补，而是固定接地（或固定接 5 V），只给 IN1 PWM（无信号），18 Ω 负载；看负载上的直流电压
+.include front.inc
+.include comp_fault.inc
+* Vin2 的电压用 alter 改：0 V＝接地，5 V＝接 5 V
+.include drv.inc
+.include lc.inc
+R10 x1 y 10
+R8 y x2 8
+VS sig 0 0
+.ic v(sq)=10.5 v(tri)=6
+.options reltol=1e-3 method=gear
+.control
+tran 20n 4m 0 50n
+let vd = v(x1)-v(x2)
+let v10 = v(x1)-v(y)
+let v8 = v(y)-v(x2)
+meas tran vdavg avg vd from=2m to=4m
+meas tran v8avg avg v8 from=2m to=4m
+let pw10 = v10*v10/10
+meas tran p10 avg pw10 from=2m to=4m
+let pw8 = v8*v8/8
+meas tran p8 avg pw8 from=2m to=4m
+meas tran iavg avg i(Vam) from=2m to=4m
+echo "RES flt_vdavg $&vdavg"
+echo "RES flt_v8avg $&v8avg"
+echo "RES flt_p10 $&p10"
+echo "RES flt_p8 $&p8"
+echo "RES flt_iavg $&iavg"
+alter Vin2 dc 5
+tran 20n 4m 0 50n
+let vd = v(x1)-v(x2)
+let v10 = v(x1)-v(y)
+let v8 = v(y)-v(x2)
+let pw10 = v10*v10/10
+let pw8 = v8*v8/8
+meas tran vdavg avg vd from=2m to=4m
+meas tran v8avg avg v8 from=2m to=4m
+let pw10 = v10*v10/10
+meas tran p10 avg pw10 from=2m to=4m
+let pw8 = v8*v8/8
+meas tran p8 avg pw8 from=2m to=4m
+meas tran iavg avg i(Vam) from=2m to=4m
+echo "RES flt5_vdavg $&vdavg"
+echo "RES flt5_v8avg $&v8avg"
+echo "RES flt5_p10 $&p10"
+echo "RES flt5_p8 $&p8"
+echo "RES flt5_iavg $&iavg"
+.endc
+.end
