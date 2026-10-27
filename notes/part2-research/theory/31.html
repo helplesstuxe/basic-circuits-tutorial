@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>31 跨阻放大器 TIA · 理论笔记（理论研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/31.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="31-跨阻放大器-tia--理论笔记理论研究员">31 跨阻放大器 TIA · 理论笔记（理论研究员）</h1>
+<blockquote>
+<p>依据：<a href="http://00-design-part2.md">00-design-part2.md</a>、PART2_BRIEF.md §10、<a href="http://31-research.md">31-research.md</a>。数值脚本：盒子 /workspace/scratch/theory2/c31.py（含单极点运放模型的闭环频响扫描）。</p>
+</blockquote>
+<h2 id="1-推导链">1. 推导链</h2>
+<h3 id="11-直流v_o--v_ref--ir_f">1.1 直流：V_o = V_REF + I·R_F</h3>
+<ol>
+<li>反相端接光电二极管，同相端接参考 V_REF（0 V 或虚地 2.5 V）。负反馈 + 虚短 ⇒ 反相端也等于 V_REF。</li>
+<li>二极管两端电压被钉死（= V_REF − 0），所以 C_D 上电压不变、不充放电——这是 TIA 比&quot;二极管直接接电阻&quot;快的根本原因（电阻接法里 C_D 要随信号充放电，时间常数 R·C_D）。</li>
+<li>虚断：光电流 I 不能进运放，只能全部经 R_F 流向输出。欧姆定律：V_o − V_REF = I·R_F（电流从输出流向反相端时取正）。</li>
+<li>方向（单电源必须讲清）：二极管<strong>阴极接反相端、阳极接地</strong>时，光电流在外电路里从输出 → R_F → 反相端 → 阴极，输出<strong>高于</strong> V_REF。V_REF = 2.5 V 时二极管被反偏 2.5 V（光导模式）；V_REF = 0 时零偏（光伏模式）。</li>
+</ol>
+<h3 id="12-为什么会振荡c_f-怎么来只用gbw与二次方程">1.2 为什么会振荡、C_F 怎么来（只用&quot;GBW&quot;与二次方程）</h3>
+<ol>
+<li>第一部分已讲 GBW：运放在频率 f 处能提供的增益约为 GBW/f。</li>
+<li>电路&quot;要求&quot;运放提供的增益叫噪声增益 = 1 + Z_F/Z_D。高频时 R_F 被 C_F 旁路、二极管只剩 C_D，两只电容串联分压，噪声增益趋于 (C_F + C_D)/C_F（只用容抗 X_C = 1/(2πfC) 的比值，频率约掉）。</li>
+<li>没有 C_F 时噪声增益随频率一直上升，与 GBW/f 相交时相位不够 → 振铃。</li>
+<li>SBOA055A 的做法：让反馈拐点 f_P = 1/(2πR_F C_F) 恰好落在交点上，即 GBW/f_P = (C_F + C_D)/C_F（SBOA055A 式(4)）。</li>
+<li>代入 f_P = 1/(2πR_F C_F)：2π·R_F·GBW·C_F² − C_F − C_D = 0，这是关于 C_F 的<strong>一元二次方程</strong>（高中）。取正根：
+<strong>C_F = [1 + √(1 + 8π·R_F·C_D·GBW)]/(4π·R_F·GBW)</strong>（= SBOA055A 式(5)）。</li>
+<li>当 8πR_F C_D GBW ≫ 1 时，C_F ≈ √(C_D/(2πR_F GBW))，代回得 f_P ≈ √(GBW/(2πR_F C_D))（SBOA055A 式(6)）。</li>
+<li>这个 f_P 有两重含义（数值相同）：(a) <strong>补偿后</strong>的信号带宽（SBOA055A 原意，带宽与 √R_F 成反比）；(b) <strong>不补偿时</strong>噪声增益线与 GBW 线的交点，也就是振铃频率。Python：TL072、1 MΩ、70 pF、C_F = 0 时闭环频响尖峰在 109 kHz、高达 +33.6 dB。</li>
+</ol>
+<ul>
+<li>超纲：相位裕度、复数阻抗。最小必要知识：&quot;两条线（运放能给的增益、电路要的增益）相交处若后者还在上升就会振；C_F 让后者在交点处变平。&quot;闭环曲线用 SPICE 展示即可。</li>
+</ul>
+<h3 id="13-偏置电流误差">1.3 偏置电流误差</h3>
+<p>V_o 的误差 = I_B·R_F（I_B 也只能流过 R_F）。要求 I_B ≪ 被测电流。</p>
+<h2 id="2-符号表">2. 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>I（或 I_P）</td>
+<td>光电流</td>
+<td>A（µA、nA）</td>
+</tr>
+<tr>
+<td>R_F</td>
+<td>反馈电阻（第一部分记 R_f，00-design-part2 用 R_f；正文请统一一种，建议沿用 R_f，引 TI 公式处注&quot;手册记作 R_F&quot;）</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td>C_F</td>
+<td>反馈电容（00-design-part2 记 C_f）</td>
+<td>F（pF）</td>
+</tr>
+<tr>
+<td>C_D</td>
+<td>光电二极管结电容 <strong>+ 运放输入电容 + 分布电容</strong>（反相端对地总电容）</td>
+<td>pF</td>
+</tr>
+<tr>
+<td>GBW</td>
+<td>增益带宽积</td>
+<td>Hz</td>
+</tr>
+<tr>
+<td>f_P</td>
+<td>补偿后带宽 / 不补偿时振铃频率</td>
+<td>Hz</td>
+</tr>
+<tr>
+<td>V_REF</td>
+<td>同相端参考（0 V 或虚地）</td>
+<td>V</td>
+</tr>
+<tr>
+<td>I_B</td>
+<td>输入偏置电流</td>
+<td>A</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误">3. 勘误</h2>
+<ol>
+<li><strong>第 7 行</strong>：&quot;SBOA268A 例子 R_F = 100 kΩ，C_D 150 pF&quot;——<strong>错</strong>。该电路手册（现版 SBOA268B）中 R1 = 100 kΩ、<strong>C1 = 150 pF 是反馈电容</strong>，二极管电容 Cs = 0，运放输入电容 Ci = 6 pF；OPA170、±15 V、0–50 µA → 0–5 V、带宽 10 kHz、要求 GBW &gt; 11.03 kHz。改为&quot;反馈 100 kΩ ∥ 150 pF，带宽 1/(2π·100k·150p) ≈ 10.6 kHz&quot;。</li>
+<li><strong>第 6 行</strong>：f_P &quot;不补偿时的振铃频率&quot;——不完整。SBOA055A 式(6) 给出的是<strong>补偿后的带宽</strong>；数值恰好也等于不补偿时的交点频率。正文两种说法都写，并注明来源本意（见 1.2 第 7 步）。</li>
+<li><strong>第 5 行 / 第 21–22 行</strong>：C_D 必须是反相端对地总电容。TL072 H 版输入电容差模 2 pF、共模 1 pF（非 H 版手册未给），LMC6482 C_IN = 3 pF。TL072：70 + 3 pF → C_F = 1.50 pF、f_P = 107 kHz（原 1.47 pF/109 kHz 差别很小，但前提要写）。LMC6482：25 + 3 = 28 pF → C_F = 6.0 pF、f_P = 292 kHz。</li>
+<li><strong>第 21 行 / 第 38 行（1.5 pF）</strong>：面包板相邻排孔的分布电容约 pF 级 [待核实，无来源，不能当数字引]，1.5 pF 与之同量级，实验里&quot;加 1.5 pF&quot;不可控。Python：C_F 只要 0.5 pF 尖峰就降到 +9 dB，1 pF → +3.6 dB，说明分布电容本身就会部分补偿。建议 page4 用 R_F = 1 MΩ 时选 2.2–4.7 pF 的瓷片电容做&quot;有 C_F&quot;组，并说明带宽会降低到 1/(2πR_F C_F)（2.2 pF → 72 kHz）。</li>
+<li><strong>第 22 行 &quot;LMC6482 带宽约 279 kHz&quot;</strong>：279 kHz 是 1/(2πR_F C_F)（C_F = 5.7 pF）；式(6) 的 f_P 是 309 kHz；单极点模型闭环 −3 dB ≈ 323 kHz（尖峰 +0.4 dB）。三个数不同，正文选一个并写明是哪一个；建议写&quot;约 300 kHz 量级&quot;。另外 LMC6482 的 1.5 MHz 是 <strong>V+ = 15 V</strong> 条件，3 V 时为 1 MHz，5 V 手册未直接给出；按 1 MHz 计（28 pF）C_F = 7.5 pF、f_P ≈ 238 kHz。SPICE 计划第 39 行&quot;期望约 280 kHz&quot;应改为&quot;200–320 kHz 之间，取决于 GBW 取值&quot;。</li>
+<li><strong>第 9 行 / 第 23 行 BPW34 1 klx</strong>：手册 1 klx 时短路电流 I_k = 70 µA，反偏 5 V 时反向光电流 I_ra = 75 µA。第 23 行&quot;70 µA × 47 kΩ = 3.29 V，5 V 单电源可用&quot;<strong>缺前提</strong>：只有 V_REF = 0 时才成立；若按第 43 行用 2.5 V 虚地，输出最多到约 4.9 V（LMC6482 5 V 下 swing high 4.8–4.9 V），可用电流上限 (4.9 − 2.5)/47k ≈ <strong>51 µA</strong>，1 klx 会饱和。改正：V_REF = 2.5 V 时把 R_F 降到 ≤ 33 kΩ，或说明&quot;1 klx 为强光，室内灯光下远小于此&quot;。V_REF = 0 时暗电流读数会被 swing low ≈ 0.1 V 挡住（相当于 47 kΩ 下约 2 µA 以下读不出）。</li>
+<li><strong>第 44 行校准注入极性</strong>：单电源 V_REF = 0 时，从 +1 V 经 10 MΩ 注入 100 nA，电流流<strong>入</strong>反相端 → 输出 = −0.1 V → 被削到 0 V，读不出。改正：用 V_REF = 2.5 V 虚地，从&quot;比虚地低 1 V&quot;的点（1.5 V 分压点）经 10 MΩ 抽出 100 nA → 输出 2.5 + 0.1 = 2.6 V；或从 3.5 V 注入 → 2.4 V（两个方向都可读）。万用表测&quot;输出 − V_REF&quot;。</li>
+<li><strong>第 43 行&quot;反相端接虚地或 0 V（需 SPICE 确认）&quot;</strong>：理论上可直接定：接 2.5 V 虚地 = 光导模式（C_D 25–30 pF，快，但量程 51 µA/47 kΩ）；接 0 V = 光伏模式（C_D 70 pF，零偏暗电流小，但输出下端被 0.1 V 挡住）。建议用 2.5 V 虚地（与 BRIEF §10 的虚地方案一致），并在阴极/阳极接法上按 1.1 第 4 步画图。</li>
+<li><strong>第 18 行</strong>：LM358 I_B 典型 20 nA（经典版，最大 250 nA）× 1 MΩ = 20 mV；100 nA 校准信号只有 0.1 V，误差 20%（最大可超 100%）。TL072 65 pA → 65 µV；LMC6482 20 fA → 20 nV。正文&quot;淹没&quot;可改成具体数字。</li>
+</ol>
+<h2 id="4-参考来源本次已打开">4. 参考来源（本次已打开）</h2>
+<ul>
+<li>TI SBOA055A <a href="https://www.ti.com/lit/an/sboa055a/sboa055a.pdf">https://www.ti.com/lit/an/sboa055a/sboa055a.pdf</a> （curl）：式(4)(5)(6)，C_D 含运放输入电容。</li>
+<li>TI SBOA268 <a href="https://www.ti.com/lit/an/sboa268a/sboa268a.pdf">https://www.ti.com/lit/an/sboa268a/sboa268a.pdf</a> （curl，内容为 SBOA268B 版）：R1 100 kΩ、C1 150 pF（反馈）、Cs 0、Ci 6 pF、10 kHz。</li>
+<li>TI LMC6482 <a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">https://www.ti.com/lit/ds/symlink/lmc6482.pdf</a> （curl）：I_B 20 fA 典型、C_IN 3 pF、GBW 1.5 MHz（V+=15 V）/1 MHz（3 V）、5 V 下 swing 4.8–4.9 V / 0.1 V。</li>
+<li>TI TL072 <a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （curl，SLOS080W）：GBW 5.25 MHz，I_B 65 pA，H 版输入电容 2 pF/1 pF。</li>
+<li>Vishay BPW34 <a href="https://www.vishay.com/docs/81521/bpw34.pdf">https://www.vishay.com/docs/81521/bpw34.pdf</a> （curl）：C_D 70 pF(0 V)/25 pF(3 V)，I_k 70 µA，I_ra 75 µA。</li>
+<li>TI LM358B <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> （curl）：I_B 数据。</li>
+</ul>
+<h2 id="5-待核实">5. [待核实]</h2>
+<ul>
+<li>面包板分布电容的具体数值（不能作为数字出处，只能用 SPICE 扫 C_F 演示）。</li>
+<li>OPA380（research 第 8 行）本次未打开。</li>
+<li>TL072 非 H 版输入电容（手册未列，用 H 版 3 pF 近似）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>31 跨阻放大器 TIA · 工程实战调研（工程实战派）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/31.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="31-跨阻放大器-tia--工程实战调研工程实战派">31 跨阻放大器 TIA · 工程实战调研（工程实战派）</h1>
+<blockquote>
+<p>对应页面：31-transimpedance-amp（尚无页面草稿）。依据 notes/31-research.md、notes/00-design-part2.md §31、PART2_BRIEF §10。
+本文的数据都来自下面“参考链接”里实际打开过的 PDF。打不开或没找到出处的标「[待核实]」。</p>
+</blockquote>
+<h2 id="1-真实产品--参考设计怎么做">1. 真实产品 / 参考设计怎么做</h2>
+<h3 id="11-集成方案ti-opt101光电二极管--tia-做在同一颗芯片里">1.1 集成方案：TI OPT101（光电二极管 + TIA 做在同一颗芯片里）</h3>
+<p>来源：OPT101 数据手册 <a href="https://www.ti.com/lit/ds/symlink/opt101.pdf">https://www.ti.com/lit/ds/symlink/opt101.pdf</a></p>
+<ul>
+<li>单电源 <strong>2.7–36 V</strong>（Features 与引脚表：“Apply 2.7 V to 36 V relative to –V pin”）。</li>
+<li>内置 <strong>1 MΩ 反馈电阻</strong>；pin 4「1MΩ Feedback」通常直接接 pin 5 输出。</li>
+<li>带宽 <strong>14 kHz @ R_F = 1 MΩ</strong>（电气特性表，VS 2.7–36 V，λ = 650 nm，R_L = 10 kΩ）。</li>
+<li>静态电流 120 µA。</li>
+<li>工程意义：把光电二极管和反馈电阻做在同一块硅片上，就绕开了分立设计里的漏电、杂散电容和拾取噪声。数据手册首页写明这是它的卖点。所以页面可以说「产品里真这么做」。</li>
+</ul>
+<h3 id="12-分立方案ti-tidu535tipd1761-mhz-单电源光电二极管放大器参考设计">1.2 分立方案：TI TIDU535（TIPD176，1 MHz 单电源光电二极管放大器参考设计）</h3>
+<p>来源：<a href="https://www.ti.com/lit/ug/tidu535/tidu535.pdf">https://www.ti.com/lit/ug/tidu535/tidu535.pdf</a></p>
+<ul>
+<li><strong>5 V 单电源</strong>，OPA320，输入 0–90 µA，输出 <strong>100 mV–4.9 V</strong>。</li>
+<li>R1（R_F）= <strong>53.6 kΩ</strong>，C1（C_F）= <strong>2.7 pF C0G/NP0 0603</strong>。实测 −3 dB 带宽 1.59 MHz，相位裕度 62°。</li>
+<li><strong>同相端加 100 mV 偏置</strong>：用 R2 = 13.7 kΩ 和 R3 = 280 Ω 从 5 V 分压得到，原因是防止输出在 0 A 时贴着负轨饱和。原文见 Fig. 4：“A bias voltage is applied to the op amp’s non-inverting input to prevent saturation at the negative power supply”。这正是本节 page4 单电源接法需要的做法，见 §2.2。</li>
+<li>因为偏置只有 100 mV，光电二极管几乎处于 0 V 偏置，所以稳定性计算按 <strong>VR = 0 V 时的结电容</strong>取值。</li>
+<li><strong>PCB 要点（§5.1 PCB Layout）</strong>：
+<ul>
+<li>反相输入端周围两层都<strong>挖掉地铜</strong>，减少该节点的寄生电容，否则会不稳定。</li>
+<li>输出串一个 <strong>49.9 Ω</strong> 电阻 R4，用来隔离电缆或接头电容，同时和同轴电缆阻抗匹配。</li>
+</ul>
+</li>
+</ul>
+<h3 id="13-ti-sboa268btransimpedance-amplifier-circuiturl-仍是-sboa268a现在下载到的是-rev-b">1.3 TI SBOA268B《Transimpedance Amplifier Circuit》（URL 仍是 sboa268a，现在下载到的是 Rev. B）</h3>
+<p>来源：<a href="https://www.ti.com/lit/an/sboa268a/sboa268a.pdf">https://www.ti.com/lit/an/sboa268a/sboa268a.pdf</a></p>
+<ul>
+<li>±15 V，OPA170，R1 = <strong>100 kΩ</strong>，C1 = <strong>150 pF</strong>。目标 0–50 µA → 0–5 V，f_p = 10 kHz。</li>
+<li><strong>注意：150 pF 是反馈电容 C1，不是光电二极管电容。</strong> 例子里取 Cs = 0 pF，Ci = Cs + Cd + Ccm = 0 + 3 + 3 = 6 pF。</li>
+<li>C1 的选取：C1 ≤ 1/(2π·R1·f_p) = 159 pF，取标准值 150 pF。稳定性要求 GBW &gt; (Ci + C1)/(2π·R1·C1²) = 11.03 kHz。</li>
+<li>设计注记：
+<ol>
+<li>用 JFET 或 CMOS 输入运放，降低直流误差。</li>
+<li>同相端可以加偏置电压，以设定 0 A 时的输出电压。</li>
+<li>工作在线性输出摆幅内。</li>
+</ol>
+</li>
+</ul>
+<h3 id="14-补偿理论ti-sboa055a">1.4 补偿理论：TI SBOA055A</h3>
+<p>来源：<a href="https://www.ti.com/lit/an/sboa055a/sboa055a.pdf">https://www.ti.com/lit/an/sboa055a/sboa055a.pdf</a></p>
+<ul>
+<li>式 (5)：C_F = (1/(4π·R_F·GBW))·(1 + √(1 + 8π·R_F·C_D·GBW))。</li>
+<li>式 (6)：f_P = √(GBW/(2π·R_F·C_D))。文中指出带宽与 √R_F 成反比。</li>
+</ul>
+<h3 id="15-器件参数本节实验用到的">1.5 器件参数（本节实验用到的）</h3>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>参数</th>
+<th>值</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMC6482</td>
+<td>推荐电源</td>
+<td>3–15.5 V；绝对最大 16 V</td>
+<td>数据手册推荐工作条件 / 绝对最大额定值</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>I_B</td>
+<td>±0.02 pA 典型；±4 pA 最大（−40…85 °C）</td>
+<td>5 V DC 电气特性表</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>输入共模范围</td>
+<td>(V−)−0.3 V 到 (V+)+0.3 V 典型（CMRR ≥ 50 dB）</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>输出摆幅，V+ = 5 V，R_L = 2 kΩ 接 V+/2</td>
+<td>高电平 4.8 V 最小 / 4.9 V 典型；低电平 0.1 V 典型 / 0.18 V 最大</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>GBW</td>
+<td>1.5 MHz（条件 V+ = 15 V）；3 V 表中为 1 MHz</td>
+<td>5 V AC 表 / 3 V AC 表</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>SR</td>
+<td>1.3 V/µs 典型（V+ = 15 V）；3 V 表中 0.9 V/µs</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>C_IN</td>
+<td>3 pF</td>
+<td>电气特性表</td>
+</tr>
+<tr>
+<td>LMC6482</td>
+<td>每路静态电流</td>
+<td>0.5 mA</td>
+<td>5 V 表</td>
+</tr>
+<tr>
+<td>BPW34</td>
+<td>结电容 C_D</td>
+<td>70 pF @ VR = 0 V；25 pF 典型 / 40 pF 最大 @ VR = 3 V</td>
+<td>Vishay BPW34 Rev 2.1 基本特性表</td>
+</tr>
+<tr>
+<td>BPW34</td>
+<td>光电流</td>
+<td>短路电流 Ik 70 µA @ 1 klx；Ira 75 µA @ 1 klx、VR = 5 V</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>BPW34</td>
+<td>暗电流</td>
+<td>2 nA 典型 / 30 nA 最大 @ 10 V</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>BPW34</td>
+<td>上升/下降时间</td>
+<td>100 ns（VR = 10 V，R_L = 1 kΩ）</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>LM358（经典版）</td>
+<td>I_B</td>
+<td>−20 nA 典型 / −250 nA 最大</td>
+<td>TI LM358B 合订手册中 LM358 的表</td>
+</tr>
+<tr>
+<td>LM358B</td>
+<td>I_B</td>
+<td>−10 nA 典型 / −35 nA 最大</td>
+<td>同一手册 LM358B 的表</td>
+</tr>
+<tr>
+<td>TL072（经典 C 版）</td>
+<td>输入电压范围</td>
+<td>(VCC−)+4 V 到 (VCC+)+0.1 V</td>
+<td>TL072 手册推荐工作条件表</td>
+</tr>
+<tr>
+<td>ATmega328P</td>
+<td>ADC</td>
+<td>10 位，±2 LSB 绝对精度，满分辨率下 ADC 时钟 50–200 kHz，每次转换 13 个 ADC 时钟</td>
+<td>Microchip ATmega328P 数据手册 ADC 章节</td>
+</tr>
+<tr>
+<td>Arduino UNO</td>
+<td>analogRead</td>
+<td>约 100 µs 一次，最高约 10 000 次/秒；5 V/1024 = 4.9 mV/LSB</td>
+<td>Arduino 官方 reference 源文件 analogRead.adoc</td>
+</tr>
+</tbody>
+</table>
+<h3 id="16-布线要点汇总">1.6 布线要点（汇总）</h3>
+<ul>
+<li><strong>反相输入节点要最短、最小面积。</strong>
+<ul>
+<li>LMC6482 手册 §7.4.1 建议用保护环。保护环电位要接近输入电位（5 mV 以内）。</li>
+<li>手册还举例：10^12 Ω 的漏电通路挨着 5 V 总线会漏 5 pA。</li>
+<li>手册还建议“空中接线”：把输入脚掰起来，直接焊在元件上，不走板。</li>
+</ul>
+</li>
+<li><strong>TIDU535 在反相端周围挖掉地铜。</strong></li>
+<li><strong>C_F 用 C0G/NP0 小电容</strong>（TIDU535 用 2.7 pF C0G）。</li>
+<li><strong>LMC6482 手册明说：</strong> PCB 和面包板的杂散电容有大有小，最优 C_F 要“在实际电路上检查”（§7.2.1.2.3）。面包板相邻排之间的电容具体是多少，没有找到可靠出处，标「[待核实]」，以实测为准。</li>
+<li>每颗运放电源脚就近放 100 nF 去耦。SBOA268B 原理图中 V+、V− 各有一个 100 nF（C2、C3）。</li>
+</ul>
+<h2 id="2-page4-实验可行性逐项核对">2. page4 实验可行性逐项核对</h2>
+<p>原设计（<a href="http://31-research.md">31-research.md</a>「page4 实验」、00-design §31）：</p>
+<ul>
+<li>LMC6482，5 V 单电源，“反相端接虚地 2.5 V 或直接 0 V”。</li>
+<li>BPW34，或把红色 LED 反接当光电二极管用。</li>
+<li>R_F 47 kΩ / 1 MΩ 可换，并联 C_F。</li>
+<li>校准：1 V 经 10 MΩ 注入 100 nA → 1 MΩ 上得到 0.1 V。</li>
+<li>用 Arduino 让 LED 方波闪烁，用 Arduino ADC 或示波器看上升沿。</li>
+</ul>
+<h3 id="21-引脚与供电">2.1 引脚与供电</h3>
+<ul>
+<li><strong>LMC6482 引脚</strong>（手册 Table 4-1，P 封装为 8 脚 PDIP）：1 OUT A，2 −IN A，3 +IN A，4 V−，5 +IN B，6 −IN B，7 OUT B，8 V+。没用到的 B 路要接成跟随器（+IN B 接 V_B），不要悬空。</li>
+<li><strong>供电。</strong> §10 规定用单路 9–12 V，但 Arduino 模拟输入不能超过 5 V。两种做法：
+<ul>
+<li>推荐：运放直接用 Arduino 板上的 5 V 供电。</li>
+<li>或者：从 9–12 V 经 78L05 稳出 5 V。</li>
+<li>不推荐让 LMC6482 在 12 V 下工作（12 V 本身在其 3–15.5 V 范围内）。这样输出可以到 11.9 V 左右，接 A0 会超过 5 V。如果一定要这样做，A0 前必须分压或钳位。</li>
+</ul>
+</li>
+<li><strong>不能用 TL072 代替。</strong> 经典 TL072 的输入必须比 V− 高 4 V。单电源、同相端为 0 V 的 TIA 直接违反这一条。</li>
+<li><strong>不能用 LM358 代替。</strong> I_B 最大 250 nA，在 1 MΩ 上就是 250 mV 的假信号，见 §3 输出第 5 项。</li>
+</ul>
+<h3 id="22-同相端到底接-0-v25-v-还是小偏置本节最关键的问题">2.2 同相端到底接 0 V、2.5 V 还是小偏置？（本节最关键的问题）</h3>
+<ul>
+<li><strong>接 0 V：</strong> 二极管零偏（光伏模式）。无光时输出理论 0 V，但 LMC6482 低电平典型只能到 0.1 V（R_L = 2 kΩ 时）。弱光段被吃掉，校准也做不了（见 2.3）。</li>
+<li><strong>接 2.5 V：</strong> 二极管反偏 2.5 V（阴极接反相端，阳极接地），C_D 下降到 25–40 pF 左右（3 V 时数据）。但输出只能从 2.5 V 往上走到 4.9 V，只剩 2.4 V 量程：
+<ul>
+<li>R_F = 47 kΩ 时最大约 51 µA；</li>
+<li>R_F = 1 MΩ 时最大约 2.4 µA。</li>
+</ul>
+</li>
+<li><strong>推荐：</strong> 学 TIDU535，同相端加 <strong>0.5–1.0 V 偏置</strong>。用 10 kΩ/2.2 kΩ 之类的分压即可，同相端几乎不取电流，不需要跟随器。
+<ul>
+<li>无光时输出 = V_B，远离负轨。</li>
+<li>二极管有 V_B 的反偏，C_D 介于 70 pF 和 25 pF 之间。</li>
+<li>V_B = 1 V 时，R_F = 47 kΩ 可测到约 83 µA，R_F = 1 MΩ 可测到约 3.9 µA（§3 第 3 项）。</li>
+<li>测量时 <strong>读 V_out − V_B</strong>。可以用万用表直接跨接输出端和同相端测，这一条对应 §10「万用表可验证」。</li>
+</ul>
+</li>
+</ul>
+<h3 id="23-10-mω-校准方法原接法在单电源下不成立">2.3 10 MΩ 校准方法：原接法在单电源下不成立</h3>
+<ul>
+<li>原文：“1 V 经 10 MΩ 注入”，同相端 0 V。电流流进反相端，输出 = 0 − 100 nA × 1 MΩ = −0.1 V，单电源做不到，输出贴在 0.1 V 左右的负轨上。§3 第 4 项已算。</li>
+<li><strong>改法：</strong>
+<ul>
+<li>同相端偏置 V_B = 1.0 V，10 MΩ 从反相端接到 GND。</li>
+<li>虚短让反相端也是 1.0 V，于是 10 MΩ 从该节点抽走 100 nA。这 100 nA 只能经 R_F 由输出提供。</li>
+<li>结果：V_out = V_B + 100 nA × 1 MΩ = <strong>1.100 V</strong>，即 100 mV 变化，方向和光电流相同。</li>
+<li>也可以从 5 V 经 10 MΩ 接到反相端（电流 (5 − 1)/10 MΩ = 400 nA，方向相反，输出往下走 0.4 V）。V_B 要够高，例如 V_B = 2.5 V → 输出 2.1 V。</li>
+</ul>
+</li>
+<li><strong>不要用万用表（10 MΩ 输入阻抗）去量反相端。</strong> 量了等于又并上一个 10 MΩ。</li>
+<li>10 MΩ 电阻的精度和漏电会直接成为校准误差。用 1% 金属膜电阻，面包板保持干燥；面包板漏电量级「[待核实]」。</li>
+</ul>
+<h3 id="24-带宽与-arduino-能否看到阶跃">2.4 带宽与 Arduino 能否“看到阶跃”</h3>
+<ul>
+<li>按 §3 第 1、2 项：R_F = 1 MΩ、C_in = 73 pF、GBW 1 MHz 时，C_F 最优约 3.5 pF，带宽约 46 kHz，10–90% 上升约 5–7 µs。</li>
+<li>Arduino analogRead 约 100 µs 一次（≈10 kS/s）。<strong>上升沿里一个点都采不到</strong>，所以“用 Arduino ADC 对比有无 C_F 的振铃”这个设计<strong>不可行</strong>。</li>
+<li><strong>替代方案（二选一）：</strong>
+<ul>
+<li>(a) 振铃对比<strong>必须用示波器</strong>（46 kHz 振铃，任何入门示波器都能看到）。没有示波器的读者只做 (b)。</li>
+<li>(b) 给 Arduino 做一个“慢 TIA”演示：C_F = 1 nF（τ = 1 ms，上升约 2.2 ms，可采约 22 点）或 10 nF（τ = 10 ms，约 220 点）。演示的是“C_F 越大越慢”，不演示振铃。</li>
+</ul>
+</li>
+<li><strong>LED 闪光源本身。</strong>
+<ul>
+<li>Arduino 数字脚驱动 LED 要串 220 Ω–1 kΩ 电阻。ATmega328P 每脚绝对最大 40 mA，手册测试条件是 20 mA。</li>
+<li>LED 本身的开关时间远快于 ms 级，对慢 TIA 演示没有影响。但它和 µs 级上升时间相比快多少，手头没有该 LED 的数据，标「[待核实]」。</li>
+</ul>
+</li>
+<li><strong>相移裕度提醒：</strong>
+<ul>
+<li>不加 C_F 时，单极点模型给出的 ζ ≈ 0.02，几乎是振荡边缘。实际 LMC6482 还有第二极点，加上面包板杂散，很可能直接持续振荡。</li>
+<li>页面应写“可能持续振荡”，而不是“会有几次振铃”。SPICE 需验证（交 SPICE 组）。</li>
+</ul>
+</li>
+</ul>
+<h3 id="25-光照量程">2.5 光照量程</h3>
+<ul>
+<li>BPW34 在 1 klx 时约 70 µA。R_F = 47 kΩ → 3.29 V，在 V_B = 0 时可用。但 V_B = 1 V 时就是 4.29 V，接近 4.9 V 上限，阳光或台灯直照会饱和。</li>
+<li>R_F = 1 MΩ 只能在约 4 µA 以内工作，也就是弱光或遮光环境。页面要写清楚“1 MΩ 档在弱光下用”。lux 与 µA 的线性换算这里不做；BPW34 Ik 只给了 1 klx 一个点。</li>
+<li><strong>LED 反接当光电二极管：</strong> 光电流和结电容都没有数据手册值，必须写「以实测为准」，<strong>不能</strong>套用 BPW34 的数字。</li>
+</ul>
+<h3 id="26-功耗与热">2.6 功耗与热</h3>
+<ul>
+<li>LMC6482 每路 0.5 mA，5 V 下合计约 5 mW，无发热问题。</li>
+<li>BPW34 光电流 µA 级，无发热问题。</li>
+</ul>
+<h3 id="27-arduino-部分">2.7 Arduino 部分</h3>
+<ul>
+<li>ADC 10 位，5 V 参考 → 4.9 mV/LSB（Arduino analogRead 文档）。</li>
+<li>1 MΩ 档 100 nA 校准信号为 100 mV，约 20 LSB，够用。</li>
+<li>1 nA 级暗电流（1 mV）低于 1 LSB，Arduino 读不到，属于正常现象，用万用表 mV 档读 V_out − V_B。</li>
+<li>若想提高分辨率，可用内部 1.1 V 参考（ATmega328P 手册 1.0–1.2 V），但那样 V_out 必须 &lt; 1.1 V，与偏置方案冲突，不推荐初学者这样做。</li>
+</ul>
+<h3 id="需要作者改正的要点">需要作者改正的要点</h3>
+<ol>
+<li><strong>SBOA268 的“C_D 150 pF”是误读。</strong> 150 pF 是反馈电容 C1；该例 Cs = 0 pF，Ci = 6 pF，f_p = 1/(2π·100 kΩ·150 pF) = 10.6 kHz。00-design §31 的“SBOA268 例子（100 kΩ，150 pF）复现”在 SPICE 里应把 150 pF 放在反馈支路。</li>
+<li><strong>校准接法要改。</strong> 单电源下“1 V 经 10 MΩ 注入、同相端 0 V”会让输出要求 −0.1 V，读不到。改为：同相端偏置 V_B = 1.0 V，10 MΩ 从反相端接 GND，预期 V_out = 1.100 V（ΔV = +100 mV）。</li>
+<li><strong>同相端不要接 0 V，也不建议接 2.5 V。</strong> 推荐 0.5–1.0 V 小偏置（TIDU535 用 100 mV）。量程表按 4.9 V 上限重算：V_B = 1 V 时 R_F 47 kΩ 约 83 µA，1 MΩ 约 3.9 µA。</li>
+<li><strong>“用 Arduino ADC 看上升沿和振铃”不可行</strong>（10 kS/s 对比 µs 级上升）。振铃对比只能用示波器；Arduino 只做 C_F = 1 nF/10 nF 的“慢 TIA”演示。</li>
+<li><strong>不加 C_F 可能持续振荡</strong>（模型 ζ ≈ 0.02），文字别写成“轻微振铃”。最优 C_F 在 1 MΩ 档约 2–3.5 pF，取决于偏置和 GBW。按 LMC6482 手册建议在实物上试 2.2/3.3/4.7 pF。</li>
+<li><strong>调研笔记“LMC6482 GBW 1.5 MHz”的条件是 V+ = 15 V。</strong> 5 V 实验应按 1 MHz（3 V 表）估算：R_F = 100 kΩ、C_D = 25 pF 时 C_F = 7.2 pF（带宽约 222 kHz），而不是 5.7 pF / 279 kHz。</li>
+<li><strong>电源与 §10 的衔接。</strong> 运放用 Arduino 5 V 或 78L05 供电。若用 9–12 V 直供，A0 前必须分压或钳位。TL072（输入需高于 V− 4 V）和 LM358（I_B 最大 250 nA）都不能替代 LMC6482，应在页面“常见错误”里写明。</li>
+<li><strong>LED 当光电二极管时，参数一律「以实测为准」。</strong> 1 MΩ 档只适用于弱光（≲4 µA），避免读者在台灯下直接饱和。</li>
+</ol>
+<h2 id="3-计算--仿真python-3--numpyscipy已运行">3. 计算 / 仿真（Python 3 + NumPy/SciPy，已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng31/tia.py</code>（临时脚本在 /tmp，未写入仓库）</p>
+<p>模型说明：</p>
+<ul>
+<li>运放取单极点积分器 A(s) = 2π·GBW/s。</li>
+<li>跨阻 Z_F = R_F/(1 + sR_F·C_F)，C_in = C_D + C_CM。</li>
+<li>闭环传递函数：V_out/I = −R_F·ω_t / (s²·R_F·(C_in + C_F) + s·(1 + ω_t·R_F·C_F) + ω_t)。</li>
+<li>忽略第二极点和面包板杂散，所以无 C_F 时的结果只是乐观估计。</li>
+</ul>
+<p><strong>已运行</strong> 代码：</p>
+<pre><code class="language-python">import numpy as np
+from scipy import signal
+
+# ---- 数据手册数值（出处见 .md）----
+GBW_5V = 1.0e6     # LMC6482 3V 表 GBW 1 MHz（保守取值）
+GBW_15V = 1.5e6    # LMC6482 5V 表里 GBW 1.5 MHz 的条件是 V+ = 15 V
+C_CM = 3e-12       # LMC6482 共模输入电容 3 pF
+C_D0 = 70e-12      # BPW34 在 VR = 0 V 时 70 pF
+C_D3 = 25e-12      # BPW34 在 VR = 3 V 时 25 pF（典型）
+IB_LMC = 4e-12     # LMC6482 IB 在 -40~85°C 下最大 4 pA
+IB_LM358 = 250e-9  # LM358（非 B 版）IB 最大 250 nA（25°C）
+IB_LM358B = 35e-9  # LM358B IB 最大 35 nA（25°C）
+
+def cf_opt(RF, CD, GBW):
+    &quot;&quot;&quot;SBOA055 式 (5)&quot;&quot;&quot;
+    return (1/(4*np.pi*RF*GBW))*(1+np.sqrt(1+8*np.pi*RF*CD*GBW))
+
+def fp(RF, CD, GBW):
+    &quot;&quot;&quot;SBOA055 式 (6)：最优补偿时的跨阻带宽近似&quot;&quot;&quot;
+    return np.sqrt(GBW/(2*np.pi*RF*CD))
+
+print(&quot;== 1. 补偿电容（SBOA055 式 5）==&quot;)
+for RF in (47e3, 100e3, 1e6):
+    for CD, tag in ((C_D0+C_CM, &quot;0V 偏置&quot;), (C_D3+C_CM, &quot;约 3V 反偏&quot;)):
+        for G, gt in ((GBW_5V, &quot;1.0MHz&quot;), (GBW_15V, &quot;1.5MHz&quot;)):
+            c = cf_opt(RF, CD, G)
+            print(f&quot;RF={RF/1e3:7.0f}k  Cin={CD*1e12:4.0f}pF({tag}) GBW={gt}: &quot;
+                  f&quot;CF={c*1e12:5.2f}pF  fP={fp(RF,CD,G)/1e3:6.1f}kHz  1/(2πRF·CF)={1/(2*np.pi*RF*c)/1e3:6.1f}kHz&quot;)
+
+print(&quot;\n== 2. 闭环阶跃响应（单极点运放模型）==&quot;)
+def tia_tf(RF, CF, Cin, GBW):
+    # 跨阻 Z_F = RF/(1+s RF CF)；运放 A(s) = wt/s；1/β = 1 + s Cin Z_F
+    wt = 2*np.pi*GBW
+    # Vout/I = -Z_F * A β /(1 + A β)。化简：
+    # 分子: -RF * wt
+    # 分母: s^2 RF (Cin+CF) + s (1 + wt RF CF) + wt
+    num = [-RF*wt]
+    den = [RF*(Cin+CF), 1+wt*RF*CF, wt]
+    return signal.TransferFunction(num, den)
+
+def overshoot_and_tr(tf, t):
+    t, y = signal.step(tf, T=t)
+    y = -y/ (-tf.num[-1]/tf.den[-1])      # 归一化为 +1 终值
+    os_ = (y.max()-1)*100
+    i10 = np.argmax(y &gt;= 0.1); i90 = np.argmax(y &gt;= 0.9)
+    return os_, (t[i90]-t[i10])
+
+Cin = C_D0 + C_CM
+for RF, CF in ((1e6, 0.0), (1e6, 2.2e-12), (1e6, 3.3e-12), (1e6, 4.7e-12), (1e6, 1e-9), (47e3, 0.0), (47e3, 18e-12), (47e3, 22e-12)):
+    tf = tia_tf(RF, CF, Cin, GBW_5V)
+    t = np.linspace(0, 10e-3 if CF &gt;= 1e-9 else 200e-6, 200001)
+    os_, tr = overshoot_and_tr(tf, t)
+    wn = np.sqrt(tf.den[2]/tf.den[0]); zeta = tf.den[1]/(2*np.sqrt(tf.den[0]*tf.den[2]))
+    print(f&quot;RF={RF/1e3:6.0f}k CF={CF*1e12:7.1f}pF: ζ={zeta:5.3f}, fn={wn/2/np.pi/1e3:7.1f}kHz, &quot;
+          f&quot;过冲={os_:5.1f}%, 10-90% 上升={tr*1e6:8.2f}µs&quot;)
+
+print(&quot;\n== 3. 单电源偏置后的输出范围（LMC6482 5V，RL=2k 典型摆幅 0.1~4.9 V）==&quot;)
+VOH, VOL = 4.9, 0.1
+for VB in (0.0, 0.1, 0.5, 1.0):
+    for RF in (47e3, 1e6):
+        Imax = (VOH-VB)/RF
+        print(f&quot;VB={VB:.1f}V RF={RF/1e3:5.0f}k: 暗电流时输出≈{max(VB,VOL):.2f}V，可测最大光电流 {Imax*1e6:7.2f} µA&quot;)
+print(&quot;BPW34 1 klx 短路电流 70 µA × 47k =&quot;, round(70e-6*47e3, 2), &quot;V；× 1M =&quot;, round(70e-6*1e6, 1), &quot;V（必饱和）&quot;)
+
+print(&quot;\n== 4. 10 MΩ 校准（单电源正确接法：10M 从反相端接地，VB 接同相端）==&quot;)
+for VB in (0.5, 1.0):
+    I = VB/10e6
+    print(f&quot;VB={VB}V: 注入(抽出)电流={I*1e9:.0f} nA，RF=1M 时 Vout = VB + I·RF = {VB+I*1e6:.3f} V（变化量 {I*1e6*1e3:.0f} mV）&quot;)
+print(&quot;原设计『1 V 经 10 MΩ 注入，反相端为 0 V』：Vout = 0 - 100nA×1M =&quot;, -100e-9*1e6, &quot;V → 单电源下输出顶在负轨，读不到&quot;)
+
+print(&quot;\n== 5. 偏置电流误差 I_B·R_F（R_F = 1 MΩ）==&quot;)
+for name, ib in ((&quot;LMC6482(最大,全温)&quot;, IB_LMC), (&quot;LM358B(最大,25°C)&quot;, IB_LM358B), (&quot;LM358(最大,25°C)&quot;, IB_LM358)):
+    print(f&quot;{name:22s}: {ib*1e6*1e3:9.4f} mV，相当于 {ib*1e9:8.3f} nA 的假光电流&quot;)
+
+print(&quot;\n== 6. Arduino 能不能看到阶跃？==&quot;)
+fs = 1/100e-6
+print(f&quot;analogRead 约 100 µs/次 → 采样率约 {fs:.0f} S/s，奈奎斯特 {fs/2:.0f} Hz&quot;)
+for RF, CF in ((1e6, 2.2e-12), (1e6, 1e-9), (1e6, 10e-9)):
+    tau = RF*CF
+    print(f&quot;RF={RF/1e6:.0f}M CF={CF*1e12:8.1f}pF: τ={tau*1e6:9.1f} µs，10-90% 上升≈{2.2*tau*1e6:9.1f} µs，&quot;
+          f&quot;上升沿内可采 {2.2*tau/100e-6:6.1f} 个点&quot;)
+
+print(&quot;\n== 7. 复核调研笔记的 TL072 算例（GBW 5.25 MHz，Cin 取 70 pF 不含运放电容）==&quot;)
+c = cf_opt(1e6, 70e-12, 5.25e6)
+print(f&quot;TL072 RF=1M CD=70pF: CF={c*1e12:.2f}pF, fP={fp(1e6,70e-12,5.25e6)/1e3:.1f}kHz&quot;)
+c = cf_opt(100e3, 25e-12, 1.5e6)
+print(f&quot;LMC6482 RF=100k CD=25pF GBW=1.5MHz: CF={c*1e12:.2f}pF, 1/(2πRF·CF)={1/(2*np.pi*100e3*c)/1e3:.0f}kHz&quot;)
+c = cf_opt(100e3, 25e-12, 1.0e6)
+print(f&quot;LMC6482 RF=100k CD=25pF GBW=1.0MHz: CF={c*1e12:.2f}pF, 1/(2πRF·CF)={1/(2*np.pi*100e3*c)/1e3:.0f}kHz&quot;)
+print(&quot;SBOA268B 例子：R1=100k, C1(反馈电容)=150pF → 1/(2πR1C1) =&quot;, round(1/(2*np.pi*100e3*150e-12)/1e3, 2), &quot;kHz&quot;)
+</code></pre>
+<p><strong>实际输出：</strong></p>
+<pre><code class="language-text">== 1. 补偿电容（SBOA055 式 5）==
+RF=     47k  Cin=  73pF(0V 偏置) GBW=1.0MHz: CF=17.51pF  fP= 215.4kHz  1/(2πRF·CF)= 193.4kHz
+RF=     47k  Cin=  73pF(0V 偏置) GBW=1.5MHz: CF=14.02pF  fP= 263.8kHz  1/(2πRF·CF)= 241.6kHz
+RF=     47k  Cin=  28pF(约 3V 反偏) GBW=1.0MHz: CF=11.58pF  fP= 347.8kHz  1/(2πRF·CF)= 292.5kHz
+RF=     47k  Cin=  28pF(约 3V 反偏) GBW=1.5MHz: CF= 9.16pF  fP= 425.9kHz  1/(2πRF·CF)= 369.7kHz
+RF=    100k  Cin=  73pF(0V 偏置) GBW=1.0MHz: CF=11.60pF  fP= 147.7kHz  1/(2πRF·CF)= 137.2kHz
+RF=    100k  Cin=  73pF(0V 偏置) GBW=1.5MHz: CF= 9.35pF  fP= 180.8kHz  1/(2πRF·CF)= 170.3kHz
+RF=    100k  Cin=  28pF(约 3V 反偏) GBW=1.0MHz: CF= 7.52pF  fP= 238.4kHz  1/(2πRF·CF)= 211.7kHz
+RF=    100k  Cin=  28pF(约 3V 反偏) GBW=1.5MHz: CF= 6.01pF  fP= 292.0kHz  1/(2πRF·CF)= 265.0kHz
+RF=   1000k  Cin=  73pF(0V 偏置) GBW=1.0MHz: CF= 3.49pF  fP=  46.7kHz  1/(2πRF·CF)=  45.6kHz
+RF=   1000k  Cin=  73pF(0V 偏置) GBW=1.5MHz: CF= 2.84pF  fP=  57.2kHz  1/(2πRF·CF)=  56.1kHz
+RF=   1000k  Cin=  28pF(约 3V 反偏) GBW=1.0MHz: CF= 2.19pF  fP=  75.4kHz  1/(2πRF·CF)=  72.6kHz
+RF=   1000k  Cin=  28pF(约 3V 反偏) GBW=1.5MHz: CF= 1.78pF  fP=  92.3kHz  1/(2πRF·CF)=  89.5kHz
+
+== 2. 闭环阶跃响应（单极点运放模型）==
+RF=  1000k CF=    0.0pF: ζ=0.023, fn=   46.7kHz, 过冲= 92.9%, 10-90% 上升=    3.54µs
+RF=  1000k CF=    2.2pF: ζ=0.341, fn=   46.0kHz, 过冲= 32.0%, 10-90% 上升=    4.76µs
+RF=  1000k CF=    3.3pF: ζ=0.496, fn=   45.7kHz, 过冲= 16.6%, 10-90% 上升=    5.68µs
+RF=  1000k CF=    4.7pF: ζ=0.691, fn=   45.3kHz, 过冲=  5.0%, 10-90% 上升=    7.38µs
+RF=  1000k CF= 1000.0pF: ζ=38.267, fn=   12.2kHz, 过冲= -0.0%, 10-90% 上升= 2197.20µs
+RF=    47k CF=    0.0pF: ζ=0.108, fn=  215.4kHz, 过冲= 71.2%, 10-90% 上升=    0.82µs
+RF=    47k CF=   18.0pF: ζ=0.609, fn=  192.9kHz, 过冲=  9.0%, 10-90% 上升=    1.55µs
+RF=    47k CF=   22.0pF: ζ=0.708, fn=  188.8kHz, 过冲=  4.3%, 10-90% 上升=    1.81µs
+
+== 3. 单电源偏置后的输出范围（LMC6482 5V，RL=2k 典型摆幅 0.1~4.9 V）==
+VB=0.0V RF=   47k: 暗电流时输出≈0.10V，可测最大光电流  104.26 µA
+VB=0.0V RF= 1000k: 暗电流时输出≈0.10V，可测最大光电流    4.90 µA
+VB=0.1V RF=   47k: 暗电流时输出≈0.10V，可测最大光电流  102.13 µA
+VB=0.1V RF= 1000k: 暗电流时输出≈0.10V，可测最大光电流    4.80 µA
+VB=0.5V RF=   47k: 暗电流时输出≈0.50V，可测最大光电流   93.62 µA
+VB=0.5V RF= 1000k: 暗电流时输出≈0.50V，可测最大光电流    4.40 µA
+VB=1.0V RF=   47k: 暗电流时输出≈1.00V，可测最大光电流   82.98 µA
+VB=1.0V RF= 1000k: 暗电流时输出≈1.00V，可测最大光电流    3.90 µA
+BPW34 1 klx 短路电流 70 µA × 47k = 3.29 V；× 1M = 70.0 V（必饱和）
+
+== 4. 10 MΩ 校准（单电源正确接法：10M 从反相端接地，VB 接同相端）==
+VB=0.5V: 注入(抽出)电流=50 nA，RF=1M 时 Vout = VB + I·RF = 0.550 V（变化量 50 mV）
+VB=1.0V: 注入(抽出)电流=100 nA，RF=1M 时 Vout = VB + I·RF = 1.100 V（变化量 100 mV）
+原设计『1 V 经 10 MΩ 注入，反相端为 0 V』：Vout = 0 - 100nA×1M = -0.09999999999999999 V → 单电源下输出顶在负轨，读不到
+
+== 5. 偏置电流误差 I_B·R_F（R_F = 1 MΩ）==
+LMC6482(最大,全温)        :    0.0040 mV，相当于    0.004 nA 的假光电流
+LM358B(最大,25°C)       :   35.0000 mV，相当于   35.000 nA 的假光电流
+LM358(最大,25°C)        :  250.0000 mV，相当于  250.000 nA 的假光电流
+
+== 6. Arduino 能不能看到阶跃？==
+analogRead 约 100 µs/次 → 采样率约 10000 S/s，奈奎斯特 5000 Hz
+RF=1M CF=     2.2pF: τ=      2.2 µs，10-90% 上升≈      4.8 µs，上升沿内可采    0.0 个点
+RF=1M CF=  1000.0pF: τ=   1000.0 µs，10-90% 上升≈   2200.0 µs，上升沿内可采   22.0 个点
+RF=1M CF= 10000.0pF: τ=  10000.0 µs，10-90% 上升≈  22000.0 µs，上升沿内可采  220.0 个点
+
+== 7. 复核调研笔记的 TL072 算例（GBW 5.25 MHz，Cin 取 70 pF 不含运放电容）==
+TL072 RF=1M CD=70pF: CF=1.47pF, fP=109.3kHz
+LMC6482 RF=100k CD=25pF GBW=1.5MHz: CF=5.71pF, 1/(2πRF·CF)=279kHz
+LMC6482 RF=100k CD=25pF GBW=1.0MHz: CF=7.15pF, 1/(2πRF·CF)=222kHz
+SBOA268B 例子：R1=100k, C1(反馈电容)=150pF → 1/(2πR1C1) = 10.61 kHz
+</code></pre>
+<h3 id="结果要点">结果要点</h3>
+<ul>
+<li>1 MΩ 档的最优 C_F 约 2.2–3.5 pF，带宽 46–90 kHz。加 4.7 pF 后过冲降到 5%，上升时间 7.4 µs。</li>
+<li>47 kΩ 档的最优 C_F 约 9–18 pF（取决于偏置）。加 22 pF 后过冲 4%。</li>
+<li>I_B 误差（1 MΩ）：LMC6482 为 0.004 mV，LM358 为 250 mV。</li>
+<li>调研笔记里的 TL072 算例（1.47 pF / 109 kHz）复核无误，但 TL072 不适用于本实验的单电源接法。</li>
+</ul>
+<h2 id="4-参考链接均已用-curl-实际下载--打开">4. 参考链接（均已用 curl 实际下载 / 打开）</h2>
+<ul>
+<li>TI LMC6482 数据手册（SNOS674J）：<a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">https://www.ti.com/lit/ds/symlink/lmc6482.pdf</a></li>
+<li>TI OPT101 数据手册：<a href="https://www.ti.com/lit/ds/symlink/opt101.pdf">https://www.ti.com/lit/ds/symlink/opt101.pdf</a></li>
+<li>TI TIDU535 / TIPD176 参考设计：<a href="https://www.ti.com/lit/ug/tidu535/tidu535.pdf%EF%BC%88%E4%BA%A7%E5%93%81%E9%A1%B5">https://www.ti.com/lit/ug/tidu535/tidu535.pdf（产品页</a> <a href="https://www.ti.com/tool/TIPD176%EF%BC%89">https://www.ti.com/tool/TIPD176）</a></li>
+<li>TI SBOA268（下载得到 Rev. B）：<a href="https://www.ti.com/lit/an/sboa268a/sboa268a.pdf">https://www.ti.com/lit/an/sboa268a/sboa268a.pdf</a></li>
+<li>TI SBOA055A：<a href="https://www.ti.com/lit/an/sboa055a/sboa055a.pdf">https://www.ti.com/lit/an/sboa055a/sboa055a.pdf</a></li>
+<li>Vishay BPW34（Rev 2.1）：<a href="https://www.vishay.com/docs/81521/bpw34.pdf">https://www.vishay.com/docs/81521/bpw34.pdf</a></li>
+<li>TI LM358B/LM358 数据手册（SLOS068AB）：<a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a></li>
+<li>TI TL072 数据手册（SLOS080W）：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+<li>Microchip ATmega48A/88A/168A/328P 数据手册：<a href="https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf</a></li>
+<li>Arduino analogRead 参考源文件：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogRead.adoc%EF%BC%88%E5%AF%B9%E5%BA%94%E9%A1%B5%E9%9D%A2">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogRead.adoc（对应页面</a> <a href="https://docs.arduino.cc/language-reference/en/functions/analog-io/analogRead/">https://docs.arduino.cc/language-reference/en/functions/analog-io/analogRead/</a> 是 JS 渲染的，抓取不到正文）</li>
+<li>Arduino analogWrite 参考源文件：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogWrite.adoc%EF%BC%88UNO/Nano">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogWrite.adoc（UNO/Nano</a> 上 490 Hz，5、6 脚 980 Hz）</li>
+</ul>
+<h3 id="待核实">[待核实]</h3>
+<ul>
+<li>面包板相邻排的杂散电容和漏电量级。</li>
+<li>红色 LED 反接作光电二极管时的光电流、结电容和响应时间。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

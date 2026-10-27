@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>31 跨阻放大器（TIA） · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/31-transimpedance-amp/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="31-跨阻放大器tia--参数与调试篇">31 跨阻放大器（TIA） · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../05-inverting-amp/page3.html">05 反相放大 · 参数与调试篇</a>、<a href="../30-instrumentation-amp/page3.html">30 仪表放大器与电桥 · 参数与调试篇</a></p>
+<p><a href="page2.html">原理与实现篇</a> 用的是&quot;干净&quot;的模型：C_D 固定、GBW 固定、运放不吃电流、表笔不碰电路。本页把这些假设一个个拿掉：面包板的寄生电容、运放的输入偏置电流、示波器和万用表本身、单片机采样的速度（<a href="../35-pga-agc/page1.html">35 程控增益与 AGC</a> 才教单片机，这里只算一笔账）。最后是故障排查表、误区清单和练习。</p>
+<h2 id="一c_f-怎么挑模型算的-vs-面包板上的">一、C_F 怎么挑：模型算的 vs 面包板上的</h2>
+<p>图 31-p3-1 把 C_F 从 0.5 pF 扫到 22 pF，左边是阶跃过冲，右边是 −3 dB 带宽，两条线分别是 C_D = 73 pF（按 0 V 结电容，保守）和 28 pF（反偏 3 V 的 25 pF + 3 pF）。</p>
+<p><a class="img-link" href="img/31_p3_1_cf_sweep.png"><img alt="左右两幅图，横轴都是反馈电容（皮法，对数刻度）。左图纵轴是阶跃过冲百分比，两条曲线都随反馈电容增大而下降，竖虚线标出两种结电容下式 (5) 给的最小值；右图纵轴是负 3 分贝带宽，两条曲线都随反馈电容增大而下降" src="img/31_p3_1_cf_sweep.png" loading="lazy" /></a></p>
+<p><em>图 31-p3-1　C_F 扫描：越大越稳，也越慢</em></p>
+<p>两点结论：</p>
+<ul>
+<li><strong>C_D 小了，同样的 C_F 更稳</strong>：C_F = 2.2 pF 时，73 pF 的过冲是 32.0%，28 pF 只有 13.5%；3.3 pF 时分别是 16.6% 和 2.1%。</li>
+<li><strong>C_F 大了，带宽一路往下掉</strong>：73 pF 下，C_F 6.8 pF 时带宽 29.7 kHz，15 pF 时 11.2 kHz，22 pF 时 7.4 kHz。</li>
+</ul>
+<p><strong>面包板上&quot;C_F = 0&quot;并不是 0</strong>（误区 A1、B1）。LMC6482 的 1 脚和 2 脚相邻，R_F 跨在这两列之间时，面包板相邻两排之间约 2～3 pF 的寄生电容已经并在 R_F 上（ <a href="https://electronics.stackexchange.com/questions/302850/what-order-of-magnitude-should-i-expect-the-parasitic-capacitance-to-be-for-a-so">https://electronics.stackexchange.com/questions/302850/what-order-of-magnitude-should-i-expect-the-parasitic-capacitance-to-be-for-a-so</a> ），和式 (5) 算出的 3.49 pF 是同一个量级。所以会出现&quot;SPICE 里要振好几毫秒才停、面包板上只有一点过冲&quot;，或者&quot;换一块面包板就开始振&quot;。Electronics Stack Exchange 上还有一个反过来的例子：电路在面包板上稳定，换到四层 PCB 就振，答案认为是面包板原本的寄生电容恰好起了稳定作用（ <a href="https://electronics.stackexchange.com/questions/709451/transimpedance-amplifier-oscillating-at-high-gain-setting-on-pcb-only">https://electronics.stackexchange.com/questions/709451/transimpedance-amplifier-oscillating-at-high-gain-setting-on-pcb-only</a> ）。</p>
+<p>做法：设计时 C_D 要算总和（结电容 + 运放输入电容 3 pF + 面包板几 pF），GBW 按典型值的 60% 留余量（ADI《Stabilize Your Transimpedance Amplifier》 <a href="https://www.analog.com/en/resources/technical-articles/stabilize-transimpedance-amplifier-circuit-design.html">https://www.analog.com/en/resources/technical-articles/stabilize-transimpedance-amplifier-circuit-design.html</a> ）；面包板上从 4.7 pF 起试，二极管引脚直接插进 2 脚所在的那一列，这一列不插多余的跳线（ <a href="https://electronics.stackexchange.com/questions/562997/noise-pick-up-in-high-impedance-nodes">https://electronics.stackexchange.com/questions/562997/noise-pick-up-in-high-impedance-nodes</a> ）。</p>
+<p><strong>C_F 也不是越大越好</strong>（误区 A8）：1 MΩ 并 100 pF，带宽只剩 1/(2π × 1 MΩ × 100 pF) ≈ 1.6 kHz，LED 方波照上去会变成圆头、像三角波。ADI 那篇文章也指出过补偿会牺牲带宽。正确的调法是从 4.7 pF 往上加，振铃刚好消失后再多留一点余量。</p>
+<h2 id="二运放的输入偏置电流lm358-为什么不行">二、运放的输入偏置电流：LM358 为什么不行</h2>
+<p><a href="page2.html">原理与实现篇</a> 假设运放输入端不吃电流。实际上，每个输入端都有一点<strong>输入偏置电流 I_B</strong>，它和光电流一起走 R_F，直接叠加到输出上。误差 = I_B × R_F，图 31-p3-2 按数据手册的典型值和最大值把三种运放画在一起（对数纵轴）。</p>
+<p><a class="img-link" href="img/31_p3_2_ib_error.png"><img alt="柱状图，纵轴对数刻度的误差电压毫伏，三组柱子 LMC6482、LM358B、LM358，每组一根典型值一根最大值；一条水平虚线标出校准①的信号 90.16 毫伏" src="img/31_p3_2_ib_error.png" loading="lazy" /></a></p>
+<p><em>图 31-p3-2　I_B × 1 MΩ 的误差，和校准①的信号比</em></p>
+<ul>
+<li><strong>LMC6482</strong>：CMOS 输入，I_B 典型 0.02 pA、最大 4 pA，乘 1 MΩ 只有 0.004 mV 以下（ <a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">https://www.ti.com/lit/ds/symlink/lmc6482.pdf</a> ）。</li>
+<li><strong>LM358B</strong>：典型 10 nA、最大 35 nA，误差 10～35 mV（ <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> ）。</li>
+<li><strong>经典 LM358</strong>：典型 20 nA、最大 250 nA，误差 20～250 mV（误区 A5）。校准①的信号才 90.16 mV，最坏情况下误差比信号还大。</li>
+</ul>
+<p><strong>方向</strong>：LM358 的输入级是 PNP 三极管，基极电流从 2 脚<strong>流出</strong>，和光电流方向相反，所以读数变小：校准①典型 70.2 mV，最坏 −159.8 mV（输出比 V_B 还低）。SPICE 用 LM358 模型算出 74.19 mV，差别来自模型取的 I_B；实测以你手上那颗为准。</p>
+<p><strong>TL072 也不行</strong>，原因不同：它的 I_B 典型 65 pA，够小，但它的输入电压必须比负电源高 4 V 左右才能正常工作（ <a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> ）。5 V 单电源、同相端只有 0.90 V，远远不够。所以本节用 LMC6482：CMOS 输入、单电源 3～15.5 V、输入到输出都接近轨到轨。</p>
+<blockquote>
+<p><strong>📌 读手册时容易看错的三处</strong></p>
+<ul>
+<li><strong>f_P 是补偿后的带宽</strong>：SBOA055A 式 (6) 的 f_P 是按式 (5) 选好 C_F 以后的跨阻带宽，不是&quot;不加 C_F 时的振铃频率&quot;，只是两者数值接近。手册和应用笔记判断&quot;够不够稳&quot;时常用一个词叫<strong>相位裕度</strong>，想深入可以拿这个词去查；本教程不用它，只用&quot;交点处噪声增益要已经变平&quot;和 18 节的振铃估算。</li>
+<li><strong>70 µA 是 I_k</strong>：BPW34 手册里 70 µA 是 1 klx 下的短路电流 I_k；反偏 5 V 时的反向光电流 I_ra 是 75 µA。（ <a href="https://www.vishay.com/docs/81521/bpw34.pdf">https://www.vishay.com/docs/81521/bpw34.pdf</a> ）</li>
+<li><strong>1.5 MHz 是 15 V 下的 GBW</strong>：LMC6482 的 1.5 MHz 列在 5 V 表里，但条件是 V+ = 15 V；3 V 表写 1 MHz。本节 5 V 供电，按 1 MHz 设计。</li>
+</ul>
+</blockquote>
+<h2 id="三三种一测就错的接法">三、三种&quot;一测就错&quot;的接法</h2>
+<p>图 31-p3-3 是三种常见的错接。每一种都是测量工具本身改变了电路。</p>
+<p><a class="img-link" href="img/31_p3_3_miswire.png"><img alt="三个小原理图：(a) 跨阻放大器，示波器探头和它的输入电容从 2 脚接到地；(b) 运放换成 LM358，箭头表示偏置电流从 2 脚流出；(c) 10 兆欧校准电阻从 N 点接到 0 伏，一只输入电阻约 10 兆欧的万用表并在它两端" src="img/31_p3_3_miswire.png" loading="lazy" /></a></p>
+<p><em>图 31-p3-3　三种错接：(a) 探头碰 2 脚；(b) 换成 LM358；(c) 万用表跨在 R_CAL 上</em></p>
+<p><strong>(a) 示波器探头碰 2 脚</strong>（误区 A6、B4）：10× 探头本身有十几皮法的输入电容，一碰 2 脚就并到 C_D 上，噪声增益的平台升高，原本稳定的电路可能马上振起来，拿开就好。TI 的 SLOA013A 专门讨论了输入端寄生电容对稳定性的影响（ <a href="https://www.ti.com/lit/an/sloa013a/sloa013a.pdf">https://www.ti.com/lit/an/sloa013a/sloa013a.pdf</a> ）。规则：<strong>示波器只测 1 脚输出（测点 C）</strong>，2 脚只用万用表量直流。看 µs 级边沿时，用探头附带的接地弹簧代替长地线夹：长地线约 200 nH，接地弹簧约 10～20 nH，长地线本身就会造成振铃（ <a href="https://www.teledynelecroy.com/doc/passive-probe-ground-lead-effects">https://www.teledynelecroy.com/doc/passive-probe-ground-lead-effects</a> ）。</p>
+<p><strong>(b) 换成 LM358</strong>：见第二节，I_B 从 2 脚流出，读数偏小几十毫伏。<a href="page4.html">动手实验篇</a> 第 5 步会真的换一次，看你手上那颗差多少。</p>
+<p><strong>(c) 万用表跨在 R_CAL 两端</strong>（误区 A7）：想&quot;量 10 MΩ 上的电压再除以 10 MΩ 得到电流&quot;，但普通数字万用表的输入电阻也在 10 MΩ 左右。表一并上去，N 点到 0 V 之间就成了 10 MΩ ∥ 10 MΩ = 5 MΩ，注入电流翻倍，C − A 从 90.16 mV 变成约 180.3 mV。正确做法：分别量两端对 0 V 的电压，用电压差除以 R_CAL。N 点本身是高阻节点，也不要拿表去碰；它和测点 A 只差几十微伏，用 A 点代替：</p>
+<ul>
+<li>校准①（R_CAL 另一端接 0 V）：I = V_A / R_CAL；</li>
+<li>校准②（R_CAL 另一端接 +5 V，即测点 D）：I = (V_D − V_A) / R_CAL。</li>
+</ul>
+<p>注入电流的参考点也别搞错：N 点在 V_B（0.90 V），不在 0 V。所以 R_CAL 接 0 V 时不是&quot;没有电流&quot;，而是有 90.16 nA 从 N 点流出。</p>
+<h2 id="四单片机采样能看什么看不了什么35-节预告">四、单片机采样能看什么、看不了什么（35 节预告）</h2>
+<p><a href="../35-pga-agc/page1.html">35 程控增益与 AGC</a> 才会教怎样让 Arduino 读电压，本节动手实验里 Arduino 只当 5 V 电源用。这里先算一笔账，免得以后想用它看振铃。Arduino Uno 的 analogRead 一次大约 100 µs（ADC 时钟 125 kHz，一次转换 13 个时钟，见 <a href="https://makeabilitylab.github.io/physcomp/arduino/inside-arduino.html">https://makeabilitylab.github.io/physcomp/arduino/inside-arduino.html</a> 和 ATmega328P 数据手册 <a href="https://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/ATmega328_datasheet.pdf">https://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/ATmega328_datasheet.pdf</a> ）。图 31-p3-4 把 C_F = 0 时的输出和 Arduino 每 100 µs 读到的点画在一起。</p>
+<p><a class="img-link" href="img/31_p3_4_arduino_slow.png"><img alt="一条快速衰减振荡的曲线，围绕最终值上下摆动；上面叠加了一串每隔 100 微秒的蓝点，蓝点之间的曲线已经摆动了好几个来回" src="img/31_p3_4_arduino_slow.png" loading="lazy" /></a></p>
+<p><em>图 31-p3-4　Arduino 每 100 µs 读一个点，中间振荡已经走了好几个周期</em></p>
+<p>振荡周期约 21.4 µs，一次读数之间已经走了 4.7 个周期，Arduino 读到的只是一串&quot;随机采样&quot;，看起来像噪声，看不出振铃（误区 A9）。所以：**上升沿和振铃只能用示波器看，单片机采样只适合读稳态光强。**另外 ATmega328P 的 ADC 按源阻抗 10 kΩ 以下优化（ <a href="https://electronics.stackexchange.com/questions/107741/required-output-impedance-for-adc-input">https://electronics.stackexchange.com/questions/107741/required-output-impedance-for-adc-input</a> ），TIA 输出是运放的低阻输出，正合适；不要让 A0 直接去读 N 点那种高阻节点。</p>
+<p>分辨率也要心里有数：一个字是 4.883 mV，校准①的 90 mV 只有 18.5 个字，所以校准用万用表；即使学完 35 节，单片机也只适合读几百毫伏到几伏的稳态光强。</p>
+<h2 id="五工程里怎么做">五、工程里怎么做</h2>
+<ul>
+<li><strong>OPT101</strong>（ <a href="https://www.ti.com/lit/ds/symlink/opt101.pdf">https://www.ti.com/lit/ds/symlink/opt101.pdf</a> ）：光电二极管和跨阻放大器做在同一颗芯片里，1 MΩ 反馈电阻也在里面，带宽 14 kHz。把 2 脚那一段高阻走线做进芯片，寄生电容和漏电问题一起消失，代价是 R_F 和带宽基本固定。</li>
+<li><strong>TIDU535</strong>（ <a href="https://www.ti.com/lit/ug/tidu535/tidu535.pdf">https://www.ti.com/lit/ug/tidu535/tidu535.pdf</a> ）：TI 的&quot;1 MHz 单电源光电二极管放大器&quot;参考设计，跨阻 53.6 kV/A。它用 OPA320、C_F 2.7 pF，同相端加 100 mV 小偏置，并在反相端周围画了保护环（guard）减小漏电。</li>
+<li><strong>SBOA268</strong>（ <a href="https://www.ti.com/lit/an/sboa268a/sboa268a.pdf">https://www.ti.com/lit/an/sboa268a/sboa268a.pdf</a> ）：先按带宽定 C_F 上限、再检查 GBW 够不够，<a href="page2.html">原理与实现篇</a> 例 3 用的就是这个思路。</li>
+<li><strong>OPA380</strong>（ <a href="https://www.ti.com/lit/ds/symlink/opa380.pdf">https://www.ti.com/lit/ds/symlink/opa380.pdf</a> ）：专为跨阻设计的运放，GBW 90 MHz、I_B 最大 50 pA，能做到 1 MHz 以上的跨阻带宽。要更快时换运放，而不是硬把 C_F 减小。</li>
+</ul>
+<h2 id="六故障排查表">六、故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>可能原因</th>
+<th>怎么查</th>
+<th>怎么修</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>一有光输出就贴在 0 V（ESE 上 BPW34 + TLC271 的帖子，同相端接 0 V）</td>
+<td>二极管接反（误区 A2）</td>
+<td>万用表二极管档确认阴阳极；有光时量 2 脚和 3 脚之差，正常只有几 mV</td>
+<td>阴极接 2 脚、阳极接 0 V。本节同相端在 V_B，接反后的现象和这个帖子<strong>不一样</strong>，留作 <a href="page4.html">动手实验篇</a> 思考题 1（ <a href="https://electronics.stackexchange.com/questions/618564/measuring-ambient-light-intensity-using-bpw34-photodiode-and-tlc271acp-opamp">https://electronics.stackexchange.com/questions/618564/measuring-ambient-light-intensity-using-bpw34-photodiode-and-tlc271acp-opamp</a> ）</td>
+</tr>
+<tr>
+<td>暗处输出是不稳的几 mV～几十 mV，弱光不线性</td>
+<td>同相端直接接 0 V，输出低于 V_OL（误区 A3）</td>
+<td>暗处量输出，对照手册 V_OL</td>
+<td>同相端加偏置（本节 0.90 V）</td>
+</tr>
+<tr>
+<td>一放到桌上输出就顶到约 4.9 V</td>
+<td>R_F 太大，被室内光饱和（误区 A4）</td>
+<td>先换 10 kΩ 量输出，I = V/R_F 算出光电流</td>
+<td>按最大电流重选 R_F；1 MΩ 只在遮光或注入校准时用</td>
+</tr>
+<tr>
+<td>换成红色 LED 当探测器，47 kΩ 档几乎没输出</td>
+<td>LED 感光面积小，光电流小得多（误区 A10，ADI RAQ 108 <a href="https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-108.html">https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-108.html</a> ）</td>
+<td>换回 BPW34 对比</td>
+<td>用 1 MΩ 档、遮住环境光；具体电流以实测为准</td>
+</tr>
+<tr>
+<td>输出有 50 Hz 纹波，手一靠近更大</td>
+<td>2 脚高阻节点拾取电场（误区 B2）</td>
+<td>手拿开纹波消失就是电场耦合</td>
+<td>缩短 2 脚走线，加接地的铝箔屏蔽（ <a href="https://electronics.stackexchange.com/questions/462446/hand-contacting-op-amp-photodiode-circuit-causes-interference-what-ist-the-phy">https://electronics.stackexchange.com/questions/462446/hand-contacting-op-amp-photodiode-circuit-causes-interference-what-ist-the-phy</a> ）</td>
+</tr>
+<tr>
+<td>有 100 Hz 纹波</td>
+<td>市电照明的光本身在闪（误区 B2）</td>
+<td>纸盒罩住二极管，纹波消失就是光源</td>
+<td>遮光，或多读几次取平均</td>
+</tr>
+<tr>
+<td>LED 不对着二极管，输出也有和 LED 同步的小台阶</td>
+<td>LED 电流的回流和偏置分压共用地线（误区 B3）</td>
+<td>黑胶布挡住 LED，台阶还在就是地线问题</td>
+<td>LED 的回流线单独接到 0 V 轨（动手实验篇第 8 步那根黑线）；C1、CB 两只 0.1 µF 都要在</td>
+</tr>
+<tr>
+<td>示波器上边沿有振铃，换接地弹簧后消失</td>
+<td>探头长地线的电感（误区 B4）</td>
+<td>换接地弹簧对比</td>
+<td>用接地弹簧或尽量短的地线</td>
+</tr>
+</tbody>
+</table>
+<h2 id="七误区清单a1a10b1b4">七、误区清单（A1–A10、B1–B4）</h2>
+<ul>
+<li><strong>A1</strong> 不加 C_F 会振，但面包板上&quot;不加&quot;不等于 0 pF：寄生 2～3 pF 已经并在 R_F 上。</li>
+<li><strong>A2</strong> 二极管接反：阴极必须接 2 脚。</li>
+<li><strong>A3</strong> 同相端直接接 0 V：暗处输出落在 V_OL 以下。</li>
+<li><strong>A4</strong> R_F 太大，被室内光饱和。</li>
+<li><strong>A5</strong> 用 LM358 测纳安级电流：I_B × R_F 几十毫伏。</li>
+<li><strong>A6</strong> 示波器探头碰 2 脚就振。</li>
+<li><strong>A7</strong> 注入电流的参考点搞错，或万用表跨在 10 MΩ 上测。</li>
+<li><strong>A8</strong> C_F 越大越稳，结果把光脉冲抹圆。</li>
+<li><strong>A9</strong> 用单片机（Arduino）的 analogRead 看上升沿。</li>
+<li><strong>A10</strong> 用 LED 代替光电二极管，信号小得多。</li>
+<li><strong>B1</strong> 寄生电容参与补偿：2 脚那一列不插多余跳线，二极管直接插进去。</li>
+<li><strong>B2</strong> 50 Hz 拾取与 100 Hz 灯光闪烁。</li>
+<li><strong>B3</strong> LED 电流从 TIA 地线上流过。</li>
+<li><strong>B4</strong> 探头长地线造成的假振铃。</li>
+</ul>
+<h3 id="d-补查动手前过一遍">D. 补查（动手前过一遍）</h3>
+<ul>
+<li>[ ] 二极管阴极接 2 脚（单电源，有光时输出往上走）？</li>
+<li>[ ] 有光时，2 脚与 3 脚之差在几 mV 以内？</li>
+<li>[ ] 同相端有偏置（本节 0.90 V），暗处输出高于运放的 V_OL？</li>
+<li>[ ] 先用小电阻（10 kΩ）测出环境光电流，再选 R_F？</li>
+<li>[ ] C_F 已计入 C_D + 运放输入电容 + 面包板寄生电容，并从 4.7 pF 起试？</li>
+<li>[ ] 示波器只测输出脚（测点 C），用接地弹簧？</li>
+<li>[ ] 注入电流按 R_CAL 两端对 0 V 的电压分别测、再相减计算？</li>
+<li>[ ] 上升沿用示波器看，不用万用表或单片机？</li>
+<li>[ ] 二极管遮过光，排除了 100 Hz 灯光闪烁？</li>
+</ul>
+<h2 id="用-python-算一遍">用 Python 算一遍</h2>
+<pre><code class="language-python">import math
+
+VB, RF, RCAL = 0.9016, 1e6, 10e6
+I_cal = VB / RCAL                              # 校准①：10 MΩ 接 0 V
+print(f&quot;校准① 注入电流 {I_cal*1e9:.2f} nA，C − A = {I_cal*RF*1e3:.2f} mV&quot;)
+
+# 1) 输入偏置电流 I_B 乘 R_F 的误差（数据手册：典型 / 最大）
+IB = {&quot;LMC6482&quot;: (0.02e-12, 4e-12), &quot;LM358B&quot;: (10e-9, 35e-9), &quot;LM358&quot;: (20e-9, 250e-9)}
+for name, (typ, mx) in IB.items():
+    print(f&quot;{name:8s} I_B×R_F：典型 {typ*RF*1e3:.2g} mV，最大 {mx*RF*1e3:.3g} mV&quot;)
+# LM358 输入级是 PNP，I_B 从 2 脚流出，和光电流方向相反，读数变小
+print(f&quot;LM358 校准①：典型 {(I_cal - 20e-9)*RF*1e3:.1f} mV，最坏 {(I_cal - 250e-9)*RF*1e3:.1f} mV&quot;)
+
+# 2) 万用表（约 10 MΩ）直接并在 R_CAL 两端
+R_par = RCAL * 10e6 / (RCAL + 10e6)
+print(f&quot;表并在 R_CAL 上：等效 {R_par/1e6:.0f} MΩ，C − A 变成 {VB/R_par*RF*1e3:.1f} mV&quot;)
+
+# 3) 单片机（Arduino Uno）读数：一个字多大、一次读多久（35 节预告）
+LSB = 5.0 / 1024
+f_ring = 46.7e3                                # f_P（与 C_F = 0 时的振铃频率接近）
+print(f&quot;一个字 {LSB*1e3:.3f} mV；校准① 只有 {I_cal*RF/LSB:.1f} 个字&quot;)
+print(f&quot;振荡周期 {1/f_ring*1e6:.1f} µs，一次 analogRead 约 100 µs，跨过 {100e-6*f_ring:.1f} 个周期&quot;)
+</code></pre>
+<p>运行结果：校准①注入 90.16 nA，C − A = 90.16 mV；I_B 误差 LMC6482 最大 0.004 mV，LM358B 最大 35 mV，LM358 最大 250 mV；LM358 做校准①典型 70.2 mV、最坏 −159.8 mV；万用表并在 R_CAL 上，C − A 变成 180.3 mV；一个字 4.883 mV，校准①只有 18.5 个字；一次 analogRead 跨过 4.7 个振荡周期。</p>
+<h2 id="练习">练习</h2>
+<p><strong>练习 1</strong>：R_F = 100 kΩ，二极管反偏到 3 V（C_D 按 28 pF），GBW = 1 MHz。最小 C_F 是多少？选一个标准值后，1/(2πR_F C_F) 是多少？</p>
+<details><summary>答案</summary>
+<p>8π × 100 kΩ × 28 pF × 1 MHz = 70.37，C_F = (1 + √71.37)/(4π × 100 kΩ × 1 MHz) = 7.52 pF，f_P = 238.4 kHz。留余量取 10 pF，1/(2π × 100 kΩ × 10 pF) = 159.2 kHz。</p>
+</details>
+<p><strong>练习 2</strong>：把 LMC6482 换成 LM358B 做校准①（R_F 1 MΩ，R_CAL 10 MΩ 接 0 V）。按数据手册，C − A 典型和最坏各是多少？</p>
+<details><summary>答案</summary>
+<p>LM358B 也是 PNP 输入，I_B 从 2 脚流出，读数变小。典型 90.16 − 10 = 80.2 mV，最坏 90.16 − 35 = 55.2 mV。比 LM358 好，但误差仍有 11%～39%，测纳安级电流还是不合格。</p>
+</details>
+<p><strong>练习 3</strong>：第二阶段（R_F 47 kΩ）万用表量到 C − A = 1.41 V。光电流多大？如果换成 1 MΩ，输出会怎样？</p>
+<details><summary>答案</summary>
+<p>I = 1.41 V / 47 kΩ = 30.0 µA。1 MΩ 只能装下 4.00 µA，30 µA 远超量程，输出顶在约 4.9 V。</p>
+</details>
+<p><strong>举一反三</strong>：研究笔记里有人建议偏置只取约 0.22 V（100 kΩ / 4.7 kΩ 分压）。照这个偏置做本节的校准①和校准②，C − A 和输出各是多少？哪一个做不成，为什么本节偏置取 0.90 V？</p>
+<details><summary>答案</summary>
+<pre><code class="language-python">VCC, RF, RCAL = 5.0, 1e6, 10e6
+vb = VCC * 4.7e3 / (100e3 + 4.7e3)
+i1 = vb / RCAL                  # 校准①：R_CAL 接 0 V
+i2 = (VCC - vb) / RCAL          # 校准②：R_CAL 接 5 V，电流反向
+print(f&quot;V_B = {vb:.4f} V&quot;)
+print(f&quot;校准①：C − A = {i1*RF*1e3:.1f} mV&quot;)
+print(f&quot;校准②：C − A = {-i2*RF*1e3:.1f} mV，输出应为 {vb - i2*RF:.3f} V&quot;)
+</code></pre>
+<p>V_B = 0.2245 V；校准① C − A = 22.4 mV，能做但信号小；校准② 要求输出到 −0.253 V，单电源运放做不到（最低约 0.1 V），所以校准②做不成。本节取 0.90 V，正是为了让校准②的 0.4918 V 仍高于 V_OL，代价是二极管反偏 0.9 V、暗电流略大（仍只有毫伏级）。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<ul>
+<li>面包板寄生电容和 C_F 同一个量级，从 4.7 pF 起试；C_F 过大会抹圆光脉冲。</li>
+<li>I_B × R_F 是直接误差：LMC6482 可忽略，LM358 几十毫伏且方向使读数变小；TL072 因输入共模范围不能用在 5 V 单电源。</li>
+<li>测量工具会改变电路：探头不碰 2 脚，万用表不跨 R_CAL、不碰 N 点，单片机采样只读稳态（35 节再学）。</li>
+<li>记住数据手册的名字和条件：f_P 是补偿后的带宽，70 µA 是 I_k，1.5 MHz 是 15 V 下的 GBW。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>
