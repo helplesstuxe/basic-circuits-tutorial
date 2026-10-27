@@ -128,8 +128,8 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><em>图 30-p3-4　差压与流量的平方关系，以及小流量时误差被放大</em></p>
 <p>图 30-p3-4 左边：10% 流量只产生 1% 满量程的差压，电桥只输出满量程的百分之一。右边：差压测量误差固定为满量程的 0.1% 时，换算成流量误差在满流量处只有 0.05%，30% 流量时 0.56%，10% 流量时达到 5.00%——因为 <span class="math math-inline">\(Q_V = k\sqrt{P}\)</span> ，差压读数多出 ΔP 时 <span class="math math-inline">\(Q_V\)</span> 变成 <span class="math math-inline">\(k\sqrt{P}\sqrt{1 + \Delta P/P}\)</span> ，记 x = ΔP/P，x 很小时 <span class="math math-inline">\(\sqrt{1+x} \approx 1 + x/2\)</span> ，所以 <span class="math math-inline">\(\Delta Q_V/Q_V \approx \Delta P/(2P)\)</span> （这里 P 就是 ΔP 的读数，ΔP 是它的误差）。小流量时 P 很小，同样的绝对误差变成很大的相对误差。所以差压变送器有&quot;低流量切除&quot;：流量低于某个值就直接显示 0（Emerson 3051S 手册中的开平方输出与低流量切除设置， <a href="https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/pressure/documents/doc-rosemount-3051s-00809-0100-4801.pdf">https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/pressure/documents/doc-rosemount-3051s-00809-0100-4801.pdf</a> ），图 30-p3-4 右边灰色区示意了这个区域。对前端放大来说，结论是：<strong>零点漂移在小流量时最致命</strong>，调零和温漂要格外在意。</p>
 <h2 id="五用单片仪表放大器">五、用单片仪表放大器</h2>
-<p><a class="img-link" href="img/30_p3_5_ina_chip.png"><img alt="电路图：5 伏电桥两个中点分别接 INA333 的正、负输入，两只 RG 引脚之间接 5 千欧，REF 接 2.5 伏低阻基准，输出为 REF 加 21 倍差压" src="img/30_p3_5_ina_chip.png" loading="lazy" /></a></p>
-<p><em>图 30-p3-5　用 INA333 单片仪表放大器读 5 V 电桥</em></p>
+<p><a class="img-link" href="img/30_p3_5_ina_chip.png"><img alt="电路图：5 伏电桥两个中点分别接 INA333 的正、负输入（3 脚、2 脚），两只 RG 引脚（1 脚、8 脚）之间接 5 千欧，REF（5 脚）接 2.5 伏低阻基准，V+（7 脚）接 5 伏，V−（4 脚）接地，VOUT（6 脚）输出为 REF 加 21 倍差压；引脚号按 TI INA333 数据手册" src="img/30_p3_5_ina_chip.png" loading="lazy" /></a></p>
+<p><em>图 30-p3-5　用 INA333 单片仪表放大器读 5 V 电桥（标引脚号）</em></p>
 <p>图 30-p3-5 用 INA333 替代三只运放：外部只剩一只 RG，内部电阻由厂家匹配，比手挑的分立电阻好得多。注意两点：</p>
 <ul>
 <li><strong>REF 必须由低阻源驱动</strong>。REF 背后就是差分级的 R10，若用两只 10 kΩ 分压直接接 REF，分压器的 5 kΩ 内阻串进了 R10，等于让 R10 失配，CMRR 立刻变差。所以 图 30-p3-5 写了&quot;接 2.5 V 低阻基准（跟随器）&quot;，做法同 <a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> 。</li>

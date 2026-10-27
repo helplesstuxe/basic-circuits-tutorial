@@ -194,7 +194,7 @@ mjx-container{max-width:100%}
 <li><code>32_sim.py</code> 正常运行。</li>
 </ul>
 </li>
-<li><strong>重新生成全部图并比对 md5</strong>：16 张里 15 张与仓库一致，只有 <code>32_p3_3_no_ri.png</code> 不同（必改-04）。</li>
+<li><strong>重新生成全部图并比对 md5</strong>：16 张里 15 张与仓库一致，只有 <code>32_p3_4_no_ri.png</code> 不同（必改-04）。</li>
 </ul>
 <p>仓库里只新建了本文件，其他文件一律没改，也没有运行任何 git 命令。</p>
 <h2 id="一必改5-条">一、必改（5 条）</h2>
@@ -238,7 +238,7 @@ mjx-container{max-width:100%}
 <li>改法：在 <code>import math</code> 前加 <code>import sys, pathlib</code> 和 <code>sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))</code>，注释照 44 节写法。</li>
 <li>理由：模板硬规则；全教程读者见到的检查程序格式要一致 [1]。</li>
 </ul>
-<p><strong>必改-04｜page3 L52 图 32-p3-3：仓库里的 PNG 是旧版，没有随网表重新生成</strong></p>
+<p><strong>必改-04｜page3 L52 图 32-p3-4：仓库里的 PNG 是旧版，没有随网表重新生成</strong></p>
 <ul>
 <li>问题：
 <ul>
@@ -247,7 +247,7 @@ mjx-container{max-width:100%}
 <li>仓库 PNG 的修改时间是 09:15（EDT），而 <code>spice/32/hold.cir</code> 等网表在 10:09（EDT）改过，图没有跟着重跑。</li>
 </ul>
 </li>
-<li>改法：在仓库根目录重新运行 <code>code/figs/32_figs.py</code>（或只跑 p3_3）生成 <code>32_p3_3_no_ri.png</code>，然后复核正文 L54 的 533 / 533.7 mV、687 kHz 和图上标注一致。</li>
+<li>改法：在仓库根目录重新运行 <code>code/figs/32_figs.py</code>（或只跑 p3_4）生成 <code>32_p3_4_no_ri.png</code>，然后复核正文 L54 的 533 / 533.7 mV、687 kHz 和图上标注一致。</li>
 <li>理由：图和正文的说法对不上，读者会以为有「复位跳线」这个元件 [4]。</li>
 </ul>
 <p><strong>必改-05｜page4 全页：缺「没有示波器怎么办」一节（AUTHOR_GUIDE 第 7 项）</strong></p>
@@ -260,7 +260,7 @@ mjx-container{max-width:100%}
 </li>
 <li>改法：在测量表之后加「## 没有示波器怎么办」，三条：
 ① 衰减太快看不到 → 换 C_F 1 µF 做第 10 步慢速演示，用手机秒表每 5 s 记一次，和 0.4500 × e^(−t/10) 对比；
-② 自激振荡只能用示波器看 → 照实说，引用图 32-p3-3，给出万用表上的旁证（读数不稳、碰表笔会变）；
+② 自激振荡只能用示波器看 → 照实说，引用图 32-p3-4，给出万用表上的旁证（读数不稳、碰表笔会变）；
 ③ 敲击的瞬间波形 → 保持模式（不插 R_F）把峰值「存住」再读，就是第 12 步的做法。</li>
 <li>理由：模板硬规则；没有示波器的读者占多数，替代方法必须明写 [6]。</li>
 </ul>

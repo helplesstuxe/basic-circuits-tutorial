@@ -79,11 +79,11 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>本节只用一个 12 V 电源，信号要能往上、往下摆，就得找一个「中间」当静止点。我们用两只 10 kΩ 把 12 V 分成 6 V，再接一个运放跟随器（12 节）输出，叫<strong>中点参考</strong>，记作 <span class="math math-inline">\(V_{MID}\)</span> 。它只给运放输入定静止点，电流只有零点几毫安。05 节里的「虚地」说的是负反馈下运放反相端被「拉」到和同相端相等的现象，两者名字别混。最重要的一点：<strong>喇叭电流不能走 <span class="math math-inline">\(V_{MID}\)</span></strong> ，它的输出能力只有几十毫安，喇叭要经输出电容回到真正的地（GND）。</p>
 </blockquote>
 <h2 id="一完整电路逐个元件看">一、完整电路，逐个元件看</h2>
-<p><a class="img-link" href="img/43_p2_1_full_circuit.png"><img alt="本节完整电路：左边信号源经 10 µF 输入电容接 TL072 B 的同相端，同相端经 100 kΩ 接中点参考 V_MID 6 V，反相端经 10 kΩ 接 V_MID、经 20 kΩ 反馈电阻接 OUT；运放输出 m 点夹在两只 1N4148 之间，上面由一个约 24 mA 的恒流源从 +12 V 往下送电流，下面由另一个约 24 mA 的恒流源把电流抽到地，两只 1N4148 标注贴在散热片上；两个基极各串 22 Ω 接 BD139 和 BD140，两管发射极各串 3.3 Ω 汇成 OUT，Q1 集电极经电流表接 +12 V，Q2 集电极接地；OUT 经 1000 µF 电容接 8 Ω 负载到真地，OUT 到地还挂着 10 Ω 加 100 nF 的 Zobel 网络" src="img/43_p2_1_full_circuit.png" loading="lazy" /></a></p>
+<p><a class="img-link" href="img/43_p2_1_full_circuit.png"><img alt="本节完整电路：左边信号源经 10 µF 输入电容（正极朝同相端）接 TL072 B 的同相端，同相端经 100 kΩ 接中点参考 V_MID 6 V，反相端经 10 kΩ 接 V_MID、经 20 kΩ 反馈电阻接 OUT；运放输出 m 点夹在两只 1N4148 之间，上面由一个约 24 mA 的恒流源从 +12 V 往下送电流，下面由另一个约 24 mA 的恒流源把电流抽到地，两只 1N4148 标注贴在散热片上；两个基极各串 22 Ω 接 BD139 和 BD140，两管发射极各串 3.3 Ω 汇成 OUT，Q1 集电极经电流表接 +12 V，Q2 集电极接地；OUT 经 1000 µF 电容接 8 Ω 负载到真地，OUT 到地还挂着 10 Ω 加 100 nF 的 Zobel 网络；灰色小字标出 TL072 B 的 5 脚（+）、6 脚（−）、7 脚（输出）和 Q1、Q2 的 B、C、E。左下是中点参考电路：+12 V 经 R1 10 kΩ、R2 10 kΩ 分压到地，分压点（6 V）并 Cd 10 µF（正极朝分压点）到地，并接 TL072 A 的 3 脚（+）；A 半的 1 脚（输出）和 2 脚（−）短接成跟随器，1 脚输出就是 V_MID，向上接到 Rbias、RG 下端的 V_MID 线；TL072 的 8 脚接 +12 V、4 脚接地" src="img/43_p2_1_full_circuit.png" loading="lazy" /></a></p>
 <p><em>图 43-p2-1　本节完整电路：单 12 V、增益 3、甲乙类推挽</em></p>
 <p>按信号走的顺序看图 43-p2-1：</p>
 <ol>
-<li><strong>输入电容 Cin 10 µF + Rbias 100 kΩ</strong>：手机耳机口的信号是围绕 0 V 摆的，Cin 挡掉直流，Rbias 把运放同相端的静止电压拉到 <span class="math math-inline">\(V_{MID} = 6\ \text{V}\)</span> 。</li>
+<li><strong>输入电容 Cin 10 µF + Rbias 100 kΩ</strong>：手机耳机口的信号是围绕 0 V 摆的，Cin 挡掉直流，Rbias 把运放同相端的静止电压拉到 <span class="math math-inline">\(V_{MID} = 6\ \text{V}\)</span> 。所以 Cin 的正极朝 5 脚（6 V 一侧），负极朝信号源（0 V 一侧）。图左下就是产生 <span class="math math-inline">\(V_{MID}\)</span> 的 TL072 A：R1、R2 两只 10 kΩ 把 12 V 分成 6 V，Cd 10 µF 滤掉电源纹波，3 脚接分压点，1 脚和 2 脚短接成跟随器，1 脚输出 <span class="math math-inline">\(V_{MID}\)</span> 。</li>
 <li><strong>TL072 B，增益 3</strong>：同相放大， <span class="math math-inline">\(1 + 20\ \text{k} / 10\ \text{k} = 3\)</span> 。注意反馈电阻 RF 接的是<strong>推挽输出 OUT</strong>，不是运放输出 m。这样两只三极管被「包」进了反馈环，第四节会讲它的大好处。RG 下端接 <span class="math math-inline">\(V_{MID}\)</span> ，所以直流时 OUT 也被拉到 6 V。</li>
 <li><strong>偏置串：上恒流源 + D1 + D2 + 下恒流源</strong>：上面的恒流源从 12 V 往 b1 点送约 24 mA，穿过两只二极管，再由下面的恒流源从 b2 点抽走。两只二极管在两个基极之间垫出约 1.56 V（SPICE 结果），正好让两只管子都「微微导通」。恒流源为什么必须要有，下面单独讲。</li>
 <li><strong>基极电阻 22 Ω</strong>：BD139 这类管子在面包板长线和电容负载下容易在 MHz 级自激（参考资料里的 StackExchange 讨论和 Feucht 的振荡讲义），基极串 22～47 Ω 能把它压下去，本节取 22 Ω，而且要<strong>焊在管子的基极脚上</strong>，离管脚越近越管用。音频频率下它几乎不影响。</li>
@@ -96,7 +96,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <div class="math math-display">\[I_B = \frac{I_C}{h_{FE}} = \frac{0.5\ \text{A}}{25} = 20\ \text{mA}\]</div>
 <p>再给两只偏置二极管留约 2 mA，让它们任何时候都保持导通，合计<strong>偏置电流至少 22 mA</strong>。否则声音一大，基极「喂不饱」，波形顶部被削平。</p>
 <p>老办法是用两只 470 Ω 电阻代替恒流源。它在静止时能送约 11 mA，但声音大时 b1 点跟着往上走，电阻两端电压变小，电流反而越来越少，偏偏这时最需要电流。参数与调试篇用 <span class="math math-inline">\(h_{FE}\)</span> 约 25 的「最差管子」模型做了 SPICE 对比：用 470 Ω 时负载峰值卡在 1.64 V，运放被迫补上 20 mA 以上的电流；换成恒流源，同样的最差管子能推到 2.89 V，运放只出 12.8 mA。</p>
-<p><a class="img-link" href="img/43_p2_6_ccs_detail.png"><img alt="恒流源偏置的内部电路：上面 +12 V 经 27 Ω 接 BD140 的发射极，BD140 基极由两只串联 1N4148 从 +12 V 往下钉住，再经 4.7 kΩ 接地，集电极往下送电流到 b1；b1 下面是 D1、m 点、D2、b2；下面 BD139 集电极接 b2，发射极经 27 Ω 接地，基极由两只 1N4148 从地往上钉住，再经 4.7 kΩ 接 +12 V；右边文字说明两只二极管约 1.30 V、发射结约 0.65 V，27 Ω 两端约 0.64 V，电流约 24 mA" src="img/43_p2_6_ccs_detail.png" loading="lazy" /></a></p>
+<p><a class="img-link" href="img/43_p2_6_ccs_detail.png"><img alt="恒流源偏置的内部电路：上面 +12 V 经 27 Ω 接 BD140 的发射极，BD140 基极由两只串联 1N4148 从 +12 V 往下钉住，再经 4.7 kΩ 接地，集电极往下送电流到 b1；b1 下面是 D1、m 点、D2、b2；下面 BD139 集电极接 b2，发射极经 27 Ω 接地，基极由两只 1N4148 从地往上钉住，再经 4.7 kΩ 接 +12 V；右边文字说明两只二极管约 1.30 V、发射结约 0.65 V，27 Ω 两端约 0.64 V，电流约 24 mA；灰色小字标出 Q3、Q4 的 B、C、E" src="img/43_p2_6_ccs_detail.png" loading="lazy" /></a></p>
 <p><em>图 43-p2-6　两个约 24 mA 的恒流源：偏置电流不随音量变小</em></p>
 <blockquote>
 <p><strong>最小补充：恒流源</strong></p>

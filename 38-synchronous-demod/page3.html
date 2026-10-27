@@ -138,6 +138,12 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li><strong>图 38-p3-3 (b) INH（6 脚）悬空</strong>：INH 是&quot;全部断开&quot;脚，悬空时它在 0 和 1 之间飘，手一靠近就可能把三个开关全部断开。U3B 的同相端随之悬空，输出乱跳。<strong>正确接法是 6 脚 INH、7 脚 VEE、8 脚 VSS 都接 0 V</strong>，没用到的 B、C 两组选择脚（10、9 脚）也接 0 V，不能悬空。CMOS 芯片的输入脚一律不许悬空。</li>
 </ul>
 <h2 id="故障排查表">故障排查表</h2>
+<p>下表里的测点字母（C～M）、元件名和脚号都对照这两张原理图找：图 38-p3-4 是板 A，图 38-p3-5 是板 B。</p>
+<p><a class="img-link" href="img/38_p3_4_schem_a.png"><img alt="板 A 原理图（U1、U2 都是 LM358，9 V 电池）。左边是模拟电极：Arduino D9 经 RS1 1M 接 P 点（测点 A），P 点经 RS2 1k 接 V_MID（测点 B）；Arduino D5 经 CN 10µ 和 RN 100k 接 P 点（50 Hz 干扰）；9 V 和 0 V 之间的电位器 RP 10k 滑动端经 RD 100k 接 P 点（可调直流）。中间是三运放仪表放大器：U1B 的 A1（5 脚 + 接 V_MID，6 脚 −，7 脚出）和 U1A 的 A2（3 脚 + 接 P 点，2 脚 −，1 脚出），两只反相端之间接 RG 1k，R5、R6 各 10k 是反馈；右边 U2A 的 A3 是差分级：R7 10k 到 2 脚（−），R8 10k 从 1 脚接回 2 脚；R9 10k 到 3 脚（+），R10 10k 从 3 脚接 V_MID；1 脚输出 Vo（测点 C）送板 B。右下是 RM1、RM2 两只 10k 分压加 U2B 跟随器（5 脚 +，6、7 脚相连）做出 V_MID ≈ 4.5 V。C1、C2 各 0.1 µF 给 U1、U2 的 8 脚去耦；灰色小字是面包板孔位" src="img/38_p3_4_schem_a.png" loading="lazy" /></a></p>
+<p><em>图 38-p3-4　板 A 原理图（查表时对照：P 点、V_MID、仪放各脚、去耦 C1、C2）</em></p>
+<p><a class="img-link" href="img/38_p3_5_schem_b.png"><img alt="板 B 原理图（U3 = LM358，U4 = CD4053，U5 = LM393，都接 9 V 和 0 V）。左边板 A 来的 Vo（测点 C）一路经 RA1 10k、RA2 10k 分压到 Arduino A0（测点 L），一路经 CH 10µ 无极性电容到测点 E，E 经 RH 100k 接 V_MID；E 进 U3A 的 3 脚（+），2 脚和 1 脚相连成跟随器，1 脚输出是测点 F。F 经 R11 10k 到 U3B 的 6 脚（−），同时到 CD4053 的 13 脚 AY；12 脚 AX 接 V_MID；14 脚接 U3B 的 5 脚（+）；R12 10k 从 7 脚（测点 G）接回 6 脚。G 经 RF 100k 到测点 J，J 经 CF 10µ 无极性电容到测点 K（V_MID），万用表红笔 J、黑笔 K。下方 U5B（LM393）的 5 脚接 Arduino D10，6 脚接 RT1 10k、RT2 10k 从 Arduino 5 V 分出的 2.5 V（测点 M），7 脚经 RU 10k 上拉到 9 V，就是 CD4053 11 脚 A 的选择电压（测点 H）。C3、C4、C5 各 0.1 µF 给 U3、U4、U5 去耦。右侧文字列出没画成线的脚：U4 的 16 脚接 9 V，6 脚 INH、7 脚 VEE、8 脚 VSS、9 脚 C、10 脚 B 接 0 V，U5 的 8 脚接 9 V、4 脚接 0 V" src="img/38_p3_5_schem_b.png" loading="lazy" /></a></p>
+<p><em>图 38-p3-5　板 B 原理图（查表时对照：测点 H、J、K、L，CD4053 的 6～10 脚和 16 脚，RU、RA1、RA2，去耦 C3～C5）</em></p>
+<p><strong>对照看</strong>：第一行&quot;选择脚 H 不翻转&quot;，H 在图 38-p3-5 里就是 U5B 7 脚、RU 下端和 CD4053 11 脚连在一起的那个点；查 CD4053 有没有电，看右侧文字里的&quot;16 脚 VDD → 9 V&quot;。&quot;INH 脚悬空&quot;那一行，对照同一处文字：6、7、8、9、10 脚都应接 0 V。&quot;读数是负的&quot;那一行要对调的 P 和 V_MID，在图 38-p3-4 左边：P 进 U1A 的 3 脚，V_MID 进 U1B 的 5 脚。&quot;串口读数是 0 或满刻度&quot;那一行的 L 点，是图 38-p3-5 左上 RA1、RA2 的中点，正常约 2.25 V（板 A 的 Vo ≈ 4.5 V 的一半）。去耦那一行的 C1、C2 在图 38-p3-4 左下，C3、C4、C5 在图 38-p3-5 下方。</p>
 <table>
 <thead>
 <tr>

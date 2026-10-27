@@ -205,6 +205,10 @@ vo_m = ____          # Vo − V_MID
 <p>倍数 1 + 20 = 21；差压 9 × 470 / (2 × 20470) = 103.32 mV；电流 103.3 μA；A1 = 4.5 − 1.0332 = 3.4668 V；A2 = 4.6033 + 1.0332 = 5.6365 V；Vo − V_MID = 21 × 103.32 mV = 2.1698 V。反过来&quot;给定倍数求 RG&quot;留到 <a href="page3.html">30 仪表放大器与电桥 · 参数与调试篇</a> 练习 1。</p>
 </details>
 <p><strong>例 3（变式：换单片芯片和 5 V）</strong>：用 INA333（倍数 G = 1 + 100 kΩ/RG，见 TI 数据手册 <a href="https://www.ti.com/lit/ds/symlink/ina333.pdf">https://www.ti.com/lit/ds/symlink/ina333.pdf</a> ），5 V 激励电桥，ΔR/R = 1%，REF 接 2.5 V。要 21 倍，RG = 100 kΩ / 20 = 5 kΩ；差压精确值 5 × 100 / (2 × 20100) = 12.438 mV（近似 12.50 mV）；输出 2.5 + 21 × 0.012438 = 2.761 V。若改用 INA126（G = 5 + 80 kΩ/RG，<a href="https://www.ti.com/lit/ds/symlink/ina126.pdf">https://www.ti.com/lit/ds/symlink/ina126.pdf</a> ），RG 同样取 5 kΩ 得 21 倍；注意 INA126 不接 RG 时最小也有 5 倍。</p>
+<p>例 3 的 INA333 接法画出来是图 30-p2-6。</p>
+<p><a class="img-link" href="img/30_p2_6_ina333_ex3.png"><img alt="例 3 原理图：5 V 电池给 R1～R4 各 10 kΩ 的电桥供电，R4 标注为变化 1% 的臂，左中点 Va 接 INA333 的 −IN（2 脚），右中点 Vb 接 +IN（3 脚），两根蓝线交叉处不相连；两个 RG 引脚（1 脚、8 脚）之间接 RG 5 kΩ；V+（7 脚）接 5 V，V−（4 脚）接地；REF（5 脚）接一只跟随器的输出，跟随器同相端接 5 V 经两只 10 kΩ 分出的 2.5 V；VOUT（6 脚）输出 Vo = REF + 21 × (Vb − Va)；引脚号按 TI INA333 数据手册" src="img/30_p2_6_ina333_ex3.png" loading="lazy" /></a></p>
+<p><em>图 30-p2-6　例 3：INA333 读 5 V 电桥，RG = 5 kΩ（21 倍），REF 接 2.5 V 低阻基准（标引脚号）</em></p>
+<p><strong>对照看</strong>：R4 就是变化 1% 的那一臂（10 kΩ → 10.1 kΩ），它变大时 Vb 升高，所以 Vb − Va 为正；RG 5 kΩ 就是例 3 里 100 kΩ / 20 算出来的那只，接在 1 脚和 8 脚之间；REF 不直接接两只 10 kΩ 的分压点，而是经跟随器出来，否则 REF 引脚内部的电阻会把分压拉偏、也破坏差分级的电阻匹配。Vb − Va 约 12.44 mV 时，输出约 2.5 + 21 × 0.012438 = 2.761 V。</p>
 <h2 id="本页小结">本页小结</h2>
 <ul>
 <li>电桥差压精确式 <span class="math math-inline">\(V_{ex}\Delta R/(2(2R+\Delta R))\)</span> ，近似式 <span class="math math-inline">\(V_{ex}\Delta R/(4R)\)</span> 偏大约 ΔR/(2R)。</li>

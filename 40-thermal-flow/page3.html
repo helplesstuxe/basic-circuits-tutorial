@@ -75,9 +75,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>温差 <strong>低于 1.8 K</strong> → 开加热（D9 = 1）；</li>
 <li>中间保持原状态。</li>
 </ul>
-<p>加热器只有全开、全关两种状态。风大时散热快，加热要开得更久；所以**“开着的时间占多少”（平均占空比）就是风速信号**。程序每完成一个开—关周期，就记下这一周期的占空比，取最近 3 个周期的平均值输出。请看图 40-p3-1。</p>
-<p><a class="img-link" href="img/40_p3_1_onoff.png"><img alt="三幅图共用时间轴 0 到 660 s。上：风速 0 → 1 m/s（120 s）→ 2 m/s（300 s）→ 0（480 s）。中：温差在 1.8 K 和 2.2 K 两条虚线之间锯齿形来回，开头和最后无风时冲到约 2.4 K。下：浅黄色竖条是加热开着的时段；紫红色台阶线是最近 3 个开关周期的平均占空，从 29.3 % 升到 64.4 %、80.0 %，风停后回到 29.5 %" src="img/40_p3_1_onoff.png" loading="lazy" /></a></p>
-<p><em>图 40-p3-1　开关控温：温差锯齿与平均占空（示意参数）</em></p>
+<p>这三条规则作用在图 40-p3-1 的电路上：程序读 A0、A1 算温差，再决定 D9 输出 0 还是 1。</p>
+<p><a class="img-link" href="img/40_p3_1_sys_schem.png"><img alt="原理图，从左到右三块。左：+5 V 经 R_S2 10k 到分压点，分压点经 N2 环境 NTC（上风处）接地，分压点用绿线接 Arduino A1。中：Arduino D9 经 R_G 100 Ω 接 Q1 IRLZ44N 的栅极 G，栅极经 R_PD 100k 接地；Q1 源极 S 接地，漏极 D 经加热器 R_H 560 Ω 2 W 接 +9 V。右：+5 V 经 R_S1 10k 到分压点，分压点经 N1 加热 NTC 接地，分压点用绿线接 Arduino A0；R_H 和 N1 之间一条朱红色虚线，注明「胶带包在一起（热量从 R_H 传到 N1）」。图下两行注：开关控温时温差 &gt; 2.2 K 则 D9 = 0（关加热），&lt; 1.8 K 则 D9 = 1（开加热），平均占空 = 风速信号；R_G 100 Ω 限制 D9 给栅极充电的电流，R_PD 100 kΩ 让 Arduino 复位、D9 悬空时 Q1 保持关断" src="img/40_p3_1_sys_schem.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-1　参数篇对照用的原理图（开关控温、标定、调试对照表都按这张图找元件）</em></p>
+<p><strong>对照看</strong>：温差 = N1 − N2，N1 在右边（接 A0，和 R_H 包在一起），N2 在左边（接 A1，放在上风处）。D9 = 1 时 Q1 导通，R_H 两端接近 9 V，功率约 9² ÷ 560 ≈ 0.14 W；D9 = 0 时 Q1 关断，R_H 不发热。所以&quot;开着的时间占多少&quot;就是 R_H 的平均功率。第六节调试对照表里：&quot;温差总是负数&quot;要查的 A0、A1 两根绿线，&quot;加热电阻没贴紧 NTC&quot;说的是图上那条朱红色虚线，&quot;断开 9 V&quot;断的是 R_H 上端的 +9 V。</p>
+<p>加热器只有全开、全关两种状态。风大时散热快，加热要开得更久；所以**“开着的时间占多少”（平均占空比）就是风速信号**。程序每完成一个开—关周期，就记下这一周期的占空比，取最近 3 个周期的平均值输出。请看图 40-p3-2。</p>
+<p><a class="img-link" href="img/40_p3_2_onoff.png"><img alt="三幅图共用时间轴 0 到 660 s。上：风速 0 → 1 m/s（120 s）→ 2 m/s（300 s）→ 0（480 s）。中：温差在 1.8 K 和 2.2 K 两条虚线之间锯齿形来回，开头和最后无风时冲到约 2.4 K。下：浅黄色竖条是加热开着的时段；紫红色台阶线是最近 3 个开关周期的平均占空，从 29.3 % 升到 64.4 %、80.0 %，风停后回到 29.5 %" src="img/40_p3_2_onoff.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-2　开关控温：温差锯齿与平均占空（示意参数）</em></p>
 <p>图注：Python 热模型，示意参数；NTC 按手册热时间常数 15 s 建模。</p>
 <table>
 <thead>
@@ -143,9 +147,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </tr>
 </tbody>
 </table>
-<p>3 m/s 时最后 60 s 加热器 100 % 开着，一次也没关过，<strong>超出量程</strong>。原因不是功率撑不住 2 K：按模型，3 m/s 全开时温差能到 2.09 K（PI 稳态只要 95.8 % 占空）。问题出在开关控温要等温差超过<strong>上门限 2.2 K</strong> 才关一次，2.09 K 永远碰不到，于是一个完整周期也结算不出来。全开刚好到 2.2 K 的风速约 2.61 m/s，这就是开关控温的量程上限；第四节表里的 3.36 m/s 是 PI 控制的上限（<code>code/40_sim.py</code> 第 8 部分）。程序要能识别这种情况并报“超量程”，而不是输出一个错的风速。请看图 40-p3-2。</p>
-<p><a class="img-link" href="img/40_p3_2_calib.png"><img alt="横轴平均占空 30 % 到 100 %，纵轴风速 0 到 3 m/s。黑点是仿真得到的六个恒定风速下的平均占空；绿色虚线是用 0、1、2、2.5 m/s 四点拟合的曲线，橙色实线是再加上 0.5 m/s 的五点拟合。箭头标出真值 0.5 m/s 时四点标定读成 0.44 m/s（−12 %）。右侧虚线在 100 % 处，注释 3 m/s 一直开着 = 超出量程" src="img/40_p3_2_calib.png" loading="lazy" /></a></p>
-<p><em>图 40-p3-2　平均占空与风速的标定曲线</em></p>
+<p>3 m/s 时最后 60 s 加热器 100 % 开着，一次也没关过，<strong>超出量程</strong>。原因不是功率撑不住 2 K：按模型，3 m/s 全开时温差能到 2.09 K（PI 稳态只要 95.8 % 占空）。问题出在开关控温要等温差超过<strong>上门限 2.2 K</strong> 才关一次，2.09 K 永远碰不到，于是一个完整周期也结算不出来。全开刚好到 2.2 K 的风速约 2.61 m/s，这就是开关控温的量程上限；第四节表里的 3.36 m/s 是 PI 控制的上限（<code>code/40_sim.py</code> 第 8 部分）。程序要能识别这种情况并报“超量程”，而不是输出一个错的风速。请看图 40-p3-3。</p>
+<p><a class="img-link" href="img/40_p3_3_calib.png"><img alt="横轴平均占空 30 % 到 100 %，纵轴风速 0 到 3 m/s。黑点是仿真得到的六个恒定风速下的平均占空；绿色虚线是用 0、1、2、2.5 m/s 四点拟合的曲线，橙色实线是再加上 0.5 m/s 的五点拟合。箭头标出真值 0.5 m/s 时四点标定读成 0.44 m/s（−12 %）。右侧虚线在 100 % 处，注释 3 m/s 一直开着 = 超出量程" src="img/40_p3_3_calib.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-3　平均占空与风速的标定曲线</em></p>
 <p>曲线弯得厉害，低风速段尤其陡：</p>
 <table>
 <thead>
@@ -170,9 +174,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </table>
 <p><strong>结论：曲线弯的地方要多放标定点。</strong> 只用 King 定律两点（0 和 2 m/s）定 a、b，误差更大：真值 0.5 m/s 读成 0.418 m/s（−16.3 %），3 m/s 读成 3.226 m/s（+7.5 %），因为实际探头不是严格的 <span class="math math-inline">\(a + b\cdot v^{0.45}\)</span> 形式。</p>
 <h2 id="三环境温度补偿">三、环境温度补偿</h2>
-<p>气体温度变了怎么办？加热 NTC 的温度会跟着变，如果拿“开机时的环境温度”当基准，程序就会误判。请看图 40-p3-3。</p>
-<p><a class="img-link" href="img/40_p3_3_amb.png"><img alt="横轴时间 0 到 600 s，纵轴平均占空。300 s 时环境从 25 °C 升到 26 °C（竖虚线）。橙色线用环境 NTC 补偿（温差 = N1 − N2），短暂冲到约 70 % 后回到 64.3 %；深橙色线不补偿（温差 = N1 − 开机时的环境温度），一路掉到 34.4 %" src="img/40_p3_3_amb.png" loading="lazy" /></a></p>
-<p><em>图 40-p3-3　环境温度变化时有无补偿的对比</em></p>
+<p>气体温度变了怎么办？加热 NTC 的温度会跟着变，如果拿“开机时的环境温度”当基准，程序就会误判。请看图 40-p3-4。</p>
+<p><a class="img-link" href="img/40_p3_4_amb.png"><img alt="横轴时间 0 到 600 s，纵轴平均占空。300 s 时环境从 25 °C 升到 26 °C（竖虚线）。橙色线用环境 NTC 补偿（温差 = N1 − N2），短暂冲到约 70 % 后回到 64.3 %；深橙色线不补偿（温差 = N1 − 开机时的环境温度），一路掉到 34.4 %" src="img/40_p3_4_amb.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-4　环境温度变化时有无补偿的对比</em></p>
 <p>风速一直是 1 m/s，环境只升高 1 K：</p>
 <ul>
 <li><strong>补偿</strong>（温差 = N1 − N2，N2 实时测环境）：平均占空 64.2 % → 64.3 %，几乎不变。中间短暂冲到约 70 %、持续约 60 s，因为 N2 比 N1 先感到升温。</li>
@@ -192,9 +196,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </ul>
 <p>在 Arduino 上就是每 0.1 s 算一次，用 <code>analogWrite(9, D*255)</code> 输出。</p>
 </blockquote>
-<p>同样 0→1 m/s 的台阶， <span class="math math-inline">\(T_i\)</span> = 10 s，比较三个 <span class="math math-inline">\(K_p\)</span> （图 40-p3-4）：</p>
-<p><a class="img-link" href="img/40_p3_4_pi.png"><img alt="横轴时间 60 到 300 s，纵轴占空。120 s 风速从 0 跳到 1 m/s。绿色虚线 K_p = 0.1，慢慢爬升，t90 61.5 s；橙色 K_p = 0.6，几秒内到 64 % 左右，t90 6.7 s；紫红点划线 K_p = 2.0，最快（t90 1.7 s），冲到约 95 % 且一直上下乱跳；黑色台阶是开关控温的 3 周期平均（t90 60.0 s）" src="img/40_p3_4_pi.png" loading="lazy" /></a></p>
-<p><em>图 40-p3-4　PI 控制三个 K_p 的阶跃响应对比</em></p>
+<p>同样 0→1 m/s 的台阶， <span class="math math-inline">\(T_i\)</span> = 10 s，比较三个 <span class="math math-inline">\(K_p\)</span> （图 40-p3-5）：</p>
+<p><a class="img-link" href="img/40_p3_5_pi.png"><img alt="横轴时间 60 到 300 s，纵轴占空。120 s 风速从 0 跳到 1 m/s。绿色虚线 K_p = 0.1，慢慢爬升，t90 61.5 s；橙色 K_p = 0.6，几秒内到 64 % 左右，t90 6.7 s；紫红点划线 K_p = 2.0，最快（t90 1.7 s），冲到约 95 % 且一直上下乱跳；黑色台阶是开关控温的 3 周期平均（t90 60.0 s）" src="img/40_p3_5_pi.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-5　PI 控制三个 K_p 的阶跃响应对比</em></p>
 <table>
 <thead>
 <tr>
@@ -282,17 +286,17 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li><a href="page4.html">动手实验篇</a>的开关控温程序在加热器连续开 120 s 仍碰不到上门限 2.2 K 时，也会打印 OVER-RANGE。</li>
 </ul>
 <h2 id="五工业做法模拟恒温差电桥">五、工业做法：模拟恒温差电桥</h2>
-<p>工业热膜/热线风速仪不用单片机慢慢调，而是一个运放直接闭环：热膜本身就是电桥的一个臂，<strong>既是加热器又是测温元件</strong>。请看图 40-p3-5。</p>
-<p><a class="img-link" href="img/40_p3_5_cta_schem.png"><img alt="原理图：电桥顶端由运放输出驱动，粉色文字标注电桥顶端电压 V_top = 输出信号。左臂 R_A 20 Ω 在上，热膜 R_s 在下（20 Ω（20 °C），热到 +30 K = 22.31 Ω）；右臂 R_B 200 Ω 在上，R_C 223.1 Ω（= 10 × 22.31 Ω）在下。右桥中点接运放 +，左桥中点接运放 −，运放标“+ 在上”。图下写：风一吹 → R_s 变冷、阻值变小 → 运放输入差变号 → 输出升高、加大加热 → R_s 又回到 22.31 Ω；电桥平衡条件 R_s/R_A = R_C/R_B：热膜永远被拉回同一个温度，风越大 V_top 越高" src="img/40_p3_5_cta_schem.png" loading="lazy" /></a></p>
-<p><em>图 40-p3-5　模拟恒温差（CTA）电桥原理图</em></p>
+<p>工业热膜/热线风速仪不用单片机慢慢调，而是一个运放直接闭环：热膜本身就是电桥的一个臂，<strong>既是加热器又是测温元件</strong>。请看图 40-p3-6。</p>
+<p><a class="img-link" href="img/40_p3_6_cta_schem.png"><img alt="原理图：电桥顶端由运放输出驱动，粉色文字标注电桥顶端电压 V_top = 输出信号。左臂 R_A 20 Ω 在上，热膜 R_s 在下（20 Ω（20 °C），热到 +30 K = 22.31 Ω）；右臂 R_B 200 Ω 在上，R_C 223.1 Ω（= 10 × 22.31 Ω）在下。右桥中点接运放 +，左桥中点接运放 −，运放标“+ 在上”。图下写：风一吹 → R_s 变冷、阻值变小 → 运放输入差变号 → 输出升高、加大加热 → R_s 又回到 22.31 Ω；电桥平衡条件 R_s/R_A = R_C/R_B：热膜永远被拉回同一个温度，风越大 V_top 越高" src="img/40_p3_6_cta_schem.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-6　模拟恒温差（CTA）电桥原理图</em></p>
 <ul>
 <li>平衡时 <span class="math math-inline">\(R_s / R_A = R_C / R_B\)</span> ，即 <span class="math math-inline">\(R_s\)</span> = 20 Ω × 223.1 / 200 = 22.31 Ω，对应热膜比 20 °C 环境高 30 K（温度系数按 0.00385 /K）；</li>
 <li>风把热膜吹冷 → <span class="math math-inline">\(R_s\)</span> 变小 → 左中点电压降低 → 运放输出升高 → 加热电流变大 → <span class="math math-inline">\(R_s\)</span> 回升。负反馈把热膜温度钉死；</li>
 <li>热膜功率 <span class="math math-inline">\(P = V_{top}^2 \cdot R_s / (R_A + R_s)^2\)</span> ，按 King 定律随风速增大，所以 <span class="math math-inline">\(V_{top}^2 \propto a + b\cdot v^n\)</span> 。</li>
 </ul>
 <p>SPICE 里用“热 ↔ 电”类比搭了一个热膜模型（热容 → 电容、热功率 → 电流、温升 → 电压），和一只恒流（CP）热膜同时吹 0 → 2 → 1 → 0 m/s 的风：</p>
-<p><a class="img-link" href="img/40_p3_6_cta_spice.png"><img alt="上图：橙色是 CTA 电桥顶端电压 V_top，风到 2 m/s 时从约 2.2 V 跳到 3.388 V，1 m/s 时约 3.1 V，风停回到约 2.2 V；浅蓝色是风速（右轴）。下图：橙色 CTA 热膜温升一直在 30 K 附近（30.23 K）；蓝色恒流 CP 热膜温升在 2 m/s 时慢慢降到 11.89 K，1 m/s 时约 14 K，风停后又慢慢回到 30 K" src="img/40_p3_6_cta_spice.png" loading="lazy" /></a></p>
-<p><em>图 40-p3-6　CTA 与恒流 CP 热膜的 SPICE 对比（时间轴为毫秒）</em></p>
+<p><a class="img-link" href="img/40_p3_7_cta_spice.png"><img alt="上图：橙色是 CTA 电桥顶端电压 V_top，风到 2 m/s 时从约 2.2 V 跳到 3.388 V，1 m/s 时约 3.1 V，风停回到约 2.2 V；浅蓝色是风速（右轴）。下图：橙色 CTA 热膜温升一直在 30 K 附近（30.23 K）；蓝色恒流 CP 热膜温升在 2 m/s 时慢慢降到 11.89 K，1 m/s 时约 14 K，风停后又慢慢回到 30 K" src="img/40_p3_7_cta_spice.png" loading="lazy" /></a></p>
+<p><em>图 40-p3-7　CTA 与恒流 CP 热膜的 SPICE 对比（时间轴为毫秒）</em></p>
 <p>图注：SPICE 示意参数（20 Ω 小热膜，热容 0.2 mJ/K），时间轴是毫秒级。</p>
 <table>
 <thead>
@@ -334,7 +338,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>CTA 比 CP 快约 60 倍（44.2 ÷ 0.7265 = 60.8）：温度不变，热容就不用充放电，速度只看运放回路；</li>
 <li>SPICE 的温升略高于 30 K（+1.37 %），因为运放增益有限，电桥不能完全平衡。</li>
 </ul>
-<p><strong>和<a href="page4.html">动手实验篇</a>的差别</strong>：这里热膜同时是加热器和传感器，没有“传热到另一个元件”的延迟。动手实验篇的 NTC 贴在电阻外面，自身热时间常数约 15 s，PI 回路再快也快不过 NTC，所以面包板上的恒温差法 t90 只能做到几秒到十几秒，图 40-p3-6 那种毫秒级速度在面包板上看不到。</p>
+<p><strong>和<a href="page4.html">动手实验篇</a>的差别</strong>：这里热膜同时是加热器和传感器，没有“传热到另一个元件”的延迟。动手实验篇的 NTC 贴在电阻外面，自身热时间常数约 15 s，PI 回路再快也快不过 NTC，所以面包板上的恒温差法 t90 只能做到几秒到十几秒，图 40-p3-7 那种毫秒级速度在面包板上看不到。</p>
 <h2 id="六调试对照表">六、调试对照表</h2>
 <table>
 <thead>

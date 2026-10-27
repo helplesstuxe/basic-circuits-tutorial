@@ -69,7 +69,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <ul>
 <li>工具：ngspice batch 模式</li>
 <li>运行：仓库根目录 <code>python spice/39/run.py</code>，退出码 0，已实际运行（49 项比对，约 15 s）；默认输出写到临时目录，加 <code>--update</code> 才覆盖仓库里画图用的 CSV</li>
-<li>网表：<code>39_ccs.cir</code>（直流扫描负载、上限、练习 2）、<code>39_step.cir</code>（有／无补偿阶跃，图 39-p3-2）、<code>39_coil_v.cir</code>（电压驱动换向）、<code>39_coil_i.cir</code>（H 桥 + 恒流沉换向、RC 吸收，图 39-p2-5、图 39-p3-3）、<code>39_wrong.cir</code>（采样电阻放高边的错误接法，图 39-p3-4）</li>
+<li>网表：<code>39_ccs.cir</code>（直流扫描负载、上限、练习 2）、<code>39_step.cir</code>（有／无补偿阶跃，图 39-p3-6）、<code>39_coil_v.cir</code>（电压驱动换向）、<code>39_coil_i.cir</code>（H 桥 + 恒流沉换向、RC 吸收，图 39-p2-5、图 39-p3-8）、<code>39_wrong.cir</code>（采样电阻放高边的错误接法，图 39-p3-4）</li>
 <li>波形抽稀为 <code>coil_v.csv</code>、<code>coil_i.csv</code>、<code>coil_i_nosnub.csv</code>、<code>step.csv</code>，供 <code>code/figs/39_figs.py</code> 画图</li>
 </ul>
 <h2 id="模型与来源">模型与来源</h2>
@@ -272,42 +272,42 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>✅；按 11.5/(110+10) 估</td>
 </tr>
 <tr>
-<td>p3 图39-p3-2 有补偿 过冲</td>
+<td>p3 图39-p3-6 有补偿 过冲</td>
 <td>15 %</td>
 <td>14.99 %</td>
 <td>-0.07%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-2 有补偿 到 0.95 V 用时</td>
+<td>p3 图39-p3-6 有补偿 到 0.95 V 用时</td>
 <td>2.1 µs</td>
 <td>2.116 µs</td>
 <td>+0.76%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-2 有补偿 0.2 ms 后残余纹波</td>
+<td>p3 图39-p3-6 有补偿 0.2 ms 后残余纹波</td>
 <td>—</td>
 <td>0 mVpp</td>
 <td>—</td>
 <td>✅（页面只给定性描述：页面写“没有持续振荡”）</td>
 </tr>
 <tr>
-<td>p3 图39-p3-2 无补偿 过冲</td>
+<td>p3 图39-p3-6 无补偿 过冲</td>
 <td>28.7 %</td>
 <td>28.74 %</td>
 <td>+0.15%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-2 / 排查表 无补偿 持续振荡峰峰值</td>
+<td>p3 图39-p3-6 / 排查表 无补偿 持续振荡峰峰值</td>
 <td>54.5 mVpp</td>
 <td>54.49 mVpp</td>
 <td>-0.02%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-2 / 排查表 无补偿 振荡频率</td>
+<td>p3 图39-p3-6 / 排查表 无补偿 振荡频率</td>
 <td>147 kHz</td>
 <td>147 kHz</td>
 <td>-0.02%</td>
@@ -370,42 +370,42 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-3 / 排查表 无 RC 吸收：桥底电压最低</td>
+<td>p3 图39-p3-8 / 排查表 无 RC 吸收：桥底电压最低</td>
 <td>1.01 V</td>
 <td>1.013 V</td>
 <td>+0.29%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-3 / 排查表 无 RC 吸收：桥底电压最高</td>
+<td>p3 图39-p3-8 / 排查表 无 RC 吸收：桥底电压最高</td>
 <td>12.54 V</td>
 <td>12.54 V</td>
 <td>+0.03%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-3 无 RC 吸收：电流最低</td>
+<td>p3 图39-p3-8 无 RC 吸收：电流最低</td>
 <td>98.8 mA</td>
 <td>98.78 mA</td>
 <td>-0.02%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-3 无 RC 吸收：电流最高</td>
+<td>p3 图39-p3-8 无 RC 吸收：电流最高</td>
 <td>102.2 mA</td>
 <td>102.2 mA</td>
 <td>+0.04%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-3 有 RC 吸收：桥底电压（稳定）</td>
+<td>p3 图39-p3-8 有 RC 吸收：桥底电压（稳定）</td>
 <td>4.44 V</td>
 <td>4.437 V</td>
 <td>-0.06%</td>
 <td>✅</td>
 </tr>
 <tr>
-<td>p3 图39-p3-3 / RC 吸收 无 RC 吸收：振荡周期</td>
+<td>p3 图39-p3-8 / RC 吸收 无 RC 吸收：振荡周期</td>
 <td>175 µs</td>
 <td>175.4 µs</td>
 <td>+0.23%</td>

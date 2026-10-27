@@ -76,14 +76,18 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>程序读数是真值的 2 倍、流量差了 3.8 倍，多半是哪里错了？</li>
 </ol>
 <h2 id="一回差要多宽比干扰大比信号小">一、回差要多宽：比干扰大，比信号小</h2>
+<p>本页讲到的 R1、R2、R3、Rn、两级 RC 和测量点①②③都在图 36-p3-1 里，查故障时也对照它。</p>
+<p><a class="img-link" href="img/36_p3_1_schem.png"><img alt="原理图：D7 经 Rs1 1 kΩ、C1 4.7 µF、Rs2 1 kΩ、C2 4.7 µF 两级 RC 到 n2；D5 经 Rn 2.2 kΩ 也接到 n2；n2 经 R1 10 kΩ 进 LM393 A 组同相端 3 脚，R2 220 kΩ 从输出 1 脚接回 3 脚；反相端 2 脚接 Ra、Rb 两只 10 kΩ 从 +5 V 分出的 2.5 V，并有 Cref 100 nF 到地；LM393 的 8 脚接 +9 V、4 脚接地，输出 1 脚经 R3 4.7 kΩ 上拉到 Arduino 5 V，并连到 D8（Timer1 捕获）；探针 ① 在 n2，② 在输出，③ 在 2.5 V 参考；底部注：信号源内阻 Rs = Rs1 + Rs2（本图 1 kΩ + 1 kΩ），回差电流从输出经 R2、R1 流进 n2 再流过 Rs；LM393 8 脚 +9 V、4 脚 GND，B 组 5、6 脚接 GND" src="img/36_p3_1_schem.png" loading="lazy" /></a></p>
+<p><em>图 36-p3-1　参数篇对照用的原理图：回差由 R1、R2 决定，信号源内阻是 Rs1 + Rs2</em></p>
+<p><strong>对照看</strong>：回差的宽度由 R1 和 R2 的比决定：输出在约 0 V 和接近 5 V 之间跳，这一跳经 R2、R1 分压反馈到 3 脚，所以 R2 越小回差越宽，第一节扫的就是这只 R2。第二节说的「信号源内阻」就是 n2 左边的 Rs1 + Rs2：回差电流从 1 脚经 R2、R1 流进 n2，还要再流过它们，所以它们和 R1 串在一起，相当于 R1 变大了。第三节的共模范围看 2、3 脚：两只脚的电压都在 3 V 以下，离 LM393 的 +9 V（8 脚）很远。第四节表里的①②③就是图上三个黄色圆圈：① n2，② 1 脚输出（靠 R3 上拉），③ 2 脚的 2.5 V 参考。</p>
 <h3 id="先预测">先预测</h3>
 <p><a href="../10-voltage-comparator/page3.html">10 节第三页</a> 说过「回差至少要比噪声宽」。本节 n2 上的干扰峰峰值约 125 mV，信号加干扰一共约 663 mV。把 R2 从 47 kΩ 扫到 1000 kΩ（回差从约 1 V 降到约 49 mV），每一档数 1 秒。</p>
 <p><strong>先预测</strong>：哪一头会出错？错成什么样？</p>
-<p><a class="img-link" href="img/36_p3_1_r2_window.png"><img alt="柱状图：横轴 R2 从 47k 到 1000k，纵轴 1 秒计数；Rn = 2.2k 时 47k、56k、68k 三档计数为 0，82k 到 1000k 都是 100；另有 Rn = 1k 和 Rn = 470 两组，干扰越强，能用的 R2 越窄" src="img/36_p3_1_r2_window.png" loading="lazy" /></a></p>
-<p><em>图 36-p3-1　回差要比干扰大、比信号小：否则不是多数，就是一个也数不到</em></p>
+<p><a class="img-link" href="img/36_p3_2_r2_window.png"><img alt="柱状图：横轴 R2 从 47k 到 1000k，纵轴 1 秒计数；Rn = 2.2k 时 47k、56k、68k 三档计数为 0，82k 到 1000k 都是 100；另有 Rn = 1k 和 Rn = 470 两组，干扰越强，能用的 R2 越窄" src="img/36_p3_2_r2_window.png" loading="lazy" /></a></p>
+<p><em>图 36-p3-2　回差要比干扰大、比信号小：否则不是多数，就是一个也数不到</em></p>
 <details>
 <summary>揭晓</summary>
-<p>图 36-p3-1 里 Rn = 2.2 kΩ 那一组：</p>
+<p>图 36-p3-2 里 Rn = 2.2 kΩ 那一组：</p>
 <ul>
 <li><strong>回差太大</strong>：R2 = 47k、56k、68k，回差 1002、847、702 mV，比信号加干扰的峰峰值 663 mV 还大。输入根本够不着两条门限，1 秒计 <strong>0 个</strong>；</li>
 <li><strong>刚好</strong>：R2 = 82k 到 1000k，回差 585～49 mV，都计 <strong>100 个</strong>；</li>
@@ -100,10 +104,10 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><strong>经验做法</strong>：回差取干扰峰峰值的 1.5～2 倍，同时不超过最小信号峰峰值的一半。估算回差时用 <span class="math math-inline">\(\Delta V \approx V_A (R_1 + R_s) / R_2\)</span> ， <span class="math math-inline">\(R_s\)</span> 是信号源内阻。本节取 R2 = 220 kΩ，回差 222 mV，是干扰（125 mV）的 1.77 倍、只有信号时峰峰值的 0.40 倍。</p>
 <h2 id="二一个也数不到信号源内阻太大">二、一个也数不到：信号源内阻太大</h2>
 <h3 id="先预测-1">先预测</h3>
-<p>有人把两级 RC 换成 10 kΩ / 470 nF（转折频率和 1 kΩ / 4.7 µF 一样），信号幅度几乎不变，R1、R2、R3 和参考电压都没动。为了只看信号，这一题<strong>先把 Rn 拔掉</strong>（不加干扰）。图 36-p3-2 把两种网络并排画了出来：上图是原来的网络，下图是新网络。</p>
+<p>有人把两级 RC 换成 10 kΩ / 470 nF（转折频率和 1 kΩ / 4.7 µF 一样），信号幅度几乎不变，R1、R2、R3 和参考电压都没动。为了只看信号，这一题<strong>先把 Rn 拔掉</strong>（不加干扰）。图 36-p3-3 把两种网络并排画了出来：上图是原来的网络，下图是新网络。</p>
 <p><strong>先预测</strong>：计数会变吗？</p>
-<p><a class="img-link" href="img/36_p3_2_source_resistance.png"><img alt="上下两张：上图 1 kΩ / 4.7 µF 网络，比较器同相端的波形上下穿过两条门限，30 ms 里升 3 次；下图 10 kΩ / 470 nF 网络，同相端波形整体被往上抬，一直在下门限以上，30 ms 里一次也没升" src="img/36_p3_2_source_resistance.png" loading="lazy" /></a></p>
-<p><em>图 36-p3-2　回差电流约 10.6 µA：流过 20 kΩ 拉偏 212 mV，流过 2 kΩ 只拉偏 21 mV</em></p>
+<p><a class="img-link" href="img/36_p3_3_source_resistance.png"><img alt="上下两张：上图 1 kΩ / 4.7 µF 网络，比较器同相端的波形上下穿过两条门限，30 ms 里升 3 次；下图 10 kΩ / 470 nF 网络，同相端波形整体被往上抬，一直在下门限以上，30 ms 里一次也没升" src="img/36_p3_3_source_resistance.png" loading="lazy" /></a></p>
+<p><em>图 36-p3-3　回差电流约 10.6 µA：流过 20 kΩ 拉偏 212 mV，流过 2 kΩ 只拉偏 21 mV</em></p>
 <details>
 <summary>揭晓</summary>
 <p>会，从 100 个变成 <strong>0 个</strong>。原因在 R2 里流的那一点电流：输出为高时，约 10.6 µA 从输出经 R2、R1 流进 n2，这个电流还要流过信号源的内阻（两级 RC 的电阻），把 n2 往上抬：</p>
@@ -197,13 +201,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>倒数计数要等下一个边沿才能算出新的周期。水一停，就再也等不到边沿，屏幕会一直停在最后一个读数上。所以程序要加<strong>超时</strong>：超过一段时间没边沿，就报 0。超时取 2 秒，意味着低于 0.5 Hz 的流量会被当成 0。</p>
 <h2 id="五变体">五、变体</h2>
 <ul>
-<li><strong>霍尔传感器的涡轮流量计</strong>：很多小型水流传感器内部已经有霍尔元件和整形电路，输出本身就是开集电极方波。这时候不需要本节的 LM393，但<strong>上拉电阻仍然要接，而且只能接到 MCU 的电源</strong>；导线很长时，仍可以在 MCU 一侧加一级施密特整形。接法见图 36-p3-3。</li>
+<li><strong>霍尔传感器的涡轮流量计</strong>：很多小型水流传感器内部已经有霍尔元件和整形电路，输出本身就是开集电极方波。这时候不需要本节的 LM393，但<strong>上拉电阻仍然要接，而且只能接到 MCU 的电源</strong>；导线很长时，仍可以在 MCU 一侧加一级施密特整形。接法见图 36-p3-4。</li>
 </ul>
-<p><a class="img-link" href="img/36_p3_3_hall_variant.png"><img alt="原理图：左边一个方框是霍尔涡轮流量计，引出三根线；红线接传感器电源，标注按手册可能是 5 V 也可能是 5 到 24 V；黄线是信号，经 4.7 kΩ 上拉到 Arduino 的 5 V，再接到 D8；黑线接地，并和 Arduino 的 GND 相连" src="img/36_p3_3_hall_variant.png" loading="lazy" /></a></p>
-<p><em>图 36-p3-3　霍尔流量计直接接 Arduino：上拉只接 Arduino 5 V</em></p>
-<p><strong>对照看</strong>图 36-p3-3：红线只给传感器自己供电，电压按传感器手册来（有的 5 V，有的 5～24 V）；黄线是开集电极输出，经 4.7 kΩ 上拉到 <strong>Arduino 的 5 V</strong> 后进 D8，绝不能上拉到传感器的 12 V 或 24 V；黑线是地，必须和 Arduino 的 GND 连在一起。改接线时同样先断电，接好再接回电源。</p>
+<p><a class="img-link" href="img/36_p3_4_hall_variant.png"><img alt="原理图：左边一个方框是霍尔涡轮流量计，引出三根线；红线接传感器电源，标注按手册可能是 5 V 也可能是 5 到 24 V；黄线是信号，经 4.7 kΩ 上拉到 Arduino 的 5 V，再接到 D8；黑线接地，并和 Arduino 的 GND 相连" src="img/36_p3_4_hall_variant.png" loading="lazy" /></a></p>
+<p><em>图 36-p3-4　霍尔流量计直接接 Arduino：上拉只接 Arduino 5 V</em></p>
+<p><strong>对照看</strong>图 36-p3-4：红线只给传感器自己供电，电压按传感器手册来（有的 5 V，有的 5～24 V）；黄线是开集电极输出，经 4.7 kΩ 上拉到 <strong>Arduino 的 5 V</strong> 后进 D8，绝不能上拉到传感器的 12 V 或 24 V；黑线是地，必须和 Arduino 的 GND 连在一起。改接线时同样先断电，接好再接回电源。</p>
 <ul>
-<li><strong>MCU 内部比较器</strong>：ATmega328P 自带一个模拟比较器，可以省掉 LM393；但它本身不带回差，要靠外部电阻或软件去补，入口电压也只能在 MCU 的电源以内。它的接法和图 36-p3-3 不同：信号要经 R1、R2 这样的电阻网络接到 AIN0、AIN1 两个比较器引脚，本节不展开，只作了解。</li>
+<li><strong>MCU 内部比较器</strong>：ATmega328P 自带一个模拟比较器，可以省掉 LM393；但它本身不带回差，要靠外部电阻或软件去补，入口电压也只能在 MCU 的电源以内。它的接法和图 36-p3-4 不同：信号要经 R1、R2 这样的电阻网络接到 AIN0、AIN1 两个比较器引脚，本节不展开，只作了解。</li>
 <li><strong>数字回差</strong>：信号已经是方波、只是边沿有毛刺时，可以在程序里规定「一次边沿后 x 微秒内的边沿都不算」，这叫软件消抖。它不能代替模拟回差去处理慢慢变化的正弦。</li>
 </ul>
 <h2 id="六练习先预测再揭晓">六、练习：先预测，再揭晓</h2>

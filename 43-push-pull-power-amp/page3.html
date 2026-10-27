@@ -69,6 +69,13 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../19-emitter-follower/page3.html">19 射极跟随器 · 参数与调试篇</a>、<a href="../17-zener-regulator/page3.html">17 稳压管稳压 · 参数与调试篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a></p>
 <h2 id="参数一览">参数一览</h2>
 <p>原理与实现篇把电路搭了出来，这一页回答「每个元件取多大、改了会怎样、出了毛病怎么查」。表里的数字都来自 <code>spice/43/run.py</code> 的仿真或页面上的手算。</p>
+<p>表里提到的元件都在下面两张图上：图 43-p3-1 是完整电路，图 43-p3-2 是图中两个「恒流源」的内部。</p>
+<p><a class="img-link" href="img/43_p3_1_full_schem.png"><img alt="完整电路：左边信号源经 Cin 10 µF（正极朝 5 脚）接 TL072 B 的同相端（5 脚），同相端经 Rbias 100 kΩ 接中点参考 V_MID 6 V；反相端（6 脚）经 RG 10 kΩ 接 V_MID、经蓝绿色的 RF 20 kΩ 接 OUT；运放输出（7 脚）就是 m 点，夹在 D1、D2 两只 1N4148（贴在散热片上）之间；D1 上端由「恒流源 约 24 mA」从 +12 V 往下送电流，D2 下端由另一个约 24 mA 的恒流源把电流抽到地；两个基极各串 22 Ω 接 Q1 BD139 和 Q2 BD140 的 B；Q1 的 C 经电流表（10 A 插孔、A 档）接 +12 V，Q2 的 C 接真地；两管 E 各串 RE1、RE2 3.3 Ω 汇成 OUT；OUT 经 C_o 1000 µF / 25 V（正极接 OUT）接 R_L 8 Ω 到真地，OUT 到地还挂着 Rz 10 Ω + Cz 100 nF。左下是中点参考电路：+12 V 经 R1 10 kΩ、R2 10 kΩ 分压到地，分压点（6 V）并 Cd 10 µF（正极朝分压点）到地，并接 TL072 A 的 3 脚（+）；A 半的 1 脚（输出）和 2 脚（−）短接成跟随器，1 脚输出就是 V_MID，向上接到 Rbias、RG 下端的 V_MID 线；TL072 的 8 脚接 +12 V、4 脚接地。图下两行注：参数表里两只恒流源 = 偏置电流，22 Ω = 基极阻尼电阻，RE1、RE2 = 发射极电阻 R_E，Rz + Cz = Zobel 网络；排错表里喇叭经 C_o 回到真地、不接 V_MID，C_o 正极接 OUT，静态电流看 RE1 两端的 mV（÷ 3.3 Ω）" src="img/43_p3_1_full_schem.png" loading="lazy" /></a></p>
+<p><em>图 43-p3-1　参数篇对照用的完整电路（TL072 A 标 1、2、3、4、8 脚，B 标 5、6、7 脚，Q1、Q2 标 B、C、E）</em></p>
+<p><strong>对照看</strong>：表里的「基极阻尼电阻 22 Ω」是 b1、b2 到 Q1、Q2 基极的两只小电阻，实物要焊在基极脚上。「发射极电阻 <span class="math math-inline">\(R_E\)</span> 」是 RE1、RE2，量 RE1 两端的 mV 再除以 3.3 Ω 就是静止电流 <span class="math math-inline">\(I_q\)</span> ，33 mA 时约 109 mV。「输出电容 <span class="math math-inline">\(C_o\)</span> 」的正极朝 OUT，因为 OUT 静止时是 6 V，喇叭那端是 0 V；输入的 Cin 也一样，正极朝 5 脚（6 V），负极朝信号源（0 V）。排错表里的「 <span class="math math-inline">\(V_{MID}\)</span> 」来自图左下的 TL072 A 跟随器：R1、R2 各 10 kΩ 分压，Cd 10 µF 滤波，3 脚进、1 脚出，1 脚和 2 脚短接。「Zobel 网络」是 OUT 到地的 Rz + Cz。排错表第一行说的&quot;喇叭回线接到了 <span class="math math-inline">\(V_{MID}\)</span>&quot;，在图上就是把 <span class="math math-inline">\(R_L\)</span> 下端从真地改接到左下角那条绿色的 <span class="math math-inline">\(V_{MID}\)</span> 线，这是错的。</p>
+<p><a class="img-link" href="img/43_p3_2_ccs.png"><img alt="恒流源内部原理图：上面 +12 V 经 D5、D6 两只二极管到 Q3 BD140 的基极 B，基极再经 Rk3 4.7 kΩ 接地；+12 V 经 Rx3 27 Ω 到 Q3 的发射极 E，Q3 的集电极 C 向下就是 b1 点（→ 22 Ω → Q1 基极），往下经 D1 到 m 点（← 运放输出），再经 D2 到 b2 点（→ 22 Ω → Q2 基极）；b2 接 Q4 BD139 的集电极 C，Q4 的发射极 E 经 Rx4 27 Ω 接地；Q4 的基极 B 经 Rk4 4.7 kΩ 接 +12 V，再经 D7、D8 接地。右侧蓝字：上恒流源 D5 + D6 把 Q3 基极钉在 +12 V 下面约 1.30 V，Rx3 两端约 0.64 V，电流约 23.7 mA；下恒流源是镜像，约 23.6 mA。图下两行注：参数表的恒流源 R_X 就是 Rx3、Rx4（各 27 Ω），电流约 0.64 V ÷ R_X，改成 33 Ω 约 19 mA，低于 22 mA 的要求；排错表里量 Rx3、Rx4 两端应约 0.64 V，为 0 先查 Q3、Q4 的 E、C、B 有没有插错，再查 D5～D8 的方向" src="img/43_p3_2_ccs.png" loading="lazy" /></a></p>
+<p><em>图 43-p3-2　参数篇对照用的恒流源内部（Q3、Q4 标 B、C、E）</em></p>
+<p><strong>对照看</strong>：表里「恒流源 <span class="math math-inline">\(R_X\)</span> 」那一行就是 Rx3 和 Rx4。D5 + D6 两端约 1.30 V，减去 Q3 发射结的约 0.65 V，Rx3 上剩约 0.64 V，所以电流 ≈ 0.64 V ÷ 27 Ω ≈ 23.7 mA。下面的 Q4、D7、D8、Rx4 是上下镜像。排错表「两边不对称」那一行要量的就是 Rx3、Rx4 两端：BD139 / BD140 正面朝自己时管脚从左到右是 E、C、B，插错一只，那一路的电流就是 0。</p>
 <table>
 <thead>
 <tr>
@@ -155,10 +162,10 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><em>图 43-p3-3　偏置方式对比：最差管子配 470 Ω 时输出卡在约 1.64 V</em></p>
 <p>看图 43-p3-3 的中间一组：最差管子配 470 Ω，不管输入多大，负载峰值都只有 1.64 V，运放输出电流顶在约 20.6 mA，已经被拽到极限。换成恒流源（右边一组），同样的最差管子能推到 2.89 V，运放只出 12.8 mA。这就是本节不用 470 Ω、改用恒流源的原因。</p>
 <h2 id="二发射极电阻-r_e-取多大">二、发射极电阻 <span class="math math-inline">\(R_E\)</span> 取多大</h2>
-<p>管子比二极管热，相当于偏置电压「多出来」一些（每热 1 °C 约多 2 mV）。图 43-p3-1 用 SPICE 在偏置里人为多加 20、80、160 mV，看静止电流怎么变。</p>
-<p><a class="img-link" href="img/43_p3_1_iq_mismatch.png"><img alt="静止电流对偏置失配的柱状图：横轴失配 0、20、80、160 mV，黄色柱是本节 R_E 3.3 Ω，电流依次为 33、35、42、52 mA；橙色柱是 R_E 1 Ω，依次为 76、82、101、128 mA；一条 50 mA 虚线标注实验里超过就断电" src="img/43_p3_1_iq_mismatch.png" loading="lazy" /></a></p>
-<p><em>图 43-p3-1　发射极电阻越大，静止电流越不怕失配</em></p>
-<p>从图 43-p3-1 读出：失配 80 mV 时，3.3 Ω 的静止电流从 33.0 涨到 42.3 mA（多 28.4%），1 Ω 从 75.8 涨到 101 mA（多 33.5%）。1 Ω 不光涨得多，起点也高一倍多。80 mV 大约相当于管子比二极管热 40 °C（按每度 2 mV 估算）。所以本节两手都要：</p>
+<p>管子比二极管热，相当于偏置电压「多出来」一些（每热 1 °C 约多 2 mV）。图 43-p3-4 用 SPICE 在偏置里人为多加 20、80、160 mV，看静止电流怎么变。</p>
+<p><a class="img-link" href="img/43_p3_4_iq_mismatch.png"><img alt="静止电流对偏置失配的柱状图：横轴失配 0、20、80、160 mV，黄色柱是本节 R_E 3.3 Ω，电流依次为 33、35、42、52 mA；橙色柱是 R_E 1 Ω，依次为 76、82、101、128 mA；一条 50 mA 虚线标注实验里超过就断电" src="img/43_p3_4_iq_mismatch.png" loading="lazy" /></a></p>
+<p><em>图 43-p3-4　发射极电阻越大，静止电流越不怕失配</em></p>
+<p>从图 43-p3-4 读出：失配 80 mV 时，3.3 Ω 的静止电流从 33.0 涨到 42.3 mA（多 28.4%），1 Ω 从 75.8 涨到 101 mA（多 33.5%）。1 Ω 不光涨得多，起点也高一倍多。80 mV 大约相当于管子比二极管热 40 °C（按每度 2 mV 估算）。所以本节两手都要：</p>
 <ol>
 <li><span class="math math-inline">\(R_E\)</span> 用 3.3 Ω，刹车更有力；</li>
 <li>二极管贴在散热片上（热耦合），让「多出来」的那部分本来就小。</li>
@@ -169,19 +176,19 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><strong>最小补充：THD（总谐波失真）</strong></p>
 <p>一个被「压扁」的正弦，可以拆成原来频率的正弦（基波）加上 2 倍、3 倍……频率的小正弦（谐波）。THD 就是「所有谐波加起来的大小 ÷ 基波的大小」，用百分数表示。0.1% 以下人耳一般已经很难分辨；交越失真的谐波集中在高次，听感更刺耳。</p>
 </blockquote>
-<p>图 43-p3-2 是 SPICE 在 1 kHz、负载峰值约 2 V 时算的四个 THD。</p>
-<p><a class="img-link" href="img/43_p3_2_thd_bars.png"><img alt="四种接法的总谐波失真柱状图，纵轴对数刻度：乙类开环 20.96%，甲乙类开环 1.837%，乙类放进反馈环 0.0708%，甲乙类放进反馈环 0.00855%" src="img/43_p3_2_thd_bars.png" loading="lazy" /></a></p>
-<p><em>图 43-p3-2　四种接法的失真度：偏置和反馈环各降一大截</em></p>
-<p>图 43-p3-2 告诉我们两件事：</p>
+<p>图 43-p3-5 是 SPICE 在 1 kHz、负载峰值约 2 V 时算的四个 THD。</p>
+<p><a class="img-link" href="img/43_p3_5_thd_bars.png"><img alt="四种接法的总谐波失真柱状图，纵轴对数刻度：乙类开环 20.96%，甲乙类开环 1.837%，乙类放进反馈环 0.0708%，甲乙类放进反馈环 0.00855%" src="img/43_p3_5_thd_bars.png" loading="lazy" /></a></p>
+<p><em>图 43-p3-5　四种接法的失真度：偏置和反馈环各降一大截</em></p>
+<p>图 43-p3-5 告诉我们两件事：</p>
 <ul>
 <li><strong>偏置</strong>把开环失真从约 21% 降到 1.84%；</li>
 <li><strong>反馈环</strong>再把它降到约 0.0086%。两样都做，才是本节的甲乙类加反馈环。</li>
 </ul>
 <h3 id="只靠反馈环的乙类高频会露馅">只靠反馈环的乙类，高频会露馅</h3>
 <p>乙类放进环里，1 kHz 时 THD 只有 0.071%，看起来已经很好。可是到了 10 kHz，SPICE 算出 THD 约 0.70%，大了约十倍。</p>
-<p><a class="img-link" href="img/43_p3_4_10k_spike.png"><img alt="10 kHz 乙类放进反馈环时的误差波形：橙色误差曲线等于负载电压减 3 倍输入，大部分时间在正负 0.03 V 以内缓慢变化，但每次过零时出现一个约 0.18 V 的尖刺；淡黄色是负载电压，峰值约 2 V，过零处可以看到一个小台阶" src="img/43_p3_4_10k_spike.png" loading="lazy" /></a></p>
-<p><em>图 43-p3-4　10 kHz 乙类环内：每次过零都有一个尖刺</em></p>
-<p>图 43-p3-4 里的尖刺就是死区留下的痕迹：过零时运放要在极短时间里把输出跳过约 1.2 V 的「两个 <span class="math math-inline">\(V_{BE}\)</span> 」，频率越高，留给它跳的时间越短，跳不过去的部分就漏到输出上。误差最大约 185 mV（SPICE），其中尖刺之外的慢变化部分是环路在 10 kHz 的相位滞后。结论：反馈环能补救，但不能替代偏置。图 43-p3-4 也说明为什么听感上乙类的「沙沙」声在高音更明显。</p>
+<p><a class="img-link" href="img/43_p3_6_10k_spike.png"><img alt="10 kHz 乙类放进反馈环时的误差波形：橙色误差曲线等于负载电压减 3 倍输入，大部分时间在正负 0.03 V 以内缓慢变化，但每次过零时出现一个约 0.18 V 的尖刺；淡黄色是负载电压，峰值约 2 V，过零处可以看到一个小台阶" src="img/43_p3_6_10k_spike.png" loading="lazy" /></a></p>
+<p><em>图 43-p3-6　10 kHz 乙类环内：每次过零都有一个尖刺</em></p>
+<p>图 43-p3-6 里的尖刺就是死区留下的痕迹：过零时运放要在极短时间里把输出跳过约 1.2 V 的「两个 <span class="math math-inline">\(V_{BE}\)</span> 」，频率越高，留给它跳的时间越短，跳不过去的部分就漏到输出上。误差最大约 185 mV（SPICE），其中尖刺之外的慢变化部分是环路在 10 kHz 的相位滞后。结论：反馈环能补救，但不能替代偏置。图 43-p3-6 也说明为什么听感上乙类的「沙沙」声在高音更明显。</p>
 <h2 id="排错表">排错表</h2>
 <table>
 <thead>
