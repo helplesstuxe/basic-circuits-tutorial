@@ -1,0 +1,24 @@
+* 40 PT100 电桥 + 仪表放大器（page2 §四「工业版：PT100 电桥 + 仪表放大器」）
+* 2.5 V 激励，上臂两只 2.4 kΩ，参考臂下臂 100 Ω（= PT100 的 0 °C 值），PT100 用 CVD 公式（SBAA275A 系数）换算阻值。
+* 仪表放大器用理想压控电压源 E（G = 100）代替：这里只核对电桥本身的输出与非线性，INA 的细节见 30 节。
+VEX ex 0 2.5
+R1 ex a 2400
+RT a 0 100
+R2 ex b 2400
+R3 b 0 100
+EINA o 0 a b 100
+.control
+foreach t 0 25 50 75 100
+  let tt = $t
+  let r = 100*(1+3.9083e-3*tt-5.775e-7*tt*tt)
+  alter RT = $&r
+  op
+  let vd = v(a)-v(b)
+  let vo = v(o)
+  let irt = v(a)/r
+  echo RES vd$t $&vd
+  echo RES vo$t $&vo
+  echo RES irt$t $&irt
+end
+.endc
+.end

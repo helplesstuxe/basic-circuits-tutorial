@@ -1,0 +1,52 @@
+* 35 程控增益 第 0 档（X0，R_g=100000 Ω，输入 1.0 V）：LM358 单 5 V 同相放大，R_f 100k
+* CD4051 的 COM 接反相端，通道 X_k 经 R_g 接地 —— 开关的导通电阻 R_on 与 R_g 串联（与面包板接法一致）
+* s：R_on=470 Ω（CD4051B 手册 VDD=5 V 典型值）；n：理想开关；h：R_on=125 Ω（VDD=15 V 典型值）；w：R_on=1050 Ω（VDD=5 V 最大值，最坏情况）
+* 复核：page2 §二 档位表、page4 §六 测量表（① 输出、② 反相端、③ 通道脚）
+* （这一档直接 op 不收敛，改为 0→1 V 直流扫描取末点）
+.include ../models/LMx58_LM2904.lib
+VCC vcc 0 5
+VI i 0 1.0
+Xs i ms vcc 0 os LMX58_LM2904
+RFs os ms 100k
+RONs ms xs 470
+RGs xs 0 100000
+Xn i mn vcc 0 on LMX58_LM2904
+RFn on mn 100k
+RONn mn xn 0.001
+RGn xn 0 100000
+Xh i mh vcc 0 oh LMX58_LM2904
+RFh oh mh 100k
+RONh mh xh 125
+RGh xh 0 100000
+Xw i mw vcc 0 ow LMX58_LM2904
+RFw ow mw 100k
+RONw mw xw 1050
+RGw xw 0 100000
+.control
+dc VI 0 1.0 0.05
+let vos=v(os)[20]
+echo "RES vos $&vos"
+let vms=v(ms)[20]
+echo "RES vms $&vms"
+let vxs=v(xs)[20]
+echo "RES vxs $&vxs"
+let von=v(on)[20]
+echo "RES von $&von"
+let vmn=v(mn)[20]
+echo "RES vmn $&vmn"
+let vxn=v(xn)[20]
+echo "RES vxn $&vxn"
+let voh=v(oh)[20]
+echo "RES voh $&voh"
+let vmh=v(mh)[20]
+echo "RES vmh $&vmh"
+let vxh=v(xh)[20]
+echo "RES vxh $&vxh"
+let vow=v(ow)[20]
+echo "RES vow $&vow"
+let vmw=v(mw)[20]
+echo "RES vmw $&vmw"
+let vxw=v(xw)[20]
+echo "RES vxw $&vxw"
+.endc
+.end

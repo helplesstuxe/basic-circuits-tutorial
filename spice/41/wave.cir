@@ -1,0 +1,36 @@
+* 41 波形（仅供作图 41-p3-5）：在 0.5 s 时设定从“4 mA”改成“20 mA”，两种滤波并排仿真：
+*  ① 本节方案 12k/10k 分压 + 10 µF：analogWrite 45 → 224（占空 45/255 → 224/255）
+*  ② 原方案 10k + 10 µF、不分压：占空 0.08 → 0.40（同样是 0.4 V → 2.0 V）
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+VCC vcc 0 PWL(0 0 1m 12)
+VPA pa 0 PULSE(0 5 0 1u 1u 0.36e-3 2.04e-3)
+VPB pb 0 PULSE(0 5 0 1u 1u 1.792e-3 2.04e-3)
+VQA qa 0 PULSE(0 5 0 1u 1u 0.1632e-3 2.04e-3)
+VQB qb 0 PULSE(0 5 0 1u 1u 0.816e-3 2.04e-3)
+BP1 p1 0 V=time<0.5 ? v(pa) : v(pb)
+BP2 p2 0 V=time<0.5 ? v(qa) : v(qb)
+R1 p1 s1 12k
+R2 s1 0 10k
+C1 s1 0 10u
+XU1 s1 e1 vcc 0 o1 LMX58_LM2904
+RB1 o1 b1 1k
+Q1 c1 b1 e1 Q2n3904
+RS1 e1 0 100
+RRX1 vcc c1 250
+R3 p2 s2 10k
+C2 s2 0 10u
+XU2 s2 e2 vcc 0 o2 LMX58_LM2904
+RB2 o2 b2 1k
+Q2 c2 b2 e2 Q2n3904
+RS2 e2 0 100
+RRX2 vcc c2 250
+.control
+tran 50u 1.2 0 50u uic
+let i1 = (v(vcc)-v(c1))/250
+let i2 = (v(vcc)-v(c2))/250
+meas tran a1 avg i1 from=1.1 to=1.2
+meas tran a2 avg i2 from=1.1 to=1.2
+echo "RES wave a1=$&a1 a2=$&a2"
+.endc
+.end

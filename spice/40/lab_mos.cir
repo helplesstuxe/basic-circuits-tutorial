@@ -1,0 +1,37 @@
+* 40 实验加热回路（page4 §搭建步骤、测量表 ①～④；page2 §二）
+* +9 V → 加热电阻 RH 560 Ω → IRLZ44N 漏极；源极接地；Arduino D9（0/5 V）经 100 Ω 到栅极，栅极 100 kΩ 下拉。
+* 先做直流工作点（D9 = 5 V 常开），再用 490 Hz、50 % 占空的 PWM 看平均功率。
+* 另外两只 10 kΩ NTC 分压：上臂 10 kΩ 接 5 V，NTC 接地；25 °C 时 NTC = 10 000 Ω，45 °C 时 4372 Ω（Vishay NTCLE100E3103 表）。
+.include ../models/IRLZ44N_infineon.lib
+VDD vdd 0 9
+RH vdd d 560
+X1 d g 0 irlz44n
+RGT pin g 100
+RPD g 0 100k
+VPIN pin 0 PULSE(0 5 0 50n 50n 1.0204m 2.0408m)
+V5 v5 0 5
+RS1 v5 n1 10k
+RN25 n1 0 10000
+RS2 v5 n2 10k
+RN45 n2 0 4372
+.control
+alter VPIN dc = 5
+op
+let id = -i(VDD)
+let ph = (v(vdd)-v(d))*id
+let pm = v(d)*id
+echo RES id $&id
+echo RES vds $&v(d)
+echo RES ph $&ph
+echo RES pm $&pm
+echo RES vn25 $&v(n1)
+echo RES vn45 $&v(n2)
+tran 1u 20.408m 10.204m 1u
+let pht = (v(vdd)-v(d))*(-i(VDD))
+let pmt = v(d)*(-i(VDD))
+meas tran PHAVG avg pht from=10.204m to=20.408m
+meas tran PMAVG avg pmt from=10.204m to=20.408m
+echo RES phavg $&PHAVG
+echo RES pmavg $&PMAVG
+.endc
+.end

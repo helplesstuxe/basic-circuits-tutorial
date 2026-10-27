@@ -1,0 +1,55 @@
+* 41 带载能力（compliance）扫描：R_x 从 1 Ω 慢慢加到 700 Ω（0.5 s 内线性增加，远慢于回路的微秒级响应 → 每一刻都等于直流工作点），
+* 三份相同的发送器分别设定 12 / 20 / 21 mA（V_SET = 1.2 / 2.0 / 2.1 V）。读回路电流、A0 侧发射极电流、余量 V_out − V_E、晶体管功耗。
+* 用于图 41-p3-1、41-p3-2；spice/41/run.py 用 R_x = 470 Ω 处的值和 vi_dc.cir 对照。
+* R_x(t) = 1 Ω + (t − 5 ms) × 1400 Ω/s：R_x = 470 Ω 在 t = 0.340357 s，220 Ω 在 t = 0.161786 s。
+* R_x 用行为电流源 I = V/R 实现（R 由节点 rxv 的电压给出，单位 Ω）。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+VCC vcc 0 PWL(0 0 1m 12)
+VRX rxv 0 PWL(0 1 5m 1 505m 701)
+* --- 12 mA ---
+VSA sa 0 1.2
+BRXA vcc ta I=V(vcc,ta)/V(rxv)
+RRXA ta ca 250
+XUA sa ea vcc 0 oa LMX58_LM2904
+RBA oa ba 1k
+QA ca ba ea Q2n3904
+RSA ea 0 100
+* --- 20 mA ---
+VSB sb 0 2.0
+BRXB vcc tb I=V(vcc,tb)/V(rxv)
+RRXB tb cb 250
+XUB sb eb vcc 0 ob LMX58_LM2904
+RBB ob bb 1k
+QB cb bb eb Q2n3904
+RSB eb 0 100
+* --- 21 mA ---
+VSC sc 0 2.1
+BRXC vcc tc I=V(vcc,tc)/V(rxv)
+RRXC tc cc 250
+XUC sc ec vcc 0 oc LMX58_LM2904
+RBC oc bc 1k
+QC cc bc ec Q2n3904
+RSC ec 0 100
+.options method=gear
+.control
+tran 50u 0.51 0 50u
+let rx = v(rxv)
+let ila = (v(ta)-v(ca))/250
+let ilb = (v(tb)-v(cb))/250
+let ilc = (v(tc)-v(cc))/250
+let iea = v(ea)/100
+let ieb = v(eb)/100
+let iec = v(ec)/100
+let hda = v(oa)-v(ea)
+let hdb = v(ob)-v(eb)
+let hdc = v(oc)-v(ec)
+let pqb = (v(cb)-v(eb))*ilb + (v(bb)-v(eb))*(v(ob)-v(bb))/1k
+meas tran ib470 find ilb at=0.3403571429
+meas tran eb470 find ieb at=0.3403571429
+meas tran hb470 find hdb at=0.3403571429
+meas tran ic220 find ilc at=0.1617857143
+meas tran hc220 find hdc at=0.1617857143
+echo "RES sweep ib470=$&ib470 eb470=$&eb470 hb470=$&hb470 ic220=$&ic220 hc220=$&hc220"
+.endc
+.end

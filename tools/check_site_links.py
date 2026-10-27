@@ -8,7 +8,9 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SITE = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else os.path.join(ROOT, "_site"))
-REPO_PREFIX = re.compile(r"^https://github\.com/[^/]+/[^/]+/(blob|tree)/[^/]+/(.*)$")
+# 只认本仓库的 blob/tree 链接（build_site.py 把非 .md 的仓库内链接改写成这种形式）；别人仓库的 GitHub 链接按外链处理
+REPO = os.environ.get("GITHUB_REPOSITORY", "helplesstuxe/basic-circuits-tutorial")
+REPO_PREFIX = re.compile(r"^https://github\.com/" + re.escape(REPO) + r"/(blob|tree)/[^/]+/(.*)$")
 
 
 class P(HTMLParser):

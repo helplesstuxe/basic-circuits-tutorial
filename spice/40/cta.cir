@@ -1,0 +1,63 @@
+* 40 恒温差（CTA）与恒流（CP）热膜的电热联合仿真（page3 §五「工业模拟 CTA」）
+* 热量 ↔ 电流、温升 ↔ 电压、热容 ↔ 电容（1 F 代表 1 J/K）。环境 20 °C，节点电压 = 温升 θ（K）。
+* 传感器（假设的小热膜）：R = 20 Ω·(1 + 0.00385·θ)，热容 2e-4 J/K，静止空气热导 2 mW/K，
+* 风速 v（m/s）时热导 G = 2 mW/K·(1 + v^0.45)（King 定律形式，n = 0.45 在 METU AE547 热线讲义给出的 0.45～0.5 范围内）。
+* CTA：运放（A0 = 1e4、单极点 100 Hz、输出 0～12 V、1 mV 起振失调）驱动电桥顶端，平衡点 θ = 30 K。
+* CP：另一只相同传感器，恒流 51.86 mA（静止空气时也正好 θ ≈ 30 K）。
+* 风速：0 → 2 m/s（0.5 s）→ 1 m/s（1.0 s）→ 0（1.5 s），每次 50 µs 过渡。
+.param R20=20 ALPHA=0.00385 CTH=2e-4 G0=2e-3
+VVEL vel 0 PWL(0 0 0.5 0 0.50005 2 1.0 2 1.00005 1 1.5 1 1.50005 0 2.0 0)
+* ---- CTA 传感器 ----
+CTH1 th1 0 {CTH}
+BG1 th1 0 I = {G0}*(1+pow(max(v(vel),0),0.45))*v(th1)
+BP1 0 th1 I = v(s1)*v(s1)/({R20}*(1+{ALPHA}*v(th1)))
+BS1 s1 0 I = v(s1)/({R20}*(1+{ALPHA}*v(th1)))
+RA top s1 20
+RB top r1 200
+RC r1 0 223.1
+* 运放：跨导 1 S 进 10 kΩ‖159 nF（A0 = 1e4，极点 100 Hz），再限幅 0～12 V
+GOP 0 x r1 s1 1
+VOS x0 0 1e-3
+GOS 0 x x0 0 1
+RX x 0 1e4
+CX x 0 159n
+BTOP top 0 V = max(0, min(12, v(x)))
+* ---- CP 传感器 ----
+CTH2 th2 0 {CTH}
+BG2 th2 0 I = {G0}*(1+pow(max(v(vel),0),0.45))*v(th2)
+BP2 0 th2 I = 51.86e-3*51.86e-3*{R20}*(1+{ALPHA}*v(th2))
+.ic v(th1)=30 v(th2)=30 v(x)=5
+.control
+tran 5u 2.0 0 5u uic
+let p1 = v(top)*v(top)
+meas tran VB0 avg v(top) from=0.40 to=0.49
+meas tran VB2 avg v(top) from=0.90 to=0.99
+meas tran VB1 avg v(top) from=1.40 to=1.49
+meas tran TH1A avg v(th1) from=0.40 to=0.49
+meas tran TH1B avg v(th1) from=0.90 to=0.99
+meas tran TH2A avg v(th2) from=0.40 to=0.49
+meas tran TH2B avg v(th2) from=0.90 to=0.99
+* 63 % 响应时间：CTA 看 V_top，CP 看 θ
+let vb63 = VB0 + 0.632*(VB2-VB0)
+let th63 = TH2A + 0.632*(TH2B-TH2A)
+meas tran TCTA when v(top)=vb63 rise=1 from=0.5
+meas tran TCP when v(th2)=th63 fall=1 from=0.5
+let tcta = TCTA - 0.5
+let tcp = TCP - 0.5
+meas tran VBMAX max v(top) from=0.9 to=0.99
+meas tran VBMIN min v(top) from=0.9 to=0.99
+let rip = VBMAX-VBMIN
+echo RES vbrip $&rip
+meas tran TH1MIN min v(th1) from=0.5 to=0.6
+echo RES th1min $&TH1MIN
+echo RES vb0 $&VB0
+echo RES vb2 $&VB2
+echo RES vb1 $&VB1
+echo RES th1a $&TH1A
+echo RES th1b $&TH1B
+echo RES th2a $&TH2A
+echo RES th2b $&TH2B
+echo RES tcta $&tcta
+echo RES tcp $&tcp
+.endc
+.end

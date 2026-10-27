@@ -1,0 +1,40 @@
+* 41 坏例：“电流环要接地才有回路”——把 250 Ω 下端（集电极，第 24 列）用导线接到 0 V（page3「七」、page4 表 5）
+* 电路同 vi_dc.cir，只多一根 0.01 Ω 的“地线”RWG 从集电极 c 到 0。R_x = 470 Ω。
+* 设定 0.4 V（4 mA）、1.2 V（12 mA）和 2.0 V（20 mA），结果相同；run.py 核对 0.4 V 和 2.0 V。电源同样在 1 ms 内升到 12 V，读 4.5 ms 时的值。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+.param VS=2.0
+VCC vcc 0 PWL(0 0 1m 12)
+VSET set 0 {VS}
+XU set e vcc 0 out LMX58_LM2904
+RB out b 1k
+Q1 c b e Q2n3904
+RS e 0 100
+RRX top c 250
+RX vcc top 470
+RWG c 0 0.01
+RA0 e a0 10k
+RAD a0 0 1e9
+RD1 out a1 22k
+RD2 a1 0 10k
+.control
+foreach vs 0.4 1.2 2.0
+  alterparam VS = $vs
+  reset
+  tran 5u 5m 0 5u
+  meas tran m_vt find v(top) at=4.5m
+  meas tran m_vc find v(c) at=4.5m
+  meas tran m_ve find v(e) at=4.5m
+  meas tran m_vb find v(b) at=4.5m
+  meas tran m_vo find v(out) at=4.5m
+  let irx = (m_vt-m_vc)/250
+  let v250 = m_vt-m_vc
+  let ie = m_ve/100
+  let ib = (m_vo-m_vb)/1k
+  let p250 = irx*irx*250
+  let prx = irx*irx*470
+  let hd = m_vo-m_ve
+  echo "RES vs=$vs irx=$&irx v250=$&v250 ie=$&ie ib=$&ib vout=$&m_vo ve=$&m_ve vc=$&m_vc hd=$&hd p250=$&p250 prx=$&prx"
+end
+.endc
+.end

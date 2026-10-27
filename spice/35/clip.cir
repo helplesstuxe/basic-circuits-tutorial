@@ -1,0 +1,17 @@
+* 35 LM358 单 5 V 供电输出上限：G≈2 档（R_f 100k、R_g 100k+470），输入 0→2.5 V 扫描，负载 = Arduino ADC 输入（看成开路）
+.include ../models/LMx58_LM2904.lib
+VCC vcc 0 5
+VI i 0 0
+X1 i m vcc 0 o LMX58_LM2904
+RF o m 100k
+RG m x 100k
+RON x 0 470
+.control
+dc VI 0 2.5 0.01
+meas dc vmax max v(o)
+echo "RES vmax $&vmax"
+let d = v(o) - 1.99532*v(i)
+meas dc vknee when d=-0.05 fall=1
+echo "RES vknee $&vknee"
+.endc
+.end

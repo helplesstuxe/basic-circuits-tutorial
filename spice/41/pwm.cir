@@ -1,0 +1,58 @@
+* 41 设定电压：Arduino D9 的 PWM（约 490 Hz，0/5 V）→ 12k/10k 分压 + 10 µF → LM358 同相端，整条回路一起仿真
+* （page2 §四、page3 §三、page4 第 1 部分）。对照：不分压的 10k + 10 µF（原方案）。
+* 读：稳定后（1.0～1.2 s）设定电压与环路电流的纹波峰峰值、平均值；以及 （阶跃见 step.cir）。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+.param DUTY=0.5 RTOP=12k RBOT=10k
+.param T=2.04e-3
+VCC vcc 0 PWL(0 0 1m 12)
+VP pwm 0 PULSE(0 5 0 1u 1u {DUTY*T} {T})
+R1 pwm set {RTOP}
+R2 set 0 {RBOT}
+C1 set 0 10u
+XU set e vcc 0 out LMX58_LM2904
+RB out b 1k
+Q1 c b e Q2n3904
+RS e 0 100
+RRX vcc c 250
+.control
+* 12k/10k：analogWrite 45 / 135 / 224 → 占空 45/255、135/255、224/255
+set tag = div12k
+alterparam RTOP = 12k
+alterparam RBOT = 10k
+foreach d 0.176471 0.529412 0.878431
+  alterparam DUTY = $d
+  reset
+  tran 20u 1.2 0 20u uic
+  meas tran vmax max v(set) from=1.0 to=1.2
+  meas tran vmin min v(set) from=1.0 to=1.2
+  meas tran vavg avg v(set) from=1.0 to=1.2
+  let irx = (v(vcc)-v(c))/250
+  meas tran imax max irx from=1.0 to=1.2
+  meas tran imin min irx from=1.0 to=1.2
+  meas tran iavg avg irx from=1.0 to=1.2
+  let vpp = vmax-vmin
+  let ipp = imax-imin
+  echo "RES cfg=$tag d=$d vavg=$&vavg vpp=$&vpp iavg=$&iavg ipp=$&ipp"
+end
+* 原方案：10k + 10 µF、不分压（RBOT 取 1 TΩ 当开路），Vset = 0.4/1.2/2.0 V → 占空 0.08/0.24/0.40
+set tag = r10k
+alterparam RTOP = 10k
+alterparam RBOT = 1e12
+foreach d 0.08 0.24 0.40
+  alterparam DUTY = $d
+  reset
+  tran 20u 1.2 0 20u uic
+  meas tran vmax max v(set) from=1.0 to=1.2
+  meas tran vmin min v(set) from=1.0 to=1.2
+  meas tran vavg avg v(set) from=1.0 to=1.2
+  let irx = (v(vcc)-v(c))/250
+  meas tran imax max irx from=1.0 to=1.2
+  meas tran imin min irx from=1.0 to=1.2
+  meas tran iavg avg irx from=1.0 to=1.2
+  let vpp = vmax-vmin
+  let ipp = imax-imin
+  echo "RES cfg=$tag d=$d vavg=$&vavg vpp=$&vpp iavg=$&iavg ipp=$&ipp"
+end
+.endc
+.end

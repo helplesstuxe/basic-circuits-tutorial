@@ -1,0 +1,33 @@
+* 41 同一电路把 2N3904 换成 2N7000（MOSFET，栅极不取电流 → 没有 β 误差）（page3 §一、常见误区）
+* 2N7000 的 S-G-D 与 2N3904 的 E-B-C 脚位一一对应（TO-92 平面朝自己时从左到右），可以原位替换。
+* 其余同 vi_dc.cir：12 V → R_x → 250 Ω → 漏极；源极 → 100 Ω → 地；LM358 输出经 1 kΩ 接栅极。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N7000_onsemi.lib
+.param VS=1.2 RXV=0.001
+VCC vcc 0 PWL(0 0 1m 12)
+VSET set 0 {VS}
+XU set e vcc 0 out LMX58_LM2904
+RB out g 1k
+XQ d g e 2n7000
+RS e 0 100
+RRX top d 250
+RX vcc top {RXV}
+.control
+foreach rx 0.001 220 470
+  foreach vs 0.4 1.2 2.0
+    alterparam RXV = $rx
+    alterparam VS = $vs
+    reset
+    tran 5u 5m 0 5u
+    meas tran m_vt find v(top) at=4.5m
+    meas tran m_vd find v(d) at=4.5m
+    meas tran m_ve find v(e) at=4.5m
+    meas tran m_vo find v(out) at=4.5m
+    let irx = (m_vt-m_vd)/250
+    let ie = m_ve/100
+    let hd = m_vo-m_ve
+    echo "RES rx=$rx vs=$vs irx=$&irx ie=$&ie vout=$&m_vo hd=$&hd"
+  end
+end
+.endc
+.end

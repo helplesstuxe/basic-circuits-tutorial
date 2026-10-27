@@ -3526,6 +3526,23 @@ def node_30():
         getattr(m, f)()
 
 
+def _part2_node(nn, funcs):
+    """第二部分节点的 page4 原理图画在各自的 code/figs/NN_figs.py 里，这里只登记转调入口，保持「lab_schem.py NN」可重画。"""
+    def run():
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(f"figs{nn}", os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{nn}_figs.py"))
+        m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+        for f in funcs:
+            getattr(m, f)()
+    run.__name__ = f"node_{nn}"
+    return run
+
+
+node_35 = _part2_node("35", ("p4_2_schem_lab", "p4_3_ac_inject"))
+node_40 = _part2_node("40", ("p4_2_schem_lab", "p4_4_schem_lab"))
+node_41 = _part2_node("41", ("p4_2_schem_lab",))
+
+
 # ---------------- 登记表：键 = 节点编号（与 save_schem 的 prefix 相同） ----------------
 NODES = {
     "01": node_01,
@@ -3558,6 +3575,9 @@ NODES = {
     "26": node_26,
     "29": node_29,
     "30": node_30,   # 第二部分：转调 code/figs/30_figs.py
+    "35": node_35,   # 转调 code/figs/35_figs.py
+    "40": node_40,   # 转调 code/figs/40_figs.py
+    "41": node_41,   # 转调 code/figs/41_figs.py
 }
 
 

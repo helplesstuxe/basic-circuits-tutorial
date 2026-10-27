@@ -1,0 +1,40 @@
+* 35 峰值检波：A = 单二极管（1N4148 + 1 µF + 100k）；B = 精密峰值检波（LM358 ±5 V，二极管在环内，跟随 C 点电压）
+* 输入 1 kHz 正弦，0–60 ms 峰值 1.0 V，60 ms 起降为 0.5 V（模拟信号突然变小）
+* 复核：page2 §四 图 35-p2-4 的保持值、压降、纹波与下降时间
+.include ../models/LMx58_LM2904.lib
+.include ../models/1N4148_nexperia.lib
+VP vp 0 5
+VN vn 0 -5
+B1 in 0 V = (time < 60m ? 1.0 : 0.5) * sin(2*3.14159265*1k*time)
+* A：单二极管
+XDA in pa 1N4148
+CA pa 0 1u
+RA pa 0 100k
+* B：精密
+XB in pb vp vn ob LMX58_LM2904
+RSB ob ob2 100
+XDB ob2 hb 1N4148
+CB hb 0 1u
+RB hb 0 100k
+RFB hb pb 1k
+.options method=gear
+.tran 10u 300m 0 10u
+.control
+run
+meas tran pa55 max v(pa) from=50m to=60m
+meas tran pb55 max v(hb) from=50m to=60m
+meas tran pbmin min v(hb) from=50m to=60m
+meas tran pamin min v(pa) from=50m to=60m
+meas tran pb_end max v(hb) from=290m to=300m
+meas tran pa_end max v(pa) from=290m to=300m
+meas tran tdecay when v(hb)=0.52 fall=1 from=60m
+let tdec = tdecay - 60m
+echo "RES pa55 $&pa55"
+echo "RES pb55 $&pb55"
+echo "RES pbmin $&pbmin"
+echo "RES pamin $&pamin"
+echo "RES pbend $&pb_end"
+echo "RES paend $&pa_end"
+echo "RES tdec $&tdec"
+.endc
+.end

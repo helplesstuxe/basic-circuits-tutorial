@@ -1,0 +1,44 @@
+* 41 V→I 发送器工作点（page2 §三、page3 §一～二、page4 预期读数表）
+* 12 V → R_x（串联的“导线/额外负载”）→ R_RX 250 Ω 接收电阻 → 2N3904 集电极；发射极 → R_S 100 Ω → 地。
+* LM358（A 半，TI 官方 LMx58/LM2904 模型）：同相端 = 设定电压 V_SET（实验里是 D9 的 PWM 经 12k/10k 分压 + 10 µF 滤波），
+* 反相端直接接发射极；输出经 R_B 1 kΩ 到基极。A0 经 10 kΩ 读发射极；运放输出经 22k/10k 分压给 A1。
+* 断线：R_x 改成 1 GΩ。该运放模型直接求直流工作点不收敛，所以同 spice/39：电源在 1 ms 内从 0 升到 12 V，读 4.5 ms 时的值。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+.param VS=1.2 RXV=0.001
+VCC vcc 0 PWL(0 0 1m 12)
+VSET set 0 {VS}
+XU set e vcc 0 out LMX58_LM2904
+RB out b 1k
+Q1 c b e Q2n3904
+RS e 0 100
+RRX top c 250
+RX vcc top {RXV}
+RA0 e a0 10k
+RAD a0 0 1e9
+RD1 out a1 22k
+RD2 a1 0 10k
+.control
+foreach rx 0.001 100 220 470 1e9
+  foreach vs 0.33868 0.4 1.2 2.0 2.1 2.27273 5.0
+    alterparam RXV = $rx
+    alterparam VS = $vs
+    reset
+    tran 5u 5m 0 5u
+    meas tran m_vt find v(top) at=4.5m
+    meas tran m_vc find v(c) at=4.5m
+    meas tran m_ve find v(e) at=4.5m
+    meas tran m_vb find v(b) at=4.5m
+    meas tran m_vo find v(out) at=4.5m
+    meas tran m_va1 find v(a1) at=4.5m
+    let irx = (m_vt-m_vc)/250
+    let ie = m_ve/100
+    let ib = (m_vo-m_vb)/1k
+    let vce = m_vc-m_ve
+    let hd = m_vo-m_ve
+    let pq = vce*irx + (m_vb-m_ve)*ib
+    echo "RES rx=$rx vs=$vs irx=$&irx ie=$&ie ib=$&ib vce=$&vce vout=$&m_vo va1=$&m_va1 hd=$&hd vc=$&m_vc pq=$&pq"
+  end
+end
+.endc
+.end

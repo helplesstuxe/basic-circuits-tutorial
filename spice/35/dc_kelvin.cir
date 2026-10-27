@@ -1,0 +1,41 @@
+* 35 抽头（开尔文）接法：梯形电阻 51k/30k/10k/5.1k/3k/1k/1k（自上而下），开关 470 Ω 串到反相端，选最底抽头
+* 复核：page2 §三 抽头接法“R_on 不进增益”、page3 练习；对照：串联接法 G≈69
+* w 电路 = 同一梯形电阻，开关取 1050 Ω（CD4051B VDD=5 V 最大值）
+* 另：z 电路 = 输入 0 V 时 G≈69 档的输出（看单电源下输出能多接近 0）
+.include ../models/LMx58_LM2904.lib
+VCC vcc 0 5
+VIK ik 0 0.02
+XK ik mk vcc 0 ok LMX58_LM2904
+RONK mk t1 470
+R7 ok t6 51k
+R6 t6 t5 30k
+R5 t5 t4 10k
+R4 t4 t3 5.1k
+R3 t3 t2 3k
+R2 t2 t1 1k
+R1 t1 0 1k
+XKW ik mkw vcc 0 okw LMX58_LM2904
+RONKW mkw w1 1050
+RW7 okw w6 51k
+RW6 w6 w5 30k
+RW5 w5 w4 10k
+RW4 w4 w3 5.1k
+RW3 w3 w2 3k
+RW2 w2 w1 1k
+RW1 w1 0 1k
+VIZ iz 0 0
+XZ iz mz vcc 0 oz LMX58_LM2904
+RFZ oz mz 100k
+RGZ mz xz 1k
+RONZ xz 0 470
+.control
+op
+echo "RES vok $&v(ok)"
+echo "RES vmk $&v(mk)"
+echo "RES vt1 $&v(t1)"
+echo "RES voz $&v(oz)"
+echo "RES vokw $&v(okw)"
+echo "RES vmkw $&v(mkw)"
+echo "RES vt1w $&v(w1)"
+.endc
+.end

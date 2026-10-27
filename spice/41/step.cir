@@ -1,0 +1,48 @@
+* 41 阶跃：analogWrite 从 45（4 mA）突然改成 224（20 mA），12k/10k + 10 µF，看环路电流多久到位（page3 §三）
+* 另：环路电流对设定电压的快速阶跃（理想源 0.4 V → 2.0 V，上升 1 µs）的响应，接收端并 0 / 100 nF（模拟长线 + B2 的滤波电容），看有没有振荡。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+.param CL=1p
+VCC vcc 0 PWL(0 0 1m 12)
+VP pwm 0 PULSE(0 5 0 1u 1u 0.36e-3 2.04e-3)
+BSW pw2 0 V=time<0.5 ? v(pwm) : (v(pwm2))
+VP2 pwm2 0 PULSE(0 5 0 1u 1u 1.792e-3 2.04e-3)
+R1 pw2 set 12k
+R2 set 0 10k
+C1 set 0 10u
+XU set e vcc 0 out LMX58_LM2904
+RB out b 1k
+Q1 c b e Q2n3904
+RS e 0 100
+RRX vcc c 250
+* 第二个电路：理想阶跃驱动，看小时间尺度
+VS2 set2 0 PULSE(0.4 2.0 1m 1u 1u 1 2)
+XU2 set2 e2 vcc 0 out2 LMX58_LM2904
+RB2 out2 b2 1k
+Q2 c2 b2 e2 Q2n3904
+RS2 e2 0 100
+RRX2 vcc c2 250
+CL2 c2 0 {CL}
+.control
+tran 50u 1.2 0 50u uic
+let irx = (v(vcc)-v(c))/250
+meas tran i0 avg irx from=0.4 to=0.5
+meas tran i1 avg irx from=1.1 to=1.2
+let i99 = i0 + 0.99*(i1-i0)
+meas tran t99 when irx=i99 rise=1 from=0.5
+let ts = t99-0.5
+echo "RES pwmstep i0=$&i0 i1=$&i1 t99=$&ts"
+foreach cl 1p 100n
+  alterparam CL = $cl
+  reset
+  tran 0.05u 1.2m 0 0.05u
+  let i2 = (v(vcc)-v(c2))/250
+  meas tran ipk max i2 from=1.0m to=1.2m
+  meas tran ifin avg i2 from=1.15m to=1.2m
+  meas tran tr when i2=0.0196 rise=1 from=1.0m
+  let ov = (ipk-ifin)/(ifin-0.00399)*100
+  let trr = tr-1m
+  echo "RES step cl=$cl ipk=$&ipk ifin=$&ifin ov_pct=$&ov t98=$&trr"
+end
+.endc
+.end

@@ -1,0 +1,39 @@
+* 35 带宽：LM358 单 5 V，输入偏置 20 mV，三档：G≈101（R_g 1k 理想开关）、G≈69（1k+470）、G≈2（100k+470）
+.include ../models/LMx58_LM2904.lib
+VCC vcc 0 5
+VIA ia 0 dc 0.02 ac 1
+XA ia ma vcc 0 oa LMX58_LM2904
+RFA oa ma 100k
+RGA ma 0 1k
+VIB ib 0 dc 0.02 ac 1
+XB ib mb vcc 0 ob LMX58_LM2904
+RFB ob mb 100k
+RGB mb xb 1k
+RONB xb 0 470
+VIC ic 0 dc 0.5 ac 1
+XC ic mc vcc 0 oc LMX58_LM2904
+RFC oc mc 100k
+RGC mc xc 100k
+RONC xc 0 470
+.control
+ac dec 200 10 2meg
+let ga=mag(v(oa))
+let gb=mag(v(ob))
+let gc=mag(v(oc))
+meas ac g0a find ga at=100
+meas ac g0b find gb at=100
+meas ac g0c find gc at=100
+let tha = g0a/sqrt(2)
+let thb = g0b/sqrt(2)
+let thc = g0c/sqrt(2)
+meas ac bwa when ga=tha
+meas ac bwb when gb=thb
+meas ac bwc when gc=thc
+echo "RES g0a $&g0a"
+echo "RES g0b $&g0b"
+echo "RES g0c $&g0c"
+echo "RES bwa $&bwa"
+echo "RES bwb $&bwb"
+echo "RES bwc $&bwc"
+.endc
+.end
