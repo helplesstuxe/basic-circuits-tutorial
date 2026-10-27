@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放：甲、乙、甲乙类 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/43-push-pull-power-amp/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放甲乙甲乙类--直觉篇">43 推挽功放：甲、乙、甲乙类 · 直觉篇</h1>
+<p>上一页：42 节流量计信号链总览（即将上线） · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../19-emitter-follower/page1.html">19 射极跟随器 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../17-zener-regulator/page1.html">17 稳压管稳压 · 直觉篇</a>、<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
+<h2 id="开头三问先回忆再往下读">开头三问（先回忆，再往下读）</h2>
+<ol>
+<li><a href="../19-emitter-follower/page1.html">19 射极跟随器</a> 里，NPN 管的发射极电压和基极电压差多少？它为什么能「扛电流」？</li>
+<li>19 节参数与调试篇的练习 4 里，一只 NPN 推上、一只 PNP 拉下，输出波形在过零附近长什么样？</li>
+<li>一只 8 Ω 喇叭两端加峰值 2 V 的正弦，电流峰值是多少？平均功率是多少？</li>
+</ol>
+<details><summary>答案</summary>
+<ol>
+<li>发射极比基极低约 0.6～0.7 V（一个 PN 结的压降）。电压增益约为 1，但电流增益很大：基极只要给一点点电流，发射极就能送出几十到几百倍的电流，所以它能把「有电压、没力气」的信号变成「有电压、有力气」的信号。</li>
+<li>过零附近有一小段「平台」：输入在 −0.6～+0.6 V 之间时，两只管子都没导通，输出卡在 0 V 不动。这一段叫<strong>交越失真</strong>，本节要把它治好。</li>
+<li>电流峰值 <span class="math math-inline">\(2 / 8 = 0.25\ \text{A}\)</span> ；平均功率 <span class="math math-inline">\(P = V_p^2 / (2R) = 4 / 16 = 0.25\ \text{W}\)</span> （正弦的有效值是峰值除以 <span class="math math-inline">\(\sqrt{2}\)</span> ，见 <a href="../13-bridge-rectifier/page2.html">13 桥式整流 · 原理与实现篇</a>； <span class="math math-inline">\(P = V^2 / R\)</span> 见 <a href="../01-components-basics/page1.html">01 元件速成</a>）。</li>
+</ol>
+</details>
+<h2 id="痛点运放有电压没力气">痛点：运放「有电压、没力气」</h2>
+<p>前面几节的运放放大器，输出接的都是几千欧的电阻或者 Arduino 的输入脚，电流不过零点几毫安。现在想让它推一只 8 Ω 喇叭，问题马上出来了：峰值 2 V 的声音信号，要喇叭里流过 0.25 A 的峰值电流，而 TL072 的输出短路电流手册里写的典型值只有 26 mA 左右，差了十倍。运放会被「拽住」，波形削平，声音又小又破。</p>
+<p>所以要在运放后面加一级「扛电流」的输出级。19 节的射极跟随器正好合适：电压照搬，电流放大几十上百倍。可它只有一只 NPN 管，只会往上「推」，往下「拉」只能靠电阻。想让它把喇叭电流推上去、拉下来都有力气，最直接的办法是给它一个大电流的静态点，这就是<strong>甲类</strong>。</p>
+<p><a class="img-link" href="img/43_p1_1_class_a.png"><img alt="甲类放大器示意：+12 V 经 8 Ω 喇叭位置的负载接到 NPN 管集电极，管子发射极接地，基极由输入加偏置控制，让集电极静止时停在 6 V；图上标出没有声音时也一直流着 0.75 A，电源一直给 9 W，喇叭最多只拿到 2.25 W，效率最高 25%" src="img/43_p1_1_class_a.png" loading="lazy" /></a></p>
+<p><em>图 43-p1-1　甲类：没声音时也一直烧着 0.75 A</em></p>
+<p>图 43-p1-1 把甲类的账算清楚了：让集电极静止停在电源一半的 6 V，8 Ω 负载上就一直流着 <span class="math math-inline">\(6 / 8 = 0.75\ \text{A}\)</span> ，电源一直付出 <span class="math math-inline">\(12 \times 0.75 = 9\ \text{W}\)</span> 。而喇叭最多只能拿到峰值 6 V 的正弦，平均 2.25 W，效率最高 25%，没有声音的时候效率是零，9 W 全部变成热。再看图 43-p1-1 里的数字就明白：一个手掌大的小功放，靠甲类做，会烫得像暖手宝，还得配一个巨大的电源。</p>
+<h2 id="类比两个人拉大锯">类比：两个人拉大锯</h2>
+<p>木工用的大锯两头各站一个人：一个人往自己这边拉，另一个人就放手；然后换过来。每个人只出半程的力，所以不累。这就是<strong>推挽</strong>：NPN 管负责「推」（把输出往上拉到正半周），PNP 管负责「挽」（往下拉出负半周），谁闲着谁就歇着，没声音时两个都不出力。</p>
+<p><a class="img-link" href="img/43_p1_2_push_pull_idea.png"><img alt="推挽的想法：上面一只 NPN 管接 +12 V，下面一只 PNP 管接地，两只管子发射极接在一起作为输出，经耦合电容接到 8 Ω 负载；正半周 NPN 导通把电流推进负载，负半周 PNP 导通把电流从负载拉出，没有信号时两只都不导通" src="img/43_p1_2_push_pull_idea.png" loading="lazy" /></a></p>
+<p><em>图 43-p1-2　推挽：上管推、下管拉，各管半个周期</em></p>
+<p>图 43-p1-2 里两只管子的基极接在一起，由前级运放驱动。输出端的静止电压是 6 V（电源的一半），喇叭经一只大电容接到真正的地，电容挡住 6 V 的直流，只让声音通过。</p>
+<p>可是拉大锯有个麻烦：「交接」的那一下。一个人放手、另一个人还没握紧，锯子会停一下。三极管也一样，基极比发射极高不到约 0.6 V 时，NPN 管根本不导通；PNP 管也要低约 0.6 V 才导通。于是输入在 −0.6～+0.6 V 之间时，两只管子都在「歇着」，输出卡在原地不动。</p>
+<p><a class="img-link" href="img/43_p1_3_crossover.png"><img alt="乙类推挽的交越失真：左图横轴是时间，蓝色是运放输出（减去 6 V），峰值 2 V 的正弦，橙色是负载电压，峰值只有约 0.9 V，每次过零时有一段贴在 0 V 的平台，用浅橙色阴影带标出两只管子都不导通；右图是输入输出关系，橙色乙类曲线在横轴 −0.6 到 +0.6 V 之间是平的，标出死区约 ±0.6 V，黑色虚线是理想的输出等于输入" src="img/43_p1_3_crossover.png" loading="lazy" /></a></p>
+<p><em>图 43-p1-3　乙类的交越失真：过零时输出卡住一段</em></p>
+<p>图 43-p1-3 是仿真的结果（ngspice，元件模型见原理与实现篇）。运放给出峰值 2 V 的正弦，负载上只剩峰值约 0.91 V（SPICE 0.910 V），还多了一个个平台。右边的输入输出关系更直白：中间那段约 ±0.6 V 是「死区」。两只管子都只在半个周期里导通、静止电流为零的推挽，叫<strong>乙类</strong>。耳朵对这种平台非常敏感，小音量时尤其难听，因为小信号几乎整个落在死区里。</p>
+<p>治法也很像大锯：让两个人<strong>都轻轻握着</strong>锯把，交接时就不会断。给两只管子各垫一点偏置电压，让它们没声音时也有几十毫安的小电流（本节是约 33 mA），刚好越过 0.6 V 的门槛，这就是<strong>甲乙类</strong>。它的静止电流比甲类的 0.75 A 小二十多倍，又消掉了死区。图 43-p1-3 里的平台在甲乙类里几乎看不见（参数与调试篇会给出失真度的数字）。</p>
+<h2 id="效率推挽省在哪里">效率：推挽省在哪里</h2>
+<p><a class="img-link" href="img/43_p1_4_efficiency.png"><img alt="效率随负载电压峰值变化：横轴负载电压峰值 0 到 6 V，红紫色甲类理想曲线到 6 V 时才 25%，蓝色乙类理想直线到 6 V 时 78.5%，橙色圆点是 SPICE 仿真的甲乙类加反馈环电路，贴着蓝线上升，在约 3 V 处为 39%，约 3.1 V 以后的灰色区域标注本电路摆不到" src="img/43_p1_4_efficiency.png" loading="lazy" /></a></p>
+<p><em>图 43-p1-4　推挽的效率比甲类高得多，但本节电路只到约 3 V</em></p>
+<p>图 43-p1-4 比较了三种情况。甲类即使开到最大也只有 25%；乙类推挽理论上最高 78.5%（峰值顶到 6 V 时）。本节实际搭的甲乙类电路（橙色圆点）几乎贴着乙类的直线走，只多了一点静止电流的损耗。</p>
+<p>注意图 43-p1-4 右边的灰色区域：本节电路的输出峰值到约 3 V 就开始削顶了：三极管基极要比输出多吃约 0.7 V，给两只管子送偏置电流的「恒流源」自己也要留一点电压余量，所以输出摆不到电源边上。所以本节电路实际能给 8 Ω 的最大功率约 0.56 W，不是理论的 2.25 W。这个「能做到多少」比「理论上多少」重要，原理与实现篇会一步步算出来。</p>
+<h2 id="一句话">一句话</h2>
+<p><strong>推挽 = 两只跟随器一推一拉、各管半周；垫一点偏置让它们交接时都轻轻导通（甲乙类），就同时得到了高效率和没有死区的波形。</strong></p>
+<p>下一页把完整电路拆开，逐个元件算一遍：偏置怎么垫、发射极电阻干什么、放进运放的反馈环后交越失真为什么又小了几百倍。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>运放驱动推挽输出级、甲乙类偏置与交越失真（TI 应用笔记 AN-272《Op Amp Booster Designs》）：<a href="https://www.ti.com/lit/an/snoa600b/snoa600b.pdf">https://www.ti.com/lit/an/snoa600b/snoa600b.pdf</a></li>
+<li>TL072 数据手册（输出短路电流、摆幅）：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+<li>BD139 数据手册（ST，最大电流、功耗、热阻）：<a href="https://www.st.com/resource/en/datasheet/bd139.pdf">https://www.st.com/resource/en/datasheet/bd139.pdf</a></li>
+<li>射极跟随器高频寄生振荡与基极串联电阻（原理与实现篇会用到，Electronics StackExchange）：<a href="https://electronics.stackexchange.com/questions/476679">https://electronics.stackexchange.com/questions/476679</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

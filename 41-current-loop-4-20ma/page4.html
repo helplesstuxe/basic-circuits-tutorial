@@ -49,9 +49,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/41-current-loop-4-20ma/page4.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="41-420-ma-电流环--动手实验篇">41 4–20 mA 电流环 · 动手实验篇</h1>
-<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · 下一页：42 节流量计信号链总览（即将上线） · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、<a href="../07-bjt-relay-driver/page4.html">07 三极管开关与继电器驱动 · 动手实验篇</a>、<a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a></p>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · 下一页：42 节流量计信号链总览（即将上线） · 前置节点：<a href="../39-constant-current-excitation/page4.html">39 恒流源与线圈励磁驱动 · 动手实验篇</a>、<a href="../07-bjt-relay-driver/page4.html">07 三极管开关与继电器驱动 · 动手实验篇</a>、<a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a></p>
 <blockquote>
-<p><strong>前置回顾</strong>：39 节恒流源（即将上线） 用运放 + MOS 管（IRLZ44N）搭过恒流源；本页换成 2N3904 三极管，思路相同（差别见<a href="page2.html">原理与实现篇</a>「三」），把它变成一个由 Arduino 控制的 4–20 mA 发送器；<a href="../07-bjt-relay-driver/page4.html">07 三极管 · 动手实验篇</a> 里认过 TO-92 三极管的 E、B、C 三只脚。</p>
+<p><strong>前置回顾</strong>：<a href="../39-constant-current-excitation/page4.html">39 恒流源 · 动手实验篇</a> 用运放 + MOS 管（IRLZ44N）搭过恒流源；本页换成 2N3904 三极管，思路相同（差别见<a href="page2.html">原理与实现篇</a>「三」），把它变成一个由 Arduino 控制的 4–20 mA 发送器；<a href="../07-bjt-relay-driver/page4.html">07 三极管 · 动手实验篇</a> 里认过 TO-92 三极管的 E、B、C 三只脚。</p>
 </blockquote>
 <h2 id="这次实验要验证什么">这次实验要验证什么</h2>
 <p>本页用 Arduino 的 PWM、一片 LM358、一只 2N3904 和几只电阻，在 12 V 下搭一个 4–20 mA 发送器，再用电阻 <span class="math math-inline">\(R_x\)</span> 模拟长导线。要亲手验证五件事：</p>
@@ -533,7 +533,7 @@ void loop() {
 <p>测完<strong>先拔 12 V</strong>，拆掉 g24 那根短线，再继续。</p>
 <h2 id="没有示波器怎么办">没有示波器怎么办</h2>
 <ul>
-<li><strong>建立时间</strong>：串口输入 <code>T</code>，程序打印阶跃后每 20 ms 的 <span class="math math-inline">\(I_E\)</span> 。找出 <span class="math math-inline">\(I_E\)</span> 到约 19.8 mA（终值的 99 %）的时刻，应约 240–250 ms（<a href="page3.html">参数与调试篇</a>「三」，SPICE 0.238 s）。</li>
+<li><strong>建立时间</strong>：串口输入 <code>T</code>，程序在阶跃后大约每 20 ms 打印一次 <span class="math math-inline">\(I_E\)</span> （实际间隔略长于 20 ms，以打印出的 ms 数为准，见上面「Arduino 程序」一节的说明）。找出 <span class="math math-inline">\(I_E\)</span> 到约 19.8 mA（终值的 99 %）的时刻，应约 240–250 ms（<a href="page3.html">参数与调试篇</a>「三」，SPICE 0.238 s）。</li>
 <li><strong>纹波</strong>：20 mA 时回路纹波约 89 µApp，在 250 Ω 上是 22.3 mVpp。万用表交流 mV 挡如果有，读数大约是几 mV（按三角波估算有效值约 6.4 mV；各种表对 490 Hz 非正弦波的响应不同，只看量级）。直流挡会把它平均掉，读数不受影响。</li>
 <li><strong>振荡</strong>：万用表直流挡读数稳定、最后一位不乱跳，就说明没有明显振荡。如果乱跳，按 <a href="page3.html">参数与调试篇</a>「五」检查。</li>
 </ul>

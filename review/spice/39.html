@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>39 恒流源与线圈励磁驱动：SPICE 复核报告</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/39.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="39-恒流源与线圈励磁驱动spice-复核报告">39 恒流源与线圈励磁驱动：SPICE 复核报告</h1>
+<ul>
+<li>工具：ngspice batch 模式</li>
+<li>运行：仓库根目录 <code>python spice/39/run.py</code>，退出码 0，已实际运行（49 项比对，约 15 s）；默认输出写到临时目录，加 <code>--update</code> 才覆盖仓库里画图用的 CSV</li>
+<li>网表：<code>39_ccs.cir</code>（直流扫描负载、上限、练习 2）、<code>39_step.cir</code>（有／无补偿阶跃，图 39-p3-2）、<code>39_coil_v.cir</code>（电压驱动换向）、<code>39_coil_i.cir</code>（H 桥 + 恒流沉换向、RC 吸收，图 39-p2-5、图 39-p3-3）、<code>39_wrong.cir</code>（采样电阻放高边的错误接法，图 39-p3-4）</li>
+<li>波形抽稀为 <code>coil_v.csv</code>、<code>coil_i.csv</code>、<code>coil_i_nosnub.csv</code>、<code>step.csv</code>，供 <code>code/figs/39_figs.py</code> 画图</li>
+</ul>
+<h2 id="模型与来源">模型与来源</h2>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LM358B</td>
+<td>spice/models/LMx58B_LM2904B.lib（复用）</td>
+<td>TI 官方 PSpice 模型 <a href="https://www.ti.com/lit/zip/slom472">https://www.ti.com/lit/zip/slom472</a></td>
+</tr>
+<tr>
+<td>IRLZ44N</td>
+<td>spice/models/IRLZ44N_infineon.lib（复用）</td>
+<td>Infineon 官方 SPICE 模型</td>
+</tr>
+<tr>
+<td>换向网表中的运放</td>
+<td>网表内简化运放（增益、输出限幅）</td>
+<td>LM358B 模型在 39_coil_i.cir 的 H 桥换向瞬态中不收敛，改用简化模型</td>
+</tr>
+<tr>
+<td>H 桥开关</td>
+<td>电压控制开关，导通电阻按 DRV8871 数据手册高边 + 低边约 0.565 Ω</td>
+<td><a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a></td>
+</tr>
+</tbody>
+</table>
+<p>假设：电阻用标称值；线圈按 L、R 串联建模（电压驱动 τ = L/(75 Ω + 0.565 Ω) = 1.3234 ms）；12 V 理想电源。</p>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>p2 §二 第一步 V_REF（R1 10k / R2 910 分压）</td>
+<td>1.001 V</td>
+<td>1.001 V</td>
+<td>+0.00%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第二步 I_SET = V_REF/R_S</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=0.01 Ω 电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=0.01 Ω V_DS</td>
+<td>11 V</td>
+<td>11 V</td>
+<td>-0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=10 Ω 电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=10 Ω V_DS</td>
+<td>9.999 V</td>
+<td>9.998 V</td>
+<td>-0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=22 Ω 电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=22 Ω V_DS</td>
+<td>8.799 V</td>
+<td>8.797 V</td>
+<td>-0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=47 Ω 电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=47 Ω V_DS</td>
+<td>6.296 V</td>
+<td>6.294 V</td>
+<td>-0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=68 Ω 电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=68 Ω V_DS</td>
+<td>4.194 V</td>
+<td>4.192 V</td>
+<td>-0.06%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=100 Ω 电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第三步 / 图39-p2-2 R_L=100 Ω V_DS</td>
+<td>0.99 V</td>
+<td>0.9882 V</td>
+<td>-0.18%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第四步 R_L 上限（V_DS 留 0.5 V）105 Ω 时电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 第四步 / p4 测量表 R_L=120 Ω 掉出恒流区</td>
+<td>92.3 mA</td>
+<td>92.3 mA</td>
+<td>-0.01%</td>
+<td>✅；按 (12−0.0016)/(130) 估</td>
+</tr>
+<tr>
+<td>p2 图39-p2-2 R_L=150 Ω 电流</td>
+<td>75 mA</td>
+<td>74.99 mA</td>
+<td>-0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 测量表 运放 1 脚（R_L=47 Ω）</td>
+<td>3.14 V</td>
+<td>3.144 V</td>
+<td>+0.14%</td>
+<td>✅；页面按 SPICE 给参考值</td>
+</tr>
+<tr>
+<td>p4 测量表 / p3 排查表 运放 1 脚顶到上限（R_L=120 Ω）</td>
+<td>10.83 V</td>
+<td>10.83 V</td>
+<td>+0.01%</td>
+<td>✅；LM358B 12 V 供电输出上限</td>
+</tr>
+<tr>
+<td>p3 练习2 电源掉到 11.5 V 时 V_REF（同一电源分压）</td>
+<td>0.959 V</td>
+<td>0.9592 V</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2 电源掉到 11.5 V，R_L=47 Ω（恒流区内，设定电流跟着掉）</td>
+<td>95.9 mA</td>
+<td>95.94 mA</td>
+<td>+0.04%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 练习2 电源掉到 11.5 V，R_L=110 Ω（超过上限 104.7 Ω，MOS 全开）</td>
+<td>95.8 mA</td>
+<td>95.8 mA</td>
+<td>+0.00%</td>
+<td>✅；按 11.5/(110+10) 估</td>
+</tr>
+<tr>
+<td>p3 图39-p3-2 有补偿 过冲</td>
+<td>15 %</td>
+<td>14.99 %</td>
+<td>-0.07%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-2 有补偿 到 0.95 V 用时</td>
+<td>2.1 µs</td>
+<td>2.116 µs</td>
+<td>+0.76%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-2 有补偿 0.2 ms 后残余纹波</td>
+<td>—</td>
+<td>0 mVpp</td>
+<td>—</td>
+<td>✅（页面只给定性描述：页面写“没有持续振荡”）</td>
+</tr>
+<tr>
+<td>p3 图39-p3-2 无补偿 过冲</td>
+<td>28.7 %</td>
+<td>28.74 %</td>
+<td>+0.15%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-2 / 排查表 无补偿 持续振荡峰峰值</td>
+<td>54.5 mVpp</td>
+<td>54.49 mVpp</td>
+<td>-0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-2 / 排查表 无补偿 振荡频率</td>
+<td>147 kHz</td>
+<td>147 kHz</td>
+<td>-0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 电压驱动 稳态电流 12/(75+0.565)</td>
+<td>158.8 mA</td>
+<td>158.8 mA</td>
+<td>+0.00%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 电压驱动 换向后过零 τ·ln2</td>
+<td>0.917 ms</td>
+<td>0.917 ms</td>
+<td>+0.00%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 电压驱动 到 99%：τ·ln200</td>
+<td>7.01 ms</td>
+<td>7.011 ms</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 恒流驱动 稳态电流</td>
+<td>100.1 mA</td>
+<td>100.1 mA</td>
+<td>-0.01%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 恒流驱动 换向后过零</td>
+<td>0.63 ms</td>
+<td>0.6303 ms</td>
+<td>+0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 恒流驱动 到 99%</td>
+<td>2.06 ms</td>
+<td>2.063 ms</td>
+<td>+0.15%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 恒流驱动 换向后冲到</td>
+<td>119.1 mA</td>
+<td>119.1 mA</td>
+<td>-0.01%</td>
+<td>✅；仿真用简化运放并把运放内部节点限幅到电源轨（LM358B 模型在此网表不收敛），峰值大小与模型有关，页面已注明</td>
+</tr>
+<tr>
+<td>p2 §四 恒流驱动 稳态 V_DS</td>
+<td>3.44 V</td>
+<td>3.437 V</td>
+<td>-0.10%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-3 / 排查表 无 RC 吸收：桥底电压最低</td>
+<td>1.01 V</td>
+<td>1.013 V</td>
+<td>+0.29%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-3 / 排查表 无 RC 吸收：桥底电压最高</td>
+<td>12.54 V</td>
+<td>12.54 V</td>
+<td>+0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-3 无 RC 吸收：电流最低</td>
+<td>98.8 mA</td>
+<td>98.78 mA</td>
+<td>-0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-3 无 RC 吸收：电流最高</td>
+<td>102.2 mA</td>
+<td>102.2 mA</td>
+<td>+0.04%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-3 有 RC 吸收：桥底电压（稳定）</td>
+<td>4.44 V</td>
+<td>4.437 V</td>
+<td>-0.06%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-3 / RC 吸收 无 RC 吸收：振荡周期</td>
+<td>175 µs</td>
+<td>175.4 µs</td>
+<td>+0.23%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 RC 吸收 反推等效电容 (T/2π)²/L（L = 0.1 H）</td>
+<td>7.8 nF</td>
+<td>7.794 nF</td>
+<td>-0.08%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 RC 吸收 √(L/C_eq)</td>
+<td>3.6 kΩ</td>
+<td>3.582 kΩ</td>
+<td>-0.50%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 恒流驱动 进入 100 mA ±1 mA（换向后）</td>
+<td>3.36 ms</td>
+<td>3.355 ms</td>
+<td>-0.14%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图39-p2-5 恒流驱动 过冲峰值时刻（换向后）</td>
+<td>2.84 ms</td>
+<td>2.844 ms</td>
+<td>+0.15%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-4 预测题 高边接法：反馈点电压</td>
+<td>12 V</td>
+<td>12 V</td>
+<td>-0.00%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图39-p3-4 预测题 高边接法：运放输出（被拉到底）</td>
+<td>—</td>
+<td>0.02379 V</td>
+<td>—</td>
+<td>✅（页面只给定性描述：页面写“约 0 V”）</td>
+</tr>
+<tr>
+<td>p3 图39-p3-4 预测题 高边接法：负载电流</td>
+<td>—</td>
+<td>0.005 mA</td>
+<td>—</td>
+<td>✅（页面只给定性描述：页面写“几乎为 0”）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="不在-spice-里由手算得到的数值">不在 SPICE 里、由手算得到的数值</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>数值</th>
+<th>计算方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page4 实验 B 线圈电流</td>
+<td>29.23 mA</td>
+<td><span class="math math-inline">\(11.98 / (400 + 10)\)</span> ；11.98 V = 12 V 减去 DRV8871 两只导通管 0.565 Ω × 29.2 mA</td>
+</tr>
+<tr>
+<td>page4 实验 B 线圈电压 / 采样电压</td>
+<td>11.69 V / 0.292 V</td>
+<td>29.23 mA × 400 Ω / × 10 Ω；线圈 ±10% 时采样电压 0.266～0.324 V</td>
+</tr>
+<tr>
+<td>page4 思考题 3</td>
+<td>0.253 V</td>
+<td>线圈 400 × 1.157 = 462.8 Ω（铜电阻温度系数 0.00393/°C × 40 °C），11.98 / 472.8 Ω × 10 Ω</td>
+</tr>
+<tr>
+<td>page4 思考题 2</td>
+<td>5.72 V，约 0.21 A，约 2.1 W</td>
+<td>12 × 9.1 / 19.1；12 / 57；0.2105² × 47</td>
+</tr>
+<tr>
+<td>page3 练习 3 温度</td>
+<td>约 80 °C / 约 44 °C</td>
+<td>0.88 W × RθJA 62 °C/W + 25 °C；0.88 W × (1.4 + 0.5 + 20) °C/W + 25 °C（IRLZ44N 数据手册热阻）</td>
+</tr>
+<tr>
+<td>page4 用 Python 核对</td>
+<td>与上表一致</td>
+<td>页面内 Python 块，tools/run_blocks.py 实际运行通过</td>
+</tr>
+</tbody>
+</table>
+<h2 id="不在-spice-里的补充本轮修订新增">不在 SPICE 里的补充（本轮修订新增）</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>数值</th>
+<th>计算方法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page3 TL431 可选升级</td>
+<td>约 1.9 mA；0.998 V；97.6～102.0 mA</td>
+<td>(12 − 2.495)/4.7 kΩ − 分压电流 0.1 mA；2.495 × 10/(15+10)；TL431C 参考电压容差代入</td>
+</tr>
+<tr>
+<td>page3 RC 吸收</td>
+<td>取 1 kΩ + 100 nF；100 nF ≈ 13 × C_eq</td>
+<td>经验法则 R 与 √(L/C_eq) ≈ 3.6 kΩ 同数量级、吸收电容比 C_eq 大好几倍；C_eq 由 SPICE 振荡周期反推（见上表）。原先「√(0.1 H / 100 nF) = 1 kΩ」代错了电容，已按学生 2 建议 N2 改正</td>
+</tr>
+<tr>
+<td>page3 练习 5（PT100）</td>
+<td>限 10.5 kΩ，MOS 约 11 mW，PT100 约 0.1 mW</td>
+<td>1 mA 设定、R_S 1 kΩ 代入同一套公式</td>
+</tr>
+<tr>
+<td>page3 常见误区 地线压降</td>
+<td>30 mV / 3%</td>
+<td>0.3 Ω × 0.1 A，对 1 V 采样电压</td>
+</tr>
+<tr>
+<td>page2 自测（08 节分压）</td>
+<td>200.2 mA，上限 47.4 Ω</td>
+<td>同第一～四步公式</td>
+</tr>
+<tr>
+<td>page4 示波器 L 反算</td>
+<td>0.40 H（t0 = 0.68 ms 时）</td>
+<td>L = t0·410.6 Ω / ln2；图 39-p4-7 的 t0 = 0.338 / 0.675 / 1.351 ms 由 39_figs.py 计算</td>
+</tr>
+<tr>
+<td>page4 A7 可选步骤</td>
+<td>约 12.0 V、约 0.024 V</td>
+<td>取自上表高边接法 SPICE 行</td>
+</tr>
+</tbody>
+</table>
+<h2 id="汇总">汇总</h2>
+<ul>
+<li>✅ 49 项（其中 2 项页面只给定性描述，仿真吻合；换向过冲峰值 119.1 mA 依赖简化运放的限幅模型，已在页面注明）</li>
+<li>⚠️ 0 项</li>
+<li>❌ 0 项</li>
+<li>定量项偏差都在 ±0.76% 以内（最大为有补偿阶跃到 0.95 V 用时 2.1 µs 对 2.116 µs）</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

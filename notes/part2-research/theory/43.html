@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放：甲、乙、甲乙类 · 理论审校（theory）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/43.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放甲乙甲乙类--理论审校theory">43 推挽功放：甲、乙、甲乙类 · 理论审校（theory）</h1>
+<blockquote>
+<p>计算脚本：/workspace/calc/c43.py（本会话已运行）。记号依 §4：效率 <span class="math math-inline">\(\eta\)</span> ； <span class="math math-inline">\(V_p\)</span> 为负载电压峰值； <span class="math math-inline">\(V_{CC}\)</span> 为单边电源（双电源 ± <span class="math math-inline">\(V_{CC}\)</span> ；单电源 + 耦合电容时，等效 <span class="math math-inline">\(V_{CC}\)</span> 取电源的一半）。§10.3：page4 只用单 12 V。</p>
+</blockquote>
+<h2 id="1-推导链只用-pvi-平均值正弦有效值">(1) 推导链（只用 <span class="math math-inline">\(P=VI\)</span> 、平均值、正弦有效值）</h2>
+<ol>
+<li>
+<p><strong>正弦功率（回指 01、09）</strong>： <span class="math math-inline">\(v=V_p\sin\omega t\)</span> 。负载功率 <span class="math math-inline">\(P_L=V_{rms}^2/R_L=V_p^2/(2R_L)\)</span> 。
+峰值和有效值不能混用： <span class="math math-inline">\(V_p^2/R_L\)</span> 会算成两倍。</p>
+</li>
+<li>
+<p><strong>甲类（电阻负载、单电源 <span class="math math-inline">\(V_S\)</span> ）</strong>。</p>
+<ul>
+<li>静态点取 <span class="math math-inline">\(V_S/2\)</span> ，静态电流 <span class="math math-inline">\(I_q=V_S/(2R_L)\)</span> 。</li>
+<li>电源功率恒为 <span class="math math-inline">\(V_S I_q=V_S^2/(2R_L)\)</span> 。</li>
+<li>最大输出： <span class="math math-inline">\(V_p=V_S/2\)</span> 时 <span class="math math-inline">\(P_L=V_S^2/(8R_L)\)</span> 。</li>
+<li>所以 <span class="math math-inline">\(\eta_{max}=25\)</span> % 。例：12 V、8 Ω 时电源 9 W，最大输出 2.25 W，不放音也耗 9 W。</li>
+</ul>
+</li>
+<li>
+<p><strong>乙类（双电源 ± <span class="math math-inline">\(V_{CC}\)</span> ）</strong>。</p>
+<ul>
+<li>每管只导通半周，电流是半波正弦。半波平均 = <span class="math math-inline">\(I_p/\pi\)</span> （回指 09：全波 <span class="math math-inline">\(|\sin|\)</span> 的平均为 <span class="math math-inline">\(2/\pi\)</span> ，半波是它的一半）。</li>
+<li>两路电源各提供 <span class="math math-inline">\(V_{CC}\cdot I_p/\pi\)</span> ，合计 <span class="math math-inline">\(P_S=2V_{CC}V_p/(\pi R_L)\)</span> 。</li>
+<li><span class="math math-inline">\(\eta=P_L/P_S=\pi V_p/(4V_{CC})\)</span> ， <span class="math math-inline">\(V_p=V_{CC}\)</span> 时达到最大 <span class="math math-inline">\(\pi/4=78.5\)</span> % 。</li>
+</ul>
+</li>
+<li>
+<p><strong>管耗最大点（不用导数，配方）</strong>。
+<span class="math math-inline">\(P_D=P_S-P_L=\frac{2V_{CC}}{\pi R_L}V_p-\frac{1}{2R_L}V_p^2\)</span> 是关于 <span class="math math-inline">\(V_p\)</span> 开口向下的二次函数。</p>
+<ul>
+<li>顶点在 <span class="math math-inline">\(V_p=2V_{CC}/\pi\approx0.637V_{CC}\)</span> ， <span class="math math-inline">\(P_{D,max}=2V_{CC}^2/(\pi^2R_L)=(4/\pi^2)P_{L,max}=0.405P_{L,max}\)</span> （两管合计）。</li>
+<li>此时 <span class="math math-inline">\(\eta=\pi(2/\pi)/4=50\)</span> % 。Python 数值扫描的最大值在 5.729 V、2.052 W，与公式一致。</li>
+</ul>
+</li>
+<li>
+<p><strong>数值（±9 V、8 Ω）</strong>：</p>
+<ul>
+<li><span class="math math-inline">\(V_p\)</span> = 9 V： <span class="math math-inline">\(P_L\)</span> = 5.06 W， <span class="math math-inline">\(P_S\)</span> = 6.45 W， <span class="math math-inline">\(\eta\)</span> = 78.5%，管耗 1.38 W；</li>
+<li><span class="math math-inline">\(V_p\)</span> = 5.73 V：管耗 2.05 W， <span class="math math-inline">\(\eta\)</span> = 50%，2.05/5.06 = 0.405。</li>
+<li>每管 1.03 W。BD139 的 <span class="math math-inline">\(R_{th,j\text{-}amb}\)</span> 为 100 °C/W，不加散热片时温升约 103 °C，所以必须加散热片。</li>
+</ul>
+</li>
+<li>
+<p><strong>单 12 V + 输出耦合电容（§10.3 方案）</strong>。</p>
+<ul>
+<li>推挽中点偏置在 6 V，喇叭经电容 <span class="math math-inline">\(C_o\)</span> 接<strong>真地</strong>，等效 <span class="math math-inline">\(V_{CC}=6\)</span> V。</li>
+<li>不能把喇叭接到 TL072 虚地：虚地要吸收或提供全部喇叭电流（数百 mA），而 TL072 的短路电流只有 ±26 mA。</li>
+<li><span class="math math-inline">\(C_o\)</span> 与负载构成高通（回指 01 RC）， <span class="math math-inline">\(f_c=1/(2\pi R_L C_o)\)</span> 。负载 18 Ω（8 Ω 喇叭 + 10 Ω）时：
+<table>
+<thead>
+<tr>
+<th><span class="math math-inline">\(C_o\)</span></th>
+<th>470 µF</th>
+<th>1000 µF</th>
+<th>2200 µF</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>18 Ω 负载</td>
+<td>18.8 Hz</td>
+<td>8.8 Hz</td>
+<td>4.0 Hz</td>
+</tr>
+<tr>
+<td>只接 8 Ω</td>
+<td>42.3 Hz</td>
+<td>19.9 Hz</td>
+<td>9.0 Hz</td>
+</tr>
+<tr>
+<td>可选 1000 µF / 16 V 以上。</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>输入 10 µF 进 10 kΩ 时 <span class="math math-inline">\(f_c\)</span> = 1.6 Hz。</li>
+<li>可达幅度：TL072 在 ±15 V、10 kΩ 负载时 <span class="math math-inline">\(V_{OM}\)</span> 典型 ±13.5 V，即离电源轨约 1.5 V（最小 ±12 V，离轨 3 V）。再减去 <span class="math math-inline">\(V_{BE}\)</span> ≈ 0.7 V 和 <span class="math math-inline">\(R_E\)</span> 压降，12 V 单电源下 <span class="math math-inline">\(V_p\)</span> 约 2–3.5 V， <span class="math math-inline">\(V_p\)</span> = 5 V 是达不到的上限。
+<table>
+<thead>
+<tr>
+<th><span class="math math-inline">\(V_p\)</span></th>
+<th>2 V</th>
+<th>3.5 V</th>
+<th>5 V（上限）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(I_p\)</span></td>
+<td>0.111 A</td>
+<td>0.194 A</td>
+<td>0.278 A</td>
+</tr>
+<tr>
+<td>喇叭功率</td>
+<td>0.049 W</td>
+<td>0.151 W</td>
+<td>0.309 W</td>
+</tr>
+<tr>
+<td>10 Ω 功率</td>
+<td>—</td>
+<td>—</td>
+<td>0.386 W（5 W 电阻足够）</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>管耗最大合计 0.405 W，每管 0.20 W。BD139 不加散热片时温升约 20 °C，可接受，但仍建议加小散热片。</li>
+<li><strong>2N3904</strong>： <span class="math math-inline">\(I_C\)</span> 最大 200 mA，小于 <span class="math math-inline">\(V_p\)</span> = 5 V 时的 278 mA；而且 ±9 V/8 Ω 时 <span class="math math-inline">\(I_p\)</span> 达 1.125 A。所以 2N3904/2N3906 只能在 <span class="math math-inline">\(V_p\lt\)</span> 约 3 V、负载 ≥ 18 Ω 时做演示，功率实验应使用 BD139/BD140（1.5 A，12.5 W @ <span class="math math-inline">\(T_c\)</span> = 25 °C）。</li>
+</ul>
+</li>
+<li>
+<p><strong>交越失真与甲乙类</strong>。</p>
+<ul>
+<li>乙类下 <span class="math math-inline">\(|v_{in}|\lt V_{BE}\approx0.6\)</span> V 时两管都截止，形成死区（回指 19 page3 练习 4）。</li>
+<li>两只 1N4148 提供约 <span class="math math-inline">\(2V_{BE}\)</span> 的预偏置，形成静态电流 <span class="math math-inline">\(I_q\)</span> 。</li>
+<li><strong><span class="math math-inline">\(I_q\)</span> 对偏置失配很敏感</strong>（每管满足 <span class="math math-inline">\(\Delta V/2=V_T\ln(I/I_0)+R_E(I-I_0)\)</span> ， <span class="math math-inline">\(V_T\)</span> = 26 mV， <span class="math math-inline">\(I_0\)</span> = 10 mA，数值求解；指数和对数关系见 07 节，属于超纲工具，只用结论“ <span class="math math-inline">\(V_{BE}\)</span> 每增加 60 mV，电流增大约 10 倍”）：
+<table>
+<thead>
+<tr>
+<th>偏置失配 <span class="math math-inline">\(\Delta V\)</span></th>
+<th>20 mV</th>
+<th>80 mV</th>
+<th>160 mV</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(R_E\)</span> = 0</td>
+<td>14.7 mA</td>
+<td>46.6 mA</td>
+<td>217 mA</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_E\)</span> = 1 Ω</td>
+<td>13.1 mA</td>
+<td>25.6 mA</td>
+<td>48.8 mA</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_E\)</span> = 2.2 Ω</td>
+<td>12.2 mA</td>
+<td>20.0 mA</td>
+<td>32.5 mA</td>
+</tr>
+<tr>
+<td>80 mV 相当于两管结温比二极管高 20 °C（每结 −2 mV/°C，回指 17），所以 <span class="math math-inline">\(R_E\)</span> 和“二极管贴管子”都是必须的。</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><strong>偏置电流</strong>要大于功率管峰值基极电流： <span class="math math-inline">\(I_p\)</span> = 0.278 A、 <span class="math math-inline">\(h_{FE}\)</span> = 40（BD139 在 150 mA 时的最小值）时为 7 mA； <span class="math math-inline">\(h_{FE}\)</span> = 25（0.5 A 时的最小值）时为 11 mA。否则正峰会被削顶。</li>
+</ul>
+</li>
+<li>
+<p><strong>放进运放反馈环</strong>。</p>
+<ul>
+<li>死区等效为在输出端叠加一个误差，环内被约 <span class="math math-inline">\(1/(1+A\beta)\)</span> 压低。</li>
+<li>运放输出必须在过零附近“跳过”约 <span class="math math-inline">\(2V_{BE}\approx1.4\)</span> V。以 TL072 的 SR = 20 V/µs 计，需要约 70 ns，对 1 kHz 可以忽略，对高频则残留尖刺。所以“环内 + 少量甲乙偏置”效果最好。</li>
+</ul>
+</li>
+<li>
+<p><strong>效率怎样用万用表测（§10.2）</strong>。</p>
+<ul>
+<li><span class="math math-inline">\(P_S\)</span> = 电源电压 × 直流电流表读数（读的就是平均值）；</li>
+<li><span class="math math-inline">\(P_L=V_{rms}^2/R_{spk}\)</span> （AC 档读的是有效值，所以不要除以 2）。</li>
+<li>廉价万用表 AC 档的频带有限 「[待核实]」，建议用 100–400 Hz 正弦测试。</li>
+</ul>
+</li>
+</ol>
+<h2 id="2-符号表">(2) 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(V_{CC}\)</span></td>
+<td>单边电源（单电源时取 <span class="math math-inline">\(V_S/2\)</span> ）</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_S\)</span></td>
+<td>单电源电压（12 V）</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_p\)</span>, <span class="math math-inline">\(I_p\)</span></td>
+<td>负载电压/电流峰值</td>
+<td>V, A</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{rms}\)</span></td>
+<td>有效值</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_L\)</span>, <span class="math math-inline">\(R_{spk}\)</span>, <span class="math math-inline">\(R_E\)</span></td>
+<td>总负载 / 喇叭 / 发射极电阻</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(P_L\)</span>, <span class="math math-inline">\(P_S\)</span>, <span class="math math-inline">\(P_D\)</span></td>
+<td>负载功率 / 电源功率 / 管耗（两管合计）</td>
+<td>W</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\eta\)</span></td>
+<td>效率</td>
+<td>1（%）</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(I_q\)</span></td>
+<td>静态电流</td>
+<td>mA</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(C_o\)</span>, <span class="math math-inline">\(f_c\)</span></td>
+<td>输出耦合电容 / 高通截止频率</td>
+<td>µF, Hz</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_T\)</span></td>
+<td>热电压 26 mV（07）</td>
+<td>mV</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(h_{FE}\)</span></td>
+<td>直流电流放大系数</td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_{th}\)</span></td>
+<td>热阻</td>
+<td>°C/W</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误针对-notes43-researchmd-及-00-design-6-的-43-条">(3) 勘误（针对 notes/43-research.md 及 00-design §6 的 43 条）</h2>
+<ul>
+<li><strong>E1【§10.3】第 56 行“±6 V（4 节 AA × 2）”</strong>，以及 00-design 43 条 page4 的“（或 ±6 V）”：违反 §10.3（不用 ±6 V 电池），应删去，只保留单 12 V。
+同时“12 V 单电源 + 6 V 虚地”要明确：
+<ul>
+<li>虚地只用来偏置运放输入；</li>
+<li>推挽中点由反馈稳定在 6 V；</li>
+<li>喇叭经 ≥ 1000 µF 电容接真地（ <span class="math math-inline">\(f_c\)</span> = 8.8 Hz，18 Ω）；</li>
+<li>不能把喇叭回到 TL072 虚地（TL072 <span class="math math-inline">\(I_{SC}\)</span> ±26 mA）。</li>
+</ul>
+</li>
+<li><strong>E2 第 31 行“±6 V/8 Ω，Vp ≈ 5 V，1.56 W”</strong>：数值 25/16 = 1.5625 W 计算正确，但这种供电已被 §10.3 禁止。
+改为单 12 V、18 Ω 负载： <span class="math math-inline">\(V_p\)</span> 实际约 2–3.5 V，喇叭功率 0.05–0.15 W，上限 <span class="math math-inline">\(V_p\)</span> = 5 V 时为 0.31 W。</li>
+<li><strong>E3 00-design 43 条 page4“TL072 + 2N3904/2N3906（小功率）”</strong>： <span class="math math-inline">\(V_p\)</span> = 5 V、18 Ω 时峰值 278 mA，大于 2N3904 的 200 mA。2N3904 方案必须限幅（ <span class="math math-inline">\(V_p\lt\)</span> 约 3 V），否则改用 BD139/BD140。第 50 行的 SPICE 在 ±9 V/8 Ω 下峰值为 1.125 A，2N3904 只能作为“看波形”的模型，不能代表实物。</li>
+<li><strong>E4 第 63 行“BD139 需要散热片”</strong>：给出定量依据。±9 V/8 Ω 时每管最大 1.03 W， <span class="math math-inline">\(R_{th,j\text{-}amb}\)</span> 100 °C/W 对应温升约 103 °C，必须加散热片。12 V 单电源/18 Ω 时每管 0.20 W，温升约 20 °C。</li>
+<li><strong>E5 第 67 行“BD139 参数未核实前不写具体数值”</strong>：本会话已打开 ST 数据手册，数值可以写：
+<ul>
+<li><span class="math math-inline">\(V_{CEO}\)</span> 80 V， <span class="math math-inline">\(I_C\)</span> 1.5 A， <span class="math math-inline">\(I_{CM}\)</span> 3 A；</li>
+<li><span class="math math-inline">\(P_{tot}\)</span> 12.5 W（ <span class="math math-inline">\(T_c\)</span> ≤ 25 °C）/ 1.25 W（ <span class="math math-inline">\(T_{amb}\)</span> ≤ 25 °C）；</li>
+<li><span class="math math-inline">\(R_{th,j\text{-}c}\)</span> 10 °C/W， <span class="math math-inline">\(R_{th,j\text{-}a}\)</span> 100 °C/W；</li>
+<li><span class="math math-inline">\(h_{FE}\)</span> 40–250（150 mA），0.5 A 时 ≥ 25。</li>
+</ul>
+</li>
+<li><strong>E6 第 21 行“发射极电阻（如 1 Ω 左右）”</strong>：补定量表（推导 7）。没有 <span class="math math-inline">\(R_E\)</span> 时，80 mV 失配（约 20 °C 温差）就让 <span class="math math-inline">\(I_q\)</span> 从 10 mA 升到 47 mA；有 1 Ω 时为 26 mA。
+另外，1 Ω 和 18 Ω 负载串联会损失约 5% 的幅度（1/19）。</li>
+<li><strong>E7 第 18 行</strong>：公式和数值都正确（2.05 W、0.405、η = 50%）。“0.64 倍 Vcc”应写成 <span class="math math-inline">\(2/\pi\approx0.637\)</span> ，并说明这是负载电压峰值，不是电源电压。建议用配方法代替“求导”，因为高中求导不一定覆盖这里。</li>
+<li><strong>E8 第 15 行</strong>：“单管电流半波平均 Vp/(π·RL)”正确。应注明这一步来自 09 节的 <span class="math math-inline">\(|\sin|\)</span> 平均 <span class="math math-inline">\(2/\pi\)</span> 的一半。</li>
+<li><strong>E9 page4 偏置电阻</strong>：缺少偏置电流要求。偏置电流须 ≥ 峰值基极电流 7–11 mA（推导 7），否则正半周削顶。</li>
+<li><strong>E10 第 57 行“手机耳机输出 + 10 µF”</strong>：未标负载电阻。若输入电阻为 10 kΩ， <span class="math math-inline">\(f_c\)</span> = 1.6 Hz，可以。另外 AC 档测效率时要用有效值（推导 9），对应 00-design 典型错误“峰值和有效值混算”。</li>
+<li><strong>E11 第 9 行“甲类变压器/电感耦合 50%”</strong>：这是教科书结论，本会话未打开来源 「[待核实]」，正文如需引用应加来源，或者只讲电阻负载的 25%（已推导）。</li>
+</ul>
+<h2 id="4-参考本会话已打开并核对">(4) 参考（本会话已打开并核对）</h2>
+<ul>
+<li>TI SNOA600B（AN-272）<a href="https://www.ti.com/lit/an/snoa600b/snoa600b.pdf">https://www.ti.com/lit/an/snoa600b/snoa600b.pdf</a> ——§2 “200 mA Current Booster”：“Crossover distortion is avoided by the D2-D3 diodes which compensate the VBEs of Q1 and Q2”，D2、D3 宜与 Q1、Q2 的散热片热耦合。</li>
+<li>ST BD135/136/139/140 数据手册（Rev 5，2008 年 5 月；Distrelec 镜像）<a href="https://media.distrelec.com/Web/Downloads/_t/ds/BD135-136-139-140_eng_tds.pdf">https://media.distrelec.com/Web/Downloads/_t/ds/BD135-136-139-140_eng_tds.pdf</a> ——见 E5 的各项数值。ST 官方 <a href="https://www.st.com/resource/en/datasheet/BD139.pdf">https://www.st.com/resource/en/datasheet/BD139.pdf</a> 本会话 curl 未取到，只通过搜索摘要看到同样内容。</li>
+<li>TI TL072 数据手册（SLOS080W）<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> ——SR 20 V/µs； <span class="math math-inline">\(I_{SC}\)</span> ±26 mA；TL07xC 的 <span class="math math-inline">\(V_{OM}\)</span> ±13.5 V 典型 / ±12 V 最小（±15 V， <span class="math math-inline">\(R_L\)</span> = 10 kΩ）。</li>
+<li>ST 2N3904 <a href="https://www.sparkfun.com/datasheets/Components/2N3904.pdf">https://www.sparkfun.com/datasheets/Components/2N3904.pdf</a> —— <span class="math math-inline">\(I_C\)</span> 200 mA， <span class="math math-inline">\(P_{tot}\)</span> 625 mW。</li>
+</ul>
+<h3 id="待核实">「[待核实]」</h3>
+<ul>
+<li>甲类变压器耦合 50%（教科书结论，未找来源）。</li>
+<li>2N3906 数据手册（未打开）。</li>
+<li><a href="http://electronics-tutorials.ws">electronics-tutorials.ws</a> 功放页面、ADI MT-065（笔记已标，本会话未打开）。</li>
+<li>廉价万用表 AC 档频带。</li>
+<li>热耦合效果的量级：只用了 −2 mV/°C（17 节数值），未做实测。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

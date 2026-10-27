@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放：甲、乙、甲乙类 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/43-push-pull-power-amp/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放甲乙甲乙类--动手实验篇">43 推挽功放：甲、乙、甲乙类 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · 下一页：44 节 D 类功放（即将上线） · 前置节点：<a href="../19-emitter-follower/page4.html">19 射极跟随器 · 动手实验篇</a>、<a href="../12-voltage-follower/page4.html">12 电压跟随器 · 动手实验篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>本次搭原理与实现篇里那台「TL072 + 两个恒流源 + BD139/BD140」的甲乙类推挽功放，负载先用 8 Ω 功率电阻。分四个小实验：</p>
+<ul>
+<li><strong>实验 A：静止状态。</strong> 没有信号时，验证中点参考 <span class="math math-inline">\(V_{MID}\)</span> 、运放输出 m、推挽输出 OUT 都在 6 V 附近；两个恒流源各送约 23.7 mA（ <span class="math math-inline">\(R_X\)</span> 两端约 0.64 V）；静止电流约 33 mA（ <span class="math math-inline">\(R_E\)</span> 两端约 109 mV），并且 5 分钟内不往上爬。</li>
+<li><strong>实验 B：放大与效率。</strong> 加 400 Hz 正弦，让负载电压峰值约 2 V，验证电流表平均读数约 82.5 mA、电源功率约 0.99 W、效率约 25.5%。</li>
+<li><strong>实验 C：没有示波器也能「看见」交越失真。</strong> 用电位器慢慢调输入，用万用表一点一点读 OUT。先读甲乙类，再用两根跳线把 D1、D2 短接变成乙类，比较两条读数曲线；最后把反馈插回 OUT，看反馈环怎样「跳过」死区（C3）。</li>
+<li><strong>实验 D：用耳朵听交越失真（可选）。</strong> 喇叭串 10 Ω 接到负载位置，先听乙类，再换回甲乙类对比，最后听「乙类 + 反馈环」。</li>
+</ul>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>只用 12 V 直流电源</strong>：实验室可调电源限流 0.5 A；或 12 V 适配器，正极串一只 1 A 保险丝。本节所有电压都不超过 12 V，不要接市电，也不要换更高电压的电源。</li>
+<li><strong>两只功放管 Q1、Q2 必须各装一块散热片。</strong> 满音量（输入 1.0 V 峰值）时每管发热约 0.44 W，不装散热片温升约 44 °C；BD139 手册写着不加散热片、空气 25 °C 时最多 1.25 W，室温越高能耗的越少。恒流源的 Q3、Q4 静止只耗约 0.11 W，不用散热片。</li>
+<li><strong>只用测温探头量温度</strong>：万用表温度档配热电偶、红外测温枪，或贴一只 NTC 热敏电阻都可以；<strong>不要用手摸</strong>。<strong>散热片超过 60 °C 就立刻断电。</strong></li>
+<li><strong>散热片带电：BD139、BD140 背面的金属片和集电极（中间脚）相连</strong>（见下面参考资料里的两份手册）。Q1 的集电极经电流表接 +12 V，所以 Q1 的散热片就是 +12 V；Q2 的集电极接 GND，所以 Q2 的散热片就是 GND。<strong>两块散热片绝不能互相碰</strong>，一碰就是 +12 V 直接短路到 GND；也不能碰任何导线和元件脚。条件允许时在管子和散热片之间垫一片绝缘垫（云母片或硅胶垫，配绝缘螺丝套），散热片就不带电了。D1、D2 的玻璃外壳是绝缘的，可以直接用导热胶贴在散热片上，但它们的管脚不能碰到散热片金属。</li>
+<li><strong>电流表先插好再上电</strong>：表笔插 <strong>10 A 插孔</strong>、旋钮拨到<strong>直流 A 档</strong>，全程不换。开机时 <span class="math math-inline">\(C_o\)</span> 充电的冲击电流和放音时 Q1 约 0.25 A 的瞬时电流（SPICE，负载峰值 2 V 时；满音量约 0.38 A）都可能烧掉 mA 插孔的保险丝。</li>
+<li><strong>静止电流红线</strong>：万用表在 <span class="math math-inline">\(R_E\)</span> 两端读到超过 165 mV（50 mA）就立刻断电，检查热耦合和二极管方向。</li>
+<li><strong>先用 8 Ω / 5 W 功率电阻做负载。</strong> 试听喇叭时，必须先给喇叭<strong>串一只 10 Ω / 2 W 电阻</strong>，音量从 0 开始慢慢加。输出 OUT 和负载两端都不能短接到 GND 或 +12 V。</li>
+<li><strong>输出电容 <span class="math math-inline">\(C_o\)</span> 的正极接推挽输出（第 26 列那一侧），耐压 ≥ 16 V（如 25 V）。</strong> 接反会发热、鼓包。</li>
+<li><strong>改线、换元件之前先断电。</strong> 本节的电流比前面的小信号实验大得多，带电插拔很容易碰出火花。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运放</td>
+<td>TL072</td>
+<td>1</td>
+<td>A 运放做 <span class="math math-inline">\(V_{MID}\)</span> 缓冲，B 运放做 ×3 同相放大</td>
+</tr>
+<tr>
+<td>功放管</td>
+<td>BD139（NPN）、BD140（PNP）</td>
+<td>各 1</td>
+<td>Q1、Q2，各装一块小散热片</td>
+</tr>
+<tr>
+<td>恒流源管</td>
+<td>BD140、BD139</td>
+<td>各 1</td>
+<td>Q3（上）、Q4（下），不用散热片</td>
+</tr>
+<tr>
+<td>二极管</td>
+<td>1N4148</td>
+<td>6</td>
+<td>D1、D2 贴散热片；D5～D8 给恒流源</td>
+</tr>
+<tr>
+<td>基极阻尼电阻</td>
+<td>22 Ω</td>
+<td>2</td>
+<td>RS1、RS2，焊在 Q1、Q2 的基极脚上</td>
+</tr>
+<tr>
+<td>发射极电阻</td>
+<td>3.3 Ω，1 W</td>
+<td>2</td>
+<td>RE1、RE2</td>
+</tr>
+<tr>
+<td>恒流源电阻</td>
+<td>27 Ω（ <span class="math math-inline">\(R_X\)</span> ）、4.7 kΩ（ <span class="math math-inline">\(R_K\)</span> ）</td>
+<td>各 2</td>
+<td>Rx3/Rx4、Rk3/Rk4</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>10 kΩ ×3、20 kΩ ×1、100 kΩ ×1</td>
+<td>—</td>
+<td>R1、R2、RG；RF；Rbias</td>
+</tr>
+<tr>
+<td>电容</td>
+<td>10 µF 电解 ×2、1000 µF / ≥ 16 V（如 25 V）电解 ×1、100 nF 瓷片 ×1</td>
+<td>—</td>
+<td>Cd、Cin； <span class="math math-inline">\(C_o\)</span> ；Cz</td>
+</tr>
+<tr>
+<td>Zobel 电阻</td>
+<td>10 Ω</td>
+<td>1</td>
+<td>Rz</td>
+</tr>
+<tr>
+<td>负载</td>
+<td>8 Ω / 5 W 功率电阻</td>
+<td>1</td>
+<td>实验 A、B、C 都用它</td>
+</tr>
+<tr>
+<td>试听（可选）</td>
+<td>8 Ω 小喇叭 + 10 Ω / 2 W 电阻</td>
+<td>各 1</td>
+<td>串联后接到负载位置</td>
+</tr>
+<tr>
+<td>实验 C 用</td>
+<td>2 kΩ 电位器 ×1、4.7 kΩ ×2、100 Ω ×1、2 kΩ ×2、跳线 ×2</td>
+<td>—</td>
+<td>直流慢扫</td>
+</tr>
+<tr>
+<td>电流表</td>
+<td>第二只万用表（或电源自带电流显示）</td>
+<td>1</td>
+<td>串在 Q1 集电极，10 A 插孔、直流 A 档</td>
+</tr>
+<tr>
+<td>导热胶、测温工具</td>
+<td>导热胶（或导热硅脂 + 扎带）；温度档万用表 / 红外测温枪 / NTC</td>
+<td>—</td>
+<td>贴二极管；量散热片温度</td>
+</tr>
+<tr>
+<td>信号源</td>
+<td>手机测试音 App 或信号发生器</td>
+<td>1</td>
+<td>400 Hz 正弦，先把音量调到 0</td>
+</tr>
+</tbody>
+</table>
+<h2 id="搭建步骤">搭建步骤</h2>
+<h3 id="先做两个功放管模块在面包板外">先做两个「功放管模块」（在面包板外）</h3>
+<ol>
+<li>给 Q1（BD139）装散热片；把 22 Ω 电阻（RS1）焊在 Q1 的基极脚上；用导热胶把 D1（1N4148）贴在同一块散热片上，D1 的<strong>阳极</strong>焊到 RS1 的另一端，这一点叫 b1。从模块引出四根线：b1、D1 阴极、发射极 E、集电极 C。</li>
+<li>同样给 Q2（BD140）装散热片，焊上 RS2，把 D2 贴在<strong>另一块</strong>散热片上，D2 的<strong>阴极</strong>焊到 RS2 的另一端（这一点叫 b2）。引出 b2、D2 阳极、E、C 四根线。这两个模块就是图 43-p4-2 原理图里「Q1 + RS1 + D1」和「Q2 + RS2 + D2」那两块。</li>
+</ol>
+<p>这两步就是「热耦合」：二极管和功放管一起热，偏置电压自动跟着变小。</p>
+<p><a class="img-link" href="img/43_p4_6_module.png"><img alt="功放管模块示意：左右两块带散热齿的散热片，分别装 Q1 BD139 和 Q2 BD140，管子和散热片之间画了一片黄色的可选绝缘垫；管脚从左到右 E、C、B，22 Ω 电阻焊在 B 脚上；D1、D2 用导热胶贴在各自散热片的左下角；图上写明散热片带电、等于集电极，下方文字列出每根引线插到面包板哪里：E 接 RE（a22 或 j22），Q1 的 C 经电流表接 +12 V、Q2 的 C 接 GND 轨，22 Ω 另一端和二极管一脚连成基极线 b1 或 b2；标题提醒两块散热片绝不能相碰" src="img/43_p4_6_module.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-6　功放管模块：散热片就是集电极，两块不能相碰</em></p>
+<p>图 43-p4-6 里管脚顺序按常见 BD139/BD140 的引脚图画（正面朝自己、管脚朝下，从左到右 E、C、B），动手前请对照你买的那批管子的手册。图 43-p4-6 的下方文字就是第 10 步要插的位置。</p>
+<h3 id="面包板接线">面包板接线</h3>
+<ol start="3">
+<li>TL072 跨在凹槽上，缺口朝左，占第 3～6 列（下半区第 3～6 列是 1、2、3、4 脚，上半区第 3～6 列是 8、7、6、5 脚）。a3 接上方 +12 V 轨，j6 接下方 GND 轨。</li>
+<li><strong>A 运放做 <span class="math math-inline">\(V_{MID}\)</span></strong> ：R1 10 kΩ 从 j5 到下方 +12 V 轨，绿线 h5 → h8，R2 10 kΩ 从 j8 到 GND 轨，Cd 10 µF 在 i8–i10（正极在第 8 列），j10 接 GND 轨；g3–g4 短线（1 脚接 2 脚，跟随器）；绿线 h3 → h1，再 g1 → d1，把 <span class="math math-inline">\(V_{MID}\)</span> 送到上半区第 1 列。</li>
+<li><strong>B 运放做 ×3 放大</strong>：RG 10 kΩ 在 b1–b5，Rbias 100 kΩ 在 c1–c6，Cin 10 µF 在 a6–a9（正极在第 6 列），信号源接 a9 和上方 GND 轨；绿线 a5 → a12，RF 20 kΩ 在 a12–a15，绿线 a15 → a26（反馈取自 OUT）。</li>
+<li><strong>运放输出 m</strong>：蓝线 d4 → d16，再 e16–f16 短线跨过凹槽，第 16 列上下两半都是 m。</li>
+<li><strong>发射极和输出</strong>：RE1 3.3 Ω 在 c22–c26，RE2 3.3 Ω 在 h22–h26，橙线 d26 → g26 连通上下两半的第 26 列（OUT）；Rz 10 Ω 在 i26–i29，Cz 100 nF 从 j29 到 GND 轨； <span class="math math-inline">\(C_o\)</span> 1000 µF 在 b26–b30（<strong>正极在第 26 列</strong>）。</li>
+<li><strong>上恒流源（上半区第 33～38 列）</strong>：Q3（BD140）印字面朝自己插在 c33、c34、c35（E、C、B）；Rx3 27 Ω 从上方 +12 V 轨到 a33；Rk3 4.7 kΩ 从 a35 到上方 GND 轨；D5 从 +12 V 轨（阳极）到 a38（阴极），b38–b37 短线，D6 阳极 d37、阴极 d35；绿线 e34 → e17 把 Q3 集电极的电流送到 b1。</li>
+<li><strong>下恒流源（下半区第 33～38 列）</strong>：Q4（BD139）和 Q3 一样<strong>印字面朝自己</strong>（朝面包板下边沿），插在 g33、g34、g35，从左到右是 E、C、B，和图 43-p4-1 里 Q4 方块上的标注一致；插反了 E、C 会对调，恒流源就不工作；Rx4 27 Ω 从 j33 到下方 GND 轨；Rk4 4.7 kΩ 从 j35 到下方 +12 V 轨；D7 阳极 i35、阴极 i37，h37–h38 短线，D8 阳极 j38、阴极接 GND 轨；绿线 f34 → g18 把 b2 的电流抽到 Q4 集电极。</li>
+<li><strong>接模块</strong>：Q1 模块的 b1 线插 a17，D1 阴极线插 a16，E 线插 a22，C 线经电流表（红表笔插 10 A 插孔、接 +12 V 一侧，旋钮拨直流 A 档）接上方 +12 V 轨（第 31 列）。Q2 模块的 b2 线插 j18，D2 阳极线插 j16，E 线插 j22，C 线接下方 GND 轨（第 24 列）。</li>
+<li><strong>负载</strong>：8 Ω / 5 W 功率电阻一端接 b30（ <span class="math math-inline">\(C_o\)</span> 负极这一列），另一端用粗线接上方 GND 轨第 39 列。</li>
+<li><strong>电源轨</strong>：上下两条 +12 V 轨在第 41 列连起来，两条 GND 轨在第 40 列连起来。电源 +12 V 接 B+2，GND 接 B-3。这里的记号：T 表示面包板<strong>上方</strong>电源轨，B 表示<strong>下方</strong>电源轨；「+」「−」分别是 +12 V 轨和 GND 轨；后面的数字是列号。所以 B+2 就是「下方 +12 V 轨第 2 列」，B-3 就是「下方 GND 轨第 3 列」。本实验峰值电流约 0.25 A，面包板触点一般扛得住；负载和电源仍用粗线，若哪个触点发烫，按参数与调试篇排错表的办法改用接线端子。上电前先用万用表电阻档确认 +12 V 轨和 GND 轨之间不是短路（应大于几百欧）。</li>
+</ol>
+<p><a class="img-link" href="img/43_p4_1_breadboard.png"><img alt="面包板实物接线图：标题「推挽功放：TL072 + 两个恒流源 + BD139 / BD140（功率管连同 D1、D2 装在散热片上，放在板外）」。TL072 跨凹槽占第 3～6 列；左下 R1、R2 和 Cd 做中点参考，绿线把它送到上半区第 1 列；上半区 RG、Rbias、Cin 和 RF 20 kΩ 组成 ×3 放大，绿线从 a15 走到第 26 列；蓝线把运放输出 m 送到第 16 列；RE1、RE2 3.3 Ω 汇到第 26 列 OUT，旁边是 Rz、Cz 和 1000 µF 输出电容；右边第 33～38 列上下各一个恒流源（Q3 BD140、Q4 BD139、27 Ω、4.7 kΩ、D5～D8），集电极经绿线接到第 17 列和第 18 列；板外上方是 Q1 模块、电流表、8 Ω 负载，下方是 Q2 模块和 12 V 电源。黄圈：① e1 中点参考，② g16 运放输出，③ b22 与第 26 列量 RE1，④ e26 OUT，⑤ +12 V 轨与 e33 量 Rx3，⑥ i33 与 GND 轨量 Rx4" src="img/43_p4_1_breadboard.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-1　面包板接线：黄圈是测量点，功放管模块在板外</em></p>
+<p><a class="img-link" href="img/43_p4_2_schem_lab.png"><img alt="对照原理图：TL072 A 运放把 R1、R2 分压缓冲成中点参考 V_MID（测量点 ①），B 运放同相放大 3 倍，输出 m（测量点 ②）夹在 D1、D2 之间，上面是约 24 mA 的上恒流源，下面是下恒流源；b1、b2 经 22 Ω 接 Q1 BD139、Q2 BD140 的基极，两管发射极经 RE1、RE2 3.3 Ω 汇成 OUT（测量点 ④，RE1 两端是测量点 ③），OUT 经 1000 µF 接 8 Ω 负载到地，并接 Zobel 网络；电流表串在 +12 V 与 Q1 集电极之间。灰字标出面包板位置：b1 是上半区第 17 列，m 是第 16 列，b2 是下半区第 18 列，上下恒流源都在第 33～38 列，负载在板外" src="img/43_p4_2_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-2　对照原理图：灰字是面包板位置，黄圈编号与图 43-p4-1 相同</em></p>
+<p><strong>对照看</strong>：图 43-p4-1 和图 43-p4-2 的黄圈编号一一对应。原理图里夹在 D1、D2 中间的 m 点，就是面包板第 16 列：蓝线从 TL072 的 7 脚（上半区第 4 列）拉过来，D1 的阴极线和 D2 的阳极线都插在这一列。原理图上「上恒流源 → b1」那根线，就是面包板上从 e34 走到 e17 的绿线；「b2 → 下恒流源」就是 f34 → g18。原理图的 RE1、RE2 汇到 OUT，就是面包板 c22–c26、h22–h26 两只 3.3 Ω 加上 d26 → g26 那根橙线。原理图左边的反馈电阻 RF 接在 OUT 上，面包板上就是 a15 → a26 那根长绿线。电流表在原理图里串在 +12 V 和 Q1 集电极之间，面包板上就是 Q1 模块 C 线经过电流表再到第 31 列的 +12 V 轨。</p>
+<h2 id="测量表">测量表</h2>
+<p>万用表黑表笔默认接 GND 轨。「应该读到」来自原理与实现篇的计算和 SPICE（<code>spice/43/run.py</code>），元件误差会让你的读数差几个百分点。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A1</td>
+<td>信号源音量 0，上电：中点参考 <span class="math math-inline">\(V_{MID}\)</span> （①）</td>
+<td>e1</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 6.00 V</td>
+<td>R1、R2 是否都接上；g1 → d1 跨线</td>
+</tr>
+<tr>
+<td>A2</td>
+<td>运放输出 m（②）</td>
+<td>g16</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 6.0 V</td>
+<td>7 脚蓝线 d4 → d16；e16–f16 短线</td>
+</tr>
+<tr>
+<td>A3</td>
+<td>推挽输出 OUT（④）</td>
+<td>e26</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 6.0 V</td>
+<td>反馈线 a15 → a26；RE1、RE2 是否插在第 26 列</td>
+</tr>
+<tr>
+<td>A4</td>
+<td>上恒流源 <span class="math math-inline">\(R_X\)</span> 两端（⑤）</td>
+<td>上方 +12 V 轨</td>
+<td>e33</td>
+<td>直流 2 V</td>
+<td>约 0.64 V（约 23.7 mA）</td>
+<td>Q3 的 E、C、B 顺序；D5、D6 方向（读到 0 多半是恒流源没通）</td>
+</tr>
+<tr>
+<td>A5</td>
+<td>下恒流源 <span class="math math-inline">\(R_X\)</span> 两端（⑥）</td>
+<td>i33</td>
+<td>下方 GND 轨</td>
+<td>直流 2 V</td>
+<td>约 0.64 V</td>
+<td>Q4 的 E、C、B 顺序；D7、D8 方向</td>
+</tr>
+<tr>
+<td>A6</td>
+<td>RE1 两端（③）：静止电流</td>
+<td>b22</td>
+<td>e26</td>
+<td>直流 200 mV</td>
+<td>约 109 mV（ <span class="math math-inline">\(\div 3.3\ \Omega \approx 33\ \text{mA}\)</span> ）；<strong>超过 165 mV 立刻断电</strong></td>
+<td>D1、D2 方向；模块 b1、b2 线是否插对列</td>
+</tr>
+<tr>
+<td>A7</td>
+<td>电流表读数（Q1 集电极）</td>
+<td>—</td>
+<td>—</td>
+<td>10 A 插孔、直流 A 档</td>
+<td>约 0.033 A，与 A6 一致（10 A 档通常只显示到 0.01 A，只能看到 0.03；精读以 A6 的 mV ÷ 3.3 为准）</td>
+<td>电流表是否插在 10 A 插孔、拨在直流 A 档</td>
+</tr>
+<tr>
+<td>A8</td>
+<td>每分钟记一次 A6 和散热片温度，共 5 分钟</td>
+<td>同 A6</td>
+<td>同 A6</td>
+<td>同 A6</td>
+<td>基本稳定，不持续上升；散热片只是温热</td>
+<td>D1、D2 是否真的贴在散热片上</td>
+</tr>
+<tr>
+<td>B1</td>
+<td>400 Hz 正弦，慢慢加音量：负载两端交流电压</td>
+<td>b30</td>
+<td>GND 轨</td>
+<td>交流 2 V</td>
+<td>调到约 1.42 V（有效值，相当于峰值 2.01 V）</td>
+<td>音量是否够；Cin 方向</td>
+</tr>
+<tr>
+<td>B2</td>
+<td>此时电流表读数</td>
+<td>—</td>
+<td>—</td>
+<td>10 A 插孔、直流 A 档</td>
+<td>约 0.083 A（82.5 mA；10 A 档只能看到 0.08，精读以 B2′ 的 274 mV ÷ 3.3 为准）</td>
+<td>读数在跳就等几秒，读平均</td>
+</tr>
+<tr>
+<td>B2′</td>
+<td>此时 RE1 两端（③），直流档</td>
+<td>b22</td>
+<td>e26</td>
+<td>直流 2 V</td>
+<td>约 274 mV（ <span class="math math-inline">\(\div 3.3\ \Omega \approx 83\ \text{mA}\)</span> ，和 B2 一致）</td>
+<td>这是放音时的平均值，165 mV 红线只管<strong>静止</strong>时的 A6</td>
+</tr>
+<tr>
+<td>B3</td>
+<td>此时散热片温度</td>
+<td>测温探头</td>
+<td>—</td>
+<td>温度档</td>
+<td>温热，远低于 60 °C</td>
+<td>超过 60 °C 立即断电</td>
+</tr>
+<tr>
+<td>C1</td>
+<td>改成直流慢扫（见下文），甲乙类：inp 与 OUT</td>
+<td>b6 / e26</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>见读完后展开的「预期参考」</td>
+<td>RF 改接是否到位（b16）</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>两根跳线短接 D1、D2 变成乙类，重复 C1</td>
+<td>b6 / e26</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>见读完后展开的「预期参考」</td>
+<td>两根跳线位置</td>
+</tr>
+<tr>
+<td>C3</td>
+<td>保留跳线，反馈线 b16 端改插 f26（乙类 + 反馈环）：inp、OUT 和 m（②）</td>
+<td>b6 / e26 / g16</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>见读完后展开的「预期参考」</td>
+<td>反馈线是否插在 f26（a26 被测试负载占着）</td>
+</tr>
+</tbody>
+</table>
+<p>B1 用 400 Hz 而不是 1 kHz，是因为很多入门万用表的交流档只在几百赫兹以内准（查一下你那只表说明书里的频率范围）。推挽功放在 400 Hz 和 1 kHz 的表现几乎一样（原理与实现篇的幅频曲线在 100 Hz 以上已经是平的）。</p>
+<p>B2′ 用万用表直流档量 RE1，读的是放音时的平均值：Q1 只在正半周导通，平均电流约 83 mA，所以 RE1 上平均约 274 mV（SPICE）。它比 165 mV 的红线高，这是正常的；红线只用来判断<strong>没有信号时</strong>的静止电流。</p>
+<p><strong>怎么算效率</strong>：电源功率 <span class="math math-inline">\(P_S = 12\ \text{V} \times\)</span> （B2 读数），负载功率 <span class="math math-inline">\(P_L = V_{rms}^2 / 8\ \Omega\)</span> 。按「应该读到」： <span class="math math-inline">\(P_S = 12 \times 0.0825 \approx 0.99\ \text{W}\)</span> ， <span class="math math-inline">\(P_L = 1.42^2 / 8 \approx 0.252\ \text{W}\)</span> ，效率约 25.5%。注意电流表只量 Q1 这一路；电源自带的电流显示会多出恒流源的约 24 mA 和运放的几毫安，那部分不算进这里的效率。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>交越失真只出现在过零附近几十微秒里，万用表跟不上。办法是把「时间」换成「电位器」：让输入慢慢变，每变一点就用万用表读一次 OUT，自己画一条输入—输出曲线（实验 C）。</p>
+<p>断电后做以下改动：</p>
+<ol>
+<li>拔掉信号源（a9 那根线）。</li>
+<li><strong>反馈改接 m</strong>：把 a15 → a26 那根绿线的 a26 一端改插到 b16。这样推挽级在反馈环外，才能看到它自己的死区。</li>
+<li><strong>输入用电位器</strong>：4.7 kΩ 从下方 +12 V 轨到 j12，2 kΩ 电位器三只脚插 h12、h13、h14（中间脚 h13 是滑动端），4.7 kΩ 从 j14 到下方 GND 轨；100 Ω 在 g11–g13，再用一根线 f11 → d6 接到 B 运放的同相端（上半区第 6 列）。滑动端电压范围约 4.95～7.05 V。</li>
+<li><strong>测试负载</strong>：2 kΩ 从 a26 到上方 +12 V 轨，另一只 2 kΩ 从 j26 到下方 GND 轨，让 OUT 在死区里被拉在 6 V。</li>
+<li>上电，从 inp 约 5.7 V 到 6.3 V，每隔约 50 mV 读一次 inp（b6）、OUT（e26）和 m（g16），记下来（这就是测量表的 C1；记录表里「m − 6 V」那一行也要用 m 的读数）。</li>
+<li>断电，加两根跳线：c16–c17（短接 D1）、h16–h18（短接 D2），两个基极都直接接 m，变成乙类。两个恒流源的电流一个流进 m、一个从 m 流出，差的零点几毫安由运放补上。再上电重复第 5 步（C2）。</li>
+<li>断电，<strong>保留两根跳线</strong>，把反馈线的 b16 一端插到 <strong>f26</strong>：a26 此时被测试负载占着，而 f26 在下半区第 26 列，经 d26 → g26 那根橙线和 a26 同属 OUT。这样乙类推挽又回到反馈环里。上电，在 inp − 6 V 为 −0.1、0、+0.1 V 附近各读一次 inp、OUT 和 m（g16），再在 6 V 两侧各 10 mV 处读两次 m（C3）。</li>
+</ol>
+<p><a class="img-link" href="img/43_p4_4_expC_breadboard.png"><img alt="实验 C 改线后的面包板图：在图 43-p4-1 的基础上，a9 的信号源拔掉（蓝色虚线表示示波器实验时才接回）；反馈绿线从 a15 走到 b16（不再到 a26）；下半区 j12 到下方 +12 V 轨一只 4.7 kΩ，h12 到 h14 一只 2 kΩ 电位器，j14 到下方 GND 轨一只 4.7 kΩ，g11 到 g13 一只 100 Ω，蓝线 f11 跨到 d6；a26 到上方 +12 V 轨、j26 到下方 GND 轨各一只 2 kΩ 测试负载；c16–c17、h16–h18 两根紫色跳线上画了红叉，表示 C2 时才插；黄圈 ⑦ 在 b6 读 inp，④ 在 e26 读 OUT，② 在 g16 读 m；f26 画了一个绿色虚线圈，表示 C3 时反馈线 b16 一端改插到这里（a26 被测试负载占着，f26 经 g26 的橙线同属 OUT）；电位器的三只脚画成三个黑点，插在 h12、h13、h14，中间的 h13 是滑动端" src="img/43_p4_4_expC_breadboard.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-4　实验 C 的改线：反馈改接 m，电位器慢扫，紫色跳线 C2 才插</em></p>
+<p><a class="img-link" href="img/43_p4_5_expC_schem.png"><img alt="实验 C 的原理图：左边 +12 V 经 4.7 kΩ、2 kΩ 电位器、4.7 kΩ 到地，电位器滑动端经 100 Ω 接 TL072 B 的同相端 inp（测量点 ⑦），Rbias 100 kΩ 仍接中点参考；反馈电阻 RF 20 kΩ 从运放反相端接到运放输出 m，并注明面包板 b16；m 夹在 D1、D2 之间，紫色虚线绕过 D1、D2，表示 C2 才插的跳线；推挽输出 OUT（测量点 ④）上接两只 2 kΩ，一只到 +12 V、一只到地，旁注「对交流相当于 1 kΩ，直流把 OUT 拉在 6 V」；其余部分与图 43-p4-2 相同" src="img/43_p4_5_expC_schem.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-5　实验 C 的原理图：推挽级在反馈环外</em></p>
+<p><strong>对照看</strong>：图 43-p4-4 下半区左边那一串「4.7 kΩ — 电位器 — 4.7 kΩ」，就是图 43-p4-5 最左边那一竖排；电位器中间脚 h13 是滑动端，经 g11–g13 的 100 Ω 和 f11 → d6 那根蓝线进到 inp。图 43-p4-4 里从 a15 走到 b16 的绿线，就是图 43-p4-5 里标着「RF 改接 m」的那根反馈线。两只 2 kΩ 测试负载在原理图右上角，面包板上分别插在 a26 和 j26。C3 时反馈线要回到 OUT，可上半区第 26 列 a26～e26 已经插满（测试负载、 <span class="math math-inline">\(C_o\)</span> 、RE1、橙线、测量点 ④），所以改插下半区的 f26，也就是图 43-p4-4 里那个绿色虚线圈；图 43-p4-5 底部注文写的也是 f26。两根紫色跳线在两张图里都绕过 D1、D2。</p>
+<blockquote>
+<p><strong>动手前先预测（C1、C2、C3 读完再展开下面的参考）</strong></p>
+<ol>
+<li>甲乙类（C1）：inp 每升 0.1 V，OUT 大约升多少？</li>
+<li>乙类（C2）：inp 在 6 V 附近变一点点时，OUT 会怎样？m 呢？</li>
+<li>乙类放回反馈环（C3）：OUT 还会有「不动」的一段吗？m 在 inp 经过 6 V 时会怎样？</li>
+</ol>
+</blockquote>
+<details><summary>测完再看：预期参考（SPICE）</summary>
+<p><a class="img-link" href="img/43_p4_3_dc_readings.png"><img alt="直流慢扫的预期读数曲线：横轴是 inp 减 6 V，从 −0.5 到 +0.5 V；黄色甲乙类曲线 OUT 减 6 V 是一条斜率为 3 的直线，在原点处平滑通过；橙色乙类曲线在 inp 减 6 V 为 −0.15 到 +0.15 V 的阴影区里平躺在 0，阴影区标注「乙类：inp 在这 0.30 V 里 OUT 一动不动」，之后才斜着上升；圆点表示每 50 mV 读一次；灰色虚线是 m 减 6 V，两种接法几乎一样" src="img/43_p4_3_dc_readings.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-3　直流慢扫的预期读数：乙类中间那段平台就是死区</em></p>
+<table>
+<thead>
+<tr>
+<th>inp − 6 V / V</th>
+<th>−0.3</th>
+<th>−0.2</th>
+<th>−0.1</th>
+<th>0</th>
+<th>0.1</th>
+<th>0.2</th>
+<th>0.3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1 甲乙类 OUT − 6 V</td>
+<td>−0.90</td>
+<td>−0.60</td>
+<td>−0.30</td>
+<td>0</td>
+<td>0.30</td>
+<td>0.60</td>
+<td>0.90</td>
+</tr>
+<tr>
+<td>C2 乙类 OUT − 6 V</td>
+<td>−0.36</td>
+<td>−0.09</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+<td>0.09</td>
+<td>0.35</td>
+</tr>
+<tr>
+<td>C3 乙类 + 反馈环 OUT − 6 V</td>
+<td>—</td>
+<td>—</td>
+<td>−0.30</td>
+<td>0</td>
+<td>0.30</td>
+<td>—</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>C1：OUT − 6 V ≈ 3 × (inp − 6 V)，一条直线。</li>
+<li>C1、C2 的 m（g16）：反馈此时取自 m，同相放大倍数是 1 + 20 kΩ / 10 kΩ = 3，所以 m − 6 V ≈ 3 × (inp − 6 V)：inp − 6 V 为 ±0.1 V 时，m − 6 V 约 ±0.30 V。记录表「m − 6 V」那两行就和这个比。</li>
+<li>C2：图 43-p4-3 里乙类的平台约 0.3 V 宽（SPICE 按 m 的摆幅除以 3 算是 0.31 V，图里按扫描点读出 0.30 V）。inp 在这段里变，m 跟着摆了约 ±0.46 V，可两只管子都还没导通，OUT 纹丝不动。这就是交越失真的「慢动作」。甲乙类的曲线在原点平滑通过，说明两只二极管垫的偏置把死区填平了。把你的读数点画在图 43-p4-3 上对比，就能亲眼看到偏置的作用。</li>
+<li>C3：OUT 又变回斜率 3 的直线，没有平台（±0.1 V 时约 ±0.30 V）。死区被藏进了 m：inp 从 6 V 下面 10 mV 走到上面 10 mV，m 一下子跳了约 1.02 V；inp − 6 V = +0.1 V 时 m − 6 V 约 0.84 V，比 OUT 高出一个 <span class="math math-inline">\(V_{BE}\)</span> 再加 RE 上的压降。运放用自己的输出「跳过」死区，这正是原理与实现篇里乙类放进反馈环后的那种跳变。</li>
+</ul>
+</details>
+<p>做完后<strong>断电</strong>，把两根跳线拆掉，拆掉电位器那一串和测试负载，信号源接回 a9，把反馈线从 f26 改插回 a26，恢复实验 B 的接法。</p>
+<h2 id="实验-d用耳朵听交越失真可选">实验 D：用耳朵听交越失真（可选）</h2>
+<p><a class="img-link" href="img/43_p4_7_listen.png"><img alt="试听接法：OUT（第 26 列）经 1000 µF 输出电容到 b30，再串一只 10 Ω / 2 W 电阻，接 8 Ω 喇叭，喇叭另一端回 GND 轨；下方文字说明负载位置共 18 Ω，万用表交流档量 b30 对 GND，先在正常接法下调到约 0.71 V（峰值约 1 V），之后音量旋钮不再动；喇叭上峰值约 0.44 V、约 12 mW，10 Ω 上约 15 mW" src="img/43_p4_7_listen.png" loading="lazy" /></a></p>
+<p><em>图 43-p4-7　试听接法：喇叭先串 10 Ω，再接到原来 8 Ω 负载的位置</em></p>
+<p>断电，按图 43-p4-7 把 8 Ω 功率电阻换成「10 Ω / 2 W 串 8 Ω 喇叭」。每次改接都先断电，音量旋钮从头到尾只在第 1 步调一次：</p>
+<ol>
+<li>正常接法（甲乙类、反馈接 a26），400 Hz，音量从 0 慢慢加，直到万用表交流档在 b30 对 GND 读到约 0.71 V（峰值约 1 V）。记住这个声音。</li>
+<li><strong>D1 乙类、反馈在环外</strong>：断电，反馈线 a26 端改插 b16，插上两根跳线。上电听。</li>
+<li><strong>D2 甲乙类、反馈在环外</strong>：断电，拔掉两根跳线。上电听。</li>
+<li><strong>D3 乙类、反馈在环内</strong>：断电，插回两根跳线，反馈线插回 a26。上电听。</li>
+<li>断电，拆掉跳线，喇叭换回 8 Ω 功率电阻。</li>
+</ol>
+<blockquote>
+<p><strong>听之前先猜</strong>：D1、D2、D3 三种接法里，你猜哪一种最「沙」、声音最小？哪一种和第 1 步几乎听不出差别？听完再展开下面的参考。</p>
+</blockquote>
+<details><summary>听完再看：SPICE 参考</summary>
+<ul>
+<li>D1 乙类、反馈在环外：声音明显变小、发「沙」，负载位置峰值只剩约 0.30 V，失真（THD）约 45%。</li>
+<li>D2 甲乙类、反馈在环外：声音干净，峰值约 0.89 V，THD 约 0.085%。</li>
+<li>D3 乙类、反馈在环内：峰值回到约 1.0 V，THD 约 0.054%，和第 1 步几乎听不出差别（第 1 步本身约 0.0057%）。</li>
+</ul>
+</details>
+<p>图 43-p4-7 里喇叭上峰值约 0.44 V、约 12 mW，10 Ω 电阻上约 15 mW，喇叭和电阻都很安全。D1 那种「沙沙」声，就是图 43-p4-3 里那段平台变成的声音：小信号几乎整个掉进死区。</p>
+<h2 id="有示波器时看交越波形可选">有示波器时：看交越波形（可选）</h2>
+<p>示波器探头接 b30（负载上端），<strong>地夹夹在 GND 轨</strong>上。本节的负载一端接地，所以地夹放在 GND 轨是安全的（下一节的 D 类功放用的是两端都不接地的接法，那里地夹绝不能夹在输出上）。</p>
+<ul>
+<li>断电后按实验 C 的第 2 步把反馈改接 m，再加上第 6 步的两根跳线，但信号源接回 a9：400 Hz 正弦，负载峰值调到约 1 V，就能看到原理与实现篇里那种「过零处被削掉一截」的乙类波形。</li>
+<li>拆掉两根跳线（甲乙类），台阶基本消失。</li>
+<li>断电，把反馈线插回 a26（如果 2 kΩ 测试负载还占着 a26，就插 f26，同属 OUT），波形应和输入一模一样（只是大了 3 倍）。</li>
+<li>时基调到 1 µs/div、带宽调满，看 OUT 有没有一层「毛」：有就是寄生振荡，参考参数与调试篇的排错表。</li>
+</ul>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>把你的读数填进 <code>mine</code>，运行后会和预期值比较，偏差超过 10% 的会被标出来。程序不读写任何文件，在哪个目录运行都行。</p>
+<pre><code class="language-python">RE, RX, RL = 3.3, 27.0, 8.0                        # ← 换成你实测的电阻值（RE、恒流源 RX、负载）
+VS = 12.0                                          # ← 换成你实测的电源电压
+exp = {                                            # 预期值（spice/43/run.py）
+    &quot;V_MID&quot;: 6.00, &quot;OUT&quot;: 6.00,                    # 静止电压 / V
+    &quot;V_RX3&quot;: 0.64, &quot;V_RX4&quot;: 0.64,                  # 恒流源电阻两端 / V
+    &quot;V_RE1&quot;: 0.109,                                # RE1 两端 / V（静止电流 33 mA）
+    &quot;I_amm_B&quot;: 0.0825, &quot;V_rms_B&quot;: 1.42,            # 实验 B：电流表 / A、负载有效值 / V
+}
+mine = {&quot;V_MID&quot;: 5.98, &quot;OUT&quot;: 6.03, &quot;V_RX3&quot;: 0.62,  # ← 换成你的读数
+        &quot;V_RX4&quot;: 0.66, &quot;V_RE1&quot;: 0.118,
+        &quot;I_amm_B&quot;: 0.085, &quot;V_rms_B&quot;: 1.40}
+for k, v in mine.items():                          # 逐项比较
+    w = exp[k]                                     # 预期值
+    flag = &quot;OK&quot; if abs(v - w) / w &lt;= 0.10 else &quot;偏差超过 10%&quot;  # 相对偏差
+    print(f&quot;{k:8s} 预期 {w:7.4f}，你读到 {v:7.4f} → {flag}&quot;)  # 打印
+iq = mine[&quot;V_RE1&quot;] / RE                            # 静止电流 = RE 电压 ÷ RE
+print(f&quot;静止电流 {iq * 1e3:.1f} mA&quot;, &quot;（超过 50 mA 立刻断电！）&quot; if iq &gt; 0.050 else &quot;（正常）&quot;)
+print(f&quot;恒流源：上 {mine['V_RX3'] / RX * 1e3:.1f} mA，下 {mine['V_RX4'] / RX * 1e3:.1f} mA（要求 ≥ 22 mA）&quot;)
+ps = VS * mine[&quot;I_amm_B&quot;]                          # 电源功率（只算 Q1 这一路）
+pl = mine[&quot;V_rms_B&quot;] ** 2 / RL                     # 负载功率
+print(f&quot;P_S = {ps:.3f} W，P_L = {pl:.3f} W，效率 {pl / ps * 100:.1f}%（预期约 25.5%）&quot;)
+</code></pre>
+<p>示例读数运行后应全部显示 OK。注意：若恒流源算出来小于 22 mA，平时也许听不出问题，但遇到 <span class="math math-inline">\(h_{FE}\)</span> 偏低的管子、音量开大时会削顶。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>时间 / min</th>
+<th>RE1 两端 / mV</th>
+<th>静止电流 = mV ÷ 3.3 / mA</th>
+<th>电流表 / mA</th>
+<th>Q1 散热片 / °C</th>
+<th>Q2 散热片 / °C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>1</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>实验 B</th>
+<th>读数</th>
+<th>预期</th>
+<th>偏差 / %</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>负载有效值 / V</td>
+<td></td>
+<td>1.42</td>
+<td></td>
+</tr>
+<tr>
+<td>电流表平均 / mA</td>
+<td></td>
+<td>82.5</td>
+<td></td>
+</tr>
+<tr>
+<td>电源功率 <span class="math math-inline">\(P_S\)</span> / W</td>
+<td></td>
+<td>0.99</td>
+<td></td>
+</tr>
+<tr>
+<td>负载功率 <span class="math math-inline">\(P_L\)</span> / W</td>
+<td></td>
+<td>0.252</td>
+<td></td>
+</tr>
+<tr>
+<td>效率 / %</td>
+<td></td>
+<td>25.5</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>实验 C：inp − 6 V / V</th>
+<th>−0.3</th>
+<th>−0.2</th>
+<th>−0.1</th>
+<th>0</th>
+<th>0.1</th>
+<th>0.2</th>
+<th>0.3</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>C1 甲乙类 OUT − 6 V（我的）</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>C2 乙类 OUT − 6 V（我的）</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>C2 乙类 m − 6 V（我的）</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>C3 乙类 + 反馈环 OUT − 6 V（我的）</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>C3 乙类 + 反馈环 m − 6 V（我的）</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>实验 D</th>
+<th>听到的声音（大小、干净还是沙）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>正常接法</td>
+<td></td>
+</tr>
+<tr>
+<td>D1 乙类、环外</td>
+<td></td>
+</tr>
+<tr>
+<td>D2 甲乙类、环外</td>
+<td></td>
+</tr>
+<tr>
+<td>D3 乙类、环内</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>实验 C 的预期值取自 <code>spice/43/dc_AB.csv</code>、<code>dc_B.csv</code> 和 <code>dc_B_loop.csv</code>，在上面「测完再看」里。试听时（负载位置峰值约 1 V），喇叭上峰值约 0.44 V、约 12 mW，10 Ω 电阻上约 15 mW，所以 2 W 的电阻足够。</p>
+<h2 id="思考题">思考题</h2>
+<p><strong>1.</strong> 没有声音时电流表读约 33 mA，负载峰值 2 V 时读约 82.5 mA。多出来的电流从哪里来？如果是乙类（没有偏置），峰值 2 V 时电流表大约读多少？</p>
+<details><summary>答案</summary>
+<p>Q1 只在正半周导通，送出半个正弦，峰值 <span class="math math-inline">\(2 / 8 = 0.25\ \text{A}\)</span> ，半波的平均值是 <span class="math math-inline">\(0.25 / \pi \approx 79.6\ \text{mA}\)</span> 。甲乙类在这之上还有一部分静止电流（大信号时静止电流的贡献会变小），所以读到约 82.5 mA。乙类没有静止电流，读数接近 79.6 mA；理想乙类电源功率 <span class="math math-inline">\(12 \times 0.0796 \approx 0.955\ \text{W}\)</span> 。</p>
+</details>
+<p><strong>2.</strong> 做完 C2 后，你应该发现 inp 在 6 V 附近的一小段里 OUT 不动，m（②）却在动。用你自己的读数回答：m 摆的大约是 inp 的几倍？为什么？m 摆了几百毫伏，两只管子为什么都还没导通？</p>
+<details><summary>答案</summary>
+<p>反馈改接 m 后，B 运放是一个增益 <span class="math math-inline">\(1 + 20 / 10 = 3\)</span> 的同相放大器，所以 m − 6 V ≈ 3 × (inp − 6 V)，0.15 V 变成约 0.46 V。乙类时 m 直接接两只基极，OUT 被测试负载拉在 6 V；m 要比 OUT 高出一个 <span class="math math-inline">\(V_{BE}\)</span> （约 0.6 V）Q1 才导通，低出一个 <span class="math math-inline">\(V_{BE}\)</span> Q2 才导通，±0.46 V 还没到，所以两只都截止。</p>
+</details>
+<p><strong>3.</strong> 有同学嫌贴二极管麻烦，把 D1、D2 直接插在面包板上。刚上电静止电流正常，放了 5 分钟大音量音乐后变成 60 mA。发生了什么？该怎么办？</p>
+<details><summary>答案</summary>
+<p>大音量时功放管发热，它们的 <span class="math math-inline">\(V_{BE}\)</span> 每热 1 °C 约小 2 mV；而面包板上的二极管还是凉的，偏置电压不变，于是静止电流变大，管子更热，进入正反馈。60 mA 时 <span class="math math-inline">\(R_E\)</span> 上约 198 mV，已经超过 165 mV（50 mA）的红线，应立即断电，等它凉下来，把 D1、D2 用导热胶贴在各自的散热片上再试。参数与调试篇的失配图说明了 3.3 Ω 的 <span class="math math-inline">\(R_E\)</span> 能拖慢这个过程，但不能代替热耦合。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>[ ] 我能说出甲类、乙类、甲乙类各自的效率和缺点。</li>
+<li>[ ] 我能解释为什么偏置电流要按 <span class="math math-inline">\(h_{FE}\)</span> 最差 25 算到 ≥ 22 mA，以及恒流源比 470 Ω 好在哪里。</li>
+<li>[ ] 我能用 <span class="math math-inline">\(R_E\)</span> 两端的 mV 算出静止电流，并知道 165 mV 是断电红线。</li>
+<li>[ ] 我能说出二极管为什么要贴在散热片上，以及温度为什么只能用测温探头量。</li>
+<li>[ ] 我能用电流表和负载电压算出电源功率、负载功率和效率。</li>
+<li>[ ] 我能用直流慢扫的读数说明交越失真是怎么来的。</li>
+<li>[ ] 我能说出为什么乙类放进反馈环后 OUT 没有平台，而运放输出 m 会跳一下。</li>
+<li>[ ] 我知道 Q1 的散热片是 +12 V、Q2 的散热片是 GND，两块绝不能相碰。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>BD135～BD140 数据手册（Central Semiconductor，「Mounting pad is common to lead 2」，即背面金属片接集电极）：<a href="https://my.centralsemi.com/datasheets/BD135_SERIES.PDF">https://my.centralsemi.com/datasheets/BD135_SERIES.PDF</a></li>
+<li>BD139 数据手册（Philips，引脚图与外壳）：<a href="https://www.alldatasheet.pl/html-pdf/16171/PHILIPS/BD139/493/2/BD139.html">https://www.alldatasheet.pl/html-pdf/16171/PHILIPS/BD139/493/2/BD139.html</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

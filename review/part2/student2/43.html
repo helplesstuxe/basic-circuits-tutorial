@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放 · 模拟学生 student2 审读报告</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/student2/43.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放--模拟学生-student2-审读报告">43 推挽功放 · 模拟学生 student2 审读报告</h1>
+<ul>
+<li>审读人：student2（高一水平：会欧姆定律、串并联、功率、电容、基础 Python；没学过运放、三极管工作区、反馈、频率响应）</li>
+<li>审读时间：2026-10-27 约 06:55–07:05 EDT</li>
+<li>作者完成行：在 notes/part2-status.log 里找到「43-push-pull-power-amp done (author D)」（这一行没有时间戳）。</li>
+<li>运行环境：/workspace/circuits-venv/bin/python。代码、图和 SPICE 都在仓库副本 /tmp/bct-run/43/repocopy 里跑，副本不含 notes/、.git、_site。我自己的验算放在 /tmp/bct-run/43/var/。</li>
+</ul>
+<h2 id="1-总体感受">1 总体感受</h2>
+<p>这一节我很喜欢。page1 用「拉大锯」讲交越失真，配上 page2 的完整电路图和 page3 的失配图，我能顺着读下来：</p>
+<ul>
+<li>为什么要推挽；</li>
+<li>为什么会有死区；</li>
+<li>为什么要垫两只二极管；</li>
+<li>为什么偏置要用恒流源；</li>
+<li>为什么 R_E 能防热失控。</li>
+</ul>
+<p>计算题都给了公式和数字，我能一步一步跟着算，全部对得上。SPICE 核对表 74 项全部吻合，偏差都在 ±3.1 % 以内。</p>
+<p>动手实验篇的面包板图画得很细：每个元件的位置、方向（&quot;+&quot; 号、阳极）、探针点 ①–⑥ 都和文字步骤一一对应。我逐个元件核对，没有发现插错的地方。照着步骤能搭出来。</p>
+<p>问题主要有三类：</p>
+<ul>
+<li>跨节导航有 2 处断链：42 和 44 两节都没有页面；</li>
+<li>page1 有一个数字和图、和作者自己的 SPICE 表都对不上（0.99 V，应为 0.91 V）；</li>
+<li>一些对新手不友好的小地方：求导、B+2 记号、电流表档位前后说法不一等。</li>
+</ul>
+<h2 id="2-按页问题">2 按页问题</h2>
+<h3 id="必改">必改</h3>
+<p><strong>必改 1｜跨节导航断链（42、44 两处）</strong></p>
+<ul>
+<li>page1 第 3 行「上一页：42 流量计信号链总览 · 动手实验篇」链接到 <code>../42-flowmeter-signal-chains/page4.md</code>。仓库里 42-flowmeter-signal-chains/ 目录虽然在 06:51 EDT 出现了，但里面只有一个空的 img/，没有任何 page 文件，所以链接打不开。按协调者要求，「依赖的 42 缺失」要记为问题。</li>
+<li>page4 第 3 行「下一页：44 D 类功放 · 直觉篇」链接到 <code>../44-class-d-amp/page1.md</code>。仓库里根本没有 44-class-d-amp/ 目录，链接打不开。</li>
+<li>其他链接我都用脚本逐个检查过，全部存在：
+<ul>
+<li>本节 page1–4 互链；</li>
+<li>17 张 img；</li>
+<li>前置节点 19 的 page1/3/4、08 的 page1、12 的 page1/4、17 的 page1/3、01 的 page1。</li>
+</ul>
+</li>
+<li>page1 第 8 行提到的「19 节参数与调试篇的练习 4」确实就是推挽跟随器（19/page3.md 第 93 行），对得上。</li>
+<li>改法：42、44 的页面写好后再复查；在那之前，可以先改成纯文字、不带链接。</li>
+</ul>
+<p><strong>必改 2｜page1 第 47 行「负载上只剩峰值 0.99 V 左右」与图和 SPICE 不符</strong></p>
+<ul>
+<li>图 43-p1-3 左图的橙色波形峰值明显在 0.9 V 附近。</li>
+<li>spice/43/run.py 的核对项「p1 图43-p1-3 乙类开环：负载电压峰值」页面值写的是 0.91 V，SPICE 算出 0.9103 V。</li>
+<li>我自己手算：(2 − 0.7) × 8 / (8 + 3.3) ≈ 0.92 V。</li>
+<li>第 43 行的图说明写「峰值只有约 1 V」，算是约数，可以接受；但第 47 行给了两位小数 0.99，就是一个错数。</li>
+<li>新手如果拿图来对，会以为自己读错了图。另外，核对脚本只核对它自己硬编码的 0.91，并没有去读页面正文，所以没发现这里的错。</li>
+<li>改法：把 0.99 改为 0.91。</li>
+</ul>
+<h3 id="建议">建议</h3>
+<ol>
+<li>
+<p><strong>恒流源手算值和 SPICE 值的差，没讲清是哪一步造成的</strong></p>
+<ul>
+<li>位置：page2 第 48 行「…约 1.24 V；Q3 的发射结又吃掉约 0.64 V，所以 27 Ω 两端只剩约 0.6 V，≈ 22 mA（手算估计），SPICE 算出 23.7 mA」。page3 练习 2 第 118 行用的也是「2 × 0.62 − 0.64 = 0.6 V」。</li>
+<li>问题：
+<ul>
+<li>两只二极管算 0.62 V/只，而发射结算 0.64 V，数字是混着用的。</li>
+<li>而图 43-p2-6、page3 第 12 行和 page4 的测量表都写 R_X 上约 0.64 V；我在 SPICE 里读到 V_RX3 = 0.641 V。</li>
+<li>新手会困惑：「为什么 page4 让我量出 0.64 V，可 page2 说只剩 0.6 V？」</li>
+</ul>
+</li>
+<li>建议：
+<ul>
+<li>说明二极管在约 2.6 mA 时压降也约 0.64 V，两者基本抵消，所以 R_X 上 ≈ 0.64 V；</li>
+<li>统一写成 0.64 V / 27 Ω ≈ 23.7 mA；</li>
+<li>练习 2 相应改成 0.64 / 33 ≈ 19.4 mA，结论「不够」不变。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>page2 第 82 行「对 V_p 求导，令导数为 0」超出高一</strong></p>
+<ul>
+<li>我还没学导数。</li>
+<li>建议改用二次函数配方或顶点公式：管耗 P_D = (12/π) · V_p / 8 − V_p² / 16，这是开口向下的抛物线，顶点在 V_p = (12/π) / 2 · 16 / 8 = 12/π ≈ 3.82 V。</li>
+<li>或者把「求导」放进 details 里，正文只给结论加一张表（page2 的代码块其实已经打印出 3.82 V 那一行了）。</li>
+</ul>
+</li>
+<li>
+<p><strong>测试音频率前后不一致</strong></p>
+<ul>
+<li>page2 第 58 行说「动手实验篇用 200 Hz 测试音」；</li>
+<li>但 page4 第 10、43、91、97、124 行全部用 400 Hz，第 97 行还专门解释了为什么用 400 Hz。</li>
+<li>建议把 page2 改成 400 Hz：在 1000 µF、19.9 Hz 拐点下，400 Hz 的衰减约 0.12 %，结论更好。</li>
+</ul>
+</li>
+<li>
+<p><strong>page4 第 65 行「电源 +12 V 接 B+2，GND 接 B-3」记号没定义</strong></p>
+<ul>
+<li>我对着面包板图才看懂：「B」是下方电源轨，「+」是 +12 V 轨，「2」是第 2 列。也就是 +12 V 接下方 +12 V 轨第 2 列，GND 接下方 GND 轨第 3 列，图里确实是这样画的。</li>
+<li>这和 41 节的「tn34」是同一类问题。</li>
+<li>建议写成完整中文。</li>
+</ul>
+</li>
+<li>
+<p><strong>电流表插孔前后说法不一</strong></p>
+<ul>
+<li>page3 第 91 行故障表说「开机冲击电流可能超出 mA 档 → 先用 10 A 插孔量」；</li>
+<li>page4 A7、B2（第 89、92 行）写的都是「直流 200 mA」，检查栏还写「电流表是否在 mA 插孔」。</li>
+<li>新手不知道该听哪个。开机时 C_o 从 0 充到 6 V，冲击电流受电源 0.5 A 限流，而很多表的 mA 档保险丝只有 200 mA。</li>
+<li>建议在 page4 步骤 10 写明：
+<ul>
+<li>上电时先插 10 A 孔；</li>
+<li>稳定后断电，换到 mA 孔再上电；</li>
+<li>或者干脆用 A6（R_E 上的 mV）代替电流表读静态电流。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>page3 第 90 行与 page4 搭法之间的张力</strong></p>
+<ul>
+<li>page3 说功率回路（电源 → 管子 → 输出电容 → 负载 → 地）要「用粗线和接线端子，不要全走面包板」；</li>
+<li>但 page4 的 RE1、RE2、C_o、负载接点、电源轨都在面包板上。</li>
+<li>本实验峰值电流约 0.25 A，平均 82.5 mA，面包板一般扛得住。建议在 page4 补一句：
+<ul>
+<li>本实验电流在面包板承受范围内；</li>
+<li>负载和电源用粗线；</li>
+<li>若触点发烫，按 page3 第 90 行处理。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>电源没有大电容退耦</strong></p>
+<ul>
+<li>物料表（page4 第 36 行）没有 +12 V 对 GND 的电源滤波电容；TL072 电源脚也没有 100 nF。</li>
+<li>功放管电流按 400 Hz 脉动、峰值 0.25 A，电源引线长时容易引起寄生振荡或「汽船声」。page3 第 86 行把「集电极就近加 0.1 µF」只放在了故障排查里。</li>
+<li>建议在步骤 12 直接加两只电容，都跨在 +12 V 轨和 GND 轨之间：
+<ul>
+<li>一只 470 µF/16 V 电解；</li>
+<li>一只靠近 TL072 的 100 nF。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>Q4 的插法没说朝向</strong></p>
+<ul>
+<li>page4 第 61 行对 Q3 写了「印字面朝自己」；第 62 行对 Q4 只写了插在 g33、g34、g35（E、C、B），没说朝向。</li>
+<li>BD139 反插后 E、C 会对调。</li>
+<li>建议同样加「印字面朝自己」。</li>
+</ul>
+</li>
+<li>
+<p><strong>C_o 耐压三处写法不一</strong></p>
+<ul>
+<li>page2 第 30 行和原理图 43-p4-2 写「1000 µF/25 V」；</li>
+<li>page3 第 17 行和 page4 第 21、36 行写「16 V 以上 / 16 V」。</li>
+<li>两种都安全，但新手买料时会犹豫。建议统一写「≥ 16 V（如 25 V）」。</li>
+</ul>
+</li>
+<li>
+<p><strong>手机输出幅度前后说法不一</strong></p>
+<ul>
+<li>page3 第 82 行写了手机输出「约 0.5～1 Vrms」；</li>
+<li>page2 第 146 行附近却说这里不给具体数字。</li>
+<li>建议统一：都给范围，或都不给。属于很小的不一致。</li>
+</ul>
+</li>
+</ol>
+<h2 id="3-练习作答记录">3 练习作答记录</h2>
+<p>我先自己算，再打开 details 对答案。</p>
+<p><strong>page2 例题 1–3 和代码块里的数</strong></p>
+<ul>
+<li>理想乙类功率，V_p = 2 V：
+<ul>
+<li>P_L = 2² / (2·8) = 0.25 W；</li>
+<li>P_S = 12 · 2 / (π·8) = 0.955 W；</li>
+<li>η = π·2/24 = 26.2 %。✓</li>
+</ul>
+</li>
+<li>V_p = 3 V：η = 39.3 %，P_L = 0.5625 W。✓</li>
+<li>管耗最大点：V_p = 12/π = 3.82 V，两管合计 0.912 W。我是用抛物线顶点算出来的，没有用求导。✓</li>
+<li>V_p = 6 V：P_S = 2.865 W。✓</li>
+<li>甲类对比：0.75 A、9 W、2.25 W、25 %。✓</li>
+<li>静态管耗：6 V × 33 mA = 0.198 W，×100 °C/W ≈ 19.8 °C 温升。✓</li>
+<li>低频拐点：
+<ul>
+<li>1000 µF：fc = 1/(2π·8·1000 µ) = 19.9 Hz；</li>
+<li>470 µF：42.3 Hz；</li>
+<li>220 µF：90.4 Hz。✓</li>
+</ul>
+</li>
+</ul>
+<p><strong>page3 练习</strong></p>
+<ul>
+<li>练习 1：140 mV / 3.3 Ω = 42.4 mA。还没到 165 mV（50 mA）的红线。✓</li>
+<li>练习 2：我按页面方法算出 0.6 / 33 = 18.2 mA &lt; 22 mA，不够。✓
+<ul>
+<li>但如果按 SPICE 的 0.64 V 算，是 19.4 mA，结论相同，见建议 1。</li>
+</ul>
+</li>
+<li>练习 3：35 + 0.44 × 100 ≈ 79 °C。手册 1.25 W 是 25 °C 环境、不带散热片时的数，高温时要降额，所以最好装散热片。✓</li>
+<li>练习 4：C_o 换成 2200 µF，fc = 1/(2π·8·2200 µF) ≈ 9.0 Hz。代价是电容更大、开机「嘭」更响、充电时间更长。✓</li>
+</ul>
+<p><strong>page4 思考题</strong></p>
+<ul>
+<li>1：最大功率 0.25 W 时的平均电流 = 2/(π·8) A = 79.6 mA；再加 I_q，和 82.5 mA 吻合。✓</li>
+<li>2：为什么二极管要贴在散热片上？管子热了 V_BE 下降约 2 mV/°C，二极管跟着热、压降也降，偏置自动变小，防止热失控。我的理解和答案一致。✓</li>
+<li>3：60 mA × 3.3 Ω = 198 mV，超过 165 mV 的红线，该停机检查。✓</li>
+</ul>
+<p><strong>page4 测量表的预期值</strong></p>
+<ul>
+<li>B1：1.42 Vrms × √2 = 2.01 V 峰值。✓</li>
+<li>效率：12 V × 82.5 mA = 0.99 W，0.252 / 0.99 = 25.5 %。✓</li>
+<li>试听（喇叭串 10 Ω）：
+<ul>
+<li>喇叭 3·8/18 = 1.33 V，0.111 W；</li>
+<li>10 Ω 上 0.139 W，在 2 W 额定内。✓</li>
+</ul>
+</li>
+<li>慢扫电位器的范围：12 × 4.7/11.4 = 4.95 V 到 7.05 V，与 43_figs.py 打印的「4.95～7.05 V」一致。✓</li>
+</ul>
+<h2 id="4-代码运行记录">4 代码运行记录</h2>
+<p>所有运行都在副本 /tmp/bct-run/43/repocopy 根目录下进行，环境变量设为 TMPDIR=/tmp/bct-run/43/tmp、MPLCONFIGDIR=/tmp/bct-run/43/mpl。</p>
+<table>
+<thead>
+<tr>
+<th>代码</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page2 代码块（功率与效率表）</td>
+<td>退出码 0。打印 2 / 3 / 3.82 / 6 V 四行：0.250 W / 0.955 W / 26.2 %、0.562 W / 39.3 %、0.912 W / 50 %、2.865 W / 78.5 %，与正文一致</td>
+</tr>
+<tr>
+<td>page4 代码块（测量读数检查）</td>
+<td>退出码 0。示例读数全部 OK，静止电流 35.8 mA，恒流源 23.0 / 24.4 mA，效率 24.0 %，与第 157 行「应全部显示 OK」一致</td>
+</tr>
+<tr>
+<td>code/figs/43_figs.py</td>
+<td>退出码 0。重新生成 17 张 PNG，与仓库里的逐字节相同（cmp 无差异）</td>
+</tr>
+<tr>
+<td>spice/43/run.py</td>
+<td>退出码 0，用时约 14 s，共 74 项，全部吻合，最大偏差 BD140 V_BE −3.03 %（页面按「约 0.6～0.7 V」写）。重点项：I_q 32.96 mA、偏置 1.558 V、恒流 23.75 / 23.6 mA；THD 20.96 / 1.837 / 0.0708 / 0.00855 %；82.54 mA、1.421 Vrms、25.48 %；低 hFE 时恒流源 2.01 / 2.89 V，470 Ω 时 1.64 V；失配 35.3 / 42.3 / 52 与 82.1 / 101 / 128 mA；10 kHz THD 0.70 %；增益 2.999</td>
+</tr>
+</tbody>
+</table>
+<p>文件影响：</p>
+<ul>
+<li><a href="http://run.py">run.py</a> 默认把 *_vg.txt 和 CSV 写到 mkdtemp 临时目录（落在 /tmp/bct-run/43/tmp 下）。副本里 spice/43/ 和 img/ 的 md5 前后完全相同。</li>
+<li><code>find -newer stamp</code> 只列出 43_figs.py 重写的 17 张 img，而且内容未变。</li>
+<li>仓库本身没有任何文件被生成或覆盖。</li>
+</ul>
+<p><strong>附记（审读期间代码有更新）</strong></p>
+<ul>
+<li>06:59 EDT，code/figs/43_figs.py 和 spice/43/run.py 被别的代理改过（「教师复核后补充」）；四个 page 文件没有变（mtime 仍是 06:28–06:36 EDT）。</li>
+<li>本报告第 2–3 节针对的是当前页面文字；第 4 节前面的表是 06:54 EDT 快照的运行结果。</li>
+<li>我又把新版 spice/、code/ 复制到 /tmp/bct-run/43/repocopy2 重跑了一遍：
+<ul>
+<li><a href="http://run.py">run.py</a> 退出码 0，共 93 项，原有项全部吻合；</li>
+<li>新增项（恒流源 1.295 / 0.654 / 0.641 V、B2 瞬时 0.25 A、实验 C3、实验 D 试听）在页面值一栏还是「—」，说明作者正在修订、页面还没同步；</li>
+<li>新版 43_figs.py 也能跑，退出码 0。</li>
+</ul>
+</li>
+<li>新代码已按 SPICE 工作点改写了恒流源算式，正好对应我的建议 1；还写明 Q1 瞬时电流约 0.25 A，所以电流表用 10 A 插孔，对应建议 5。等页面同步后这两条可以复查关闭。</li>
+</ul>
+<h2 id="5-面包板与原理图核对">5 面包板与原理图核对</h2>
+<p>我对照的图是 43_p4_1_breadboard.png（放大裁了 4 块看）和 43_p4_2_schem_lab.png，按 page4 步骤 3–12 和实验 C 的步骤逐个元件核对。</p>
+<p>TL072 跨中缝，占第 3–6 列：</p>
+<ul>
+<li>上排第 3–6 列 = 脚 8、7、6、5；</li>
+<li>下排第 3–6 列 = 脚 1、2、3、4。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>元件 / 连线</th>
+<th>文字位置</th>
+<th>图中位置</th>
+<th>原理图</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V+ / GND</td>
+<td>a3 → 上 +12；j6 → 下 GND</td>
+<td>一致</td>
+<td>脚 8 / 脚 4</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>R1、R2 分压 + Cd</td>
+<td>R1 j5 → 下 +12；h5 → h8；R2 j8 → GND；Cd i8–i10（+ 在 8）；j10 → GND</td>
+<td>一致，&quot;+&quot; 在第 8 列</td>
+<td>V_MID = 6 V 给 A 半 + 端</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>A 半跟随</td>
+<td>g3–g4；h3 → h1；g1 → d1</td>
+<td>一致</td>
+<td>A 输出 = V_MID</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>RG、Rbias</td>
+<td>RG b1–b5；Rbias c1–c6</td>
+<td>一致</td>
+<td>RG 到脚 6（−），Rbias 到脚 5（+）</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Cin</td>
+<td>a6–a9，+ 在 6；信号源接 a9 和上 GND</td>
+<td>一致</td>
+<td>极性正确：运放侧 6 V，信号侧 0 V</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>RF</td>
+<td>a5 → a12；RF a12–a15；a15 → a26</td>
+<td>一致</td>
+<td>反馈取自 OUT，增益 1 + 20/10 = 3</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>m</td>
+<td>d4 → d16；e16–f16</td>
+<td>一致</td>
+<td>脚 7 = m</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>RE1 / RE2 / OUT</td>
+<td>RE1 c22–c26；RE2 h22–h26；d26 → g26</td>
+<td>一致</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Zobel</td>
+<td>Rz i26–i29；Cz j29 → 下 GND</td>
+<td>一致（Cz 落在 GND 行，不是 +12 行）</td>
+<td>10 Ω + 100 nF</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>C_o</td>
+<td>b26–b30，+ 在 26</td>
+<td>一致</td>
+<td>正极接 OUT</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>上恒流源</td>
+<td>Q3 BD140 c33/34/35 = E/C/B；Rx3 +12 → a33；Rk3 a35 → 上 GND；D5 +12 → a38；b38–b37；D6 d37 → d35</td>
+<td>一致，D6 &quot;+&quot; 在 37</td>
+<td>+12 → D5 → D6 → 基极，钉在 +12 − 1.3 V</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Q3 集电极 → b1</td>
+<td>e34 → e17</td>
+<td>一致</td>
+<td>恒流流进 b1</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>下恒流源</td>
+<td>Q4 BD139 g33/34/35；Rx4 j33 → GND；Rk4 j35 → 下 +12；D7 i35 → i37；h37–h38；D8 j38 → GND</td>
+<td>一致，D7 &quot;+&quot; 在 35，D8 &quot;+&quot; 在 38</td>
+<td>基极钉在 GND + 1.3 V</td>
+<td>✓（朝向未写，见建议 8）</td>
+</tr>
+<tr>
+<td>Q4 集电极 → b2</td>
+<td>f34 → g18</td>
+<td>一致</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Q1 模块</td>
+<td>b1 → a17；D1 阴极 → a16；E → a22；C 经电流表 → 上 +12 第 31 列</td>
+<td>一致</td>
+<td>D1 阳极 b1、阴极 m</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>Q2 模块</td>
+<td>b2 → j18；D2 阳极 → j16；E → j22；C → 下 GND 第 24 列</td>
+<td>一致</td>
+<td>Q2 PNP 发射极朝上、箭头向内；D2 阳极 m、阴极 b2</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>负载</td>
+<td>b30 → 上 GND 第 39 列</td>
+<td>一致</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>电源轨</td>
+<td>+12 第 41 列连通，GND 第 40 列连通；电源 + → 下 +12 第 2 列，− → 下 GND 第 3 列</td>
+<td>一致</td>
+<td>—</td>
+<td>✓（记号见建议 4）</td>
+</tr>
+<tr>
+<td>探针 ①–⑥</td>
+<td>e1、g16、b22 / 26 列、e26、+12 / e33、i33 / GND</td>
+<td>一致，各孔都空着</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>实验 C 改接</td>
+<td>电位器网络：4.7k 下 +12 → j12；电位器 h12–h14；4.7k j14 → GND；100 Ω g11–g13；f11 → d6。RF 一端改插 b16；2k a26 → +12；2k j26 → GND；跳线 c16–c17、h16–h18</td>
+<td>所用的孔我逐列数过都是空的（第 16 列上半 5 个孔正好用满）</td>
+<td>—</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<p>我还专门核对了以下几点：</p>
+<ul>
+<li>BD139/BD140（SOT-32/TO-126）印字面朝自己时，引脚从左到右是 E、C、B，和图一致。</li>
+<li>两块散热片背面接集电极，一个是 +12 V、一个是 GND。page4 第 18 行「散热片不能互相碰」说得对。</li>
+</ul>
+<p>结论：面包板与原理图、与文字步骤全部一致，没有发现错位。照步骤可以搭出来。</p>
+<h2 id="6-举一反三">6 举一反三</h2>
+<p><strong>问题</strong>：家里只有 4 Ω 喇叭，直接把 8 Ω 换成 4 Ω 行不行？能出多大声？把恒流源电流加大（R_X 27 → 18 Ω）有没有用？</p>
+<p><strong>我的预测</strong>（用本节学到的方法）：</p>
+<ol>
+<li>低频拐点：fc = 1/(2π·4·1000 µF) = 39.8 Hz，低音少一点，仍能用。</li>
+<li>V_p = 2 V 时：
+<ul>
+<li>P_L = 4/(2·4) = 0.5 W；</li>
+<li>P_S = 12·2/(π·4) = 1.91 W；</li>
+<li>η 仍约 26 %。</li>
+</ul>
+</li>
+<li>V_p = 3 V 时，负载峰值电流 0.75 A，R_E 上就要掉 0.75 × 3.3 ≈ 2.5 V。
+<ul>
+<li>b1 至少要到 6 + 3 + 2.5 + V_BE(0.8) + 22 Ω 压降 ≈ 12.5 V 以上，可上恒流源最多只能把 b1 推到约 11.1 V。</li>
+<li>所以我预计会被「电压余量」卡在约 2.0–2.4 V，而不是被「喂不饱」卡住。</li>
+<li>因此把 R_X 改小、加大电流帮助不大；把 R_E 改成 1 Ω 才有用，但静态电流会升高。</li>
+</ul>
+</li>
+</ol>
+<p><strong>SPICE 验证</strong>：</p>
+<ul>
+<li>文件在 /tmp/bct-run/43/var/43/gen.py。它基于副本的 common.inc 和 bias_AB.inc，只改 RL、R_X、R_E；低 hFE 模型按 <a href="http://run.py">run.py</a> 同样的方法生成。</li>
+<li>先用 8 Ω、低 hFE 的组合复现页面：2.01 / 2.89 V，与 page3 一致，说明我的网表没改坏。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>I_q</th>
+<th>目标 2 V 时 V_p</th>
+<th>目标 3 V 时 V_p</th>
+<th>b1 最高</th>
+<th>电流表平均（3 V 档）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>8 Ω，低 hFE（复现页面）</td>
+<td>—</td>
+<td>2.01 V</td>
+<td>2.90 V</td>
+<td>11.13 V</td>
+<td>116 mA</td>
+</tr>
+<tr>
+<td>4 Ω，典型 hFE，R_X 27，R_E 3.3</td>
+<td>33.0 mA</td>
+<td>2.01 V</td>
+<td><strong>2.37 V</strong></td>
+<td>11.22 V</td>
+<td>215 mA</td>
+</tr>
+<tr>
+<td>4 Ω，低 hFE，R_X 27，R_E 3.3</td>
+<td>—</td>
+<td>2.01 V</td>
+<td><strong>2.13 V</strong></td>
+<td>11.12 V</td>
+<td>195 mA</td>
+</tr>
+<tr>
+<td>4 Ω，低 hFE，<strong>R_X 18</strong>，R_E 3.3</td>
+<td>—</td>
+<td>2.01 V</td>
+<td>2.17 V（几乎没变）</td>
+<td>11.20 V</td>
+<td>198 mA</td>
+</tr>
+<tr>
+<td>4 Ω，低 hFE，R_X 18，<strong>R_E 1 Ω</strong></td>
+<td>65.6 mA</td>
+<td>2.01 V</td>
+<td>2.63 / −2.50 V</td>
+<td>10.76 V</td>
+<td>222 mA</td>
+</tr>
+<tr>
+<td>4 Ω，典型 hFE，R_X 27，<strong>R_E 1 Ω</strong></td>
+<td>75.8 mA</td>
+<td>2.01 V</td>
+<td>3.00 V</td>
+<td>10.71 V</td>
+<td>242 mA</td>
+</tr>
+</tbody>
+</table>
+<p>（低 hFE 那几行的 I_q 在报告里没有单列，只看 V_p。）</p>
+<p><strong>结论</strong>：</p>
+<ul>
+<li>4 Ω 时 V_p = 2 V 完全没问题：P_L 0.5 W，效率 = 0.5 / (12 × 0.160) ≈ 26 %，与理想 26.2 % 吻合。</li>
+<li>想要 3 V 就削顶了。正如我预测的，瓶颈是 R_E 上的压降吃掉了余量，b1 已顶到约 11.1–11.2 V：
+<ul>
+<li>R_X 从 27 Ω 改成 18 Ω，V_p 只从 2.13 V 涨到 2.17 V；</li>
+<li>R_E 改成 1 Ω 才能推到 2.5–3.0 V，但静态电流升到 66–76 mA，和 page3 失配图一致，热稳定性变差、每管静态发热约 0.45 W，必须上散热片并重新按 165 mV 红线（1 Ω 时应改成 50 mV）监控。</li>
+</ul>
+</li>
+<li>我的数值预测（约 2.0–2.4 V）偏保守，但机理判断对了。这说明 page3 讲的「余量」和「R_E 取舍」我真的学会了。</li>
+<li>也可以给作者参考：在 page3 的参数表里加一行「负载 4 Ω 时」。</li>
+</ul>
+<h2 id="7-结论必改-2-条建议-10-条">7 结论：必改 2 条、建议 10 条</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>必改</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>跨节导航断链：42 节没有页面（目录只有空 img/），44 节目录不存在</td>
+<td>page1 第 3 行 <code>../42-flowmeter-signal-chains/page4.md</code>；page4 第 3 行 <code>../44-class-d-amp/page1.md</code></td>
+</tr>
+<tr>
+<td>2</td>
+<td>「负载上只剩峰值 0.99 V」应为 0.91 V（图 43-p1-3 和 <a href="http://run.py">run.py</a> 核对项都是 0.91 V）</td>
+<td>page1 第 47 行</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>代码：2 个页面代码块、43_figs.py、spice/43/run.py（74 项）全部能跑、全部吻合；仓库内没有生成或覆盖任何文件。</li>
+<li>面包板：与原理图、步骤全部一致。</li>
+</ul>
+<h2 id="复核">复核</h2>
+<p>复核时间：2026-10-27 07:44–07:50 EDT（box 时间 19:44–19:50 CST）。
+复核依据：status.log 第 99 行和第 109 行，都是「43-push-pull-power-amp teacher-fix done (author D)」。
+复核范围：只看剩下的必改，以及修改有没有带来新问题。必改 1（指向 42、44 的跨节链接）按协调者的新规则（未写节的链接不算必改）<strong>关闭</strong>，不再追究。</p>
+<p>验证方法：</p>
+<ul>
+<li>仓库（不含 .git、_site、notes）复制到 <code>/tmp/bct-run/43r/repocopy</code>，设了 <code>TMPDIR</code>、<code>MPLCONFIGDIR=/tmp/bct-run/43r/...</code>。</li>
+<li>把 4 个页面和上次的副本 <code>/tmp/bct-run/43/repocopy2</code> 逐行 diff，四页都改了。<code>code/figs/43_figs.py</code>、<code>spice/43/run.py</code>、<code>spice/43/dc_B_loop.csv</code> 也改了。</li>
+<li>运行结果：
+<ul>
+<li><code>code/figs/43_figs.py</code> exit 0，重新生成的 21 张图和仓库逐字节相同；</li>
+<li><code>spice/43/run.py</code> exit 0，用时 17 s，共 93 项（上次 74 项），偏差全部在 ±1.2% 以内；</li>
+<li>页面引用的图片全部存在。</li>
+</ul>
+</li>
+<li>副本里除了出图目录，没有其他新文件。我没有在仓库里运行任何东西。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>必改项</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>跨节导航断链（42、44）</td>
+<td><strong>按规则关闭</strong></td>
+<td>未写节的链接不算必改</td>
+</tr>
+<tr>
+<td>2</td>
+<td>page1「负载上只剩峰值 0.99 V」应为 0.91 V</td>
+<td><strong>已修</strong></td>
+<td>第 47 行改成「负载上只剩峰值约 0.91 V（SPICE 0.910 V）」。<a href="http://run.py">run.py</a> 第 46 行核对项：页面 0.91 V，SPICE 0.9103 V，偏差 +0.03%。第 43 行图注也从「约 1 V」改成了「约 0.9 V」，和图一致</td>
+</tr>
+</tbody>
+</table>
+<h3 id="新内容抽查我自己验算过">新内容抽查（我自己验算过）</h3>
+<ul>
+<li>page2 管耗公式 <span class="math math-inline">\(P_D = \frac{12}{8\pi}V_p - \frac{V_p^2}{16}\)</span> ：顶点 <span class="math math-inline">\(V_p = 12/\pi = 3.82\)</span> V， <span class="math math-inline">\(P_D\)</span> = 1.824 − 0.912 = 0.912 W ✓。</li>
+<li>page2 例 1： <span class="math math-inline">\(P_S\)</span> = 1.43 W， <span class="math math-inline">\(P_D\)</span> = 0.87 W ✓。例 2 填空答案：0.955 / 0.25 / 0.705 W，每只 0.35 W，温升 35 °C ✓。</li>
+<li>page2：400 Hz 时输出电容带来的衰减 <span class="math math-inline">\(1/\sqrt{1+(19.9/400)^2}\)</span> = 0.99876，即约 0.12% ✓。</li>
+<li>page2/page3 恒流源：1.295 − 0.654 = 0.641 V；0.641/27 = 23.7 mA；33 Ω 时 19.4 mA ✓。</li>
+<li>page3 新练习 4（换 4 Ω）： <span class="math math-inline">\(P_L\)</span> 1.125 W， <span class="math math-inline">\(P_S\)</span> 2.865 W， <span class="math math-inline">\(P_D\)</span> 1.74 W，每只 0.87 W、温升 87 °C，C ≈ 2000 µF，基极电流 30 mA &gt; 23.7 mA ✓。练习 5：90.4 Hz ✓。</li>
+<li>page4 B2′：83 mA × 3.3 Ω = 274 mV ✓，<a href="http://run.py">run.py</a> 也给 274 mV。</li>
+<li>page4 实验 C3：m 跳变 1.02 V，+0.1 V 时 m − 6 V = 0.84 V ✓（<a href="http://run.py">run.py</a>）。我手算：0.30 V，加上小电流下的 V_BE 约 0.55 V，合计约 0.85 V，吻合。</li>
+<li>page4 实验 D：负载位置共 18 Ω，峰值 1 V。喇叭上峰值 1 × 8/18 = 0.444 V，功率 12.3 mW；10 Ω 上 15.4 mW ✓。D1/D2/D3 的峰值和 THD 都和 <a href="http://run.py">run.py</a> 一致。</li>
+<li>图 43-p4-4（实验 C 改线）、43-p4-6（功放管模块）、43-p4-7（试听接法）都和文字对得上：
+<ul>
+<li>p4-6 管脚 E、C、B，D1 阴极 → a16，D2 阳极 → j16；</li>
+<li>p4-4 的 f26 绿色虚线圈，以及 d26 → g26 橙线把 a26 和 f26 连成同一个 OUT。</li>
+</ul>
+</li>
+<li>散热片带电的说法（Q1 散热片 = +12 V，Q2 散热片 = GND）和接线一致；电流表全程用 10 A 插孔，A7/B2 的读数说明也合理。</li>
+</ul>
+<h3 id="修改引入的新问题都是建议没有新必改">修改引入的新问题（都是建议，没有新必改）</h3>
+<ol>
+<li>page2 第 174 行「音量比例 1 里的小」读起来很别扭（像是「比例 1」连在一起）。建议改成「音量比例 1 小，管子反而只凉了一点点」。</li>
+<li>page3 第 13 行参数表最后一列还是「 <span class="math math-inline">\(R_X \approx 0.6\ \text{V} / I\)</span> 」，而正文和练习 2 已经统一用 0.64 V。建议改成 0.64 V，或写「约一只二极管压降 / I」。</li>
+</ol>
+<p><strong>复核结论</strong>：必改全部关闭（1 条按规则关闭，1 条已修），新增建议 2 条。43 可以通过。</p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

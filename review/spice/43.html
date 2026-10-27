@@ -1,0 +1,833 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放：SPICE 复核报告</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/spice/43.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放spice-复核报告">43 推挽功放：SPICE 复核报告</h1>
+<ul>
+<li><strong>工具</strong>：ngspice 44.2，batch 模式。</li>
+<li><strong>运行</strong>：在仓库根目录执行 <code>python spice/43/run.py</code>（约 15 秒），退出码 0，已实际运行，共 93 项。默认所有输出写到临时目录；只有加 <code>--update</code> 时才更新 <code>spice/43/</code> 下画图用的小 CSV。</li>
+<li><strong>电压范围</strong>：单 12 V 直流供电，负载 8 Ω 功率电阻接真地；全部 ≤ 12 V。</li>
+<li><strong>结论汇总</strong>：✅ 93　⚠️ 0　❌ 0（判据：|偏差| ≤ 2 % 为 ✅，2～5 % 为 ⚠️，&gt; 5 % 为 ❌；页面写成范围的按是否落在范围内判）。</li>
+</ul>
+<h2 id="网表">网表</h2>
+<table>
+<thead>
+<tr>
+<th>网表</th>
+<th>内容</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>common.inc</code></td>
+<td>公共部分：TL072 A 缓冲出中点参考 6 V（10 k / 10 k + 10 µF），B 运放 ×3 同相放大（RG 10 k、RF 20 k、Rbias 100 k、Cin 10 µF），基极阻尼 22 Ω，BD139/BD140 推挽，R_E 3.3 Ω，Zobel 10 Ω + 100 nF，1000 µF 接 8 Ω 到真地；电流表 <code>Vam</code> 串在 +12 V 与 Q1 集电极之间</td>
+</tr>
+<tr>
+<td><code>bias_AB.inc</code></td>
+<td>甲乙类偏置：两个恒流源（Q3 BD140 / Q4 BD139，27 Ω + 两只 1N4148 + 4.7 kΩ）各约 23.7 mA，D1、D2 1N4148 垫在 m 和两基极之间</td>
+</tr>
+<tr>
+<td><code>bias_B.inc</code></td>
+<td>乙类：两基极直接接 m，无偏置、无恒流源</td>
+</tr>
+<tr>
+<td><code>bias_RB470.inc</code></td>
+<td>对比用：470 Ω 电阻代替恒流源</td>
+</tr>
+<tr>
+<td><code>iq_op.cir</code></td>
+<td>静态工作点、静止电流、偏置电压、失配扫描（20 / 80 / 160 mV，R_E 1 Ω 与 3.3 Ω）</td>
+</tr>
+<tr>
+<td><code>tran_*.cir</code></td>
+<td>1 kHz（及 10 kHz）瞬态：乙类 / 甲乙类，开环 / 环内；THD 用 <code>.four</code></td>
+</tr>
+<tr>
+<td><code>dc_*_open.cir</code></td>
+<td>直流慢扫：反馈改接 m，OUT 加 2 kΩ 到 +12 V、2 kΩ 到地的测试负载，inp 经 100 Ω 从电位器扫</td>
+</tr>
+<tr>
+<td><code>lowb_*.cir</code>、<code>typ_rb470.cir</code></td>
+<td>h_FE ≈ 25 的最坏模型下，恒流源 vs 470 Ω 的削顶与运放电流</td>
+</tr>
+<tr>
+<td><code>ac_cout.cir</code></td>
+<td>1000 µF / 470 µF 低频角与中频增益</td>
+</tr>
+<tr>
+<td><code>ccs_op.cir</code></td>
+<td>恒流源各点电压（D5+D6、Q3 V_EB、Rx3）与电流</td>
+</tr>
+<tr>
+<td><code>tran_AB_B2.cir</code></td>
+<td>400 Hz 甲乙类环内：实验 B2 / B2′ 读数</td>
+</tr>
+<tr>
+<td><code>dc_B_loop.cir</code></td>
+<td>实验 C3：乙类放回反馈环的直流慢扫</td>
+</tr>
+<tr>
+<td><code>listen_*.cir</code></td>
+<td>400 Hz：实验 D 试听四种接法（负载位置 = 10 Ω + 8 Ω）</td>
+</tr>
+<tr>
+<td><code>chk_models.cir</code></td>
+<td>BD139/BD140 模型与数据手册的 h_FE、V_BE 对照</td>
+</tr>
+</tbody>
+</table>
+<h2 id="模型与来源">模型与来源</h2>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>模型文件</th>
+<th>来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TL072</td>
+<td>spice/models/TL072.lib（共享，原样未改）</td>
+<td>TI：<a href="https://www.ti.com/lit/zip/sloj067">https://www.ti.com/lit/zip/sloj067</a></td>
+</tr>
+<tr>
+<td>1N4148</td>
+<td>spice/models/1N4148_nexperia.lib（共享，原样未改）</td>
+<td>Nexperia：<a href="https://assets.nexperia.com/documents/spice-model/1N4148.txt">https://assets.nexperia.com/documents/spice-model/1N4148.txt</a></td>
+</tr>
+<tr>
+<td>BD139 / BD140</td>
+<td>spice/models/BD139_BD140_generic.lib（通用 Gummel-Poon 参数，原样未改）</td>
+<td><a href="https://www.steinhoff-web.de/w/index.php?title=Spice_Model">https://www.steinhoff-web.de/w/index.php?title=Spice_Model</a> ；与 ST 数据手册 <a href="https://www.st.com/resource/en/datasheet/bd139.pdf">https://www.st.com/resource/en/datasheet/bd139.pdf</a> 的 h_FE、V_BE 范围核对见下表 [模型核对] 行</td>
+</tr>
+<tr>
+<td>低 h_FE 版本</td>
+<td>运行时在临时目录生成，只把 BF 按比例缩小到 0.5 A 时 h_FE ≈ 25</td>
+<td>手册最坏值 h_FE ≥ 25 @0.5 A</td>
+</tr>
+</tbody>
+</table>
+<h2 id="假设与局限">假设与局限</h2>
+<ol>
+<li>通用模型不是厂商官方文件；它的 h_FE 典型值（约 140 @0.5 A）远高于手册保证值，所以偏置电流另用低 h_FE 模型按最坏值 25 复核（页面「≥ 22 mA」= 0.5 A ÷ 25 + 约 2 mA 给二极管）。</li>
+<li>SPICE 不含热模型：「失配 20 / 80 / 160 mV」是在偏置里人为加电压，按每 °C 约 2 mV 换算成温差，页面已注明是估算。散热片温升（约 19.8 °C、44 °C）用手册 R_th(j-a) ≈ 100 °C/W 手算，不是 SPICE。</li>
+<li>实验页的乙类是用两根跳线短接 D1、D2 得到的，两个恒流源仍接在 m 上（电流一进一出，失配约 0.15 mA 由运放吸收）；<code>bias_B.inc</code> 里没有恒流源。两者在 m 点只差这一点直流电流，对死区宽度的影响可以忽略，但严格说不是同一电路。</li>
+<li>万用表交流档按 400 Hz 有效值读；大部分 SPICE 行用 1 kHz，实验 B2 / B2′（电流表平均、RE1 平均、集电极电流峰值）和实验 D 试听四种接法另在 400 Hz 下仿真。原理与实现篇的幅频曲线在 100 Hz 以上已平，B2 的 400 Hz 与 1 kHz 结果一致（82.56 mA vs 82.54 mA）。</li>
+<li>实验 D 试听：喇叭按纯电阻 8 Ω 处理，和 10 Ω 串联共 18 Ω 接在负载位置，输入 0.333 V 峰值、400 Hz；四种接法（乙类/甲乙类 × 开环/环内）的峰值和 THD 由 <a href="http://run.py">run.py</a> 算出。真实喇叭阻抗随频率变化，听感只作定性对比。喇叭 12.3 mW、10 Ω 15.4 mW 由 code/figs/43_figs.py 按峰值 1 V 手算。</li>
+</ol>
+<h2 id="核对表">核对表</h2>
+<table>
+<thead>
+<tr>
+<th>页面位置</th>
+<th>页面值</th>
+<th>SPICE 值</th>
+<th>偏差</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>[模型核对] BD139 hFE @150 mA（手册 40～250）</td>
+<td>—</td>
+<td>177.8</td>
+<td>—</td>
+<td>✅ 落在范围内</td>
+</tr>
+<tr>
+<td>[模型核对] BD139 hFE @0.5 A（手册 ≥ 25）</td>
+<td>—</td>
+<td>140.5</td>
+<td>—</td>
+<td>✅ 满足</td>
+</tr>
+<tr>
+<td>[模型核对] BD139 V_BE @0.5 A（手册 ≤ 1 V）</td>
+<td>— V</td>
+<td>0.7941 V</td>
+<td>—</td>
+<td>✅ 满足</td>
+</tr>
+<tr>
+<td>[模型核对] BD139 V_BE @10 mA</td>
+<td>0.65 V</td>
+<td>0.6356 V</td>
+<td>-2.22%</td>
+<td>✅ 落在页面写的「约 0.6～0.7 V」内</td>
+</tr>
+<tr>
+<td>[模型核对] BD140 hFE @150 mA（手册 40～250）</td>
+<td>—</td>
+<td>160.2</td>
+<td>—</td>
+<td>✅ 落在范围内</td>
+</tr>
+<tr>
+<td>[模型核对] BD140 hFE @0.5 A（手册 ≥ 25）</td>
+<td>—</td>
+<td>123</td>
+<td>—</td>
+<td>✅ 满足</td>
+</tr>
+<tr>
+<td>[模型核对] BD140 V_BE @0.5 A（手册 ≤ 1 V）</td>
+<td>— V</td>
+<td>0.8021 V</td>
+<td>—</td>
+<td>✅ 满足</td>
+</tr>
+<tr>
+<td>[模型核对] BD140 V_BE @10 mA</td>
+<td>0.65 V</td>
+<td>0.6303 V</td>
+<td>-3.03%</td>
+<td>✅ 落在页面写的「约 0.6～0.7 V」内</td>
+</tr>
+<tr>
+<td>p2 §三 / p4 测量表 甲乙类静态电流 I_q（R_E 3.3 Ω）</td>
+<td>33 mA</td>
+<td>32.96 mA</td>
+<td>-0.13%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 两只 1N4148 垫出的偏置电压</td>
+<td>1.56 V</td>
+<td>1.558 V</td>
+<td>-0.12%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §一 上恒流源电流（流进 b1）</td>
+<td>23.7 mA</td>
+<td>23.75 mA</td>
+<td>+0.21%</td>
+<td>✅；要求 ≥ 22 mA</td>
+</tr>
+<tr>
+<td>p2 §一 下恒流源电流（从 b2 抽走）</td>
+<td>23.7 mA</td>
+<td>23.6 mA</td>
+<td>-0.42%</td>
+<td>✅；要求 ≥ 22 mA</td>
+</tr>
+<tr>
+<td>p2 §一 恒流源 Q3 静态管耗</td>
+<td>0.11 W</td>
+<td>0.1087 W</td>
+<td>-1.17%</td>
+<td>✅；不用散热片（手册无散热片 1.25 W）</td>
+</tr>
+<tr>
+<td>p2 §三 静态时功放管电源功率 12 V × I_q</td>
+<td>0.396 W</td>
+<td>0.3955 W</td>
+<td>-0.13%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 静态时每只功放管管耗 6 V × I_q</td>
+<td>0.198 W</td>
+<td>0.1977 W</td>
+<td>-0.13%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §二 R_E 1 Ω 时 I_q</td>
+<td>75.8 mA</td>
+<td>75.84 mA</td>
+<td>+0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 失配图 R_E 3.3 Ω，失配 20 mV 时 I_q</td>
+<td>35.3 mA</td>
+<td>35.26 mA</td>
+<td>-0.12%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 失配图 R_E 1 Ω，失配 20 mV 时 I_q</td>
+<td>82.1 mA</td>
+<td>82.06 mA</td>
+<td>-0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 失配图 R_E 3.3 Ω，失配 80 mV 时 I_q</td>
+<td>42.3 mA</td>
+<td>42.31 mA</td>
+<td>+0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 失配图 R_E 1 Ω，失配 80 mV 时 I_q</td>
+<td>101 mA</td>
+<td>101.2 mA</td>
+<td>+0.23%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 失配图 R_E 3.3 Ω，失配 160 mV 时 I_q</td>
+<td>52 mA</td>
+<td>51.98 mA</td>
+<td>-0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 失配图 R_E 1 Ω，失配 160 mV 时 I_q</td>
+<td>128 mA</td>
+<td>127.7 mA</td>
+<td>-0.26%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §二 R_E 3.3 Ω：失配 80 mV 时 I_q 增幅</td>
+<td>28.4 %</td>
+<td>28.39 %</td>
+<td>-0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 §二 R_E 1 Ω：失配 80 mV 时 I_q 增幅</td>
+<td>33.5 %</td>
+<td>33.49 %</td>
+<td>-0.04%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>[低 hFE 模型] BD139 hFE @0.5 A（目标 ≈ 25）</td>
+<td>—</td>
+<td>26.79</td>
+<td>—</td>
+<td>✅（按手册最坏值缩放的模型）</td>
+</tr>
+<tr>
+<td>[低 hFE 模型] BD139 hFE @150 mA</td>
+<td>—</td>
+<td>34.5</td>
+<td>—</td>
+<td>✅（按手册最坏值缩放的模型）</td>
+</tr>
+<tr>
+<td>[低 hFE 模型] BD140 hFE @0.5 A（目标 ≈ 25）</td>
+<td>—</td>
+<td>25.16</td>
+<td>—</td>
+<td>✅（按手册最坏值缩放的模型）</td>
+</tr>
+<tr>
+<td>[低 hFE 模型] BD140 hFE @150 mA</td>
+<td>—</td>
+<td>32.9</td>
+<td>—</td>
+<td>✅（按手册最坏值缩放的模型）</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，恒流源：目标 2 V 时实际 V_p</td>
+<td>2.01 V</td>
+<td>2.01 V</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，恒流源：目标 2 V 时运放电流峰值</td>
+<td>8.2 mA</td>
+<td>8.157 mA</td>
+<td>-0.52%</td>
+<td>✅；TL072 短路电流 26 mA</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，恒流源：目标 3 V 时实际 V_p</td>
+<td>2.89 V</td>
+<td>2.893 V</td>
+<td>+0.11%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，恒流源：目标 3 V 时运放电流峰值</td>
+<td>12.8 mA</td>
+<td>12.77 mA</td>
+<td>-0.26%</td>
+<td>✅；TL072 短路电流 26 mA</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，R_B 470 Ω：目标 2 V 时实际 V_p</td>
+<td>1.64 V</td>
+<td>1.637 V</td>
+<td>-0.17%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，R_B 470 Ω：目标 2 V 时运放电流峰值</td>
+<td>20.6 mA</td>
+<td>20.57 mA</td>
+<td>-0.15%</td>
+<td>✅；TL072 短路电流 26 mA</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，R_B 470 Ω：目标 3 V 时实际 V_p</td>
+<td>1.64 V</td>
+<td>1.641 V</td>
+<td>+0.04%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 hFE≈25，R_B 470 Ω：目标 3 V 时运放电流峰值</td>
+<td>20.6 mA</td>
+<td>20.63 mA</td>
+<td>+0.16%</td>
+<td>✅；TL072 短路电流 26 mA</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 典型 hFE，R_B 470 Ω：目标 2 V 时实际 V_p</td>
+<td>2.01 V</td>
+<td>2.01 V</td>
+<td>+0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 典型 hFE，R_B 470 Ω：目标 2 V 时运放电流峰值</td>
+<td>14.1 mA</td>
+<td>14.06 mA</td>
+<td>-0.30%</td>
+<td>✅；TL072 短路电流 26 mA</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 典型 hFE，R_B 470 Ω：目标 3 V 时实际 V_p</td>
+<td>2.85 V</td>
+<td>2.847 V</td>
+<td>-0.10%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 偏置对比图 典型 hFE，R_B 470 Ω：目标 3 V 时运放电流峰值</td>
+<td>20.5 mA</td>
+<td>20.52 mA</td>
+<td>+0.10%</td>
+<td>✅；TL072 短路电流 26 mA</td>
+</tr>
+<tr>
+<td>p4 没有示波器 / 图43-p2-4 乙类：out 离开 6 V ±10 mV 前，m 下限 − 6 V</td>
+<td>-0.46 V</td>
+<td>-0.4586 V</td>
+<td>+0.30%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 没有示波器 / 图43-p2-4 乙类：同上，m 上限 − 6 V</td>
+<td>0.46 V</td>
+<td>0.4638 V</td>
+<td>+0.83%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 没有示波器 乙类：对应的输入 inp 宽度</td>
+<td>0.31 V</td>
+<td>0.3078 V</td>
+<td>-0.71%</td>
+<td>✅；= m 宽度 ÷ 3</td>
+</tr>
+<tr>
+<td>p4 没有示波器 / 图43-p2-4 甲乙类：m 的「死区」总宽</td>
+<td>0.02 V</td>
+<td>0.02005 V</td>
+<td>+0.25%</td>
+<td>✅；已基本没有死区</td>
+</tr>
+<tr>
+<td>p1 图43-p1-3 乙类开环：负载电压峰值（理想 2 V）</td>
+<td>0.91 V</td>
+<td>0.9103 V</td>
+<td>+0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图43-p1-3 乙类开环：死区内 m 下限 − 6 V</td>
+<td>-0.62 V</td>
+<td>-0.6228 V</td>
+<td>-0.45%</td>
+<td>✅；负载电压绝对值 &lt; 20 mV 判据</td>
+</tr>
+<tr>
+<td>p1 图43-p1-3 乙类开环：死区内 m 上限 − 6 V</td>
+<td>0.63 V</td>
+<td>0.6342 V</td>
+<td>+0.67%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图43-p3-2 乙类开环 THD</td>
+<td>21 %</td>
+<td>20.96 %</td>
+<td>-0.17%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图43-p3-2 乙类开环 3 次谐波</td>
+<td>19.2 %</td>
+<td>19.18 %</td>
+<td>-0.12%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图43-p3-2 甲乙类开环 THD</td>
+<td>1.84 %</td>
+<td>1.837 %</td>
+<td>-0.15%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §三 甲乙类开环：负载峰值（R_E 分压后理想 2×8/11.3 = 1.42 V）</td>
+<td>1.44 V</td>
+<td>1.439 V</td>
+<td>-0.06%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图43-p3-2 乙类环内 THD</td>
+<td>0.071 %</td>
+<td>0.07081 %</td>
+<td>-0.26%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p3 图43-p3-2 甲乙类环内 THD</td>
+<td>0.0086 %</td>
+<td>0.008554 %</td>
+<td>-0.53%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 乙类环内：负载峰值</td>
+<td>2 V</td>
+<td>2.008 V</td>
+<td>+0.42%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §四 / 图43-p2-5 乙类环内：运放输出 m 最高</td>
+<td>9.62 V</td>
+<td>9.618 V</td>
+<td>-0.02%</td>
+<td>✅；2 V + 0.7 V + R_E 压降</td>
+</tr>
+<tr>
+<td>p2 §四 乙类环内：1 kHz 效率 P_L/P_S</td>
+<td>26.5 %</td>
+<td>26.49 %</td>
+<td>-0.04%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 理想乙类 V_p=2 V：P_L</td>
+<td>0.25 W</td>
+<td>0.25 W</td>
+<td>+0.00%</td>
+<td>✅；公式本身</td>
+</tr>
+<tr>
+<td>p2 §二 理想乙类 V_p=2 V：P_S</td>
+<td>0.955 W</td>
+<td>0.9549 W</td>
+<td>-0.01%</td>
+<td>✅；公式本身</td>
+</tr>
+<tr>
+<td>p2 §二 vs SPICE 甲乙类环内 V_p=2 V：P_S</td>
+<td>0.99 W</td>
+<td>0.9905 W</td>
+<td>+0.05%</td>
+<td>✅；多出来的是 I_q</td>
+</tr>
+<tr>
+<td>p4 测量表 甲乙类环内 V_p=2 V：电流表读数</td>
+<td>82.5 mA</td>
+<td>82.54 mA</td>
+<td>+0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 测量表 甲乙类环内 V_p=2 V：负载 V_rms</td>
+<td>1.42 V</td>
+<td>1.421 V</td>
+<td>+0.06%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 测量表 甲乙类环内 V_p=2 V：效率</td>
+<td>25.5 %</td>
+<td>25.48 %</td>
+<td>-0.08%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §五 V_p=2 V 时运放输出电流峰值（TL072 短路电流 26 mA）</td>
+<td>1.9 mA</td>
+<td>1.879 mA</td>
+<td>-1.09%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图43-p1-4 / p2 §二 削顶前最大 V_p（输入 1.0 V 峰值）</td>
+<td>3 V</td>
+<td>2.999 V</td>
+<td>-0.03%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p1 图43-p1-4 / p2 §二 V_p≈3 V 时效率</td>
+<td>38.9 %</td>
+<td>38.86 %</td>
+<td>-0.11%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 理想乙类 V_p=3 V 效率 π·3/24</td>
+<td>39.3 %</td>
+<td>38.86 %</td>
+<td>-1.13%</td>
+<td>✅；SPICE 含 I_q 和管压降</td>
+</tr>
+<tr>
+<td>p2 §二 V_p≈3 V 时两管合计管耗 P_S − P_L</td>
+<td>0.88 W</td>
+<td>0.8845 W</td>
+<td>+0.51%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 V_p≈3 V 时 P_L</td>
+<td>0.56 W</td>
+<td>0.5621 W</td>
+<td>+0.38%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §二 输入再加大（1.2 V）：V_p 被恒流源余量卡住</td>
+<td>3.11 V</td>
+<td>3.106 V</td>
+<td>-0.13%</td>
+<td>✅；正负略不对称</td>
+</tr>
+<tr>
+<td>p2 §五 运放输出电流最大（削顶时）</td>
+<td>3.19 mA</td>
+<td>3.188 mA</td>
+<td>-0.05%</td>
+<td>✅；&lt; 26 mA</td>
+</tr>
+<tr>
+<td>p3 §三 乙类环内 10 kHz THD</td>
+<td>0.7 %</td>
+<td>0.7029 %</td>
+<td>+0.41%</td>
+<td>✅；比 1 kHz 的 0.071% 大</td>
+</tr>
+<tr>
+<td>p2 §一 / 图43-p2-1 1000 µF + 8 Ω 低频角</td>
+<td>19.9 Hz</td>
+<td>19.89 Hz</td>
+<td>-0.05%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §一 470 µF + 8 Ω 低频角</td>
+<td>42.3 Hz</td>
+<td>42.27 Hz</td>
+<td>-0.08%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §一 中频增益</td>
+<td>3</td>
+<td>2.999</td>
+<td>-0.02%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §一 / 图43-p2-6 D5+D6 两端</td>
+<td>1.3 V</td>
+<td>1.295 V</td>
+<td>-0.36%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §一 / 图43-p2-6 Q3 发射结 V_EB</td>
+<td>0.65 V</td>
+<td>0.6541 V</td>
+<td>+0.63%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p2 §一 / 图43-p2-6 Rx3 两端</td>
+<td>0.64 V</td>
+<td>0.6412 V</td>
+<td>+0.19%</td>
+<td>✅；÷ 27 Ω = 恒流源电流</td>
+</tr>
+<tr>
+<td>p2 §一 / 图43-p2-6 Rx3 两端 ÷ 27 Ω</td>
+<td>23.7 mA</td>
+<td>23.75 mA</td>
+<td>+0.21%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 测量表 B2 400 Hz、负载峰值 2 V：电流表平均</td>
+<td>82.5 mA</td>
+<td>82.56 mA</td>
+<td>+0.07%</td>
+<td>✅；与 1 kHz 那次一致</td>
+</tr>
+<tr>
+<td>p4 测量表 B2′ 同上：RE1 两端直流平均</td>
+<td>274 mV</td>
+<td>274 mV</td>
+<td>-0.01%</td>
+<td>✅；≈ 电流表 × 3.3 Ω</td>
+</tr>
+<tr>
+<td>p4 测量表 B2 同上：Q1 集电极电流瞬时最大</td>
+<td>0.25 A</td>
+<td>0.2495 A</td>
+<td>-0.19%</td>
+<td>✅；所以电流表用 10 A 插孔</td>
+</tr>
+<tr>
+<td>p4 实验 C3 环内乙类：inp 从 −10 mV 到 +10 mV，m 跳变</td>
+<td>1.02 V</td>
+<td>1.021 V</td>
+<td>+0.12%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 实验 C3 环内乙类：inp − 6 V = +0.1 V 时 OUT − 6 V</td>
+<td>0.3 V</td>
+<td>0.2997 V</td>
+<td>-0.10%</td>
+<td>✅；斜率约 3，没有平台</td>
+</tr>
+<tr>
+<td>p4 实验 C3 环内乙类：inp − 6 V = −0.1 V 时 OUT − 6 V</td>
+<td>-0.3 V</td>
+<td>-0.2997 V</td>
+<td>+0.11%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 实验 C3 环内乙类：inp − 6 V = +0.1 V 时 m − 6 V</td>
+<td>0.84 V</td>
+<td>0.8438 V</td>
+<td>+0.45%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 B_open：负载位置（喇叭+10 Ω）峰值</td>
+<td>0.3 V</td>
+<td>0.2972 V</td>
+<td>-0.92%</td>
+<td>✅；输入 0.333 V 峰值、400 Hz</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 B_open：THD</td>
+<td>45 %</td>
+<td>44.84 %</td>
+<td>-0.36%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 AB_open：负载位置（喇叭+10 Ω）峰值</td>
+<td>0.89 V</td>
+<td>0.8889 V</td>
+<td>-0.12%</td>
+<td>✅；输入 0.333 V 峰值、400 Hz</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 AB_open：THD</td>
+<td>0.085 %</td>
+<td>0.0852 %</td>
+<td>+0.24%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 B_loop：负载位置（喇叭+10 Ω）峰值</td>
+<td>1 V</td>
+<td>0.9997 V</td>
+<td>-0.03%</td>
+<td>✅；输入 0.333 V 峰值、400 Hz</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 B_loop：THD</td>
+<td>0.054 %</td>
+<td>0.05418 %</td>
+<td>+0.34%</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 AB_loop：负载位置（喇叭+10 Ω）峰值</td>
+<td>1 V</td>
+<td>0.9997 V</td>
+<td>-0.03%</td>
+<td>✅；输入 0.333 V 峰值、400 Hz</td>
+</tr>
+<tr>
+<td>p4 实验 D 试听 AB_loop：THD</td>
+<td>0.0057 %</td>
+<td>0.005707 %</td>
+<td>+0.13%</td>
+<td>✅</td>
+</tr>
+</tbody>
+</table>
+<h2 id="未解决--待跟进">未解决 / 待跟进</h2>
+<ul>
+<li>无 ❌。BD139/BD140 没有拿到 ST 官方 PSpice 模型（下载超时），已用通用模型 + 手册范围核对 + 低 h_FE 最坏模型补足。</li>
+<li>实验页的乙类跳线接法与 <code>bias_B.inc</code> 的差别见「假设与局限」第 3 条。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

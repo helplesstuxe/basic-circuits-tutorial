@@ -49,9 +49,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/41-current-loop-4-20ma/page2.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="41-420-ma-电流环--原理与实现篇">41 4–20 mA 电流环 · 原理与实现篇</h1>
-<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、<a href="../07-bjt-relay-driver/page2.html">07 三极管开关与继电器驱动 · 原理与实现篇</a></p>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../39-constant-current-excitation/page2.html">39 恒流源与线圈励磁驱动 · 原理与实现篇</a>、<a href="../07-bjt-relay-driver/page2.html">07 三极管开关与继电器驱动 · 原理与实现篇</a></p>
 <blockquote>
-<p><strong>前置回顾</strong>：39 节恒流源（即将上线） 里，运放把 MOS 管源极电压拉到等于基准电压，于是电流 = 基准 ÷ <span class="math math-inline">\(R_S\)</span> ，和负载无关（本页换成三极管，源极换成发射极，就是 <span class="math math-inline">\(I_E = V_{SET}/R_S\)</span> ）；<a href="../07-bjt-relay-driver/page2.html">07 三极管</a> 里， <span class="math math-inline">\(I_E = I_C + I_B\)</span> ， <span class="math math-inline">\(I_C = \beta I_B\)</span> 。本页把这两条接到一起，再加上“电源电压够不够”这一笔账。</p>
+<p><strong>前置回顾</strong>：<a href="../39-constant-current-excitation/page2.html">39 恒流源 · 原理与实现篇</a> 里，运放把 MOS 管源极电压拉到等于基准电压，于是电流 = 基准 ÷ <span class="math math-inline">\(R_S\)</span> ，和负载无关（本页换成三极管，源极换成发射极，就是 <span class="math math-inline">\(I_E = V_{SET}/R_S\)</span> ）；<a href="../07-bjt-relay-driver/page2.html">07 三极管</a> 里， <span class="math math-inline">\(I_E = I_C + I_B\)</span> ， <span class="math math-inline">\(I_C = \beta I_B\)</span> 。本页把这两条接到一起，再加上“电源电压够不够”这一笔账。</p>
 </blockquote>
 <h2 id="一回路电压预算电流环能扛多少导线">一、回路电压预算：电流环能扛多少导线</h2>
 <p>电流环里只有一个电流 <span class="math math-inline">\(I\)</span> ，但每个元件都要分走一点电压。把它们加起来，不能超过电源电压：</p>

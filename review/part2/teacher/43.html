@@ -1,0 +1,868 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放：甲、乙、甲乙类：资深教师审读</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/43.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放甲乙甲乙类资深教师审读">43 推挽功放：甲、乙、甲乙类：资深教师审读</h1>
+<p>审读对象：<code>43-push-pull-power-amp/page1.md</code>～<code>page4.md</code>，以及 <code>img/</code> 下全部 17 张图（43_p1_1～43_p1_4、43_p2_1～43_p2_6、43_p3_1～43_p3_4、43_p4_1～43_p4_3）。每张都用图片方式打开看过。
+对照文件：</p>
+<ul>
+<li><code>review/part2/teacher/00-plan-review.md</code>：本节教学方法、必备图，以及必改-14～17、建议-07、建议-11。</li>
+<li><code>review/teacher/best-practices.md</code>：原则编号 [1]～[6]。</li>
+<li><code>notes/AUTHOR_GUIDE.md</code>。</li>
+<li>第一部分的 01、13、17、19、21 节。</li>
+</ul>
+<p>核算方式：</p>
+<ul>
+<li>把 <code>spice/43/run.py</code> 连同仓库复制到 <code>/tmp/rv43/</code> 运行，74 项数值全部和正文、图一致。关键几项：
+<ul>
+<li>乙类开环负载峰值 0.9103 V；</li>
+<li>THD 20.96% / 1.837% / 0.0708% / 0.00855%，10 kHz 环内乙类 0.70%；</li>
+<li>恒流源 23.7 mA，静止电流 33.0 mA；</li>
+<li>实验 B 82.5 mA / 0.99 W / 25.5%。</li>
+</ul>
+</li>
+<li>把 page2 的代码块、page4 的核对代码块复制到 <code>/tmp</code> 运行，打印值与正文一致（26.2%、39.3%、0.912 W、50.0%、78.5%；35.8 mA、23.0/24.4 mA、24.0%，全部 OK）。</li>
+<li>另外手算了以下各项，均吻合：
+<ul>
+<li>甲类 0.75 A / 9 W / 25%；</li>
+<li><span class="math math-inline">\(f_c\)</span> = 19.9 Hz；</li>
+<li>管耗最大 <span class="math math-inline">\(V_p\)</span> = 3.82 V；</li>
+<li>试听 1.33 V / 0.111 W / 0.139 W；</li>
+<li>实验 C 预期表与 <code>dc_B.csv</code>。</li>
+</ul>
+</li>
+</ul>
+<p>仓库文件和 git 都没有动。</p>
+<p>原则编号沿用 <a href="http://best-practices.md">best-practices.md</a>：
+[1] 控制认知负荷（NSW CESE 2017：<a href="https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory">https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory</a> ；Rosenshine 2012：<a href="https://www.aft.org/ae/spring2012/rosenshine">https://www.aft.org/ae/spring2012/rosenshine</a> ）
+[2] 样例与渐隐样例（Pashler 等 2007，IES 建议 2：<a href="https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf">https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf</a> ）
+[3] 提取练习与间隔复习（Pashler 2007 建议 1、5；<a href="https://www.learningscientists.org/blog/2016/6/23-1">https://www.learningscientists.org/blog/2016/6/23-1</a> ；<a href="https://www.retrievalpractice.org/">https://www.retrievalpractice.org/</a> ）
+[4] 图文双编码（Pashler 2007 建议 3；<a href="https://www.learningscientists.org/blog/2016/9/1-1">https://www.learningscientists.org/blog/2016/9/1-1</a> ）
+[5] 先处理误区（PRPER 20, 020128（2024）：<a href="https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128">https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128</a> ）
+[6] 由具体到抽象（Pashler 2007 建议 4；Rosenshine 2012）</p>
+<h2 id="一总体评分">一、总体评分</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>主线是：先算甲类 9 W 只换来 2.25 W 的账，再用「拉大锯」引出推挽和交接停顿，然后推出功率、效率、管耗（3.82 V 时最热这个反直觉结论），最后到恒流源、 <span class="math math-inline">\(h_{FE}\)</span> 最差 25 和热失控。一层层由具体到抽象，深度够，数字全部可复核。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>主线清楚，但有好几处会卡住手机上的高中读者。<br>• 两处数字和代码对不上：page1「0.99 V」应为 0.91 V；page4 思考题 3「50 mA（198 mV）」应为 60 mA。<br>• 图 43-p2-6 的算式自相矛盾（1.24 − 0.64 ≠ 0.64）。<br>• 有三处说的颜色和图不符：p2-2 的 alt 说「蓝线」，图里没有；p1-3 说「红色阴影带」，实为浅橙；p1-4 说「粉色」，实为红紫。<br>• 实验 C 改线、示波器、试听、板外模块这几处只有接线文字，没有图。<br>• 电流表档位前后矛盾。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td>有参数表、 <span class="math math-inline">\(R_E\)</span> 取舍图、最差 <span class="math math-inline">\(h_{FE}\)</span> 的论证和排错表。但 page2 的三道例题全是完整示范，没有渐隐。page3 练习 4（2200 µF）和 page2 例 2（220 µF）是同一题型换个数，全节没有一道换场景的迁移题（比如 4 Ω 喇叭、9 V 电源、32 Ω 耳机）。</td>
+</tr>
+</tbody>
+</table>
+<p>三项都没有「差」，所以没有因评分而追加的必改项。</p>
+<h2 id="二逐条意见">二、逐条意见</h2>
+<h3 id="必改">必改</h3>
+<h3 id="必改-01page1-乙类负载峰值099-v与-spice图不符">必改-01　page1 乙类负载峰值「0.99 V」与 SPICE、图不符</h3>
+<ul>
+<li><strong>位置</strong>：page1 L47。原句：「运放给出峰值 2 V 的正弦，负载上只剩峰值 0.99 V 左右，还多了一个个平台。」</li>
+<li><strong>问题</strong>：<code>run.py</code> 算出乙类开环负载峰值 0.9103 V，图 43-p1-3 左图橙线峰值也在约 0.91 V。正文的 0.99 V 不知从哪里来，alt 文字写的又是「约 1 V」。读者拿图对数字会对不上。</li>
+<li><strong>改法</strong>：改为「运放给出峰值 2 V 的正弦，负载上只剩峰值约 0.91 V（SPICE 0.910 V），还多了一个个平台。」alt 文字里的「峰值只有约 1 V」同步改成「峰值只有约 0.9 V」。</li>
+<li><strong>为什么</strong>：正文、图、代码三处的数字必须一致，否则读者无法核对，图文双编码也会互相干扰 [4]。</li>
+</ul>
+<h3 id="必改-02page4-思考题-3-答案把60-ma和50-ma的红线弄混">必改-02　page4 思考题 3 答案把「60 mA」和「50 mA」的红线弄混</h3>
+<ul>
+<li><strong>位置</strong>：page4 思考题 3 答案（L208）。原句：「60 mA 已经超过 50 mA（ <span class="math math-inline">\(R_E\)</span> 上 198 mV）的红线」。</li>
+<li><strong>问题</strong>： <span class="math math-inline">\(50\ \text{mA} \times 3.3\ \Omega = 165\ \text{mV}\)</span> ，安全须知（L19）的红线也是「165 mV（50 mA）」。198 mV 对应的是 60 mA。按原句读，读者会以为红线是 198 mV，这是一个安全阈值上的错误。</li>
+<li><strong>改法</strong>：改为「60 mA 时 <span class="math math-inline">\(R_E\)</span> 上约 198 mV，已经超过 165 mV（50 mA）的红线，应立即断电……」</li>
+<li><strong>为什么</strong>：安全阈值在全节只能有一个数，答案里的数要和安全须知一致 [1]。</li>
+</ul>
+<h3 id="必改-03三处说的颜色和图不符">必改-03　三处说的颜色和图不符</h3>
+<ul>
+<li><strong>位置</strong>：
+<ol>
+<li>page2 图 43-p2-2 的 alt（L84）：「蓝线是电源功率……橙线是负载功率……红线是两管合计发热」。图里实际是：电源功率为朱红/深橙，负载功率为浅橙，管耗为红紫，<strong>没有蓝线</strong>。</li>
+<li>page1 图 43-p1-3 的 alt（L43）写「用红色阴影带标出两只管子都不导通」，图内注字也写「红色带」，可图上的阴影是浅橙色。</li>
+<li>page1 图 43-p1-4 的 alt（L53）写「粉色甲类理想曲线」，图中甲类是 figstyle 的红紫色点划线。</li>
+</ol>
+</li>
+<li><strong>问题</strong>：读者是靠颜色在小屏上找线的。说「蓝线」却找不到，说「红色」看到的却是浅橙，图文对照就失效了。</li>
+<li><strong>改法</strong>：
+<ol>
+<li>p2-2 的 alt 改为「深橙线是电源功率从 0 直线上升到 2.865 W，浅橙线是负载功率抛物线上升到 2.25 W，红紫色线是两管合计发热……」。更好的做法是重画：把电源功率改成蓝绿虚线，和负载功率的橙色拉开（见建议-12）。</li>
+<li>p1-3 的 alt 与图内注字都改成「浅橙色阴影带」，或者把阴影改成 figstyle 的灰色。</li>
+<li>p1-4 的 alt 改成「红紫色点划线是甲类理想曲线」。</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：图文双编码要求文字指向的视觉元素真实存在、可辨认 [4]。</li>
+</ul>
+<h3 id="必改-04图-43-p2-6-恒流源算式自相矛盾和-page2-方框page3-练习-2-三处不统一">必改-04　图 43-p2-6 恒流源算式自相矛盾，和 page2 方框、page3 练习 2 三处不统一</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>图 43-p2-6 内注字：「D5+D6 …约 1.24 V，Q3 发射结再吃掉约 0.64 V，Rx3 两端只剩约 0.64 V，电流 ≈ 0.64/27 ≈ 24 mA」。</li>
+<li>page2 L48 方框：「27 Ω 两端只剩约 0.6 V，电流约 0.6 V / 27 Ω ≈ 22 mA（手算估计），SPICE 算出 23.7 mA」。</li>
+<li>page3 练习 2 的答案用的是 2 × 0.62 − 0.64。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：1.24 − 0.64 = 0.60，不是 0.64。读者在手机上逐项减一遍就会发现图错了，三处用的数也各不相同。</li>
+<li><strong>改法</strong>：二选一，全节统一。
+<ul>
+<li>（甲）按 SPICE 工作点：先在 <code>run.py</code> 里打印 D5、D6 两端电压和 Q3 的 <span class="math math-inline">\(V_{EB}\)</span> ，确认二极管对约 1.28 V。然后图内注字改成「D5+D6 约 1.28 V，Q3 发射结吃掉约 0.64 V，Rx3 两端约 0.64 V，电流 ≈ 0.64/27 ≈ 23.7 mA（SPICE）」，方框和练习 2 用同一组数。</li>
+<li>（乙）全节统一写「手算：1.24 − 0.64 ≈ 0.6 V，0.6/27 ≈ 22 mA；SPICE 23.7 mA，差别来自二极管和发射结压降的实际值」，并把图内的「0.64 V」「24 mA」改成「约 0.6 V」「约 22 mA（手算）」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：算式要能一步步复算，同一个量不能有三个版本 [1]。</li>
+</ul>
+<h3 id="必改-05电流表档位page4-让用-ma-插孔page3-说先用-10-a-插孔">必改-05　电流表档位：page4 让用 mA 插孔，page3 说先用 10 A 插孔</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>page4 测量表 A7（L89）：「直流 200 mA | 约 33 mA，与 A6 一致 | 电流表是否在 mA 插孔」。</li>
+<li>page4 B2（L92）：「直流 200 mA | 约 82.5 mA」。</li>
+<li>page3 排错表 L91：「开机冲击电流可能超出 mA 档 | … | 先用 10 A 插孔量；平时改量 <span class="math math-inline">\(R_E\)</span> 上的 mV」。</li>
+<li>器材表 L41：「直流 mA / A 档」。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：
+<ul>
+<li>开机时 <span class="math math-inline">\(C_o\)</span> 1000 µF 从 0 充到 6 V，充电电流全部经 Q1 集电极流过电流表。实验 B 的瞬时集电极电流也有约 0.28 A。</li>
+<li>按 page4 用 200 mA 档的 mA 插孔，正好撞上 page3 说的「保险丝烧了」。</li>
+<li>两页给出相反的指示，读者不知道该听哪一页的。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：
+<ol>
+<li>A7、B2 的「量程」栏改成「10 A 插孔、A 档（读数约 0.03 A / 0.08 A）」。「检查」栏改成「电流表接在 10 A 插孔；上电前已接好，不带电换插孔」。</li>
+<li>主读数改成不串表的办法：A6 已经在量 <span class="math math-inline">\(R_E\)</span> 上的 mV。B2 后加一行：「B2′　 <span class="math math-inline">\(R_{E1}\)</span> 两端直流 mV（直流 2 V 档，万用表会自动取平均）÷ 3.3 Ω ≈ Q1 平均电流，应读约 272 mV（82.5 mA × 3.3 Ω）」。这个 272 mV 请先用 <code>run.py</code> 补算 <span class="math math-inline">\(R_{E1}\)</span> 的平均电压，确认后再写进表里。</li>
+<li>安全须知加一条：「电流表串在 Q1 集电极，开机前就接在 10 A 插孔；需要换档或拆表时先断电。」</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：仪表接法属于安全与器材保护，全节只能有一种说法；用 mV 读数还能和 A6 的方法连成一条线，减少新操作 [1]。</li>
+</ul>
+<h3 id="必改-06实验-c-的预测被测量表记录表和图-43-p4-3-提前揭晓">必改-06　实验 C 的预测被测量表、记录表和图 43-p4-3 提前揭晓</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>测量表 C1（L94）的「应该读到」：「OUT − 6 V ≈ 3 × (inp − 6 V)，例如 inp − 6 V = 0.1 V 时约 0.30 V」。</li>
+<li>测量表 C2（L95）的「应该读到」：「inp 在 6 V 上下约 ±0.15 V 内 OUT 一动不动；inp − 6 V = 0.3 V 时 OUT − 6 V 约 0.35 V」。</li>
+<li>记录表（L176–183）事先把乙类「预期」一行填成 −0.36 / −0.09 / 0 / 0 / 0 / 0.09 / 0.35。</li>
+<li>图 43-p4-3「直流慢扫的预期读数」紧跟在第 6 步之后、读者动手之前出现，图内还标着「乙类：inp 在这 0.30 V 里 OUT 一动不动」。</li>
+<li>思考题 2 的题干「inp 在约 ±0.15 V 内变化时 OUT 不动，而 m 摆了约 ±0.46 V」又把结论写成了已知条件。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：直流慢扫是本节唯一能用万用表「亲眼看到死区」的实验，也是计划里的「预测—验证」环节。答案先摆在眼前，读者只会去对数，不会去想。</li>
+<li><strong>改法</strong>：
+<ol>
+<li>第 6 步后加一个预测框：「<strong>动手前先预测</strong>：短接 D1、D2 后，inp − 6 V 从 −0.3 V 走到 +0.3 V，OUT − 6 V 会怎么变？画一条你猜的线。提示：m − 6 V ≈ 3 × (inp − 6 V)，管子要 <span class="math math-inline">\(V_{BE}\)</span> 约 0.6 V 才导通，但这里负载只有 1 kΩ。」</li>
+<li>C1、C2 的「应该读到」改为「见读完后展开的『预期参考』」。记录表里的两行「预期」值移进 <code>&lt;details&gt;&lt;summary&gt;测完再看：预期参考（SPICE）&lt;/summary&gt;</code>。</li>
+<li>图 43-p4-3 移到实验 C 末尾的同一个 <code>&lt;details&gt;</code> 里，引导句改成「测完后把你的点画在图 43-p4-3 上对比」。</li>
+<li>思考题 2 的题干改成「实验 C 短接 D1、D2 后，你在 inp 的哪一段看到 OUT 不动？那段里 m 摆了多少？为什么 m 摆的约是 inp 的 3 倍，却两只管子都没导通？」</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：预测必须在看答案之前做，误区才会暴露 [5]；不提前看答案、自己提取，才是提取练习 [3]。AUTHOR_GUIDE 也要求答案图只能放在揭晓之后。</li>
+</ul>
+<h3 id="必改-07计划的教学方法先乙类耳朵和波形先行同信号三连对比没有落实到动手篇">必改-07　计划的教学方法「先乙类、耳朵和波形先行」「同信号三连对比」没有落实到动手篇</h3>
+<ul>
+<li><strong>位置</strong>：计划（00-plan-review 本节教学方法）要求三件事：先搭乙类，用耳朵和波形感受交越，再加偏置二极管；对同一信号依次比较乙类 → 甲乙类 → 环内；用万用表能做的版本优先。
+<ul>
+<li>page4 L7–11 是：「实验 A：静止状态…实验 B：放大与效率…实验 C」。实验 A、B 直接搭甲乙类。</li>
+<li>乙类只在实验 C 的开环直流慢扫里出现。</li>
+<li>「乙类→甲乙类→环内」的同信号对比只写在<strong>可选</strong>的示波器小节（L122–126）。</li>
+<li>试听只听甲乙类。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：
+<ul>
+<li>没有示波器的读者（多数高中读者）始终听不到、也看不到乙类的毛病，「为什么要垫二极管」只能靠相信页面上的话。</li>
+<li>环内乙类（page2 §4 的核心结论「交越失真小了几百倍」）在动手篇完全没有可做的版本。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：
+<ol>
+<li>实验 C 后加「实验 D：用耳朵比较（喇叭串 10 Ω）」。
+<ul>
+<li>D1　甲乙类，400 Hz、负载峰值约 0.3 V（小音量），听。</li>
+<li>D2　断电，按 C 第 6 步加跳线变乙类，<strong>反馈仍从 a26 取</strong>（环内乙类），上电听同一音量。</li>
+<li>D3　断电，再把反馈改到 b16（开环乙类），上电听：「小音量时明显发沙、发毛」。</li>
+<li>每步之间断电改线，音量旋钮不动，保证是同一信号。</li>
+</ul>
+</li>
+<li>实验 C 加 C3：「保留两根跳线，把反馈插回 a26（环内乙类），重复第 5 步，同时读 m（b16）和 OUT。预测：OUT 会不会还有平台？m 在 inp ≈ 6 V 附近会怎样？」预期是 OUT 基本是一条斜率 3 的直线，m 在过零处跳约 1.2 V。数值请先用 <code>run.py</code> 补一条环内乙类直流扫描再写。这样就能用万用表看到 page2 图 43-p2-5 的「m 跳一下」。</li>
+<li>开头 L7 的实验列表同步改写，标明「先用耳朵和万用表看乙类的毛病，再看偏置和反馈怎么治」。</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：由具体到抽象，先有亲身感受再讲原理 [6]；同一信号对比能减少无关变化、突出要点 [1]；计划已经定的教学方法必须落实。</li>
+</ul>
+<h3 id="必改-08接线文字缺原理图或面包板图逐处列出">必改-08　接线文字缺原理图或面包板图（逐处列出）</h3>
+<ul>
+<li><strong>位置与问题</strong>：AUTHOR_GUIDE 要求每段接线文字配原理图，改线要配改后的图。以下几处只有文字：
+<ol>
+<li><strong>实验 C 的改线</strong>（page4 L107–112）：反馈 a26 → b16；4.7 kΩ / 电位器 h12–h14 / 4.7 kΩ / 100 Ω g11–g13；f11 → d6；2 kΩ 在 a26 和 j26；跳线 c16–c17、h16–h18。没有改线后的面包板图，也没有原理图。</li>
+<li><strong>示波器小节</strong>（L120–127）：探头 b30、地夹接 GND，以及「反馈改接 m + 跳线 + 信号接回 a9」的组合。没有原理图。</li>
+<li><strong>板外功放管模块</strong>的焊接步骤 1–2（BD139/BD140 + 22 Ω 基极电阻 + 散热片 + D1/D2 贴片 + 引线）。没有实物示意，也没有模块原理图。</li>
+<li><strong>试听接法</strong>（器材表「8 Ω 小喇叭 + 10 Ω / 2 W 电阻，串联后接到负载位置」，以及 L17）。没有图说明接在哪两列。</li>
+<li><strong>page2 图 43-p2-4 的仿真测试负载</strong>（L124：「OUT 接 1 kΩ 测试负载（两只 2 kΩ 分别接 +12 V 和地）」）。没有小原理图，读者想不通「两只 2 kΩ 怎么等于 1 kΩ、为什么能把 OUT 拉在 6 V」。</li>
+</ol>
+</li>
+<li><strong>改法</strong>：
+<ul>
+<li>第 1 项：新增「图 43-p4-4　实验 C 改线：面包板」和「图 43-p4-5　实验 C 原理图」。原理图画出 B 运放（增益 3，反馈取自 m）、电位器分压到 inp、OUT 上的 2 kΩ‖2 kΩ 测试负载。跳线用朱红色 × 号标出「乙类时加这两根」。</li>
+<li>第 2 项：在图 43-p4-5 上用虚线标出「示波器时信号改接 a9」，或者单独加一张小原理图。</li>
+<li>第 3 项：加一张模块示意图：管脚 E-C-B、22 Ω 焊在 B 脚、D1 贴散热片、三根引线插到哪几列。</li>
+<li>第 4 项：在图 43-p4-2 的负载位置旁加小插图「试听：喇叭 + 10 Ω 串联替代 8 Ω」。</li>
+<li>第 5 项：在图 43-p2-4 左上角加小插图：OUT 一边 2 kΩ 到 +12 V、一边 2 kΩ 到地，旁注「对交流相当于 1 kΩ，直流把 OUT 拉在 6 V」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：只有文字的接线，读者必须在脑子里拼图，认知负荷太高 [1]；图文配合才能可靠复现 [4]。</li>
+</ul>
+<h3 id="必改-09散热片带电应写明是集电极并分别说清两块各带什么电压">必改-09　散热片带电：应写明是「集电极」，并分别说清两块各带什么电压</h3>
+<ul>
+<li><strong>位置</strong>：page4 安全须知 L18。原句：「管子的金属背面通常和某个管脚相连（请按带电处理），两块散热片一碰就可能把 +12 V 和 GND 短接。」</li>
+<li><strong>问题</strong>：「某个管脚」太含糊。BD139 手册写明背面金属与 2 脚（集电极）相连：Central Semiconductor 的 BD135/137/139 手册写「Mounting pad is common to lead 2」（<a href="https://my.centralsemi.com/datasheets/BD135_SERIES.PDF">https://my.centralsemi.com/datasheets/BD135_SERIES.PDF</a> ）；Philips 手册写「2 collector, connected to metal part of mounting surface」（<a href="https://www.alldatasheet.pl/html-pdf/16171/PHILIPS/BD139/493/2/BD139.html">https://www.alldatasheet.pl/html-pdf/16171/PHILIPS/BD139/493/2/BD139.html</a> ）。BD140 是同一封装（PNP 互补管）[待核实 BD140 手册原文]。
+<ul>
+<li>Q1 集电极经电流表接 +12 V，所以 Q1 的散热片就是 +12 V。</li>
+<li>Q2 集电极接地，所以 Q2 的散热片就是 GND。</li>
+<li>读者不知道是哪一块带电，就不会特别小心示波器地夹、表笔碰到 Q1 的散热片。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：改为「BD139/BD140 的金属背面和<strong>集电极</strong>（中间脚）相连：Q1 的散热片就是 +12 V，Q2 的散热片就是 GND。两块散热片一碰就把 +12 V 和 GND 短接；表笔、示波器地夹、导线都不要碰 Q1 的散热片。」并在参考资料里加上述手册链接。</li>
+<li><strong>为什么</strong>：安全提示要具体到「哪块、带多少伏」，读者才能执行 [1]。</li>
+</ul>
+<h3 id="必改-10page1-预习题-3-的有效值回指错页">必改-10　page1 预习题 3 的「有效值」回指错页</h3>
+<ul>
+<li><strong>位置</strong>：page1 L15。原句：「（正弦的有效值是峰值除以 <span class="math math-inline">\(\sqrt{2}\)</span> ，见 <a href="../../../01-components-basics/page1.html">01 元件速成</a>）」。</li>
+<li><strong>问题</strong>：01 节 page1 没有讲有效值，有效值是在 13 节整流桥 page2 L16 讲的。读者点进去找不到，前置复习就断了。</li>
+<li><strong>改法</strong>：改为「（正弦的有效值是峰值除以 <span class="math math-inline">\(\sqrt{2}\)</span> ，见 <a href="../../../13-bridge-rectifier/page2.html">13 桥式整流 · 原理与实现篇</a>）」。</li>
+<li><strong>为什么</strong>：间隔复习要能准确回到原讲解处 [3]。</li>
+</ul>
+<h3 id="必改-11page2-三道例题全是完整示范没有渐隐">必改-11　page2 三道例题全是完整示范，没有渐隐</h3>
+<ul>
+<li><strong>位置</strong>：page2「例题」L150–174。例 1（管耗与温升）、例 2（220 µF 拐点）、例 3（33 → 50 mA）都在 <code>&lt;details&gt;</code> 里给了完整解答，彼此是三个不同的问题，不是「完整示范 → 填空 → 独立」的序列。</li>
+<li><strong>问题</strong>：读者看完三个完整答案，并没有练到自己动手。计划要求的渐隐样例没有落实。</li>
+<li><strong>改法</strong>：围绕「管耗 → 温升 → 要不要散热片」这一条主线改写成渐隐序列：
+<ul>
+<li><strong>例 1（完整示范）</strong>：保留原例 1， <span class="math math-inline">\(V_p = 3\)</span> V 时两管 0.88 W，每只 0.44 W，温升 44 °C。</li>
+<li><strong>例 2（填空）</strong>：「 <span class="math math-inline">\(V_p = 2\)</span> V 时， <span class="math math-inline">\(P_S = 12 \times 2 / (\pi \times 8) =\)</span> ____ W， <span class="math math-inline">\(P_L =\)</span> ____ W，每只管子 ____ W，不加散热片温升约 ____ °C。」答案放在 details 里：0.955、0.25、0.35、35。</li>
+<li><strong>例 3（独立）</strong>：「静止电流从 33 mA 涨到 50 mA，自己算 <span class="math math-inline">\(R_E\)</span> 电压和每只管子的静止发热，判断要不要断电。」</li>
+<li>原例 2（220 µF）挪到 page3 练习，替换 page3 练习 4（见必改-12）。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：渐隐样例让读者从看懂过渡到会做 [2]。</li>
+</ul>
+<h3 id="必改-12page3-没有换场景的迁移题练习-4-与-page2-例-2-重复">必改-12　page3 没有换场景的迁移题，练习 4 与 page2 例 2 重复</h3>
+<ul>
+<li><strong>位置</strong>：page3 练习 4（L130）：「把 <span class="math math-inline">\(C_o\)</span> 从 1000 µF 换成 2200 µF，低频拐点变成多少？有什么代价？」它和 page2 例 2（L160）「如果把输出电容换成 220 µF，低频拐点是多少？」是同一个公式换个数。</li>
+<li><strong>问题</strong>：全节的练习都在同一个 8 Ω / 12 V 电路里变参数，没有一道要求读者把方法搬到新情境，「举一反三」不足。</li>
+<li><strong>改法</strong>：把练习 4 换成迁移题：「<strong>练习 4</strong>：想用同一块板驱动 4 Ω 喇叭，电源仍是 12 V。(a) 输出峰值仍约 3 V 时，最大功率、两管合计发热各多少？(b) <span class="math math-inline">\(C_o\)</span> 要多大才能让拐点仍约 20 Hz？(c) 管耗最大时 <span class="math math-inline">\(V_p\)</span> 是多少、多少 W？每只管子装原来的散热片还够不够？」答案：
+<ul>
+<li>(a) <span class="math math-inline">\(P_L = 9 / 8 = 1.125\)</span> W； <span class="math math-inline">\(P_S = 12 \times 3 / (\pi \times 4) = 2.865\)</span> W；两管合计发热 1.74 W。</li>
+<li>(b) 约 2000 µF。</li>
+<li>(c) <span class="math math-inline">\(V_p = 3.82\)</span> V 已超出可摆幅范围，所以在 3 V 处取到约 1.74 W，每只约 0.87 W，要更大的散热片。</li>
+<li>题目之外再加一句选做：「改成 32 Ω 耳机，增益还用 3 吗？」</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：只换数字不换情境，学生学到的是套公式，不是方法；变式与换情境练习才能促进迁移 [2][6]。</li>
+</ul>
+<h3 id="建议">建议</h3>
+<h3 id="建议-01-c_o-耐压前后不一25-v-还是-16-v">建议-01　 <span class="math math-inline">\(C_o\)</span> 耐压前后不一：25 V 还是 16 V</h3>
+<ul>
+<li><strong>位置</strong>：page2 L30「<strong>输出电容 Co 1000 µF/25 V</strong>」，图 43-p1-2、43-p2-1、43-p4-2 也都标 25 V；page3 参数表、page4 器材表 L36、安全须知 L21 写的是「16 V」「≥ 16 V」。</li>
+<li><strong>问题</strong>：读者买元件时不知道按哪个买。</li>
+<li><strong>改法</strong>：全节统一成「1000 µF / 25 V（至少 16 V）」，page4 器材表改为「1000 µF / 25 V 电解（16 V 也可以）」。</li>
+<li><strong>为什么</strong>：同一元件在图文里只给一种规格 [1]。</li>
+</ul>
+<h3 id="建议-02page2-说动手实验篇用-200-hzpage4-实际用-400-hz">建议-02　page2 说「动手实验篇用 200 Hz」，page4 实际用 400 Hz</h3>
+<ul>
+<li><strong>位置</strong>：page2 L58：「动手实验篇用 200 Hz 测试音，电容带来的衰减不到 0.5%」。page4 L43、L91、L97 全部是 400 Hz。</li>
+<li><strong>改法</strong>：改为「动手实验篇用 400 Hz 测试音，电容带来的衰减只有约 0.1%」（ <span class="math math-inline">\(1 - 1/\sqrt{1 + (19.9/400)^2} \approx 0.12\)</span> % ）。</li>
+<li><strong>为什么</strong>：前后页的数字要能对上 [1]。</li>
+</ul>
+<h3 id="建议-03几处前面讲过没有链接">建议-03　几处「前面讲过」没有链接</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>page1 L8：「19 节参数与调试篇的练习 4 里，一只 NPN 推上、一只 PNP 拉下」。练习 4 在 <code>19-emitter-follower/page3.md</code> L93，用的是 ± 电源。</li>
+<li>page2 L126：「（17 节讲稳压管温度系数时见过这个数量级）」。在 <code>17-zener-regulator/page3.md</code> L27。</li>
+<li>page2 L118、L156「结到空气的热阻约 100 °C/W」。热阻在 <code>21-linear-regulator/page3.md</code> L35–37（以及 19 节 page3）讲过。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：
+<ul>
+<li>分别加链接 <code>[19 节练习 4](../19-emitter-follower/page3.md)</code>、<code>[17 节](../17-zener-regulator/page3.md)</code>、<code>[21 节热阻](../21-linear-regulator/page3.md)</code>。</li>
+<li>19 节那句补一句「那里用 ± 电源，本节换成单 12 V 加输出电容」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：间隔复习要一键可达 [3]。</li>
+</ul>
+<h3 id="建议-04导航链接指向尚不存在的-4244-节">建议-04　导航链接指向尚不存在的 42、44 节</h3>
+<ul>
+<li><strong>位置</strong>：page1 L3「<code>[上一页：42 流量计信号链总览 · 动手实验篇](../42-flowmeter-signal-chains/page4.md)</code>」；page4 L3「<code>[下一页：44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)</code>」。仓库里目前只有 <code>43-push-pull-power-amp</code>。</li>
+<li><strong>改法</strong>：42、44 写出后回头核对路径。在那之前，可以在发布清单里记一笔，避免死链上线。</li>
+<li><strong>为什么</strong>：手机上按顺序学的读者会在死链处中断 [1]。</li>
+</ul>
+<h3 id="建议-05page2-先用-thd到-page3-才解释">建议-05　page2 先用 THD，到 page3 才解释</h3>
+<ul>
+<li><strong>位置</strong>：page2 L142：「SPICE 用 1 kHz 正弦算了总谐波失真（THD，参数与调试篇的最小补充有解释）」。</li>
+<li><strong>改法</strong>：就地加一句：「THD 就是『输出里多出来的、原信号没有的那些倍频成分』占原信号的百分比，越小越干净；细节见参数与调试篇。」</li>
+<li><strong>为什么</strong>：新术语首次出现时就给最小定义，避免读者带着悬念读后面的数字 [1]。</li>
+</ul>
+<h3 id="建议-06zobel寄生振荡基极阻尼电阻讲得太薄">建议-06　Zobel、寄生振荡、基极阻尼电阻讲得太薄</h3>
+<ul>
+<li><strong>位置</strong>：page2 元件清单里 Zobel 10 Ω + 100 nF 和 22 Ω 基极电阻只各有一句，参考资料只链了一个 StackExchange 问答。</li>
+<li><strong>改法</strong>：加一个三四行的「最小补充：为什么会自己振荡」，用「喇叭线圈在高频像电感，跟随器带电感负载容易起振，Zobel 在高频把负载拉回接近电阻」来解释，并说明怎么用示波器 1 µs/div 看「毛」（page4 L127 已有）。</li>
+<li><strong>为什么</strong>：读者只记住「要加」，不知道「为什么加」，换电路就不会用 [6]。</li>
+</ul>
+<h3 id="建议-07图-43-p1-4spice-点高于理想乙类线-v_cc-图例恒流源损耗没说明">建议-07　图 43-p1-4：SPICE 点高于理想乙类线、「 <span class="math math-inline">\(V_{CC}\)</span> 」图例、恒流源损耗没说明</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>图 43-p1-4 中 <span class="math math-inline">\(V_p\)</span> ≈ 3.09 / 3.11 V 的两个 SPICE 点（41.8%、43.5%）落在理想乙类直线之上。</li>
+<li>图例公式写「 <span class="math math-inline">\(\pi V_p/(4V_{CC})\)</span> 」，而全节都用「12 V」表示电源。</li>
+<li>page1 L57 说「只多了一点静止电流的损耗」，但没算恒流源约 24 mA × 12 V ≈ 0.29 W。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：
+<ul>
+<li>最后两点高于理论线，是因为削顶让波形接近方波：eff.csv 中 <span class="math math-inline">\(P_L\)</span> = 0.652 W，而 <span class="math math-inline">\(V_p^2/16\)</span> = 0.596 W。正文没有解释，读者会以为「超过理论最高」。</li>
+<li>图例里的 <span class="math math-inline">\(V_{CC}\)</span> 在本节指 6 V，读者会代进 12 V 算错一半。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：
+<ul>
+<li>图例改成「 <span class="math math-inline">\(\pi V_p / (4 \times 6\ \text{V})\)</span> 」。</li>
+<li>灰色区域旁注「这里已削顶，波形变方，效率点会略高于正弦的理论线」。</li>
+<li>L57 改为「……几乎贴着乙类的直线走（只算功放管这一路；恒流源和运放另外还要约 0.3 W，见原理与实现篇）」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：图里出现「违反理论」的点而不解释，会制造新误区 [5]。</li>
+</ul>
+<h3 id="建议-08page1-l49-说图-43-p1-3-里的平台在甲乙类里几乎看不见图里没有甲乙类">建议-08　page1 L49 说「图 43-p1-3 里的平台在甲乙类里几乎看不见」，图里没有甲乙类</h3>
+<ul>
+<li><strong>位置</strong>：page1 L49。原句：「图 43-p1-3 里的平台在甲乙类里几乎看不见（参数与调试篇会给出失真度的数字）。」图 43-p1-3 只画了乙类。</li>
+<li><strong>改法</strong>：二选一。在图 43-p1-3 右图加一条甲乙类的输入输出曲线（<code>dc_AB.csv</code> 现成），或者把句子改为「加了偏置后，图 43-p1-3 里的平台几乎消失（原理与实现篇图 43-p2-4 会把两条曲线放在一起比）」。</li>
+<li><strong>为什么</strong>：文字说「图里看得到」的东西，图里必须有 [4]。</li>
+</ul>
+<h3 id="建议-09图-43-p1-1-甲类是可搭的原理图样子需加示意别搭">建议-09　图 43-p1-1 甲类是可搭的原理图样子，需加「示意，别搭」</h3>
+<ul>
+<li><strong>位置</strong>：图 43-p1-1 画的是 8 Ω 负载在集电极、静止 0.75 A 直流流过负载的甲类电路，旁边没有任何警示。</li>
+<li><strong>问题</strong>：照着搭会让 0.75 A 直流长期流过喇叭，管子耗 4.5 W，超过 BD139 不加散热片时的 1.25 W。</li>
+<li><strong>改法</strong>：图下加一句：「<strong>这只是算账用的示意，不要搭</strong>：0.75 A 直流会一直流过喇叭，管子要耗约 4.5 W。」</li>
+<li><strong>为什么</strong>：安全提示要在读者第一次看到这个电路的地方给出 [1]。</li>
+</ul>
+<h3 id="建议-10图-43-p2-5-前加一个预测问题">建议-10　图 43-p2-5 前加一个预测问题</h3>
+<ul>
+<li><strong>位置</strong>：page2 L134：「乙类推挽有死区，但如果把它包进运放的负反馈环里，运放会发现『OUT 没跟上』，于是把 m 猛地往上或往下推」，紧接着就是图 43-p2-5。</li>
+<li><strong>改法</strong>：在图前加：「<strong>先猜</strong>：把乙类放进反馈环，负载波形还会有平台吗？运放输出 m 会长什么样？」然后再放图。</li>
+<li><strong>为什么</strong>：先预测再看结果，记得更牢，也能暴露「反馈万能」这类误区 [3][5]。</li>
+</ul>
+<h3 id="建议-11几张图缺引导句图-43-p2-4-插在静止时的代价中间">建议-11　几张图缺引导句，图 43-p2-4 插在「静止时的代价」中间</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>图 43-p1-4 紧接小标题「## 效率：推挽省在哪里」。</li>
+<li>图 43-p2-1 紧接「## 一、完整电路，逐个元件看」。</li>
+<li>图 43-p4-1 紧接步骤 12，图 43-p4-2 紧接图 43-p4-1，图 43-p4-3 紧接实验 C 第 6 步。这几处前面都没有一句「看图要看什么」。</li>
+<li>图 43-p2-4（直流传输曲线）放在「静止时的代价」和「为什么要 RE」之间，打断了「功耗 → 热稳定」的思路。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：每张图前加一句「看图时先找……」。例如图 43-p1-4 前加「下图把三种推挽的效率放在一起，先找 3 V 附近（本节能到的最大）的那几个点」。图 43-p2-4 挪到 §三 开头，跟在「偏置垫多少」的讨论后面。</li>
+<li><strong>为什么</strong>：引导句告诉读者关注什么，能减少无关搜索 [1][4]。</li>
+</ul>
+<h3 id="建议-12几组颜色太接近">建议-12　几组颜色太接近</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>图 43-p2-2：电源功率（朱红/深橙）与负载功率（橙）接近。</li>
+<li>图 43-p2-4：乙类（朱红）与甲乙类（橙）接近。</li>
+<li>图 43-p2-3：470 µF 曲线用了蓝色，而蓝色在 figstyle 里是「输入」。</li>
+<li>图 43-p4-1：图例「+12 V（红）」画成了朱红，接近 OUT 的橙。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：按 figstyle 重新分配颜色。图 43-p2-2 的电源功率、图 43-p2-4 的乙类改用红紫点划线或蓝绿虚线；图 43-p2-3 的 470 µF 改用蓝绿虚线；面包板 +12 V 线改用更深的红并在图例里写「深红」。</li>
+<li><strong>为什么</strong>：小屏上相近颜色难以分辨，颜色约定一致才能减轻负担 [1][4]。</li>
+</ul>
+<h3 id="建议-13图-43-p4-3-图例里的灰色m--6-v线看不见">建议-13　图 43-p4-3 图例里的灰色「m − 6 V」线看不见</h3>
+<ul>
+<li><strong>位置</strong>：图 43-p4-3 图例列了「m − 6 V」，alt 写「灰色虚线是 m 减 6 V，两种接法几乎一样」。但这条线和甲乙类曲线重合，在图上找不到。</li>
+<li><strong>改法</strong>：把 m − 6 V 画在右侧第二纵轴（或画成下方一个小子图），或者删掉图例项，改在正文里说一句。</li>
+<li><strong>为什么</strong>：图例里有、图上找不到，会让读者怀疑自己看错 [4]。</li>
+</ul>
+<h3 id="建议-14a8共-5-分钟与记录表不符温热没有数字散热片没有规格">建议-14　A8「共 5 分钟」与记录表不符；「温热」没有数字；散热片没有规格</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>测量表 A8（L90）：「每分钟记一次 A6 和散热片温度，共 5 分钟 | … | 基本稳定，不持续上升；散热片只是温热」。记录表只有 0、1、2、3、5 分钟，缺 4 分钟。</li>
+<li>B3：「温热，远低于 60 °C」。</li>
+<li>器材表里散热片没有任何规格。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：
+<ul>
+<li>记录表补上「4 分钟」一列。</li>
+<li>器材表写明散热片规格，例如「TO-126 用小散热片，热阻约 20～30 °C/W [待核实具体型号]」。</li>
+<li>「温热」改成可测的数，例如「比室温高约 5～15 °C（按 0.2 W × 散热片热阻估算，[待核实]）」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：动手篇要给可对照的数字，用探头量出来才能判断 [1]。</li>
+</ul>
+<h3 id="建议-15交流档频率范围给一个自查办法计划建议-07-只落实了一半">建议-15　交流档频率范围：给一个自查办法（计划建议-07 只落实了一半）</h3>
+<ul>
+<li><strong>位置</strong>：page4 L97：「很多入门万用表的交流档只在几百赫兹以内准（查一下你那只表说明书里的频率范围）」。</li>
+<li><strong>改法</strong>：补一句自查：「没有说明书时，用手机测试音在 50 Hz、400 Hz、1 kHz 各读一次负载交流电压（音量不动）。如果 1 kHz 的读数比 400 Hz 低很多，就说明表在 1 kHz 已经不准了。」入门表具体的频率上限标「[待核实]」。</li>
+<li><strong>为什么</strong>：给读者一个能自己验证的办法，而不是只说「查说明书」[6]。</li>
+</ul>
+<h3 id="建议-16实验-c-电位器分辨率太粗">建议-16　实验 C 电位器分辨率太粗</h3>
+<ul>
+<li><strong>位置</strong>：page4 实验 C 第 3 步：「滑动端电压范围约 4.95～7.05 V」；第 5 步：「每隔约 50 mV 读一次」。</li>
+<li><strong>问题</strong>：2 kΩ 普通电位器约 270° 对应 2.1 V，50 mV 只有约 6°，很难拧准。实际只需要 inp − 6 V 在 ±0.3 V 内。</li>
+<li><strong>改法</strong>：两只 4.7 kΩ 换成 10 kΩ。范围变为 <span class="math math-inline">\(12 \times 10/22 \approx 5.45\)</span> V 到 <span class="math math-inline">\(12 \times 12/22 \approx 6.55\)</span> V（±0.55 V），每 50 mV 约 12°。器材表同步修改；也可以注明「有多圈电位器更好」。</li>
+<li><strong>为什么</strong>：让动手步骤可操作，读者才能把注意力放在现象上 [1]。</li>
+</ul>
+<h3 id="建议-17page3功率回路不要全走面包板与-page4-的做法不一致">建议-17　page3「功率回路不要全走面包板」与 page4 的做法不一致</h3>
+<ul>
+<li><strong>位置</strong>：page3 排错表 L90：「功率回路（电源→管子→输出电容→负载→地）用粗线和接线端子，不要全走面包板」。page4 把 <span class="math math-inline">\(R_E\)</span> 、 <span class="math math-inline">\(C_o\)</span> 、负载回地都插在面包板上。</li>
+<li><strong>改法</strong>：page4 安全须知加一句：「本节最大峰值电流约 0.4 A，在面包板触点允许范围内（见 page3 参考资料中的 BusBoard FAQ），但负载、 <span class="math math-inline">\(C_o\)</span> 、 <span class="math math-inline">\(R_E\)</span> 一定要插紧。如果触点发烫，按 page3 排错表把功率回路改用粗线。」</li>
+<li><strong>为什么</strong>：前后页的建议要能互相解释，不能互相否定 [1]。</li>
+</ul>
+<h3 id="建议-18几段长段落拆短">建议-18　几段长段落拆短</h3>
+<ul>
+<li><strong>位置</strong>：page2 L124（图 43-p2-4 的说明，含测试负载、死区 ±0.46 V、为什么比 8 Ω 窄、甲乙类 0.02 V 四件事）、page2 L118（静止代价 + 手册 + 温升）、page4 L118（平台宽度 + m 摆幅 + 甲乙类 + 怎么对比 + 恢复接法）。</li>
+<li><strong>改法</strong>：每段按「一件事一段」拆成 2～3 段，或改成编号要点。page4 L118 末尾的「做完后<strong>断电</strong>，把反馈线插回 a26……」单独成一步，编号为第 7 步。</li>
+<li><strong>为什么</strong>：手机上长段落难以定位，分块能降低负荷 [1]。</li>
+</ul>
+<h2 id="三计数">三、计数</h2>
+<p>用脚本统计本文件中以「### 必改-」和「### 建议-」开头的标题：</p>
+<pre><code class="language-bash">rg -c '^### 必改-' review/part2/teacher/43.md   # 必改条数
+rg -c '^### 建议-' review/part2/teacher/43.md   # 建议条数
+</code></pre>
+<p><strong>必改 12、建议 18</strong>。</p>
+<h2 id="复核2026-10-27第-1-轮">复核（2026-10-27，第 1 轮）</h2>
+<p>本轮核对方式：</p>
+<ul>
+<li>重读 page1–4。</li>
+<li>用 Read 打开全部 21 张图。图 43-p4-1、图 43-p4-4 两张面包板图按左、中、右三段放大，逐孔对照 page4 第 3～12 步和实验 C 第 1～7 步。</li>
+<li>把 page2、page4 的代码复制到 /tmp/rv43b 运行，输出与页面一致：0.250/0.955/0.705 W、26.2%；3.82 V 时 0.912 W；示例读数全部 OK。</li>
+<li>在临时目录跑 <code>spice/43/run.py</code>（默认不写回仓库），93 项与页面的偏差都在 ±1.2% 以内。新增数字全部对上，包括：
+<ul>
+<li>B2′ 274 mV、Q1 瞬时 0.2495 A；</li>
+<li>C3 m 跳变 1.021 V、+0.1 V 时 OUT 0.300 V、m 0.844 V；</li>
+<li>试听 D1/D2/D3：0.297 V / 44.8%、0.889 V / 0.085%、1.000 V / 0.054%，正常接法 0.0057%；</li>
+<li>D5+D6 1.295 V、V_EB 0.654 V、Rx3 0.641 V；</li>
+<li>Q3 0.109 W。</li>
+</ul>
+</li>
+<li>新例题、练习自己算了一遍：
+<ul>
+<li>例 1/2/3 数字核对无误；</li>
+<li>练习 4（4 Ω）：1.125 W / 2.865 W / 1.74 W / 2000 µF / 30 mA，全部正确；</li>
+<li>练习 5：90.4 Hz，正确；</li>
+<li>思考题 1：79.6 mA，正确；</li>
+<li>电位器范围：4.95～7.05 V，正确；</li>
+<li>试听功率：12.3 mW / 15.4 mW，正确。</li>
+</ul>
+</li>
+</ul>
+<h3 id="一上轮必改逐条状态">一、上轮必改逐条状态</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-01</td>
+<td>✅</td>
+<td>page1 L47 改为「峰值约 0.91 V（SPICE 0.910 V）」，p1-3 的 alt 同步改为「约 0.9 V」；图 43-p1-3(b) 右端 0.91 V 与 SPICE 0.9103 V 一致。</td>
+</tr>
+<tr>
+<td>必改-02</td>
+<td>✅</td>
+<td>page4 L275 思考题 3 的红线统一为 50 mA / 165 mV，与安全须知 L21 一致。</td>
+</tr>
+<tr>
+<td>必改-03</td>
+<td>✅</td>
+<td>已打开图核对：图 43-p1-3 的死区确为浅橙色阴影带，图内注文也写「浅橙色带」；图 43-p1-4 的甲类线为红紫色，alt 也写红紫；图 43-p2-2 的 alt 不再提「蓝线」，改为深橙 / 浅橙 / 红紫，和图一致。</td>
+</tr>
+<tr>
+<td>必改-04</td>
+<td>✅</td>
+<td>图 43-p2-6 注文改为「Rx3 两端约 1.295 − 0.654 ≈ 0.64 V，电流 ≈ 0.64 V ÷ 27 Ω ≈ 23.7 mA」，可以自己减出来；page2 L48 方框、page3 L118 练习 2、page4 A4/A5 统一为 1.30 / 0.65 / 0.64 V / 23.7 mA，与 SPICE 1.295 / 0.654 / 0.641 V 一致。正文里「1.30 − 0.65 = 0.64」差的 0.01 V 是四舍五入造成的，列为新建议-01。</td>
+</tr>
+<tr>
+<td>必改-05</td>
+<td>✅</td>
+<td>page4 L20「表笔插 10 A 插孔、直流 A 档，全程不换」；A7、B2 读 10 A 插孔；另加 B2′（RE1 两端直流平均 274 mV，SPICE 274.0 mV）作为精读；page3 L91 的说法与此一致。</td>
+</tr>
+<tr>
+<td>必改-06</td>
+<td>✅</td>
+<td>page4 L137–141 加了「动手前先预测」框（C1/C2/C3 三问）。预期表和图 43-p4-3 都收进 L143 的「测完再看」折叠块；记录表 L236–242 只留空格；思考题 2（L263）改为「用你自己的读数回答」。</td>
+</tr>
+<tr>
+<td>必改-07</td>
+<td>✅</td>
+<td>新增 C3（乙类放回反馈环，L125、L157）和实验 D 试听三连对比（L163–177：D1 乙类环外 → D2 甲乙类环外 → D3 乙类环内，音量只调一次）；L7–12 的总览也改写了。实验 A、B 仍从甲乙类开始，这是搭建顺序决定的，可以接受。</td>
+</tr>
+<tr>
+<td>必改-08</td>
+<td>✅</td>
+<td>逐处核对：①实验 C 改线：图 43-p4-4 面包板 + 图 43-p4-5 原理图 + L135「对照看」，孔位全部对上；②示波器：图 43-p4-4 用蓝色虚线标出 a9「示波器实验时才接回」，L183 指回实验 C 的步骤；③板外模块：图 43-p4-6，E/C/B 顺序和每根引线插哪个孔写在图下，与第 10 步一致；④试听：图 43-p4-7；⑤图 43-p2-4 右下角加了测试负载小图。</td>
+</tr>
+<tr>
+<td>必改-09</td>
+<td>✅</td>
+<td>page4 L19 写明「背面金属片和集电极（中间脚）相连」，Q1 散热片 = +12 V、Q2 散热片 = GND，两块绝不能相碰；可以垫绝缘垫；L292–293 给出两份手册；图 43-p4-6 标「带电！= 集电极」。</td>
+</tr>
+<tr>
+<td>必改-10</td>
+<td>✅</td>
+<td>page1 L15 预习题 3 的有效值说明改为当场给出，不再回指错页。</td>
+</tr>
+<tr>
+<td>必改-11</td>
+<td>✅</td>
+<td>page2 例 1 完整示范 → 例 2 留最后一步 → 例 3 全部自己来，数字都没有在正文出现过，核算无误。</td>
+</tr>
+<tr>
+<td>必改-12</td>
+<td>✅</td>
+<td>page3 练习 4 换成「8 Ω 换 4 Ω 喇叭」的迁移题（功率、管耗、 <span class="math math-inline">\(C_o\)</span> 、恒流源四问），答案全对；原来与例 2 重复的 2200 µF 题已删。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>旧必改未改好：0 条。</strong></p>
+<h3 id="二建议采纳情况">二、建议采纳情况</h3>
+<ul>
+<li><strong>已采纳</strong>：
+<ul>
+<li>建议-01（ <span class="math math-inline">\(C_o\)</span> 统一为「≥ 16 V，如 25 V」：page4 L23、page3 L17）；</li>
+<li>建议-02（统一 400 Hz）；</li>
+<li>建议-07 部分（图 43-p1-4 图例改成「π V_p /(4 × 6 V)」，不再写 <span class="math math-inline">\(V_{CC}\)</span> ）；</li>
+<li>建议-17（page4 L73 补了「功率回路走粗线」的说明）；</li>
+<li>建议-18 部分（page4 原来的长段拆成第 5～7 步和 L161）。</li>
+</ul>
+</li>
+<li><strong>未采纳</strong>（都不升级为必改）：
+<ul>
+<li>建议-03：「前面讲过」处仍无链接；</li>
+<li>建议-05：page2 L146 先用 THD，page3 L52 才解释；</li>
+<li>建议-06：Zobel 仍只有一句；</li>
+<li>建议-07 其余部分：SPICE 点高于理想线的原因没有说明；</li>
+<li>建议-08：page1 L49 仍说「甲乙类几乎看不见」，图 43-p1-3 里没有甲乙类；</li>
+<li>建议-09：图 43-p1-1 仍无「示意，别搭」；</li>
+<li>建议-10：图 43-p2-5 前没有预测问题；</li>
+<li>建议-11：几张图缺引导句；</li>
+<li>建议-12：图 43-p2-2 的 <span class="math math-inline">\(P_S\)</span> 深橙与 <span class="math math-inline">\(P_L\)</span> 浅橙、图 43-p2-4 的两条橙线仍太接近；</li>
+<li>建议-13：图 43-p4-3 图例有「m − 6 V 灰色虚线」，图里看不到；alt 也还这么写；</li>
+<li>建议-14：记录表仍缺第 4 分钟一行，「温热」没有数字，没给散热片规格；</li>
+<li>建议-15：交流档频率范围；</li>
+<li>建议-16：电位器分辨率；</li>
+<li>建议-18 的其余部分：page2 L122、L128 仍是长段。</li>
+</ul>
+</li>
+</ul>
+<h3 id="三新问题">三、新问题</h3>
+<h4 id="新必改-01实验-c-第-7-步c3要把反馈线插回-a26可第-4-步的-2-kω-测试负载正插在-a26">新必改-01　实验 C 第 7 步（C3）要把反馈线「插回 a26」，可第 4 步的 2 kΩ 测试负载正插在 a26</h4>
+<ul>
+<li><strong>位置</strong>：page4 L122（第 4 步）、L125（第 7 步）、L135（对照看）；图 43-p4-4；图 43-p4-5 底部注文「C3 再把 RF 插回 OUT（a26）」。</li>
+<li><strong>问题</strong>：放大图 43-p4-4 核对：上半区第 26 列 a26 = 2 kΩ 测试负载，b26 = <span class="math math-inline">\(C_o\)</span> 正极，c26 = RE1，d26 = 去 g26 的橙线，e26 是测量点 ④。五个孔已经全部占满，第 7 步照做就插不进去。到 L161 拆掉测试负载之后，a26 才空出来（实验 D 的 D3 插 a26 没有问题）。读者手里拿着线找不到孔，只能自己猜，这正是动手篇最不该出现的卡点。</li>
+<li><strong>改法（任选其一）</strong>：
+<ul>
+<li>(a) 第 7 步改为「把反馈线的 b16 一端插到 <strong>f26</strong>（下半区第 26 列，经 d26 → g26 那根橙线与 a26 同属 OUT；a26 此时被测试负载占着）」，同时改 L135 对照看和图 43-p4-5 的注文。</li>
+<li>(b) 第 4 步把上方那只 2 kΩ 改为「从 f26 到下方 +12 V 轨」（两只测试负载都放在下半区，第 26 列下半区 f26、j26 原本空着），这样 C3 时 a26 是空的，第 7 步不用改；同步更新图 43-p4-4、图 43-p4-5 和 L135。</li>
+</ul>
+</li>
+</ul>
+<h4 id="新必改-02page3-参数表提前给出了练习-2练习-5-的答案且与练习-2-的答案数字不一致">新必改-02　page3 参数表提前给出了练习 2、练习 5 的答案，且与练习 2 的答案数字不一致</h4>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>page3 L13：「恒流源 <span class="math math-inline">\(R_X\)</span> ……电流变小（33 Ω 时约 18 mA，不够）」→ 练习 2（L114）问的正是「用 33 Ω，电流多少？够不够？」，答案 L118 却是 19.4 mA。</li>
+<li>page3 L17：「低音变薄（220 µF 时拐点约 90 Hz）」→ 练习 5（L144）问的正是「220 µF 时拐点多少」，答案 90.4 Hz。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：两道题的答案在同页前面的表里已经印出，提取练习失效（原则 [3]）。练习 2 还会让认真算的读者困惑：表里说 18 mA，自己算出 19.4 mA，到底谁对？</li>
+<li><strong>改法</strong>：
+<ul>
+<li>参数表两格去掉具体数字，改为「电流变小（见练习 2）」「低音变薄（见练习 5）」；</li>
+<li>或者表格保留数字、换题：练习 2 改用 39 Ω（0.64 / 39 ≈ 16.4 mA），练习 5 改用 330 µF（≈ 60.3 Hz）或 680 µF（≈ 29.3 Hz）。</li>
+<li>无论选哪种，L13 的「约 18 mA」都要与估算法统一成 19.4 mA，或注明「SPICE 值」并给出依据。</li>
+</ul>
+</li>
+</ul>
+<h4 id="新建议">新建议</h4>
+<ul>
+<li><strong>新建议-01</strong>：page2 L48、page3 L118 写的是「1.30 V 减 0.65 V 剩 0.64 V」，心算得 0.65，会有人卡住。建议照图 43-p2-6 补一句括注「（SPICE：1.295 − 0.654 ≈ 0.641 V，各数四舍五入后差 0.01 V）」。</li>
+<li><strong>新建议-02</strong>：实验 C 第 5 步（L123）只让读 inp 和 OUT，可是记录表 L240、L242 有「m − 6 V」两行，预测框第 2 问、思考题 2 也要用 m 的读数。建议第 5 步改为「读 inp（b6）、OUT（e26）和 m（g16）」，C2 的折叠参考里补一行 m 的预期（约为 inp 偏差的 3 倍，即 ±0.1 V → ±0.3 V）。</li>
+<li><strong>新建议-03</strong>：万用表 10 A 档的分辨率通常只有 10 mA。A7「约 0.033 A」、B2「约 0.083 A」实际只能看到 0.03 / 0.08。建议在 A7 后加一句「10 A 档只看到两位，精读以 A6 的 mV ÷ 3.3、B2′ 的 274 mV ÷ 3.3 为准」。</li>
+<li><strong>新建议-04</strong>：page4 L183 示波器那一段改线没写「断电」，虽然 L24 有总规定，但其他各处都逐步写了断电。建议补成「断电后按实验 C 的第 2 步……」。</li>
+<li><strong>新建议-05</strong>：峰值电流有两种说法：page4 L20、L73 写「约 0.25 A」（负载峰值 2 V），page2 L34、page3 L48 写满音量 0.375 A。建议 L20 改为「放音时 Q1 约 0.25 A（满音量约 0.38 A）」，免得读者以为 0.25 A 是上限。</li>
+<li><strong>新建议-06</strong>：page2 L174「音量比例 1 小」容易被读成「音量比例」。建议改为「音量比例 1 里的小」。</li>
+<li><strong>新建议-07</strong>：图 43-p4-4 的「电位器 2 kΩ」是一个方框，盖住了 h12、h13、h14 三个孔，看不出三只脚插在哪。建议画出三个脚点，并标出中间是滑动端。</li>
+<li><strong>新建议-08</strong>：图 43-p2-3 的 alt 说横轴「10 Hz 到 20 kHz」，图里实际是 1 Hz 到 100 kHz，请改 alt。</li>
+<li><strong>新建议-09</strong>：实验 D 在「上电听」之前就把 THD、峰值写出来了。可以学实验 C 的做法：先问「你猜哪一种最沙？」，再把数字放进折叠块。</li>
+</ul>
+<h3 id="四评分">四、评分</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>主线不变：甲类算账 → 拉大锯 → 功率、效率、管耗 → 恒流源 → 热失控。新加的 C3（m 跳 1.02 V）和实验 D，把「反馈环跳过死区」从公式落到了万用表和耳朵上，具体与抽象接得更紧。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>好</td>
+<td>上轮列出的卡点都已消除：数字与 SPICE 对齐，颜色与图一致，电流表档位统一，改线、模块、试听各补了图并配「对照看」。剩下的是长段落、缺链接、颜色接近这类打磨项；新必改-01 的孔位冲突必须改，但只是局部问题。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>好</td>
+<td>例题已经渐隐：例 1 完整示范 → 例 2 留最后一步 → 例 3 全部自己来。练习 4 是 4 Ω 迁移题，一题串起四个概念。实验 D 是同一信号的三连对比，C1/C2/C3 先预测再测。参数表提前漏答案的问题列为新必改-02。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="五连接文字旁必须有原理图复查">五、「连接文字旁必须有原理图」复查</h3>
+<ul>
+<li>✅ page1：甲类、推挽、交越 → 图 43-p1-1、图 43-p1-2、图 43-p1-3。</li>
+<li>✅ page2：整机 → 图 43-p2-1；恒流源细节 → 图 43-p2-6（数字已自洽）；测试负载 → 图 43-p2-4 右下角小图。</li>
+<li>✅ page4 主体：面包板图 43-p4-1 ↔ 原理图 43-p4-2 + L83 对照看。逐孔核对第 3～12 步：TL072 第 3～6 列、A 半中点、RG/Rbias/Cin/RF、D1/D2 节点 a16/j16、b1/b2、RE1/RE2、 <span class="math math-inline">\(C_o\)</span> 、Zobel、Q3/Q4 恒流源（E-C-B 第 33～35 列）、D5～D8、测量点 ①～⑥，全部与文字一致。</li>
+<li>✅ 实验 C：面包板图 43-p4-4 ↔ 原理图 43-p4-5 + L135 对照看。孔位逐一核对无误，唯一的问题是 a26 冲突，见新必改-01。</li>
+<li>✅ 实验 D：图 43-p4-7（只换负载）。板外模块：图 43-p4-6。示波器：沿用实验 C 的两张图。</li>
+<li>小建议：板外模块（L50–52）可以加一句「对应图 43-p4-2 中 Q1 + RS1 + D1 那一块」。不算必改。</li>
+</ul>
+<h3 id="六安全复查">六、安全复查</h3>
+<ul>
+<li><strong>测温</strong>：page4 L18 只用测温探头，写明「不要用手摸」，超过 60 °C 断电；page3 L99 同样禁止。✅</li>
+<li><strong>带电改线</strong>：L24 有总规定；实验 C 第 2、6、7 步、L161、实验 D 各步都写了「断电」。只有示波器段没写，见新建议-04。✅</li>
+<li><strong>电流表量程</strong>：10 A 插孔、直流 A 档，全程不换（L20）。最大瞬时电流 0.25 A，开机有充电冲击，都在 10 A 档以内。✅</li>
+<li><strong>散热片带电</strong>：已写清是集电极；Q1 散热片 = +12 V、Q2 散热片 = GND，不能相碰；图 43-p4-6 有标注。✅</li>
+<li><strong>器件电流、功率</strong>：
+<ul>
+<li>功放管：满音量每管约 0.44 W，加散热片；BD139/140 允许 1.5 A，实际 ≤ 0.375 A。</li>
+<li>恒流源管：Q3/Q4 约 0.11 W，小于 1.25 W。</li>
+<li>电阻：RE 3.3 Ω 静态加信号约 0.12 W，小于 1 W；Rx 27 Ω 约 15 mW；2 kΩ 测试负载约 18 mW。</li>
+<li>负载与试听：负载 8 Ω / 5 W；试听时 10 Ω 上 15 mW、喇叭 12 mW。</li>
+<li>运放：输出最大 3.19 mA，远小于 TL072 的 26 mA 短路电流。</li>
+<li>以上全部在额定值内。✅</li>
+</ul>
+</li>
+<li><strong>喇叭直流</strong>：所有接法（含实验 C、D 的开环乙类）喇叭都在 <span class="math math-inline">\(C_o\)</span> 之后，正极朝 OUT、耐压 ≥ 16 V，喇叭上没有直流。✅</li>
+<li><strong>电源</strong>：限流 0.5 A，或 12 V 适配器 + 1 A 保险丝；不接市电。✅</li>
+</ul>
+<h3 id="七结论">七、结论</h3>
+<p><strong>暂不能发布。</strong> 上一轮 12 条必改全部改好，三项评分都是「好」，数字、代码、SPICE、孔位核对全部吻合，安全检查全部通过。还剩两处局部问题要改：</p>
+<ul>
+<li>实验 C3 的反馈线插不进已占满的 a26（新必改-01）；</li>
+<li>page3 参数表提前印出练习 2、练习 5 的答案（新必改-02）。</li>
+</ul>
+<p>两处都是改几句话、改一张图注的工作量。改完由协调者核对这两处即可，无需再整节复审。指向 42、44 的导航链接属于尚未上线的节点，不算必改。</p>
+<p><strong>计数：未改好的旧必改 0 条；新必改 2 条；新建议 9 条。</strong></p>
+<h2 id="复核2026-10-27第-2-轮">复核（2026-10-27，第 2 轮）</h2>
+<p>本轮触发：notes/part2-status.log L109「43-push-pull-power-amp teacher-fix done (author D)」（约 19:37 CST，晚于第 1 轮的约 19:33 CST）。</p>
+<p>本轮核对方式（重点看改动处）：</p>
+<ul>
+<li>重读 page3 参数表和练习 2、5（L9–19、L114–150），以及 page4 测量表 C 行、实验 C 第 1～7 步、对照看、预测框、「测完再看」、恢复接法、实验 D、示波器段、记录表（L95–196、L246–253）。</li>
+<li>用 Read 打开图 43-p4-4、图 43-p4-5、图 43-p4-3。图 43-p4-4 在 /tmp 用 PIL 裁剪放大第 26 列（a～j 行）和电位器、100 Ω 一带，逐孔核对。</li>
+<li>逐孔核对第 26 列占用情况（以 page4 L66、L68、L122 为准）：
+<ul>
+<li>上半区：a26 测试负载、b26 <span class="math math-inline">\(C_o\)</span> 、c26 RE1、d26 橙线、e26 测量点 ④。</li>
+<li>下半区：g26 橙线、h26 RE2、i26 Rz、j26 测试负载，<strong>f26 空</strong>。所以作者选的改法 (a) 成立。</li>
+</ul>
+</li>
+</ul>
+<h3 id="一第-1-轮新必改逐条状态">一、第 1 轮新必改逐条状态</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第 1 轮新必改-01（C3 反馈线插不进 a26）</td>
+<td>✅</td>
+<td>采用改法 (a)。page4 L125 第 7 步改为「把反馈线的 b16 一端插到 <strong>f26</strong>：a26 此时被测试负载占着，而 f26……经 d26 → g26 那根橙线和 a26 同属 OUT」；L105 测量表 C3 行同步改为「改插 f26」，检查项写「反馈线是否插在 f26」；L135 对照看补了「上半区第 26 列 a26～e26 已经插满……所以改插下半区的 f26」；图 43-p4-4 在 f26 画了绿色虚线圈，图下注文写「绿色虚线圈 f26 = C3 时反馈线 b16 一端改插的孔」；图 43-p4-5 底部注文改为「C3 断电，把 RF 的 b16 一端插到 f26（同属 OUT，a26 被测试负载占着）」；L127 alt 同步。放大图核对：虚线圈确实落在 f26，f26 没有别的元件。第 7 步开头写了「断电」。</td>
+</tr>
+<tr>
+<td>第 1 轮新必改-02（page3 参数表提前印出练习答案）</td>
+<td>✅</td>
+<td>page3 L13 改为「电流变小，可能低于 22 mA 的要求（见练习 2）」，L17 改为「低音变薄（见练习 5）」，两个具体数字都删了。「约 18 mA」与 19.4 mA 打架的问题随之消失。练习 2 答案 L118（19.4 mA）、练习 5 答案 L148（90.4 Hz）复算无误。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>旧必改（初审 12 条 + 第 1 轮新必改 2 条）未改好：0 条。</strong></p>
+<h3 id="二第-1-轮新建议采纳情况">二、第 1 轮新建议采纳情况</h3>
+<ul>
+<li><strong>新建议-01</strong> ✅：page2 L48、page3 L118 都补了「（SPICE：1.295 − 0.654 ≈ 0.641 V，各数四舍五入后差 0.01 V）」。</li>
+<li><strong>新建议-02</strong> ✅：page4 L123 第 5 步改为读 inp（b6）、OUT（e26）和 m（g16）；L156 补了 C1、C2 的 m 预期（±0.1 V → ±0.30 V）；L105 C3 行加了 g16。措辞还有一处小问题，见本轮新建议-01。</li>
+<li><strong>新建议-03</strong> ✅：A7（L97）、B2（L100）都写了「10 A 档只看到 0.03 / 0.08，精读以 mV ÷ 3.3 为准」。</li>
+<li><strong>新建议-04</strong> ✅：page4 L194 改为「断电后按实验 C 的第 2 步……」；L196 插回反馈线前也写了断电。</li>
+<li><strong>新建议-05</strong> ✅：page4 L20 改为「Q1 约 0.25 A……负载峰值 2 V 时；满音量约 0.38 A」。</li>
+<li><strong>新建议-06</strong> ✅：page2 例 2 答案第 3 条（L174）整句重写为「峰值从 3 V 降到 2 V，音量小了三分之一……」，不再有歧义。</li>
+<li><strong>新建议-07</strong> ✅：图 43-p4-4 的电位器画成 h12、h13、h14 三个黑点，标注「中间脚 h13 = 滑动端」，L121 和 L135 文字同步。</li>
+<li><strong>新建议-08</strong> ✅：图 43-p2-3 的 alt（page2 L54）改为「横轴 1 Hz 到 100 kHz」，与图一致。</li>
+<li><strong>新建议-09</strong> ✅：实验 D 加了「听之前先猜」框（L178），数字收进「听完再看」折叠块（L180–186）。</li>
+<li><strong>初审建议中仍未采纳的</strong>：03、05、06、07 其余部分、08～16、18 其余部分，状态与第 1 轮记录相同，仍不升级为必改。另外，图 43-p4-3 的「m − 6 V」灰色细点线与甲乙类曲线基本重合，图上看不出来（建议-13），这次已再次核实。</li>
+</ul>
+<h3 id="三改动处引入的新问题">三、改动处引入的新问题</h3>
+<h4 id="新必改-01实验-c-结束后的恢复步骤仍写反馈线留在-a26可-c3-已经把它插到了-f26">新必改-01　实验 C 结束后的恢复步骤仍写「反馈线留在 a26」，可 C3 已经把它插到了 f26</h4>
+<ul>
+<li><strong>位置</strong>：page4 L162「做完后<strong>断电</strong>，把两根跳线拆掉，拆掉电位器那一串和测试负载，信号源接回 a9，反馈线留在 a26，恢复实验 B 的接法。」</li>
+<li><strong>问题</strong>：
+<ul>
+<li>按新的第 7 步，C3 结束时反馈线插在 f26，a26 上是测试负载。读者照 L162 拆掉测试负载后，a26 是空的，「留在 a26」就和手上的板子对不上。</li>
+<li>第 1 轮改之前，第 7 步把线插回 a26，这句话是对的；这次只改了第 7 步，这句忘了跟着改。</li>
+<li>电气上 f26 和 a26 同属 OUT，留在 f26 也能工作，所以没有安全问题。但后面实验 D 第 1、2、4 步（L172、L173、L175）都按「反馈线在 a26」来写，动手篇的步骤之间必须前后一致。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：L162 改为「……信号源接回 a9，<strong>把反馈线从 f26 改插回 a26</strong>（测试负载拆掉后 a26 空了），恢复实验 B 的接法。」或者写「反馈线留在 f26 也可以（与 a26 同属 OUT），后文的『a26』都可以换成 f26」。推荐前一种，后文不用动。</li>
+</ul>
+<h4 id="新建议-1">新建议</h4>
+<ul>
+<li><strong>新建议-01</strong>：m 的记录行措辞对不上。
+<ul>
+<li><strong>位置</strong>：page4 L123 第 5 步、L156。</li>
+<li><strong>问题</strong>：
+<ul>
+<li>L123 第 5 步做的是 C1，却写「记录表里『m − 6 V』那一行也要用 m 的读数」。可记录表（L248–253）没有 C1 的 m 行，m 行只有 C2、C3 两行。</li>
+<li>L156 说「记录表『m − 6 V』那两行就和这个比」。这两行里 C3 的 m 不满足 3 倍关系（会跳约 1.02 V，见 L158）。照这句去比，读者会以为 C3 测错了。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：
+<ul>
+<li>L123 改为「m 的读数在 C2、C3 记进记录表的『m − 6 V』行；C1 读 m 只是为了和 C2 对比，可不填」。或者在记录表加一行「C1 甲乙类 m − 6 V（我的）」。</li>
+<li>L156 末句改为「记录表『C2 乙类 m − 6 V』那一行就和这个比（C3 的 m 见下一条）」。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>新建议-02</strong>：图 43-p4-4 的注文没跟上第 5 步。图右下注文仍写「实验 C 读数：⑦ inp（b6）和 ④ OUT（e26）……每隔约 50 mV 拧一下电位器，记下 inp 和 OUT」，而 L123 第 5 步和图上的黄圈 ②（g16）都要求同时读 m。建议注文改为「⑦ inp（b6）、④ OUT（e26）、② m（g16）」，与第 5 步一致。</li>
+<li><strong>新建议-03</strong>：f26 的标记容易和导线混在一起。图 43-p4-4 里 f26 的「绿色虚线圈」紧挨着一根从左到右、贴着 f 行走的绿色实线（b2 → 下恒流源那根）。在手机上放大看，虚线圈像是那根绿线上的一个节点。建议：
+<ul>
+<li>把虚线圈改成别的颜色（例如紫色虚线圈，与「C2 才插」的紫色跳线同属「后面才插」一类），或加粗、加大；</li>
+<li>旁边加一个小标签「C3：RF → f26」。</li>
+</ul>
+</li>
+</ul>
+<h3 id="四评分-1">四、评分</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>主线不变：甲类算账 → 推挽拉大锯 → 功率、效率、管耗 → 恒流源 → 热失控 → 反馈环跳过死区。这次补了 m 的预期（3 倍关系）和 1.295 − 0.654 的来历，「为什么」讲得更完整。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>好</td>
+<td>第 1 轮的两个卡点都已消除：C3 有孔可插，对照看说明了原因；参数表不再提前给答案、也不再和答案打架。电位器三只脚、10 A 档分辨率、峰值电流两种说法都已讲清。剩下的只有 L162 一句忘了同步改（新必改-01），是局部问题。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>好</td>
+<td>例 1 完整示范 → 例 2 留空 → 例 3 自己做；练习 4 是 4 Ω 迁移题；练习 2、5 现在真正要自己算。实验 C（C1/C2/C3）、实验 D（D1/D2/D3）都是先预测、先猜，再看参考，前后形成对比。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="五连接文字旁必须有原理图复查只看改动处">五、「连接文字旁必须有原理图」复查（只看改动处）</h3>
+<ul>
+<li>✅ 实验 C 第 7 步改插 f26：面包板图 43-p4-4 有 f26 虚线圈，原理图 43-p4-5 底部注文写 f26（原理图上 f26 与 a26 同属 OUT 节点，不需要另画），L135 对照看把两张图连起来了。</li>
+<li>✅ 电位器三只脚：图 43-p4-4 的 h12/h13/h14 对应图 43-p4-5 最左边一竖排的电位器，L135 写明了。</li>
+<li>其余部分与第 1 轮相同，无变化。</li>
+</ul>
+<h3 id="六安全复查只看改动处">六、安全复查（只看改动处）</h3>
+<ul>
+<li>第 7 步改插 f26 前写了「断电」；示波器段（L194、L196）已补「断电」；L162 恢复接法也写了「断电」。✅</li>
+<li>f26 与 a26 同属 OUT，C3 的电路与第 1 轮核对时完全相同，SPICE 数字（m 跳 1.021 V、+0.1 V 时 OUT 0.300 V、m 0.844 V）照旧适用，没有新的电流、功率风险。✅</li>
+<li>测温、散热片带电、电流表 10 A 档、喇叭串 10 Ω、 <span class="math math-inline">\(C_o\)</span> 极性：都没有改动，第 1 轮结论不变。✅</li>
+</ul>
+<h3 id="七结论-1">七、结论</h3>
+<p><strong>暂不能发布，但只差一句。</strong></p>
+<ul>
+<li>第 1 轮的 2 条新必改都已改好，初审 12 条必改仍然全部保持。</li>
+<li>第 1 轮的 9 条新建议全部采纳。</li>
+<li>三项评分都是「好」。</li>
+<li>改动处只引入一个小问题：page4 L162 的「反馈线留在 a26」没有随第 7 步同步（新必改-01）。</li>
+</ul>
+<p>作者把 L162 改成「把反馈线从 f26 改插回 a26」后，由协调者核对这一句即可发布，不需要再整节复审。本轮 3 条新建议可以顺手改，不影响发布。指向 44 的导航链接属于尚未上线的节点，不算必改。</p>
+<p><strong>计数：未改好的旧必改 0 条；新必改 1 条；新建议 3 条。</strong></p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

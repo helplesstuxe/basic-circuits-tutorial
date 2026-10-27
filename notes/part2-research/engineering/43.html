@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>43 推挽功放（甲 / 乙 / 甲乙类）· 工程实战调研</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/43.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="43-推挽功放甲--乙--甲乙类-工程实战调研">43 推挽功放（甲 / 乙 / 甲乙类）· 工程实战调研</h1>
+<blockquote>
+<p>作者：工程实战派。读过的材料：notes/00-design-part2.md §43、notes/PART2_BRIEF.md §10、notes/43-research.md。本节还没有 page4 草稿，所以下面的可行性审查针对 00-design 和 43-research 中的 page4 计划。
+所有数字都来自本次实际打开的手册，或来自下文「已运行」的 Python 计算。打不开的来源标「[待核实]」。</p>
+</blockquote>
+<h2 id="1-真实器件与参考设计">1. 真实器件与参考设计</h2>
+<h3 id="11-ti-snoa600ban-272op-amp-booster-designsfigure-1200-ma-current-booster">1.1 TI SNOA600B（AN-272《Op Amp Booster Designs》）Figure 1：200 mA Current Booster</h3>
+<p>来源已打开：<a href="https://www.ti.com/lit/an/snoa600b/snoa600b.pdf">https://www.ti.com/lit/an/snoa600b/snoa600b.pdf</a></p>
+<ul>
+<li><strong>结构</strong>：LF356 反相放大器 + 互补射极跟随器 Q1/Q2。
+<ul>
+<li>两只 LM334 恒流源给跟随器提供偏置。原文：「the 20Ω resistor sets the current value at 3.5 mA」。</li>
+<li>LM334 旁的 200 Ω 和 D1–D4 给恒流源做温度补偿。</li>
+</ul>
+</li>
+<li><strong>交越</strong>：原文「Crossover distortion is avoided by the D2-D3 diodes which compensate the VBEs of Q1 and Q2」，并且「D2 and D3 would be thermally coupled to the TO-5 type heat sinks」。也就是说，二极管要和功率管做热耦合。</li>
+<li><strong>反馈从推挽输出端取回</strong>：原文「Amplifier feedback is taken from the booster output」。这正是 00-design 里“放进反馈环”这一步。</li>
+<li><strong>短路保护</strong>：输出串 2.5 Ω。电流超过约 275 mA 时，D5/D6 把驱动分流走（0.7 V / 2.5 Ω ≈ 275 mA）。</li>
+<li><strong>反馈网络</strong>：15 pF 与 10k 并联，2 MHz 以上滚降。实测在 50 Ω ∥ 10 nF 负载、100 kHz、20 Vpp 时，失真 0.05%。</li>
+<li><strong>对 page4 的启发</strong>：
+<ul>
+<li>恒流源偏置优于电阻偏置（见 §2.3 的“偏置电阻饿死”）。</li>
+<li>二极管要贴着管子。</li>
+<li>环内反馈从功率级输出取回。</li>
+<li>可以借用“小电阻 + 二极管”限流的思路。</li>
+</ul>
+</li>
+</ul>
+<h3 id="12-st-bd135bd136bd139bd140-数据手册rev-52008-年-5-月">1.2 ST BD135/BD136/BD139/BD140 数据手册（Rev 5，2008 年 5 月）</h3>
+<p>来源已打开：<a href="https://www.st.com/resource/en/datasheet/bd139.pdf">https://www.st.com/resource/en/datasheet/bd139.pdf</a>
+（curl 访问 <a href="http://st.com">st.com</a> 超时，用 WebFetch 打开成功，因此 43-research 中的「[待核实]」可以解除。）</p>
+<ul>
+<li><strong>极限值</strong>：
+<ul>
+<li>VCEO 80 V（BD139/BD140）。</li>
+<li>IC 1.5 A，ICM 3 A，IB 0.5 A。</li>
+<li>Ptot：Tc ≤ 25 °C 时 12.5 W；<strong>Tamb ≤ 25 °C（不加散热片）时 1.25 W</strong>。</li>
+<li>Tj 最高 150 °C。</li>
+</ul>
+</li>
+<li><strong>热阻</strong>：Rth j-case 10 °C/W，<strong>Rth j-amb 100 °C/W</strong>。</li>
+<li><strong>hFE</strong>：
+<ul>
+<li>5 mA 时 ≥ 25。</li>
+<li>150 mA 时 40–250（-10 档 63–160，-16 档 100–250）。</li>
+<li>0.5 A 时 ≥ 25。</li>
+</ul>
+</li>
+<li><strong>VCE(sat)</strong> ≤ 0.5 V（0.5 A / 50 mA）；<strong>VBE</strong> ≤ 1 V（0.5 A，VCE = 2 V）。</li>
+<li>封装 SOT-32（引脚 1/2/3）。引脚次序在手册中只以图示给出，文本没有抽取出来。常见说法是 E-C-B，记作「[待核实]」，<strong>请作者对照手册 Figure 1 或实物丝印确认</strong>。BD139/BD140 的排列和 2N3904 的 E-B-C 不同，插错就不能工作。</li>
+<li>BD139 与 BD140 是互补对（NPN 与 PNP），可选同一 hFE 档（例如都用 -16）来配对。</li>
+</ul>
+<h3 id="13-小功率替代管2n3904--2n3906mcc">1.3 小功率替代管：2N3904 / 2N3906（MCC）</h3>
+<ul>
+<li>2N3904：IC 200 mA，PD 625 mW，RθJA 200 °C/W，TO-92 引脚 1E 2B 3C（第 41 节已核对）。</li>
+<li>2N3906（MCC，已打开 <a href="https://www.mccsemi.com/pdf/Products/2N3906(TO-92).pdf%EF%BC%89%EF%BC%9A">https://www.mccsemi.com/pdf/Products/2N3906(TO-92).pdf）：</a>
+<ul>
+<li>IC −200 mA，PD 600 mW。</li>
+<li>hFE：1 mA 时 80，10 mA 时 100–300，50 mA 时 60，100 mA 时 30。</li>
+</ul>
+</li>
+<li><strong>结论</strong>：hFE 在 100 mA 时只剩 30，IC 上限 200 mA。按 18 Ω 负载算，Vp ≤ 3.6 V（见 §3）。所以 2N3904/2N3906 只适合“小音量演示”。</li>
+</ul>
+<h3 id="14-偏置二极管-1n4148vishay">1.4 偏置二极管 1N4148（Vishay）</h3>
+<p>来源已打开：<a href="https://www.vishay.com/docs/81857/1n4148.pdf">https://www.vishay.com/docs/81857/1n4148.pdf</a></p>
+<ul>
+<li>手册只给出 VF ≤ 1 V（IF = 10 mA）的最大值。典型值只有曲线 Fig. 2，未抽取数字。</li>
+<li>因此静态电流 Iq = (2VD − 2VBE)/(2Re) <strong>无法凭手册预算</strong>，只能实测（方法见 §2.4）。正文不要写“Iq 约 xx mA”的预测值。</li>
+</ul>
+<h3 id="15-运放ti-tl072-slos080-新版已有缓存见第-31-节">1.5 运放（TI TL072 SLOS080 新版，已有缓存，见第 31 节）</h3>
+<ul>
+<li><strong>TL07xH</strong>：
+<ul>
+<li>VS 4.5–40 V。</li>
+<li>VCM 从 (V−)+1.5 V 到 V+。</li>
+<li>GBW 5.25 MHz，SR 20 V/µs，ISC ±26 mA。</li>
+<li>输出离电源轨：RL = 2 kΩ 时典型 520 mV、最大 965 mV（VS = 40 V 条件）。</li>
+</ul>
+</li>
+<li><strong>经典 TL072C</strong>：
+<ul>
+<li>GBW 3 MHz，SR 最小 8 / 典型 20 V/µs。</li>
+<li>VCM 典型值为 −12 到 15 V（±15 V 供电时），即<strong>负端要留约 3–4 V 余量</strong>。</li>
+<li>VOM 在 RL ≥ 2 kΩ 时为 ±10 V（±15 V 供电时），即离电源轨约 5 V（最坏情况）。</li>
+</ul>
+</li>
+<li><strong>LM358B</strong>：GBW 1.2 MHz，SR 0.5 V/µs，ISC ±40 mA（典型 60 mA）。旧版 LM358：GBW 0.7 MHz，SR 0.3 V/µs。</li>
+<li>单电源 12 V、输入偏在 6 V 时，两种 TL072 的输入共模都满足。但<strong>经典 TL072C 的输出摆幅在 12 V 下不可靠</strong>（按 ±10 V@±15 V 的最坏情况推算，只剩约 ±1 V），<strong>建议指定 TL072H 或 LM358B</strong>。LM358B 输出能到地附近，上端离 V+ 约 1.5 V。</li>
+</ul>
+<h3 id="16-pcb-与布线要点来自-an-272-的思路和通用功放布线实践">1.6 PCB 与布线要点（来自 AN-272 的思路和通用功放布线实践）</h3>
+<ul>
+<li><strong>大电流回路</strong>：+12 V → Q1 → 输出 → 耦合电容 → 喇叭 → GND。这个回路要短而粗，面包板上可用跳线并联来加粗。</li>
+<li><strong>电源去耦</strong>：功率管集电极旁接 100 nF + 470 µF，运放电源脚旁接 100 nF。</li>
+<li><strong>星形地</strong>：喇叭回线、电源地、运放虚地参考分别回到电源负端的同一点。<strong>不要让喇叭电流流过运放偏置分压的地线。</strong></li>
+<li><strong>热耦合</strong>：二极管 D1/D2 用导热硅脂或胶贴在 BD139/BD140 的金属面上（SOT-32 背面金属面的电位以手册为准「[待核实]」，<strong>两只管子不要共用同一块不绝缘的散热片</strong>）。</li>
+</ul>
+<h2 id="2-page4-可行性逐项审查">2. page4 可行性逐项审查</h2>
+<h3 id="21-电源与虚地严重问题">2.1 电源与“虚地”：<strong>严重问题</strong></h3>
+<p>00-design 写的是「12 V 单电源 + 6 V 虚地」。<strong>如果喇叭的回线接到“分压 + 跟随器”虚地上，跟随器必须吞吐整个喇叭电流</strong>：Vp = 4 V、18 Ω 时峰值 222 mA。可是 LM358B 的 ISC 只有 ±40 mA，TL07xH 只有 ±26 mA，虚地会被拉垮。</p>
+<p><strong>改正方案</strong>（二选一）：</p>
+<ol>
+<li><strong>（推荐）单电源 + 输出耦合电容</strong>：
+<ul>
+<li>推挽中点静态偏在 6 V。</li>
+<li>输出经 <strong>1000 µF / 16 V 及以上</strong> 电解电容（+ 极朝放大器）→ 10 Ω → 8 Ω 喇叭 → <strong>真实 GND</strong>。</li>
+<li>虚地（100k/100k + 10 µF）<strong>只作运放同相端的偏置参考</strong>，不走负载电流。</li>
+<li>fc：1000 µF 配 18 Ω 时 8.8 Hz；470 µF 时 18.8 Hz（§3 已运行）。</li>
+</ul>
+</li>
+<li><strong>±6 V 双电源</strong>（两组电池或两路电源）：喇叭直接回到真实 0 V，不需要耦合电容。<strong>但 4 节 AA 能否供 0.3 A 峰值，要看内阻「[待核实]」</strong>，建议改用实验电源双路输出。</li>
+</ol>
+<h3 id="22-输出能力功率与热3-已运行rl--8--10--18-ω等效-vcc--6-v">2.2 输出能力、功率与热（§3 已运行，RL = 8 + 10 = 18 Ω，等效 Vcc = 6 V）</h3>
+<ul>
+<li>Vp = 4 V：
+<ul>
+<li>峰值电流 222 mA。</li>
+<li>总输出 444 mW，其中喇叭只得 198 mW，10 Ω 电阻吃掉 247 mW。</li>
+<li>电源输入 849 mW，η = 52.4%。</li>
+<li>每管 202 mW。</li>
+</ul>
+</li>
+<li><strong>每管最大管耗</strong>出现在 Vp = 2·6/π = 3.82 V，为 203 mW。
+<ul>
+<li>BD139 不加散热片时温升约 20 °C，可以不加散热片。</li>
+<li>TO-92 的温升约 41 °C。</li>
+</ul>
+</li>
+<li><strong>去掉 10 Ω 只接 8 Ω 时</strong>：每管 456 mW，BD139 温升 46 °C，TO-92 温升 91 °C（不可接受）；Vp = 5 V 时峰值电流 625 mA，远超 2N3904 的 200 mA。<strong>必须保留 10 Ω。</strong></li>
+<li><strong>10 Ω 电阻</strong>：Vp = 4.5 V 时消耗 313 mW，Vp = 6 V 时 556 mW。<strong>用 ≥ 1 W 规格的电阻</strong>（43-research 写的 5 W 也可以，更稳妥）。</li>
+<li>静态功耗另计：每管 6 V × Iq，Iq = 20 mA 时每管 120 mW，会叠加到上面的管耗上。</li>
+<li>测温<strong>只用温度计 / NTC 贴表面，绝不用手摸</strong>。</li>
+</ul>
+<h3 id="23-偏置电阻饿死问题00-design--43-research-都没提">2.3 偏置电阻“饿死”：<strong>问题（00-design / 43-research 都没提）</strong></h3>
+<p>最常见的面包板接法如下：</p>
+<ul>
+<li>+12 V 经 R1 接 Q1 基极，再串 D1、D2 接 Q2 基极，然后经 R2 接地。</li>
+<li>运放输出接 D1/D2 中点。</li>
+</ul>
+<p>这种接法下，Q1 的基极电流只能来自 R1。输出往正走时，R1 两端只剩 12 − (6 + Vp + VBE + Ipk·Re) 的压降。§3 的计算（Re = 1 Ω）：</p>
+<table>
+<thead>
+<tr>
+<th>R1 = R2</th>
+<th>串联偏置电流</th>
+<th>β = 40 时最大 Vp</th>
+<th>β = 100 时最大 Vp</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 kΩ</td>
+<td>5.3 mA</td>
+<td>2.15 V</td>
+<td>3.26 V</td>
+</tr>
+<tr>
+<td>470 Ω</td>
+<td>11.4 mA</td>
+<td>3.07 V</td>
+<td>3.99 V</td>
+</tr>
+<tr>
+<td>330 Ω</td>
+<td>16.2 mA</td>
+<td>3.47 V</td>
+<td>4.24 V</td>
+</tr>
+<tr>
+<td>220 Ω</td>
+<td>24.3 mA（R 耗 130 mW）</td>
+<td>3.86 V</td>
+<td>4.46 V</td>
+</tr>
+</tbody>
+</table>
+<p><strong>建议</strong>：</p>
+<ul>
+<li>选用 BD139-16 / BD140-16（150 mA 时 hFE ≥ 100）。</li>
+<li>R1 = R2 = 330 Ω（1/4 W 够用，87 mW）。</li>
+<li>或者按 AN-272 Fig. 1 改用恒流源偏置（LM334 或晶体管恒流源）；也可以用自举电容（变体，不进 page4）。</li>
+<li>正文应该说明：<strong>“正半周先削顶”往往不是运放的问题，而是 R1 供不出基极电流。</strong></li>
+</ul>
+<h3 id="24-甲乙类静态电流只能测不能算">2.4 甲乙类静态电流：只能测，不能算</h3>
+<ul>
+<li><strong>测法</strong>：万用表 mV 档测 1 Ω 发射极电阻两端，<strong>1 mV = 1 mA</strong>，不用断开电路。这个方法既安全又直观，建议写成 page4 的一个步骤。</li>
+<li><strong>热漂移上界</strong>（§3，VBE −2 mV/°C，二极管没贴管时）：
+<ul>
+<li>管子比二极管热 20 °C，Re = 1 Ω：Iq 最多增加 40 mA。</li>
+<li>同样条件，Re = 2.2 Ω：最多增加 18 mA。</li>
+<li>Re 从 1 Ω 换成 2.2 Ω，在 18 Ω 负载下只损失约 11% 的摆幅，<strong>建议 page4 用 2.2 Ω</strong>。用 1 Ω 时二极管必须贴管。</li>
+</ul>
+</li>
+<li><strong>安全阈值</strong>：Iq 超过约 50 mA（一个由管耗推出的建议值：6 V × 50 mA = 0.3 W/管）就断电。也可以先用 1 个二极管 + 100 Ω 微调电位器（VBE 倍增器）从小往大调。</li>
+</ul>
+<h3 id="25-交越失真的观察arduino-采样要用低频">2.5 交越失真的观察：Arduino 采样要用低频</h3>
+<p>analogRead 一次加上循环开销约 112 µs（fs ≈ 8.9 kHz，按第 31 节的数据取整估计）。</p>
+<ul>
+<li>1 kHz、4 V 幅度时，每次过零的死区只有 52 µs，约 0.5 个样点，<strong>基本看不到</strong>。</li>
+<li>100 Hz、1 V 幅度时死区 2252 µs，约 20 个样点；100 Hz、4 V 时约 4.6 个样点。</li>
+<li><strong>建议</strong>：用手机信号发生器 App 输出 <strong>100 Hz、小幅度</strong>正弦，此时交越最明显。耳听可以用 1 kHz。</li>
+<li><strong>Arduino 接点</strong>：只能读<strong>耦合电容之前的推挽中点</strong>（6 V ± Vp）。
+<ul>
+<li>经 20k/10k 分压：1.5 V → 102 计数，6 V → 409，10.5 V → 716，12 V → 818，全部在 0–5 V 以内。</li>
+<li><strong>喇叭侧是以 0 V 为中心的交流，会出现负电压，不能直接接 A0。</strong></li>
+</ul>
+</li>
+<li><strong>不用 Arduino 的核心验证</strong>（满足 §10）：
+<ul>
+<li>交越用耳听。</li>
+<li>静态电流用 mV 表。</li>
+<li>效率用万用表 DC 电流档测电源电流，再用 AC 档测喇叭两端有效值，P = V²/8。</li>
+<li>万用表 AC 档在 1 kHz 的精度与表有关「[待核实]」，建议用 100–400 Hz。</li>
+</ul>
+</li>
+</ul>
+<h3 id="26-环内反馈带宽与压摆率">2.6 环内反馈：带宽与压摆率</h3>
+<p>§3 中的“死区 + 静态开环增益 A = GBW/f”模型：</p>
+<ul>
+<li>开环乙类 THD：Vp = 1 V 时 52.5%，Vp = 4 V 时 10.3%。</li>
+<li>放进环内（Vp = 4 V）：
+<ul>
+<li>LM358 0.7 MHz：1 kHz 时 0.013%，5 kHz 时 0.068%。</li>
+<li>TL072 3 MHz：1 kHz 时 0.003%。</li>
+</ul>
+</li>
+<li>这是理想化的静态模型，<strong>没有计入压摆率</strong>。运放要在过零处跳 1.3 V：LM358 需要 4.33 µs，TL07xH 需要 0.07 µs。</li>
+<li>所以 <strong>LM358 在环内仍能听出或测出残余交越尖刺</strong>，教学上正好可以用来对比；正文用 TL072H 做主方案。</li>
+<li>实际 THD 需要 SPICE 或实测来确认，<strong>正文不要引用上面的模型数作为“实测”</strong>。</li>
+</ul>
+<h3 id="27-增益与输入">2.7 增益与输入</h3>
+<ul>
+<li>同相放大：增益 1 + Rf/Rg，例如 10k/4.7k 约为 3.1。</li>
+<li><strong>Rg 下端串 22–47 µF 再接地</strong>，让直流增益为 1，输出中点稳定在 6 V。</li>
+<li>输入：10 µF 隔直 + 10 kΩ 音量电位器 + 100 kΩ 接虚地。</li>
+<li>手机耳机输出的幅度因机型而异「[待核实]」，靠音量电位器从 0 开始调。</li>
+</ul>
+<h3 id="28-上电冲击">2.8 上电冲击</h3>
+<p>1000 µF 电容在上电瞬间经 18 Ω 充电，峰值约 333 mA，喇叭会“砰”一声，属于正常现象。<strong>先把音量调到 0 再上电。</strong> 电源串 500 mA 自恢复保险丝或用限流电源，限流设为 0.5 A。</p>
+<h2 id="3-python-计算已运行">3. Python 计算（已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng43/amp.py</code></p>
+<pre><code class="language-python">import numpy as np
+Vs=12.0; Vmid=6.0; Rspk=8.0; Rser=10.0; RL=Rspk+Rser
+print(&quot;== 1) 单电源电容耦合乙类：功率/效率/管耗 (RL=%.0fΩ)&quot;%RL)
+for Vp in [2.0,3.0,4.0,4.5,2*Vmid/np.pi,6.0]:
+    Po=Vp**2/(2*RL); Pspk=Po*Rspk/RL; Pdc=Vs*Vp/(np.pi*RL); Pd=Pdc-Po
+    print(f&quot;Vp={Vp:4.2f}V Ipk={Vp/RL*1e3:5.0f}mA Po(总)={Po*1e3:6.1f}mW 喇叭={Pspk*1e3:6.1f}mW 10Ω={(Po-Pspk)*1e3:6.1f}mW Pdc={Pdc*1e3:6.1f}mW η={Po/Pdc*100:5.1f}% 每管={Pd/2*1e3:6.1f}mW&quot;)
+for R in [18.0,8.0]:
+    Pdmax=Vmid**2/(np.pi**2*R)
+    print(f&quot;RL={R:.0f}Ω: 每管最大管耗 Vmid²/(π²RL)={Pdmax*1e3:.0f} mW (Vp=2·6/π=3.82V)；BD139 Rthja=100°C/W→温升 {Pdmax*100:.0f}°C；TO-92 200°C/W→{Pdmax*200:.0f}°C；Ipk(Vp=5V)={5/R*1e3:.0f}mA&quot;)
+print(&quot;2N3904/3906 IC 200mA 限制 → Vp ≤ %.1f V (18Ω)&quot;%(0.2*RL))
+print()
+print(&quot;== 2) 偏置电阻'饿死'：R1 从 +12V 供 Q1 基极，Q1 发射极电阻 Re=1Ω&quot;)
+Re=1.0; Vd=0.65
+for R in [1000,470,330,220]:
+    Iq_bias=(Vs-Vmid-Vd)/R
+    for beta in [40,100]:
+        # find Vp where beta*(Vs-(Vmid+Vp+Vbe+Ipk*Re))/R = Vp/RL
+        Vp=np.linspace(0,6,60001); Ipk=Vp/RL
+        Iavail=beta*np.clip(Vs-(Vmid+Vp+0.75+Ipk*Re),0,None)/R
+        vmax=Vp[np.argmax(Iavail&lt;Ipk)]
+        print(f&quot;R={R:5d}Ω β={beta:3d}: 静态偏置串电流≈{Iq_bias*1e3:5.1f}mA, R功耗{Iq_bias**2*R*1e3:4.0f}mW, 削顶前最大 Vp≈{vmax:4.2f}V&quot;)
+print()
+print(&quot;== 3) 热：VBE −2mV/°C，二极管未贴管时的静态电流漂移上界 (Re=1Ω, 每管 ΔVBE 由两管共分)&quot;)
+for dT in [10,20,30]:
+    for Re in [1.0,2.2]:
+        print(f&quot;ΔT={dT}°C Re={Re}Ω: ΔIq ≤ 2·{2*dT}mV/(2·{Re}Ω) = {2*dT/Re:.0f} mA&quot;)
+print()
+print(&quot;== 4) 交越死区（乙类无二极管，死区 ±0.65V）与 Arduino 采样&quot;)
+fs=1/112e-6
+for f in [100,1000]:
+    for Vin in [1.0,4.0]:
+        tdead=2*np.arcsin(0.65/Vin)/(2*np.pi*f)   # 每次过零的死区时长
+        print(f&quot;f={f}Hz 输入幅度{Vin}V: 每次过零死区 {tdead*1e6:6.0f} µs，≈{tdead*fs:4.1f} 个 Arduino 样点 (fs≈{fs:.0f}Hz)&quot;)
+print()
+print(&quot;== 5) THD：乙类死区 vs 环内(开环增益 A=GBW/f)&quot;)
+N=4096; t=np.arange(N)/N; f0=8
+def thd(y):
+    Y=np.abs(np.fft.rfft(y*np.hanning(N)))
+    k=f0; fund=Y[k-1:k+2].max(); h=sum(Y[m*k-1:m*k+2].max()**2 for m in range(2,20))
+    return np.sqrt(h)/fund*100
+def dz(v,d=0.65): return np.sign(v)*np.clip(np.abs(v)-d,0,None)
+for Vp in [1.0,4.0]:
+    x=Vp*np.sin(2*np.pi*f0*t)
+    yB=dz(x)
+    print(f&quot;Vp={Vp}V 开环乙类 THD={thd(yB):5.1f}%&quot;)
+    for name,GBW in [(&quot;LM358 0.7MHz&quot;,0.7e6),(&quot;TL072 3MHz&quot;,3e6)]:
+        for f in [100,1000,5000]:
+            A=GBW/f
+            # 环内：求 y=dz(u), u=A(x-y) 逐点解
+            y=np.zeros(N)
+            for i,xi in enumerate(x):
+                lo,hi=-20,20
+                for _ in range(60):
+                    u=(lo+hi)/2
+                    if u-A*(xi-dz(u))&gt;0: hi=u
+                    else: lo=u
+                y[i]=dz((lo+hi)/2)
+            print(f&quot;   环内 {name} f={f:5d}Hz A≈{A:7.0f}: THD={thd(y):.4f}%  (死区折算 ±{0.65/A*1e3:.2f} mV)&quot;)
+print()
+print(&quot;== 6) 运放压摆率跨越死区所需时间 (需跳 2×0.65V)&quot;)
+for name,SR in [(&quot;LM358&quot;,0.3),(&quot;LM358B&quot;,0.5),(&quot;TL072&quot;,8),(&quot;TL07xH&quot;,20)]:
+    print(f&quot;{name}: {1.3/SR:.2f} µs&quot;)
+print()
+print(&quot;== 7) 输出耦合电容高通 fc=1/(2πRL C), RL=18Ω 与 8Ω&quot;)
+for C in [220e-6,470e-6,1000e-6,2200e-6]:
+    print(f&quot;C={C*1e6:5.0f}µF: fc(18Ω)={1/(2*np.pi*18*C):5.1f}Hz  fc(8Ω)={1/(2*np.pi*8*C):5.1f}Hz  上电充电峰值电流 6V/18Ω={6/18*1e3:.0f}mA&quot;)
+print()
+print(&quot;== 8) Arduino 读输出中点 (6V±Vp) 经 20k/10k 分压&quot;)
+for v in [6-4.5,6,6+4.5,12]:
+    print(f&quot;节点 {v:4.1f}V → A0 {v/3:4.2f}V → 计数 {round(v/3/5*1023)}&quot;)
+</code></pre>
+<p>输出（已运行）：</p>
+<pre><code>== 1) 单电源电容耦合乙类：功率/效率/管耗 (RL=18Ω)
+Vp=2.00V Ipk=  111mA Po(总)= 111.1mW 喇叭=  49.4mW 10Ω=  61.7mW Pdc= 424.4mW η= 26.2% 每管= 156.7mW
+Vp=3.00V Ipk=  167mA Po(总)= 250.0mW 喇叭= 111.1mW 10Ω= 138.9mW Pdc= 636.6mW η= 39.3% 每管= 193.3mW
+Vp=4.00V Ipk=  222mA Po(总)= 444.4mW 喇叭= 197.5mW 10Ω= 246.9mW Pdc= 848.8mW η= 52.4% 每管= 202.2mW
+Vp=4.50V Ipk=  250mA Po(总)= 562.5mW 喇叭= 250.0mW 10Ω= 312.5mW Pdc= 954.9mW η= 58.9% 每管= 196.2mW
+Vp=3.82V Ipk=  212mA Po(总)= 405.3mW 喇叭= 180.1mW 10Ω= 225.2mW Pdc= 810.6mW η= 50.0% 每管= 202.6mW
+Vp=6.00V Ipk=  333mA Po(总)=1000.0mW 喇叭= 444.4mW 10Ω= 555.6mW Pdc=1273.2mW η= 78.5% 每管= 136.6mW
+RL=18Ω: 每管最大管耗 Vmid²/(π²RL)=203 mW (Vp=2·6/π=3.82V)；BD139 Rthja=100°C/W→温升 20°C；TO-92 200°C/W→41°C；Ipk(Vp=5V)=278mA
+RL=8Ω: 每管最大管耗 Vmid²/(π²RL)=456 mW (Vp=2·6/π=3.82V)；BD139 Rthja=100°C/W→温升 46°C；TO-92 200°C/W→91°C；Ipk(Vp=5V)=625mA
+2N3904/3906 IC 200mA 限制 → Vp ≤ 3.6 V (18Ω)
+
+== 2) 偏置电阻'饿死'：R1 从 +12V 供 Q1 基极，Q1 发射极电阻 Re=1Ω
+R= 1000Ω β= 40: 静态偏置串电流≈  5.3mA, R功耗  29mW, 削顶前最大 Vp≈2.15V
+R= 1000Ω β=100: 静态偏置串电流≈  5.3mA, R功耗  29mW, 削顶前最大 Vp≈3.26V
+R=  470Ω β= 40: 静态偏置串电流≈ 11.4mA, R功耗  61mW, 削顶前最大 Vp≈3.07V
+R=  470Ω β=100: 静态偏置串电流≈ 11.4mA, R功耗  61mW, 削顶前最大 Vp≈3.99V
+R=  330Ω β= 40: 静态偏置串电流≈ 16.2mA, R功耗  87mW, 削顶前最大 Vp≈3.47V
+R=  330Ω β=100: 静态偏置串电流≈ 16.2mA, R功耗  87mW, 削顶前最大 Vp≈4.24V
+R=  220Ω β= 40: 静态偏置串电流≈ 24.3mA, R功耗 130mW, 削顶前最大 Vp≈3.86V
+R=  220Ω β=100: 静态偏置串电流≈ 24.3mA, R功耗 130mW, 削顶前最大 Vp≈4.46V
+
+== 3) 热：VBE −2mV/°C，二极管未贴管时的静态电流漂移上界 (Re=1Ω, 每管 ΔVBE 由两管共分)
+ΔT=10°C Re=1.0Ω: ΔIq ≤ 2·20mV/(2·1.0Ω) = 20 mA
+ΔT=10°C Re=2.2Ω: ΔIq ≤ 2·20mV/(2·2.2Ω) = 9 mA
+ΔT=20°C Re=1.0Ω: ΔIq ≤ 2·40mV/(2·1.0Ω) = 40 mA
+ΔT=20°C Re=2.2Ω: ΔIq ≤ 2·40mV/(2·2.2Ω) = 18 mA
+ΔT=30°C Re=1.0Ω: ΔIq ≤ 2·60mV/(2·1.0Ω) = 60 mA
+ΔT=30°C Re=2.2Ω: ΔIq ≤ 2·60mV/(2·2.2Ω) = 27 mA
+
+== 4) 交越死区（乙类无二极管，死区 ±0.65V）与 Arduino 采样
+f=100Hz 输入幅度1.0V: 每次过零死区   2252 µs，≈20.1 个 Arduino 样点 (fs≈8929Hz)
+f=100Hz 输入幅度4.0V: 每次过零死区    520 µs，≈ 4.6 个 Arduino 样点 (fs≈8929Hz)
+f=1000Hz 输入幅度1.0V: 每次过零死区    225 µs，≈ 2.0 个 Arduino 样点 (fs≈8929Hz)
+f=1000Hz 输入幅度4.0V: 每次过零死区     52 µs，≈ 0.5 个 Arduino 样点 (fs≈8929Hz)
+
+== 5) THD：乙类死区 vs 环内(开环增益 A=GBW/f)
+Vp=1.0V 开环乙类 THD= 52.5%
+   环内 LM358 0.7MHz f=  100Hz A≈   7000: THD=0.0054%  (死区折算 ±0.09 mV)
+   环内 LM358 0.7MHz f= 1000Hz A≈    700: THD=0.0540%  (死区折算 ±0.93 mV)
+   环内 LM358 0.7MHz f= 5000Hz A≈    140: THD=0.2715%  (死区折算 ±4.64 mV)
+   环内 TL072 3MHz f=  100Hz A≈  30000: THD=0.0013%  (死区折算 ±0.02 mV)
+   环内 TL072 3MHz f= 1000Hz A≈   3000: THD=0.0125%  (死区折算 ±0.22 mV)
+   环内 TL072 3MHz f= 5000Hz A≈    600: THD=0.0630%  (死区折算 ±1.08 mV)
+Vp=4.0V 开环乙类 THD= 10.3%
+   环内 LM358 0.7MHz f=  100Hz A≈   7000: THD=0.0014%  (死区折算 ±0.09 mV)
+   环内 LM358 0.7MHz f= 1000Hz A≈    700: THD=0.0134%  (死区折算 ±0.93 mV)
+   环内 LM358 0.7MHz f= 5000Hz A≈    140: THD=0.0675%  (死区折算 ±4.64 mV)
+   环内 TL072 3MHz f=  100Hz A≈  30000: THD=0.0005%  (死区折算 ±0.02 mV)
+   环内 TL072 3MHz f= 1000Hz A≈   3000: THD=0.0031%  (死区折算 ±0.22 mV)
+   环内 TL072 3MHz f= 5000Hz A≈    600: THD=0.0157%  (死区折算 ±1.08 mV)
+
+== 6) 运放压摆率跨越死区所需时间 (需跳 2×0.65V)
+LM358: 4.33 µs
+LM358B: 2.60 µs
+TL072: 0.16 µs
+TL07xH: 0.07 µs
+
+== 7) 输出耦合电容高通 fc=1/(2πRL C), RL=18Ω 与 8Ω
+C=  220µF: fc(18Ω)= 40.2Hz  fc(8Ω)= 90.4Hz  上电充电峰值电流 6V/18Ω=333mA
+C=  470µF: fc(18Ω)= 18.8Hz  fc(8Ω)= 42.3Hz  上电充电峰值电流 6V/18Ω=333mA
+C= 1000µF: fc(18Ω)=  8.8Hz  fc(8Ω)= 19.9Hz  上电充电峰值电流 6V/18Ω=333mA
+C= 2200µF: fc(18Ω)=  4.0Hz  fc(8Ω)=  9.0Hz  上电充电峰值电流 6V/18Ω=333mA
+
+== 8) Arduino 读输出中点 (6V±Vp) 经 20k/10k 分压
+节点  1.5V → A0 0.50V → 计数 102
+节点  6.0V → A0 2.00V → 计数 409
+节点 10.5V → A0 3.50V → 计数 716
+节点 12.0V → A0 4.00V → 计数 818
+</code></pre>
+<p>单电源电容耦合时的公式（供正文使用）：</p>
+<ul>
+<li>每半周只有一只管子从 Vs 取电，平均电流 Vp/(πRL)，因此 P_dc = Vs·Vp/(πRL)。</li>
+<li>η = πVp/(2Vs)；Vp = Vs/2 时达到最大，为 π/4。</li>
+<li>每管最大管耗为 (Vs/2)²/(π²RL)。</li>
+<li>这些公式与 ±Vcc 双电源公式在 Vcc = Vs/2 时等价。<strong>正文若用单电源，不要直接套 ±Vcc 公式而把 Vcc 当成 12 V。</strong></li>
+</ul>
+<h2 id="4-需要作者改正的要点">4. 需要作者改正的要点</h2>
+<ol>
+<li><strong>虚地不能做喇叭回线</strong>：跟随器 ISC 只有 26–40 mA，而喇叭峰值电流约 0.2–0.3 A。12 V 单电源时，改用“推挽中点 6 V + 1000 µF/16 V 耦合电容 + 喇叭回真实 GND”。虚地只作运放偏置参考。</li>
+<li><strong>公式要写清供电方式</strong>：单电源时 Vcc 应取 6 V（Vs/2）。对 18 Ω 负载，每管最大管耗为 203 mW（Vp = 3.82 V），不能拿 ±9 V 例题的 2.05 W 来套。</li>
+<li><strong>保留 10 Ω 串联电阻，用 ≥ 1 W 规格</strong>（Vp = 6 V 时消耗 0.56 W）。去掉它后 TO-92 温升约 91 °C，峰值 625 mA 超出 2N3904 的额定值。</li>
+<li><strong>2N3904/2N3906 只适合 Vp ≤ 3.6 V 的小音量</strong>（IC 200 mA，100 mA 时 hFE 只有 30）。主方案用 BD139-16/BD140-16（ST：1.5 A，不加散热片 1.25 W，Rthja 100 °C/W）。<strong>不加散热片也可以</strong>（温升约 20 °C）。43-research 写的“BD139 需要散热片”在这个功率下不必要，但可以作为保险保留。</li>
+<li><strong>核对 BD139 引脚</strong>：SOT-32 的引脚次序和 TO-92 的 2N3904 不同，请对照手册 Figure 1 或实物确认（E-C-B 是常见说法「[待核实]」）。</li>
+<li><strong>偏置电阻不能用 1 kΩ</strong>（β = 40 时 Vp 仅 2.15 V，正半周先削顶）。用 330 Ω 配 -16 档管，或用恒流源偏置（AN-272 Fig. 1）。</li>
+<li><strong>Iq 用“1 Ω 上 1 mV = 1 mA”实测，不要预测数值</strong>（1N4148 只有 VF ≤ 1 V@10 mA 的最大值）。建议 Re = 2.2 Ω，二极管贴管。Iq 超过约 50 mA 就断电。</li>
+<li><strong>交越用 100 Hz 小幅度观察</strong>，Arduino 采 1 kHz 时每次过零只有约 0.5 个样点。Arduino 只接耦合电容前的中点，经 20k/10k 分压。喇叭侧有负电压，不能接 A0。</li>
+<li><strong>运放指定 TL072H 或 LM358B</strong>：经典 TL072C 在 12 V 单电源下输出摆幅没有保证。LM358 在环内残留的交越尖刺（压摆 4.3 µs）可以作为对比实验。Rg 支路串电容，使直流增益为 1。</li>
+<li><strong>效率测量</strong>：P_dc 用 DC 电流 × 12 V；P_o 用喇叭 AC 有效值的平方除以 8 Ω，另外 10 Ω 上的功率单独算。测量频率用 100–400 Hz。上电前音量归零，电源限流 0.5 A。</li>
+</ol>
+<h2 id="5-参考链接">5. 参考链接</h2>
+<ul>
+<li>TI SNOA600B AN-272 Op Amp Booster Designs：<a href="https://www.ti.com/lit/an/snoa600b/snoa600b.pdf">https://www.ti.com/lit/an/snoa600b/snoa600b.pdf</a> （curl 已打开）</li>
+<li>ST BD135/BD136/BD139/BD140 数据手册 Rev 5：<a href="https://www.st.com/resource/en/datasheet/bd139.pdf">https://www.st.com/resource/en/datasheet/bd139.pdf</a> （WebFetch 已打开，curl 超时）</li>
+<li>MCC 2N3906：<a href="https://www.mccsemi.com/pdf/Products/2N3906(TO-92).pdf">https://www.mccsemi.com/pdf/Products/2N3906(TO-92).pdf</a> （curl 已打开）</li>
+<li>MCC 2N3904：第 41 节已打开的缓存（同站 2N3904(TO-92).pdf）</li>
+<li>Vishay 1N4148：<a href="https://www.vishay.com/docs/81857/1n4148.pdf">https://www.vishay.com/docs/81857/1n4148.pdf</a> （curl 已打开）</li>
+<li>TI TL072 数据手册：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （第 31 节已打开）</li>
+<li>TI LM358B 数据手册：<a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> （第 31 节已打开）</li>
+<li>「[待核实]」onsemi BD135/BD139 手册（返回 403）</li>
+<li>「[待核实]」ADI MT-065、electronics-tutorials 功放页面（沿用 43-research 的结论，未打开）</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -49,11 +49,11 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/41-current-loop-4-20ma/page1.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="41-420-ma-电流环--直觉篇">41 4–20 mA 电流环 · 直觉篇</h1>
-<p><a href="../40-thermal-flow/page4.html">上一页：40 热式流量与 RTD 恒温差 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、<a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a>、<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
+<p><a href="../40-thermal-flow/page4.html">上一页：40 热式流量与 RTD 恒温差 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../39-constant-current-excitation/page1.html">39 恒流源与线圈励磁驱动 · 直觉篇</a>、<a href="../07-bjt-relay-driver/page1.html">07 三极管开关与继电器驱动 · 直觉篇</a>、<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a></p>
 <blockquote>
 <p><strong>前置回顾（一句话版）</strong></p>
 <ul>
-<li>39 节恒流源（即将上线）：运放盯着采样电阻 <span class="math math-inline">\(R_S\)</span> 上的电压，拧 MOS 管这只『阀门』，把它按在基准电压上，于是电流 = 基准 ÷ <span class="math math-inline">\(R_S\)</span> ，负载变一点，电流不变。本节把 MOS 管换成三极管，思路完全相同。</li>
+<li><a href="../39-constant-current-excitation/page1.html">39 恒流源 · 直觉篇</a>：运放盯着采样电阻 <span class="math math-inline">\(R_S\)</span> 上的电压，拧 MOS 管这只『阀门』，把它按在基准电压上，于是电流 = 基准 ÷ <span class="math math-inline">\(R_S\)</span> ，负载变一点，电流不变。本节把 MOS 管换成三极管，思路完全相同。</li>
 <li><a href="../07-bjt-relay-driver/page1.html">07 三极管</a>：基极一点点电流控制集电极大电流，集电极电流 ≈ β 倍基极电流，发射极电流 = 集电极电流 + 基极电流。</li>
 <li><a href="../01-components-basics/page1.html">01 元件速成</a>：串联电路里，电流处处相等；电阻上的电压 = 电流 × 电阻。</li>
 </ul>
@@ -85,7 +85,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </ul>
 <h2 id="换个思路不送电压送电流">换个思路：不送电压，送电流</h2>
 <p><a href="../01-components-basics/page1.html">01 元件速成</a> 里有一句最朴素的话：<strong>串联电路里，电流处处相等</strong>。</p>
-<p>如果传感器那头不输出电压，而是输出一个<strong>被控制住的电流</strong>（这就是 39 节恒流源（即将上线） 干的事），那么：</p>
+<p>如果传感器那头不输出电压，而是输出一个<strong>被控制住的电流</strong>（这就是 <a href="../39-constant-current-excitation/page1.html">39 恒流源</a> 干的事），那么：</p>
 <ul>
 <li>这个电流从电源出来，流过导线，流过传感器，流过接收端的电阻，再流回电源。整圈只有一个电流。</li>
 <li>导线电阻大一点，只是导线上多“吃掉”一点电压；恒流源会自动多给一点电压把电流顶住。电流本身不变。</li>

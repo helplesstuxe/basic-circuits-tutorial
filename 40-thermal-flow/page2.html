@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/40-thermal-flow/page2.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="40-热式流量与-rtd-恒温差--原理与实现篇">40 热式流量与 RTD 恒温差 · 原理与实现篇</h1>
-<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../06-mosfet-switch/page2.html">06 MOS 管开关 · 原理与实现篇</a>、<a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥 · 原理与实现篇</a>、39 节恒流源与线圈励磁驱动（即将上线）</p>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../06-mosfet-switch/page2.html">06 MOS 管开关 · 原理与实现篇</a>、<a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥 · 原理与实现篇</a>、<a href="../39-constant-current-excitation/page2.html">39 恒流源与线圈励磁驱动 · 原理与实现篇</a></p>
 <p>这一页把直觉篇的方框图拆成四块电路：<strong>测温（NTC 分压）</strong>、<strong>加热（MOS 管开关）</strong>、<strong>恒功率测量</strong>、<strong>工业上的 PT100 电桥</strong>。恒温差控制放到<a href="page3.html">参数与调试篇</a>。</p>
 <h2 id="一ntc-分压把温度变成-adc-读数">一、NTC 分压：把温度变成 ADC 读数</h2>
 <p>请看图 40-p2-1。</p>
@@ -266,7 +266,7 @@ print(f&quot;35 °C：扩展公式 {r_ntc(35):.0f} Ω，B 值简化公式 {rb:.0
 <p><em>图 40-p2-5　PT100 电桥与仪表放大</em></p>
 <p>这是 <a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥</a> 的电路，只是把应变片换成 PT100：</p>
 <ul>
-<li>2.4 kΩ 远大于 100 Ω，桥臂电流几乎恒定（0 °C 时 1.000 mA，100 °C 时 0.985 mA），作用上接近 39 节恒流源（即将上线） 的恒流激励；</li>
+<li>2.4 kΩ 远大于 100 Ω，桥臂电流几乎恒定（0 °C 时 1.000 mA，100 °C 时 0.985 mA），作用上接近 <a href="../39-constant-current-excitation/page2.html">39 恒流源</a> 的恒流激励；</li>
 <li>差压只有每度约 0.37 mV，要靠 G = 100 的仪表放大器放大：25 °C 9.309 mV → 0.9309 V，100 °C 36.41 mV → 3.641 V；</li>
 <li>因为桥臂电流随温度略变，加上 PT100 本身的二次项，输出不是严格直线：0～100 °C 两端连直线，50 °C 处偏 0.757 K。</li>
 </ul>

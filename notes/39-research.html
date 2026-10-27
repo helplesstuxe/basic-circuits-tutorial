@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>39 恒流源与线圈励磁驱动 · 调研笔记（作者 D）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/39-research.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="39-恒流源与线圈励磁驱动--调研笔记作者-d">39 恒流源与线圈励磁驱动 · 调研笔记（作者 D）</h1>
+<h2 id="理论">理论</h2>
+<ul>
+<li>TI SNOA474A（AN-1515《A Comprehensive Study of the Howland Current Pump》）<a href="https://www.ti.com/lit/an/snoa474a/snoa474a.pdf">https://www.ti.com/lit/an/snoa474a/snoa474a.pdf</a> （已打开）：Howland 电流泵要求 R1/R2 = R3/R4，失配会让输出阻抗下降（电流随负载变化）。</li>
+<li>TI SBOA046（XTR110 电压-电流转换与电流泵）<a href="https://www.ti.com/lit/an/sboa046/sboa046.pdf">https://www.ti.com/lit/an/sboa046/sboa046.pdf</a> （已打开）：电压控制电流源结构。</li>
+<li>TI DRV8871 <a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a> （已打开）：6.5–45 V，PWM ≤ 200 kHz，内置电流限制；真值表中 IN1 = IN2 = 1 为 “Brake; low-side slow decay”；数据手册说明续流经高边或低边 FET 的体二极管。</li>
+<li>EM（见 38-research）：线圈几十到几百 mH + 50–100 Ω；小口径励磁电流可到 50 mA，大口径 500 mA–1 A。</li>
+<li>Embien 博客（见 38-research）：MOSFET H 桥 + 恒流吸收电路，约 150 mA 到 1 A 以上。</li>
+<li>第一部分回指：21 节线性稳压（运放 + 调整管 + 反馈，与恒流源同构）；06 节 MOS 管开关；26 节 H 桥与死区。</li>
+</ul>
+<h2 id="推导链">推导链</h2>
+<ol>
+<li>运放 + MOSFET + 采样电阻 R_s：运放使 R_s 上电压 = V_ref → I = V_ref/R_s，与负载无关（只要 MOSFET 还在线性区）。</li>
+<li>顺从电压：V_supply ≥ I·R_load + I·R_s + V_DS(min)。超出后电流开始下降。</li>
+<li>MOSFET 管耗：P = V_DS·I = (V_supply − I·R_load − I·R_s)·I；负载越小管耗越大。</li>
+<li>换向：恒流源串在 H 桥下面（或 H 桥 + 电流检测闭环）；线圈电流 i(t) 按 τ = L/R 指数趋近设定值。如果驱动电压更高，恒流源就能更快“推”到设定值（高压快速换向的原理，只讲概念）。</li>
+<li>Howland：一个运放 + 四只电阻，可以输出双向电流；电阻比匹配决定输出阻抗。</li>
+</ol>
+<h2 id="算例calcpy-已复核">算例（<a href="http://calc.py">calc.py</a> 已复核）</h2>
+<ul>
+<li>12 V、100 mA、负载 47 Ω + 采样 10 Ω：V_DS = 12 − 4.7 − 1.0 = 6.3 V，P = 0.63 W。</li>
+<li>线圈 100 mH / 75 Ω：τ = 1.33 ms；6.25 Hz 半周期 80 ms ≈ 60τ，稳定充分。</li>
+</ul>
+<h2 id="常见错误">常见错误</h2>
+<ul>
+<li>采样电阻放在负载高端，运放输入共模超出范围。</li>
+<li>不算管耗，MOSFET（无散热片）烫手。</li>
+<li>运放驱动 MOSFET 栅极时振荡：栅极串 100 Ω 左右、反馈加小电容（作者用 SPICE 确认数值）。</li>
+<li>感性负载断开时没有续流通路（分立 H 桥必须加二极管；DRV8871 依靠 FET 体二极管）。</li>
+<li>用 LM358 输出接 IRLZ44N 时忽略 LM358 输出上限（约 V+ − 1.5 V），12 V 供电下够用，5 V 供电下要算。</li>
+</ul>
+<h2 id="图与原理图计划">图与原理图计划</h2>
+<ul>
+<li>图 39-p1-1 恒压源 vs 恒流源（负载变化时）；图 39-p2-1 运放 + MOSFET 恒流源原理图；图 39-p2-2 电流 vs 负载电阻（顺从极限，39_figs.py）；图 39-p2-3 Howland 原理图；图 39-p3-1 线圈换向电流波形（τ = 1.33 ms）。</li>
+<li>图 39-p4-1 面包板 + 39_p4_k_schem_lab.png（两张：恒流源、H 桥励磁）。</li>
+</ul>
+<h2 id="spice-计划spice39">SPICE 计划（spice/39/）</h2>
+<ul>
+<li>39_ccs.cir：LM358 + IRLZ44N + 10 Ω，V_ref 1 V，负载 0–120 Ω .step，画 I 与 V_DS、P。</li>
+<li>39_coil.cir：DRV8871 用理想开关 H 桥代替 + 100 mH/75 Ω，6.25 Hz 换向，看电流波形与 τ。</li>
+<li>39_howland.cir：四电阻 10 k，失配 1% 时输出阻抗。</li>
+</ul>
+<h2 id="page4-实验">page4 实验</h2>
+<ul>
+<li>12 V，LM358 + IRLZ44N + 10 Ω（1 W）采样电阻，V_ref 由 5 V 分压得 1 V → 100 mA。负载 10/22/47/68/100 Ω（功率足够），测电流和 MOSFET 温度。</li>
+<li>第二部分：DRV8871 模块（VM = 12 V）+ 线圈（继电器线圈或自绕线圈 + 串联电阻）+ 1 Ω 采样，Arduino 以 6.25 Hz 换向，Arduino ADC 或示波器看采样电阻电压。</li>
+<li>安全：MOSFET 可能超过 60 °C，不要用手摸。</li>
+</ul>
+<h2 id="未用待核实">未用·待核实</h2>
+<ul>
+<li>「[待核实]」ST L298 数据手册（<a href="http://st.com">st.com</a> curl 超时，未打开，不用）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>
