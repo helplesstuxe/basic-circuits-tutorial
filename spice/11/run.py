@@ -82,9 +82,9 @@ check("p2 例1", "正转中按反转(接触器互锁)：KM1/KM2", None, 1.0, "",
       v="✅" if state(t, y, "E", 2.2) == "吸/放" else "❌")
 
 # ---- page3 §1：只做按钮互锁的换向空档（2 s 按 SB3）
-01 = dict(SB2=pwl([(1.0, 1.3)]), SB3=pwl([(2.0, 2.3)]), TSTOP="2.5")
+P1 = dict(SB2=pwl([(1.0, 1.3)]), SB3=pwl([(2.0, 2.3)]), TSTOP="2.5")
 for tp2, td1, pg in ((12e-3, 19e-3, -7), (17e-3, 19e-3, -2), (22e-3, 4e-3, 18), (15e-3, 18e-3, -3)):
-    t, y = run(01, td1=td1, tp2=tp2)
+    t, y = run(P1, td1=td1, tp2=tp2)
     k = t > 2.0
     off = t[k][np.argmax(y["B1"][k] < 0.5)]
     on = t[k][np.argmax(y["B2"][k] > 0.5)]
@@ -96,8 +96,8 @@ for tp2, td1, pg in ((12e-3, 19e-3, -7), (17e-3, 19e-3, -2), (22e-3, 4e-3, 18), 
         check("p3 练习1", "改成双重互锁后的空档(=KM2 吸合时间)", 15, tD * 1e3, "ms")
 
 # ---- page3 §2：KM1 0.8 s 熔焊，1.0 s 按停止，1.6 s 按反转
-03 = dict(SB2=pwl([(0.2, 0.5)]), WELD=pwl([(0.8, 3.0)]), SB1=pwl([(1.0, 1.3)]), SB3=pwl([(1.6, 1.9)]), TSTOP="2.5")
-t, y = run(03)
+P2 = dict(SB2=pwl([(0.2, 0.5)]), WELD=pwl([(0.8, 3.0)]), SB1=pwl([(1.0, 1.3)]), SB3=pwl([(1.6, 1.9)]), TSTOP="2.5")
+t, y = run(P2)
 check("p3 图11-p3-2", "按钮互锁：熔焊后按反转，KM2 是否吸合(页面：吸合，短路)", None, 1.0, "",
       f"SPICE：KM2 {'吸合' if at(t, y['B2'], 2.2) else '释放'}，同时闭合 {overlap(t, y['B1'], y['B2']):.2f} s",
       v="✅" if at(t, y["B2"], 2.2) else "❌")

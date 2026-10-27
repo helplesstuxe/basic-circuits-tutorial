@@ -1,0 +1,196 @@
+* 33 MFB 带通：AC 扫频 + 直流工作点。单 9 V 电池，中点参考 V_MID = 两只 10k 分压 + 10uF + LM358 B 跟随
+* X1  实验电路（page4）：LM358B（TI 官方模型），R1=82k R2=160k R3=1.6k C1=C2=10n，信号源负端接 V_MID
+* X2  同一电路、理想运放（压控电压源增益 1e7），用来和 page2 公式对比
+* X3  page2 精确设计值 79.6k / 159.2k / 1.624k，理想运放
+* X4/X5/X6  单极点运放模型，增益带宽积 GBW = 20 kHz / 100 kHz / 1 MHz（开环直流增益 1e5）：page3「A ≫ 2Q²」
+* X7/X8  page3 R3 扫描：R3 = 820 / 3.3k（理想运放）
+* X9  page3 练习 2（fill-in 例）：2 kHz、Q=5、A=1：R1=39k R2=82k R3=820，C=10n（E 系列）
+.include ../models/LMx58B_LM2904B.lib
+VB vb 0 DC 9
+* ---- 中点参考 V_MID（网表里节点名仍叫 vg）----
+RA vb m 10k
+RB m 0 10k
+CM m 0 10u
+XUB m vg vb 0 vg LMX58B_LM2904B
+* ---- 信号源：浮在 V_MID 上（手机地接 V_MID）----
+VIN in vg DC 0 AC 1
+* 1) LM358B
+R11 in a1 82k
+R13 a1 vg 1.6k
+C11 a1 n1 10n
+C12 a1 o1 10n
+R12 n1 o1 160k
+XU1 vg n1 vb 0 o1 LMX58B_LM2904B
+* 理想运放用的输入源：接地参考（与中点参考 V_MID无关）
+VI2 in2 0 DC 0 AC 1
+* 2) 理想
+R21 in2 a2 82k
+R23 a2 0 1.6k
+C21 a2 n2 10n
+C22 a2 o2 10n
+R22 n2 o2 160k
+E2 o2 0 0 n2 1e7
+* 3) 精确值
+R31 in2 a3 79.58k
+R33 a3 0 1.6236k
+C31 a3 n3 10n
+C32 a3 o3 10n
+R32 n3 o3 159.15k
+E3 o3 0 0 n3 1e7
+* 4~6) 单极点运放：E 增益 1e5 → RC 极点 fp = GBW/1e5 → 缓冲
+.subckt OPA1P inp inn out PARAMS: GBW=1meg
+E1 x 0 inp inn 1e5
+Rp x y 1k
+Cp y 0 {1e5/(6.2831853*1k*GBW)}
+E2 out 0 y 0 1
+.ends
+R41 in2 a4 82k
+R43 a4 0 1.6k
+C41 a4 n4 10n
+C42 a4 o4 10n
+R42 n4 o4 160k
+X4 0 n4 o4 OPA1P PARAMS: GBW=20k
+R51 in2 a5 82k
+R53 a5 0 1.6k
+C51 a5 n5 10n
+C52 a5 o5 10n
+R52 n5 o5 160k
+X5 0 n5 o5 OPA1P PARAMS: GBW=100k
+R61 in2 a6 82k
+R63 a6 0 1.6k
+C61 a6 n6 10n
+C62 a6 o6 10n
+R62 n6 o6 160k
+X6 0 n6 o6 OPA1P PARAMS: GBW=1meg
+* 7~8) R3 扫描
+R71 in2 a7 82k
+R73 a7 0 820
+C71 a7 n7 10n
+C72 a7 o7 10n
+R72 n7 o7 160k
+E7 o7 0 0 n7 1e7
+R81 in2 a8 82k
+R83 a8 0 3.3k
+C81 a8 n8 10n
+C82 a8 o8 10n
+R82 n8 o8 160k
+E8 o8 0 0 n8 1e7
+* 9) 练习 2：2 kHz
+R91 in2 a9 39k
+R93 a9 0 820
+C91 a9 n9 10n
+C92 a9 o9 10n
+R92 n9 o9 82k
+E9 o9 0 0 n9 1e7
+.nodeset v(vg)=4.5 v(o1)=4.5 v(n1)=4.5 v(a1)=4.5
+.control
+op
+echo "RESULT vg $&v(vg)"
+echo "RESULT vo_dc $&v(o1)"
+echo "RESULT vn_dc $&v(n1)"
+echo "RESULT ib $&i(VB)"
+ac dec 2000 10 100k
+let g1=mag(v(o1)) 
+let g2=mag(v(o2))
+let g3=mag(v(o3))
+let g4=mag(v(o4))
+let g5=mag(v(o5))
+let g6=mag(v(o6))
+let g7=mag(v(o7))
+let g8=mag(v(o8))
+let g9=mag(v(o9))
+let ph1=ph(v(o1))*180/pi
+meas ac g1max MAX g1
+meas ac g2max MAX g2
+meas ac g3max MAX g3
+meas ac g4max MAX g4
+meas ac g5max MAX g5
+meas ac g6max MAX g6
+meas ac g7max MAX g7
+meas ac g8max MAX g8
+meas ac g9max MAX g9
+meas ac f1 WHEN ph1=0 RISE=1
+let k1=g1max/sqrt(2)
+meas ac l1 WHEN g1=k1 RISE=1
+meas ac h1 WHEN g1=k1 FALL=1
+let k2=g2max/sqrt(2)
+meas ac l2 WHEN g2=k2 RISE=1
+meas ac h2 WHEN g2=k2 FALL=1
+meas ac f2 WHEN g2=g2max
+let k7=g7max/sqrt(2)
+meas ac l7 WHEN g7=k7 RISE=1
+meas ac h7 WHEN g7=k7 FALL=1
+let k8=g8max/sqrt(2)
+meas ac l8 WHEN g8=k8 RISE=1
+meas ac h8 WHEN g8=k8 FALL=1
+let k9=g9max/sqrt(2)
+meas ac l9 WHEN g9=k9 RISE=1
+meas ac h9 WHEN g9=k9 FALL=1
+let k4=g4max/sqrt(2)
+meas ac l4 WHEN g4=k4 RISE=1
+meas ac h4 WHEN g4=k4 FALL=1
+let k5=g5max/sqrt(2)
+meas ac l5 WHEN g5=k5 RISE=1
+meas ac h5 WHEN g5=k5 FALL=1
+let k6=g6max/sqrt(2)
+meas ac l6 WHEN g6=k6 RISE=1
+meas ac h6 WHEN g6=k6 FALL=1
+let k3=g3max/sqrt(2)
+meas ac l3 WHEN g3=k3 RISE=1
+meas ac h3 WHEN g3=k3 FALL=1
+meas ac g1_50 FIND g1 AT=50
+meas ac g1_200 FIND g1 AT=200
+meas ac g1_500 FIND g1 AT=500
+meas ac g1_800 FIND g1 AT=800
+meas ac g1_900 FIND g1 AT=900
+meas ac g1_1000 FIND g1 AT=1000
+meas ac g1_1100 FIND g1 AT=1100
+meas ac g1_1200 FIND g1 AT=1200
+meas ac g1_2000 FIND g1 AT=2000
+meas ac g1_5000 FIND g1 AT=5000
+meas ac g2_1000 FIND g2 AT=1000
+meas ac ph1_1000 FIND ph1 AT=1000
+echo "RESULT g1max $&g1max"
+echo "RESULT g2max $&g2max"
+echo "RESULT g3max $&g3max"
+echo "RESULT g4max $&g4max"
+echo "RESULT g5max $&g5max"
+echo "RESULT g6max $&g6max"
+echo "RESULT g7max $&g7max"
+echo "RESULT g8max $&g8max"
+echo "RESULT g9max $&g9max"
+echo "RESULT f1 $&f1"
+echo "RESULT f2 $&f2"
+echo "RESULT l1 $&l1"
+echo "RESULT h1 $&h1"
+echo "RESULT l2 $&l2"
+echo "RESULT h2 $&h2"
+echo "RESULT l3 $&l3"
+echo "RESULT h3 $&h3"
+echo "RESULT l4 $&l4"
+echo "RESULT h4 $&h4"
+echo "RESULT l5 $&l5"
+echo "RESULT h5 $&h5"
+echo "RESULT l6 $&l6"
+echo "RESULT h6 $&h6"
+echo "RESULT l7 $&l7"
+echo "RESULT h7 $&h7"
+echo "RESULT l8 $&l8"
+echo "RESULT h8 $&h8"
+echo "RESULT l9 $&l9"
+echo "RESULT h9 $&h9"
+echo "RESULT g1_50 $&g1_50"
+echo "RESULT g1_200 $&g1_200"
+echo "RESULT g1_500 $&g1_500"
+echo "RESULT g1_800 $&g1_800"
+echo "RESULT g1_900 $&g1_900"
+echo "RESULT g1_1000 $&g1_1000"
+echo "RESULT g1_1100 $&g1_1100"
+echo "RESULT g1_1200 $&g1_1200"
+echo "RESULT g1_2000 $&g1_2000"
+echo "RESULT g1_5000 $&g1_5000"
+echo "RESULT g2_1000 $&g2_1000"
+echo "RESULT ph1_1000 $&ph1_1000"
+wrdata ac.txt g1 g2 g4 g5 g6 g7 g8
+.endc
+.end

@@ -1,0 +1,57 @@
+* 34 开关电容低通（实验电路整体）：LM358 A = 时钟，CD4053 A 路 = 单刀双掷开关，C1 10 nF 来回搬电荷，
+* C2 1 µF（薄膜）存电荷，LM358 B = 跟随器（万用表接这里）。输入 = 10k/10k 分压 4.5 V，跳线 J 在 T0 时刻从 GND 改插 4.5 V。
+* CD4053 用两只压控开关代替：控制端 > 4.5 V 时 AY（13 脚）通，< 4.5 V 时 AX（12 脚）通（用反相控制 clkn = 9 V − clk 实现「二选一」）；RON 由 run.py 设定：180 Ω（10 V 典型）、470 Ω（5 V 典型）、1050 Ω（5 V 最大，作最坏情况）
+.include ../models/LMx58B_LM2904B.lib
+.param RT=68k RON=180 RL=1e12 C1=10n C2=1u
+*@def TSTOP=4
+*@def T0=0.2
+*@def TA=3.9
+*@def T0E=0.200001
+*@def V63=2.844
+*@def V95=4.275
+VB vb 0 DC 9
+* --- 时钟 ---
+XU1 inp inn vb 0 clk LMX58B_LM2904B
+RT clk inn {RT}
+CT inn 0 100n
+RA vb inp 10k
+RB inp 0 10k
+RC clk inp 10k
+* --- 输入 4.5 V 分压 + 跳线 J ---
+RV1 vb vin 10k
+RV2 vin 0 10k
+VJ jc 0 PWL(0 0 @T0@ 0 @T0E@ 1)
+SJ1 vin ax jc 0 SWJ
+BJN jn 0 V=1-v(jc)
+SJ2 ax 0 jn 0 SWJ
+.model SWJ SW(VT=0.5 VH=0.01 RON=0.1 ROFF=1e12)
+* --- CD4053 A 路：com(14) = c1，AX(12) = ax，AY(13) = vo ---
+BCN clkn 0 V=9-v(clk)
+SX ax c1 clkn 0 SWY
+SY c1 vo clk 0 SWY
+.model SWY SW(VT=4.5 VH=0.05 RON={RON} ROFF=1e11)
+C1 c1 0 {C1}
+C2 vo 0 {C2}
+RL vo 0 {RL}
+* --- 跟随器 ---
+XU2 vo fo vb 0 fo LMX58B_LM2904B
+.control
+tran 20u @TSTOP@ 0 20u uic
+meas tran vfin AVG v(fo) FROM=@TA@ TO=@TSTOP@
+meas tran vofin AVG v(vo) FROM=@TA@ TO=@TSTOP@
+meas tran vinf AVG v(vin) FROM=@TA@ TO=@TSTOP@
+meas tran t63 WHEN v(fo)=@V63@ RISE=1
+meas tran t95 WHEN v(fo)=@V95@ RISE=1
+meas tran vmaxc MAX v(clk) FROM=0.1 TO=0.3
+meas tran ib AVG i(VB) FROM=@TA@ TO=@TSTOP@
+let tau63 = t63-@T0@
+let tau95 = t95-@T0@
+echo "RESULT vfin $&vfin"
+echo "RESULT vofin $&vofin"
+echo "RESULT vinf $&vinf"
+echo "RESULT t63 $&tau63"
+echo "RESULT t95 $&tau95"
+echo "RESULT vmaxc $&vmaxc"
+echo "RESULT ib $&ib"
+.endc
+.end

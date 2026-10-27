@@ -1,0 +1,138 @@
+* 33 双 T 陷波：无源，R = 33k，C = 100n；R/2 = 两只 33k 并联，2C = 两只 100n 并联
+* X1 标称值、空载（输出端 1e12 Ω）
+* X2 标称值、接 10 MΩ（数字万用表交流档输入电阻量级）
+* X3 标称值、接 1 MΩ
+* X4 标称值、接 100 kΩ
+* X5 失配：R/2 那一臂偏大 5%（17.3k），其余标称，空载
+* X6 失配：一只 C 偏大 5%（105n），空载
+* X7 信号源内阻 100 Ω（手机耳机口量级），空载
+* X8 page3 练习 3（变体）：60 Hz，C=100n，R=27k，R/2=13.5k(两只 27k 并联)，2C=200n
+* X9 双 T 后面加 LM358 跟随器（9 V 单电源 + 中点参考 V_MID）的有源版本，跟随器输入电阻极大
+* X10 实际应用里地 = V_MID：信号与陷波都参考中点参考 V_MID，空载（结果应与 X1 一样）
+.include ../models/LMx58B_LM2904B.lib
+.subckt TT in out gnd PARAMS: RA=33k RB=33k RC=16.5k CA=100n CB=100n CC=200n
+Ra in m {RA}
+Rb m out {RB}
+Cc m gnd {CC}
+Ca in n {CA}
+Cb n out {CB}
+Rc n gnd {RC}
+.ends
+VIN in 0 DC 0 AC 1
+X1 in o1 0 TT
+RL1 o1 0 1e12
+X2 in o2 0 TT
+RL2 o2 0 10meg
+X3 in o3 0 TT
+RL3 o3 0 1meg
+X4 in o4 0 TT
+RL4 o4 0 100k
+X5 in o5 0 TT PARAMS: RC=17.3k
+RL5 o5 0 1e12
+X6 in o6 0 TT PARAMS: CA=105n
+RL6 o6 0 1e12
+Rs7 in i7 100
+X7 i7 o7 0 TT
+RL7 o7 0 1e12
+X8 in o8 0 TT PARAMS: RA=27k RB=27k RC=13.5k CC=200n
+RL8 o8 0 1e12
+VB vb 0 DC 9
+RA9 vb m9 10k
+RB9 m9 0 10k
+CM9 m9 0 10u
+XUB m9 vg vb 0 vg LMX58B_LM2904B
+VI9 i9 vg DC 0 AC 1
+X9 i9 t9 vg TT
+XU9 t9 o9 vb 0 o9 LMX58B_LM2904B
+X10 i9 o10 vg TT
+RL10 o10 vg 1e12
+.nodeset v(vg)=4.5 v(o9)=4.5 v(t9)=4.5 v(m9)=4.5
+.control
+op
+echo "RESULT vo9_dc $&v(o9)"
+ac dec 4000 5 10k
+let g1=mag(v(o1))
+let g2=mag(v(o2))
+let g3=mag(v(o3))
+let g4=mag(v(o4))
+let g5=mag(v(o5))
+let g6=mag(v(o6))
+let g7=mag(v(o7))
+let g8=mag(v(o8))
+let g9=mag(v(o9)-v(vg))
+let g10=mag(v(o10)-v(vg))
+meas ac g1min MIN g1
+meas ac f1 WHEN g1=g1min
+meas ac g2min MIN g2
+meas ac g3min MIN g3
+meas ac g4min MIN g4
+meas ac f4 WHEN g4=g4min
+meas ac g5min MIN g5
+meas ac f5 WHEN g5=g5min
+meas ac g6min MIN g6
+meas ac f6 WHEN g6=g6min
+meas ac g7min MIN g7
+meas ac g8min MIN g8
+meas ac f8 WHEN g8=g8min
+meas ac g9min MIN g9
+meas ac g10min MIN g10
+meas ac l1 WHEN g1=0.70711 FALL=1
+meas ac h1 WHEN g1=0.70711 RISE=1
+meas ac g1_10 FIND g1 AT=10
+meas ac g1_20 FIND g1 AT=20
+meas ac g1_48 FIND g1 AT=48.2
+meas ac g1_50 FIND g1 AT=50
+meas ac g1_60 FIND g1 AT=60
+meas ac g1_100 FIND g1 AT=100
+meas ac g1_200 FIND g1 AT=200
+meas ac g1_1000 FIND g1 AT=1000
+meas ac g2_50 FIND g2 AT=50
+meas ac g2_1000 FIND g2 AT=1000
+meas ac g3_50 FIND g3 AT=50
+meas ac g3_1000 FIND g3 AT=1000
+meas ac g4_1000 FIND g4 AT=1000
+meas ac g5_50 FIND g5 AT=50
+meas ac g6_50 FIND g6 AT=50
+meas ac g8_60 FIND g8 AT=60
+meas ac g9_50 FIND g9 AT=50
+meas ac g9_1000 FIND g9 AT=1000
+meas ac g10_50 FIND g10 AT=50
+echo "RESULT g1min $&g1min"
+echo "RESULT f1 $&f1"
+echo "RESULT g2min $&g2min"
+echo "RESULT g3min $&g3min"
+echo "RESULT g4min $&g4min"
+echo "RESULT f4 $&f4"
+echo "RESULT g5min $&g5min"
+echo "RESULT f5 $&f5"
+echo "RESULT g6min $&g6min"
+echo "RESULT f6 $&f6"
+echo "RESULT g7min $&g7min"
+echo "RESULT g8min $&g8min"
+echo "RESULT f8 $&f8"
+echo "RESULT g9min $&g9min"
+echo "RESULT g10min $&g10min"
+echo "RESULT l1 $&l1"
+echo "RESULT h1 $&h1"
+echo "RESULT g1_10 $&g1_10"
+echo "RESULT g1_20 $&g1_20"
+echo "RESULT g1_48 $&g1_48"
+echo "RESULT g1_50 $&g1_50"
+echo "RESULT g1_60 $&g1_60"
+echo "RESULT g1_100 $&g1_100"
+echo "RESULT g1_200 $&g1_200"
+echo "RESULT g1_1000 $&g1_1000"
+echo "RESULT g2_50 $&g2_50"
+echo "RESULT g2_1000 $&g2_1000"
+echo "RESULT g3_50 $&g3_50"
+echo "RESULT g3_1000 $&g3_1000"
+echo "RESULT g4_1000 $&g4_1000"
+echo "RESULT g5_50 $&g5_50"
+echo "RESULT g6_50 $&g6_50"
+echo "RESULT g8_60 $&g8_60"
+echo "RESULT g9_50 $&g9_50"
+echo "RESULT g9_1000 $&g9_1000"
+echo "RESULT g10_50 $&g10_50"
+wrdata tt.txt g1 g4 g5 g6
+.endc
+.end

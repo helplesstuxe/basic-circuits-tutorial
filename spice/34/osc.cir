@@ -1,0 +1,32 @@
+* 34 时钟：24 节的 LM358 弛张振荡器，改用 9 V 单电源；R = 定时电阻（68k 或 2×68k），C = 100 nF
+* Ra/Rb/Rc 三只 10 kΩ 定门限；输出另带 CD4053 控制端（输入电流 µA 级以下，这里不接）
+.include ../models/LMx58B_LM2904B.lib
+.param RT=68k
+*@def TSTOP=0.25
+VB vb 0 DC 9
+XU1 inp inn vb 0 out LMX58B_LM2904B
+RT out inn {RT}
+CT inn 0 100n
+RA vb inp 10k
+RB inp 0 10k
+RC out inp 10k
+.control
+tran 5u @TSTOP@ 0 5u uic
+meas tran t1 WHEN v(out)=4.5 RISE=5
+meas tran t2 WHEN v(out)=4.5 RISE=15
+meas tran vmax MAX v(out) FROM=0.1 TO=@TSTOP@
+meas tran vmin MIN v(out) FROM=0.1 TO=@TSTOP@
+meas tran vhi MAX v(inp) FROM=0.1 TO=@TSTOP@
+meas tran vlo MIN v(inp) FROM=0.1 TO=@TSTOP@
+meas tran vavg AVG v(out) FROM=0.1 TO=@TSTOP@
+meas tran ib AVG i(VB) FROM=0.1 TO=@TSTOP@
+let f = 10/(t2-t1)
+echo "RESULT f $&f"
+echo "RESULT vmax $&vmax"
+echo "RESULT vmin $&vmin"
+echo "RESULT vhi $&vhi"
+echo "RESULT vlo $&vlo"
+echo "RESULT vavg $&vavg"
+echo "RESULT ib $&ib"
+.endc
+.end

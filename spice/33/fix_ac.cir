@@ -1,0 +1,158 @@
+* 33 审阅后补充的核对（新文件，不改动原有网表）：双 T 与理想 / 单极点运放部分；LM358B 部分见 fix_lm358.cir
+* T1  page3 双 T 微调：Ra、Rb 各并 1 MΩ，R/2（R4∥R5 = 两只 33k）再并 470 kΩ，空载
+* T2  page3 练习 3：所有电阻电容一起偏大 5%，空载
+* M1  page3 练习 1：R3 = 1.1k（82k/160k/10n，理想运放）
+* M2  page2 例 3：43k / 91k / 2.4k，C = 22n（理想运放）
+* M3  page4 思考题 2：R3 = 2.2k（理想运放）
+* M4/M5  page3 第一节 R3 = 1k + 0～2k 电位器两端：1k、3k（理想运放）
+* M6  page3 练习 5：40 kHz、Q值 5、A 1，C = 1n，R1 19.89k R2 39.79k R3 406（精确设计值）：理想运放
+* M7  同上，单极点运放 GBW 1.2 MHz（LM358B 数据手册典型值）
+.subckt TT in out gnd PARAMS: RA=33k RB=33k RC=16.5k CA=100n CB=100n CC=200n
+Ra in m {RA}
+Rb m out {RB}
+Cc m gnd {CC}
+Ca in n {CA}
+Cb n out {CB}
+Rc n gnd {RC}
+.ends
+.subckt OPA1P inp inn out PARAMS: GBW=1meg
+E1 x 0 inp inn 1e5
+Rp x y 1k
+Cp y 0 {1e5/(6.2831853*1k*GBW)}
+E2 out 0 y 0 1
+.ends
+VIN in 0 DC 0 AC 1
+* ---- T1：并联微调（Ra∥1M、Rb∥1M、R4∥R5∥470k）----
+XT1 in t1 0 TT PARAMS: RA={33k*1meg/(33k+1meg)} RB={33k*1meg/(33k+1meg)} RC={1/(1/33k+1/33k+1/470k)}
+RLT1 t1 0 1e12
+* ---- T2：全部 +5% ----
+XT2 in t2 0 TT PARAMS: RA=34.65k RB=34.65k RC=17.325k CA=105n CB=105n CC=210n
+RLT2 t2 0 1e12
+* ---- MFB 理想运放 ----
+R11 in a1 82k
+R13 a1 0 1.1k
+C11 a1 n1 10n
+C12 a1 o1 10n
+R12 n1 o1 160k
+E1 o1 0 0 n1 1e7
+R21 in a2 43k
+R23 a2 0 2.4k
+C21 a2 n2 22n
+C22 a2 o2 22n
+R22 n2 o2 91k
+E2 o2 0 0 n2 1e7
+R31 in a3 82k
+R33 a3 0 2.2k
+C31 a3 n3 10n
+C32 a3 o3 10n
+R32 n3 o3 160k
+E3 o3 0 0 n3 1e7
+R41 in a4 82k
+R43 a4 0 1k
+C41 a4 n4 10n
+C42 a4 o4 10n
+R42 n4 o4 160k
+E4 o4 0 0 n4 1e7
+R51 in a5 82k
+R53 a5 0 3k
+C51 a5 n5 10n
+C52 a5 o5 10n
+R52 n5 o5 160k
+E5 o5 0 0 n5 1e7
+* ---- 40 kHz ----
+R61 in a6 19.894k
+R63 a6 0 406.0
+C61 a6 n6 1n
+C62 a6 o6 1n
+R62 n6 o6 39.789k
+E6 o6 0 0 n6 1e7
+R71 in a7 19.894k
+R73 a7 0 406.0
+C71 a7 n7 1n
+C72 a7 o7 1n
+R72 n7 o7 39.789k
+X7 0 n7 o7 OPA1P PARAMS: GBW=1.2meg
+.control
+ac lin 40001 30 70
+let gt1=mag(v(t1))
+let gt2=mag(v(t2))
+meas ac gt1min MIN gt1
+meas ac ft1 WHEN gt1=gt1min
+meas ac gt1_50 FIND gt1 AT=50
+meas ac gt2min MIN gt2
+meas ac ft2 WHEN gt2=gt2min
+meas ac gt2_50 FIND gt2 AT=50
+echo "RESULT ft1 $&ft1"
+echo "RESULT gt1_50 $&gt1_50"
+echo "RESULT ft2 $&ft2"
+echo "RESULT gt2min $&gt2min"
+echo "RESULT gt2_50 $&gt2_50"
+ac dec 100 900 1100
+let gt1k=mag(v(t1))
+meas ac gt1_1k FIND gt1k AT=1000
+echo "RESULT gt1_1k $&gt1_1k"
+ac dec 1000 100 200k
+let g1=mag(v(o1))
+let g2=mag(v(o2))
+let g3=mag(v(o3))
+let g4=mag(v(o4))
+let g5=mag(v(o5))
+let g6=mag(v(o6))
+let g7=mag(v(o7))
+meas ac g1max MAX g1
+meas ac g2max MAX g2
+meas ac g3max MAX g3
+meas ac g4max MAX g4
+meas ac g5max MAX g5
+meas ac g6max MAX g6
+meas ac g7max MAX g7
+meas ac f1 WHEN g1=g1max
+meas ac f2 WHEN g2=g2max
+meas ac f3 WHEN g3=g3max
+let k4=g4max/sqrt(2)
+meas ac l4 WHEN g4=k4 RISE=1
+meas ac h4 WHEN g4=k4 FALL=1
+let k5=g5max/sqrt(2)
+meas ac l5 WHEN g5=k5 RISE=1
+meas ac h5 WHEN g5=k5 FALL=1
+let k6=g6max/sqrt(2)
+meas ac l6 WHEN g6=k6 RISE=1
+meas ac h6 WHEN g6=k6 FALL=1
+meas ac f7 WHEN g7=g7max
+let k2=g2max/sqrt(2)
+meas ac l2 WHEN g2=k2 RISE=1
+meas ac h2 WHEN g2=k2 FALL=1
+let k1=g1max/sqrt(2)
+meas ac l1 WHEN g1=k1 RISE=1
+meas ac h1 WHEN g1=k1 FALL=1
+let k3=g3max/sqrt(2)
+meas ac l3 WHEN g3=k3 RISE=1
+meas ac h3 WHEN g3=k3 FALL=1
+let k7=g7max/sqrt(2)
+meas ac l7 WHEN g7=k7 RISE=1
+meas ac h7 WHEN g7=k7 FALL=1
+echo "RESULT g1max $&g1max"
+echo "RESULT g2max $&g2max"
+echo "RESULT g3max $&g3max"
+echo "RESULT g6max $&g6max"
+echo "RESULT g7max $&g7max"
+echo "RESULT f1 $&f1"
+echo "RESULT f2 $&f2"
+echo "RESULT f3 $&f3"
+echo "RESULT l4 $&l4"
+echo "RESULT h4 $&h4"
+echo "RESULT l5 $&l5"
+echo "RESULT h5 $&h5"
+echo "RESULT l6 $&l6"
+echo "RESULT h6 $&h6"
+echo "RESULT f7 $&f7"
+echo "RESULT l1 $&l1"
+echo "RESULT h1 $&h1"
+echo "RESULT l2 $&l2"
+echo "RESULT h2 $&h2"
+echo "RESULT l3 $&l3"
+echo "RESULT h3 $&h3"
+echo "RESULT l7 $&l7"
+echo "RESULT h7 $&h7"
+.endc
+.end

@@ -3538,6 +3538,8 @@ def _part2_node(nn, funcs):
     return run
 
 
+node_33 = _part2_node("33", ("p4_2", "p4_4"))
+node_34 = _part2_node("34", ("p4_2", "p4_4", "p4_5"))
 node_35 = _part2_node("35", ("p4_2_schem_lab", "p4_3_ac_inject"))
 node_40 = _part2_node("40", ("p4_2_schem_lab", "p4_4_schem_lab"))
 node_41 = _part2_node("41", ("p4_2_schem_lab",))
@@ -3575,6 +3577,8 @@ NODES = {
     "26": node_26,
     "29": node_29,
     "30": node_30,   # 第二部分：转调 code/figs/30_figs.py
+    "33": node_33,   # 转调 code/figs/33_figs.py
+    "34": node_34,   # 转调 code/figs/34_figs.py
     "35": node_35,   # 转调 code/figs/35_figs.py
     "40": node_40,   # 转调 code/figs/40_figs.py
     "41": node_41,   # 转调 code/figs/41_figs.py

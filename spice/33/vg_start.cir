@@ -1,0 +1,26 @@
+* 33 中点参考 V_MID上电检查：9 V 电池一下子接通（tran uic：所有电容从 0 V 开始），看 LM358B 跟随器输出能否自己走到 4.5 V（不靠 .nodeset）
+* 同时带上 MFB 电路（实验值），看输出直流是否也停在 V_MID
+.include ../models/LMx58B_LM2904B.lib
+VB vb 0 DC 9
+RA vb m 10k
+RB m 0 10k
+CM m 0 10u
+XUB m vg vb 0 vg LMX58B_LM2904B
+R11 vg a1 82k
+R13 a1 vg 1.6k
+C11 a1 n1 10n
+C12 a1 o1 10n
+R12 n1 o1 160k
+XU1 vg n1 vb 0 o1 LMX58B_LM2904B
+.control
+tran 20u 0.6 uic
+meas tran vg_03 FIND v(vg) AT=0.3
+meas tran vg_06 FIND v(vg) AT=0.6
+meas tran vo_06 FIND v(o1) AT=0.6
+meas tran t90 WHEN v(vg)=4.05 RISE=1
+echo "RESULT vg_03 $&vg_03"
+echo "RESULT vg_06 $&vg_06"
+echo "RESULT vo_06 $&vo_06"
+echo "RESULT t90 $&t90"
+.endc
+.end

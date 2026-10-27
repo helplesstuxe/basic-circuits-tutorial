@@ -1,0 +1,44 @@
+* 33 审阅后补充：TI LM358B 模型，9 V 单电源 + 中点参考 V_MID（节点名 vg）
+* M8  40 kHz、Q值 5、A 1 设计（19.894k/39.789k/406，C=1n）用 LM358B
+* M9  实验电路（82k/160k/1.6k/10n）峰值所在频率
+.include ../models/LMx58B_LM2904B.lib
+VB vb 0 DC 9
+RA vb m 10k
+RB m 0 10k
+CM m 0 10u
+XUB m vg vb 0 vg LMX58B_LM2904B
+VI8 i8 vg DC 0 AC 1
+R81 i8 a8 19.894k
+R83 a8 vg 406.0
+C81 a8 n8 1n
+C82 a8 o8 1n
+R82 n8 o8 39.789k
+XU8 vg n8 vb 0 o8 LMX58B_LM2904B
+R91 i8 a9 82k
+R93 a9 vg 1.6k
+C91 a9 n9 10n
+C92 a9 o9 10n
+R92 n9 o9 160k
+XU9 vg n9 vb 0 o9 LMX58B_LM2904B
+.nodeset v(vg)=4.5 v(m)=4.5 v(o8)=4.5 v(n8)=4.5 v(a8)=4.5 v(i8)=4.5 v(o9)=4.5 v(n9)=4.5 v(a9)=4.5
+.control
+op
+echo "RESULT vg $&v(vg)"
+ac dec 1000 100 200k
+let g8=mag(v(o8))
+let g9=mag(v(o9))
+meas ac g8max MAX g8
+meas ac g9max MAX g9
+meas ac f8 WHEN g8=g8max
+meas ac f9 WHEN g9=g9max
+let k8=g8max/sqrt(2)
+meas ac l8 WHEN g8=k8 RISE=1
+meas ac h8 WHEN g8=k8 FALL=1
+echo "RESULT g8max $&g8max"
+echo "RESULT g9max $&g9max"
+echo "RESULT f8 $&f8"
+echo "RESULT f9 $&f9"
+echo "RESULT l8 $&l8"
+echo "RESULT h8 $&h8"
+.endc
+.end
