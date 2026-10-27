@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37 过零检测与超声波时差 · 工程实战调研（工程实战派）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/37.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="37-过零检测与超声波时差--工程实战调研工程实战派">37 过零检测与超声波时差 · 工程实战调研（工程实战派）</h1>
+<blockquote>
+<p>范围：给 37-zero-crossing-tof 的 page4 面包板实验做工程核查。目录里目前只有 <code>img/</code>，<strong>还没有 page4 草稿</strong>，所以本文核查的是 notes/37-research.md 和 <a href="http://00-design-part2.md">00-design-part2.md</a> §37 里的 page4 计划。
+供电按 PART2_BRIEF §10：单电源 9–12 V，用分压加跟随器做虚地（第 12 节），全程 ≤ 12 V，不用 ±6 V。</p>
+</blockquote>
+<hr />
+<h2 id="1-真实产品与参考设计">1. 真实产品与参考设计</h2>
+<h3 id="11-murata-ma40s4s--ma40s4r40-khz-开放式换能器">1.1 Murata MA40S4S / MA40S4R（40 kHz 开放式换能器）</h3>
+<p>来源：Murata 数据手册 DM-U16-483 Rev.2（2017-08），已用 curl 下载并逐行读过。</p>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>MA40S4S（发射）</th>
+<th>MA40S4R（接收）</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>用途</td>
+<td>&quot;MA40S4S is used to transmit ultrasonic waves&quot;</td>
+<td>&quot;MA40S4R is used to receive them&quot;</td>
+<td>p.1</td>
+</tr>
+<tr>
+<td>工作频率</td>
+<td>40.0 kHz（For reference）</td>
+<td>40.0 kHz</td>
+<td>Table 3/4</td>
+</tr>
+<tr>
+<td>声压 S.P.L.</td>
+<td>120 ± 3 dB（0 dB = 20 µPa；条件：40 kHz、10 Vrms 正弦、30 cm）</td>
+<td>—</td>
+<td>Table 3</td>
+</tr>
+<tr>
+<td>灵敏度</td>
+<td>—</td>
+<td>−63 ± 3 dB（0 dB = 10 V/Pa，30 cm），即约 7.1 mV/Pa</td>
+<td>Table 4</td>
+</tr>
+<tr>
+<td>电容</td>
+<td>2550 pF ± 20 %（1 kHz）</td>
+<td>2550 pF ± 20 %</td>
+<td>Table 3/4</td>
+</tr>
+<tr>
+<td>最大输入电压</td>
+<td>20 Vp-p（40 kHz，连续方波）</td>
+<td>—</td>
+<td>Table 1</td>
+</tr>
+<tr>
+<td>工作温度</td>
+<td>−40 … +85 °C</td>
+<td>−40 … +85 °C</td>
+<td>Table 1/2</td>
+</tr>
+<tr>
+<td>限制</td>
+<td>开放式结构，不能户外用；不能用于汽车</td>
+<td>同左</td>
+<td>p.1</td>
+</tr>
+</tbody>
+</table>
+<p>要点：Murata 的 S 型和 R 型<strong>分别</strong>规定为发射用和接收用。数据手册没有给 S 型当接收器、R 型当发射器时的指标。</p>
+<ul>
+<li>37 的实验要&quot;交换收发方向&quot;，就要求每一端既能发又能收。</li>
+<li>用两只同型号互换，或者用 HC-SR04 模块上拆下的换能器，性能都**[待核实]**。</li>
+<li>解决办法见 §2.6。</li>
+</ul>
+<h3 id="12-ti-tdc1000超声模拟前端snas648c2023-02-修订">1.2 TI TDC1000（超声模拟前端，SNAS648C，2023-02 修订）</h3>
+<p>已下载并读过。</p>
+<ul>
+<li><strong>发射：</strong> TX1/TX2 可编程激励频率 31.25 kHz–4 MHz，最多 31 个脉冲。</li>
+<li><strong>接收：</strong>
+<ul>
+<li>LNA 加 PGA，信号链对外开放，可以接外部滤波器。</li>
+<li>可编程门限比较器做 &quot;echo qualification&quot;，即本节说的&quot;武装&quot;。</li>
+<li>过零比较器（ZERO CROSS COMPARATOR）：失调 ±115 µV，迟滞 −10 mV（以 VCOM 为参考）。</li>
+<li>门限检测电平：ECHO_QUAL_THLD = 0h 时 −35 mV，7h 时 −1.5 V（以 VCOM 为参考）。</li>
+<li>STOP 周期间抖动 50 psRMS。</li>
+<li>可自动交换通道，做差分 TOF。</li>
+<li>有 power blanking 功能（盲区窗口）。</li>
+</ul>
+</li>
+<li><strong>供电：</strong>
+<ul>
+<li>VDD 2.7–5.5 V（绝对最大 6.0 V）；VIO 1.8 V 到 VDD。</li>
+<li>测量范围最长 8 ms。</li>
+</ul>
+</li>
+<li><strong>对 page4 的意义：</strong>
+<ul>
+<li>本节面包板电路就是 TDC1000 内部&quot;门限武装 + 过零&quot;结构的分立版。</li>
+<li>迟滞、门限、盲区这几个参数可以直接拿来类比。</li>
+<li>TDC1000 是 TSSOP-28 贴片，不适合直接插面包板，正文&quot;变体&quot;里只讲不做。</li>
+</ul>
+</li>
+</ul>
+<h3 id="13-ti-tdc7200时间数字转换器">1.3 TI TDC7200（时间数字转换器）</h3>
+<ul>
+<li>研究笔记已核对：分辨率 55 ps。</li>
+<li>与 Arduino Timer1 的 62.5 ns 相差约 1100 倍。这正好说明水里的 91 ns / 0.9 ns 为什么必须用 TDC，而空气中的 10 µs 用 Arduino 就够。</li>
+</ul>
+<h3 id="14-ti-snia020--slaaes9">1.4 TI SNIA020 / SLAAES9</h3>
+<ul>
+<li><strong>SNIA020</strong>（超声水表/热量表）已核对第 346 行：加阻抗匹配后，ΔTOF 偏移温漂可降到 &quot;approximately 25 ps or less for STOP pulses 1 and 5&quot;。研究笔记说&quot;这是温漂，不是分辨率&quot;，表述正确。</li>
+<li><strong>SLAAES9</strong>：标题实际是 &quot;Ultrasonic Sensing Solution (USS) Guide&quot;，研究笔记写成&quot;超声波流量计设计指南&quot;，建议正文按原标题引用。
+<ul>
+<li>文中写了&quot;消去声速&quot;的推导：式 1–4 用 T12、T21 推出 v，并说明 &quot;possible even without knowing … velocity of the ultrasound&quot;（第 114–116 行）。</li>
+<li>PDF 文本层的公式排版错乱（第 103、120 行），必须看原 PDF 核对，这一点研究笔记已提醒。</li>
+</ul>
+</li>
+</ul>
+<h3 id="15-ti-lm393--lm393bslcs005ah2025-04-修订">1.5 TI LM393 / LM393B（SLCS005AH，2025-04 修订）</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>LM393（经典）</th>
+<th>LM393B</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>电源</td>
+<td>2–30 V（LM393 列）</td>
+<td>2–36 V</td>
+<td>器件对比表</td>
+</tr>
+<tr>
+<td>输入共模范围</td>
+<td>包含地；上限 VCC − 1.5 V（25 °C），全温 VCC − 2 V</td>
+<td>(V+) − 2.0 V</td>
+<td>注 (1)、推荐工作条件</td>
+</tr>
+<tr>
+<td>输出</td>
+<td>开集电极，需要上拉</td>
+<td>同左</td>
+<td>—</td>
+</tr>
+<tr>
+<td>响应时间（5 V，上拉 5.1 kΩ，CL 15 pF）</td>
+<td>1.3 µs（100 mV 阶跃、5 mV 过驱动）；0.3 µs（TTL 电平阶跃）</td>
+<td>1 µs（5 mV 过驱动）；300 ns（TTL）</td>
+<td>§5.11、§5.7</td>
+</tr>
+<tr>
+<td>低电平灌电流</td>
+<td>≥6 mA，典型 21 mA（VOL = 1.5 V，VS = 5 V）</td>
+<td>—</td>
+<td>表</td>
+</tr>
+<tr>
+<td>失调</td>
+<td>经典型最大 ±9 mV（对比表）</td>
+<td>典型 0.37 mV</td>
+<td>首页</td>
+</tr>
+</tbody>
+</table>
+<h3 id="16-ti-tl072--tl072hslos080w2025-07-修订">1.6 TI TL072 / TL072H（SLOS080W，2025-07 修订）</h3>
+<ul>
+<li><strong>经典 TL07xC/I/M</strong>（±15 V 表）：
+<ul>
+<li>VCM 最小 ±11 V，典型 −12 V 到 +15 V。按最小值算，输入下沿要比负电源高 <strong>4 V</strong>。</li>
+<li>输出摆幅 RL = 10 kΩ 时典型 ±13.5 V、最小 ±12 V，即距电源轨 1.5–3 V。</li>
+<li>SR 最小 8 V/µs、典型 20 V/µs。</li>
+<li>GBW：NS/PS 封装及 M 型为 3 MHz，其余为 5.25 MHz。</li>
+</ul>
+</li>
+<li><strong>TL07xH</strong>（表 5.7）：
+<ul>
+<li>VS 4.5–40 V。</li>
+<li>VCM 从 (VCC−) + 1.5 V 到 (VCC+)。</li>
+<li>输出距电源轨 105–215 mV（典型/最大，VS = 40 V，RL = 10 kΩ）。</li>
+<li>GBW 5.25 MHz，SR 20 V/µs，ISC ±26 mA。</li>
+</ul>
+</li>
+</ul>
+<h3 id="17-atmega328p--arduino沿用-31-节已核对的数据">1.7 ATmega328P / Arduino（沿用 31 节已核对的数据）</h3>
+<ul>
+<li>单个 I/O 引脚绝对最大 40 mA，测试条件 20 mA。</li>
+<li>Timer1 是 16 位，带输入捕获 ICP1，对应 UNO 的 D8。16 MHz 不分频时分辨率 62.5 ns。</li>
+<li>Timer2 是 8 位，OC2A 对应 D11，OC2B 对应 D3。</li>
+<li>引脚输出电阻（VOH/VOL 曲线）只在 PDF 图中给出，文本层读不出数值，<strong>[待核实]</strong>。下面的限流计算按引脚内阻为 0 取最保守值。</li>
+</ul>
+<hr />
+<h2 id="2-page4-逐项可行性核查">2. page4 逐项可行性核查</h2>
+<h3 id="21-引脚与接线">2.1 引脚与接线</h3>
+<ul>
+<li><strong>LM393：</strong>
+<ul>
+<li>引脚：1 OUT1、2 IN1−、3 IN1+、4 GND、5 IN2+、6 IN2−、7 OUT2、8 VCC。</li>
+<li>输出是开集电极，<strong>上拉电阻必须接 Arduino 的 5 V，不能接 12 V</strong>。开集电极输出允许上拉到与 VCC 不同的电压，这样 D8 就不会被灌进 12 V。</li>
+</ul>
+</li>
+<li><strong>TL072（H）：</strong> 引脚与 LM358 相同，1 OUTA、2 −INA、3 +INA、4 V−、5 +INB、6 −INB、7 OUTB、8 V+。</li>
+<li><strong>Arduino 引脚分配（建议）：</strong>
+<ul>
+<li>D11/D3（Timer2 OC2A/OC2B）反相输出 40 kHz 猝发。</li>
+<li>D8（ICP1）接&quot;武装后的过零&quot;信号。</li>
+<li><strong>不要用 Timer1 同时产生 40 kHz 又做捕获。</strong> Timer1 的 CTC 模式每 12.5 µs 清零一次，捕获值只能在 0–199 之间循环，读不出 583 µs。</li>
+<li>Timer2 的 CTC 设置：OCR2A = 16 MHz / (2 × 40 kHz) − 1 = <strong>199</strong>（已运行，见 §3）。初始化时把两个输出强制成相反电平就能反相。</li>
+<li>寄存器级代码未在硬件上实测，<strong>[待核实]</strong>。</li>
+<li>不能用 <code>digitalWrite</code> 循环产生 40 kHz，它太慢，具体耗时 <strong>[待核实]</strong>；要用定时器硬件翻转，或者直接操作端口。</li>
+</ul>
+</li>
+</ul>
+<h3 id="22-电源-12-v单电源">2.2 电源（≤ 12 V，单电源）</h3>
+<ul>
+<li>9–12 V 进 Arduino VIN，板上稳压出 5 V，供上拉电阻和 74HC74 使用。</li>
+<li>TL072H 和 LM393 直接用 9–12 V 供电。</li>
+<li>虚地 Vref = VCC/2：用两只 10 kΩ 分压，加 10 µF 电容，再接一个跟随器。</li>
+<li><strong>经典 TL072 在 9 V 时不行：</strong>
+<ul>
+<li>Vref = 4.5 V，输入下限 (V−) + 4 V = 4 V，向下只剩 0.5 V 余量。</li>
+<li>输出离负电源轨也要 1.5–3 V。</li>
+<li>所以第二级以后 ±1–2 V 的信号会被削顶。</li>
+</ul>
+</li>
+<li><strong>经典 TL072 在 12 V 时勉强可以：</strong> Vref = 6 V，向下余量 2 V。</li>
+<li><strong>结论：</strong> 用 TL072H（VCM 下限 (V−) + 1.5 V，输出距电源轨约 0.2 V），或者保证 12 V 供电。</li>
+<li><strong>LM393 共模：</strong>
+<ul>
+<li>12 V 供电时输入上限 10.5 V（25 °C）或 10 V（全温），信号在 6 V ± 2 V 内满足。</li>
+<li>如果把 LM393 改用 5 V 供电，上限只有 3.5 V，要把 Vref 移到 ≤ 2.5 V。</li>
+</ul>
+</li>
+</ul>
+<h3 id="23-发射驱动">2.3 发射驱动</h3>
+<ul>
+<li><strong>反相推挽电压：</strong> 两只 5 V 引脚反相，换能器两端得到 ±5 V，即 <strong>10 Vp-p</strong>，低于 MA40S4S 的 20 Vp-p 上限，可行。</li>
+<li><strong>不能用 12 V H 桥：</strong> 12 V H 桥反相驱动是 24 Vp-p，超过上限。数据手册里 24 Vp-p 只出现在可靠性试验条件（第 216 行），不是允许的工作电压。</li>
+<li><strong>限流（已运行）：</strong>
+<ul>
+<li>换能器是 2550 pF 的容性负载。反相翻转瞬间电容两端电压变化 10 V，如果不加串联电阻，峰值电流只受引脚内阻限制，可能超过 40 mA 的绝对最大值。</li>
+<li>每个引脚各串 <strong>150 Ω</strong>：峰值 ≤ 33 mA；时间常数 τ = 0.77 µs；40 kHz 基波保留 98.2 %。</li>
+<li>每个引脚各串 100 Ω：峰值 50 mA，超标。</li>
+<li>平均充放电电流只有 2.0 mA，引脚发热不成问题。</li>
+</ul>
+</li>
+<li><strong>R 型接收灵敏度换算：</strong> −63 dB 对应 0 dB = 10 V/Pa，即约 7.1 mV/Pa。已用 Python 换算。</li>
+</ul>
+<h3 id="24-接收电平增益带宽压摆率已运行">2.4 接收电平、增益、带宽、压摆率（已运行）</h3>
+<ul>
+<li><strong>接收幅度：</strong>
+<ul>
+<li>10 Vp-p 方波的基波为 4.50 Vrms，30 cm 处约 113 dB，20 cm 处约 116.6 dB，即 13.5 Pa。</li>
+<li>乘以 7.1 mV/Pa，得到稳态接收约 <strong>96 mVrms</strong>。这是稳态上限估计；8 个周期的猝发还没振到稳态，且没有算管壁和指向性的影响，实际值 <strong>[待核实]</strong>，以实测为准。</li>
+</ul>
+</li>
+<li><strong>增益：</strong> 要把信号放到 1–2 V 峰值，总增益约 20–50 倍，可以分两级做。</li>
+<li><strong>压摆率：</strong>
+<ul>
+<li>40 kHz、2 V 峰值需要 0.5 V/µs。</li>
+<li>LM358（0.3 V/µs）只能不失真输出 1.19 V 峰值，LM358B 为 1.99 V。</li>
+<li><strong>所以 LM358 不能替代 TL072。</strong></li>
+</ul>
+</li>
+<li><strong>带宽：</strong>
+<ul>
+<li>40 kHz 处开环增益：LM358 约 17.5 倍，LM358B 30 倍，MCP6002 25 倍，TL072（3 MHz 版本）75 倍，TL072H 131 倍。</li>
+<li>单级闭环增益建议 ≤ 10，否则增益和相移会随器件离散。</li>
+</ul>
+</li>
+<li><strong>带通：</strong> 换能器本身就是窄带谐振器，接收链用&quot;高通（滤掉 50 Hz 和风扇噪声）+ 增益&quot;即可。如果要做 33 节的 MFB 带通，Q 取 3–5 就够了。</li>
+</ul>
+<h3 id="25-比较器过零逻辑与捕获">2.5 比较器、过零逻辑与捕获</h3>
+<ol>
+<li><strong>过零比较器的参考：</strong> 不要直接拿 Vref 当参考。运放失调乘上增益会让&quot;零&quot;偏离信号中心。建议信号经电容耦合，比较器两个输入各通过相同的电阻接到 Vref。</li>
+<li><strong>迟滞：</strong> 加 5–20 mV 的小迟滞防止抖动。TDC1000 内部用的是 −10 mV，可以作类比。迟滞会让触发点固定偏移一点，这个偏移在顺流和逆流中相同，求 Δt 时会消掉。</li>
+<li><strong>过驱动和延迟：</strong>
+<ul>
+<li>40 kHz 过零处斜率为 2πfA。A = 1 V 时为 0.25 V/µs，20 ns 内就能达到 5 mV 过驱动。A = 0.1 V 时要 199 ns。</li>
+<li>LM393 延迟在 0.3–1.3 µs 之间，随过驱动变化。</li>
+<li>顺流和逆流幅度相同时，延迟相互抵消。风扇引起的幅度变化带来的误差估计在几百 ns 以下，比 5–10 µs 的 Δt 小得多。这个量级是按数据手册上下限推断的，<strong>[待核实]</strong>，以实测为准。</li>
+</ul>
+</li>
+<li><strong>&quot;武装→过零&quot;的逻辑：</strong>
+<ul>
+<li>用 74HC74 D 触发器：门限比较器输出接 D（或 SET），过零比较器的上升沿接 CLK，Q 输出接 D8。</li>
+<li>不要靠 Arduino 软件在门限中断里再去开捕获。中断延迟是几 µs 量级（<strong>[待核实]</strong>），半个周期只有 12.5 µs，余量太小。</li>
+</ul>
+</li>
+<li><strong>捕获用下降沿：</strong> 开集电极的下降沿是主动下拉，比 RC 上拉的上升沿快。用 10 kΩ 上拉、约 20 pF 负载时，上升沿 τ ≈ 0.2 µs（估算）。可设 ICES1 = 0，或在 Q 端用反相输出。</li>
+<li><strong>分辨率：</strong>
+<ul>
+<li>Timer1 不分频：62.5 ns，溢出周期 4.096 ms。583 µs 对应约 9323 个计数，够用。</li>
+<li>猝发和计时用的是同一个 16 MHz 时钟，量化相位是固定的，平均也消不掉。仿真（假设 50 ns rms 噪声抖动）显示：单次标准差 57 ns；平均 64 次约 19 ns，平均 256 次约 18 ns，在 18 ns 附近见底。</li>
+<li>对 10 µs 的 Δt 来说完全够用（误差 &lt; 0.2 %）。这也说明水中的 91 ns 用 Arduino 做不了。</li>
+</ul>
+</li>
+<li><strong>盲区：</strong>
+<ul>
+<li>8 个周期的猝发持续 200 µs，电串扰也在这段时间内。0.2 m 声程的首达时间是 583 µs，开一个 300–400 µs 之后才接受捕获的窗口即可。</li>
+<li>间距不要小于约 0.1 m。0.07 m 时首达约 200 µs，会和串扰重叠。</li>
+</ul>
+</li>
+</ol>
+<h3 id="26-机械布置与交换方向">2.6 机械布置与&quot;交换方向&quot;</h3>
+<ul>
+<li><strong>问题一：管道和风扇。</strong> 换能器正对着装在管子两端，会把管口堵住，风扇的风吹不进声路。</li>
+<li><strong>问题二：收发型号。</strong> S/R 分型（§1.1），一对 S + R 无法互换方向。</li>
+<li><strong>可行方案（按难度递增）：</strong>
+<ul>
+<li><strong>A，最简单：</strong>
+<ul>
+<li>不用管子。把发射和接收换能器装在尺子上相距 0.2 m，风扇顺着连线吹。</li>
+<li>发射和接收固定不动，测&quot;风扇关&quot;与&quot;风扇开&quot;的 t 差：单向变化 Lv/c²，3 m/s 时约 <strong>5.1 µs</strong>（已运行）。</li>
+<li>再把风扇转到另一头吹，得到符号相反的 5.1 µs。两次相减就是 Δt ≈ 10.2 µs。</li>
+</ul>
+</li>
+<li><strong>B：</strong> 每一端并排放一只 S 和一只 R，共 4 只，用 CD4053 切换。缺点是两条声程不完全重合。</li>
+<li><strong>C：</strong> 每端一只同型号换能器，用 CD4053 切换收发。性能 <strong>[待核实]</strong>。</li>
+<li>要用管道的话，用三通从侧面开口装换能器，风从直通段走。</li>
+</ul>
+</li>
+<li><strong>温度：</strong>
+<ul>
+<li>仿真结果：0.2 m 声程的 t 随温度变化约 <strong>−0.99 µs/°C</strong>（c ≈ 331.32·√(1 + θ/273.15)，来自 Wikipedia）。</li>
+<li>方案 A 前后两次测量如果间隔几十秒，温度变化 0.5 °C 就会引入 0.5 µs 误差，相当于 Δt 的 5 %。</li>
+<li>所以要快速交替测量，并在实验记录里写上室温。</li>
+<li>SLAAES9 的两时间法 v = (L/2)(1/t1 − 1/t2) 能消去 c，但前提是 t1、t2 在同一时刻测得。</li>
+</ul>
+</li>
+</ul>
+<h3 id="27-改间距验证-292-µsmm">2.7 &quot;改间距验证 2.92 µs/mm&quot;</h3>
+<ul>
+<li>20 °C 时理论值为 <strong>2.913 µs/mm</strong>；15 °C 为 2.939，30 °C 为 2.865（已运行）。正文应写成&quot;约 2.9 µs/mm（20 °C）&quot;并注明温度。</li>
+<li><strong>必须用斜率，不能用 t/L：</strong>
+<ul>
+<li>仿真中，从发射开始到&quot;武装后第一个过零&quot;之间，除了 583 µs 的传播时间，还多出约 125 µs，即 5 个周期。这部分来自换能器谐振的起振时间和&quot;武装&quot;所在的周期数，再加上比较器和逻辑的延迟。</li>
+<li>所以要测两个以上间距，用 Δt/ΔL 求斜率，固定偏移才会消掉。</li>
+</ul>
+</li>
+<li>尺子误差 ±1 mm 时，ΔL = 100 mm 的斜率误差约 ±1 %，这是实验精度的主要限制。</li>
+</ul>
+<h3 id="28-跳周期已运行">2.8 跳周期（已运行）</h3>
+<ul>
+<li>仿真模型：8 周期方波经过 TX 和 RX 两个谐振（Q 假设 = 15，<strong>Q 的真实值数据手册未给，[待核实]</strong>）。</li>
+<li>包络约需 9 个周期才升到峰值。</li>
+<li>门限取在第 4 和第 5 个峰之间（归一化 0.326）时，结果如下：
+<ul>
+<li><strong>幅度门限触发</strong>的时刻随幅度连续漂移：×0.5 为 738.1 µs，×1 为 686.8 µs，×2 为 660.6 µs。</li>
+<li><strong>武装 + 过零</strong>的时刻只会整周期跳变：757.6、732.6、707.6、682.6 µs，每档相差正好 25 µs。</li>
+<li>幅度在标称值的 <strong>×0.83 … ×1.26</strong> 范围内不会跳周期。</li>
+</ul>
+</li>
+<li><strong>结论：</strong>
+<ul>
+<li>过零法把&quot;连续漂移&quot;变成&quot;要么不变、要么跳 25 µs&quot;。</li>
+<li>门限要放在相邻两个峰的中点。</li>
+<li>风扇或手遮挡使幅度变化超过约 ±20 % 就会跳周期。实验时读数如果突然跳 25 µs，就是这个原因。</li>
+</ul>
+</li>
+</ul>
+<h3 id="29-安全">2.9 安全</h3>
+<ul>
+<li>全部 ≤ 12 V。</li>
+<li>40 kHz 人耳听不到，但离得很近时声压可达 110–120 dB 量级，不要把换能器贴着耳朵。是否有健康影响 <strong>[待核实]</strong>，这里只作谨慎提示。</li>
+<li>风扇用 USB 或 12 V 小风扇。叶片要有护网，手不要伸进去。</li>
+</ul>
+<h3 id="需要作者改正的要点">需要作者改正的要点</h3>
+<ol>
+<li><strong>收发型号：</strong> MA40S4S 是发射型，接收要用 MA40S4R（−63 dB，约 7.1 mV/Pa）。&quot;两只 MA40S4S 交换收发方向&quot;没有数据手册依据。改用方案 A（发射和接收固定，风扇正吹/反吹/关）或方案 B（每端一对 S + R）。</li>
+<li><strong>管道布置：</strong> 换能器正对着装在 PVC 管两端会堵住风道。改为&quot;尺子上开放式布置&quot;，或用三通侧装。</li>
+<li><strong>发射限流：</strong> D11/D3 各串 150 Ω（峰值 ≤ 33 mA）。不加电阻直接驱动 2550 pF 会超过 40 mA。不要用 12 V H 桥（24 Vp-p 超过 20 Vp-p 上限）。</li>
+<li><strong>定时器分工：</strong> Timer2（OCR2A = 199）产生 40 kHz，Timer1 不分频做 ICP1（D8）捕获。不能都用 Timer1，也不能用 <code>digitalWrite</code>。</li>
+<li><strong>运放与电源：</strong> 经典 TL072 在 9 V 单电源下余量不足，改用 TL072H，或明确要求 12 V。LM358 的 SR（0.3 V/µs）在 40 kHz 下只能输出 1.2 V 峰值，不能替代。</li>
+<li><strong>LM393 上拉与捕获：</strong> 上拉接 5 V，不接 12 V。用 74HC74 硬件完成&quot;武装→过零&quot;，捕获用下降沿。要开 300–400 µs 的盲区窗口，间距 ≥ 0.1 m。</li>
+<li><strong>&quot;2.92 µs/mm&quot;的写法：</strong> 写成&quot;约 2.91 µs/mm（20 °C）&quot;，并且必须用多个间距求斜率，因为有约 100 µs 量级的起振和逻辑固定偏移（仿真约 125 µs）。</li>
+<li><strong>温度：</strong> 约 −1 µs/°C，与 5 µs 的单向信号同一量级。要快速交替测量并记录室温。</li>
+<li><strong>跳周期：</strong> 门限放在相邻两峰的中点。读数跳 25 µs 就是跳了周期。</li>
+<li><strong>研究笔记的资料名：</strong> SLAAES9 的标题应为 &quot;Ultrasonic Sensing Solution (USS) Guide&quot;。</li>
+<li><strong>Arduino 知识框：</strong> 37 用到输入捕获和寄存器设置，超出 31 节&quot;最小必要知识&quot;框的范围。建议在 37 补一个&quot;定时器捕获&quot;小框，并给出不用 Arduino 的核查办法：示波器双通道，看发射猝发与 Q 输出的间隔。</li>
+</ol>
+<hr />
+<h2 id="3-python-代码已运行">3. Python 代码（已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng37/tof.py</code></p>
+<pre><code class="language-python">import numpy as np
+np.set_printoptions(precision=4, suppress=True)
+# ---------- 1. 基本数字 ----------
+def c_air(theta):            # Wikipedia: 331.32*sqrt(1+θ/273.15)
+    return 331.32*np.sqrt(1+theta/273.15)
+L=0.20
+for th in (15,20,25,30):
+    c=c_air(th); print(f&quot;θ={th:2d}°C c={c:6.2f} m/s  t=L/c={L/c*1e6:7.2f} us  每mm {1e3/c:5.3f} us&quot;)
+c=c_air(20)
+for v in (1,2,3,5):
+    t1=L/(c+v); t2=L/(c-v); dt=t2-t1
+    print(f&quot;v={v} m/s: Δt={dt*1e6:6.2f} us (近似2Lv/c²={2*L*v/c**2*1e6:6.2f}); 反算 v=(L/2)(1/t1-1/t2)={L/2*(1/t1-1/t2):.4f}&quot;)
+dtdT=(L/c_air(20.5)-L/c_air(19.5))
+print(f&quot;温度系数 dt/dθ ≈ {dtdT*1e6:.3f} us/°C  (对比 v=3 m/s 的单向变化 Lv/c² = {L*3/c**2*1e6:.2f} us)&quot;)
+# ---------- 2. Timer1 ----------
+f_clk=16e6; tq=1/f_clk
+print(f&quot;Timer1 预分频1: 分辨率 {tq*1e9:.1f} ns, 16 位溢出 {65536*tq*1e3:.3f} ms, t=583us → {L/c/tq:.0f} 计数&quot;)
+print(&quot;Timer2 CTC 翻转 40 kHz: OCR2A =&quot;, f_clk/(2*40e3)-1)
+rng=np.random.default_rng(1)
+true=5.1e-6
+for N in (1,16,64,256):
+    est=[]
+    for _ in range(2000):
+        x=true+rng.normal(0,50e-9,N)+rng.uniform(0,tq)   # 50 ns rms 噪声抖动(假设) + 随机相位
+        est.append(np.mean(np.floor(x/tq)*tq))
+    print(f&quot;N={N:3d} 次平均: 标准差 {np.std(est)*1e9:6.2f} ns&quot;)
+# ---------- 3. 发射驱动 ----------
+C=2550e-12; f=40e3; V=10.0
+for Rs in (0,100,150,220):
+    Rt=2*Rs
+    ipk = np.inf if Rt==0 else V/Rt
+    tau=Rt*C
+    att=1/np.sqrt(1+(2*np.pi*f*tau)**2)
+    print(f&quot;串联 2×{Rs:3d} Ω: 峰值电流 {ipk*1e3 if Rt else float('inf'):6.1f} mA, τ={tau*1e6:5.2f} us, 40k 基波保留 {att:.3f}&quot;)
+print(f&quot;平均充放电电流 2·C·V·f = {2*C*V*f*1e3:.2f} mA ; 40 kHz 容抗 {1/(2*np.pi*f*C):.0f} Ω&quot;)
+# ---------- 4. 接收电平估算 ----------
+Vf=4/np.pi*5/np.sqrt(2)     # 10 Vp-p 方波(±5V 差分)的基波 rms
+spl30=120+20*np.log10(Vf/10)
+spl20=spl30+20*np.log10(0.30/0.20)
+p=20e-6*10**(spl20/20); S=10*10**(-63/20)
+print(f&quot;10Vp-p 方波基波 {Vf:.2f} Vrms → 30cm SPL {spl30:.1f} dB, 20cm {spl20:.1f} dB = {p:.1f} Pa; 灵敏度 {S*1e3:.2f} mV/Pa → 稳态接收 ≈ {p*S*1e3:.0f} mVrms (上限估计)&quot;)
+# ---------- 5. 回波模型: 8 周期猝发经 TX、RX 两个谐振 (Q 假设=15) ----------
+fs=8e6; n=int(2e-3*fs); t=np.arange(n)/fs
+burst=np.where(t&lt;8/f, np.sign(np.sin(2*np.pi*f*t)),0.0)
+def bp(x,f0,Q):
+    w0=2*np.pi*f0/fs; al=np.sin(w0)/(2*Q)
+    b=np.array([al,0,-al]); a=np.array([1+al,-2*np.cos(w0),1-al]); b/=a[0]; a/=a[0]
+    y=np.zeros_like(x)
+    for i in range(2,len(x)):
+        y[i]=b[0]*x[i]+b[2]*x[i-2]-a[1]*y[i-1]-a[2]*y[i-2]
+    return y
+y=bp(bp(burst,f,15),f,15)
+d=int(round(L/c*fs)); rx=np.zeros_like(y); rx[d:]=y[:n-d]; rx/=np.max(np.abs(rx))
+pk=[]; 
+for k in range(40):
+    seg=rx[d+int(k*fs/f):d+int((k+1)*fs/f)]
+    if len(seg): pk.append(seg.max())
+pk=np.array(pk); print(&quot;各周期正峰(归一化) 前14个:&quot;, pk[:14])
+def first_cross(sig,thr):
+    i=np.argmax(sig&gt;thr); return i if sig[i]&gt;thr else None
+def armed_zc(sig,thr):
+    i=first_cross(sig,thr)
+    if i is None: return None
+    j=i+np.argmax((sig[i:-1]&lt;0)&amp;(sig[i+1:]&gt;=0))   # 武装后下一个上升过零
+    return j
+thr=0.5*(pk[3]+pk[4])   # 门限放在第4与第5个峰之间
+print(f&quot;门限 = {thr:.3f} (第4、5峰中点)&quot;)
+t0=None
+for g in (0.5,0.7,1.0,1.4,2.0):
+    s=g*rx
+    i=first_cross(s,thr); j=armed_zc(s,thr)
+    if t0 is None and g==0.5: pass
+    print(f&quot;幅度×{g:3.1f}: 幅度门限触发 {i/fs*1e6:8.3f} us | 武装+过零 {j/fs*1e6:8.3f} us&quot;)
+lo=thr/pk[4]; hi=thr/pk[3]
+print(f&quot;不跳周期的幅度容许范围: ×{lo:.2f} … ×{hi:.2f} (相对标称)&quot;)
+# ---------- 6. 过零斜率与比较器、放大器要求 ----------
+for A in (0.1,0.5,1.0,2.0):
+    slope=2*np.pi*f*A
+    print(f&quot;A={A} V 过零斜率 {slope/1e6:.3f} V/us, 到 5 mV 过驱动用 {5e-3/slope*1e9:6.1f} ns&quot;)
+for name,sr in ((&quot;LM358&quot;,0.3),(&quot;LM358B&quot;,0.5),(&quot;TL072/TL072H&quot;,20)):
+    print(f&quot;{name}: SR {sr} V/us → 40 kHz 下不失真最大峰值 {sr*1e6/(2*np.pi*f):5.2f} V&quot;)
+for name,gbw in ((&quot;LM358&quot;,0.7e6),(&quot;LM358B&quot;,1.2e6),(&quot;TL072(NS/PS/M)&quot;,3e6),(&quot;TL072H&quot;,5.25e6),(&quot;MCP6002&quot;,1e6)):
+    print(f&quot;{name}: 40 kHz 处开环增益 ≈ {gbw/f:5.1f} 倍&quot;)
+</code></pre>
+<p>实际输出（已运行）：</p>
+<pre><code>θ=15°C c=340.30 m/s  t=L/c= 587.72 us  每mm 2.939 us
+θ=20°C c=343.24 m/s  t=L/c= 582.69 us  每mm 2.913 us
+θ=25°C c=346.15 m/s  t=L/c= 577.78 us  每mm 2.889 us
+θ=30°C c=349.04 m/s  t=L/c= 573.00 us  每mm 2.865 us
+v=1 m/s: Δt=  3.40 us (近似2Lv/c²=  3.40); 反算 v=(L/2)(1/t1-1/t2)=1.0000
+v=2 m/s: Δt=  6.79 us (近似2Lv/c²=  6.79); 反算 v=(L/2)(1/t1-1/t2)=2.0000
+v=3 m/s: Δt= 10.19 us (近似2Lv/c²= 10.19); 反算 v=(L/2)(1/t1-1/t2)=3.0000
+v=5 m/s: Δt= 16.98 us (近似2Lv/c²= 16.98); 反算 v=(L/2)(1/t1-1/t2)=5.0000
+温度系数 dt/dθ ≈ -0.994 us/°C  (对比 v=3 m/s 的单向变化 Lv/c² = 5.09 us)
+Timer1 预分频1: 分辨率 62.5 ns, 16 位溢出 4.096 ms, t=583us → 9323 计数
+Timer2 CTC 翻转 40 kHz: OCR2A = 199.0
+N=  1 次平均: 标准差  56.59 ns
+N= 16 次平均: 标准差  21.80 ns
+N= 64 次平均: 标准差  19.31 ns
+N=256 次平均: 标准差  18.47 ns
+串联 2×  0 Ω: 峰值电流    inf mA, τ= 0.00 us, 40k 基波保留 1.000
+串联 2×100 Ω: 峰值电流   50.0 mA, τ= 0.51 us, 40k 基波保留 0.992
+串联 2×150 Ω: 峰值电流   33.3 mA, τ= 0.77 us, 40k 基波保留 0.982
+串联 2×220 Ω: 峰值电流   22.7 mA, τ= 1.12 us, 40k 基波保留 0.962
+平均充放电电流 2·C·V·f = 2.04 mA ; 40 kHz 容抗 1560 Ω
+10Vp-p 方波基波 4.50 Vrms → 30cm SPL 113.1 dB, 20cm 116.6 dB = 13.5 Pa; 灵敏度 7.08 mV/Pa → 稳态接收 ≈ 96 mVrms (上限估计)
+各周期正峰(归一化) 前14个: [0.0026 0.0457 0.137  0.2576 0.3935 0.5342 0.6733 0.8063 0.9261 0.9906
+ 0.9977 0.9668 0.9119 0.8432]
+门限 = 0.326 (第4、5峰中点)
+幅度×0.5: 幅度门限触发  738.125 us | 武装+过零  757.625 us
+幅度×0.7: 幅度门限触发  712.125 us | 武装+过零  732.625 us
+幅度×1.0: 幅度门限触发  686.750 us | 武装+过零  707.625 us
+幅度×1.4: 幅度门限触发  662.500 us | 武装+过零  682.625 us
+幅度×2.0: 幅度门限触发  660.625 us | 武装+过零  682.625 us
+不跳周期的幅度容许范围: ×0.83 … ×1.26 (相对标称)
+A=0.1 V 过零斜率 0.025 V/us, 到 5 mV 过驱动用  198.9 ns
+A=0.5 V 过零斜率 0.126 V/us, 到 5 mV 过驱动用   39.8 ns
+A=1.0 V 过零斜率 0.251 V/us, 到 5 mV 过驱动用   19.9 ns
+A=2.0 V 过零斜率 0.503 V/us, 到 5 mV 过驱动用    9.9 ns
+LM358: SR 0.3 V/us → 40 kHz 下不失真最大峰值  1.19 V
+LM358B: SR 0.5 V/us → 40 kHz 下不失真最大峰值  1.99 V
+TL072/TL072H: SR 20 V/us → 40 kHz 下不失真最大峰值 79.58 V
+LM358: 40 kHz 处开环增益 ≈  17.5 倍
+LM358B: 40 kHz 处开环增益 ≈  30.0 倍
+TL072(NS/PS/M): 40 kHz 处开环增益 ≈  75.0 倍
+TL072H: 40 kHz 处开环增益 ≈ 131.2 倍
+MCP6002: 40 kHz 处开环增益 ≈  25.0 倍
+</code></pre>
+<p>说明：</p>
+<ul>
+<li>回波模型里的 Q = 15、噪声抖动 50 ns rms、MCP6002 的 GBW 1 MHz 都是假设值，或没有在本轮打开数据手册核对，因此标 <strong>[待核实]</strong>。</li>
+<li>结论只依赖它们的量级，不依赖具体数字。</li>
+<li>第 5 段中幅度 ×1.4 和 ×2.0 都在第 4 个峰处武装（1.4×0.2576 = 0.36 &gt; 0.326，2×0.137 = 0.27 &lt; 0.326），因此过零时刻相同；幅度门限触发时刻只在同一个周期内略有前移。</li>
+</ul>
+<hr />
+<h2 id="4-参考链接均已用-curl-实际打开">4. 参考链接（均已用 curl 实际打开）</h2>
+<ul>
+<li>Murata MA40S4S/MA40S4R 数据手册：<a href="https://www.murata.com/~/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx?la=en">https://www.murata.com/~/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx?la=en</a></li>
+<li>TI TDC1000 数据手册（SNAS648C）：<a href="https://www.ti.com/lit/ds/symlink/tdc1000.pdf">https://www.ti.com/lit/ds/symlink/tdc1000.pdf</a></li>
+<li>TI LM393 / LM393B 数据手册（SLCS005AH）：<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a></li>
+<li>TI TL072 / TL072H 数据手册（SLOS080W）：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+<li>TI SLAAES9 &quot;Ultrasonic Sensing Solution (USS) Guide&quot;：<a href="https://www.ti.com/lit/an/slaaes9/slaaes9.pdf">https://www.ti.com/lit/an/slaaes9/slaaes9.pdf</a></li>
+<li>TI SNIA020：<a href="https://www.ti.com/lit/an/snia020/snia020.pdf">https://www.ti.com/lit/an/snia020/snia020.pdf</a></li>
+<li>TI TDC7200 数据手册（研究笔记已打开；本文引用 55 ps）：<a href="https://www.ti.com/lit/ds/symlink/tdc7200.pdf">https://www.ti.com/lit/ds/symlink/tdc7200.pdf</a></li>
+<li>Wikipedia《Speed of sound》（c_air ≈ 331.32·√(1 + θ/273.15)，20 °C 时 343.2 m/s）：<a href="https://en.wikipedia.org/wiki/Speed_of_sound">https://en.wikipedia.org/wiki/Speed_of_sound</a></li>
+<li>Microchip ATmega328P 数据手册、Arduino analogRead/analogWrite 参考：见 <a href="http://31.md">31.md</a> 参考列表。</li>
+</ul>
+<p><strong>[待核实]</strong>：</p>
+<ul>
+<li>S 型换能器作接收、R 型作发射时的性能。</li>
+<li>MA40S4S/R 的 Q 值与起振时间。</li>
+<li>ATmega328P 引脚输出电阻的具体数值。</li>
+<li><code>digitalWrite</code> 的耗时，以及 Arduino 中断延迟的具体数值。</li>
+<li>Timer2 反相输出寄存器代码的硬件实测。</li>
+<li>实际接收幅度（受猝发长度、指向性、管壁影响）。</li>
+<li>LM393 延迟随幅度变化造成的 Δt 误差量级。</li>
+<li>40 kHz 高声压的健康影响。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

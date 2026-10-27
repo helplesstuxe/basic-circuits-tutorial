@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37 过零检测与超声波时差 · 误区与排查（反方研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/37.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="37-过零检测与超声波时差--误区与排查反方研究员">37 过零检测与超声波时差 · 误区与排查（反方研究员）</h1>
+<blockquote>
+<p>依据：notes/37-research.md、PART2_BRIEF §10。
+LM393 数据手册已在本地核对。
+「本人计算」只作演示；空气中算例按 L = 0.2 m、c = 343 m/s。</p>
+</blockquote>
+<h2 id="a-新手误区与边界失效">A. 新手误区与边界失效</h2>
+<h3 id="a1-lm393-的延迟随过驱动变化过零不随幅度变只对理想比较器成立">A1 LM393 的延迟随过驱动变化，「过零不随幅度变」只对理想比较器成立</h3>
+<ul>
+<li><strong>现象</strong>：回波幅度变化（换向、风扇开关、手挡一下）时，触发时刻漂移零点几 µs。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册：LM393 经典版的响应时间在「100 mV 阶跃、5 mV 过驱动」时为 1.3 µs，在 TTL 电平阶跃时为 0.3 µs。</li>
+<li>图 5-31 / 5-32 给出了不同过驱动下的曲线。</li>
+<li>回波越小、过零处斜率越小，过驱动就越小，延迟越长。</li>
+<li>两次测量幅度不同时，Δt 中会混入最多约 1 µs 的误差（本人估算）。而 3 m/s 时 Δt 只有 10.2 µs，误差量级约 10 %。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：
+<ul>
+<li>固定间距，用手部分挡住声路，改变幅度。</li>
+<li>示波器 CH1 接放大器输出，CH2 接过零比较器输出，测边沿与真实过零点的延迟。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：
+<ul>
+<li>放大器增益足够，让过零处的斜率尽量大（输出峰峰值几 V）。</li>
+<li>顺流、逆流用同一条接收链，交替测量（误差会大部分相消）。</li>
+<li>正文写明「过零触发只是大幅减小、而不是消除幅度依赖」。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：LM393 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> （本地核对 Switching Characteristics 与 Figure 5-31/5-32）</li>
+</ul>
+<h3 id="a2-过零比较器的回差也会引入随幅度变化的延时">A2 过零比较器的回差也会引入随幅度变化的延时</h3>
+<ul>
+<li><strong>现象</strong>：给过零比较器加了回差防抖之后，读数随回波幅度的变化更明显。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>有回差时，比较器在偏离零点 V_H/2 处才翻转。时间偏移 Δt ≈ (V_H/2)/(2πf·A)。</li>
+<li>例如 f = 40 kHz、A = 1 V、V_H = 20 mV 时约 40 ns；A 变为 0.5 V 时约 80 ns（本人计算）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：同 A1，比较不同幅度下的边沿时刻。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>过零比较器的回差尽量小（≤ 10 mV），靠「武装」门限来抗噪。</li>
+<li>或者只用上升沿过零，且只比较同一方向的边沿。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导（斜率 = 2πfA）。</li>
+</ul>
+<h3 id="a3-发射端电串扰和管壁固体传声被当成回波">A3 发射端电串扰和管壁固体传声，被当成回波</h3>
+<ul>
+<li><strong>现象</strong>：测得的传播时间远小于 583 µs（例如几十到一百多 µs），而且改变间距后变化不成比例。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>一是发射脉冲经共地、面包板电容直接耦合进高增益接收链。</li>
+<li>二是声音沿 PVC 管壁或支架传播：固体中声速远高于空气，所以更早到达。Panametrics 的专利 US5275060A 讨论的就是这种「结构传声串扰」，其隔离措施约有 40 dB（搜索摘要）。</li>
+<li>PVC 中的声速本节没有核实 [待核实]，正文不要给具体数字。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：
+<ul>
+<li>用手捏住管子，或者把换能器从管上取下悬空，看早到的信号是否变化。</li>
+<li>拔掉发射换能器（保留驱动线），看是否仍有信号，用来区分电串扰和声串扰。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：
+<ul>
+<li>换能器用泡沫或橡胶垫隔离安装，不要直接接触管壁。</li>
+<li>软件设盲区：发射后 300 µs 内不武装（本人建议值，小于 583 µs 留有余量）。</li>
+<li>发射和接收的地线分开，最后汇到一点。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Google Patents US5275060A <a href="https://patents.google.com/patent/US5275060A/en">https://patents.google.com/patent/US5275060A/en</a> （仅搜索确认）</li>
+</ul>
+<h3 id="a4-用-digitalwrite-产生-40-khz-反相驱动">A4 用 digitalWrite 产生 40 kHz 反相驱动</h3>
+<ul>
+<li><strong>现象</strong>：发射频率不是 40 kHz，换能器的输出很弱；两脚之间的波形不对称。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>在 16 MHz 的 Uno 上，digitalWrite 每次约 3.5–6 µs，而 40 kHz 半周期只有 12.5 µs。</li>
+<li>两个引脚先后写入，不能同时翻转，频率也偏离 MA40S4S 的 40.0 kHz 谐振点。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器测两个引脚的频率和相位差。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>用直接端口操作一次写两个引脚，例如 <code>PORTB ^= 0b00000110;</code>（D9 / D10）。</li>
+<li>或者用 Timer1 的比较输出 OC1A / OC1B 设成互补模式，用硬件产生 8 个周期。</li>
+<li>tone() 只能输出一个引脚，不能产生反相对。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>Timo Denk「Port Manipulation and Arduino's digitalWrite Performance」<a href="https://blog.timodenk.com/port-manipulation-and-arduino-digitalwrite-performance/">https://blog.timodenk.com/port-manipulation-and-arduino-digitalwrite-performance/</a> （仅搜索确认）</li>
+<li>Peter Beard「Why is Arduino digitalWrite so slow?」<a href="https://peterbeard.co/blog/post/why-is-arduino-digitalwrite-so-slow/">https://peterbeard.co/blog/post/why-is-arduino-digitalwrite-so-slow/</a> （仅搜索确认）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a5-发射起点由软件决定时基抖动">A5 发射起点由软件决定，时基抖动</h3>
+<ul>
+<li><strong>现象</strong>：传播时间读数抖动几 µs，远大于 62.5 ns 的分辨率。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>如果先「开始计时」再用软件发脉冲，或者 Timer1 捕获的起点取自 micros()，那么中断延迟和 millis 中断都会带来几 µs 的抖动。</li>
+<li>micros() 本身的分辨率只有 4 µs（[待核实]，常见说法，不作数字出处）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：同一状态下连续测 100 次，计算标准差。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>发射和捕获都用 Timer1 硬件：在比较匹配时启动发射，用输入捕获记录到达时刻，两者相减。</li>
+<li>测量期间关闭 Timer0 中断。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导；ATmega328P 数据手册 <a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a> （Timer1 输入捕获，仅搜索确认）。</li>
+</ul>
+<h3 id="a6-温度手风扇或灯一热传播时间就变约-1-µsc">A6 温度：手、风扇或灯一热，传播时间就变约 1 µs/°C</h3>
+<ul>
+<li><strong>现象</strong>：没有风时，读数也在缓慢漂移几 µs。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>空气声速约随温度上升 0.6 m/s/°C（相对约 0.17 %/°C）。</li>
+<li>583 µs × 0.17 % ≈ 1 µs/°C（本人计算，近似），与 3 m/s 的 Δt = 10.2 µs 同一量级。</li>
+<li>两时间法（SLAAES9 式 4）只有在 t1、t2 几乎同时测量时才能消去 c。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：不开风扇，连续记录 t1、t2 五分钟，看 t1 和 Δt 的漂移。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>顺流、逆流快速交替测量（间隔 ≤ 50 ms），并对多次 Δt 取平均。</li>
+<li>避免手和灯靠近管子。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>Wikipedia《Speed of sound》<a href="https://en.wikipedia.org/wiki/Speed_of_sound">https://en.wikipedia.org/wiki/Speed_of_sound</a> （研究笔记作者已打开，343 m/s @ 20 °C）</li>
+<li>TI SLAAES9 <a href="https://www.ti.com/lit/an/slaaes9/slaaes9.pdf">https://www.ti.com/lit/an/slaaes9/slaaes9.pdf</a> （研究笔记作者已打开）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a7-管内混响下一次发射太快">A7 管内混响：下一次发射太快</h3>
+<ul>
+<li><strong>现象</strong>：连续测量时，偶尔得到一个奇怪的短时间。</li>
+<li><strong>原因</strong>：上一次发射在管内来回反射的余波还没衰减，就被下一次测量的武装逻辑捕获。</li>
+<li><strong>排查</strong>：把发射间隔从 5 ms 逐步增大到 50 ms，看异常是否消失；用示波器看接收波形的拖尾。</li>
+<li><strong>修复</strong>：发射间隔 ≥ 20–50 ms（本人建议值，按示波器上的余波长度确定）。</li>
+<li><strong>来源</strong>：本人推导。</li>
+</ul>
+<h3 id="a8-跳周期门限离包络太近">A8 跳周期：门限离包络太近</h3>
+<ul>
+<li><strong>现象</strong>：读数在两个值之间跳，差约 25 µs（一个 40 kHz 周期）。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>研究笔记已经说明。补充一点：MA40S4S 这类谐振换能器 Q 值高，包络上升需要好几个周期，相邻周期的峰值差别小。</li>
+<li>门限稍有噪声或幅度稍有变化，就会提前或推后一个周期武装。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器同时看接收波形和武装信号，在幅度变化时观察武装点。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>门限设在相邻两个周期峰值的中间。</li>
+<li>软件检查：|t − t_上次| ≈ 25 µs 时丢弃这次读数，或把它当作跳周期并修正。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI SNIA020 <a href="https://www.ti.com/lit/an/snia020/snia020.pdf">https://www.ti.com/lit/an/snia020/snia020.pdf</a> （研究笔记作者已打开）；TDC1000 数据手册 <a href="https://www.ti.com/lit/ds/symlink/tdc1000.pdf">https://www.ti.com/lit/ds/symlink/tdc1000.pdf</a> （门限加过零的两级结构，研究笔记作者已打开）。</li>
+</ul>
+<h3 id="a9-tl072-带通的增益与供电">A9 TL072 带通的增益与供电</h3>
+<ul>
+<li><strong>现象</strong>：接收放大器输出削顶，或者干脆没有信号。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>TL072 在单电源下必须偏置到 V_ref = 6 V（12 V 供电，按 BRIEF §10）。</li>
+<li>增益方面：TL072 的 GBW 约 3 MHz（数据手册典型值），在 40 kHz 下单级可用增益只有几十（本人计算）。如果想单级放大 ×1000，实际做不到。</li>
+<li>研究笔记没有给接收信号的幅度。0.2 m 处的幅度要以实测为准（MA40S4S 灵敏度 −63 dB 的参考基准本节没有核实 [待核实]）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：
+<ul>
+<li>示波器先看换能器两端的原始信号幅度。</li>
+<li>再逐级看放大器输出，确认每级都偏置在约 6 V。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：两级，每级 ×20–30（本人建议）；级间用电容耦合；每级同相端接缓冲后的 V_ref。</li>
+<li><strong>来源</strong>：TL072 数据手册 <a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （GBW 一行，已在本地核对过数据手册）；Murata MA40S4S 数据手册（研究笔记链接）。</li>
+</ul>
+<h3 id="a10-只交换位置而不是交换收发角色">A10 只交换「位置」而不是交换「收发角色」</h3>
+<ul>
+<li><strong>现象</strong>：Δt 的符号对，但数值随每次拆装变化。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>物理上把两只换能器对调，会改变声程 L 和对准情况，每次拆装 L 变 1 mm 就是 2.92 µs。</li>
+<li>正确的做法是电气上切换哪只发、哪只收，两时间法要求同一 L。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：不开风扇，反复电气切换收发，看 Δt 是否接近 0。</li>
+<li><strong>修复</strong>：用 CD4053 或跳线切换收发角色，换能器固定不动；先测零风速下的 Δt 偏置，再扣除。</li>
+<li><strong>来源</strong>：TI SLAAES9（同 A6，T12 / T21 定义）。</li>
+</ul>
+<h3 id="a11-arduino-引脚直接驱动-2550-pf-换能器">A11 Arduino 引脚直接驱动 2550 pF 换能器</h3>
+<ul>
+<li><strong>现象</strong>：引脚边沿有过冲或振铃，相邻的模拟信号被干扰。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>MA40S4S 的电容为 2550 pF ± 20 %。引脚每次翻转对它充放电，瞬时电流只受引脚内阻限制。</li>
+<li>平均电流 ≈ C·ΔV·f·2 = 2550 pF × 10 V × 40 kHz × 2 ≈ 2 mA（本人估算），不大，但边沿电流尖峰会经共地进入接收端。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器测 Arduino GND 与接收放大器地之间的电压，在发射时触发。</li>
+<li><strong>修复</strong>：每个驱动脚串 100 Ω；发射线和接收线分开走，地线星形连接。</li>
+<li><strong>来源</strong>：Murata MA40S4S 数据手册（研究笔记链接，2550 pF）；本人估算。</li>
+</ul>
+<h2 id="b-面包板实操问题">B. 面包板实操问题</h2>
+<h3 id="b1-高增益接收链自激">B1 高增益接收链自激</h3>
+<ul>
+<li><strong>现象</strong>：没有发射时，接收放大器输出也有几十 kHz 到 MHz 的振荡。</li>
+<li><strong>原因</strong>：两级 ×1000 总增益下，面包板上输出到输入只要有零点几 pF 的耦合，就足以形成正反馈。</li>
+<li><strong>排查</strong>：拔掉接收换能器，把输入对 V_ref 短路，看输出是否仍然振荡。</li>
+<li><strong>修复</strong>：两级拉开排布；第一级的输入线最短；每个运放的电源脚接 0.1 µF；反馈电阻并联 10–22 pF 限制带宽。</li>
+<li><strong>来源</strong>：ESE 117994 <a href="https://electronics.stackexchange.com/questions/117994">https://electronics.stackexchange.com/questions/117994</a> （39 节已打开，面包板寄生参数）</li>
+</ul>
+<h3 id="b2-50-hz-与开关电源噪声">B2 50 Hz 与开关电源噪声</h3>
+<ul>
+<li><strong>现象</strong>：接收输出上有 50 Hz 或 USB 电源的纹波，让过零比较器在没有回波时乱翻。</li>
+<li><strong>原因</strong>：输入阻抗高、增益高；USB 5 V 噪声大。</li>
+<li><strong>排查</strong>：示波器用电源（Line）触发看接收输出。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>第一级前加高通（例如 1 nF + 10 kΩ，f_c ≈ 16 kHz，本人计算），只放 40 kHz 附近的信号。</li>
+<li>12 V 电源要去耦。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：ESE 462446 <a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a> （30 节已打开）</li>
+</ul>
+<h3 id="b3-换能器引线接触不良">B3 换能器引线接触不良</h3>
+<ul>
+<li><strong>现象</strong>：幅度时大时小，跳周期频繁。</li>
+<li><strong>原因</strong>：换能器引脚短而粗，插不紧面包板。</li>
+<li><strong>排查</strong>：轻压换能器时观察幅度变化。</li>
+<li><strong>修复</strong>：焊上细导线再插面包板，并用胶带固定。</li>
+<li><strong>来源</strong>：ESE 117994（同 B1）。</li>
+</ul>
+<h2 id="c-对-37-researchmd-的意见">C. 对 <a href="http://37-research.md">37-research.md</a> 的意见</h2>
+<ol>
+<li><strong>「过零点时刻不随幅度变」</strong>：对理想比较器成立。LM393 的响应时间随过驱动在 0.3–1.3 µs 之间变化，这个量级与 Δt 可比（A1）。正文应加一句限定。</li>
+<li><strong>page4 的「Arduino 两个引脚反相输出」</strong>：要写明用端口操作或 Timer 硬件输出，不能用 digitalWrite（A4）。还要写明发射与捕获共用 Timer1（A5）。</li>
+<li><strong>page4 的 PVC 管</strong>：会产生管壁传声串扰，需要隔离安装和盲区时间窗（A3）。研究笔记「常见错误」提到了盲区，但没有给出管壁这条通路。</li>
+<li><strong>温度</strong>：1 µs/°C 与 Δt 同一量级（A6）。两时间法要求 t1、t2 快速交替测量。</li>
+<li><strong>「交换收发方向」</strong>：应明确是电气切换，不是物理对调（A10）。</li>
+<li><strong>接收放大器</strong>：增益分配、偏置和 TL072 GBW 的限制都没有写（A9）。</li>
+<li><strong>算例复核</strong>：水中 Δt = 2 × 0.1 × 1/1481² = 91.2 ns 正确；空气中 0.2/343 = 583 µs、2.92 µs/mm、10.2 µs 均正确；583 µs 对应 9328 个计数，Timer1 不分频不会溢出（本人复核）。</li>
+<li><strong>SNIA020「约 25 ps」</strong>：研究笔记已注明这是温漂，表述准确。</li>
+</ol>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] 发射用端口操作或 Timer 硬件输出，示波器确认 40.0 kHz、两脚反相</li>
+<li>[ ] 发射和捕获共用 Timer1；没有用 micros() 计时</li>
+<li>[ ] 换能器用泡沫隔离安装；软件盲区 ≥ 300 µs</li>
+<li>[ ] 接收两级，每级都偏置到 V_ref；没有自激</li>
+<li>[ ] 门限在相邻周期峰值之间；软件能识别 ±25 µs 的跳变</li>
+<li>[ ] 过零比较器的回差 ≤ 10 mV；只用同一方向的过零</li>
+<li>[ ] 顺流、逆流用电气切换，快速交替；先测零风速下的偏置</li>
+<li>[ ] 发射间隔 ≥ 20–50 ms</li>
+<li>[ ] 地线星形连接；驱动脚串 100 Ω</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<p>已打开或本地核对：</p>
+<ul>
+<li>LM393 数据手册：<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a></li>
+<li>TL072 数据手册：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+<li>ESE 117994：<a href="https://electronics.stackexchange.com/questions/117994">https://electronics.stackexchange.com/questions/117994</a></li>
+<li>ESE 462446：<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a></li>
+</ul>
+<p>研究笔记作者已打开（本人沿用）：</p>
+<ul>
+<li>SNIA020：<a href="https://www.ti.com/lit/an/snia020/snia020.pdf">https://www.ti.com/lit/an/snia020/snia020.pdf</a></li>
+<li>SLAAES9：<a href="https://www.ti.com/lit/an/slaaes9/slaaes9.pdf">https://www.ti.com/lit/an/slaaes9/slaaes9.pdf</a></li>
+<li>TDC1000：<a href="https://www.ti.com/lit/ds/symlink/tdc1000.pdf">https://www.ti.com/lit/ds/symlink/tdc1000.pdf</a></li>
+<li>Wikipedia《Speed of sound》：<a href="https://en.wikipedia.org/wiki/Speed_of_sound">https://en.wikipedia.org/wiki/Speed_of_sound</a></li>
+<li>Murata MA40S4S：<a href="https://www.murata.com/~/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx?la=en">https://www.murata.com/~/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx?la=en</a></li>
+</ul>
+<p>仅搜索确认：</p>
+<ul>
+<li>US5275060A：<a href="https://patents.google.com/patent/US5275060A/en">https://patents.google.com/patent/US5275060A/en</a></li>
+<li>Timo Denk 端口操作：<a href="https://blog.timodenk.com/port-manipulation-and-arduino-digitalwrite-performance/">https://blog.timodenk.com/port-manipulation-and-arduino-digitalwrite-performance/</a></li>
+<li>Peter Beard digitalWrite：<a href="https://peterbeard.co/blog/post/why-is-arduino-digitalwrite-so-slow/">https://peterbeard.co/blog/post/why-is-arduino-digitalwrite-so-slow/</a></li>
+<li>ATmega328P 数据手册：<a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>误区条数：14 条（A1–A11、B1–B3）。</li>
+<li>带外部 URL 的条数：11 条。A2、A7 是本人推导；A5 只有 ATmega 数据手册的间接引用，计入有 URL。</li>
+<li>[待核实]：3 处（A3 PVC 中的声速、A5 micros() 的分辨率、A9 MA40S4S 灵敏度的参考基准）。</li>
+<li>搜索：本节约 3 次搜索 + 0 次新打开 + 1 份数据手册本地核对。数量远低于目标。</li>
+</ul>
+<h2 id="d-补查">D. 补查</h2>
+<blockquote>
+<p>本节补查实际搜索 10 次，另打开 2 个页面（EEVblog「TL072 minimum supply」、Evident 声速表），用 curl 取回 Arduino 官方 micros.adoc 与 ArduinoCore-avr 的 wiring.c 源码，下载 Murata MA40S4S/MA40S4R 数据手册本地核对，并重读本地 TL072 数据手册（/workspace/pdfs/tl072.txt）。</p>
+</blockquote>
+<h3 id="d1-待核实-项结论">D1 [待核实] 项结论</h3>
+<ul>
+<li><strong>A3（PVC 中的声速）</strong>：已核实（Evident《Material Sound Velocities》<a href="https://ims.evidentscientific.com/en/learn/ndt-tutorials/thickness-gauge/appendices-velocities">https://ims.evidentscientific.com/en/learn/ndt-tutorials/thickness-gauge/appendices-velocities</a> ，&quot;Polyvinylchloride, (PVC) … 2395 m/sec&quot;，纵波；页面注明塑料的实际声速差异较大）。0.2 m 管壁路径约 84 µs，空气中约 582 µs（20 °C，本人计算），与 A3「几十到一百多 µs 的提前信号」量级一致。正文仍建议只写「管壁声速约为空气的 7 倍」，不写精确数字。</li>
+<li><strong>A5（micros() 分辨率 4 µs）</strong>：已核实。Arduino 官方文档原文：&quot;On 16 MHz Arduino boards (e.g. Duemilanove and Nano), this function has a resolution of four microseconds (i.e. the value returned is always a multiple of four)&quot;（<a href="https://docs.arduino.cc/language-reference/en/functions/time/micros/">https://docs.arduino.cc/language-reference/en/functions/time/micros/</a> ，原文取自 <a href="https://github.com/arduino/reference-en/blob/master/Language/Functions/Time/micros.adoc">https://github.com/arduino/reference-en/blob/master/Language/Functions/Time/micros.adoc</a> ）；源码 <code>return ((m &lt;&lt; 8) + t) * (64 / clockCyclesPerMicrosecond());</code> 见 <a href="https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring.c">https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/wiring.c</a> 。</li>
+<li><strong>A9（MA40S4S 灵敏度 −63 dB 的参考基准）</strong>：核实为错，建议删除原句并改写。Murata 数据手册（<a href="https://www.murata.com/-/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx">https://www.murata.com/-/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx</a> ，本地核对）：Table.3「MA40S4S」只有 &quot;S.P.L. … 120 +/- 3 dB, 0dB = 20uPa, 30cm&quot;；&quot;Sensitivity -63 +/- 3 dB, 0dB = 10V / Pa, 30cm&quot; 在 Table.4，属于 <strong>MA40S4R</strong>。原文：&quot;MA40S4S is used to transmit ultrasonic waves. MA40S4R is used to receive them.&quot; 两者电容都是 2,550 pF ± 20 %（1 kHz）。A9 和来源行应改为「MA40S4R（接收）灵敏度 −63 ± 3 dB，0 dB = 10 V/Pa」。（engineering/37.md 与 theory/37.md 也已指出同一问题。）</li>
+<li>统计：已核实 2 条，核实为错建议删除/改写 1 条，保留 0 条。</li>
+</ul>
+<h3 id="d2-新增误区">D2 新增误区</h3>
+<h4 id="d2-1-两只都买-ma40s4s或两只发射头当收发对">D2-1 两只都买 MA40S4S（或两只发射头）当收发对</h4>
+<ul>
+<li><strong>现象</strong>：照「两只 MA40S4S 交换收发」搭电路，接收端信号比预期弱很多，或者两个方向的灵敏度不对称。</li>
+<li><strong>原因</strong>：Murata 把发射型（MA40S4S，只给 S.P.L. 指标）和接收型（MA40S4R，只给 Sensitivity 指标）分开出售，数据手册没有给 MA40S4S 当接收器用的指标。</li>
+<li><strong>怎么排查</strong>：看换能器背面或包装的型号末尾字母 S/R；示波器比较同一距离下两种接法的接收幅度。</li>
+<li><strong>怎么修复</strong>：两端各放一只 MA40S4S + 一只 MA40S4R，或者用每端一对的方案；正文 BOM 明确写「MA40S4S（发）×N + MA40S4R（收）×N」。若坚持「交换角色」，要说明这超出数据手册。</li>
+<li><strong>来源</strong>：Murata MA40S4S/MA40S4R 数据手册（D1 链接，本地核对）。</li>
+</ul>
+<h4 id="d2-2-用-9-v-电池或其他厂家的-tl072低于最小电源电压或撞上相位反转">D2-2 用 9 V 电池或其他厂家的 TL072，低于最小电源电压或撞上「相位反转」</h4>
+<ul>
+<li><strong>现象</strong>：接收放大器在 9 V 电池快没电时乱翻、输出突然打到正轨；换了一包网购 TL072 后行为不同。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>TI 数据手册 Recommended Operating Conditions：NS/PS 封装和 TL07xM（老管芯）的 VS 为 10–30 V；其余新管芯（TL07xH 系）为 4.5–40 V。老管芯最小 10 V，9 V 电池已低于下限。</li>
+<li>EEVblog 论坛帖中 guymo 指出：&quot;The regular TL072 suffers from phase reversal if its input terminals get within 4V of the negative supply&quot;；TimFox 提醒不同厂家、不同批次的 TL072 不能按某一片的实测外推；Kleinstein 提到网购有冒充其他运放的 LM358。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：确认电源 ≥ 10 V；同相端偏置点离 GND 至少 4 V（12 V 供电下偏置 6 V 符合）；按帖中 magic 的方法做跟随器接法，IN+ 接地，看输出是否约为 VCC − 1 V，以判断是否为真 TL072。</li>
+<li><strong>怎么修复</strong>：本节坚持 12 V 单电源、偏置 6 V（与 BRIEF §10 一致），不要用 9 V 电池；从正规渠道买 TI/ST 的 TL072。</li>
+<li><strong>来源</strong>：TI TL072 数据手册 <a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （本地核对 §5.3）；EEVblog「TL072 minimum supply」<a href="https://www.eevblog.com/forum/beginners/tl072-minimum-supply/">https://www.eevblog.com/forum/beginners/tl072-minimum-supply/</a> （已打开）。</li>
+</ul>
+<h4 id="d2-3-发射用-timer1-互补输出时占用了-910-脚和-timer1">D2-3 发射用 Timer1 互补输出时占用了 9、10 脚和 Timer1</h4>
+<ul>
+<li><strong>现象</strong>：改用 Timer1 产生 40 kHz 互补驱动后，输入捕获或 analogWrite(9/10) 不能用了。</li>
+<li><strong>原因</strong>：ICR1=399、OC1A 同相、OC1B 反相的 Fast PWM（模式 14）是常见做法，但它占用 Timer1；本节如果同时用 Timer1 输入捕获计时，就冲突。</li>
+<li><strong>怎么排查</strong>：检查代码里 TCCR1A/TCCR1B 是否被两处配置。</li>
+<li><strong>怎么修复</strong>：发射用 Timer2（OC2A/OC2B，8 位，16 MHz 下 OCR2A 取 199、无分频时可得 40 kHz 翻转，本人计算），计时用 Timer1 输入捕获；或者发射只打 8–10 个周期后停 Timer1、再切到捕获模式。</li>
+<li><strong>来源</strong>：Arduino SE 85381（ICR1 = 399 产生互补波形的示例）<a href="https://arduino.stackexchange.com/questions/85381">https://arduino.stackexchange.com/questions/85381</a> （仅搜索确认）；Arduino 论坛「unstable 40Khz Phase shift」<a href="https://forum.arduino.cc/t/unstable-40khz-phase-shift-see-video-for-behaviour/425464">https://forum.arduino.cc/t/unstable-40khz-phase-shift-see-video-for-behaviour/425464</a> （仅搜索确认）。Timer2 的具体寄存器设置正文需自行验证 [待核实]。</li>
+</ul>
+<h4 id="d2-4-跳周期的真实案例hc-sr04-读数以-25-µs-为单位跳">D2-4 跳周期的真实案例：HC-SR04 读数以 25 µs 为单位跳</h4>
+<ul>
+<li><strong>现象</strong>：同一距离下读数在两个值之间跳，差值约一个 40 kHz 周期。</li>
+<li><strong>原因</strong>：接收比较器漏掉较弱的第一个峰，在下一个峰才触发。David Pilling 拆解 HC-SR04 时记录了这一现象，并指出模块用随时间变化的门限抑制直达信号。</li>
+<li><strong>怎么排查 / 修复</strong>：同 A8；正文可引用这个现成模块的例子说明「这不是你一个人的问题」。</li>
+<li><strong>来源</strong>：David Pilling「HC-SR04」<a href="https://www.davidpilling.com/wiki/index.php/HCSR04">https://www.davidpilling.com/wiki/index.php/HCSR04</a> （仅搜索确认）。</li>
+</ul>
+<h3 id="d3-补充来源">D3 补充来源</h3>
+<ul>
+<li><strong>A1（LM393 延迟随过驱动变化）</strong>：TI 数据手册给出响应时间 1000 ns（典型，100 mV 阶跃、5 mV 过驱动、5 V、5.1 kΩ 上拉、15 pF），onsemi 给出 1.3 µs 典型；老版 TI 手册有 5/20/100 mV 过驱动曲线（<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> ；<a href="https://www.onsemi.com/pdf/datasheet/lm393-d.pdf">https://www.onsemi.com/pdf/datasheet/lm393-d.pdf</a> ，均仅搜索确认，本地 /workspace/pdfs/lm393.txt 可再核对）。</li>
+<li><strong>A6（温度系数）</strong>：c ≈ 331.3 + 0.606·T m/s（T 为 °C），20 °C 时 343.4 m/s。OpenStax《University Physics Volume 1》17.2 <a href="https://openstax.org/books/university-physics-volume-1/pages/17-2-speed-of-sound">https://openstax.org/books/university-physics-volume-1/pages/17-2-speed-of-sound</a> （仅搜索确认）。</li>
+<li><strong>B1（接收链自激）</strong>：ESE 153349「Band pass filter unstable and lower gain than simulation」<a href="https://electronics.stackexchange.com/questions/153349">https://electronics.stackexchange.com/questions/153349</a> ；ESE 613239（VCO 噪声被超声换能器拾取）<a href="https://electronics.stackexchange.com/questions/613239">https://electronics.stackexchange.com/questions/613239</a> （均仅搜索确认）。</li>
+</ul>
+<h3 id="d4-补查统计">D4 补查统计</h3>
+<ul>
+<li>实际搜索：10 次；打开页面 2 个；源码/文档 curl 2 份；数据手册本地核对 2 份（Murata、TL072）。</li>
+<li>[待核实]：核实 2 条，建议删除/改写 1 条（A9），保留 0 条。D2-3 新增 1 处 [待核实]（Timer2 寄存器设置）。</li>
+<li>新增误区：4 条（D2-1 至 D2-4）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37 过零检测与超声波时差 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/37-zero-crossing-tof/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="37-过零检测与超声波时差--直觉篇">37 过零检测与超声波时差 · 直觉篇</h1>
+<p><a href="../36-schmitt-pulse-shaping/page4.html">上一页：36 施密特整形与频率/脉冲计数 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../10-voltage-comparator/page1.html">10 电压比较器 · 直觉篇</a>、<a href="../36-schmitt-pulse-shaping/page1.html">36 施密特整形与频率/脉冲计数 · 直觉篇</a></p>
+<h2 id="开始之前三个小问题">开始之前：三个小问题</h2>
+<p>先凭记忆回答，再点开揭晓。这三问正好对应本节要用的三样东西：放大前的滤波、过零比较器，和「过零」这个词。</p>
+<ol>
+<li><a href="../33-bandpass-notch/page1.html">33 节</a>：带通滤波器为什么能让 40 kHz 通过、却挡住 50 Hz？</li>
+<li><a href="../36-schmitt-pulse-shaping/page1.html">36 节</a>：施密特比较器为什么不会在中线附近来回抖？</li>
+<li><a href="../23-optocoupler/page3.html">23 节 · 参数与调试篇</a>：可控硅调光、固态继电器里的「过零检测」是检测什么？</li>
+</ol>
+<details>
+<summary>揭晓</summary>
+<ol>
+<li>带通只让中心频率附近一窄条通过，离得远的频率（比如 50 Hz 的工频干扰）被大大衰减。本节的接收放大级也在低频端加了高通，作用类似。</li>
+<li>它有两个门限：输出翻高以后，门限跟着移开一点（回差），中线附近的小抖动够不着新门限，所以只翻一次。本节的过零比较器也加了一点回差。</li>
+<li>检测交流电压「从正变负、从负变正」穿过 0 V 的那一刻，好在那一刻开关，减小冲击和干扰。本节借用同一个词：找回波穿过中线的那一刻。</li>
+</ol>
+</details>
+<h2 id="痛点要量的不是多久而是差多少">痛点：要量的不是「多久」，而是「差多少」</h2>
+<p>上一节 <a href="../36-schmitt-pulse-shaping/page1.html">36 节</a> 的涡轮流量计靠一只小叶轮转圈数脉冲。叶轮会磨损、会被杂物卡住，还会挡住水流。家里新装的智能水表、燃气表，很多改用了<strong>超声波</strong>：管子两头各装一只「小喇叭」（超声波换能器，既能发声也能听声），管子里什么也不放。</p>
+<p>道理很简单：声音在流动的水或空气里传播，<strong>顺着流动方向走得快，逆着走得慢</strong>。让两只换能器轮流发声、轮流收听，量出两次传播时间的<strong>差</strong>，就能反算出流速。</p>
+<p>难的是这个「差」太小了。看图 37-p1-1：两只探头相距 L = 20 cm，空气 20 °C 时声速 c = 343.24 m/s，风速 v = 3 m/s。</p>
+<p><a class="img-link" href="img/37_p1_1_up_down.png"><img alt="顺流与逆流示意：一段长 20 cm 的通道，左边探头 A、右边探头 B，中间是向右吹的风；上方蓝色箭头表示 A→B 顺风，速度 c + v，用时 t1 ≈ 577.64 µs；下方橙色箭头表示 B→A 逆风，速度 c − v，用时 t2 ≈ 587.83 µs" src="img/37_p1_1_up_down.png" loading="lazy" /></a></p>
+<p><em>图 37-p1-1　同一段 20 cm，顺风走 577.64 µs，逆风走 587.83 µs，两者只差 10.19 µs</em></p>
+<h3 id="先算一遍">先算一遍</h3>
+<p>顺风时声音的速度是 c + v，逆风时是 c − v，所以：</p>
+<ul>
+<li>顺风 t1 = L / (c + v) = 0.20 / (343.24 + 3) ≈ 577.64 µs；</li>
+<li>逆风 t2 = L / (c − v) = 0.20 / (343.24 − 3) ≈ 587.83 µs；</li>
+<li>时间差 Δt = t2 − t1 ≈ 10.19 µs。</li>
+</ul>
+<p>风速比声速小得多时，可以用一个近似公式一步算出时间差： <span class="math math-inline">\(\Delta t \approx 2Lv / c^2\)</span> 。代进去：2 × 0.20 × 3 ÷ 343.24² ≈ 10.19 µs，和上面几乎一样。反过来，量到 Δt 就能求风速： <span class="math math-inline">\(v \approx \Delta t \cdot c^2 / (2L)\)</span> 。<a href="page2.html">原理与实现篇</a> 会推导这个公式。</p>
+<p>图 37-p1-1 里两次传播都要五百多微秒，差却只有 10.19 µs，不到 2 %。如果风速只有 1 m/s，差就只剩 3.40 µs。换成水管，情况更夸张：水里声速约 1481 m/s，探头相距 10 cm、水流 1 m/s 时，时间差只有 91.2 ns（纳秒，1 ns 是 1 µs 的千分之一）。</p>
+<p>所以这一节的问题是：<strong>怎样让「声音到了」这一刻，每次都被认得一样准？</strong></p>
+<h2 id="先预测一下">先预测一下</h2>
+<p>接收探头收到的不是一个干净的「咔」，而是一串<strong>慢慢长大、再慢慢变小</strong>的 40 kHz 振动（见图 37-p1-2 上半）。最直接的办法，是拿 <a href="../10-voltage-comparator/page1.html">10 节</a> 学过的电压比较器设一条门限：放大后的回波一超过门限，就算「声音到了」。</p>
+<p>现在开一下风扇，或者探头稍微偏一点，回波的<strong>大小</strong>变了 ±10 %，而<strong>到达时间</strong>一点没变。</p>
+<blockquote>
+<p>先写下你的预测：用「超过门限」来计时，读数会变吗？变多少？和 3 m/s 风造成的变化比，哪个大？</p>
+</blockquote>
+<details>
+<summary>揭晓</summary>
+<p>会变，而且不小。按本节的回波模型（<code>code/37_sim.py</code>），回波 ×1.1 时 686.25 µs 就超过门限，×0.9 时要到 687.62 µs，相差 1.37 µs。而 3 m/s 的风让单程时间只变 5.09 µs。也就是说，回波大小晃一晃，读数就被冤枉地挪了四分之一的「风」。</p>
+<p>更糟的是，回波大小一直在变：温度、湿度、探头老化、灰尘都会改它。用门限直接计时，等于拿一把会伸缩的尺子去量。</p>
+</details>
+<h2 id="揭晓背后门限只用来武装计时交给过零点">揭晓背后：门限只用来「武装」，计时交给过零点</h2>
+<p>图 37-p1-2 下半把第 5 个周期附近放大了。圆点是两条回波超过门限的时刻，离得明显；方块是紧接着的那个「从下往上穿过中线」的时刻，也就是<strong>过零点</strong>，两只方块几乎重合，只差 40 ns。这个「过零」和 <a href="../23-optocoupler/page3.html">23 节参数与调试篇</a> 里市电过零检测说的是同一件事：找信号穿过中线的那一刻。</p>
+<p><a class="img-link" href="img/37_p1_2_thr_vs_zc.png"><img alt="上半：整段回波，蓝色实线是幅度 ×1.1，橙色虚线是 ×0.9，绿色虚线是门限 V_TH（比中线高 169 mV）；下半：放大 680–712 µs，两只圆点是过门限时刻，相差 1.37 µs，两只方块是接着的过零点，只差 40 ns" src="img/37_p1_2_thr_vs_zc.png" loading="lazy" /></a></p>
+<p><em>图 37-p1-2　门限只用来「武装」，真正的计时点取它后面的那个过零点</em></p>
+<p>为什么过零点不怕回波变大变小？把一条正弦波整体放大 1.1 倍，波峰变高了，但它穿过中线的位置<strong>一点也不动</strong>：0 乘以 1.1 还是 0。过零的时刻只由「声音什么时候到」决定，和「声音多响」无关。</p>
+<p>但只看过零也不行：回波前面还有噪声，噪声也会穿过中线。所以要分两步，就像短跑比赛：</p>
+<ol>
+<li><strong>武装</strong>（裁判举枪）：回波超过门限，说明「真的回波来了」，只是还不计时；</li>
+<li><strong>过零触发</strong>（扣扳机）：武装之后的<strong>下一个</strong>向上过零点，才是计时的那一刻。</li>
+</ol>
+<p>图 37-p1-2 里，门限负责第 1 步，过零点负责第 2 步。武装早一点、晚一点都没关系，只要还落在同一个周期里，扳机就扣在同一个过零点上。</p>
+<h2 id="门限放错地方整整差一个周期">门限放错地方：整整差一个周期</h2>
+<p>两步法也有自己的「坑」。门限要是贴着某个波峰，回波稍微小一点，这个峰就够不着门限，武装推迟到下一个周期，过零点也跟着晚<strong>整整一个周期</strong>。40 kHz 的一个周期是 25 µs，比 3 m/s 风造成的 10.19 µs 时间差还大一倍多。这叫<strong>跳周期</strong>，<a href="page3.html">参数与调试篇</a> 专门讲怎样把门限放在两个峰的正中间，让回波在 ×0.83 到 ×1.25 之间变化都不跳。</p>
+<h2 id="还有一个敌人温度">还有一个敌人：温度</h2>
+<p>声速随温度变：空气每升高 1 °C，20 cm 的传播时间少约 0.994 µs。只开一次风扇、量一个方向，温度变 5 °C 就能把 3 m/s 的信号吃掉。办法是<strong>两个方向都量，用两个时间一起算</strong>：温度让两个方向同时变快或变慢，相减或者按 <a href="page2.html">原理与实现篇</a> 的公式一算，大部分就抵消了。</p>
+<h2 id="精度从哪里来">精度从哪里来</h2>
+<p>本节的 <a href="page4.html">动手实验篇</a> 用 Arduino 的 Timer1 当秒表，每一格 62.5 ns。在空气里量 10 µs 级的时间差绰绰有余。水表要分辨 1 cm/s 的水流，时间差不到 1 ns，就得用 TI TDC7200 这种专门的计时芯片，分辨率 55 ps（皮秒，1 ps 是 1 ns 的千分之一），比 Arduino 细 1136 倍。但「先武装、再过零」的思路是一样的。</p>
+<h2 id="练习先预测再揭晓">练习（先预测，再揭晓）</h2>
+<p><strong>练习 1</strong>　探头相距 15 cm，风速 2.5 m/s，温度 20 °C。顺风、逆风的时间差大约多少？</p>
+<details>
+<summary>揭晓</summary>
+<p>约 6.37 µs。用上面「先算一遍」的近似公式：Δt ≈ 2Lv / c² = 2 × 0.15 × 2.5 ÷ 343.24² ≈ 6.37 µs。间距和风速都比正文小，差也就比 10.19 µs 小。</p>
+</details>
+<p><strong>练习 2</strong>　水管里探头相距 5 cm，水流 0.5 m/s。时间差大约多少？Arduino 的 62.5 ns 一格够用吗？</p>
+<details>
+<summary>揭晓</summary>
+<p>约 22.8 ns，还不到 Arduino 一格的一半，不够用。所以真正的水表要用 TDC7200 这类皮秒级计时芯片。</p>
+</details>
+<p><strong>练习 3</strong>　探头相距 20 cm，没有风。如果顺风方向那次测量跳了一个周期（晚了 25 µs），而逆风方向没跳，算出来的「风速」是多少？</p>
+<details>
+<summary>揭晓</summary>
+<p>按正文的定义 Δt = t逆 − t顺，这次 Δt = −25 µs。用近似公式 v ≈ Δt·c²/(2L) 算出约 −7.36 m/s，也就是<strong>一阵 7.36 m/s 的逆风</strong>：明明没风，仪器却以为风是反着吹的，而且比正文的 3 m/s 还大。</p>
+<p>25 µs 已经不算「很小」，近似公式有点偏差；用原理与实现篇的两时间法算是约 −7.06 m/s。不论哪种算法，结论一样：跳一次周期就冒出一阵几 m/s 的假风。这就是为什么跳周期是超声波流量计最怕的错误，也是动手实验篇要盯着串口 <code>min</code>、<code>max</code> 的原因。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<ul>
+<li>超声波流量计量的是<strong>顺流、逆流两次传播时间的差</strong>，空气里 20 cm、3 m/s 只差 10.19 µs，水里更是纳秒级。</li>
+<li>用门限直接计时，读数会随回波大小漂移；过零点的时刻不随大小变。</li>
+<li>两步法：门限负责「武装」，武装后的下一个过零点负责「计时」。</li>
+<li>门限要放在两个峰的中间，否则会跳周期，一跳就是 25 µs。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>TI SNIA020《Ultrasonic Sensing for Water Flow Meters and Heat Meters》（顺流、逆流时间差；Figure 2 里接收信号先过「qualifying threshold」再取 STOP）：<a href="https://www.ti.com/lit/an/snia020/snia020.pdf">https://www.ti.com/lit/an/snia020/snia020.pdf</a></li>
+<li>TI SLAAES9《Ultrasonic Sensing Solution (USS) Guide》（式 1–4：t12 = L/(c + v)，t21 = L/(c − v)）：<a href="https://www.ti.com/lit/an/slaaes9/slaaes9.pdf">https://www.ti.com/lit/an/slaaes9/slaaes9.pdf</a></li>
+<li>TI TDC7200 数据手册（分辨率 55 ps）：<a href="https://www.ti.com/lit/ds/symlink/tdc7200.pdf">https://www.ti.com/lit/ds/symlink/tdc7200.pdf</a></li>
+<li>Wikipedia《Speed of sound》（空气声速随温度的公式；20 °C 淡水约 1481 m/s）：<a href="https://en.wikipedia.org/wiki/Speed_of_sound">https://en.wikipedia.org/wiki/Speed_of_sound</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

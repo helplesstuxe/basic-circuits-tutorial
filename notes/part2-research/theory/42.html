@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>42 流量计信号链总览（capstone） · 理论审校（theory）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/42.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="42-流量计信号链总览capstone--理论审校theory">42 流量计信号链总览（capstone） · 理论审校（theory）</h1>
+<blockquote>
+<p>计算脚本：/workspace/calc/c42.py（本会话已运行）。本节以“串讲”为主，新的推导只有三条：差压开方（伯努利 + 连续性）、开方在零点附近的误差放大、频率型传感器的 K 系数。其余各条都回指已审节点（37、38、40、41）。</p>
+</blockquote>
+<h2 id="1-推导链">(1) 推导链</h2>
+<h3 id="a-按信号种类分类全节主线">A. 按信号种类分类（全节主线）</h3>
+<table>
+<thead>
+<tr>
+<th>种类</th>
+<th>传感器量</th>
+<th>关键链路</th>
+<th>主要误差来源</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>幅度型</td>
+<td>电磁 µV 级电压、热式功率、差压电桥 mV 级</td>
+<td>INA（30）→ 滤波 → 同步检波（38）或开方</td>
+<td>漂移、共模、极化电压</td>
+</tr>
+<tr>
+<td>频率型</td>
+<td>涡街、涡轮、风扇的脉冲</td>
+<td>放大 → 带通/跟踪（33/34）→ 施密特（36）→ 计数</td>
+<td>丢脉冲、多计脉冲</td>
+</tr>
+<tr>
+<td>时间型</td>
+<td>超声 Δt</td>
+<td>门限 + 过零（37）→ TDC</td>
+<td>触发点随幅度跳周期（见 theory/37 E3）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="b-电磁回指-38">B. 电磁（回指 38）</h3>
+<ul>
+<li><span class="math math-inline">\(E=k\cdot B\cdot D_{pipe}\cdot v\)</span> （ADI 原文， <span class="math math-inline">\(D\)</span> 为内径，本节写作 <span class="math math-inline">\(D_{pipe}\)</span> ，避免与占空比 <span class="math math-inline">\(D\)</span> 冲突）。</li>
+<li>灵敏度 150–200 µV/(m/s)。以 175 µV/(m/s) 为例：1 m/s 时 175 µV，乘 G = 10 得 1.75 mV。</li>
+<li>交替励磁使“幅度加倍”：0.5 m/s 单向为 75–100 µV；15 m/s 时 p-p 为 2×150×15 = 4.5 mV 到 2×200×15 = 6.0 mV，与 ADI 的“75 µV … 4–6 mV”一致（两端基准不同，见 theory/38 E1）。</li>
+</ul>
+<h3 id="c-差压开方新内容超纲工具伯努利方程">C. 差压开方（新内容，超纲工具：伯努利方程）</h3>
+<ul>
+<li><strong>超纲说明</strong>：伯努利方程不在高中必修范围内。最小推导用高中的动能定理即可：
+<ol>
+<li>取一小段体积 <span class="math math-inline">\(\Delta V\)</span> 的水，从粗管（压强 <span class="math math-inline">\(p_1\)</span> 、速度 <span class="math math-inline">\(v_1\)</span> ）流到细管（ <span class="math math-inline">\(p_2\)</span> 、 <span class="math math-inline">\(v_2\)</span> ），高度不变。</li>
+<li>压力差对它做的功为 <span class="math math-inline">\((p_1-p_2)\Delta V\)</span> ，动能增量为 <span class="math math-inline">\(\tfrac12\rho\Delta V(v_2^2-v_1^2)\)</span> 。</li>
+<li>两者相等： <span class="math math-inline">\(\Delta P=p_1-p_2=\tfrac12\rho(v_2^2-v_1^2)\)</span> 。</li>
+</ol>
+</li>
+<li><strong>连续性（不可压缩）</strong>： <span class="math math-inline">\(A_1v_1=A_2v_2\)</span> ，令 <span class="math math-inline">\(\beta=d/D_{pipe}\)</span> ，则 <span class="math math-inline">\(v_1=\beta^2v_2\)</span> 。</li>
+<li>代入得 <span class="math math-inline">\(v_2=\sqrt{2\Delta P/[\rho(1-\beta^4)]}\)</span> ，于是
+<span class="math math-display">\[Q=C_d A_2 v_2 = k\sqrt{\Delta P/\rho},\]</span>
+其中 <span class="math math-inline">\(C_d\)</span> （流出系数）由标定给出。这就是 Rosemount 405 手册中“DP 与流速平方成正比、Q 与 K、DP、ρ 有关”的标准形式。</li>
+<li>示例：水、 <span class="math math-inline">\(D_{pipe}\)</span> = 50 mm、 <span class="math math-inline">\(\beta\)</span> = 0.5、 <span class="math math-inline">\(C_d\)</span> = 0.6（这些数只是示例）。
+<table>
+<thead>
+<tr>
+<th>ΔP</th>
+<th>100 Pa</th>
+<th>2500 Pa</th>
+<th>10000 Pa</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Q</td>
+<td>0.136 L/s</td>
+<td>0.680 L/s</td>
+<td>1.360 L/s</td>
+</tr>
+<tr>
+<td>ΔP 乘以 100，Q 只乘以 10。</td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><strong>比例形式</strong>（ <span class="math math-inline">\(x\)</span> = 差压占满量程的比例， <span class="math math-inline">\(q\)</span> = 流量占满量程的比例）： <span class="math math-inline">\(q=\sqrt{x}\)</span> 。
+<ul>
+<li>25% → 50%；</li>
+<li>1% → 10%；</li>
+<li>流量 10:1 对应差压 100:1。</li>
+</ul>
+</li>
+</ul>
+<h3 id="d-开方在零点附近放大误差解释低流量切除和-3051s-的斜率-42">D. 开方在零点附近放大误差（解释“低流量切除”和 3051S 的“斜率 42”）</h3>
+<ul>
+<li>斜率 <span class="math math-inline">\(\mathrm{d}q/\mathrm{d}x=1/(2\sqrt{x})\)</span> 。不用导数也能看出来：用割线代替。设差压误差为满量程的 0.1%：
+<table>
+<thead>
+<tr>
+<th>差压 <span class="math math-inline">\(x\)</span></th>
+<th>流量误差（满量程 %）</th>
+<th>流量误差（读数 %）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>100%</td>
+<td>0.05%</td>
+<td>0.05%</td>
+</tr>
+<tr>
+<td>25%</td>
+<td>0.10%</td>
+<td>0.2%</td>
+</tr>
+<tr>
+<td>4%</td>
+<td>0.25%</td>
+<td>1.24%</td>
+</tr>
+<tr>
+<td>1%</td>
+<td>0.49%</td>
+<td>4.9%</td>
+</tr>
+<tr>
+<td>0.8%</td>
+<td>0.54%</td>
+<td>6.1%</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>所以零点附近的噪声会被放大，需要“低流量切除”，或者在零点附近改用线性。</li>
+<li>3051S 的做法是 0–0.6% 用 <span class="math math-inline">\(y=x\)</span> ，0.6–0.8% 用斜率 42。验证： <span class="math math-inline">\(\sqrt{0.008}=0.0894\)</span> ， <span class="math math-inline">\((0.0894-0.006)/0.002=41.7\approx42\)</span> 。所以 42 就是“从 (0.6%, 0.6%) 连到开方曲线上 (0.8%, 8.94%)”那条线段的斜率，正好可以作为课堂练习。</li>
+<li><strong>开方做两次</strong>：显示值变成 <span class="math math-inline">\(x^{1/4}\)</span> 。真实 10% 流量会显示 31.6%，真实 50% 会显示 70.7%，只有满量程时恰好正确，所以这个错误在满量程点校验时发现不了。</li>
+</ul>
+<h3 id="e-频率型k-系数涡轮涡街风扇">E. 频率型：K 系数（涡轮、涡街、风扇）</h3>
+<ul>
+<li>体积流量 <span class="math math-inline">\(Q_v=f/K\)</span> （ <span class="math math-inline">\(K\)</span> ：脉冲数/体积）。按分钟计： <span class="math math-inline">\(Q=f\times60/K\)</span> 。例：500 Hz、K = 100 脉冲/gal 时 300 gpm（FLOMEC 原例）。</li>
+<li>涡街： <span class="math math-inline">\(f=St\cdot v/d\)</span> ， <span class="math math-inline">\(St\)</span> 在很宽的 Re 范围内基本不变（Emerson 8800）。合并管道面积后即 <span class="math math-inline">\(Q_v=f/K\)</span> ， <span class="math math-inline">\(K\)</span> 只与表体几何有关。
+示例（ <span class="math math-inline">\(St\)</span> = 0.2、 <span class="math math-inline">\(d\)</span> = 10 mm 都是示例数）：0.3/1/3 m/s 对应 6/20/60 Hz。可见涡街频率可以低到几 Hz，带通和跟踪滤波的下限要覆盖这么低。</li>
+<li>涡轮的 <span class="math math-inline">\(K\)</span> 随流量和黏度变化，标定报告会给出多点 K（FLOMEC）。</li>
+<li><strong>page4 风扇</strong>：每转脉冲数 = 叶片数 <span class="math math-inline">\(N_b\)</span> ， <span class="math math-inline">\(f=N_b\cdot \text{rpm}/60\)</span> 。7 叶风扇在 1000/2000/3000 rpm 时为 117/233/350 Hz。
+风扇不是流量计，“K 系数”需要人为定义（例如“每升空气 x 个脉冲”只是示意），正文要说明这是“模拟流量”。</li>
+</ul>
+<h3 id="f-热式回指-40超声回指-37">F. 热式（回指 40）、超声（回指 37）</h3>
+<p>不重复推导，只在表格中注明误差来源。</p>
+<h2 id="2-符号表">(2) 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(E\)</span>, <span class="math math-inline">\(k\)</span>, <span class="math math-inline">\(B\)</span>, <span class="math math-inline">\(D_{pipe}\)</span>, <span class="math math-inline">\(v\)</span></td>
+<td>电磁感应电势 / 常数 / 磁感应强度 / 管内径 / 平均流速</td>
+<td>V, 1, T, m, m/s</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\Delta P\)</span>, <span class="math math-inline">\(p_1\)</span>, <span class="math math-inline">\(p_2\)</span></td>
+<td>差压 / 上下游压强</td>
+<td>Pa</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\rho\)</span></td>
+<td>流体密度</td>
+<td>kg/m³</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(A_1\)</span>, <span class="math math-inline">\(A_2\)</span>, <span class="math math-inline">\(d\)</span>, <span class="math math-inline">\(\beta\)</span></td>
+<td>管道/节流截面积，节流孔径，直径比</td>
+<td>m², m, 1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(C_d\)</span></td>
+<td>流出系数（标定）</td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(Q\)</span>, <span class="math math-inline">\(Q_v\)</span></td>
+<td>体积流量（Q 不是电荷，也不是 Q 值；按 §4 在首次出现时注明）</td>
+<td>m³/s、L/s、gpm</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(x\)</span>, <span class="math math-inline">\(q\)</span></td>
+<td>差压、流量占满量程的比例</td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(f\)</span>, <span class="math math-inline">\(K\)</span></td>
+<td>脉冲频率 / K 系数（脉冲数/体积）</td>
+<td>Hz, 1/L 或 1/gal</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(St\)</span></td>
+<td>Strouhal 数</td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(N_b\)</span></td>
+<td>风扇叶片数</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>注意：§4 中 <span class="math math-inline">\(K\)</span> 已定义为 K 系数，本节沿用。405 手册中的“K”是单位换算和流出系数等因子的合称，本节改写为小写 <span class="math math-inline">\(k\)</span> ，避免混淆。</p>
+<h2 id="3-勘误针对-notes42-researchmd">(3) 勘误（针对 notes/42-research.md）</h2>
+<ul>
+<li><strong>E1【重要】第 61 行 page4 与 00-design §6</strong>：风扇对射信号进入“带通（33）”。33 节的带通是 1 kHz、Q 值 = 5（BW = 200 Hz）。7 叶风扇在 1000–3000 rpm 时信号为 117–350 Hz，相对增益只有 0.024–0.080（−32.5 至 −22.0 dB），而且随转速变化。
+改为：
+<ul>
+<li>宽带通（例如高通约 20 Hz + 低通约 2 kHz，即 33 节的级联宽带通），或</li>
+<li>把 MFB 的 <span class="math math-inline">\(f_0\)</span> 改到约 250 Hz 并取 Q 值 ≤ 1。
+要说明“固定窄带通不适合频率会变的信号”，这正好引出 34 节的跟踪滤波。</li>
+</ul>
+</li>
+<li><strong>E2 第 62 行备选“3 线风扇测速线直接接施密特”</strong>：测速线通常是开集电极（每转 2 个脉冲，属于常见规范，本会话未打开原文 「[待核实]」）。必须上拉到 Arduino 的 5 V，不能上拉到 12 V（违反 ATmega328P 的 <span class="math math-inline">\(V_{CC}\)</span>+0.5 V，见 theory/41）。频率换算时要除以每转脉冲数，而不是除以叶片数。</li>
+<li><strong>E3 第 61 行“再经 PWM + RC → V→I（41）输出 4–20 mA，接收端 250 Ω 读回”</strong>：继承 theory/41 E1。250 Ω 在高边时不能接 A0，改为 A0 读 100 Ω 采样电阻，250 Ω 只用万用表测。</li>
+<li><strong>E4 第 27 行 Rosemount 405</strong>：原文第 9 页（PDF 页）写的是“DP proportional to the square of the velocity … Bernoulli's theorem”，公式本身是图片；where 列表中 K = “Units conversion factor, discharge coefficient, and other factors”。笔记“Q 与 √(DP/ρ) 成正比”与此一致，可补充推导 C 作为来源。</li>
+<li><strong>E5 第 30 行 3051S</strong>：原文（PDF 第 27 页，§2.6.2）的数值正确。建议补上“42 = (√0.008 − 0.006)/0.002 ≈ 41.7”的由来（推导 D），以及“开方两次只在满量程点看不出”的数值例：10% → 31.6%。</li>
+<li><strong>E6 第 42 行</strong>：25% → 50%、1% → 10% 正确。应补误差放大表（推导 D），这是“低流量切除”的定量理由；00-design §6 的典型错误“零点附近乱跳”应引用这张表。</li>
+<li><strong>E7 第 9–11 行 ADI</strong>：数值核对无误：150–200 µV/(m/s)；×10；6.25 Hz、DN25、0.5–2 m/s、±0.2% of reading；几十到几百 mH，50–100 Ω；励磁“up to 50 mA（小口径）… 500 mA or 1 A（大口径）”。
+补充：ADI 的新架构（过采样）已经去掉了模拟带通和 S/H，改用 30 Hz FIR 低通 + 数字同步解调。00-design 链路 1 写的“带通/同步检波”是传统架构，应注明两者都有。另外第 5 行“curl 超时、WebFetch 可打开”本会话复现无误。</li>
+<li><strong>E8 第 16–18 行 Emerson 8800</strong>：原文为 “F α k·V”，“Strouhal number remains constant over a wide range of Reynolds Numbers”，Qv = F/K，“K-factor is only dependent on meter body geometry”，与笔记一致。可补 <span class="math math-inline">\(f=St\cdot v/d\)</span> 的量级示例，说明涡街频率可以低到几 Hz（推导 E）。</li>
+<li><strong>E9 第 20–22 行 FLOMEC</strong>：例子正确。原文还说明“液体比水稠 → 转得慢 → 频率更低、K 更小”，可用来支撑“同一个 K 不能覆盖全量程和不同流体”。</li>
+<li><strong>E10 符号</strong>：§4 用 <span class="math math-inline">\(K\)</span> 表示 K 系数，405 的 K 不是同一个量，正文要区分（见符号表）。电磁公式中的 <span class="math math-inline">\(D\)</span> 写成 <span class="math math-inline">\(D_{pipe}\)</span> （同 theory/38 E10）。</li>
+</ul>
+<h2 id="4-参考本会话已打开并核对">(4) 参考（本会话已打开并核对）</h2>
+<ul>
+<li>ADI《Electromagnetic Flow Meters: Design Considerations and Solutions》<a href="https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html">https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html</a> （WebFetch）——150–200 µV/(mps)；“amplitude doubles”；×10；Table 9 DN25 6.25 Hz ±0.2%；线圈几十到几百 mH + 50–100 Ω；励磁 50 mA…1 A；30 Hz FIR。</li>
+<li>Emerson Rosemount 8800 技术说明 <a href="https://www.emerson.com/documents/automation/technical-note-vortex-adaptive-digital-signal-processing-8800-series-rosemount-en-76500.pdf">https://www.emerson.com/documents/automation/technical-note-vortex-adaptive-digital-signal-processing-8800-series-rosemount-en-76500.pdf</a> ——PDF 第 3 页 Eq.1–6、Strouhal、K-Factor。</li>
+<li>Rosemount 3051S 手册 <a href="https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/pressure/documents/doc-rosemount-3051s-00809-0100-4801.pdf">https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/pressure/documents/doc-rosemount-3051s-00809-0100-4801.pdf</a> ——PDF 第 27 页 §2.6.2：slope unity 0–0.6%、42 在 0.6–0.8%、“performed twice”；另有 Low flow cutoff 条目。</li>
+<li>Rosemount 405/1595 手册 <a href="https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/dp-flow/documents/dl-rmt-00821-0100-4810.pdf">https://www.emerson.com/is/content/emerson/en/measurement-instrumentation/technical/products/dp-flow/documents/dl-rmt-00821-0100-4810.pdf</a> ——PDF 第 9 页 §2.1 Bernoulli、K/DP/ρ 定义。</li>
+<li>FLOMEC <a href="https://flomecmeters.com/blogs/did-you-know/turbine-flow-meter-frequency-and-k-factor">https://flomecmeters.com/blogs/did-you-know/turbine-flow-meter-frequency-and-k-factor</a> （WebFetch）——500 Hz × 60 / 100 ppg = 300 gpm；多点 K；黏度影响。</li>
+</ul>
+<h3 id="待核实">「[待核实]」</h3>
+<ul>
+<li>电脑风扇测速线“开集电极、每转 2 脉冲”（Noctua 白皮书 504 超时，Intel 规范 PDF 无法下载，均未打开）。</li>
+<li>Omega TURBINE_PADDLE_REF.pdf（笔记第 23 行引用，本会话未重新打开）。</li>
+<li>Sierra 热式资料（同 theory/40）。</li>
+<li>E+H 学习页面、tomarok VY 涡街 PDF（笔记已标）。</li>
+<li>示例参数 <span class="math math-inline">\(St\)</span> = 0.2、 <span class="math math-inline">\(d\)</span> = 10 mm、 <span class="math math-inline">\(C_d\)</span> = 0.6、 <span class="math math-inline">\(\beta\)</span> = 0.5、7 叶风扇只用于说明量级，不是任何来源的数据，不得作为来源数值。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

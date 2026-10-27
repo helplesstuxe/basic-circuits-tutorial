@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 集成功放芯片与散热保护：资深教师审读（初审）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/45.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="45-集成功放芯片与散热保护资深教师审读初审">45 集成功放芯片与散热保护：资深教师审读（初审）</h1>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>从「为什么不自己搭」→ 单端/BTL 跷跷板类比 → 增益 20/200 推导 → <span class="math math-inline">\(P_{D,max}=V_S^2/(2\pi^2R_L)+V_SI_Q\)</span> → 温升 = 发热 × 热阻，每一步都有数字；SPICE 32 项全部在 5% 内，我复算的例题/练习/思考题全部吻合。扣分点是有两处说「手册图上写着」，但手册里查不到（必改-09、必改-08）。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>文字清楚。但面包板图上两条 GND 轨没连起来（必改-01），还有两根线插在电源轨上不存在的孔里（必改-02）。照图搭的新生会卡在「4 脚不通 GND」。page2 §一 只用文字讲整机连线（必改-04），选做 D 只有方框图（必改-05），p4_2 也不是带孔位的 <code>_schem_lab</code>（必改-03）。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td>例 1（完整）→ 例 2（填空）→ 例 3（自己做），加上 page3 的四道练习，是合格的渐隐。缺两样：「换一颗芯片 / 换电源 / 换负载，先选型再算温升」的迁移题，以及和 43/44 的显式对比题（建议-02）。误区只放在 page3 末尾（建议-01）。</td>
+</tr>
+</tbody>
+</table>
+<p>审读对象：<code>45-audio-amp-ics/page1.md</code>～<code>page4.md</code>；<code>img/</code> 下全部图片。其中 p4_1 面包板图、p4_2 原理图、p2_4 波形是裁切放大后逐孔、逐脚核对的。另外还有 <code>code/figs/45_figs.py</code>、<code>spice/45/</code>（<code>run.py</code>、<code>amp.inc</code>、<code>lm386.inc</code>、<code>phone.cir</code> 等）和 <code>review/spice/45.md</code>。</p>
+<p>对照文件：</p>
+<ul>
+<li><code>review/part2/teacher/00-plan-review.md</code> 中 45 节的条目：L57（回扣 21 的热阻、LM386 完整外围要有原理图）、L105（教学手法）、L130（外围 250 µF、0.05 µF + 10 Ω 和对照表）、L156 必改-15、L161、L190 建议-17。</li>
+<li><code>notes/AUTHOR_GUIDE.md</code>：L36（七列测量表）、L38（Python 块的 <code>sys.path</code> 两行，用实测值，偏差 &gt;10% 要标出）、L39（记录表和 3 个思考题）、L48（至少 3 道练习，最后一道是变体迁移）、L61（面包板图后紧跟 <code>NN_p4_k_schem_lab.png</code>，节点处标孔位，再加一段「对照看」）、L62–75（颜色词）。</li>
+<li>原则编号 [1]～[6]：
+<ul>
+<li>[1] 认知负荷：<a href="https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory">https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory</a> ；<a href="https://www.aft.org/ae/spring2012/rosenshine">https://www.aft.org/ae/spring2012/rosenshine</a></li>
+<li>[2] 样例 → 渐隐：<a href="https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf">https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf</a></li>
+<li>[3] 提取练习：<a href="https://www.learningscientists.org/blog/2016/6/23-1">https://www.learningscientists.org/blog/2016/6/23-1</a> ；<a href="https://www.retrievalpractice.org/">https://www.retrievalpractice.org/</a></li>
+<li>[4] 图文双编码：<a href="https://www.learningscientists.org/blog/2016/9/1-1">https://www.learningscientists.org/blog/2016/9/1-1</a></li>
+<li>[5] 误区先行：<a href="https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128">https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128</a></li>
+<li>[6] 由具体到抽象：Pashler 等（IES 指南 rec 4，同 [2]）；Rosenshine（同 [1]）</li>
+</ul>
+</li>
+</ul>
+<p>核算方式：</p>
+<ul>
+<li>数据手册都用 curl 下载真 PDF，再用 pdftotext 提取文字，图表用 pdftoppm 放大后看（详见 §三.1）。用到的四份是：LM386 SNAS545D、PAM8403 DS36439、TPA3116D2 SLOS708G、LM78xx SNOSBT0L，外加 TI 应用报告 SLOA145。</li>
+<li>SPICE：把 <code>tools</code>、<code>code</code>、<code>45-audio-amp-ics</code>、<code>spice/45</code> 拷到 <code>/tmp/rv45/repo</code> 后，用 <code>/workspace/circuits-venv/bin/python</code> 跑 <code>run.py</code>。结果是 32 项、偏差全部 ≤5%，和页面值一致（§三.3）。</li>
+<li>用 Python 复算了以下各项：
+<ul>
+<li>增益 20/200；</li>
+<li>下限 40.2/90.4 Hz；</li>
+<li><span class="math math-inline">\(P_{D,max}\)</span> ：0.2667 W（18 Ω）、0.552 W（8 Ω）；</li>
+<li>温升：14.2 / 29.5 / 63.8 °C；</li>
+<li>PAM8403：1.445 W / 2.679 W；18 Ω 满幅 0.670 W，芯片效率 88%，发热 0.092 W，温升 10 °C；</li>
+<li>0.1 W 时的效率：29% / 55% / 26%；</li>
+<li>7805：152 mA，0.66 W，温升 36 °C；</li>
+<li>选做 D 用手机满音量直推的情形（必改-06）。</li>
+</ul>
+</li>
+<li>约束：仓库里只写了本文件，其他页面、代码、图一律没改，也没有运行任何 git 命令（包括只读的）。rg/find 都没有扫到 <code>.git</code>。</li>
+</ul>
+<h2 id="一必改">一、必改</h2>
+<p><strong>必改-01｜page4 L43 图 45-p4-1（<code>45_figs.py</code> L640–689）、L51「对照看」、L57 第 3 步：上下两条 GND 轨没有连通，照图搭的电路不能工作</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>逐孔核对发现，上 GND 轨（T−）上接的是电源负极（T−14）、C1、C2、C3（T−11）、Cz（T−15）和喇叭回线（T−24）。</li>
+<li>下 GND 轨（B−）上接的是 4 脚（j13 → B−13）、2 脚（j11 → B−11）、Rb（j5 → B−5）、RP 下端（j8 → B−8）和手机地（B−1）。</li>
+<li>两条轨之间<strong>没有任何导线</strong>，所以 4 脚（芯片地）、2 脚和输入分压都和电源负极断开，芯片根本不会上电。</li>
+<li>SPICE 网表只用一个地节点 0，所以抓不到这个错（和 38 节同一类漏检）。</li>
+</ul>
+</li>
+<li>改法：
+<ol>
+<li>在 p4_1 加一根黑线，从 T−1 接到 B−1（或者 T−25 接到 B−25，挑没占用的孔）。</li>
+<li>page4 L51「对照看」和接线步骤里加一句「黑线把上下两条 GND 轨连起来」。</li>
+<li>L57 第 3 步「4 脚通 GND」改成「4 脚到<strong>电源负极</strong>（不是到下轨）蜂鸣档通」。这样即使漏了这根线也查得出来。</li>
+</ol>
+</li>
+<li>理由：搭法图是新生唯一照着插的东西，图错了就等于实验做不成 [4]；顺带把「两条轨默认不通」这个误区写在前面 [5]。</li>
+</ul>
+<p><strong>必改-02｜page4 图 45-p4-1（<code>45_figs.py</code> L653、L689）：两根线插在电源轨上不存在的孔里</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li><code>45_figs.py</code> L511 只在 <code>c % 6 != 0</code> 的列画电源轨孔，所以第 6、12、18、24 列是电源轨的分组空档，没有孔，和真实面包板一样。</li>
+<li>但 L653 <code>bb.wire(&quot;a12&quot;, &quot;T+12&quot;, &quot;pos&quot;)</code>（6 脚接 +9 V）和 L689 的喇叭回线 <code>&quot;T-24&quot;</code> 正好落在空档上。放大后能看到，这两个黑点画在空白处，旁边没有灰色孔。</li>
+<li>21、35 节的同类代码有 <code>assert ... c % 6 != 0, &quot;电源轨孔 … 不存在&quot;</code>，45 节把这个断言漏了。</li>
+</ul>
+</li>
+<li>改法：6 脚改走 a12 → T+11（T+11 没被占用）；喇叭回线改接 T−23 或 T−25。同时在 <code>45_figs.py</code> 的 <code>xy()</code> 里补上 21/35 节那样的断言。</li>
+<li>理由：新生会照图找「第 12 列」的轨孔，找不到就会乱插 [4]。</li>
+</ul>
+<p><strong>必改-03｜page4 L45–49 图 45-p4-2：原理图没有标面包板孔位，也不是 <code>_schem_lab</code> 命名（AUTHOR_GUIDE L61 硬规则）</strong></p>
+<ul>
+<li>问题：p4_2 的电路连接和 C3/C4/C5 的极性都对，但节点上没有标「a12 / b13 / g9 / i7…」这样的孔位，文件名也不是 <code>45_p4_2_schem_lab.png</code>。读者没法逐个节点把原理图和面包板对上。</li>
+<li>改法：
+<ol>
+<li>改名为 <code>45_p4_2_schem_lab.png</code>。</li>
+<li>在每个节点旁标孔位，至少要有：+9 V 轨、GND 轨（两条都标）、1/2/3/4/5/6/7/8 脚、C4+、C4−（b18）、Zobel 中点（a15）、RP 三个脚（f6/f7/f8）、Ra/Rb 中点（h5/h6）。</li>
+<li>「对照看」段落按「原理图节点 → 面包板孔」逐条写。</li>
+</ol>
+</li>
+<li>理由：AUTHOR_GUIDE L61；双编码要求两张图能一一对上 [4]。</li>
+</ul>
+<p><strong>必改-04｜page2 §一 L21–29：用纯文字讲整机连线，没有原理图（00-plan-review L57/L130；同 44 必改-01）</strong></p>
+<ul>
+<li>问题：L21–29 用文字描述 3 脚输入、2 脚接地、7 脚旁路、1–8 脚增益电容、5 脚 → 220 µF → 10 Ω → 喇叭、Zobel 10 Ω + 47 nF 等完整外围。全节唯一的整机原理图在 page4，p2_1 只画了芯片内部的电阻网络。</li>
+<li>改法：在 L21 后放 LM386 完整外围原理图（可以复用 p4_2，再用编号框标出「输入分压 / 增益电容 / 输出电容 / Zobel / 退耦」五块，对应 L23–29 的五段）。旁边列一张「本书取值 vs 手册图 9-1/9-3 取值」的对照表（250 µF ↔ 220 µF、0.05 µF ↔ 47 nF），这正是总纲 L130 要的。</li>
+<li>理由：「讲电路连接的文字旁边必须有原理图」[4]；降低工作记忆负担 [1]。</li>
+</ul>
+<p><strong>必改-05｜page4 L94–110 选做 D、图 45-p4-4：PAM8403 只有方框图，没有原理图和接线说明</strong></p>
+<ul>
+<li>问题：p4_4 只画了方框：9 V（限流 0.3 A）→ 7805 → 「就近 1 µF + 22 µF」→ 模块 → L+、10 Ω、喇叭、L−。下面这些都没画：
+<ul>
+<li>7805 的 IN/GND/OUT 引脚顺序；</li>
+<li>输入、输出电容的位置和极性；</li>
+<li>模块上 5V/GND/L/R/G 各个端子接到哪；</li>
+<li>手机线的三芯（L/R/GND）怎么接。
+新生做这一部分时只能凭方框图猜。</li>
+</ul>
+</li>
+<li>改法：加一张 <code>45_p4_4_schem_lab.png</code>：7805（按 TO-220 正面从左到右 IN–GND–OUT 标注）、输入 0.33 µF（或 0.22 µF，见建议-05）、输出 1 µF + 22 µF（标出极性）、模块端子名、输入衰减网络（见必改-06）、L+ → 10 Ω → 喇叭 → L−，标明「L− 不接 GND」，并标出两块表各接在哪。另外加一段「对照看」。如果用模块不用面包板，就写清楚每根杜邦线从哪接到哪。</li>
+<li>理由：同必改-03/04 [4]；BTL 接错一端接地是本节第一安全点，必须在图上直接标出来。</li>
+</ul>
+<p><strong>必改-06｜page4 L94–110（尤其 L100「手机音量先调到 0」）：选做 D 没有限制输入幅度，满音量时喇叭过载、电流顶到限流值、电流表档位可能烧保险</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>选做 D 把手机直接接到 PAM8403 输入，前面没有 10 k/1 k 分压。</li>
+<li>PAM8403 数据手册 p.7 应用说明 note 4 原话的意思是：增益很高，输入过大会削顶，并且会损坏器件。它的最大增益是 24 dB（≈15.85 倍）。</li>
+<li>手机满音量约 1.48 V 峰值，需要 23.5 V 输出才不削顶，所以输出会严重削成方波。按方波估算：喇叭两端 18.32 Ω 上的电流约 0.273 A，喇叭约 0.60 W，超过常见 0.5 W 小喇叭的额定值；10 Ω 电阻约 0.75 W。</li>
+<li>9 V 侧的电流约 0.29 A，正好顶到 L37 设的 0.3 A 限流。7805 的发热升到约 1.16 W，不加散热片时温升约 60 °C。</li>
+<li>很多万用表 mA 档的保险是 200 mA 或 250 mA，L39 用作电流表的那块表会烧保险。</li>
+<li>页面也没有任何听力提示（见必改-07）。</li>
+</ul>
+</li>
+<li>改法：
+<ol>
+<li>选做 D 的输入沿用实验 A 的 10 k/1 k 分压 + RP。复算结果：满音量约 0.1216 V × 15.85 ≈ 1.93 V 差分峰值，喇叭约 0.84 V 峰值、约 44 mW，是安全的。</li>
+<li>如果不加分压，就要写明「手机音量不超过约 1/10，先从 0 慢慢往上加」。</li>
+<li>电流表写明用 10 A 孔或 400 mA 档，「表笔插在 mA/A 孔的那块表不许去量电压」。</li>
+<li>写明喇叭和 10 Ω 电阻的额定功率：喇叭 ≥0.5 W，10 Ω 用 1 W。</li>
+</ol>
+</li>
+<li>理由：手册应用说明的明文要求（§三.1）；安全规则要先讲，不能等出了事再讲 [5]。</li>
+</ul>
+<p><strong>必改-07｜page4 L10、L11、L59、L92：满音量连续放 1 kHz、增益 200「又破又响」，没有任何听力保护</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>实验 B 是「音量开满」，实验 C 是「满音量连续放 5 分钟」，L59 是「音量慢慢开满」。</li>
+<li>L92 增益 200 削顶时，喇叭上约 0.28 W 的方波（按 ±3.35 V 削顶、8/18 分压估算），离耳朵 20 cm 时声压能到 90 dB 左右（按常见小喇叭灵敏度约 85 dB/1 W/1 m 估算，[待核实]，具体看喇叭规格）。</li>
+<li>1 kHz 纯音尖锐刺耳，宿舍或实验室里连续听 5 分钟对本人和旁人都不友好。</li>
+</ul>
+</li>
+<li>改法：在「安全须知」L16–22 里加一条：
+<ul>
+<li>喇叭朝下或朝墙，离耳朵至少 50 cm；</li>
+<li>不要贴耳听；</li>
+<li>实验 C 那 5 分钟可以把喇叭换成 8 Ω/2 W 电阻（发热不变），或者戴耳塞；</li>
+<li>增益 200 的削顶演示只听 2～3 秒。</li>
+</ul>
+</li>
+<li>理由：任务清单明确要求查「音量与听力保护」；规则要具体到能照着做 [1]。</li>
+</ul>
+<p><strong>必改-08｜page2 L120–126 图 45-p2-4、L126、L185：波形画的占空比和「平均 2.5 V」矛盾；SLOA145 的引用张冠李戴</strong></p>
+<ul>
+<li>问题：
+<ol>
+<li><code>45_figs.py</code> p2_4 里，OUT+ 的占空比是 0.65，OUT− 是 0.35（放大后看就是 65%/35%）。照这样算，两路平均值分别是 3.25 V 和 1.75 V，不是图上虚线和文字写的「平均 ≈ 2.5 V」。同时图注 L122 和 L126 说的是「没有信号时、占空比约 50%」，图和文字对不上。</li>
+<li>L126 说 SLOA145 讲「无滤波」D 类时用「两路输出、无信号时都是 50% 占空比」来描述。实际上 SLOA145（Feb 2010）§1 p.1 写的是：<strong>传统</strong>（需要 LC）D 类「OUT+ 和 OUT− always out of phase, with 50% duty cycle when no input」，这样喇叭上一直有满幅方波。§2「Filter-Free Modulation Scheme」写的是：无滤波调制「OUT+ and OUT– are almost in phase when no input is applied」，喇叭上只有很窄的尖峰。页面把传统方式的描述安在了无滤波上，而图里两路刚好画成反相。新生会以为无滤波 D 类空载时喇叭上一直是 ±5 V 方波。</li>
+</ol>
+</li>
+<li>改法：
+<ul>
+<li>图 p2_4 改成两路占空比都是 50%、<strong>几乎同相</strong>（参照 SLOA145 图 2 上半），差分只剩窄尖峰。可以再加一组「有信号时 65%/35%、平均 3.25/1.75 V、差 1.5 V」作对比。</li>
+<li>L126 改成「SLOA145 §2：无滤波调制在没有输入时，两路输出几乎同相、各自约 50%，所以对地平均都约 2.5 V，差分几乎为 0」。</li>
+<li>PAM8403 手册没写它的调制方式，正文不要断言它一定是这种调制，标 [待核实]。万用表读 2.5 V 的结论不受影响。</li>
+</ul>
+</li>
+<li>理由：图文一致 [4]；对引用要负责。</li>
+</ul>
+<p><strong>必改-09｜page2 L33、L37 图注、L183 参考资料：电阻值出处写错，150 Ω 在 SNAS545D 里查不到</strong></p>
+<ul>
+<li>问题：L33 原话是「数据手册的『功能框图』画出了 LM386 内部的三个电阻：…15 kΩ…150 Ω 和 1.35 kΩ」，L37 图注是「电阻值取自数据手册的功能框图」。核对 SNAS545D：
+<ul>
+<li>§8.2 Functional Block Diagram（p.9）<strong>没有标任何电阻值</strong>。</li>
+<li>§8.3 / §9.2.1.2.1（p.10）的正文提到「internal 15-kΩ resistor」（1–5 脚之间）和 1.35 kΩ。</li>
+<li>全文 pdftotext 搜不到「150」Ω。150 Ω 来自旧版手册或推算（20 = 2 × 15 k / (150 + 1.35 k) 反推得出），本版无法核实。</li>
+</ul>
+</li>
+<li>改法：
+<ul>
+<li>L33 改成「数据手册 §8.3/§9.2.1.2.1（p.10）的文字给出了 1–5 脚之间的 15 kΩ 和 1.35 kΩ；150 Ω 是由增益 20/200 反推的简化值 [待核实：旧版 LM386 手册的原理图]」。</li>
+<li>L37 图注和 L183 参考资料同步改。</li>
+</ul>
+</li>
+<li>理由：「绝不编造出处」；新生会照着去手册里找这张图，找不到就会不再信任教材。</li>
+</ul>
+<p><strong>必改-10｜page4 L16「接错时能把电流卡住」：说过了头（同 44 必改-05）</strong></p>
+<ul>
+<li>问题：限流电源只能限制<strong>总电流</strong>，限不住局部能量：电源反接时，芯片内部的寄生二极管或者 C1 电解电容反向，在 0.2 A、9 V 下照样会坏；喇叭直接接 5 脚，直流也是在 0.2 A 以内流过喇叭。此外限流动作需要时间，电容放电不受限流控制。</li>
+<li>改法：改成「限流把<strong>最坏电流</strong>限在 0.2 A 左右，能大大降低烧线、冒烟的风险，但<strong>挡不住</strong>反接、电解电容反向，也挡不住直流进喇叭；接线仍要按第 3 步逐项蜂鸣档检查后再上电」。page3 故障表里「6 脚和 4 脚接反」一行补一句「芯片可能已经坏了，重接后要先测静态电流，异常就换芯片」（见建议-11）。</li>
+<li>理由：误区先行，不能给出虚假的安全感 [5]。</li>
+</ul>
+<p><strong>必改-11｜page4 L64–80、L102–108：测量表不是七列格式，没有红/黑表笔、档位和「读不到时先查」</strong></p>
+<ul>
+<li>问题：AUTHOR_GUIDE L36 要求的七列表头是「步骤 | 测什么 | 红表笔 | 黑表笔 | 挡位 | 应该读到 | 读不到时先查」。现在的表只有「测什么 / 应该读到」，选做 D 的 L+ ≈ 2.5 V、L− ≈ 2.5 V、L+ 到 L− ≈ 0 V 也没写表笔放哪。新生量 BTL 时最容易犯的错，就是把黑表笔夹在 L−。</li>
+<li>改法：按七列重写，例如：
+<ul>
+<li>「5 脚静态 | 红 5 脚（e13） | 黑 GND 轨 | DC 20 V | ≈4.5 V | 先查 6 脚 9 V、4 脚通负极、必改-01 的那根轨间线」；</li>
+<li>「喇叭直流 | 红 b18 侧 | 黑喇叭回线 | DC 200 mV | &lt;50 mV | C4 极性」；</li>
+<li>「静态电流 | 电流表串在 T+23 | — | DC 200 mA（mA 孔） | ≈4～8 mA | …」；</li>
+<li>选做 D 用 400 mA 档或 10 A 孔。</li>
+<li>表下加一句「插在 mA 孔的表笔不许去量电压」。</li>
+</ul>
+</li>
+<li>理由：AUTHOR_GUIDE L36 硬规则；量具操作要逐步写清楚 [1]。</li>
+</ul>
+<h2 id="二建议">二、建议</h2>
+<p><strong>建议-01｜page3 L95–102：误区放在全节末尾。</strong> 把「D 类一定更省电」「BTL 的 L− 就是地」「限流就安全」「增益越大越好」挪到 page1 开头三问之后先抛出来，各配一句「为什么不对」，后文讲到时再回扣 [5]。</p>
+<p><strong>建议-02｜page3 L104–136 练习：缺变体迁移题，也缺和 43/44 的对比题。</strong></p>
+<ul>
+<li>加一道「选型题」：给 12 V 电源、4 Ω 喇叭、要 3 W，从 LM386N-1/N-4、PAM8403、TPA3116D2 里选，并算温升。参考答案：N-4 的推荐范围到 18 V，但它的 4 Ω 功率要先查手册 [待核实]；PAM8403 超过 6 V 不能用；TPA3116D2 合适。</li>
+<li>再加一张「43 分立推挽 / 44 分立 D 类 / 45 集成芯片」三列对比表（元件数、调试点、效率、保护）[2][3]。</li>
+<li>这也满足 AUTHOR_GUIDE L48「最后一道是变体迁移」。</li>
+</ul>
+<p><strong>建议-03｜page4 L123–145 Python：缺 <code>sys.path</code> 两行，预期值写死。</strong> 按 AUTHOR_GUIDE L38 补上两行，把 VS、Ra、Rb、RL 改成「填你的实测值」，预期增益和喇叭电压由这些值算出来，偏差 &gt;10% 时打印提示。</p>
+<p><strong>建议-04｜page4 L31 器材表：C3、C5 没写耐压；RP 没写阻值特性。</strong> C3、C5 写成 10 µF/16 V（或 ≥16 V）。RP 写明「B10k（线性）」，否则 A 型（对数）电位器的「转到 14%」和分压比对不上（page4 实验 B 的「不削顶的位置」）。</p>
+<p><strong>建议-05｜page3 L104–136 练习 4、page4 L108：7805 静态电流「6 mA」没有出处，并且缺输入电容。</strong></p>
+<ul>
+<li>SNOSBT0L §6.6（LM7805 表）里静态电流只给了 25 °C 时最大 8 mA，没有典型值；6 mA 是 LM340A 表（§6.5）里的最大值。改成「≤8 mA（手册最大值），典型值 [待核实]」，22 mA 的估算改成「约 16 + ≤8 mA」。</li>
+<li>手册的测试条件是输入 0.22 µF、输出 0.1 µF，所以 p4_4 / 新原理图上要补 7805 的输入电容。</li>
+</ul>
+<p><strong>建议-06｜page1 L43–50 图 45-p1-2：LM386N-1 在 6 V、0.325 W 的黑点高于紫色曲线（约 0.2 W），正文没解释。</strong> 补一句：手册的 325 mW 是 10% THD 下测的，已经削顶，所以比按 1.15 V 损失算出的不削顶最大值高；另外 N-1 和 N-3 是不同档。否则读者会以为曲线算错了 [5]。</p>
+<p><strong>建议-07｜page2 L73–76：增益 200 的带宽只引用 SPICE，可以对照手册图 6-4；<code>review/spice/45.md</code>「手册没有增益 200 带宽」的说法不对。</strong> SNAS545D 图 6-4（p.6，Voltage Gain vs Frequency）有 C1,8 = 10 µF 那条曲线（约 46 dB），在几十 kHz 开始下降，可以和 SPICE 的 31.8 kHz 并列。读图的精确 −3 dB 点标 [待核实]。另外 page3 温升部分可以用图 6-8（9 V 时功耗峰值约 0.55 W）交叉印证 8 Ω 公式值 0.552 W，但 rev D 的这张图没标 RL，要注明 [待核实]。</p>
+<p><strong>建议-08｜图 45-p4-1：+9 V 线（<code>fs.C[&quot;bad&quot;]</code>，图例写「红」）和输出线（「橙」）在手机屏上颜色接近。</strong> 把输出线换成别的颜色，或者让 +9 V 线明显加粗，图例颜色词按 AUTHOR_GUIDE L62–75 写 [4]。</p>
+<p><strong>建议-09｜page2 L78–84：本书输出电容用 220 µF，手册图 9-1/9-3 用 250 µF。</strong> 补一句：250 µF 不是常见规格，220 µF 让 18 Ω 负载时下限从 35.4 Hz 升到 40.2 Hz，听不出差别。这样读者对照手册时不会困惑。</p>
+<p><strong>建议-10｜图 45-p3-3：第二行「LM386 SOIC 9 V、18 Ω（本实验）」。</strong> 本实验用的是 DIP，这一行改成「（同电路若用 SOIC）」，避免误会。</p>
+<p><strong>建议-11｜page3 L83–93 故障表：「6 脚和 4 脚接反」的处理只写了「对照引脚图重接」。</strong> 补上「芯片可能已坏：重接后先测静态电流，偏离 4～8 mA 就换芯片；C1 若反向鼓包，一并换掉」。</p>
+<p><strong>建议-12｜page3 L71–77 热阻：7805 用的 54 °C/W 来自 SNOSBT0L 绝对最大值表的注 (3)（TO-220，自由空气）。</strong> §6.4 热参数表里的 23.9 °C/W 是 JEDEC 测试板条件。加一句说明两者为什么不同，读者查手册时才不会混。顺便回扣 21 线性稳压节的热阻（00-plan-review L190 建议-17）。</p>
+<h2 id="三专项检查">三、专项检查</h2>
+<h3 id="1-数据手册核对都是实际下载的-pdfpdftotext-提取--放大看图">1. 数据手册核对（都是实际下载的 PDF，pdftotext 提取 + 放大看图）</h3>
+<table>
+<thead>
+<tr>
+<th>芯片 / 文档</th>
+<th>出处</th>
+<th>核对项</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LM386 SNAS545D</td>
+<td><a href="https://www.ti.com/lit/ds/symlink/lm386.pdf">https://www.ti.com/lit/ds/symlink/lm386.pdf</a></td>
+<td>表 5-1 引脚：1/8 GAIN、2 −IN、3 +IN、4 GND、5 VOUT、6 VS、7 BYPASS</td>
+<td>✅ 与 p2_1、p4_2 一致</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§6.1 绝对最大值</td>
+<td>15 V（N-1/-3）、22 V（N-4）；封装耗散 1.25 W（N）/ 0.73 W（M）；输入 ±0.4 V</td>
+<td>✅ page1 p1_1、page3 L57、p3_1 一致</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§6.3 推荐工作条件</td>
+<td>4～12 V（N-1/-3）、5～18 V（N-4）；喇叭 ≥4 Ω</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§6.4</td>
+<td>RθJA：PDIP 53.4 °C/W、SOIC 115.7 °C/W</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§6.5</td>
+<td>IQ 4 mA 典型 / 8 mA 最大（6 V）；325 mW（N-1，6 V，8 Ω）；700 mW（N-3，9 V，8 Ω）；26 / 46 dB；BW 300 kHz；RIN 50 kΩ</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>图 9-4（p.12）静态电流 vs 电源</td>
+<td>9 V 时约 4.3 mA</td>
+<td>✅ page2 L104</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§8.2 功能框图（p.9）</td>
+<td><strong>没有标电阻值</strong></td>
+<td>❌ 必改-09</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§8.3 / §9.2.1.2.1（p.10）</td>
+<td>15 kΩ、1.35 kΩ；「only compensated for closed-loop gains greater than 9」；150 Ω 查不到</td>
+<td>⚠️ 必改-09；page2 L51 的「增益大于 9 才稳定」✅</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>§9.2.1.2.2</td>
+<td>高增益时不用的输入端要旁路 / 接地</td>
+<td>✅ 2 脚接地</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>图 9-1 / 9-3</td>
+<td>250 µF、0.05 µF + 10 Ω、10 k 电位器；增益电容 + 端在 1 脚</td>
+<td>✅ C5 + 在 g9（1 脚侧）；建议-09</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>图 6-3（p.6）</td>
+<td>9 V、8 Ω 时约 6 Vpp，16 Ω 时约 7 Vpp</td>
+<td>✅ 和 18 Ω、3.35 V 峰值相符</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>图 6-4（p.6）</td>
+<td>增益 200 的幅频曲线</td>
+<td>⚠️ 建议-07</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>全文</td>
+<td>没有过热 / 短路保护的描述</td>
+<td>✅ page1 L86、page3 L57、p3_2</td>
+</tr>
+<tr>
+<td>PAM8403 DS36439 Rev 2-3（Sept 2020）</td>
+<td><a href="https://www.diodes.com/assets/Datasheets/PAM8403.pdf">https://www.diodes.com/assets/Datasheets/PAM8403.pdf</a></td>
+<td>封面 p.1：NOT RECOMMENDED FOR NEW DESIGN, USE PAM8406；有短路保护</td>
+<td>✅ page1 L26</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>p.3</td>
+<td>绝对最大 6.0 V；推荐 2.5～5.5 V；θJA 110 °C/W（SOP-16）</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>p.4 电气表（5 V，增益 24 dB）</td>
+<td>10% THD：3.2 W / 4 Ω、1.8 W / 8 Ω；1% THD：2.5 W / 4 Ω、1.4 W / 8 Ω；效率 87%（8 Ω）/ 83%（4 Ω）；IQ 16 mA；RDS(on) P 管 180 mΩ / N 管 140 mΩ；fSW 260 kHz；VOS 10 mV；OTP 140 °C、回差 30 °C</td>
+<td>✅ page1、page2 L129–135</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>p.7 应用说明</td>
+<td>note 3：4 节碱性电池会超过 6 V；<strong>note 4：输入过大，因增益高会削顶并损坏器件</strong>；最大增益 24 dB（RF 142k / RI 18k）</td>
+<td>✅ page1 L35；❌ 选做 D 没落实 note 4 → 必改-06</td>
+</tr>
+<tr>
+<td>同上</td>
+<td>p.8</td>
+<td>UVLO 2.0 V；输出对输出 / 输出对地短路保护，自动恢复；热关断 140 °C ±15，不锁，降 30 °C 恢复</td>
+<td>✅ page3 L58、p3_2</td>
+</tr>
+<tr>
+<td>TPA3116D2 SLOS708G（Dec 2017）</td>
+<td><a href="https://www.ti.com/lit/ds/symlink/tpa3116d2.pdf">https://www.ti.com/lit/ds/symlink/tpa3116d2.pdf</a></td>
+<td>4.5～26 V；绝对最大 30 V；21 V 时每声道 50 W / 4 Ω；OC 7.5 A；OT 150 °C 以上；表 4：OC/OT/DC 锁住，UV（&lt;4.5 V）/OV（&gt;27 V）自动恢复；§7.3.9 DC 检测：&gt;60%、420 ms；FAULTZ 接 SDZ 可自动重启</td>
+<td>✅ page1 L27/L88、page3 L59/L61、p3_2</td>
+</tr>
+<tr>
+<td>LM78xx SNOSBT0L</td>
+<td><a href="https://www.ti.com/lit/ds/symlink/lm7800.pdf">https://www.ti.com/lit/ds/symlink/lm7800.pdf</a></td>
+<td>绝对最大值注 (3)：TO-220 θJA 54 °C/W；§6.4 表 23.9 °C/W（JEDEC）；§6.6 LM7805 IQ 最大 8 mA（25 °C），没有典型值；6 mA 是 LM340A（§6.5）的最大值；压差 2 V；测试电容输入 0.22 µF、输出 0.1 µF</td>
+<td>⚠️ 建议-05、建议-12</td>
+</tr>
+<tr>
+<td>SLOA145（Feb 2010）</td>
+<td><a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a></td>
+<td>§1 p.1：传统 D 类无输入时反相、50%；§2：无滤波调制无输入时「almost in phase」</td>
+<td>❌ 必改-08</td>
+</tr>
+<tr>
+<td>手机输出电平</td>
+<td><a href="https://doineedanamp.com/sources/iphone-usb-c/">https://doineedanamp.com/sources/iphone-usb-c/</a></td>
+<td>满音量约 1.05 V（有效值）、输出阻抗约 0.9 Ω（page2 L186）</td>
+<td>未复核网页（第三方实测），保留原引用；1.05 V 有效值 ≈ 1.48 V 峰值，和 phone.cir 的 SIN 1.48 一致</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-面包板逐孔核对p4_145_figspy-l638699--放大图">2. 面包板逐孔核对（p4_1，<code>45_figs.py</code> L638–699 + 放大图）</h3>
+<ul>
+<li>U1 占第 10–13 列：1～4 脚在 f10–f13，8～5 脚在 e10–e13，缺口朝左。✅</li>
+<li>6 脚：a12 → T+12。❌ 必改-02，轨孔不存在。</li>
+<li>7 脚：C3 a11(+) → T−11。✅</li>
+<li>C1 在 T+7/T−7，+ 接 +9 V。C2 在 T8。✅</li>
+<li>增益电容：绿线 c10–c9、h10–h9；C5 + 在 g9（1 脚侧）。✅</li>
+<li>输出：C4 b13(+) → b18；Rz d13–d15；Cz a15 → T−15；a18 引出板外经 10 Ω 和喇叭回到 T−24。❌ 必改-02，轨孔不存在。</li>
+<li>输入：Ra g2–g5；蓝线 h5–h6；Rb j5 → B−5；RP 插在 f6/f7/f8，滑片在 f7；i7 → i12 接 3 脚；j8 → B−8，j11 → B−11（2 脚），j13 → B−13（4 脚）。✅</li>
+<li>手机地接 B−1；电源地接 T−14；电流表接 T+23。✅</li>
+<li><strong>T− 和 B− 之间没有连线。</strong> ❌ 必改-01</li>
+<li>每列插件不超过 5 个，孔位之间没有冲突（除了上面两个空档孔）。</li>
+</ul>
+<h3 id="3-spicetmprv45reporunpy">3. SPICE（<code>/tmp/rv45/repo</code>，<code>run.py</code>）</h3>
+<p>32 项全部 ≤5%，页面引用值逐项一致：</p>
+<ul>
+<li>静态：5 脚 4.5 V、7 脚 4.5 V、4.3 mA。</li>
+<li>增益：20 / 198.8；200 Hz 时 173，100 Hz 时 130，20 Hz 时 38.8。</li>
+<li>带宽：300 kHz / 31.8 kHz；输出电容下限 40.2 Hz。</li>
+<li>手机满音量：3 脚 0.1213 V 峰值、5 脚 2.426 V 峰值、喇叭 1.077 V 峰值；电源 0.4246 W、喇叭 72.5 mW、10 Ω 上 90.7 mW、电流 47.2 mA、芯片 0.261 W。</li>
+<li>增益 200 削顶在 7.85 / 1.15 V。</li>
+<li>嗡声：7 脚接电容时 0.437 mV，悬空时 20.6 mV。</li>
+<li>芯片最大发热 0.2667 W（3 脚 0.14 V 峰值时）。</li>
+</ul>
+<p>局限：网表只有单一地节点 0，查不出面包板上两条轨不通（必改-01）。建议在 <code>review/spice/45.md</code> 里注明「网表不验证面包板轨连通」。</p>
+<h3 id="4-安全清单">4. 安全清单</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>BTL 输出不许接地</td>
+<td>✅ page1 L14、page2 L139、page4 L21，p2_4 / p4_4 都有标注</td>
+</tr>
+<tr>
+<td>耦合电容 / 喇叭无直流</td>
+<td>✅ page4 L18：&lt;50 mV；C4 极性正确</td>
+</tr>
+<tr>
+<td>不许用手摸</td>
+<td>✅ page3 L79、page4 L17</td>
+</tr>
+<tr>
+<td>带电不改线</td>
+<td>✅ page4 L22、L60</td>
+</tr>
+<tr>
+<td>电表档位</td>
+<td>❌ 必改-11；选做 D 的电流档 ❌ 必改-06</td>
+</tr>
+<tr>
+<td>限流说法</td>
+<td>❌ 必改-10</td>
+</tr>
+<tr>
+<td>听力 / 音量</td>
+<td>❌ 必改-07（LM386）、必改-06（PAM8403）</td>
+</tr>
+<tr>
+<td>PAM8403 只用 5 V</td>
+<td>✅ page1 L35、page4 L20</td>
+</tr>
+<tr>
+<td>Arduino 引脚 ≤5 V</td>
+<td>不适用（本节不用 Arduino）</td>
+</tr>
+<tr>
+<td>IC 缺口 / 极性</td>
+<td>✅ U1 缺口、C1/C3/C4/C5 极性正确；7805 引脚顺序没画 → 必改-05</td>
+</tr>
+</tbody>
+</table>
+<h3 id="5-其他">5. 其他</h3>
+<ul>
+<li>剧透：开头三问和例题答案都折叠在 <code>&lt;details&gt;</code> 里。✅</li>
+<li>前置知识：43 推挽、44 BTL、21 线性稳压、25 开关电源都有链接回扣，术语一致（「BTL / 桥接」「甲乙类」「压差 × 电流」）。✅</li>
+<li>指向尚未上线节点的链接不计入必改。</li>
+</ul>
+<h2 id="四结论">四、结论</h2>
+<p><strong>必改 11 / 建议 12。</strong></p>
+<p>暂不可发布。必改-01、02 会让照图搭的电路直接不工作；必改-06、07 是安全问题（选做 D 喇叭过载、可能烧表的保险，听力也没有保护）。这四条必须先改。必改-03、04、05 是原理图硬规则，必改-08、09 是图文或出处错误，必改-10、11 是说法和表格规范问题。这些都改完以后，可以进入复审。</p>
+<h2 id="复核第-2-轮">复核（第 2 轮）</h2>
+<p>复核时间：2026-10-27。对象是作者在 notes/part2-status.log L147–148 记为 fix done / teacher-fix done 之后的页面、图和脚本。脚本全部拷到 /tmp/rv45b 再跑（tools、code、45-audio-amp-ics、spice/45），Python 用 /workspace/circuits-venv/bin/python。手册重新用 curl 下载：SNAS545D（Rev D，2023-08）和 PAM8403 DS36439，用 pdftotext 和 pdftoppm 核对。下面的行号都是当前页面的行号。</p>
+<h3 id="三项评分">三项评分</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>增益网络的出处已改对（见异议一）。PAM8403 的波形和 SLOA145 §1/§2 的说法已经对齐。选做 D 的功率我独立复算，和页面一致（见异议二）。SPICE 32 项全部在 5% 以内。剩下一处图文不一致：page1 写约 26%，图上是 25%（新必改-12）。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>好</td>
+<td>新增四张图：page2 整机原理图（五个虚线块）、p4_2 和 p4_4 两张带孔位或端子名的 <code>_schem_lab</code>、修好的面包板图（⑤ 轨间黑线，避开轨空档），每张图后面都有「对照看」。照图能搭通。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>好</td>
+<td>page3 新增练习 5（选型迁移）和「43、44、45 三节对比」表。误区仍集中在 page3 L97–106，page1 只用开头三问回扣 43/44（建议-01 只部分采纳，不影响评分）。</td>
+</tr>
+</tbody>
+</table>
+<p>没有「差」。</p>
+<h3 id="必改逐条判定">必改逐条判定</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>判定</th>
+<th>现在的位置和核对结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-01 GND 轨不通</td>
+<td>✅ 已改好</td>
+<td>图 45-p4-1（page4 L47–49）放大看：⑤ 黑线从 T−22 出发，绕到板子右侧，接到 B−22，两端都落在实孔上。页面上的说明：L51 解释原因；L60 对照看写「T− 和 B− 靠 ⑤ 连在一起」；L69 第 1 步「别忘了 ⑤」；L71 第 3 步用「4 脚 j13 通 T−14」顺带验证 ⑤；L84 A1 的「读不到时先查」也列了 ⑤。p4_2 底部注释同样写了 T−22 → B−22。</td>
+</tr>
+<tr>
+<td>必改-02 线插在轨空档</td>
+<td>✅ 已改好</td>
+<td>放大看：6 脚红线 a12 → T+13（第 12 列是空档，可见），喇叭回线 → T−23，⑤ 用 T−22 / B−22，电源负极接 T−14，电流表接 T+23。这些列号对 6 取余都不为 0。<code>code/figs/45_figs.py</code> L587 新增断言 <code>assert 1 &lt;= c &lt;= self.ncol and c % 6 != 0, &quot;电源轨孔 … 不存在&quot;</code>，所有轨孔都要过这道检查；脚本完整跑通。L708、L744 的注释写明了绕开空档的原因。</td>
+</tr>
+<tr>
+<td>必改-03 p4_2 没有孔位</td>
+<td>✅ 已改好</td>
+<td>图已改名为 <code>45_p4_2_schem_lab.png</code>（page4 L55–57），每个节点都标了灰色孔位，测量点 ①–④ 和图 45-p4-1 一致；L59–65 是「对照看」。逐项核对过：孔位和面包板图一致；元件值和 <code>spice/45/phone.cir</code>、<code>amp.inc</code> 一致（Ra 10k、Rb 1k、Rpot 10k、Rz 10、Cz 47n、Co 220u、Rlim 10、Rspk 8、Cbyp 10u）。C5 的 + 端在 1 脚一侧，和手册图 9-3 一致。小问题见建议-16。</td>
+</tr>
+<tr>
+<td>必改-04 page2 §一 只有文字</td>
+<td>✅ 已改好</td>
+<td>page2 L25–27 新增图 45-p2-1（<code>45_p2_0_full_schem.png</code>）。五个虚线块对应 L29–35 的五段文字，块号、元件值和 p4_2 一致。L39–48 加了和手册图 9-1/9-3 的对照表。复算：250 µF 时下限 35.4 Hz（18 Ω）/ 79.6 Hz（8 Ω），220 µF 时 40.2 / 90.4 Hz；Zobel 0.05 µF 拐点 318.3 kHz，47 nF 拐点 338.6 kHz。全部吻合。</td>
+</tr>
+<tr>
+<td>必改-05 选做 D 只有方框图</td>
+<td>✅ 已改好</td>
+<td>page4 L116–127 新增图 45-p4-4（<code>45_p4_4_schem_lab.png</code>）和「对照看」。图上有：7805 引脚 1 IN / 2 GND / 3 OUT，标注「TO-220 正面从左到右 IN–GND–OUT」；输入 0.33 µF；输出 1 µF + 22 µF（标了极性）；10k/1k 分压加 RP；模块端子 L/G/R、L+/L−；10 Ω / 1 W；红字「L− 不接 GND」；两块表各接在哪。</td>
+</tr>
+<tr>
+<td>必改-06 选做 D 输入没限幅</td>
+<td>✅ 已改好</td>
+<td>page4 L114 先算出直推的后果：方波 ±5 V，0.273 A，喇叭 0.596 W，10 Ω 0.745 W，9 V 侧 0.297 A，7805 1.228 W，无散热片温升 66 °C。我逐项复算吻合。然后改为沿用分压。L39 电源限流改 0.3 A；L23、L41、L137 电流表用 400 mA 档或 10 A 孔；L129 规定上电前 RP 转到 0。手册 p.7 note 4 的落实见异议二。</td>
+</tr>
+<tr>
+<td>必改-07 听力保护</td>
+<td>✅ 已改好</td>
+<td>page4 新增 L19「保护耳朵」；另有 L10（喇叭朝下或朝墙、50 cm 以上，削顶只听 2～3 秒）、L11 和 L73（实验 C 换 8 Ω / 2 W 电阻或戴耳塞）、L74、L110（2～3 秒后关小）、L139（选做 D 同样朝下、50 cm 以上）。</td>
+</tr>
+<tr>
+<td>必改-08 p2_4 占空比、SLOA145</td>
+<td>✅ 已改好</td>
+<td>图 45-p2-5（page2 L139–147）放大看：「没有输入」一列，OUT+、OUT− 都是 50%，几乎同相，平均 2.50 V，差分只剩窄尖峰，平均 0；「有输入」一列，65% / 35%，平均 3.25 / 1.75 V，差分平均 1.50 V（5 V × 0.30）。<code>45_figs.py</code> L451–452 对这两组数加了断言。L145 改写为 SLOA145 §1 是传统 D 类（反相、50%）、§2 是无滤波（几乎同相），和我第一轮读到的原文一致；L205 参考资料同步更新。</td>
+</tr>
+<tr>
+<td>必改-09 电阻值出处</td>
+<td>✅ 已改好；初审有一部分写错，撤回</td>
+<td>见下面「异议一」。L52、L56、L203 现在写「第 1 页简化原理图」，并说明 §8.2 功能框图没有标电阻值。这是准确的。还有一点措辞上的小问题，见建议-13。</td>
+</tr>
+<tr>
+<td>必改-10「限流能把电流卡住」</td>
+<td>✅ 已改好</td>
+<td>page4 L16 改为「限流把<strong>最坏情况下的总电流</strong>限在 0.2 A 左右……<strong>挡不住</strong>电源反接、电解电容接反，也挡不住直流进喇叭」；L71 写了「限流挡不住接错，这一步不能省」；page3 L104 是误区条目；page3 L87 补了「芯片可能已坏，重接后测静态电流」。</td>
+</tr>
+<tr>
+<td>必改-11 测量表不是七列</td>
+<td>✅ 已改好</td>
+<td>page4 L82–87（A1–A4）、L93–98（B1–B4）、L131–137（D1–D5）都是七列：步骤、测什么、红表笔、黑表笔、挡位、应该读到、读不到时先查。红表笔写孔位，黑表笔写 T−/B− 轨或模块 GND。电流表一行写了插孔和串联方向。</td>
+</tr>
+</tbody>
+</table>
+<p>11 条全部已改好。没有「部分」，也没有「未改」。</p>
+<h3 id="异议一必改-09150-ω-在不在-snas545d-里--初审此处有误撤回--更正">异议一（必改-09）：150 Ω 在不在 SNAS545D 里 —— 初审此处有误，撤回 / 更正</h3>
+<ul>
+<li>核对方法：重新下载 <a href="https://www.ti.com/lit/ds/symlink/lm386.pdf">https://www.ti.com/lit/ds/symlink/lm386.pdf</a>（SNAS545D，Rev D，2023-08）。先用 <code>pdftotext -f 1 -l 1</code> 取第 1 页，文字层里有 15 k（7 脚 BYPASS 分压，两处）、15 k（到 5 脚 VOUT）、「150」、「1.35 k」、两只 50 k，还有 GAIN 1 / GAIN 8 引脚标注。再用 <code>pdftoppm -f 1 -l 1</code> 渲染成图，放大看连接关系：150 Ω 在输入级发射极节点和 8 脚之间，1.35 kΩ 在 8 脚和 1 脚之间，15 kΩ 从 1 脚接到 VOUT。</li>
+<li>结论：150 Ω <strong>在</strong>第 1 页的简化原理图（Schematic）里。初审说「150 Ω 全文查不到」是错的，这一句<strong>撤回</strong>。初审的另一半仍然成立：原稿把电阻值说成出自「功能框图」，而 §8.2 功能框图（p.9）确实没有标电阻值。这一半作者已经改了。</li>
+<li>页面现在的引用是否准确：page2 L52 写「这三个值画在数据手册 SNAS545D 第 1 页的简化原理图（Schematic）里……§8.2 的功能框图没有标电阻值」，L56 图注写「电阻值取自数据手册第 1 页的简化原理图」，L203 参考资料也同步了。这些都<strong>准确</strong>。</li>
+<li>小问题（建议-13）：L52、L203 写「§8.3、§9.2.1.2.1 也写了 15 kΩ 和 1.35 kΩ」，这么写不精确：
+<ul>
+<li>§8.3（p.9）只有一句「There is an internal 1.35-KΩ resistor that sets the gain of this device to 20」，没有 15 kΩ；</li>
+<li>§9.2.1.2.1（p.10）有「open the 1.35-kΩ resistor sets the gain at 20 (26 dB)」，15 kΩ 出现在讲低音提升的那段：「series RC from pin 1 to 5 (paralleling the internal 15-kΩ resistor)」。</li>
+<li>建议改成「§8.3（p.9）写了 1.35 kΩ；§9.2.1.2.1（p.10）写了 1.35 kΩ，并在低音提升一段提到 1、5 脚之间内部的 15 kΩ」。初审 L187 的表格也犯了同样的笼统，一并以此为准。</li>
+</ul>
+</li>
+<li>150 Ω 也可以用 2 × 15 k ÷ 200 = 150 Ω 反推，和页面 L52 一致。</li>
+</ul>
+<h3 id="异议二选做-d-喇叭功率是-416-mw-还是-44-mw--作者对初审-44-mw-有误更正为约-416-mw">异议二：选做 D 喇叭功率是 41.6 mW 还是 44 mW —— 作者对，初审 44 mW 有误，更正为约 41.6 mW</h3>
+<p>页面参数：手机峰值 1.48 V（page4 L114、page2 L31）；Ra 10 kΩ，Rb 1 kΩ，RP 10 kΩ 开满（滑动端在顶端）；PAM8403 内部 RI = 18 kΩ，RF = 142 kΩ，最大增益 24 dB（手册 p.7「Maximum Gain」）；负载 10 Ω + 8 Ω + 0.32 Ω = 18.32 Ω。</p>
+<p>独立复算：先求滑动端的戴维南等效，再接到模块。</p>
+<ol>
+<li>不接模块时，分压下臂 = Rb ∥ RP = 1k ∥ 10k = 909.1 Ω，Vth = 1.48 × 909.1 ÷ (10 000 + 909.1) = <strong>0.1233 V</strong>。</li>
+<li>戴维南内阻 Rth = 10k ∥ 1k ∥ 10k = <strong>833.3 Ω</strong>。</li>
+<li>模块的第一级是反相放大，输入端对交流地是 RI = 18 kΩ。外部内阻和 RI 串联，所以差分增益 = 2·RF ÷ (RI + Rth)。也可以写成「接上 18 kΩ 负载以后的节点电压 × 15.85」，两种写法等价。按页面用的 15.85 倍：
+V_in = 0.1233 × 18 ÷ (18 + 0.8333) = <strong>0.1179 V</strong>（页面 117.9 mV ✓）
+V_diff = 0.1179 × 15.85 = <strong>1.868 V</strong>（页面 1.868 V ✓）</li>
+<li>喇叭峰值 = 1.868 × 8 ÷ 18.32 = <strong>0.8158 V</strong>（页面 0.816 V ✓）。</li>
+<li>喇叭功率 = 0.8158² ÷ (2 × 8) = <strong>41.6 mW</strong>（页面 41.6 mW ✓）。</li>
+</ol>
+<p>如果严格按手册 p.7 的公式 AVD = 20·log[2·(RF/RI)]，2 × 142 ÷ 18 = 15.78 倍（23.96 dB），结果是 V_diff = 1.860 V、喇叭 0.812 V、41.2 mW。和 41.6 mW 只差 1%，结论不变。</p>
+<p>初审为什么错：初审算 3 脚电压时，误把 LM386 的 50 kΩ 输入电阻（1k ∥ 10k ∥ 50k → 分压比 0.08197 → 0.1213 V）套到了 PAM8403 上，没有用模块的 18 kΩ。所以 0.1213 × 15.85 = 1.923 V，喇叭 0.840 V，算出 44.1 mW，偏大约 6%。初审必改-06 里的「1.93 Vpk 差分、约 0.84 Vpk、约 44 mW」应更正为「1.87 Vpk、0.816 Vpk、41.6 mW」。改法（加分压）本身不变。</p>
+<p>手册 p.7 note 4（输入太大会削顶，可能损坏器件）是否落实：要把输出推到 5 V 满幅，输入峰值得到 5 ÷ 15.85 = 0.315 V。分压后最大只有 0.118 V，只是这个值的 37%，满音量也不会削顶。✅ 已满足，page4 L114 也写了「要把输出推到 5 V，输入峰值得到约 315 mV，分压后的手机信号够不着」。听力提示：page4 L19、L139 都有（喇叭朝下或朝墙、离耳朵 50 cm 以上、RP 从 0 慢慢加）。✅</p>
+<h3 id="pam8403-的调制方式">PAM8403 的调制方式</h3>
+<ul>
+<li>用 pdftotext 检索 <a href="https://www.diodes.com/assets/Datasheets/PAM8403.pdf">https://www.diodes.com/assets/Datasheets/PAM8403.pdf</a>（DS36439，11 页），查了 modulat、PWM、duty、in phase、spread、BD 等关键词。</li>
+<li>能找到的只有「filterless（无滤波）」，没有写调制方式，也没有写无输入时两路输出是同相还是反相：
+<ul>
+<li>p.1 标题「FILTERLESS 3W CLASS-D STEREO AUDIO AMPLIFIER」；</li>
+<li>p.1 Description「filterless architecture allows the device to drive the speaker directly, requiring no low-pass output filters」；</li>
+<li>p.1 Features「Filterless, Low Quiescent Current and Low EMI」。</li>
+</ul>
+</li>
+<li>p.7「Maximum Gain」一段写「the two amplifiers produce signals identical in magnitude, but different in phase by 180°」。这句讲的是两路输出里的<strong>音频信号</strong>互为反相，也就是 BTL 的含义，不是说没有输入时载波反相，不能拿来判断调制方式。</li>
+<li>结论：手册原文<strong>找不到</strong>调制方式。page2 L147 的「「PAM8403 就是这种无滤波调制」[待核实]」<strong>可以接受</strong>。页面没有从这个标签推出错误结论：
+<ul>
+<li>L147 只说「不管哪种，没有输入时两端对地平均都约 2.5 V」。这对 SLOA145 §1（传统，反相 50%）和 §2（无滤波，几乎同相）两种情况都成立，所以和 SLOA145 的说法没有冲突。</li>
+<li>page1、page3、page4 都没有说 PAM8403 无输入时两路同相或反相（全节检索「同相 / 反相」，只在 page2 L31 讲 LM386 的 3 脚、page4 L55 alt 出现）。</li>
+<li>建议（建议-15）：在 L147 加一句引用 p.1 的「filterless architecture … requiring no low-pass output filters」，作为「无滤波」这一部分的出处。再提醒一句：p.7 的「different in phase by 180°」说的是音频信号，不要和 SLOA145 §1 的「无输入反相」混为一谈。[待核实] 保留，只覆盖「具体是哪种调制」。</li>
+</ul>
+</li>
+</ul>
+<h3 id="检查结果tmprv45b">检查结果（/tmp/rv45b）</h3>
+<ul>
+<li>count_cjk：4/4 达标（page1 1826、page2 2582、page3 2896、page4 4300 个汉字）。</li>
+<li>run_blocks：PASS 4 / FAIL 0。page4 的 Python 块（建议-03 已采纳：<code>sys.path</code> 两行，填实测值后用上一级读数推下一级）示例读数全部 OK。</li>
+<li>check_figs：page1 3 张，page2 5 张，page3 3 张，page4 4 张，全部 OK。</li>
+<li>check_github_math --repo placeholder：4/4 OK（page2 25 处公式，源和 GitHub 一致）。</li>
+<li><code>45_figs.py</code>：完整跑通，所有 assert 都通过，包括 L587 的轨空档断言和 L451–452 的 BTL 波形断言。打印出的数值和页面一一对得上。只有一处例外：「+7805 25.1 %」和 page1 不一致，见必改-12。</li>
+<li>SPICE <code>spice/45/run.py</code>：32 项，超过 5% 的 0 项。</li>
+<li>安全与剧透检查：所有思考题、练习的答案都在 <code>&lt;details&gt;</code> 里，正文没有剧透。新增的选做 D 接线没有孔位冲突（模块用杜邦线，不上面包板）。面包板图里所有轨孔都过了断言。T+23（电流表）和 T−23（喇叭回线）同列不同轨，不冲突。有一处安全措辞可以更稳，见建议-17。</li>
+</ul>
+<h3 id="新必改">新必改</h3>
+<p><strong>必改-12｜page1 L62（图 45-p1-3 的 alt）、L69：「PAM8403 加 7805 约 26%」和图、page3 对不上</strong></p>
+<ul>
+<li>现状：图 45-p1-3 上紫色点标的是「25 %」，page3 L102 写「约 25.1%」，<code>45_figs.py</code> 打印「+7805 25.1 %」。page1 的 alt 和正文仍写「约 26%」。这是 7805 静态电流从 6 mA 改成 8 mA（建议-05）以后没有同步的旧值。复算：9 × (0.1818 ÷ 5 + 0.008) = 0.399 W，0.1 ÷ 0.399 = 25.0%。</li>
+<li>改法：page1 L62、L69 改成「约 25%」。最好由脚本打印的值生成，或者给脚本加一条 assert，防止再次不同步。</li>
+<li>理由：图文数字不一致，学生对图时会以为自己读错了 [5]。</li>
+</ul>
+<h3 id="新建议">新建议</h3>
+<p><strong>建议-13｜page2 L52、L203：「§8.3、§9.2.1.2.1 也写了 15 kΩ 和 1.35 kΩ」不精确。</strong> §8.3（p.9）只写了 1.35 kΩ；15 kΩ 只在 §9.2.1.2.1（p.10）讲低音提升的那段（「paralleling the internal 15-kΩ resistor」）。改法见上面「异议一」。</p>
+<p><strong>建议-14｜page4 L114：增益写法和出处。</strong> 手册 p.7 的公式是 AVD = 20·log[2·(RF/RI)]，最大 2 × 142 ÷ 18 = 15.78 倍（23.96 dB）。页面的 15.85 倍是把 24 dB 换算回去得到的，只差 0.4%，可以保留。建议在「算上模块 18 kΩ 的输入电阻」后面注明出处：手册 p.7，最大增益时 RI = 18 kΩ。再加半句解释：外部分压的内阻约 0.83 kΩ 和 RI 串联，所以增益略降。这样读者能自己复现 117.9 mV。</p>
+<p><strong>建议-15｜page2 L147：给「无滤波」补上 p.1 的原文出处，并区分 p.7 的「180°」。</strong> 具体见上面「PAM8403 的调制方式」。</p>
+<p><strong>建议-16｜图 45-p4-2：灰色标注「f11 / j11 → B−11」放在 C2 的地符号正下方，离 2 脚的地符号反而更远。</strong> 照图的学生可能会以为这是 C2 的接地孔（C2 实际插在 T+8 / T−8）。把这条标注挪到 2 脚的地符号旁边（<code>45_figs.py</code> p4_2 绘图部分）。</p>
+<p><strong>建议-17｜page4 L91、L144：交流档量 1 kHz。</strong> 不少入门万用表的交流档只标到 400 Hz 或 1 kHz 以内，1 kHz 的读数可能偏低。建议加一句「先看说明书的交流频率范围，不够就以示波器为准，或只看 ①÷③、④÷① 的比值」。比值在同一块表上测，误差会抵消。</p>
+<p>（初审建议-01 部分采纳。建议-02～12 已采纳或基本采纳：练习 5、三节对比表、Python 块、器材耐压和 B10k、7805 8 mA 和 0.33 µF、page1 L52 的 10% THD 说明、图 6-4 [待核实]、250 µF 说明、p3_3 标签「同电路换 SOIC」、故障表补充、两个热阻的解释。不再重复列出。）</p>
+<h3 id="发布结论">发布结论</h3>
+<p><strong>可以发布。</strong> 初审的 11 条必改全部已改好，其中会导致电路不工作的两条（01、02）和两条安全问题（06、07）都已经从图、文字和脚本断言三个层面解决。两处异议的结论是：</p>
+<ul>
+<li>必改-09 里「150 Ω 查不到」是初审错误，已撤回；作者现在的引用是准确的。</li>
+<li>选做 D 的 41.6 mW 是对的，初审的 44 mW 是误用了 LM386 的 50 kΩ，已更正。</li>
+</ul>
+<p>本轮新增的必改-12 只是 page1 两处「26%」改成「25%」，改动小，作者改完就可以发布，不需要第 3 轮复审。建议-13～17 可以在发布后顺手处理。</p>
+<h2 id="复核2026-10-27第-3-轮定点">复核（2026-10-27，第 3 轮，定点）</h2>
+<p>复核范围：第 2 轮的必改-12 和建议-13～17，对象是作者在 notes/part2-status.log L153 记为「21:13 CST teacher-fix done (r2)」之后的版本。顺带看了按学生 2 意见改动的地方（page3 三节对比表、练习 4，page4 L125）。tools、code、本节目录、spice/45 拷到 /tmp/rv45c，用 /workspace/circuits-venv/bin/python 重跑。行号以当前文件为准。</p>
+<h3 id="上一轮必改逐条核对">上一轮必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>判定</th>
+<th>核对结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-12 page1 的 26%</td>
+<td>✅ 已改好</td>
+<td>page1 L62（图 45-p1-3 的 alt）写「PAM8403 加 7805 约 25%」，L69 正文写「只有约 25%」。在 45-audio-amp-ics 目录下 rg「26 ?%」，0 处。逐个看过其余所有「26」：26 dB、TPA3116D2 的 26 V、0.261/0.2667 W、2.426 V，都和效率无关，也都正确。page3 L102 是「约 25.1%」，与脚本打印的 25.1 % 一致；page1 写取整后的「约 25%」，与图上标注一致。<code>45_figs.py</code> L284 新加了 <code>assert round(100 * ETA_7805_01) == 25</code>，防止以后再不同步。复算：9 × (0.1818/5 + 0.008) = 0.399 W，0.1/0.399 = 25.0%。✓</td>
+</tr>
+</tbody>
+</table>
+<h3 id="建议-1317-核对有没有引入新错误">建议-13～17 核对：有没有引入新错误</h3>
+<table>
+<thead>
+<tr>
+<th>建议</th>
+<th>结果</th>
+<th>核对</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>13 §8.3 / §9.2.1.2.1 出处</td>
+<td>采纳，正确</td>
+<td>page2 L52：「§8.3（p.9）只写了 1.35 kΩ；15 kΩ 出现在 §9.2.1.2.1（p.10）讲低音提升的那段（&quot;paralleling the internal 15-kΩ resistor&quot;）」，与第 2 轮异议一的核对一致。L203 参考资料同步了。</td>
+</tr>
+<tr>
+<td>14 增益出处、0.83 kΩ 内阻</td>
+<td>采纳，正确</td>
+<td>page4 L114 补上了「手册 p.7：最大增益时 RI = 18 kΩ」，以及「约 0.123 V 的源串约 0.83 kΩ 内阻，它和 RI 再分一次压」。复算：0.1233 × 18/18.833 = 0.1179 V，乘 15.85 得 1.868 V，喇叭 0.816 V，41.6 mW。与页面一致，没有引入新数字错误。</td>
+</tr>
+<tr>
+<td>15 p.1 filterless 原文，区分 p.7 的 180°</td>
+<td>采纳，正确</td>
+<td>page2 L147 引了 p.1 原文，并说明 p.7 的「different in phase by 180°」指的是音频信号互为反相（BTL），不是传统 D 类的无输入反相。[待核实] 只保留在「具体哪种调制」上，结论「无输入时两端对地平均约 2.5 V」不受影响。</td>
+</tr>
+<tr>
+<td>16 图 p4-2 的 2 脚接地标注</td>
+<td>采纳，有小瑕疵</td>
+<td>看图 <code>45_p4_2_schem_lab.png</code>（放大 3 倍）：标注改成了「2 脚接地：f11 / j11 → B−11」，挪到 2 脚的地符号左边，不会再被看成 C2 的地。不过文字压在 RP 上端那根竖线上，见新建议-01。孔位没变，和图 p4-1 一致。</td>
+</tr>
+<tr>
+<td>17 交流档频率范围</td>
+<td>采纳，正确</td>
+<td>page4 L91 加在测量表上方，L144 加在「没有示波器怎么办」里，给了三种办法：示波器、改放 400 Hz、只看 ①÷③、④÷① 的比值。我核对了改放 400 Hz 时预期读数是否还成立：输出 220 µF 配 18 Ω 的下限约 40 Hz，400 Hz 时 ④÷① 只降约 0.5%；增益 20 时 LM386 在 400 Hz 是平坦的。所以表里按 1 kHz 给的预期值照样能用，这个办法没有问题。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>安全和接线检查：</strong></p>
+<ul>
+<li>新增或改写的接线文字只有 page4 L125：「模块的 G 在板内就是 GND……不用另外接」。它对应图 45-p4-4：手机 GND 接模块 G、模块 GND 接地，这两处图上都画了，属于有原理图对应的说明，没有新增导线。</li>
+<li>page3 L150–158 的三节对比表（学生 2 N1）只改了 44 栏的描述，不涉及接线。其中「DRV8871 只保护芯片自己，接错线仍要靠限流电源和上电前检查」这句说得对。</li>
+<li>安全条款都还在，没有被改坏：
+<ul>
+<li>L24「改线、换元件之前先断电」；</li>
+<li>L17、L264 和 page3 L81：温度只用测温探头量，「不要用手摸」，超过 60 °C 断电；</li>
+<li>L129「手机音量、RP 都先转到 0，再上电」；</li>
+<li>L139：喇叭朝下、离耳朵 50 cm 以上。</li>
+</ul>
+</li>
+</ul>
+<h3 id="三项评分-1">三项评分</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>第 2 轮</th>
+<th>第 3 轮</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>好</td>
+<td>增益网络出处、PAM8403 的「无滤波 / 180°」都已精确到页码和原文。选做 D 的分压补上了「源串 0.83 kΩ，再和 RI 分压」，推导链完整</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>好</td>
+<td>好</td>
+<td>图文数字（25%）统一了。交流档频率提醒给了可操作的替代办法；p4-2 只剩一个文字压线的小瑕疵</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>好</td>
+<td>好</td>
+<td>沿用第 2 轮：练习 5（选型迁移）和 43/44/45 对比表；对比表的 44 栏已与第 44 节一致</td>
+</tr>
+</tbody>
+</table>
+<p>三项都没有「差」。</p>
+<h3 id="专项检查tmprv45c">专项检查（/tmp/rv45c）</h3>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>45_figs.py</code> 全部重跑</td>
+<td>exit 0，所有 assert 通过，包括新的 25% 断言；15 张 PNG 的 md5 与仓库一致</td>
+</tr>
+<tr>
+<td><code>run_blocks</code></td>
+<td>PASS 4 / FAIL 0</td>
+</tr>
+<tr>
+<td><code>check_figs</code></td>
+<td>3/5/3/4，OK</td>
+</tr>
+<tr>
+<td><code>count_cjk</code></td>
+<td>page1 1826、page2 2671、page3 2945、page4 4458，全部达标</td>
+</tr>
+<tr>
+<td><code>check_github_math --repo placeholder/placeholder</code></td>
+<td>4/4 OK</td>
+</tr>
+<tr>
+<td><code>fix_inline_math_spacing --check</code></td>
+<td>0 处</td>
+</tr>
+</tbody>
+</table>
+<h3 id="新必改-1">新必改</h3>
+<p>无。</p>
+<h3 id="新建议1-条不阻塞">新建议（1 条，不阻塞）</h3>
+<ul>
+<li><strong>新建议-01（图 45-p4-2，<code>45_figs.py</code> p4_2 绘图部分）</strong>：「2 脚接地：f11 / j11 → B−11」压在 RP 上端那根竖线上，「2 脚」两个字和导线重叠。旁边的「i12 / f12」也被 ③ 的引线穿过，并且和 3 脚的脚号「3」挨得很近。建议加白底（bbox），或者把文字挪开。学生 2 的复核 2 也提了同一点。</li>
+</ul>
+<h3 id="结论">结论</h3>
+<p><strong>可以发布。</strong> 必改-12 已经改好：page1 L62、L69 两处都改成了 25%，全节没有残留的 26%，脚本里也加了同步断言。建议-13～17 全部采纳，没有引入数值、接线或安全方面的新错误。新建议-01 可以在发布后顺手处理。</p>
+<p><strong>计数：上一轮必改 1 条，已改好 1 条；新必改 0 条；新建议 1 条。</strong></p>
+<p>约束遵守：只向本文件末尾追加了这一节。页面、代码、图都没有改动。没有运行任何 git 命令，rg、grep 也没有碰 .git。脚本全部在 /tmp/rv45c 副本里，用 /workspace/circuits-venv/bin/python 运行。</p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

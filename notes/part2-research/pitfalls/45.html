@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 音频功放 IC（LM386 / PAM8403 / TPA3116） · 误区与排查（反方研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/45.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="45-音频功放-iclm386--pam8403--tpa3116--误区与排查反方研究员">45 音频功放 IC（LM386 / PAM8403 / TPA3116） · 误区与排查（反方研究员）</h1>
+<blockquote>
+<p>依据：</p>
+<ul>
+<li>notes/45-research.md；</li>
+<li>本地 LM386 数据手册（/workspace/pdfs/lm386.txt，SNAS545）；</li>
+<li>本地 TPA3116D2 数据手册（/workspace/pdfs/tpa3116d2.txt）。</li>
+</ul>
+<p>PAM8403 的数据手册本人没有打开，只沿用研究笔记的内容。「本人计算」只作演示。</p>
+</blockquote>
+<h2 id="a-新手误区与边界失效">A. 新手误区与边界失效</h2>
+<h3 id="a1-lm386-的输入只允许-04-v手机音量开满会超出">A1 LM386 的输入只允许 ±0.4 V：手机音量开满会超出</h3>
+<ul>
+<li><strong>现象</strong>：声音严重削波、发破；极端情况下芯片损坏。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>LM386 数据手册的绝对最大额定值和推荐条件都写 Input Voltage −0.4 V 到 0.4 V。</li>
+<li>手机耳机输出满音量时可达几百 mV 到约 1 V 量级（[待核实]，见 43 节 A2）。即使不超出额定值，0.4 V × 20 = 8 Vpp，也已经接近 9 V 电源下的削波点（本人计算）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器测 LM386 的 3 脚（同相输入端）在满音量时的峰值。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>10 kΩ 电位器当衰减器用（研究笔记已有）。正文要写明「手机音量先放在中间」，并在电位器前串 10–47 kΩ 进一步衰减（本人建议值）。</li>
+<li>增益 200 时尤其要小心。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI LM386 数据手册 §6.1 / §6.3 <a href="https://www.ti.com/lit/ds/symlink/lm386.pdf">https://www.ti.com/lit/ds/symlink/lm386.pdf</a> （本地已核对）</li>
+</ul>
+<h3 id="a2-增益-200-时啸叫自激数据手册的三处要求缺一不可">A2 增益 200 时啸叫、自激：数据手册的三处要求缺一不可</h3>
+<ul>
+<li><strong>现象</strong>：上电就啸叫，或者有超声频振荡（耳朵听不到，但芯片发热）。</li>
+<li><strong>原因与数据手册要求</strong>：
+<ul>
+<li>1–8 脚接 10 µF 绕过内部 1.35 kΩ 后，增益为 200。数据手册 §9.2.1.2.2 要求此时把未用的输入端用 0.1 µF 旁路或短接到地，否则会出现「possible instabilities」。</li>
+<li>典型应用图中，输出对地有 0.05 µF + 10 Ω 的吸收网络。</li>
+<li>7 脚 BYPASS 电容（电气特性测试条件为 10 µF）会影响 PSRR（50 dB 的条件是 C_BYPASS = 10 µF）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 1 µs/div 看输出；摸芯片是否发热；逐项检查上述三个元件。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>2 脚接地或接 0.1 µF；</li>
+<li>0.05 µF（用 47 nF）+ 10 Ω 接在输出与地之间；</li>
+<li>7 脚接 10 µF；</li>
+<li>6 脚就近接 0.1 µF + 100–470 µF。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：LM386 数据手册 §9.2.1.2.2、典型应用图、§6.5（本地已核对，同 A1）。</li>
+</ul>
+<h3 id="a3-用-9-v-叠层电池内阻大低频突突声">A3 用 9 V 叠层电池：内阻大，低频「突突」声</h3>
+<ul>
+<li><strong>现象</strong>：大音量时，声音带有低频「突突」声（motorboating），或者音量一大就断断续续。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>9 V 叠层电池内阻较大（[待核实]：依品牌和电量而定），大电流时电源电压下陷。</li>
+<li>电源波动经 PSRR（50 dB，而且只在 C_BYPASS = 10 µF 时）回到输入级，形成低频反馈。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 DC 档看 6 脚，大音量时是否随音乐起伏。</li>
+<li><strong>修复</strong>：6 脚并 470 µF；或者改用 6 × AA 或 9–12 V 适配器（最好是线性的，或者干净的开关电源）。</li>
+<li><strong>来源</strong>：LM386 数据手册 §6.5 PSRR（本地已核对）；电池内阻 [待核实]。</li>
+</ul>
+<h3 id="a4-lm386-型号与功率9-v--700-mw-这一行是-n-3-的">A4 LM386 型号与功率：9 V / 700 mW 这一行是 N-3 的</h3>
+<ul>
+<li><strong>现象</strong>：正文写「9 V 时可以有 0.7 W」，学生实测只有约一半。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册电气特性表中，6 V / 8 Ω / 10 % 的 250 / 325 mW 对应 LM386N-1 / M-1 / MM-1；9 V / 8 Ω 的 500 / 700 mW 对应 LM386N-3；16 V / 32 Ω 对应 N-4。</li>
+<li>LM386N-1 的供电范围为 4–12 V（研究笔记已有）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：看芯片表面印字（N-1 / N-3 / N-4）。</li>
+<li><strong>修复</strong>：正文按实际所购型号引用对应的那一行，不要混用。</li>
+<li><strong>来源</strong>：LM386 数据手册 §6.5（本地已核对）。</li>
+</ul>
+<h3 id="a5-输入直流偏移信号源带直流">A5 输入直流偏移：信号源带直流</h3>
+<ul>
+<li><strong>现象</strong>：没有信号时，输出端（隔直电容前）的电压偏离 VS/2；喇叭有「咔」声。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册 §9.2.1.2.2：两个输入端都经 50 kΩ 偏置到地，输入开路时约有 12.5 mV（250 nA × 50 kΩ）。</li>
+<li>源的直流电阻在 10–250 kΩ 之间时，偏移会增大。</li>
+<li>原文：「all offset problems are eliminated if the input is capacitively coupled」。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：万用表测 3 脚的直流电压。</li>
+<li><strong>修复</strong>：输入串 1 µF 隔直电容；或者按数据手册的方法，在未用的输入端对地接一只与源直流电阻相等的电阻。</li>
+<li><strong>来源</strong>：LM386 数据手册 §9.2.1.2.2（本地已核对）。</li>
+</ul>
+<h3 id="a6-输出-220-µf-隔直电容低频截止极性和开机冲击">A6 输出 220 µF 隔直电容：低频截止、极性和开机冲击</h3>
+<ul>
+<li><strong>现象</strong>：低音弱；开机时喇叭「嘭」一声；电容接反后漏电发热。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>与 8 Ω 构成高通：220 µF 对应 90 Hz（研究笔记已算）。</li>
+<li>单电源输出端约在 VS/2，开机时电容充电。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：正极接 5 脚；耐压 ≥ 16 V；开机前把音量调到最小。需要更低的低频截止时用 470 µF（约 42 Hz，本人计算）。</li>
+<li><strong>来源</strong>：LM386 数据手册典型应用图（本地）；本人计算。</li>
+</ul>
+<h3 id="a7-静态电流约-4-ma只在-6-v-时成立">A7 静态电流「约 4 mA」只在 6 V 时成立</h3>
+<ul>
+<li><strong>现象</strong>：9 V 时测到 5–6 mA 甚至更多，学生以为芯片坏了。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册写 6 V 时典型 4 mA、最大 8 mA；Figure 6-1 中静态电流随电源电压上升。</li>
+<li>刚上电时，输出电容和 7 脚电容的充电电流也会计入读数。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：上电 10 s 后再读数；输入短路，音量调到 0。</li>
+<li><strong>修复</strong>：正文写「6 V 时典型 4 mA（最大 8 mA）；9 V 时略高，以 Figure 6-1 为准」。</li>
+<li><strong>来源</strong>：LM386 数据手册 §6.5、Figure 6-1（本地已核对）。</li>
+</ul>
+<h3 id="a8硬伤级的易犯错pam8403-的喇叭负端接地或者左右负端接在一起">A8（硬伤级的易犯错）PAM8403 的喇叭负端接地，或者左右负端接在一起</h3>
+<ul>
+<li><strong>现象</strong>：芯片立即保护或发烫；声音时有时无；模块损坏。</li>
+<li><strong>原因</strong>：PAM8403 是 BTL 差分输出。ESE 118475 中 Dave Tweed 的回答：「There is no ground. ... it is not safe to connect any of these terminals together」。三芯耳机插头的公共地正是把左右负端接在了一起。</li>
+<li><strong>排查</strong>：万用表 DC 档测每个输出端对地的电压：都约为 2.5 V（研究笔记 page4 已安排）。不要用示波器的地夹去夹任何一个输出端。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>每只喇叭两根线单独接到 L+ / L−、R+ / R−。</li>
+<li>接耳机时只用 L+、R+，各自经电容耦合，耳机地接电源 GND（ESE 149687 的思路，仅搜索确认）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>ESE 118475 <a href="https://electronics.stackexchange.com/questions/118475">https://electronics.stackexchange.com/questions/118475</a> （已打开）</li>
+<li>ESE 149687 <a href="https://electronics.stackexchange.com/questions/149687">https://electronics.stackexchange.com/questions/149687</a> （仅搜索确认）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a9-无滤波-d-类的输出直接用示波器或万用表看读数没有意义">A9 无滤波 D 类的输出直接用示波器或万用表看：读数没有意义</h3>
+<ul>
+<li><strong>现象</strong>：
+<ul>
+<li>示波器上喇叭端是满幅的方波（PWM），看不到正弦；</li>
+<li>万用表 AC 档的读数忽大忽小；</li>
+<li>附近的收音机受到干扰。</li>
+</ul>
+</li>
+<li><strong>原因</strong>：无滤波 D 类依靠喇叭的电感来平滑电流，导线上仍然是 PWM。SLOA145 指出导线长时需要 LC 或磁珠来满足 EMC。</li>
+<li><strong>排查</strong>：两个通道做 A−B，再加数学低通；或者在探头前加 RC 低通（1 kΩ + 10 nF，约 16 kHz，本人建议值）后再测。</li>
+<li><strong>修复</strong>：喇叭线保持短而且双绞；需要测量时再加 RC 观测网络。</li>
+<li><strong>来源</strong>：TI SLOA145 <a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a> （研究笔记作者已打开）。</li>
+</ul>
+<h3 id="a10-usb-5-varduino-5-v-脚给-pam8403-供电掉电复位噪声大">A10 USB 5 V、Arduino 5 V 脚给 PAM8403 供电：掉电复位、噪声大</h3>
+<ul>
+<li><strong>现象</strong>：大音量时，Arduino 复位或 USB 端口断开；喇叭里有电脑的「嘀嘀」数字噪声。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>双声道 4 Ω、3 W 时，电源电流在安培级：按效率约 85 % 计，2 × 3 / 0.85 / 5 ≈ 1.4 A（本人计算）。电脑 USB 2.0 端口的标称电流常见为 500 mA（[待核实]）。</li>
+<li>电脑 USB 地上的噪声会通过音频地进入放大器。</li>
+<li>手机一边充电一边接电路，也会形成地回路（43 节 B3）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器看模块 VDD 在大音量时是否下陷。</li>
+<li><strong>修复</strong>：用独立的 5 V ≥ 2 A 电源；VDD 就近并 470 µF。实验时用 8 Ω 喇叭，电流约减半。PAM8403 的电源绝对最大值本人没有核对 [待核实]，不要超过 5.5 V 使用（本人保守建议）。</li>
+<li><strong>来源</strong>：本人计算；USB 电流 [待核实]。</li>
+</ul>
+<h3 id="a11-tpa3116-模块只讲--演示dc-检测过流锁死最小负载">A11 TPA3116 模块（只讲 / 演示）：DC 检测、过流锁死、最小负载</h3>
+<ul>
+<li><strong>现象</strong>：
+<ul>
+<li>用信号发生器输入极低频或直流测试信号时，模块自动静音；</li>
+<li>输出短路一下之后，就一直没有声音。</li>
+</ul>
+</li>
+<li><strong>原因</strong>（TPA3116D2 数据手册）：
+<ul>
+<li>§7.3.9 DC Detect：差分占空比 &gt; 60 % 且同一极性持续超过 420 ms 时报故障并关断。</li>
+<li>过流保护（输出短路或对 PVCC / GND 短路）是 Latched，要通过 SDZ 或重新上电才能恢复。</li>
+<li>最小负载：TPA3116D2 为 3.2 Ω（典型）/ 4 Ω，条件是带 10 µH / 680 nF 输出滤波器。</li>
+<li>12 V 时空载静态电流典型 20 mA。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：看 FAULTZ（开漏）脚的电平。</li>
+<li><strong>修复</strong>：测试用 ≥ 20 Hz 的交流信号；短路后重新上电；喇叭 ≥ 4 Ω。</li>
+<li><strong>来源</strong>：TI TPA3116D2 数据手册 §6.3 / §6.5 / §7.3.9 / 保护表 <a href="https://www.ti.com/lit/ds/symlink/tpa3116d2.pdf">https://www.ti.com/lit/ds/symlink/tpa3116d2.pdf</a> （本地已核对）。</li>
+</ul>
+<h3 id="a12-10--thd-下的标称功率与听感">A12 「10 % THD 下的标称功率」与听感</h3>
+<ul>
+<li>研究笔记已列出。补充：
+<ul>
+<li>PAM8403 在 3.6 V、4 Ω 时：10 % 为 1.6 W，1 % 为 1.3 W（研究笔记引用）。差 20 % 的功率，失真却差 10 倍。</li>
+<li>正文的对比表应同时列出两个 THD 条件，或者统一用 1 %。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Diodes PAM8403 <a href="https://www.diodes.com/assets/Datasheets/PAM8403.pdf">https://www.diodes.com/assets/Datasheets/PAM8403.pdf</a> （研究笔记作者已打开，本人未打开）。</li>
+</ul>
+<h2 id="b-面包板实操问题">B. 面包板实操问题</h2>
+<h3 id="b1-高增益--面包板输入长线50-hz-嗡嗡声">B1 高增益 + 面包板输入长线：50 Hz 嗡嗡声</h3>
+<ul>
+<li><strong>现象</strong>：增益 200 时，没有信号也有很大的嗡嗡声；用手靠近输入线，声音会变大。</li>
+<li><strong>原因</strong>：输入阻抗 50 kΩ，乘以 200 倍增益，输入线拾取的工频被放大。</li>
+<li><strong>排查</strong>：把输入端短路，看嗡嗡声是否消失。</li>
+<li><strong>修复</strong>：输入线短而且使用屏蔽线（或双绞）；未用的输入端按 A2 处理；实验时远离适配器和台灯。</li>
+<li><strong>来源</strong>：ESE 462446 <a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a> （30 节已打开，工频拾取）。</li>
+</ul>
+<h3 id="b2-电位器接成可变电阻只用两个脚音量调不到-0">B2 电位器接成可变电阻（只用两个脚）：音量调不到 0</h3>
+<ul>
+<li><strong>现象</strong>：电位器调到底仍然有声音，或者一转就是满音量。</li>
+<li><strong>原因</strong>：要用作分压器：两端分别接信号和地，中间的抽头接 3 脚。只接两个脚就成了串联电阻，配合 50 kΩ 的输入电阻，衰减范围很有限（本人推导）。</li>
+<li><strong>修复</strong>：三脚接法；接线前用万用表确认哪个是中间的抽头。</li>
+<li><strong>来源</strong>：LM386 数据手册典型应用图（10 kΩ 电位器的接法，本地）。</li>
+</ul>
+<h3 id="b3-输出电流回路走面包板zobel-网络远离芯片">B3 输出电流回路走面包板，Zobel 网络远离芯片</h3>
+<ul>
+<li><strong>现象</strong>：自激时有时无，按压面包板时会变。</li>
+<li><strong>原因</strong>：0.05 µF + 10 Ω 要贴近 5 脚才起作用；输出电流回路也会带来接触不良（43 节 B1）。</li>
+<li><strong>修复</strong>：Zobel 网络紧贴 5 脚，并就近接地；喇叭的回线直接接到电源地。</li>
+<li><strong>来源</strong>：LM386 数据手册典型应用图（本地）。</li>
+</ul>
+<h2 id="c-对-45-researchmd-的意见">C. 对 <a href="http://45-research.md">45-research.md</a> 的意见</h2>
+<ol>
+<li><strong>缺少 LM386 输入 ±0.4 V 限制（A1）</strong>：这是手机满音量直连时的真实风险，正文应写入。</li>
+<li><strong>9 V 实验的功率说法要对应型号</strong>：700 mW 是 N-3 的 9 V 数据，N-1 只给了 6 V 的数据（A4）。研究笔记只引用了 6 V 的 325 mW，做法正确，但 page4 用的是 9 V，要防止正文写出「0.7 W」。</li>
+<li><strong>增益 200 的稳定性</strong>：研究笔记的「常见错误」已提到啸叫，但没写数据手册的具体要求（未用输入端旁路 0.1 µF、Zobel 网络、BYPASS 10 µF）。建议照数据手册写入 page4（A2）。</li>
+<li><strong>静态电流「约 4 mA」</strong>：只适用于 6 V；page4 用的是 9 V（A7）。</li>
+<li><strong>PAM8403 的使用说明</strong>：只说了「不能接地」，没说左右负端也不能相连、三芯耳机不能直接接；USB 供电的电流也没估算（A8、A10）。</li>
+<li><strong>TPA3116</strong>：DC 检测（60 % / 420 ms）、过流锁死、最小负载 3.2 Ω（带滤波）、空载 20 mA @ 12 V。可以补充到「只讲」部分（A11）。</li>
+<li><strong>算例复核</strong>：
+<ul>
+<li>0.56 W、3.1 W、26 dB / 46 dB、220 µF → 90.4 Hz、250 µF → 79.6 Hz 都正确（本人复核）。</li>
+<li>「BTL 时 Vp 接近 V_supply」是理想值，没有扣除 RDS(on)，研究笔记已注明是理想值。</li>
+</ul>
+</li>
+<li><strong>研究笔记「本节来源均已打开」</strong>：本人只核对了 LM386 和 TPA3116 的本地数据手册；PAM8403 没有复核。</li>
+</ol>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] LM386 的 3 脚峰值 &lt; 0.4 V（手机音量先放在中间）</li>
+<li>[ ] 增益 200 时：2 脚接地或接 0.1 µF；7 脚接 10 µF；5 脚接 47 nF + 10 Ω；6 脚接 0.1 µF + 470 µF</li>
+<li>[ ] 220 µF 正极接 5 脚；开机前音量调到最小</li>
+<li>[ ] 确认芯片印字（N-1 / N-3 / N-4），按型号引用功率</li>
+<li>[ ] PAM8403：每只喇叭单独接线，任何输出端都不接地、不相连，不用示波器地夹</li>
+<li>[ ] PAM8403 用独立的 5 V ≥ 2 A 电源，不从 Arduino 取电</li>
+<li>[ ] 输入线短、屏蔽；电位器三脚接法</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<p>本地已核对：</p>
+<ul>
+<li>TI LM386：<a href="https://www.ti.com/lit/ds/symlink/lm386.pdf">https://www.ti.com/lit/ds/symlink/lm386.pdf</a></li>
+<li>TI TPA3116D2：<a href="https://www.ti.com/lit/ds/symlink/tpa3116d2.pdf">https://www.ti.com/lit/ds/symlink/tpa3116d2.pdf</a></li>
+</ul>
+<p>已打开：</p>
+<ul>
+<li>ESE 118475：<a href="https://electronics.stackexchange.com/questions/118475">https://electronics.stackexchange.com/questions/118475</a></li>
+</ul>
+<p>30 节已打开：</p>
+<ul>
+<li>ESE 462446：<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a></li>
+</ul>
+<p>研究笔记作者已打开：</p>
+<ul>
+<li>TI SLOA145：<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a></li>
+<li>Diodes PAM8403：<a href="https://www.diodes.com/assets/Datasheets/PAM8403.pdf">https://www.diodes.com/assets/Datasheets/PAM8403.pdf</a></li>
+</ul>
+<p>仅搜索确认：</p>
+<ul>
+<li>ESE 149687：<a href="https://electronics.stackexchange.com/questions/149687">https://electronics.stackexchange.com/questions/149687</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>误区条数：15 条（A1–A12、B1–B3）。</li>
+<li>带外部 URL 的条数：13 条。A6、A10 是本人计算或推导（A6 引用的本地数据手册 URL 见 A1）。</li>
+<li>[待核实]：4 处（A1 手机输出幅度、A3 电池内阻、A10 USB 电流和 PAM8403 绝对最大值）。</li>
+<li>搜索：本节 1 次搜索 + 1 次打开 + 2 份本地数据手册。数量远低于目标。</li>
+</ul>
+<h2 id="d-补查实际搜索-10-次另下载-energizer-两份-pdf用-curl-读取-arduino-论坛帖-1-个duracell-pdf-返回的是网页而非-pdfpam8403-用本地-workspacepdfspam8403pdf">D. 补查（实际搜索 10 次；另下载 Energizer 两份 PDF，用 curl 读取 Arduino 论坛帖 1 个；Duracell PDF 返回的是网页而非 PDF；PAM8403 用本地 /workspace/pdfs/pam8403.pdf）</h2>
+<h3 id="d1-待核实-逐条处理">D1. [待核实] 逐条处理</h3>
+<ul>
+<li><strong>A1（手机满音量输出几百 mV 到约 1 V）</strong>：基本核实，按 <a href="http://43.md">43.md</a> D1-A2 改写。
+<ul>
+<li>Apple USB-C 转接头最大约 1.05 V（已打开 <a href="https://doineedanamp.com/sources/iphone-usb-c/">https://doineedanamp.com/sources/iphone-usb-c/</a> ）。</li>
+<li>欧版约 0.5 Vrms（仅搜索确认 <a href="https://www.audiowords.net/reviews/apple-usb-c-dongle">https://www.audiowords.net/reviews/apple-usb-c-dongle</a> ）。</li>
+<li>本人计算：1.05 Vrms 的峰值约 1.48 V，远超 LM386 输入允许的 ±0.4 V。即使 0.5 Vrms，峰值约 0.71 V 也已经超出。A1 的结论成立，而且比原文写的更严重。</li>
+</ul>
+</li>
+<li><strong>A3（9 V 叠层电池内阻较大）</strong>：已核实（数值仅搜索确认）。
+<ul>
+<li>Duracell MN1604：1 kHz 内阻约 1.7 Ω，放电末期上升到约 3 Ω。<a href="https://duracell.com/wp-content/uploads/2016/03/MN1604_US_CT1.pdf">https://duracell.com/wp-content/uploads/2016/03/MN1604_US_CT1.pdf</a> （curl 返回的是网页，没能取得 PDF，仅搜索确认）</li>
+<li>6LR61 数据表也给出了 2.1 Ω 量级的值。<a href="https://www.novitronic.com/Datenbl%C3%A4tter/Akkus%20%20%26%20Batterien/AlkalieMn/4757_4758_4761_Technical%20Data%20Sheet%206LR61%20Standard%20Jan-2008.pdf">https://www.novitronic.com/Datenblätter/Akkus  %26 Batterien/AlkalieMn/4757_4758_4761_Technical Data Sheet 6LR61 Standard Jan-2008.pdf</a></li>
+<li>Energizer 522 数据手册（已下载阅读）没有给出内阻，只给出容量随放电电流增大而下降的曲线（10/25/50 mA，截止电压 4.8 V），即大电流时可用容量明显减少。<a href="https://data.energizer.com/pdfs/522.pdf">https://data.energizer.com/pdfs/522.pdf</a></li>
+<li>Energizer 内阻技术公告（已下载阅读）给出了测量方法：先小电流稳定，再用约 100 ms 的大电流脉冲，用 ΔV/ΔI 计算。<a href="https://data.energizer.com/pdfs/batteryir.pdf">https://data.energizer.com/pdfs/batteryir.pdf</a></li>
+<li>本人计算：按 2 Ω、峰值 0.3 A 计，电压下陷约 0.6 V。</li>
+<li>建议正文写成：「新电池约 1.7–2 Ω，用旧后约 3 Ω」，并注明数值来自厂家数据手册。</li>
+</ul>
+</li>
+<li><strong>A10（USB 2.0 500 mA）</strong>：已核实（仅搜索确认）。
+<ul>
+<li>USB 2.0 一个单位负载为 100 mA，枚举前最多 100 mA，配置后高功率设备最多 5 个单位负载，即 500 mA。</li>
+<li>来源：Infineon AN57294 &quot;USB 101&quot; <a href="https://www.infineon.com/assets/row/public/documents/cross-divisions/42/infineon-an57294-usb-101-an-introduction-to-universal-serial-bus-2.0-applicationnotes-en.pdf">https://www.infineon.com/assets/row/public/documents/cross-divisions/42/infineon-an57294-usb-101-an-introduction-to-universal-serial-bus-2.0-applicationnotes-en.pdf</a> ；TI SLYT118 <a href="https://www.ti.com/lit/an/slyt118/slyt118.pdf">https://www.ti.com/lit/an/slyt118/slyt118.pdf</a></li>
+<li>电压范围见 <a href="http://41.md">41.md</a> D1-A6（4.4–5.5 V）。</li>
+</ul>
+</li>
+<li><strong>A10（PAM8403 绝对最大值）</strong>：已核实。本地 Diodes DS36439 数据手册：
+<ul>
+<li>电源绝对最大值 6.0 V，推荐 2.5–5.5 V。</li>
+<li>手册注明 4 节碱性电池会超过 6 V，&quot;will probably damage&quot;。</li>
+<li>输出功率：5 V、4 Ω 时 10 % THD 为 3.2 W、1 % 为 2.5 W；效率约 83 %（4 Ω）。</li>
+<li>本人计算：电源电流 2 × 3.2 / 0.83 / 5 ≈ 1.54 A，比原文的 1.4 A 略大，结论不变。</li>
+<li>原文「不要超过 5.5 V」与推荐上限一致，可以去掉 [待核实]。</li>
+<li>另外该型号已标为 NRND（建议改用 PAM8406）。</li>
+<li>来源：<a href="https://www.diodes.com/assets/Datasheets/PAM8403.pdf">https://www.diodes.com/assets/Datasheets/PAM8403.pdf</a> （本地 /workspace/pdfs/pam8403.pdf）</li>
+</ul>
+</li>
+<li>统计：已核实 4（A1、A3、A10 的 USB 部分、A10 的 PAM8403 部分），删除 0，保留 0。</li>
+</ul>
+<h3 id="d2-新增坑">D2. 新增坑</h3>
+<h4 id="d2-1-pam8403-由电脑-usb-供电音频也来自电脑噪声和地回路补充-a10">D2-1 PAM8403 由电脑 USB 供电、音频也来自电脑：噪声和地回路（补充 A10）</h4>
+<ul>
+<li><strong>现象</strong>：用电脑 USB 供电时有噪声；换成手机充电器供电就没有了。</li>
+<li><strong>原因</strong>：电脑 USB 电源噪声大，而且电源地和音频地形成回路。帖中还有人提到可能超出端口额定电流。</li>
+<li><strong>怎么排查</strong>：换成充电宝或独立充电器供电，对比噪声。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>用独立 5 V 电源，电脑只提供音频信号。</li>
+<li>VDD 就近加大电解电容和 0.1 µF 电容。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Arduino 论坛 &quot;Noise issue when running PAM 8403 amplifier from usb power&quot;（已通过 JSON 读取原文）<a href="https://forum.arduino.cc/t/noise-issue-when-running-pam-8403-amplifier-from-usb-power/1369993">https://forum.arduino.cc/t/noise-issue-when-running-pam-8403-amplifier-from-usb-power/1369993</a> ；Reddit 地回路帖（仅搜索确认）<a href="https://www.reddit.com/r/AskElectronics/comments/711jir/">https://www.reddit.com/r/AskElectronics/comments/711jir/</a></li>
+</ul>
+<h4 id="d2-2-手机满音量直接接-pam8403削波可能损坏喇叭或芯片">D2-2 手机满音量直接接 PAM8403：削波，可能损坏喇叭或芯片</h4>
+<ul>
+<li><strong>现象</strong>：音量调到 80 % 以上时失真明显，喇叭损坏。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>PAM8403 增益最大 24 dB。</li>
+<li>数据手册明确写道：&quot;input signal too large… clipping… will damage the device&quot;（本地已核对）。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：示波器看 LC 后的输出（差分测量，见 <a href="http://44.md">44.md</a> D2-1），观察是否削顶。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>输入加分压或双联电位器（不要只串电阻）。</li>
+<li>手机音量保持在 75–80 % 以下。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本地 PAM8403 数据手册；ESE 560905（仅搜索确认）<a href="https://electronics.stackexchange.com/questions/560905">https://electronics.stackexchange.com/questions/560905</a> ；diyAudio 帖（仅搜索确认）<a href="https://www.diyaudio.com/community/threads/pam8403-reducing-input-volume-level-to-prevent-distortion.292787/">https://www.diyaudio.com/community/threads/pam8403-reducing-input-volume-level-to-prevent-distortion.292787/</a></li>
+</ul>
+<h4 id="d2-3-a8负端接地或接在一起有实际损坏案例">D2-3 A8（负端接地或接在一起）有实际损坏案例</h4>
+<ul>
+<li><strong>现象</strong>：两个喇叭的负端接在一起之后，一个声道没有声音了。</li>
+<li><strong>原因</strong>：PAM8403 是 BTL 输出，L− 和 R− 都是有源输出端，不是地。</li>
+<li><strong>来源</strong>（均仅搜索确认）：
+<ul>
+<li>Reddit 损坏案例 <a href="https://www.reddit.com/r/AskElectronics/comments/jca84t/">https://www.reddit.com/r/AskElectronics/comments/jca84t/</a></li>
+<li>ESE 118475 <a href="https://electronics.stackexchange.com/questions/118475">https://electronics.stackexchange.com/questions/118475</a></li>
+</ul>
+</li>
+<li><strong>建议</strong>：示波器地夹同样不能接到输出端，见 <a href="http://44.md">44.md</a> D2-1。</li>
+</ul>
+<h4 id="d2-4-2--3-w模块实际只有约-1-w声道不失真">D2-4 「2 × 3 W」模块实际只有约 1 W/声道不失真</h4>
+<ul>
+<li><strong>现象</strong>：标称 3 W，实际听起来远没有那么响。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>3.2 W 是在 10 % THD 下测得的；1 % THD 时为 2.5 W（本地数据手册）。</li>
+<li>论坛反映廉价模块常在约 1 W 时就已明显失真（仅搜索确认）。</li>
+</ul>
+</li>
+<li><strong>怎么修复</strong>：正文用 1 % THD 的数值或保守值。</li>
+<li><strong>来源</strong>：本地 PAM8403 数据手册；diyAudio（仅搜索确认）<a href="https://www.diyaudio.com/community/threads/pam8403.409126/">https://www.diyaudio.com/community/threads/pam8403.409126/</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

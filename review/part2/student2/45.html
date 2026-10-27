@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 集成功放芯片与散热保护 · student2 首审</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/student2/45.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="45-集成功放芯片与散热保护--student2-首审">45 集成功放芯片与散热保护 · student2 首审</h1>
+<p>审阅时间：2026-10-27 08:30–08:35 EDT。副本：/tmp/bct-run/45/repocopy（tar，排除 notes/.git/_site），写报告前 page1–4 与 45_figs.py 已和仓库 cmp 一致。身份：大一新生（会欧姆定律、串并联、功率、电容、基础 Python）。</p>
+<h2 id="1-总体感受">1. 总体感受</h2>
+<p>这一节读下来很顺：从「为什么用芯片」到 LM386 增益网络、发热抛物线、PAM8403 的 BTL、三颗芯片的保护对照，再到一个 9 V 的手机小音箱，每一步的数我都能自己算出来。所有数值和 TI / Diodes 手册对得上，SPICE 32 项全在 5% 内。问题主要在面包板图：两条 GND 轨没有连起来，照图搭芯片会没有地。</p>
+<h2 id="2-必改">2. 必改</h2>
+<p><strong>M1　page4 图 45-p4-1（L43 面包板图，脚本 code/figs/45_figs.py L639–690 的 p4_1()）：上下两条 GND 轨没有跨接。</strong>
+板子上方是「+9 V / GND」轨，下方是「GND / 不用」轨。电源的黑线（T-14）、C1、C2、C3、Cz、喇叭回线（T-24）都在上方 GND 轨；可 LM386 的 4 脚（j13→B-13）、2 脚（j11→B-11）、Rb（B-5）、RP 一端（j8→B-8）、手机地（B-1）全在下方 GND 轨。图里和脚本里都没有任何一根线把 T- 接到 B-（43_figs.py L794 的 <code>T-40→B-40</code>、44_figs.py L543 的 <code>T-35→B-35</code> 都有这根线，45 漏了）。真实面包板上下轨互不相通，所以照图搭，芯片 4 脚没有接到电源负极，电路不工作，手机地和功放地也不共地。原理图 45-p4-2 里所有地是同一个节点，所以面包板图和原理图对不上。
+改法：加一根 <code>bb.wire(&quot;T-22&quot;, &quot;B-22&quot;, &quot;gnd&quot;, via=…)</code> 之类的跨接线（避开 6 的倍数列，见建议 S1），在 L51「对照看」里补一句「上下两条 GND 轨要用一根黑线连起来」，重生成图。</p>
+<p><strong>M2　page4 L156 实验记录表：「接近 0（要求 \lt 50）」会原样显示成「\lt 50」。</strong>
+markdown-it-py 渲染后 HTML 里是字面的 <code>\lt 50</code>（不在 <code>$…$</code> 里，MathJax/GitHub 都不会处理）。改成「要求小于 50」或「要求 &lt; 50」即可。同样的写法在 44-class-d-amp/page4.md L198（「−11.4（要求 \lt 50）」）也有。</p>
+<p>必改合计：2。</p>
+<h2 id="3-建议">3. 建议</h2>
+<ul>
+<li><strong>S1　图 45-p4-1：两根线插在电源轨的「空位」上。</strong> Breadboard 类在电源轨上 6 的倍数列不画孔（模拟五孔一组的间隔），但 6 脚的供电线落在 T+12、喇叭回线落在 T-24，正好都是没有孔的位置（放大看，T+12 两侧 11、13 列有孔，12 列只有线头的黑点）。建议改到 T+11 / T+13 和 T-23。</li>
+<li><strong>S2　图 45-p4-1：g2 一个孔插了两根线。</strong> 信号源的蓝线和 Ra 的左脚都插在 g2（脚本 <code>bb.wire(..., &quot;g2&quot;)</code> 和 <code>P(&quot;g2&quot;,&quot;g5&quot;)</code>）。建议蓝线改到 h2 或 i2。</li>
+<li><strong>S3　仓库里 3 张图和脚本输出不一致。</strong> 在副本里重跑 45_figs.py，45_p3_2_protection、45_p3_3_temp_rise、45_p4_1_breadboard 与仓库的 png 不同（仓库的是 20:16 CST 生成的旧版，其余 11 张逐字节相同）。内容没变，只是布局/横轴范围不同（例如 p3-3 仓库的横轴到 200 并有 25 一格的刻度）。改 M1 时一并重生成。</li>
+<li><strong>S4　「手机满音量到 3 脚」有三个数：</strong> page3 L17 表里写「手机峰值取 1.48 V」→ 0.1213 V；L43–47 的代码用 1.485 V → 121.7 mV；练习 2 答案 L118 写 121.3 mV；page2 L25 和 page4 L19 写 1.485 V。建议统一说明「1.485 V 是实测、SPICE 取 1.48 V」，练习 2 用 121.3 或 121.7 二选一。</li>
+<li><strong>S5　5 脚摆动范围不一致：</strong> page3 L28 图 45-p3-1 说明写「2.0 到 6.9 V」，page4 L84 图 45-p4-3 说明写「约 2.1 V 和 6.9 V」。4.5 ± 2.426 = 2.07–6.93 V，建议都写 2.1–6.9 V。</li>
+<li><strong>S6　page3 L65–73 图 45-p3-3 的「PAM8403 5 V、8 Ω 双声道 59 °C」来源没讲。</strong> 脚本 L157 用的是手册效率 87%（10% 失真、1.8 W/声道）反推：2 × (1.8 ÷ 0.87 − 1.8) ≈ 0.54 W；而同一张图的「18 Ω 单声道 0.09 W」用的是导通电阻 + 静态电流模型。用导通电阻模型算 8 Ω 双声道只有约 0.19 W（21 °C）。两种算法放在一张图里容易让新生困惑，建议在 L73 后加一句「8 Ω 双声道按手册效率 87% 反推」。</li>
+<li><strong>S7　page2 L33、L39 的说法：</strong> 「1、8 脚之间串着的 150 Ω 和 1.35 kΩ」。按图 45-p2-1，1、8 脚之间只有 1.35 kΩ，150 Ω 在 8 脚内侧，所以接电容后才剩 150 Ω。建议改成「1 脚到 8 脚的 1.35 kΩ，加上 8 脚内侧的 150 Ω」。</li>
+<li><strong>S8　page4 L38 选做 D：</strong> 7805 只写了输出端 1 µF + 22 µF。TI LM7800 手册的典型电路要求在输入端也接 0.22–0.33 µF（稳压器离电源滤波电容较远时）。面包板 + 长电源线的情况，建议输入端也加一只 0.33 µF。</li>
+<li><strong>S9（小）page3 练习 4 / page4 L108：</strong> 「7805 静态电流 6 mA」是手册 25 °C 的最大值，不是典型值，可以注明「按最大值估」。</li>
+</ul>
+<h2 id="4-练习作答记录">4. 练习作答记录</h2>
+<p>（先自己算，再对答案）</p>
+<ul>
+<li>page1 开头三问：78.5%（π/4），小信号效率低 ✓；BTL 两端都在 Vs/2 摆，接地 = 推挽级对地短路 ✓；(9−5)×0.15 = 0.6 W ✓。</li>
+<li>page2 例 1：81/(2π²×18) = 0.2280 + 0.0387 = 0.2667 W，Vp = 9/π = 2.86 V；DIP 14.2 °C、SOIC 30.9 °C ✓（代码块真跑输出一致）。</li>
+<li>page2 例 2：81/157.9 = 0.513 W + 0.0387 = 0.552 W；SOIC 63.8 °C ✓。</li>
+<li>page2 例 3：5×4/4.32 = 4.630 V，2.679 W；单端 0.781 W，比值 3.43 ✓。</li>
+<li>page2 增益代码块：20 Hz 38.8 / 100 Hz 130.3 / 200 Hz 172.6 / 1 kHz 198.6 ✓。</li>
+<li>我自己补算：220 µF + 18 Ω → 40.19 Hz，+ 8 Ω → 90.43 Hz ✓；PAM8403 8 Ω：4.808 V，1.445 W ✓；发热最大时 3 脚峰值 2.865/20 = 0.143 V ✓；此时负载功率 2.865²/36 = 0.228 W ✓（图 45-p2-3 的「约 0.23 W」）。</li>
+<li>page1 效率：0.1 W 时 LM386 Vp = 1.897 V，P_S = 9 × (1.897/(18π) + 4.3 mA) = 0.341 W → 29.4% ✓；PAM8403 满幅 18 Ω：4.913 V，0.670 W，效率 88% ✓。</li>
+<li>page3 分压比：1 kΩ ∥ 10 kΩ ∥ 50 kΩ = 892.9 Ω，892.9/10892.9 = 0.08197 ✓。</li>
+<li>page3 练习 1：2.0 V，不削顶，2.5–6.5 V ✓。</li>
+<li>page3 练习 2：16.75 mV，约 14% ✓（见 S4 的 121.3/121.7）。</li>
+<li>page3 练习 3：144/157.9 = 0.912 + 0.052 = 0.963 W &gt; 0.73 W，111 °C ✓；我还核了 12 V 时 Vp_max = 6 − 1.15 = 4.85 V &gt; Vs/π = 3.82 V，所以最大发热点确实能达到 ✓。</li>
+<li>page3 练习 4：PAM8403 满幅输入 0.761 W / 5 V = 152 mA ✓；(9−5)×0.152 + 9×0.006 = 0.662 W，×54 = 35.7 °C ✓。</li>
+<li>page3 常见误区：满幅 3.35²/36 = 0.312 W ✓；26.2% vs 29.3% ✓。</li>
+<li>page4 思考题 1：9 V × 22 mA ≈ 0.2 W &gt; 39 mW ✓；思考题 2：0.552 W，29.5 / 63.8 °C ✓；思考题 3、4 推理 ✓。</li>
+<li>page4 核对代码：示例读数全部 OK，增益 20.1、比值 0.435、芯片约 0.257 W ✓。</li>
+</ul>
+<h2 id="5-代码运行记录">5. 代码运行记录</h2>
+<p>全部用 /workspace/circuits-venv/bin/python 在副本里跑。</p>
+<table>
+<thead>
+<tr>
+<th>内容</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page2 两个代码块、page3 一个、page4 一个（提取后在副本根目录跑）</td>
+<td>4/4 exit 0，输出和页面一致</td>
+</tr>
+<tr>
+<td>code/figs/45_figs.py</td>
+<td>exit 0（4 s），14 张图；11 张与仓库逐字节相同，p3_2 / p3_3 / p4_1 不同（见 S3）</td>
+</tr>
+<tr>
+<td>spice/45/run.py</td>
+<td>exit 0（3 s），32 项，超过 5% 的 0 项（最大 −0.58%，7 脚嗡声行为模型）</td>
+</tr>
+<tr>
+<td>tools/check_github_math.py page1–4</td>
+<td>4/4 OK</td>
+</tr>
+<tr>
+<td>tools/check_figs.py page1–4</td>
+<td>图 3/4/3/4 全部 OK</td>
+</tr>
+<tr>
+<td>markdown-it-py 粗体扫描</td>
+<td><code>&lt;strong&gt;</code> / <code>**</code> 对数：p1 18/18、p2 18/18、p3 16/16、p4 29/29；代码外无残留 <code>*</code></td>
+</tr>
+<tr>
+<td>内部 .md 链接</td>
+<td>全部存在</td>
+</tr>
+<tr>
+<td>副本新增文件</td>
+<td>14 张 png（覆盖副本里的图）+ code/figs/<strong>pycache</strong>/lab_schem.cpython-313.pyc；spice/45 的 csv 在副本里被重写。仓库没有写入任何文件</td>
+</tr>
+</tbody>
+</table>
+<p>厂商手册核对（curl + pdftotext）：</p>
+<ul>
+<li>TI LM386 SNAS545D：引脚 1/8 GAIN、2 −IN、3 +IN、4 GND、5 VOUT、6 VS、7 BYPASS ✓；电源 4–12 V（N-4 5–18 V），绝对最大 15 V / 22 V ✓；输入 ±0.4 V ✓；IQ 6 V 时典型 4、最大 8 mA ✓；RθJA SOIC 115.7、PDIP 53.4 °C/W ✓；封装功耗 N 1.25 W、M 0.73 W ✓；BW 300 kHz ✓；增益大于 9 才稳定 ✓。</li>
+<li>Diodes PAM8403 DS36439：NOT RECOMMENDED FOR NEW DESIGN ✓；5 V 8 Ω 10% THD 1.8 W、1% 1.4 W，4 Ω 1% 2.5 W ✓；IQ 5 V 16 mA ✓；RDS(on) PMOS 180 / NMOS 140 mΩ ✓；θJA 110 °C/W ✓；140 °C 过温、±15 °C、30 °C 回差、自动恢复 ✓；UVLO 2.0 V ✓；短路自动恢复 ✓；4 节碱性电池超过 6 V 会损坏 ✓。</li>
+<li>TI TPA3116D2：过流 7.5 A、过温 150 °C、直流检测（占空比超过 60%、420 ms）都锁住 ✓；FAULTZ 接 SDZ 自动清除 ✓。</li>
+<li>TI LM7800 SNOSBT0L：TO-220 θJA 54 °C/W（注 3）✓；IQ 25 °C 最大 6 mA（见 S9）。</li>
+</ul>
+<h2 id="6-面包板与原理图核对">6. 面包板与原理图核对</h2>
+<p>按脚本坐标逐孔核对图 45-p4-1：</p>
+<ul>
+<li>芯片第 10–13 列，缺口朝左：上排 8/7/6/5、下排 1/2/3/4，与 DIP-8 引脚一致 ✓。</li>
+<li>6 脚 a12 → +9 V ✓（但落在轨的空位，S1）；C3 a11（+）→ GND ✓；② b11 ✓。</li>
+<li>5 脚第 13 列：① a13、C4 b13（+）→ b18 → 板外 10 Ω + 喇叭 ✓；Rz d13–d15、Cz a15 → GND，吸收网络串联 ✓。</li>
+<li>C5：c10–c9 绿线（8 脚）、h10–h9 绿线（1 脚），C5 跨凹槽 d9–g9，+ 在 1 脚一侧，与原理图一致 ✓。</li>
+<li>输入：手机 → g2 → Ra g2–g5 → 第 5 列下半 → Rb j5 → 下 GND 轨；h5–h6 → RP f6；RP f8 → j8 → 下 GND 轨；滑动端 f7 → i7–i12 → 3 脚 ✓；③ j12 ✓；2 脚 j11、4 脚 j13 → 下 GND 轨 ✓。</li>
+<li><strong>上下 GND 轨无跨接（M1）</strong>；g2 两根线（S2）。</li>
+<li>电流表串在电源 + 和 +9 V 轨之间 ✓；④ 在板外 10 Ω 和喇叭之间 ✓。</li>
+<li>原理图 45-p4-2：元件值、极性、测量点编号与正文、面包板一致 ✓。</li>
+<li>搭建可行性：除 M1/S1/S2 外都能搭；C5 在第 9 列紧挨 RP（第 8 列），用小体积 10 µF 没问题；需要板宽 ≥ 23 列（用到 T+23），常见 30 列半板就够。</li>
+</ul>
+<h2 id="7-举一反三">7. 举一反三</h2>
+<p>面包板图只要用到上下两组电源轨，就要先问一句「这两条地轨在哪里连起来了」：原理图里的一个地符号，在面包板上可能是两根不相通的铜条，漏掉一根跨接线，整个电路就没有地。</p>
+<h2 id="8-结论">8. 结论</h2>
+<p>数值、推导、手册引用、SPICE 全部正确，练习全部做对。必改 2 条（M1 面包板 GND 轨未跨接；M2 page4 L156「\lt」原样显示），建议 9 条。</p>
+<h2 id="复核">复核</h2>
+<p>复核时间：2026-10-27 09:10 前后（EDT）。副本 <code>/tmp/bct-run/45r/repocopy</code>，与首轮副本 <code>/tmp/bct-run/45/</code> diff。没跑 git，没改页面、代码、图。</p>
+<h3 id="改动范围">改动范围</h3>
+<ul>
+<li>改了 page2/3/4、<code>code/figs/45_figs.py</code>、<code>review/spice/45.md</code>。</li>
+<li>新增图：<code>45_p2_0_full_schem</code>、<code>45_p4_2_schem_lab</code>、<code>45_p4_4_schem_lab</code>。删掉的 <code>45_p4_2_lab_schematic</code>、<code>45_p4_4_pam_dmm</code> 已经没有页面引用了。图号 p1-1…p4-4 引用都对得上。</li>
+</ul>
+<h3 id="重跑">重跑</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>45_figs.py</code>（副本里跑）</td>
+<td>exit 0，约 6 s；重新生成的 15 张图和仓库里的逐字节相同；newfiles 只有这些图，仓库根目录没有多出文件</td>
+</tr>
+<tr>
+<td><code>spice/45/run.py</code></td>
+<td>exit 0，32 项，偏差超过 5 % 的 0 项</td>
+</tr>
+<tr>
+<td>页面代码块</td>
+<td>4/4 exit 0，输出和页面写的一致</td>
+</tr>
+<tr>
+<td>markdown-it-py <code>**</code> 扫描</td>
+<td>p1 18/18、p2 23/23、p3 20/20、p4 49/49，没有残留的 <code>**</code></td>
+</tr>
+<tr>
+<td><code>check_github_math.py</code></td>
+<td>4/4 OK；<code>$</code> 外面已经没有 <code>\lt</code></td>
+</tr>
+<tr>
+<td><code>check_figs.py</code></td>
+<td>3/5/3/4 OK</td>
+</tr>
+<tr>
+<td>page4 的 7 列表</td>
+<td>markdown-it 渲染出来每行都是 7 格</td>
+</tr>
+</tbody>
+</table>
+<h3 id="必改">必改</h3>
+<ul>
+<li><strong>M1 GND 轨跨接线：已修。</strong> 跨接线 ⑤ <code>T−22→B−22</code> 从板子右侧绕过去。page4 L51 有解释，步骤 1 有这一步，步骤 3 加了通断检查 j13↔T−14（顺带验证 ⑤），A1 表第一行也有。</li>
+<li><strong>M2 <code>\lt</code>：已修。</strong> 现在写的是「要求小于 50」。</li>
+</ul>
+<h3 id="建议-s1s9">建议 S1–S9</h3>
+<ul>
+<li>S1 ✓：改用 T+13、T−23，避开了空孔列。</li>
+<li>S2 ✓：信号线挪到 h2，g2 不再插两根线。</li>
+<li>S3 ✓：图都重新生成了，和仓库一致。</li>
+<li>S4 ✓：统一成 1.48 V / 121.3 mV，page2 L31 说明了 1.485≈1.48。</li>
+<li>S5 ✓：改成 2.1～6.9 V。</li>
+<li>S6 ✓：page3 补了 PAM 59 °C 的来源。</li>
+<li>S7 ✓：150 Ω / 1.35 kΩ 重写对了，还带了节号。</li>
+<li>S8 ✓：7805 输入端 0.33 µF，BOM、原理图、安全提示三处都一致。</li>
+<li>S9 ✓。<strong>我首轮说错了，在这里更正：</strong> LM7805 数据手册 §6.6 表里 IQ 在 25 °C 时最大 8 mA，全温度范围 8.5 mA；6 mA 是 LM340A 的数。作者改成「最大 8 mA」是对的。</li>
+</ul>
+<h3 id="新增和重写的内容我真做真算了">新增和重写的内容，我真做真算了</h3>
+<p><strong>面包板图 p4-1 逐孔核对（全部 ✓）</strong></p>
+<ul>
+<li>电源：a12→T+13；C1 接 T+7/T−7；C2 接 T+8/T−8；电源 + 经电流表到 T+23，− 接 T−14。</li>
+<li>7 脚：C3 a11→T−11。</li>
+<li>1–8 脚 C5 网络：c10–c9、h10–h9，C5 接 g9(+)–d9。</li>
+<li>2、4 脚：j11→B−11，j13→B−13。</li>
+<li>输出：C4 b13(+)–b18；Rz d13–d15；Cz a15–T−15；a18 接板外的 10 Ω 和喇叭；喇叭回线接 T−23。</li>
+<li>输入：Ra g2–g5；Rb j5–B−5；h5–h6；RP 插 f6/f7/f8；j8→B−8；滑动端 i7→i12（3 脚）；手机地接 B−1。</li>
+<li>测点：① a13、② b11、③ j12、④ 板外。</li>
+<li>轨道连接都没有落在空孔列。</li>
+</ul>
+<p><strong>原理图</strong></p>
+<ul>
+<li>p4-2 的孔位标注和面包板图、正文一致。</li>
+<li>p2-0 整机原理图：极性正确，块 1–5 和正文对得上。</li>
+<li>p4-4（选做 D）：
+<ul>
+<li>7805 引脚 1 IN、2 GND、3 OUT，TO-220 散热片接 GND（查过手册）。</li>
+<li>输入 0.33 µF，输出 1 µF + 22 µF。</li>
+<li>10 k/1 k/RP 分压后进 L，手机地接 G。</li>
+<li>L+→10 Ω/1 W→喇叭→L−，L− 不接地。</li>
+<li>电流表 400 mA / 10 A 档。</li>
+</ul>
+</li>
+</ul>
+<p><strong>选做 D 分压数值（手算，全部 ✓）</strong></p>
+<ul>
+<li>增益 24 dB = 15.85 倍；RI 最小 18 kΩ（手册数）。</li>
+<li>不加分压直接接：输出削成 ±5 V 方波。
+<ul>
+<li>电流 5/18.32 = 0.273 A；喇叭 0.596 W；10 Ω 上 0.745 W，在 1 W 以内。</li>
+<li>5 V 侧约 289 mA，9 V 侧约 297 mA。</li>
+<li>7805 耗散 1.228 W，温升约 66 °C。</li>
+<li>页面说「必须分压」是对的。</li>
+</ul>
+</li>
+<li>加分压：
+<ul>
+<li>1 k∥10 k∥18 k = 865.3 Ω，比值 0.07964，输入 117.9 mV。</li>
+<li>差分输出 1.868 V，喇叭峰值 0.816 V，41.6 mW。</li>
+<li>要输入到 315 mV 才会碰 5 V 削顶，裕量够。</li>
+</ul>
+</li>
+<li>page4 代码块：分压比 0.08243（含 RP 的情况），r_low 891.9 Ω，Vspk = 2.37×8/18.1 = 1.0475 V，pl 66.3 mW、pr 83.7 mW、ps 0.413 W，芯片约 0.263 W。手算和脚本一致。</li>
+</ul>
+<p><strong>7 列表 A1–A4、B1–B4、D1–D5</strong></p>
+<ul>
+<li>数值自洽：B2/B1 = 19.99；0.762 = 1.077/√2；D5 ≤ 24 mA = 16 + 8。</li>
+<li>表笔方向正确：电流表红笔接电源一侧。</li>
+</ul>
+<p><strong>手册复查</strong></p>
+<ul>
+<li>7805：θJA 54 °C/W（注 3）；JEDEC 板 23.9 °C/W，对应温升 16.3 °C。</li>
+<li>PAM8403：IQ 16 mA，效率 87 %，应用说明第 4 条写了输入过大会削顶并可能损坏芯片。</li>
+<li>TPA3116D2：ICC 20 mA，rDS(on) 120 mΩ，12 V/4 Ω 下 16.0 W；故障表里过流、过温、DC 检测都是 Latched，FAULTZ 接 SDZ 可以自动恢复。</li>
+<li>LM386：250 µF/0.05 µF、1.35 kΩ、§9.2.1.2.2、Figure 6-4 都对。</li>
+<li>练习 5 的 2.94 W、1.875 W、DIP 温升约 100 °C、TPA 0.18 W + 0.24 W 都对。</li>
+<li>转折频率 35.4 Hz / 79.6 Hz、Zobel 318.3 kHz / 338.6 kHz、效率 25.1 / 55.0 / 87.9 / 46.4 / 54.5 % 和脚本一致。</li>
+<li>p2-4 BTL 波形：右栏 65 % 和 35 % 两路中心对齐相减，每周期两段，各 15 %，平均 5×0.30 = 1.50 V ✓。</li>
+</ul>
+<h3 id="新必改1-条">新必改（1 条）</h3>
+<ul>
+<li><strong>N1 page3 L156–159 三方对比表里「44 分立 D 类」一栏和第 44 节内容矛盾。</strong>
+<ul>
+<li>问题：表里 44 的「保护」写「全靠自己加」，「元件数」列了「驱动、桥臂」，「调试点」写「死区」。可是 44 page2 L104 明确说「不要用分立 MOSFET 自己搭 H 桥」。第 44 节用的是 DRV8871：桥臂和死区都在芯片内部，自带过流（3.7～6.4 A）和 150 °C 热关断（44 page3 L164）。</li>
+<li>影响：初学者对照两节会糊涂，还可能以为 44 没有任何保护。</li>
+<li>建议改法：
+<ul>
+<li>保护：「DRV8871 自带过流、热关断（但限流卡不住静音故障，仍要限流电源）」。</li>
+<li>元件数：「比较器、三角波、驱动芯片、LC 滤波」。</li>
+<li>调试点：「三角波幅度和频率、开关波形、滤波；死区芯片内部定好」。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h3 id="新建议">新建议</h3>
+<ul>
+<li>a. page3 练习 4 答案写「0.608 + 0.072 ≈ 0.682」，这个加法其实等于 0.680。脚本用的是 I5 = 152.5 mA，算出来是 0.682。建议写成 0.610，或注明 152.5 mA。</li>
+<li>b. p4-2 里「f11/j11→B−11」这个标注挨着 C2 的接地符号，容易看成是 C2 的。它其实是 2 脚的接地，建议挪一下位置。</li>
+<li>c. page4 代码块里有一行没用到的 <code>sys.path.insert(... code/figs)</code>，还写着「在仓库根目录运行」，其实这段代码什么都不依赖，可以删掉。</li>
+<li>d. p2-0 块 2 的说明文字提到了 C3（7 脚），但块 2 的虚线框没有框住 C3。</li>
+<li>e. p4-4 里手机地只接到模块 G，没画和系统地的连接。模块 G 内部就是 GND，所以没问题，正文也说都共地，但图上最好注一句。</li>
+<li>f. 便宜万用表的交流档带宽可能不到 1 kHz，B1–B3 用 1 kHz 测交流可能读数偏低。建议加个提示，或改用 400 Hz 测。</li>
+<li>g. page2 L95（Figure 6-4 的 −3 dB 点）和 L147（PAM8403 调制方式）还留着两个「[待核实]」。第 39 节也这样用过，算诚实的占位，不算必改；PAM8403 手册首页写着 Filterless，可以引用。</li>
+<li>h. p1-3 效率图里 LM386 的曲线在大约 0.285 W、52 % 处标「开始削顶」，正文满幅写的是 0.312 W、54.5 %。两者口径不同（SPICE 削顶起点 vs 理想满幅），建议加一句说明。</li>
+</ul>
+<h3 id="结论">结论</h3>
+<p>M1、M2 已修，S1–S9 全部处理到位（S9 是我首轮说错了）。新发现必改 1 条（N1）。<strong>剩余必改 1。</strong></p>
+<h2 id="复核-2">复核 2</h2>
+<p>复核时间：2026-10-27 09:17 前后（EDT）。新副本 <code>/tmp/bct-run/45r2/repocopy</code>，和 <code>/tmp/bct-run/45r/repocopy</code> 做了 diff。没跑 git，没改页面、代码、图。</p>
+<h3 id="改动范围只看-45">改动范围（只看 45）</h3>
+<ul>
+<li>改动文件：page1/2/3/4、<code>code/figs/45_figs.py</code>、<code>review/spice/45.md</code>、图 <code>45_p4_2_schem_lab.png</code>。</li>
+<li><code>code/figs/lab_schem.py</code> 也改了，但只是新加了 36/37/42 的转调入口，和 45 无关；重跑后 45 的其他 14 张图逐字节不变。</li>
+<li>另外还动了 page2 L52（LM386 电阻出处补页码）和 page2 L147（PAM8403 引文）。我对照手册查过：
+<ul>
+<li>SNAS545D §8.3 只写了 1.35 kΩ；15 kΩ 在 §9.2.1.2.1 的「paralleling the internal 15-kΩ resistor」一句里。</li>
+<li>PAM8403 p.1 的「filterless architecture … requiring no low-pass output filters」、p.7 的「different in phase by 180°」都是原文。✓</li>
+</ul>
+</li>
+</ul>
+<h3 id="n1page3-对比表-44-栏已修-">N1（page3 对比表 44 栏）：已修 ✓</h3>
+<ul>
+<li>我从 TI 官网下载了 DRV8871 数据手册（SLVSCY9，存在 <code>/tmp/bct-run/45r2/ds/</code>），逐项核对：
+<ul>
+<li>过流：IOCP 最小 3.7 A、典型 4.5 A、最大 6.4 A，所以「3.7～6.4 A」对。§7.3.5.2 写触发后关断 tRETRY = 3 ms，然后自动重试。</li>
+<li>热关断：TSD 最小 150 °C、典型 175 °C；故障表写的是「TJ &gt; 150 °C」，所以「150 °C 热关断」对。</li>
+<li>死区：§7.3.4 说死区由芯片自动插入，tDEAD 典型 220 ns，所以「死区由芯片内部定好」对。</li>
+</ul>
+</li>
+<li>和第 44 节正文一致：
+<ul>
+<li>44 page2 L102 写了死区由 DRV8871 内部插入。</li>
+<li>44 page3 L31 写了 220 ns。</li>
+<li>44 page3 L164 和 page4 L245 都写了「过流 3.7～6.4 A、150 °C 热关断」。</li>
+<li>44 page2 L104 说「不要用分立 MOSFET 自己搭」，和新表头「自搭 D 类（DRV8871 桥）」一致。</li>
+</ul>
+</li>
+<li>「它只保护芯片自己，接错线、直流进喇叭仍要靠限流电源和上电前检查」这句说得对，也和 44 page4 L245「冲到过流保护才停，之前电感、导线、面包板可能先烧」一致。</li>
+</ul>
+<h3 id="其他改动逐条真算">其他改动，逐条真算</h3>
+<ul>
+<li><strong>练习 4（page3 L134/138）✓</strong>
+<ul>
+<li>满幅 0.670 W ÷ 芯片效率 87.9 % = 0.762 W；0.762 W ÷ 5 V = 152.5 mA，和脚本输出「5 V 电流 152.5 mA」一致。</li>
+<li>(9 − 5) × 0.1525 = 0.610 W；9 × 0.008 = 0.072 W；0.610 + 0.072 = 0.682 W，等号成立。</li>
+<li>温升 0.682 × 54 = 36.83 °C，约 36.8 °C。✓</li>
+</ul>
+</li>
+<li><strong>25 %（page1 L62 替代文字、L69 正文、<code>review/spice/45.md</code> L89）✓</strong>
+<ul>
+<li>出处：18 Ω 上输出 0.1 W 时，PAM8403 芯片效率 55.0 %，所以 5 V 侧要 0.1/0.55 = 0.1818 W，即 36.36 mA。</li>
+<li>9 V 侧电流 = 36.36 + 8（7805 静态电流按最大 8 mA）= 44.36 mA，即 0.399 W。</li>
+<li>0.1 ÷ 0.399 = 25.0 %。脚本输出 25.1 %（没对 55.0 % 取整），新加的 <code>assert round(100*ETA_7805_01) == 25</code> 通过。</li>
+<li>原来的 26 % 应该是按较小的静态电流算的，现在和「8 mA 最大值」的口径统一了。</li>
+<li>替代文字改成「约 0.28 W、52 % 时开始削顶」，和脚本的「削顶前 0.284 W 效率 51.8 %」一致，我上次的建议 h 算解决了。</li>
+</ul>
+</li>
+<li><strong>page4 L114 分压说明 ✓</strong>
+<ul>
+<li>戴维南等效：手机 1.48 V 经 10 kΩ 接到节点，节点上并着 1 kΩ 和 RP 10 kΩ（开满）。</li>
+<li>开路电压 = 1.48 × 909.1/(10000 + 909.1) = 0.1233 V，即「约 0.123 V」✓。</li>
+<li>内阻 = 10 k ∥ 1 k ∥ 10 k = 833 Ω，即「约 0.83 kΩ」✓。</li>
+<li>再和 RI 18 kΩ 分一次压：0.1233 × 18/18.833 = 0.1179 V，即 117.9 mV ✓。</li>
+<li>差分输出 15.85 × 0.1179 = 1.868 V ✓；喇叭峰值 1.868 × 8/18.32 = 0.816 V ✓；功率 0.816²/(2 × 8) = 41.6 mW ✓。</li>
+<li>推到 5 V 需要输入 5/15.85 = 315 mV ✓。</li>
+<li>RI = 18 kΩ 是手册 p.7 的原文「minimum RI = 18 kΩ」✓。</li>
+</ul>
+</li>
+<li><strong>p4-2 的 2 脚接地标注 ✓（基本清楚）</strong>
+<ul>
+<li>现在写成「2 脚接地：f11 / j11 → B−11」，放在 2 脚接地符号左边，不会再被当成 C2 的地了。</li>
+<li>小瑕疵：文字正好压在 RP 上端那根竖线上，「2 脚」两个字和导线重叠。不影响读，见建议 1。</li>
+</ul>
+</li>
+<li>另外顺带落实的建议，都已确认：
+<ul>
+<li>e：page4 L125 注明模块 G 在板内就是 GND ✓。</li>
+<li>f：page4 L91 和 L144 加了万用表交流档频率范围的提醒，并给了三种办法：用示波器、改放 400 Hz、只看比值 ✓。</li>
+</ul>
+</li>
+</ul>
+<h3 id="重跑-1">重跑</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>45_figs.py</code></td>
+<td>exit 0，5 s；15 张图和仓库里逐字节相同；newfiles 只有这 15 张图，没有在仓库根目录多出文件</td>
+</tr>
+<tr>
+<td><code>spice/45/run.py</code></td>
+<td>exit 0，4 s；32 项，超过 5 % 的 0 项；和 45r 相比输出没变</td>
+</tr>
+<tr>
+<td>页面代码块</td>
+<td>4/4 exit 0（代码块内容和 45r 相同）；page4 输出「芯片约 0.263 W（SPICE 0.261 W）」和页面一致；运行时仓库里没有生成新文件</td>
+</tr>
+<tr>
+<td>markdown-it-py <code>**</code> 扫描</td>
+<td>p1 18/18、p2 24/24、p3 20/20、p4 50/50，没有残留的 <code>*</code>；<code>$</code> 外面没有 <code>\lt</code></td>
+</tr>
+<tr>
+<td><code>check_github_math.py</code></td>
+<td>4/4 OK</td>
+</tr>
+<tr>
+<td><code>check_figs.py</code></td>
+<td>3/5/3/4 OK</td>
+</tr>
+</tbody>
+</table>
+<h3 id="剩余必改0">剩余必改：0</h3>
+<h3 id="新建议-1">新建议</h3>
+<ol>
+<li>p4-2 的「2 脚接地：f11 / j11 → B−11」压在 RP 上端那根竖线上。建议把文字往左挪到 RP 左边，或者加白底；附近原有的「i12 / f12」也被 3 脚那根引线穿过，可以一起调。</li>
+<li><code>review/spice/45.md</code> L90 还是旧数「5 V 电流 152 mA → 7805 发热 0.664 W → 温升 35.8 °C」，和页面、脚本的 152.5 mA / 0.682 W / 36.8 °C 不一致（这不是教程页面，只是记录要同步）。</li>
+<li>（可选）DRV8871 的 150 °C 是热关断的<strong>最小</strong>触发温度，典型值 175 °C。可以写成「约 150 °C 起（典型 175 °C）」，44 和 45 两节要一起改，不改也不算错。</li>
+<li>首轮复核建议 c（page4 代码块里没用到的 <code>sys.path.insert</code>，以及「在仓库根目录运行」）和 d（p2-0 块 2 的虚线框没框住 C3）还没处理。</li>
+</ol>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

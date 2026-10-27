@@ -51,9 +51,9 @@ mjx-container{max-width:100%}
 <p><a class="img-link" href="img/00_dag.png"><img alt="图 00-1 知识点依赖图" src="img/00_dag.png" loading="lazy" /></a></p>
 <p><em>图 00-1　知识点依赖图：箭头从前置指向后继，颜色区分线索。由 <a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/code/figs/00_figs.py">code/figs/00_figs.py</a> 生成。</em></p>
 <p>阅读顺序就是编号顺序，按它读不会遇到「没学过的概念」：</p>
-<p>01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 33 → 34 → 35 → 39 → 40 → 41 → 43</p>
-<p>第二部分「流量计信号链与功放」（30–45，设计见 <a href="notes/00-design-part2.html">notes/00-design-part2.md</a>）正在陆续上线，目前已上线 30、33、34、35、39、40、41、43，后面的节点审完一批发布一批。还没上线的节点在导航条和正文里写成「NN 节…（即将上线）」，不是链接：读完 30 page4 请从下面的目录表进入 33（33 page4 → 34 → 35 的「下一页」直接相连），读完 35 page4 再从目录表进入 39（39 page4 → 40 → 41 的「下一页」直接相连），读完 41 page4 再从目录表进入 43。</p>
-<p>每个节点内部按 page1 → page2 → page3 → page4 读完，再进入下一个节点。例如开头是：01 page1 → 01 page2 → 01 page3 → 01 page4 → 02 page1 → … → 02 page4 → 03 page1 → …，目前最后一页是 43 page4。每页第 3 行的导航条就按这个顺序排好了「上一页」「下一页」：page3 的下一页是本节点的 page4，page4 的下一页是下一个节点的 page1，29 page4 的下一页回到本 README。</p>
+<p>01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 33 → 34 → 35 → 36 → 37 → 39 → 40 → 41 → 42 → 43（44 还没上线；45 已先行上线，从目录表进入）</p>
+<p>第二部分「流量计信号链与功放」（30–45，设计见 <a href="notes/00-design-part2.html">notes/00-design-part2.md</a>）正在陆续上线，目前已上线 30、33、34、35、36、37、39、40、41、42、43、45，后面的节点审完一批发布一批。还没上线的节点在导航条和正文里写成「NN 节…（即将上线）」，不是链接：读完 30 page4 请从下面的目录表进入 33（33 page4 → 34 → 35 → 36 → 37 的「下一页」直接相连），读完 37 page4 再从目录表进入 39（39 page4 → 40 → 41 → 42 → 43 的「下一页」直接相连）。45 已先行上线，但它的前一节 44 还没上线，请从目录表直接进入 45；45 是全书最后一节，读完 45 page4 回到目录。</p>
+<p>每个节点内部按 page1 → page2 → page3 → page4 读完，再进入下一个节点。例如开头是：01 page1 → 01 page2 → 01 page3 → 01 page4 → 02 page1 → … → 02 page4 → 03 page1 → …，按顺序目前能读到 43 page4（下一节 44 还没上线），另有 45 已先行上线，可从目录表单独进入。每页第 3 行的导航条就按这个顺序排好了「上一页」「下一页」：page3 的下一页是本节点的 page4，page4 的下一页是下一个节点的 page1，29 page4 的下一页回到本 README。</p>
 <h2 id="目录">目录</h2>
 <p>前置知识是 01、02、03，其余是 20 个标准电路；06、07、23、26、28、29 是扩展篇，讲电子制作中最常用的开关、驱动与隔离电路，标准与其余节点相同。</p>
 <table>
@@ -333,6 +333,22 @@ mjx-container{max-width:100%}
 <td>已完成（第二部分）</td>
 </tr>
 <tr>
+<td>36</td>
+<td>施密特整形与频率/脉冲计数</td>
+<td><a href="36-schmitt-pulse-shaping/page1.html">36-schmitt-pulse-shaping</a></td>
+<td></td>
+<td>作者 B</td>
+<td>已完成（第二部分）</td>
+</tr>
+<tr>
+<td>37</td>
+<td>过零检测与超声波时差</td>
+<td><a href="37-zero-crossing-tof/page1.html">37-zero-crossing-tof</a></td>
+<td></td>
+<td>作者 B</td>
+<td>已完成（第二部分）</td>
+</tr>
+<tr>
 <td>39</td>
 <td>恒流源与线圈励磁驱动</td>
 <td><a href="39-constant-current-excitation/page1.html">39-constant-current-excitation</a></td>
@@ -357,9 +373,25 @@ mjx-container{max-width:100%}
 <td>已完成（第二部分）</td>
 </tr>
 <tr>
+<td>42</td>
+<td>流量计信号链总览</td>
+<td><a href="42-flowmeter-signal-chains/page1.html">42-flowmeter-signal-chains</a></td>
+<td></td>
+<td>作者 C</td>
+<td>已完成（第二部分）</td>
+</tr>
+<tr>
 <td>43</td>
 <td>推挽功放：甲、乙、甲乙类</td>
 <td><a href="43-push-pull-power-amp/page1.html">43-push-pull-power-amp</a></td>
+<td></td>
+<td>作者 D</td>
+<td>已完成（第二部分）</td>
+</tr>
+<tr>
+<td>45</td>
+<td>集成功放芯片与散热保护</td>
+<td><a href="45-audio-amp-ics/page1.html">45-audio-amp-ics</a></td>
 <td></td>
 <td>作者 D</td>
 <td>已完成（第二部分）</td>
@@ -409,7 +441,7 @@ circuits-venv/bin/python tools/run_blocks.py --scripts  # 运行 code/ 里全部
 <li>
 <p><strong>ngspice</strong>（本仓库在 ngspice-44.2 下测试）。下面这些要调用它，没装就会报错：</p>
 <ul>
-<li><code>spice/</code> 下全部 37 个 <code>run.py</code>；</li>
+<li><code>spice/</code> 下全部 41 个 <code>run.py</code>；</li>
 <li><code>code/18_sim.py</code>（其中的 <code>lm358()</code> 调用 ngspice）和 <code>code/figs/18_figs.py</code>（通过 <code>18_sim.lm358</code> 间接调用）；</li>
 <li><code>code/figs/02_figs.py</code>、<code>03_figs.py</code>、<code>05_figs.py</code>、<code>08_figs.py</code>、<code>12_figs.py</code>、<code>16_figs.py</code>。</li>
 </ul>

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>37 过零检测与超声波时差 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/37-zero-crossing-tof/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="37-过零检测与超声波时差--动手实验篇">37 过零检测与超声波时差 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · 下一页：38 节同步检波（即将上线） · 前置节点：<a href="../10-voltage-comparator/page4.html">10 电压比较器 · 动手实验篇</a>、<a href="../12-voltage-follower/page4.html">12 电压跟随器 · 动手实验篇</a>、<a href="../29-pullup-level-shift/page4.html">29 上拉/下拉电阻与电平转换 · 动手实验篇</a>、<a href="../36-schmitt-pulse-shaping/page4.html">36 施密特整形与频率/脉冲计数 · 动手实验篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>用一对 40 kHz 超声波探头、一块 Arduino Uno 和三片常见芯片（TL072、LM393、74HC74），搭一个「先武装、再过零」的超声波计时器，用风扇当「风」。要验证 <a href="page2.html">原理与实现篇</a> 和 <a href="page3.html">参数与调试篇</a> 的四个结论：</p>
+<ol>
+<li><strong>读数随间距成直线</strong>：间距每多 1 mm，计时多约 2.913 µs，斜率倒过来就是声速（约 343 m/s）；</li>
+<li><strong>风能被量出来</strong>：每个方向都读「关 → 开」，顺风方向开减关约 −5 µs、逆风方向约 +5 µs，两者相差约 10 µs（3 m/s 的风）；</li>
+<li><strong>门限放错会整周期跳</strong>：转门限电位器，读数不是慢慢变，而是一跳 25 µs；</li>
+<li><strong>回波大小晃一晃，读数不动</strong>：门限放在台阶中间时，用手在旁边挥动、轻轻偏转探头，读数基本不变。</li>
+</ol>
+<p><strong>主要读法是串口监视器</strong>：程序每 0.5 s 打印一次 <code>t_us</code>，分辨到 62.5 ns 再取 100 次平均，而且不受电源电压影响。最核心的两条（1 和 2）<strong>也能只用万用表验证</strong>：程序让 74HC74 的 /Q2 脚在每一轮里「从开始发射到捕获」这段时间输出高电平，万用表直流挡读到的平均电压正比于这段时间，V5 = 5.00 V 时每 1 µs 约 1 mV。两种读法可以互相核对。</p>
+<p>页面里写的绝对数值（例如 707.79 µs）来自 Q = 15 的示意回波模型，你的实测值可能差几十微秒；但<strong>斜率</strong>和<strong>风造成的差</strong>不依赖这个模型，应该基本对得上。</p>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>全程不超过 12 V 直流</strong>：模拟部分用一只 12 V 直流电源适配器（插墙的是适配器本身，面包板上只有 12 V 直流），Arduino 用电脑 USB 供电。TL072 至少要 10 V 才能让 6 V 的中点参考 V_MID 留够余量（见参数与调试篇第五节），所以不能用 9 V 电池代替。</li>
+<li><strong>两只 2.2 kΩ 上拉电阻只能接下方 +5 V 轨（Arduino 5 V）</strong>，绝不能接上方 +12 V 轨。LM393 是开集电极输出，高电平就等于上拉电压；Q2 直接进 Arduino D8，ATmega328P 引脚电压不能超过 VCC + 0.5 V，即 5.5 V。</li>
+<li><strong>74HC74 的 14 脚（VCC，孔 a40）用一根红色跳线接下方 +5 V 轨</strong>，千万别插上方 +12 V 轨：74HC74 的推荐电源电压最高 6 V，12 V 会烧坏它，还会把 12 V 送进 Arduino。</li>
+<li><strong>LM393 的输入要低于 VCC − 1.5 V</strong>（全温度范围 VCC − 2 V）。本电路输入都在 6 V 上下几百毫伏，12 V 供电时上限 10.5 V，余量充足。</li>
+<li><strong>Arduino 每个引脚最多 40 mA</strong>：D3、D11 一定要各串一只 150 Ω（棕绿棕），不要省掉，也不要换成 100 Ω（峰值会到 50 mA）。</li>
+<li>40 kHz 超声波人耳听不见，但声压不小：<strong>不要把发射探头贴近耳朵</strong>，也不要对着宠物（狗、猫听得见）。</li>
+<li><strong>风扇必须带网罩</strong>，手指、头发、探头引线都远离扇叶；不用的时候关掉。风扇用<strong>单独的手机充电器</strong>供电，不要插在给 Arduino 供电的同一台电脑上（原因见第 9 步）。</li>
+<li><strong>不要用手摸芯片或电阻试温度</strong>。如果 Arduino 反复复位、串口断开，或闻到焦味，立刻拔掉 12 V 适配器和 USB，再对照图检查。</li>
+<li><strong>每一步改线、插拔元件之前都要断电</strong>：先拔 12 V 适配器，再拔 USB。改完先对照图检查，<strong>先接 USB、再接回 12 V 适配器</strong>。只挪动探头、转电位器、开关风扇不碰面包板，可以带电做。第 6 步的手动检验只接 USB、<strong>不接 12 V</strong>，而且只用一根一端已插在 GND 轨的跳线去碰指定的孔。</li>
+<li>Cm 是 10 µF <strong>电解电容</strong>，长脚（+）插 j6，短脚（−，外壳白色条纹一侧）接下方 GND 轨。接反会发热、鼓包。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运放</td>
+<td>TL072（DIP-8）</td>
+<td>1</td>
+<td>A：V_MID 跟随器；B：接收放大 11 倍</td>
+</tr>
+<tr>
+<td>比较器</td>
+<td>LM393（DIP-8）</td>
+<td>1</td>
+<td>A：武装（门限）；B：过零（带回差）</td>
+</tr>
+<tr>
+<td>D 触发器</td>
+<td>SN74HC74N（DIP-14）</td>
+<td>1</td>
+<td>必须是 HC 系列，5 V 供电</td>
+</tr>
+<tr>
+<td>超声波发射探头</td>
+<td>Murata MA40S4S</td>
+<td>1</td>
+<td>40 kHz；引线约 30 cm</td>
+</tr>
+<tr>
+<td>超声波接收探头</td>
+<td>Murata MA40S4R</td>
+<td>1</td>
+<td>40 kHz；引线约 30 cm，两根线绞在一起</td>
+</tr>
+<tr>
+<td>微控制器</td>
+<td>Arduino Uno（Rev3）</td>
+<td>1</td>
+<td>发射、清零、输入捕获</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>150 Ω</td>
+<td>2</td>
+<td>Rtx1、Rtx2，发射限流</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>10 kΩ</td>
+<td>6</td>
+<td>R1、R2（V_MID 分压）；Rg；过零比较器两只输入电阻；另 1 只第 6 步手动检验用</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>100 kΩ</td>
+<td>3</td>
+<td>Rb（接收偏置）、Rf（反馈）、门限网络</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>4.7 MΩ</td>
+<td>1</td>
+<td>R_HY，过零比较器回差</td>
+</tr>
+<tr>
+<td>电阻</td>
+<td>2.2 kΩ</td>
+<td>2</td>
+<td>两只比较器的上拉，只接 +5 V</td>
+</tr>
+<tr>
+<td>电位器</td>
+<td>10 kΩ（线性）</td>
+<td>1</td>
+<td>调门限 V_TH</td>
+</tr>
+<tr>
+<td>电容</td>
+<td>100 nF（代码 104）</td>
+<td>4</td>
+<td>Cg；三片芯片各一只电源旁路 Cd</td>
+</tr>
+<tr>
+<td>电解电容</td>
+<td>10 µF，耐压 16 V 以上</td>
+<td>1</td>
+<td>Cm，V_MID 滤波</td>
+</tr>
+<tr>
+<td>电源</td>
+<td>12 V 直流适配器 + 面包板接头</td>
+<td>1</td>
+<td>只给 TL072、LM393 和门限网络供电</td>
+</tr>
+<tr>
+<td>风扇</td>
+<td>带网罩的 USB 小风扇 + 单独的手机充电器</td>
+<td>1</td>
+<td>当作「风」；不要插在电脑上</td>
+</tr>
+<tr>
+<td>直尺、胶带、木条、两小块泡沫</td>
+<td>—</td>
+<td>1 套</td>
+<td>固定两只探头，量间距；泡沫把探头垫高 2～3 cm</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>直流 2 V 和 20 V 挡</td>
+<td>1</td>
+<td>2 V 挡分辨到 1 mV 最好</td>
+</tr>
+<tr>
+<td>面包板、跳线</td>
+<td>全尺寸</td>
+<td>1</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="先上传程序第-1-步">先上传程序（第 1 步）</h2>
+<p>在接任何线之前，先只用 USB 把 Arduino 接到电脑，上传下面的程序，然后拔掉 USB。</p>
+<blockquote>
+<p>⚠️ 下面的程序<strong>未经运行验证</strong>：我们没有在真实的 Arduino 上跑过它，只核对过寄存器名称和时序计算（<code>code/37_sim.py</code>）。上传后如果串口没有输出，先检查波特率是否设为 115200。</p>
+</blockquote>
+<pre><code class="language-cpp">// 未经运行验证
+// 37 超声波时差：D3、D11 反相发 8 个 40 kHz 周期；D4 清零兼盲区；D8（ICP1）捕获 Q2 的上升沿
+// Timer1 不分频，一格 62.5 ns；一轮 80000 格 = 5 ms；每 100 轮打印一次平均值
+
+const uint16_t HALF  = 200;     // 半个 40 kHz 周期 = 200 格 = 12.5 µs
+const uint8_t  NHALF = 16;      // 8 个周期 = 16 次翻转
+const uint16_t BLANK = 5600;    // 盲区 350 µs
+const uint16_t TAIL  = 14464;   // 溢出（65536）后再等这么多格，凑满 80000
+const uint8_t  NAVG  = 100;     // 100 轮打印一次（0.5 s）
+
+uint32_t sum = 0;
+uint16_t tmin = 65535, tmax = 0;
+uint8_t  n = 0, miss = 0;
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(3, OUTPUT); pinMode(11, OUTPUT); pinMode(4, OUTPUT); pinMode(8, INPUT);
+  digitalWrite(3, LOW); digitalWrite(11, LOW); digitalWrite(4, LOW);
+  TCCR1A = 0;                             // 普通计数模式
+  TCCR1B = (1 &lt;&lt; ICES1) | (1 &lt;&lt; CS10);    // 上升沿捕获，不分频（16 MHz）
+  TIMSK1 = 0;                             // 不用中断，只看标志位
+}
+
+void loop() {
+  noInterrupts();                         // 发射和盲区期间不让别的中断插队
+  PORTD &amp;= ~(1 &lt;&lt; 4);                     // D4 = 0：两个触发器清零，/Q2 变高
+  TCNT1 = 0;
+  TIFR1 = (1 &lt;&lt; ICF1) | (1 &lt;&lt; TOV1);      // 清掉旧标志（写 1 清零）
+  PORTD |= (1 &lt;&lt; 3);                      // D3 = 1、D11 = 0：第一个半周期
+  for (uint8_t k = 1; k &lt; NHALF; k++) {
+    while (TCNT1 &lt; k * HALF) {}
+    PIND = (1 &lt;&lt; 3);                      // 往 PINx 写 1 = 翻转：D3 = PD3
+    PINB = (1 &lt;&lt; 3);                      // D11 = PB3
+  }
+  while (TCNT1 &lt; NHALF * HALF) {}
+  PORTD &amp;= ~(1 &lt;&lt; 3); PORTB &amp;= ~(1 &lt;&lt; 3); // 发完，两脚都回 0
+  while (TCNT1 &lt; BLANK) {}
+  TIFR1 = (1 &lt;&lt; ICF1);                    // 丢掉盲区里的捕获
+  PORTD |= (1 &lt;&lt; 4);                      // D4 = 1：放开清零，开始等回波
+  interrupts();
+
+  while (!(TIFR1 &amp; (1 &lt;&lt; TOV1))) {}       // 等到 4.096 ms 溢出
+  bool got = TIFR1 &amp; (1 &lt;&lt; ICF1);
+  uint16_t t = ICR1;                      // 硬件在 Q2 上升沿那一刻抄下的值
+  if (got) {
+    sum += t; n++;
+    if (t &lt; tmin) tmin = t;
+    if (t &gt; tmax) tmax = t;
+  } else {
+    miss++;
+  }
+  if (n + miss &gt;= NAVG) {
+    float avg = n ? (float)sum / n : 0;
+    Serial.print(&quot;ICR1=&quot;);   Serial.print(avg, 1);
+    Serial.print(&quot;  t_us=&quot;); Serial.print(avg / 16.0, 2);
+    Serial.print(&quot;  min=&quot;);  Serial.print(tmin);
+    Serial.print(&quot;  max=&quot;);  Serial.print(tmax);
+    Serial.print(&quot;  miss=&quot;); Serial.println(miss);
+    sum = 0; n = 0; miss = 0; tmin = 65535; tmax = 0;
+  }
+  while (TCNT1 &lt; TAIL) {}                 // 凑满 5 ms
+}
+</code></pre>
+<p><code>max − min</code> 是这 100 轮里最晚和最早的差：正常时只有几格；如果接近 400 格（25 µs），说明在跳周期。<code>miss</code> 是没捕获到的轮数，正常应为 0。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p>请先看图 37-p4-1 的整板接法，再看图 37-p4-2 与它一一对应的原理图。</p>
+<p><a class="img-link" href="img/37_p4_1_breadboard.png"><img alt="面包板：上方两条轨是 12 V 适配器的 +12 V 和 GND，下方两条轨是 Arduino 的 GND 和 +5 V，两组 GND 在最左边连通；TL072 在第 8–11 列，LM393 在第 24–27 列，74HC74 在第 40–46 列；左边是 V_MID 分压和接收放大，中间是门限电位器和过零比较器的电阻，右边是两只 150 Ω 发射电阻；接收探头接 a11、a20，发射探头接 f53、f56；Arduino 的 5V、GND、D4、D8、D3、D11 用彩色线接到板上；四个黄色圆圈是表笔点 ①②③④" src="img/37_p4_1_breadboard.png" loading="lazy" /></a></p>
+<p><em>图 37-p4-1　面包板：上方两条轨是 12 V 电源，下方两条轨是 Arduino 5 V；74HC74 的 14 脚单独用跳线接 5 V</em></p>
+<p><a class="img-link" href="img/37_p4_2_schem_lab.png"><img alt="带孔位的原理图：与原理与实现篇里的原理图相同的电路，每个元件旁边用灰色小字标出它在面包板上的孔位，例如 R1 10k（h3–h5）、Rtx1 150（h50–h53）；表笔点 ①②③④ 也标在原理图上" src="img/37_p4_2_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 37-p4-2　与图 37-p4-1 一一对应的原理图（灰色小字是孔位）</em></p>
+<p><strong>对照看</strong>：</p>
+<p>① <strong>V_MID</strong>：图 37-p4-2 里 R1、R2 分压后进 TL072 A，输出就是 V_MID。在图 37-p4-1 上，<strong>一根红跳线从上方 +12 V 轨第 3 列接 g3</strong>，R1 在 h3–h5、R2 从 i5 到下方 GND 轨、Cm 在 j6；g5–g6 和 h6→g10 把分压点送到第 10 列下半（3 脚 IN+A）；h8–h9 把 1 脚（OUTA）接回 2 脚，组成跟随器；i9→i20 把 V_MID 送到第 20 列（表笔点 ③）。e20–f20 让第 20 列上下两半都是 V_MID。</p>
+<p>② <strong>接收放大</strong>：接收探头两根线插 a11（5 脚 IN+B）和 a20（V_MID）；Rb 100k 在 b11–b20。Rf 100k 从 c9（7 脚 OUTB）到 c13，d10→e13 把第 13 列接回 6 脚 IN−B；Rg 10k 在 d13–d17，Cg 100 nF 在 c17–c20 回到 V_MID。放大输出经 a9→a22 到第 22 列（表笔点 ①），e22–f22 让上下两半都有。</p>
+<p>③ <strong>两只比较器</strong>：g22→g25 把放大输出送进 LM393 的 2 脚（IN−A）。电位器的三只脚插在 h31、h32、h33；门限网络从 V_MID 出发，跳线 <strong>h20→i31</strong> 接到电位器的一端（i31 和 h31 在同一列，不和电位器的脚抢同一个孔），电位器另一端 h33 经 100k（g33–g36）到第 36 列，再<strong>从上方 +12 V 轨第 37 列用红跳线接 f36</strong>；中间脚经 i32→i26 送进 3 脚（IN+A，表笔点 ②）。过零比较器：10k c22–c27 进 5 脚（IN+B），10k d20–d26 进 6 脚（IN−B），R_HY 4.7M 在 a25–a27。</p>
+<p>④ <strong>上拉与触发器</strong>：LM393 的 1 脚（OUTA）经 j24 的 2.2k 上拉到下方 +5 V，i24→i43 接 74HC74 的 4 脚 /PRE1；7 脚（OUTB）经 b25→b29 引到第 29 列上半，<strong>e29–f29 把第 29 列上下两半连通</strong>，j29 的 2.2k 上拉到下方 +5 V；c29→c43 接 11 脚 CLK2。74HC74 的 5 脚 Q1 经 g44→a42 接 12 脚 D2；9 脚 Q2 经 a45 接 D8；8 脚 /Q2 在第 46 列上半（表笔点 ④）。</p>
+<p>⑤ <strong>电源</strong>：TL072 的 8 脚 a8、LM393 的 8 脚 a24 接上方 +12 V 轨，Cd 各自从 b8、b24 接上方 GND 轨；TL072 的 4 脚 j11、LM393 的 4 脚 j27 接下方 GND 轨。74HC74 的 14 脚 a40 <strong>用红色跳线接下方 +5 V 轨</strong>，Cd 从 c40 接上方 GND 轨。</p>
+<h3 id="第-2-步放芯片接电源断电">第 2 步：放芯片、接电源（断电）</h3>
+<p>（第 1 步是上面的上传程序。）确认 USB 和 12 V 适配器都没接。三片芯片都跨在中间凹槽上，缺口朝左，1 脚在左下角（f 排），逆时针数：TL072 占第 8–11 列，LM393 占第 24–27 列，74HC74 占第 40–46 列。</p>
+<ul>
+<li>按 ⑤ 接好三片芯片的电源和三只 Cd；</li>
+<li>12 V 适配器的 + 接上方 +12 V 轨，− 接上方 GND 轨；第 1 列把上下两条 GND 轨连通；</li>
+<li>Arduino 的 5V 接下方 +5 V 轨、GND 接下方 GND 轨。</li>
+</ul>
+<p>接回电源（先 USB、再 12 V），用 20 V 挡确认：上方两轨之间约 12 V，下方两轨之间约 5 V（记下这个 V5，后面要用）。用表笔碰一下 a40 和下方 GND 轨，应是约 5 V，<strong>不是 12 V</strong>。</p>
+<h3 id="第-3-步v_mid断电">第 3 步：V_MID（断电）</h3>
+<p>断电，按 ① 插 R1、R2、Cm 和六根跳线：+12 V→g3（红）、g5–g6、h6→g10、h8–h9、i9→i20、e20–f20。接回电源，表笔点 ③ 应读约 6.0 V。</p>
+<h3 id="第-4-步接收放大断电">第 4 步：接收放大（断电）</h3>
+<p>断电，按 ② 接接收探头、Rb、Rf、Rg、Cg 和跳线 d10→e13、a9→a22、e22–f22。接回电源，表笔点 ① 的直流电压也应约 6.0 V（Cg 挡住直流，直流上只是跟随 V_MID）。如果读数贴近 12 V 或贴近 0 V，说明 Cg 没插对或 Rb 没接到 V_MID，运放被直流放大到顶了。</p>
+<h3 id="第-5-步两只比较器和门限断电">第 5 步：两只比较器和门限（断电）</h3>
+<p>断电，按 ③ 插电位器、100k、两只 10k、R_HY 和两只 2.2k 上拉（<strong>只接 +5 V 轨</strong>），以及跳线 g22→g25、h20→i31、+12 V→f36（红）、i32→i26、b25→b29、<strong>e29–f29</strong>（共 6 根跳线，和图 37-p4-1 一致；c22–c27、d20–d26 是那两只 10k 电阻，不是跳线）。接回电源，红表笔放 ②、黑表笔放 ③，用 2 V 挡，先把电位器转到约 <strong>0.169 V</strong>。这只是模型给的起点，真正的门限第 7 步再找（<a href="page3.html">参数与调试篇</a> 第二节说明了为什么）。</p>
+<p>顺手检查一下过零比较器的上拉：黑表笔放 GND 轨，红表笔先碰 c29、再碰 j29，<strong>c29 与 j29 读数应相同</strong>（约 5 V 或约 0.1 V 都可以，取决于比较器此刻的输出）。如果 j29 约 5 V 而 c29 约 0 V，多半是 e29–f29 没插：第 29 列上下两半没接通，万用表的 10 MΩ 内阻把悬空的 c29 拉到了 0 V 附近。</p>
+<h3 id="第-6-步触发器发射接-arduino断电">第 6 步：触发器、发射、接 Arduino（断电）</h3>
+<p>断电，按 ④ 接好 74HC74 的其余脚：j41、j42、j46 接下方 GND 轨；b44→b40；d41→d39、e39–f39、g39–g40；（j24、j29 两只 2.2k 上拉已在第 5 步插好，不要再插）；i24→i43、c29→c43、g44→a42，a45 接 D8。插两只 150 Ω（h50–h53、i52–i56），j50 接 D3，j52 接 D11。<strong>D4 先不接，发射探头也先不插</strong>，先做下面的手动检验。</p>
+<p><strong>手动检验 D 触发器（不用示波器）</strong>：<a href="page2.html">原理与实现篇</a> 第二节的真值表，可以在这里亲手验证一遍。</p>
+<ol>
+<li>断电。把多备的那只 10k 从 j39 接到下方 +5 V 轨（/CLR 平时为 1，碰 GND 时为 0，电流只有 0.5 mA）。再拿一根黑跳线，一端插进下方 GND 轨，另一端先悬空，这根线下面叫「测试线」。</li>
+<li><strong>只插 USB，不接 12 V 适配器</strong>。这时 LM393 不工作，它的两个输出只靠 2.2k 上拉，都是 1；测试线去碰它们最多 2.3 mA。万用表 20 V 挡，红表笔放 ④（第 46 列上半）、黑表笔放 GND 轨。</li>
+<li>测试线碰一下 h39 再拿开（清零）：④ 应约 5 V，即 /Q2 = 1。</li>
+<li>测试线碰一下 d29 再拿开（CLK2 先变 0、再变回 1，是一个上升沿）：④ 应<strong>仍约 5 V</strong>。没武装，过零来了也不算。</li>
+<li>测试线碰一下 h43 再拿开（/PRE1 = 0，武装，Q1 = 1）：④ 仍约 5 V，还没有时钟沿。</li>
+<li>测试线再碰一下 d29 再拿开：④ 应从约 5 V <strong>变成约 0 V</strong>。这就是「先武装、再过零」才捕获。</li>
+<li>再碰一下 h39：④ 回到约 5 V。</li>
+</ol>
+<p>如果第 6 小步 ④ 一直约 5 V 不变，按这个顺序查：e29–f29 跳线、j29 的 2.2k 上拉、c29→c43 跳线（这三处让 d29 的上升沿到达 CLK2）；再查 i24→i43 和 h43 是否真的碰到（武装是否生效）。如果第 3 小步 ④ 就不是约 5 V，先查 j39 那只 10k、g39–g40、e39–f39、d41→d39。</p>
+<p>测试线只碰 h39、d29、h43 这三个孔，别的孔不要碰。做完断电，拔掉那只 10k 和测试线，从 j39 接 D4，发射探头接 f53、f56。</p>
+<p>按图 37-p4-3 把两只探头用胶带固定在木条上，正对着、同一高度，正面到正面 <strong>20.0 cm</strong>。每只探头下面垫一小块泡沫，<strong>探头中心比木条表面高 2～3 cm</strong>：只高 1 cm 时，从木条表面反射的那一路只比直达声多走约 1.00 mm（约 2.9 µs），几乎同时到达，会改变回波形状和固定偏移；高 2.5 cm 时多走约 6.16 mm（约 17.9 µs），而且更弱。<strong>探头贴好以后，整个实验都不再动它们在木条上的位置</strong>（第 8 步挪接收探头时，连同它下面的泡沫整块挪）。</p>
+<p><a class="img-link" href="img/37_p4_3_fan_setup.png"><img alt="俯视图：一把直尺上左边是 MA40S4S 发射探头、右边是 MA40S4R 接收探头，正面到正面 L = 20.0 cm；发射探头后面放一台带网罩的风扇，风沿两只探头的连线吹；旁注：顺风是风扇在发射探头后面吹，逆风是把整根木条连同探头水平转 180°（风扇和接线都不动），每个方向都读关、开、关" src="img/37_p4_3_fan_setup.png" loading="lazy" /></a></p>
+<p><em>图 37-p4-3　俯视图：探头正对着、同一高度；风沿两只探头的连线吹</em></p>
+<p>接回电源，打开串口监视器（115200）。应该看到 <code>t_us</code> 稳定在几百微秒（模型值约 707.79），<code>miss=0</code>。万用表 2 V 挡，红表笔放 ④、黑表笔放 GND 轨，应读约 0.708 V。</p>
+<h3 id="第-7-步找你这对探头的最佳门限">第 7 步：找你这对探头的最佳门限</h3>
+<p><strong>先确认不跳周期，再测间距和风</strong>，所以这一步排在最前面。风扇关着，红表笔放 ②、黑表笔放 ③，把 V_TH 从 0.05 V 慢慢转，<strong>一直转到最大（约 0.545 V）</strong>，每转一点都看串口 <code>t_us</code>（或 ④ 的读数）。你会看到读数<strong>一级一级地跳</strong>，每级约 25 µs（25 mV）。记下相邻两次跳变时的 V_TH，把电位器转回两者的中间：这就是你这对探头的最佳门限。转好后看 <code>max − min</code> 应只有几格。</p>
+<p>如果转到最大还只看到一两级台阶，说明你的回波比模型大（<a href="page3.html">参数与调试篇</a> 第二节估计可能大两三倍）。这时<strong>断电</strong>，把门限网络的 100 kΩ（g33–g36）换成 47 kΩ（<a href="page2.html">原理与实现篇</a> 练习 3），<strong>接回电源</strong>（先 USB、再 12 V），V_TH 就能调到约 1.053 V，再扫一遍。</p>
+<h3 id="第-8-步改变间距">第 8 步：改变间距</h3>
+<p>带电即可，只挪动接收探头（连同下面的泡沫）。依次放在 17、19、21、23 cm，每个位置等读数稳定，记下 <code>t_us</code>；用万用表时记下 ④，<strong>紧接着再读一次 V5</strong>。</p>
+<h3 id="第-9-步风扇整根木条转向开减关">第 9 步：风扇（整根木条转向，开减关）</h3>
+<p>回到 20.0 cm。风扇插在<strong>单独的手机充电器</strong>上，按图 37-p4-3 放在发射探头后面 10～15 cm，比贴着放好（发射探头自己挡在风扇正前方，后面有一段尾流）。</p>
+<ol>
+<li><strong>方向 A（顺风）</strong>：关风扇读一次 → 开风扇等几秒读一次 → 再关风扇读一次。</li>
+<li><strong>方向 B（逆风）</strong>：探头在木条上<strong>不动</strong>，把<strong>整根木条连同两只探头水平转 180°</strong>，让接收探头朝向风扇，离风扇的距离和刚才一样（引线够长，慢慢转，别扯到面包板）；风扇和接线都不动。同样读「关 → 开 → 关」。</li>
+<li>每个方向只用「<strong>开减关</strong>」（开的读数减去前后两次关的平均）。按本节模型，方向 A 约 −5.12 µs，方向 B 约 +5.13 µs，两者相减约 10.25 µs。</li>
+</ol>
+<p>为什么这么麻烦？每 1 mm 声程是 2.913 µs，1 mm 的放置误差就相当于约 0.86 m/s 的风；而 3 m/s 的风让单向读数只变约 5 µs。把探头拆下来对调，重新贴的误差就和风一样大了。转木条时间距没变，固定偏移和探头差异都在「开减关」里抵消；每组「关 → 开 → 关」在半分钟内读完，温度也来不及变。</p>
+<p><strong>以串口 <code>t_us</code> 为准</strong>。万用表 ④ 的读数正比于 V5，而 V5 来自电脑 USB：它只要变 0.4 %（20 mV），④ 就变约 2.8 mV，差不多是单向风信号的一半；风扇如果插在同一台电脑上，一开一关 V5 就会跳。只用万用表时，每读一次 ④ 就马上读一次 V5，用 t = V④ ÷ V5 × 5000 µs 换算。</p>
+<p>风扇吹出来的风不均匀，量到的是 20 cm 路径上的<strong>平均</strong>风速，比风扇标称风速小是正常的。</p>
+<h2 id="测量表">测量表</h2>
+<p>除特别注明外，黑表笔插 GND 轨。④ 的电压和时间的关系是：每轮 5 ms 里 /Q2 高的时间 t 占的比例乘以 V5，所以 V5 = 5.00 V 时，<strong>1 mV 对应 1 µs</strong>；V5 不是 5.00 V 时，用 t = V④ ÷ V5 × 5000 µs 换算。第 7～9 步以串口 <code>t_us</code> 为主。</p>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>预期</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>2</td>
+<td>12 V 电源</td>
+<td>上方 +12 V 轨</td>
+<td>上方 GND 轨</td>
+<td>直流 20 V</td>
+<td>约 12 V</td>
+</tr>
+<tr>
+<td>2</td>
+<td>2</td>
+<td>Arduino 5 V（V5）</td>
+<td>下方 +5 V 轨</td>
+<td>下方 GND 轨</td>
+<td>直流 20 V</td>
+<td>约 5.0 V</td>
+</tr>
+<tr>
+<td>3</td>
+<td>2</td>
+<td>74HC74 VCC</td>
+<td>a40</td>
+<td>下方 GND 轨</td>
+<td>直流 20 V</td>
+<td>约 5 V，绝不能是 12 V</td>
+</tr>
+<tr>
+<td>4</td>
+<td>3</td>
+<td>V_MID</td>
+<td>③（第 20 列）</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 6.0 V（ngspice 6.00 V）</td>
+</tr>
+<tr>
+<td>5</td>
+<td>4</td>
+<td>放大输出直流</td>
+<td>①（第 22 列）</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>约 6.0 V</td>
+</tr>
+<tr>
+<td>6</td>
+<td>5、7</td>
+<td>门限 V_TH − V_MID</td>
+<td>②（第 26 列下半）</td>
+<td>③</td>
+<td>直流 2 V</td>
+<td>起点 0.169 V；最终用第 7 步扫描找到的中点（可调 0～0.545 V，换 47k 后约 0～1.053 V）</td>
+</tr>
+<tr>
+<td>6a</td>
+<td>6</td>
+<td>手动检验：/Q2</td>
+<td>④</td>
+<td>GND 轨</td>
+<td>直流 20 V</td>
+<td>清零约 5 V；未武装碰时钟仍约 5 V；武装后碰时钟约 0 V</td>
+</tr>
+<tr>
+<td>7</td>
+<td>6</td>
+<td>/Q2 平均（20 cm、无风）</td>
+<td>④（第 46 列上半）</td>
+<td>GND 轨</td>
+<td>直流 2 V</td>
+<td>约 0.708 V（示意模型）；5.00 V 说明一次也没捕获到</td>
+</tr>
+<tr>
+<td>8</td>
+<td>7</td>
+<td>门限扫描时的跳变</td>
+<td>串口 <code>t_us</code>（或 ④）</td>
+<td>GND 轨</td>
+<td>直流 2 V</td>
+<td>每级约 25 µs（25 mV）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>8</td>
+<td>17、19、21、23 cm</td>
+<td>串口 <code>t_us</code>（或 ④）</td>
+<td>GND 轨</td>
+<td>直流 2 V</td>
+<td>约 620.3、678.5、736.9、795.2 µs；<strong>每 2 cm 多约 58 µs</strong></td>
+</tr>
+<tr>
+<td>10</td>
+<td>9</td>
+<td>方向 A 关/开、方向 B 关/开</td>
+<td>串口 <code>t_us</code>（或 ④）</td>
+<td>GND 轨</td>
+<td>直流 2 V</td>
+<td>约 707.79 / 702.67、707.79 / 712.92 µs；<strong>开减关：A 约 −5 µs、B 约 +5 µs，相差约 10 µs</strong></td>
+</tr>
+</tbody>
+</table>
+<p>图 37-p4-4 是第 9、10 项的预期样子：左边四个点排成直线；右边四根柱子，方向 A 开风扇比关风扇低约 5 mV，方向 B 开风扇比关风扇高约 5 mV。</p>
+<p><a class="img-link" href="img/37_p4_4_expected.png"><img alt="左：横轴间距 17–23 cm，纵轴 /Q2 平均电压，四个点 620.3、678.5、736.9、795.2 mV 连成直线，标题「每多 1 mm 多 2.913 mV」；右：四根柱子，顺风向关 707.79、开 702.67，逆风向关 707.79、开 712.92 mV，标题「开−关：顺 -5.12、逆 +5.13 mV / 相减 10.25 mV ≈ 10.25 µs」" src="img/37_p4_4_expected.png" loading="lazy" /></a></p>
+<p><em>图 37-p4-4　预期读数（V5 = 5.00 V、一轮 5 ms 时；1 mV 对应 1 µs）</em></p>
+<p>图 37-p4-4 的绝对高度你可能对不上（固定偏移取决于探头），但<strong>左图的斜率</strong>和<strong>右图的两个开减关</strong>应该接近。左图标题的 2.913 是理论值 1/c；按本节模型的四个点做直线拟合是 2.916，差别来自模型里的取整，可以忽略。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<ul>
+<li><strong>串口 <code>t_us</code> 是主要读法</strong>：直接给出微秒数，分辨到 62.5 ns 再取 100 次平均，而且不受 V5 影响。</li>
+<li><strong>万用表读 ④ 是备用读法</strong>：不用电脑也能看。/Q2 的平均电压就是一只「时间→电压」转换器，但 1 mV ≈ 1 µs 只在 V5 = 5.00 V 时成立；每读一次 ④ 都配一次 V5。用它核对串口：两者换算后之差应接近一个常数。</li>
+<li><strong>看 min、max 认出跳周期</strong>：<code>max − min</code> 接近 400 就是在跳，按第 7 步重新找门限。</li>
+<li><strong>串口绘图器</strong>：把打印改成只打印 <code>avg / 16.0</code>，开关风扇时能看到曲线上下台阶。</li>
+</ul>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>把你量到的数填进下面的变量（现在填的是模型的预期值），运行后它会算出声速和风速，并检查你的读数是否合理。代码只做计算和打印，不写任何文件。</p>
+<pre><code class="language-python"># 1. 填入你的实测值（串口 t_us，单位 µs；现在填的是模型的预期值）
+L_CM = [17, 19, 21, 23]                  # 第 8 步的间距（cm）
+T_L = [620.3, 678.5, 736.9, 795.2]       # 对应的 t_us（µs）
+L_FAN = 0.200                            # 第 9 步的间距（m）
+# 第 9 步：方向 A（顺风）关、开、关；方向 B（逆风，整根木条转 180°）关、开、关
+A_OFF1, A_ON, A_OFF2 = 707.79, 702.67, 707.79
+B_OFF1, B_ON, B_OFF2 = 707.79, 712.92, 707.79
+
+# 只用万用表时：每个 ④ 读数 mV 配一个同时读的 V5（V），用这个函数换成 µs 再填上面
+def mv_to_us(mv, v5):
+    return mv * 1e-3 / v5 * 5e-3 * 1e6   # 一轮 5 ms
+
+# 2. 计算
+xs = [l * 10 for l in L_CM]                   # cm → mm
+n = len(xs)
+mx, my = sum(xs) / n, sum(T_L) / n
+slope = sum((x - mx) * (y - my) for x, y in zip(xs, T_L)) / sum((x - mx) ** 2 for x in xs)   # µs/mm
+offset = my - slope * mx                      # µs：首达之外的固定偏移
+c = 1e3 / slope                               # m/s
+dA = A_ON - (A_OFF1 + A_OFF2) / 2             # 方向 A 开减关（µs），应为负
+dB = B_ON - (B_OFF1 + B_OFF2) / 2             # 方向 B 开减关（µs），应为正
+dt = dB - dA                                  # 逆风比顺风慢多少（µs）
+v = dt * 1e-6 * c ** 2 / (2 * L_FAN)
+t0 = (A_OFF1 + A_OFF2 + B_OFF1 + B_OFF2) / 4 - offset   # 无风的首达时间（µs）
+t1, t2 = (t0 + dA) * 1e-6, (t0 + dB) * 1e-6
+v2 = L_FAN / 2 * (1 / t1 - 1 / t2)            # 两时间法
+print(f&quot;斜率 {slope:.4f} µs/mm → 声速 {c:.1f} m/s；固定偏移 {offset:.1f} µs&quot;)
+print(f&quot;开减关：A {dA:+.2f} µs，B {dB:+.2f} µs；Δt {dt:.2f} µs → 风速 {v:.2f} m/s；两时间法 {v2:.2f} m/s&quot;)
+
+# 3. 检查
+assert 320 &lt; c &lt; 370, &quot;声速不在 320–370 m/s：检查间距是否量的是正面到正面，或是否跳了周期&quot;
+assert 0 &lt; offset &lt; 400, &quot;固定偏移不合理：检查是否有一个间距跳了周期（看串口 max − min）&quot;
+assert abs(dt) &lt; 20, &quot;两个开减关相差超过 20 µs：多半有一次跳了周期，回第 7 步重新找门限&quot;
+assert dA &lt; 0 &lt; dB, &quot;顺风应变快、逆风应变慢：检查风扇方向和木条是否转了 180°&quot;
+assert 0.3 &lt; v &lt; 8, &quot;风速不在 0.3–8 m/s：检查风扇是否沿两只探头连线吹&quot;
+assert abs(v2 - v) / v &lt; 0.1, &quot;两种算法差超过 10 %：检查偏移和读数&quot;
+print(&quot;读数合理 ✓&quot;)
+</code></pre>
+<p>如果某一条 <code>assert</code> 报错，按它的提示和 <a href="page3.html">参数与调试篇</a> 第七节的排错表去查。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>预期</th>
+<th>实测</th>
+<th>是否一致 / 原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1 12 V 电源</td>
+<td>约 12 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>2 V5</td>
+<td>约 5.0 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>3 74HC74 VCC</td>
+<td>约 5 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>4 ③ V_MID</td>
+<td>约 6.0 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>5 ① 直流</td>
+<td>约 6.0 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6 ② − ③</td>
+<td>起点 0.169 V，最终取第 7 步的中点</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>6a 手动检验 ④</td>
+<td>5 V → 5 V → 5 V → 约 0 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>7 ④ 20 cm 无风 / t_us</td>
+<td>约 0.708 V / 约 707.8</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>8 门限扫描每级跳变</td>
+<td>约 25 µs</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>9 四个间距的斜率</td>
+<td>约 2.913 µs/mm</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10 开减关：方向 A / 方向 B</td>
+<td>约 −5 / +5 µs</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>10 两者相减 Δt</td>
+<td>约 10 µs</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>每次读 ④ 时的 V5</td>
+<td>约 5.0 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>你的最佳 V_TH</td>
+<td>两次跳变的中点</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="想一想先写下你的预测再动手或看答案">想一想（先写下你的预测，再动手或看答案）</h2>
+<ol>
+<li>第 8 步如果把间距一下拉到 30 cm，读数会落在图 37-p4-4 左图那条直线的延长线上吗？</li>
+</ol>
+<details>
+<summary>揭晓</summary>
+<p>多半不会，会比延长线高约 25 mV。间距变大，回波变小，原来卡在第 5 个周期的武装推迟到第 6 个周期，整整晚一个周期。按本节模型，30 cm 的残差是 +24.9 µs。所以量斜率时间距只在小范围里改。</p>
+</details>
+<ol start="2">
+<li>第 9 步测逆风时，为什么不把两只探头从木条上拆下来对调，而是整根木条转 180°？</li>
+</ol>
+<details>
+<summary>揭晓</summary>
+<p>因为放置误差和要测的信号一样大。每 1 mm 声程是 2.913 µs，相当于约 0.86 m/s 的风；而 3 m/s 的风让单向读数只变约 5 µs。重新贴探头差 1～2 mm 很平常，量出来的「风」就可能是 1.5 m/s 也可能是 5 m/s，而且 Python 的检查也发现不了。两只探头的个体差异（灵敏度各 ±3 dB）还可能让固定偏移整个变掉，甚至跳一个周期。整根木条转向时，间距、固定偏移、探头差异都不变，「开减关」把它们都减掉了。真正的流量计是让两只探头轮流发、轮流收，也是同一个思路：不动几何，只换方向。</p>
+</details>
+<ol start="3">
+<li>同学 A 说：「顺风比关风扇快了 5 mV，所以只量顺风这一次就够了。」这样做有什么风险？</li>
+</ol>
+<details>
+<summary>揭晓</summary>
+<p>温度。20 cm 声程每升高 1 °C 就快约 0.994 µs，也就是约 1 mV；风扇吹的是室内空气，温度稍有不同，或你的手靠近了，几度的变化就能把 5 mV 吃掉。所以第 9 步每个方向都读「关 → 开 → 关」，只用开减关，温度变化在半分钟里来不及影响多少。另外，风扇的风到 20 cm 路径上并不均匀，发射探头还挡住了一部分，量到的是路径平均风速，比风扇标称值小是正常的。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>[ ] 我能说出两只上拉电阻和 74HC74 的 VCC 为什么只能接 Arduino 的 5 V；</li>
+<li>[ ] 我能解释「武装」和「过零」各自负责什么，为什么过零时刻不随回波大小变；</li>
+<li>[ ] 我量到的间距斜率换算成声速，在 343 m/s 附近；</li>
+<li>[ ] 我亲手验证了 D 触发器「先武装、再来时钟沿」才让 /Q2 从约 5 V 变成约 0 V；</li>
+<li>[ ] 我用整根木条转 180° 和「开减关」量到了顺风、逆风的差，并算出了风速；</li>
+<li>[ ] 我能说出为什么不能把探头拆下来对调，以及为什么串口 <code>t_us</code> 比万用表 ④ 可靠；</li>
+<li>[ ] 我看到了转门限时读数一级一级地跳，并把门限放到了台阶中间；</li>
+<li>[ ] 我知道 Timer1 输入捕获为什么不受程序快慢的影响；</li>
+<li>[ ] 每次改线前我都先拔 12 V 适配器、再拔 USB，改完先接 USB、再接 12 V。</li>
+</ul>
+<blockquote>
+<p><strong>预告</strong>：下一节（38 节）的同步检波要从噪声里「捞」出很小的信号：用一个已知频率和相位的参考信号去乘接收到的信号。那里同样关心「相位」，只是不再找一个过零点，而是把整段信号都用上。</p>
+</blockquote>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Murata MA40S4S / MA40S4R 数据手册（40 kHz；电容 2550 pF；最大 20 Vp-p）：<a href="https://www.murata.com/~/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx?la=en">https://www.murata.com/~/media/webrenewal/products/sensor/ultrasonic/open/datasheet_maopn.ashx?la=en</a></li>
+<li>TI SN74HC74 数据手册（SCLS094，VCC 2–6 V；VIH 3.15 V @ 4.5 V）：<a href="https://www.ti.com/lit/ds/symlink/sn74hc74.pdf">https://www.ti.com/lit/ds/symlink/sn74hc74.pdf</a></li>
+<li>TI LM393 数据手册：<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a></li>
+<li>TI TL072 数据手册：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+<li>Microchip ATmega328P 数据手册（引脚电压 −0.5 V 到 VCC + 0.5 V；每脚 40 mA；Timer1 输入捕获；写 PINx 翻转引脚）：<a href="https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf</a></li>
+<li>Arduino Uno Rev3 原理图（D3 = PD3，D4 = PD4，D8 = PB0 = ICP1，D11 = PB3）：<a href="https://docs.arduino.cc/resources/schematics/A000066-schematics.pdf">https://docs.arduino.cc/resources/schematics/A000066-schematics.pdf</a></li>
+<li>TI SLAAES9《Ultrasonic Sensing Solution (USS) Guide》（两时间法）：<a href="https://www.ti.com/lit/an/slaaes9/slaaes9.pdf">https://www.ti.com/lit/an/slaaes9/slaaes9.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

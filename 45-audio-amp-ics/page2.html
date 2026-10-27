@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>45 集成功放芯片与散热保护 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/45-audio-amp-ics/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="45-集成功放芯片与散热保护--原理与实现篇">45 集成功放芯片与散热保护 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../43-push-pull-power-amp/page2.html">43 推挽功放 · 原理与实现篇</a>、44 节 D 类功放（即将上线）、<a href="../21-linear-regulator/page2.html">21 线性稳压 · 原理与实现篇</a></p>
+<h2 id="最小知识">最小知识</h2>
+<p>本页要用到三件事：</p>
+<ul>
+<li><strong>单电源功放的输出中点。</strong> LM386 只接一个 9 V 电源，它的输出（5 脚）静止时自动停在电源的一半，约 4.5 V，这叫「自定中点」，数据手册写作 Self-Centering Output Quiescent Voltage。音频就在 4.5 V 上下摆，所以喇叭前面要串一只大电容挡掉这 4.5 V 直流。</li>
+<li><strong>推挽输出级的发热</strong>：<a href="../43-push-pull-power-amp/page2.html">43 推挽功放</a> 里推导过，管子的发热不是在最大输出时最大，而是在中间某处最大。本页会用同一个思路算 LM386。</li>
+<li><strong>热阻</strong>：直觉篇说过，温升 = 发热功率 × 热阻。</li>
+</ul>
+<blockquote>
+<p><strong>最小补充：耦合电容和下限频率</strong></p>
+<p>串在信号路上、用来挡直流的电容叫<strong>耦合电容</strong>。电容对低频的「阻力」（容抗）大，所以它和后面的电阻组成一个高通：频率低于某个<strong>下限频率</strong>时，信号就明显变小。下限频率的公式和 RC 低通一样， <span class="math math-inline">\(f_c = 1 / (2 \pi R C)\)</span> ，只是这次留下的是高于 <span class="math math-inline">\(f_c\)</span> 的部分。</p>
+</blockquote>
+<blockquote>
+<p><strong>最小补充：吸收网络（Zobel 网络）</strong></p>
+<p>5 脚到地串一只 10 Ω 和一只 47 nF，叫吸收网络。喇叭是线圈，频率越高「阻力」越大；吸收网络在很高的频率上给输出级一个稳定的电阻负载，防止芯片自己振荡。数据手册的典型电路用 10 Ω 和 0.05 µF，我们用最接近的常见值 47 nF。</p>
+</blockquote>
+<h2 id="一完整电路逐块看">一、完整电路，逐块看</h2>
+<p>本节实验的电路就是数据手册图 9-1 的「增益 20」典型电路（再插上 C5 就是图 9-3 的「增益 200」），加了几处为安全和测量服务的改动。先看整张原理图，虚线框把它分成五块：</p>
+<p><a class="img-link" href="img/45_p2_0_full_schem.png"><img alt="LM386 完整外围电路原理图：左边块 1 是信号源（手机）经 Ra 10 kΩ、Rb 1 kΩ 分压，再接 RP 10 kΩ 音量电位器，电位器滑动端接 LM386 的 3 脚；2 脚接地；上方块 2 是 6 脚接 +9 V，旁边 C1 100 µF 和 C2 0.1 µF 到地；7 脚经 C3 10 µF 到地；块 3 是 1、8 脚之间的 C5 10 µF，拔掉就是增益 20；5 脚右边块 4 是 C4 220 µF 输出电容，再串 10 Ω / 2 W 接 8 Ω 喇叭到地；5 脚到地还有块 5 吸收网络 Rz 10 Ω + Cz 47 nF；4 脚接地；图下方两行小字逐块说明" src="img/45_p2_0_full_schem.png" loading="lazy" /></a></p>
+<p><em>图 45-p2-1　LM386 完整外围电路：虚线框标出五块，和下面五段文字一一对应</em></p>
+<p>按图 45-p2-1 从输入到喇叭：</p>
+<ol>
+<li><strong>块 1　输入分压 + 音量电位器</strong>：手机满音量时输出约 1.05 V 有效值，峰值约 1.48 V（1.05 × √2 ≈ 1.485，SPICE 取 1.48 V）。LM386 的输入只允许 ±0.4 V，直接接上是它的 3.7 倍。所以先用 Ra 10 kΩ 和 Rb 1 kΩ 分压，再接 RP 10 kΩ 电位器调音量，音量开满时 3 脚峰值约 0.121 V。3 脚是同相输入，2 脚接地。</li>
+<li><strong>块 2　电源退耦和旁路</strong>：6 脚接 9 V，旁边就近放 C1 100 µF 和 C2 0.1 µF 到地；4 脚接 GND；7 脚接 C3 10 µF 到地（旁路，减小电源嗡声）。</li>
+<li><strong>块 3　增益电容</strong>：1、8 脚之间可以插 C5 10 µF（+ 端接 1 脚），增益从 20 变成 200。</li>
+<li><strong>块 4　输出电容</strong>：5 脚经 C4 220 µF 耦合电容（+ 端朝 5 脚），再串 10 Ω / 2 W 电阻，最后接 8 Ω 喇叭到地。</li>
+<li><strong>块 5　吸收网络</strong>：5 脚到地串 Rz 10 Ω 和 Cz 47 nF。</li>
+</ol>
+<p>那只 10 Ω 是本教程所有功放实验的规矩：它把负载从 8 Ω 变成约 18 Ω，限制了电流；万一喇叭接错或输出出了问题，先发热的是这只电阻，而不是喇叭和芯片。</p>
+<p>拿图 45-p2-1 和手册图 9-1、图 9-3 对照，取值有这几处不同：</p>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>手册图 9-1 / 9-3</th>
+<th>本书（图 45-p2-1）</th>
+<th>为什么改，影响多大</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>输出耦合电容</td>
+<td>250 µF</td>
+<td>C4 220 µF</td>
+<td>250 µF 不是常见规格。18 Ω 负载时下限从 35.4 Hz 升到 40.2 Hz（直接接 8 Ω 时从 79.6 Hz 升到 90.4 Hz），听不出差别</td>
+</tr>
+<tr>
+<td>吸收网络</td>
+<td>10 Ω + 0.05 µF</td>
+<td>Rz 10 Ω + Cz 47 nF</td>
+<td>0.05 µF 不常见。拐点从 318.3 kHz 变成 338.6 kHz，都远高于音频</td>
+</tr>
+<tr>
+<td>增益电容（图 9-3）</td>
+<td>10 µF</td>
+<td>C5 10 µF</td>
+<td>相同</td>
+</tr>
+<tr>
+<td>输入</td>
+<td>10 kΩ 电位器直接接信号</td>
+<td>Ra 10 kΩ / Rb 1 kΩ 分压后再接 RP 10 kΩ</td>
+<td>手机峰值 1.48 V 超过 ±0.4 V 的输入上限</td>
+</tr>
+<tr>
+<td>喇叭串联电阻</td>
+<td>无</td>
+<td>10 Ω / 2 W</td>
+<td>限流，保护喇叭和芯片</td>
+</tr>
+<tr>
+<td>6 脚退耦、7 脚旁路</td>
+<td>图 9-1 没画</td>
+<td>C1 100 µF + C2 0.1 µF；C3 10 µF</td>
+<td>面包板电源线长，就近退耦更稳；7 脚是手册引脚表里的 Bypass</td>
+</tr>
+</tbody>
+</table>
+<h2 id="二推导增益-20-和-200-是怎么来的">二、推导：增益 20 和 200 是怎么来的</h2>
+<p>LM386 内部有三个决定增益的电阻：从输出 5 脚到 1 脚的 15 kΩ 反馈电阻、1 脚到 8 脚之间的 1.35 kΩ，以及 8 脚内侧的 150 Ω。这三个值画在数据手册 SNAS545D 第 1 页的简化原理图（Schematic）里；正文里，§8.3（p.9）只写了 1.35 kΩ；15 kΩ 出现在 §9.2.1.2.1（p.10）讲低音提升的那段（「paralleling the internal 15-kΩ resistor」）。150 Ω 只在那张简化原理图里出现，也可以由增益 200 反推：2 × 15 kΩ ÷ 200 = 150 Ω。注意手册 §8.2 的功能框图（Functional Block Diagram）没有标电阻值，别去那里找。</p>
+<p><a class="img-link" href="img/45_p2_1_gain_network.png"><img alt="LM386 内部增益网络示意：左边是输入级（差分放大），3 脚 +IN、2 脚 −IN 进入；右边是放大和输出级，接 5 脚 VOUT；15 kΩ 反馈电阻从 5 脚接回 1 脚；1 脚和 8 脚之间是 1.35 kΩ，8 脚经 150 Ω 回到输入级；图上方写着不接电容时增益 = 2 × 15 kΩ ÷ (150 Ω + 1.35 kΩ) = 20，1、8 脚接 10 µF 时增益 = 2 × 15 kΩ ÷ 150 Ω = 200；红字说明 1、8 脚之间接 10 µF 就把 1.35 kΩ 短路" src="img/45_p2_1_gain_network.png" loading="lazy" /></a></p>
+<p><em>图 45-p2-2　LM386 内部的增益网络（简化），电阻值取自数据手册第 1 页的简化原理图</em></p>
+<p>按图 45-p2-2，增益等于「反馈电阻的 2 倍」除以「8 脚内侧的 150 Ω 加上 1、8 脚之间的 1.35 kΩ」：</p>
+<div class="math math-display">\[A_V = \frac{2 \times 15\thinspace\mathrm{k\Omega}}{150\thinspace\Omega + 1.35\thinspace\mathrm{k\Omega}} = 20\]</div>
+<p>1、8 脚之间接一只 10 µF，交流信号就从电容走，1.35 kΩ 被「短路」：</p>
+<div class="math math-display">\[A_V = \frac{2 \times 15\thinspace\mathrm{k\Omega}}{150\thinspace\Omega} = 200\]</div>
+<p>数据手册写的是 26 dB 和 46 dB，换成倍数就是 20 和 200。SPICE 在 1 kHz 得到 20.00 和 198.8。图 45-p2-2 里还有一个要点：手册说 LM386 只在增益大于 9 时稳定，所以不要试图把增益调得比 20 小很多。</p>
+<p>但 10 µF 在低频时容抗变大，「短路」不彻底。容抗和 1.35 kΩ 并联以后再串 150 Ω，用复数算：</p>
+<pre><code class="language-python">import numpy as np                                # 复数运算
+C = 10e-6                                         # 1、8 脚之间的电容 / F
+for f in (20, 100, 200, 1000):                    # 几个频率 / Hz
+    zc = 1 / (2j * np.pi * f * C)                 # 电容的复阻抗
+    zp = 1.35e3 * zc / (1.35e3 + zc)              # 和 1.35 kΩ 并联
+    g = abs(2 * 15e3 / (150 + zp))                # 增益的大小
+    print(f&quot;{f:5d} Hz：增益 {g:6.1f}&quot;)
+</code></pre>
+<p>运行结果是 20 Hz 约 38.8、100 Hz 约 130.3、200 Hz 约 172.6、1 kHz 约 198.6；SPICE 给出 38.8、130.3、172.7、198.8，相差不到 0.2%。也就是说，「增益 200」只在几百赫兹以上才成立。</p>
+<h2 id="三幅频曲线高频和低频各被谁限制">三、幅频曲线：高频和低频各被谁限制</h2>
+<p><a class="img-link" href="img/45_p2_2_gain_freq.png"><img alt="左图：LM386 芯片本身的增益幅频曲线（对数横轴、对数纵轴），蓝线增益 20 档在 300 kHz 左右才下降 3 dB，橙线增益 200 档在低频因为 10 µF 而下降、在约 31.8 kHz 下降 3 dB；右图：220 µF 输出电容和负载组成的高通，18 Ω 负载时下限约 40.2 Hz，8 Ω 喇叭直接接时约 90.4 Hz" src="img/45_p2_2_gain_freq.png" loading="lazy" /></a></p>
+<p><em>图 45-p2-3　左：芯片增益的幅频曲线（对数横轴）；右：输出耦合电容的下限</em></p>
+<p>图 45-p2-3 左边是 SPICE 的结果：</p>
+<ul>
+<li>增益 20 档，上限约 300 kHz，和数据手册的带宽 300 kHz 一致；</li>
+<li>增益 200 档，上限降到约 31.8 kHz。增益乘带宽差不多是个常数，增益大 10 倍，带宽就小将近 10 倍。两档的上限都远高于 20 kHz，人耳听不出差别。数据手册图 6-4（Voltage Gain vs Frequency）里也有 1、8 脚接 10 µF 的那条曲线，在几十千赫开始下降，和 SPICE 的趋势一致；从图上读出的精确 −3 dB 点 [待核实]。</li>
+</ul>
+<p>图 45-p2-3 右边是输出耦合电容造成的下限。220 µF 和负载组成高通：</p>
+<div class="math math-display">\[f_c = \frac{1}{2 \pi R C}\]</div>
+<p>负载是 10 Ω + 8 Ω = 18 Ω 时， <span class="math math-inline">\(f_c\)</span> 约 40.2 Hz；如果去掉 10 Ω、只接 8 Ω， <span class="math math-inline">\(f_c\)</span> 约 90.4 Hz。手册典型电路用 250 µF，18 Ω 时是 35.4 Hz，差别听不出来。负载电阻越小，要的电容越大，这就是功放输出电容动辄几百微法的原因。</p>
+<h2 id="四推导lm386-最多发多少热">四、推导：LM386 最多发多少热</h2>
+<p>LM386 的输出级是单电源甲乙类推挽。设喇叭侧（电容后）正弦峰值是 <span class="math math-inline">\(V_p\)</span> ，负载电阻 <span class="math math-inline">\(R_L\)</span> ，电源 <span class="math math-inline">\(V_S\)</span> ，静态电流 <span class="math math-inline">\(I_Q\)</span> 。</p>
+<ul>
+<li>负载拿到的功率： <span class="math math-inline">\(P_L = V_p^2 / (2 R_L)\)</span> 。</li>
+<li>电源只在半个周期往外送电流，平均电流是 <span class="math math-inline">\(V_p / (\pi R_L)\)</span> ，再加静态电流。电源功率 <span class="math math-inline">\(P_S = V_S (V_p / (\pi R_L) + I_Q)\)</span> 。</li>
+<li>芯片发热 = 电源功率 − 负载功率。</li>
+</ul>
+<div class="math math-display">\[P_D = \frac{V_S V_p}{\pi R_L} - \frac{V_p^2}{2 R_L} + V_S I_Q\]</div>
+<p>这是一个开口向下的抛物线。对 <span class="math math-inline">\(V_p\)</span> 求最大值，得到在 <span class="math math-inline">\(V_p = V_S / \pi\)</span> 时最大：</p>
+<div class="math math-display">\[P_{D,max} = \frac{V_S^2}{2 \pi^2 R_L} + V_S I_Q\]</div>
+<p>9 V、18 Ω、静态电流取 4.3 mA（数据手册曲线在 9 V 处约 4.3 mA，SPICE 模型也是这个值）时，算出来约 0.267 W，出现在 <span class="math math-inline">\(V_p\)</span> 约 2.86 V 的时候。</p>
+<p><a class="img-link" href="img/45_p2_3_dissipation.png"><img alt="LM386 芯片发热和负载功率的关系，横轴是 10 Ω + 8 Ω 上拿到的功率（0 到 0.35 W），纵轴是芯片发热：黑色虚线是公式（B 类加静态电流），橙色圆点是 SPICE 扫描，两者重合；曲线先上升，在负载功率约 0.23 W 处达到最大约 0.267 W，之后略微下降；右端两个红色叉号是已经削顶的 SPICE 点；底部灰色虚线标出没有声音时 9 V × 4.3 mA ≈ 39 mW" src="img/45_p2_3_dissipation.png" loading="lazy" /></a></p>
+<p><em>图 45-p2-4　LM386（9 V、18 Ω）的芯片发热：最大值不在满幅处</em></p>
+<p>图 45-p2-4 里的圆点是 SPICE 扫描输入幅度得到的，最大发热约 0.2667 W，出现在 3 脚输入峰值约 0.14 V 时，和公式的 0.2667 W 一致。从图 45-p2-4 可以看到三件事：</p>
+<ol>
+<li><strong>发热最大的时候不是声音最大的时候。</strong> 再往上推，负载拿走的更多，芯片反而凉一点。所以算散热要用 <span class="math math-inline">\(P_{D,max}\)</span> ，而不是满幅时的发热。</li>
+<li><strong>不放音乐也发热</strong>：9 V × 4.3 mA 约 38.7 mW。</li>
+<li><strong>负载越小，发热越大</strong>：同样 9 V，直接接 8 Ω 时 <span class="math math-inline">\(P_{D,max}\)</span> 约 0.552 W，是 18 Ω 时的两倍多。10 Ω 串联电阻也在保护芯片。</li>
+</ol>
+<h2 id="五pam8403btl-的两个输出为什么都停在-25-v">五、PAM8403：BTL 的两个输出为什么都停在 2.5 V</h2>
+<p>PAM8403 每个声道里有两个「半桥」：每个半桥是一个上管加一个下管，输出只在 0 V 和 5 V 之间切换。两个半桥的输出接喇叭两端，就是 44 节 D 类功放（即将上线） 讲过的 BTL，只是它不用 LC 滤波器，靠喇叭线圈本身来平均。</p>
+<p><a class="img-link" href="img/45_p2_4_pam_btl.png"><img alt="PAM8403 一个声道的 BTL 输出示意：左边 +5 V 同时供给半桥 A 和半桥 B，半桥 A 输出 OUT+，半桥 B 输出 OUT−，喇叭和 10 Ω 电阻接在两者之间，两端都不接地；橙色虚线和叉号标出任何一端接 GND 就是短路；右边两列波形：左列「没有输入」时 OUT+、OUT− 都是 0 到 5 V、占空比 50% 的方波，两路几乎同相，平均都是 2.50 V，喇叭两端 OUT+ − OUT− 只剩很窄的正负尖峰，平均 0 V；右列「有输入（示例）」时 OUT+ 占空比 65%、平均 3.25 V，OUT− 占空比 35%、平均 1.75 V，喇叭两端是一串正脉冲，平均 1.50 V" src="img/45_p2_4_pam_btl.png" loading="lazy" /></a></p>
+<p><em>图 45-p2-5　无滤波 BTL 输出示意：没有输入时两端各自平均 2.5 V、喇叭两端平均 0 V；有输入时一高一低</em></p>
+<p>看图 45-p2-5：</p>
+<ul>
+<li><strong>左列，没有输入</strong>：OUT+、OUT− 都是占空比 50% 的方波，而且两路几乎同相，所以<strong>对 GND 的平均值都是 2.5 V</strong>，喇叭两端（OUT+ − OUT−）只剩很窄的尖峰，平均为 0，喇叭里没有直流。TI 的应用报告 SLOA145 §2 讲「无滤波」调制时就是这样描述的：没有输入时两路输出几乎同相。同一份报告 §1 讲的<strong>传统</strong> D 类（要 LC 滤波器）则不同：两路反相、各 50%，喇叭上一直是满幅方波，所以必须加滤波器。</li>
+<li><strong>右列，有输入</strong>：一路的占空比变大、另一路变小。图中的例子是 65% 和 35%，平均值分别是 3.25 V 和 1.75 V，喇叭两端平均 1.5 V。占空比再拉开，喇叭两端的电压差最大能到接近整个 5 V。</li>
+<li>PAM8403 数据手册 p.1 只说它是无滤波结构：「filterless architecture allows the device to drive the speaker directly, requiring no low-pass output filters」，但没有写具体用的是哪种调制，所以「PAM8403 就是这种无滤波调制」[待核实]。手册 p.7 还有一句「different in phase by 180°」，说的是两路输出里的<strong>音频信号</strong>互为反相（这就是 BTL），不是 SLOA145 §1 讲的传统 D 类「没有输入时两路方波反相」，别混在一起。但不管哪种，没有输入时两端对地平均都约 2.5 V，万用表读到的结论不受影响。</li>
+</ul>
+<p>所以图 45-p2-5 也解释了直觉篇的「4 倍」：单端的峰值最多是电源的一半，BTL 的峰值接近整个电源。PAM8403 的上管导通电阻约 180 mΩ、下管约 140 mΩ，电流同时流过一个上管和一个下管，一共约 0.32 Ω。把它算进去：</p>
+<div class="math math-display">\[V_p = 5\thinspace\mathrm{V} \times \frac{R_L}{R_L + 0.32\thinspace\Omega}, \qquad P = \frac{V_p^2}{2 R_L}\]</div>
+<p>接 8 Ω 时约 1.445 W，接 4 Ω 约 2.679 W；数据手册在 1% 失真时给出 1.4 W 和 2.5 W，量级一致。</p>
+<blockquote>
+<p><strong>最小补充：为什么 BTL 的两端都不能接地</strong></p>
+<p>两端平均都在 2.5 V，而且都在 0 和 5 V 之间快速切换。把 OUT− 接地，OUT− 那个半桥的上管每次导通都直接把 5 V 短到地。PAM8403 会检测到短路并关掉输出，但别依赖它。用示波器时也一样：地夹只夹 GND。</p>
+</blockquote>
+<h2 id="例题">例题</h2>
+<p><strong>例 1（示范）</strong>：LM386 接 9 V、负载 18 Ω、静态电流 4.3 mA。求芯片最大发热；如果是 DIP 封装（热阻 53.4 °C/W），最多比环境高多少度？</p>
+<p>解：</p>
+<div class="math math-display">\[P_{D,max} = \frac{9^2}{2 \pi^2 \times 18} + 9 \times 0.0043 = 0.2280 + 0.0387 = 0.2667\thinspace\mathrm{W}\]</div>
+<p>温升 = 0.2667 × 53.4 ≈ 14.2 °C。室温 25 °C 时，芯片里面约 39 °C。</p>
+<pre><code class="language-python">import math                                       # π
+VS, RL, IQ = 9.0, 18.0, 4.3e-3                    # 电源 / V、负载 / Ω、静态电流 / A
+pd = VS**2 / (2 * math.pi**2 * RL) + VS * IQ      # 最大发热 / W
+print(f&quot;P_D,max = {pd:.4f} W，此时 Vp = {VS / math.pi:.2f} V&quot;)
+print(f&quot;DIP 温升 {pd * 53.4:.1f} °C，SOIC 温升 {pd * 115.7:.1f} °C&quot;)
+</code></pre>
+<p><strong>例 2（填空）</strong>：同一颗 LM386 还接 9 V，但去掉 10 Ω，直接接 8 Ω 喇叭。</p>
+<ul>
+<li>交流部分： <span class="math math-inline">\(9^2 / (2 \pi^2 \times 8)\)</span> = ____ W；</li>
+<li>加上静态发热 ____ W，得到 <span class="math math-inline">\(P_{D,max}\)</span> = ____ W；</li>
+<li>贴片 SOIC 封装（115.7 °C/W）的温升 = ____ °C。</li>
+</ul>
+<details><summary>答案</summary>
+<p>交流部分 81 ÷ 157.9 ≈ 0.513 W；静态 9 × 0.0043 ≈ 0.0387 W；合计约 0.552 W。SOIC 温升约 0.552 × 115.7 ≈ 63.8 °C，室温 25 °C 时芯片约 89 °C，已经很烫。去掉 10 Ω，芯片发热翻了一倍多。</p>
+</details>
+<p><strong>例 3（自己做）</strong>：PAM8403 用 5 V 供电，接 4 Ω 喇叭，两只管子导通电阻一共 0.32 Ω。求喇叭两端最大峰值和最大功率，并和单端 5 V、4 Ω 的理想值比较。</p>
+<details><summary>答案</summary>
+<p>峰值 = 5 × 4 ÷ 4.32 ≈ 4.630 V，功率 = 4.630² ÷ (2 × 4) ≈ 2.679 W。单端理想峰值是 2.5 V，功率 2.5² ÷ 8 ≈ 0.781 W。BTL 约是单端的 3.4 倍；如果不扣导通电阻，就正好是 4 倍。导通电阻在负载越小时影响越大。</p>
+</details>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>TI LM386 数据手册 SNAS545D（第 1 页简化原理图里的 15 kΩ、150 Ω、1.35 kΩ，§8.3（p.9）正文的 1.35 kΩ、§9.2.1.2.1（p.10）正文的 15 kΩ；增益 26 / 46 dB；带宽 300 kHz；增益大于 9 才稳定；图 9-1/9-3 典型电路 250 µF、10 Ω + 0.05 µF；图 6-4 幅频曲线）：<a href="https://www.ti.com/lit/ds/symlink/lm386.pdf">https://www.ti.com/lit/ds/symlink/lm386.pdf</a></li>
+<li>Diodes PAM8403 数据手册 DS36439（p.1 无滤波结构、导通电阻、输出功率、短路保护；p.7 最大增益与两路音频反相）：<a href="https://www.diodes.com/assets/Datasheets/PAM8403.pdf">https://www.diodes.com/assets/Datasheets/PAM8403.pdf</a></li>
+<li>TI 应用报告 SLOA145《Filter-Free Class-D Audio Amplifiers》（§1 传统 D 类无输入时两路反相、50% 占空比；§2 无滤波调制无输入时两路几乎同相）：<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a></li>
+<li>苹果 USB-C 耳机转接头输出电平实测（满音量最大输出约 1.05 V、输出阻抗约 0.9 Ω）：<a href="https://doineedanamp.com/sources/iphone-usb-c/">https://doineedanamp.com/sources/iphone-usb-c/</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

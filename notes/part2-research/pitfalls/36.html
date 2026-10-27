@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>36 施密特整形与计数 · 误区与排查（反方研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/36.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="36-施密特整形与计数--误区与排查反方研究员">36 施密特整形与计数 · 误区与排查（反方研究员）</h1>
+<blockquote>
+<p>依据：notes/36-research.md、PART2_BRIEF §10（允许用 Arduino 和 555）。
+LM393 数据手册已在本地核对（SLCS005 系列，/workspace/pdfs/lm393.txt）。
+「本人计算」只作演示。</p>
+</blockquote>
+<h2 id="a-新手误区与边界失效">A. 新手误区与边界失效</h2>
+<h3 id="a1-timer1-是-16-位的100-hz-用-16-mhz-计数会溢出">A1 Timer1 是 16 位的：100 Hz 用 16 MHz 计数会溢出</h3>
+<ul>
+<li><strong>现象</strong>：输入捕获测出的周期乱跳，或者显示的频率是真实值的几倍。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>研究笔记写「100 Hz 一个周期 160000 个时钟」，但 ATmega328P 的 Timer1 是 16 位计数器，最大 65535。</li>
+<li>不分频时，16 MHz 下最长只能测 4.1 ms，也就是 ≥ 244 Hz（本人计算）。</li>
+<li>低于这个频率，两次捕获之间计数器至少溢出一次，直接相减得到的是余数。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：串口打印两次捕获值和溢出次数；输入 100 Hz 时，看差值是否小于 65536。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>方案一：预分频 8，计数时钟 2 MHz，100 Hz 对应 20000 个计数，分辨率 0.5 µs，即 50 ppm（本人计算）。</li>
+<li>方案二：在溢出中断里累加高位。</li>
+<li>正文的「6.25 ppm」要注明需要扩展计数位。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：ATmega328P 数据手册 <a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a> （16-bit Timer/Counter1 一章，仅搜索确认）</li>
+</ul>
+<h3 id="a2-分辨率不等于准确度uno-的-16-mhz-是陶瓷谐振器">A2 分辨率不等于准确度：Uno 的 16 MHz 是陶瓷谐振器</h3>
+<ul>
+<li><strong>现象</strong>：用标准信号源输入 100.000 Hz，Arduino 稳定显示 100.1 Hz 左右，每块板偏差不同。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>Uno R3 给 ATmega328P 用的是陶瓷谐振器（ceramic oscillator），不是晶振。</li>
+<li>Arduino SE 回答中实测 Uno R3 每天慢约 90 s，相当于约 0.1 %（本人换算：90/86400 ≈ 1040 ppm）。</li>
+<li>其他搜索结果也给出 ±0.5 % 量级。</li>
+<li>所以倒数计数的 6.25 ppm 只是分辨率，准确度受限于约 0.1–0.5 %。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：用示波器或信号源的频率计测同一个信号，与 Arduino 的读数对比，算出这块板的比例误差。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>记下校准系数，在软件里修正。</li>
+<li>正文区分「分辨率」和「准确度」两个概念。</li>
+<li>需要准确时，改用带晶振的板子，例如 Leonardo（同一回答中实测每天慢约 2 s）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Arduino SE 25758「How accurate is arduino time keeping?」<a href="https://arduino.stackexchange.com/questions/25758">https://arduino.stackexchange.com/questions/25758</a> （已打开）</li>
+</ul>
+<h3 id="a3-lm393-用-5-v-供电时输入只能到-3-v">A3 LM393 用 5 V 供电时，输入只能到 3 V</h3>
+<ul>
+<li><strong>现象</strong>：近似正弦的幅度较大时，波峰附近输出错乱或丢脉冲。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册：共模输入上限为 V+ − 2.0 V。LM393 接 Arduino 5 V 时，输入只能到 3 V。</li>
+<li>555 在 5 V 下输出高电平约 3.3 V（34 节已核对），经 RC 后信号的峰值仍可能接近或超过 3 V。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器同时看 LM393 两个输入脚的电压，确认都 &lt; V+ − 2 V。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>LM393 改用 9–12 V 供电；输出上拉到 Arduino 的 5 V（开集电极允许这样做）。</li>
+<li>或者先把信号衰减到 0.5–2.5 V 的范围。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：LM393 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> （本地核对，「upper end of the common-mode voltage range is limited by VCC – 2V」）</li>
+</ul>
+<h3 id="a4-上拉电阻接到-12-v直接进-arduino-d2">A4 上拉电阻接到 12 V，直接进 Arduino D2</h3>
+<ul>
+<li><strong>现象</strong>：Arduino 发烫、复位，或者 D2 损坏。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>为了让 LM393 在 12 V 下工作，有人把上拉电阻也接到 12 V，输出高电平就是 12 V。</li>
+<li>这超过了 ATmega328P 引脚 VCC + 0.5 V 的绝对最大值。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：接 Arduino 之前，用万用表测 LM393 输出的高电平。</li>
+<li><strong>修复</strong>：上拉电阻只接 Arduino 的 5 V（例如 4.7 kΩ），LM393 的 V+ 可以是 12 V；两边共地。</li>
+<li><strong>来源</strong>：LM393 数据手册（同 A3，开集电极输出）；ATmega328P 数据手册（同 A1，Absolute Maximum Ratings，仅搜索确认）。</li>
+</ul>
+<h3 id="a5-交流耦合后输入低于-03-v">A5 交流耦合后输入低于 −0.3 V</h3>
+<ul>
+<li><strong>现象</strong>：负半周时输出出现奇怪的脉冲，或者计数偏多。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册脚注：任一输入低于地超过 0.3 V 时，「output can be incorrect and excessive input current can flow」。</li>
+<li>正弦经电容耦合、却没有偏置到中点时，负半周就会低于地。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 DC 档看 LM393 输入脚，最低点是否 ≥ −0.3 V。</li>
+<li><strong>修复</strong>：耦合电容之后用 2 × 100 kΩ 偏置到 V+/2；或者加 1N4148 钳位到地，并串 10 kΩ。</li>
+<li><strong>来源</strong>：LM393 数据手册（同 A3，Recommended Operating Conditions 的脚注）。</li>
+</ul>
+<h3 id="a6-回差大小靠猜噪声的实际幅度取决于注入点阻抗">A6 回差大小靠猜：噪声的实际幅度取决于注入点阻抗</h3>
+<ul>
+<li><strong>现象</strong>：照搬 10 节的电阻值做回差，结果仍然多计数；或者回差太大，小信号时丢脉冲。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>555 #2 经 100 kΩ 注入的噪声，在节点上的幅度 = 100 kΩ 与第二级 RC 节点阻抗的分压。</li>
+<li>第二级的电容对几 kHz 的噪声阻抗很低，所以噪声可能被衰减到几乎看不见，也可能很大，取决于 R、C 的取值（本人推导）。</li>
+<li>研究笔记的条件「回差 &gt; 噪声峰峰值，且 &lt; 信号峰峰值」是对的，但必须先测出噪声峰峰值。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 AC 档测比较器输入端的噪声峰峰值，然后按测得的值计算回差。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>回差取噪声峰峰值的 2 倍左右（本人建议）。</li>
+<li>噪声小到看不见时，把注入电阻从 100 kΩ 降到 22 kΩ。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导；回差条件见研究笔记所引第一部分 10 节。</li>
+</ul>
+<h3 id="a7-慢边沿在门限附近振荡chatter">A7 慢边沿在门限附近振荡（chatter）</h3>
+<ul>
+<li><strong>现象</strong>：没有外加噪声时，每个过零点也会出现一串几 MHz 的脉冲，计数翻倍。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>100 Hz 正弦在门限附近变化很慢，LM393 响应时间约 1 µs，增益又很高。</li>
+<li>输出跳变时的地弹或电源跳变，经面包板耦合回输入，就会来回翻转。</li>
+<li>TI E2E 关于 LM393 慢输入的讨论和 ESE 588501 都描述了这种现象。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器在输出边沿触发，时基 1 µs/div，看边沿是否是一串脉冲。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>加回差，即使只有几十 mV 也有帮助。</li>
+<li>LM393 的 V+ 脚就近接 0.1 µF 到地。</li>
+<li>输出线远离输入线。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>TI E2E 849560「LM393: Slew Rate Requirement」<a href="https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/849560/lm393-slew-rate-requirement">https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/849560/lm393-slew-rate-requirement</a> （仅搜索确认）</li>
+<li>ESE 588501「Lm393 output oscillation」<a href="https://electronics.stackexchange.com/questions/588501">https://electronics.stackexchange.com/questions/588501</a> （仅搜索确认）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a8-中断计数变量没有加-volatile或读取不是原子操作">A8 中断计数变量没有加 volatile，或读取不是原子操作</h3>
+<ul>
+<li><strong>现象</strong>：计数偶尔会跳一个很大的值（例如多出 256），或者主循环里的计数一直不变。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>中断里修改的变量必须声明为 <code>volatile</code>。</li>
+<li>多字节变量（long）在 8 位 AVR 上要分几次读，读的过程中中断可能改掉其中一个字节。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：用 555 输入固定频率，打印每秒的计数，看是否偶尔出现离谱的值。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>声明为 <code>volatile unsigned long count;</code>。</li>
+<li>读取时 <code>noInterrupts(); c = count; interrupts();</code>，或者使用 ATOMIC_BLOCK。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>Arduino volatile 文档 <a href="https://docs.arduino.cc/language-reference/en/variables/variable-scope-qualifiers/volatile">https://docs.arduino.cc/language-reference/en/variables/variable-scope-qualifiers/volatile</a> （已打开，页面主体为样式代码，内容以搜索摘要为准）</li>
+<li>Nick Gammon「Interrupts」<a href="https://gammon.com.au/forum/?id=11488">https://gammon.com.au/forum/?id=11488</a> （仅搜索确认）</li>
+<li>Microchip「8-bit AVR Interrupts Special Considerations」<a href="https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/8-bit-avr/peripherals/interrupts/special-considerations/">https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/8-bit-avr/peripherals/interrupts/special-considerations/</a> （仅搜索确认）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a9-用-delay1000-加-serialprint-做-1-s-门控">A9 用 delay(1000) 加 Serial.print 做 1 s 门控</h3>
+<ul>
+<li><strong>现象</strong>：门控计数比真实频率小 1–2 %，而且随打印内容的长短变化。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>闸门的实际长度 = 1000 ms + 打印和清零所用的时间。</li>
+<li>millis() 每 1.024 ms 递增一次，靠周期性跳 2 来补偿，短时间内有抖动（Arduino SE 25758 中引用了官方说明）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：用 micros() 记录实际的闸门起止时间，并打印出来。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>用 micros() 时间戳计算 f = Δcount/Δt。</li>
+<li>或者用 Timer1 的比较中断产生精确闸门。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Arduino SE 25758（同 A2）。</li>
+</ul>
+<h3 id="a10-attachinterrupt-用了-change-模式">A10 attachInterrupt 用了 CHANGE 模式</h3>
+<ul>
+<li><strong>现象</strong>：频率读数正好是真实值的 2 倍。</li>
+<li><strong>原因</strong>：CHANGE 模式在上升沿和下降沿都会触发，一个周期计两次。</li>
+<li><strong>排查</strong>：输入已知频率，看读数是否为 2 倍。</li>
+<li><strong>修复</strong>：使用 <code>attachInterrupt(digitalPinToInterrupt(2), isr, RISING)</code>。</li>
+<li><strong>来源</strong>：Arduino attachInterrupt 文档 <a href="https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/">https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/</a> （[待核实]：未打开，只依据常识写入）</li>
+</ul>
+<h3 id="a11-倒数计数在零流量时没有超时">A11 倒数计数在零流量时没有超时</h3>
+<ul>
+<li><strong>现象</strong>：流量停了，显示还停在最后一个值上。</li>
+<li><strong>原因</strong>：周期法要等下一次边沿才能更新读数；没有边沿时，旧值就一直保留。</li>
+<li><strong>排查</strong>：拔掉信号，看显示是否归零。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>超过 T_max（例如 2 s，对应最低可测 0.5 Hz，本人建议值）没有边沿，就输出 0。</li>
+<li>正文说明最低可测流量 = 1/(T_max·K)。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导；K 系数只在线性范围内为常数，见 Omega《Turbine &amp; Paddle Wheel Flowmeter Reference》<a href="https://br.omega.com/omegaFiles/Green/pdf/TURBINE_PADDLE_REF.pdf">https://br.omega.com/omegaFiles/Green/pdf/TURBINE_PADDLE_REF.pdf</a> （研究笔记作者已打开）。</li>
+</ul>
+<h2 id="b-面包板实操问题">B. 面包板实操问题</h2>
+<h3 id="b1-输入悬空时计到-50--60-hz">B1 输入悬空时计到 50 / 60 Hz</h3>
+<ul>
+<li><strong>现象</strong>：信号源拔掉后，Arduino 仍然显示约 50 Hz（北美为 60 Hz）。</li>
+<li><strong>原因</strong>：比较器输入悬空或接的是 100 kΩ 级的高阻偏置，会拾取工频；只要回差小于拾取幅度，就会每周期翻转一次。</li>
+<li><strong>排查</strong>：拔掉信号后，用示波器看输入端的 50 Hz 幅度。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>输入端对偏置点接 10–47 kΩ，降低阻抗；回差大于拾取幅度。</li>
+<li>软件里加幅度或频率合理性判断。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：ESE 462446 <a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a> （30 节已打开）</li>
+</ul>
+<h3 id="b2-两片-555-共用一条电源线">B2 两片 555 共用一条电源线</h3>
+<ul>
+<li><strong>现象</strong>：去掉噪声注入电阻后，仍然有多计数。</li>
+<li><strong>原因</strong>：555 #2 的电流尖峰（约 300 mA 量级，见 34 节 EDN 文章）经共用的电源和地，同时扰动了信号和门限分压点。</li>
+<li><strong>排查</strong>：示波器 AC 档测 LM393 的 V+ 和门限分压点。</li>
+<li><strong>修复</strong>：每片 555 都在本芯片处接 0.1 µF + 10 µF；门限分压点加 1 µF 去耦；地线星形连接。</li>
+<li><strong>来源</strong>：EDN「The NE555 current spike」<a href="https://www.edn.com/the-ne555-current-spike/">https://www.edn.com/the-ne555-current-spike/</a> （仅搜索确认）</li>
+</ul>
+<h3 id="b3-上拉电阻太小--回差电阻与上拉相近">B3 上拉电阻太小 / 回差电阻与上拉相近</h3>
+<ul>
+<li><strong>现象</strong>：实测门限与计算值不符，输出低电平偏高。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>开集电极输出的高电平由上拉电阻和回差反馈电阻分压决定（研究笔记已提到修正）。</li>
+<li>上拉电阻太小（例如 470 Ω）时，灌电流超过数据手册 VOL 条件中的 ISINK ≤ 4 mA，低电平升高。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：万用表测输出的高、低电平，代回门限公式。</li>
+<li><strong>修复</strong>：上拉 4.7 kΩ；回差反馈电阻 ≥ 100 kΩ，也就是 ≫ 上拉电阻。</li>
+<li><strong>来源</strong>：LM393 数据手册（同 A3，VOL 条件 ISINK ≤ 4 mA）。</li>
+</ul>
+<h2 id="c-对-36-researchmd-的意见">C. 对 <a href="http://36-research.md">36-research.md</a> 的意见</h2>
+<ol>
+<li><strong>「100 Hz 用 16 MHz 倒数计数，一个周期 160000 个时钟」</strong>：Timer1 是 16 位的，会溢出。应写明预分频（÷8 → 20000 个计数、50 ppm），或者扩展计数（A1）。</li>
+<li><strong>「6.25 ppm」只是分辨率</strong>：Uno R3 是陶瓷谐振器，准确度约 0.1–0.5 %（A2）。page2 的误差曲线应同时画出「时基误差」这条水平线。</li>
+<li><strong>LM393 的供电</strong>：研究笔记没写 V+。如果用 5 V，输入上限只有 3 V（A3）。建议 LM393 接 12 V，上拉到 5 V（A4）。</li>
+<li><strong>噪声注入</strong>：100 kΩ 注入的实际噪声幅度取决于 RC 网络（A6）。page4 应要求学生先测噪声，再定回差。</li>
+<li><strong>软件方面缺少</strong>：volatile / 原子读取（A8）、RISING 模式（A10）、零流量超时（A11）。</li>
+<li><strong>算例复核</strong>：100 Hz、1 s 门控 ±1 % 正确；500 × 60/100 = 300 GPM 正确（本人复核）。</li>
+<li><strong>「LM393 响应时间约 1–1.3 µs」</strong>：与本地数据手册一致（LM393B 等为 1 µs，经典版为 1.3 µs）。</li>
+</ol>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] LM393 接 9–12 V，上拉电阻接 Arduino 的 5 V，两边共地</li>
+<li>[ ] 输入信号在 0 V 到 V+ − 2 V 之间，不低于 −0.3 V</li>
+<li>[ ] 测过噪声峰峰值，回差约为它的 2 倍，且小于信号峰峰值</li>
+<li>[ ] V+ 有 0.1 µF；每片 555 都有去耦</li>
+<li>[ ] 输出边沿干净（1 µs/div 下没有一串脉冲）</li>
+<li>[ ] 中断变量为 volatile，读取时关中断；中断模式为 RISING</li>
+<li>[ ] Timer1 已设预分频或处理了溢出；周期法有超时</li>
+<li>[ ] 用信号源或示波器校准过 Arduino 的时基</li>
+<li>[ ] 拔掉信号后读数为 0（没有计到 50 / 60 Hz）</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<p>已打开或本地核对：</p>
+<ul>
+<li>LM393 数据手册：<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a></li>
+<li>Arduino SE 25758：<a href="https://arduino.stackexchange.com/questions/25758">https://arduino.stackexchange.com/questions/25758</a></li>
+<li>Arduino volatile 文档：<a href="https://docs.arduino.cc/language-reference/en/variables/variable-scope-qualifiers/volatile">https://docs.arduino.cc/language-reference/en/variables/variable-scope-qualifiers/volatile</a></li>
+<li>ESE 462446：<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a></li>
+</ul>
+<p>仅搜索确认：</p>
+<ul>
+<li>TI E2E 849560：<a href="https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/849560/lm393-slew-rate-requirement">https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/849560/lm393-slew-rate-requirement</a></li>
+<li>ESE 588501：<a href="https://electronics.stackexchange.com/questions/588501">https://electronics.stackexchange.com/questions/588501</a></li>
+<li>Nick Gammon Interrupts：<a href="https://gammon.com.au/forum/?id=11488">https://gammon.com.au/forum/?id=11488</a></li>
+<li>Microchip AVR 中断注意事项：<a href="https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/8-bit-avr/peripherals/interrupts/special-considerations/">https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/8-bit-avr/peripherals/interrupts/special-considerations/</a></li>
+<li>EDN NE555 电流尖峰：<a href="https://www.edn.com/the-ne555-current-spike/">https://www.edn.com/the-ne555-current-spike/</a></li>
+<li>ATmega328P 数据手册：<a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a></li>
+<li>Omega 涡轮流量计参考（研究笔记作者已打开）：<a href="https://br.omega.com/omegaFiles/Green/pdf/TURBINE_PADDLE_REF.pdf">https://br.omega.com/omegaFiles/Green/pdf/TURBINE_PADDLE_REF.pdf</a></li>
+</ul>
+<p>[待核实]：</p>
+<ul>
+<li>Arduino attachInterrupt 文档：<a href="https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/">https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>误区条数：14 条（A1–A11、B1–B3）。</li>
+<li>带外部 URL 的条数：13 条。A6 只有本人推导。A10 的 URL 为 [待核实]，不计入。</li>
+<li>[待核实]：1 处（A10）。</li>
+<li>搜索：本节约 4 次搜索 + 2 次打开 + 1 份数据手册本地核对。数量远低于目标。</li>
+</ul>
+<h2 id="d-补查">D. 补查</h2>
+<blockquote>
+<p>本节补查实际搜索 10 次（WebSearch 计数），另打开 3 个页面（ESE 543668、Arduino SE 51640、GitHub arduino/reference-en 的 attachInterrupt.adoc 原文），并下载 ATmega328P 数据手册本地核对。<a href="http://forum.arduino.cc">forum.arduino.cc</a> 330163 打开超时，只算搜索确认。</p>
+</blockquote>
+<h3 id="d1-待核实-项结论">D1 [待核实] 项结论</h3>
+<ul>
+<li><strong>A10（attachInterrupt 文档）</strong>：已核实（<a href="https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/">https://docs.arduino.cc/language-reference/en/functions/external-interrupts/attachInterrupt/</a> ；原文 <a href="https://github.com/arduino/reference-en/blob/master/Language/Functions/External%20Interrupts/attachInterrupt.adoc">https://github.com/arduino/reference-en/blob/master/Language/Functions/External Interrupts/attachInterrupt.adoc</a> 已用 curl 取回）。文档原文：&quot;CHANGE to trigger the interrupt whenever the pin changes value&quot;，&quot;RISING to trigger when the pin goes from low to high&quot;；Uno/Nano 可用中断的引脚只有 2、3。A10 的说法（CHANGE 每个周期触发两次，应改用 RISING）成立。</li>
+<li><strong>「仅搜索确认」的 ATmega328P 数据手册（A1、A5 引用）</strong>：已下载本地核对。来源：Microchip DS40002061B <a href="https://ww1.microchip.com/downloads/aemDocuments/documents/MCU08/ProductDocuments/DataSheets/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf">https://ww1.microchip.com/downloads/aemDocuments/documents/MCU08/ProductDocuments/DataSheets/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf</a> （已存为 /workspace/pdfs/atmega328p_ds40002061b.pdf）。Absolute Maximum Ratings 原文：&quot;Voltage on any Pin except RESET with respect to Ground … -0.5V to VCC+0.5V&quot;，&quot;DC Current per I/O Pin … 40.0mA&quot;，&quot;DC Current VCC and GND Pins … 200.0mA&quot;。Timer1 一章确认 MAX = 0xFFFF（65535），带一个 Input Capture Unit 和噪声消除器（Noise Canceler）。</li>
+<li>统计：已核实 1 条，建议删除 0 条，保留 0 条。</li>
+</ul>
+<h3 id="d2-补充来源加强已有条目">D2 补充来源（加强已有条目）</h3>
+<ul>
+<li><strong>A2 时基精度</strong>：Joris van Rantwijk 实测 Pro Mini 的陶瓷谐振器比 16 MHz 慢 761 ppm（约每天慢 67 s），晶振版 Duemilanove 快 105 ppm；文章结论是陶瓷谐振器&quot;校准后也不够做闹钟&quot;。<a href="https://jorisvr.nl/article/arduino-frequency">https://jorisvr.nl/article/arduino-frequency</a> 。Arduino SE 25758 的回答者实测 UNO R3 每天慢约 90 s：<a href="https://arduino.stackexchange.com/questions/25758/how-accurate-is-arduino-time-keeping">https://arduino.stackexchange.com/questions/25758/how-accurate-is-arduino-time-keeping</a> （均仅搜索确认）。正文可以写「UNO R3 用陶瓷谐振器，量级 0.1 %」，不要写成晶振。</li>
+<li><strong>B2 两片 555 共用电源</strong>：ESE 543668「Why are two 555 timers in separate sub-circuits cross-talking? (Poltergeist in the Breadboard)」已打开。提问者照 Make: Electronics 搭两个独立的 555 无稳态电路，只共用电源轨，结果两者同步在一个高频上闪；回答指出没有去耦电容、电源线长、面包板电源轨有电感，建议每片 0.1 µF、电源入口 10–100 µF。<a href="https://electronics.stackexchange.com/questions/543668">https://electronics.stackexchange.com/questions/543668</a> 。这正是本节「信号源 555 干扰计数」的真实案例，B2 的来源可改用此帖。</li>
+</ul>
+<h3 id="d3-新增误区">D3 新增误区</h3>
+<h4 id="d3-1-计数变量在-loop-里直接读偶尔读出离谱的值">D3-1 计数变量在 loop() 里直接读，偶尔读出离谱的值</h4>
+<ul>
+<li><strong>现象</strong>：频率读数大部分正常，偶尔跳出一个大得离谱或为 0 的值。</li>
+<li><strong>原因</strong>：AVR 是 8 位机，读 <code>unsigned int</code>/<code>unsigned long</code> 要分几条指令；读到一半时中断改了它，就得到半新半旧的值。<code>volatile</code> 只保证不被优化掉，不保证原子性。</li>
+<li><strong>怎么排查</strong>：长时间打印读数，统计离群值；改成关中断读一次副本后看是否消失。</li>
+<li><strong>怎么修复</strong>：<code>noInterrupts(); n = pulseCount; interrupts();</code>，然后只用副本 n。</li>
+<li><strong>来源</strong>：Arduino 论坛 551848，gfvalvo 回帖：&quot;This won't be atomic on an 8-bit processor … protect the access by turning interrupts on/off&quot; <a href="https://forum.arduino.cc/t/flow-sensor-rising-edge-detection-using-interrupt-not-working/551848/27">https://forum.arduino.cc/t/flow-sensor-rising-edge-detection-using-interrupt-not-working/551848/27</a> （仅搜索确认）；attachInterrupt 文档要求共享变量声明为 volatile（D1 已核实）。</li>
+</ul>
+<h4 id="d3-2-在-isr-里用-millisserialprint-做去抖或调试">D3-2 在 ISR 里用 millis()/Serial.print 做去抖或调试</h4>
+<ul>
+<li><strong>现象</strong>：ISR 里打印「Good Pulse/Bad Pulse」、用 millis() 判断间隔，结果计数和时间都不对，甚至卡死。</li>
+<li><strong>原因</strong>：attachInterrupt 文档原文：&quot;Inside the attached function, delay() won't work and the value returned by millis() will not increment. Serial data received while in the function may be lost&quot;；&quot;micros() works initially but will start behaving erratically after 1-2 ms&quot;。millis() 在 ISR 里读一次还可以（值不变），但不能在 ISR 里等它变化；Serial.print 在 ISR 里会拖长 ISR。</li>
+<li><strong>怎么排查</strong>：把 ISR 精简到只有 <code>count++</code> 和一次时间戳，对比结果。</li>
+<li><strong>怎么修复</strong>：ISR 只记数和时间戳；打印、计算都放在 loop()。</li>
+<li><strong>来源</strong>：attachInterrupt.adoc 原文（D1 链接，已打开）；Arduino SE 51640 提问者的 ISR 里就带 Serial.println <a href="https://arduino.stackexchange.com/questions/51640">https://arduino.stackexchange.com/questions/51640</a> （已打开）。</li>
+</ul>
+<h4 id="d3-3-一个脉冲被计成-230-次慢边沿--长线加电容反而更糟">D3-3 一个脉冲被计成 2–30 次：慢边沿 + 长线，加电容反而更糟</h4>
+<ul>
+<li><strong>现象</strong>：示波器看脉冲很干净，Arduino 却把 1 个脉冲计成多个；线越长越严重。</li>
+<li><strong>原因</strong>：边沿在门限附近停留时，噪声让输入来回穿越门限。Arduino SE 51640 的提问者用长线时误计与真计约 1:1，缩短导线后约 1/2000；加 1 nF 电容拉慢边沿后更糟。回答指出 CMOS 输入在 1/2 VDD 附近是线性区，除非有施密特触发，加电容只会让噪声变成多次跳变。</li>
+<li><strong>怎么排查</strong>：示波器放大边沿（µs 级），看有没有振铃或台阶；用已知频率源对比计数。</li>
+<li><strong>怎么修复</strong>：比较器加回差（本节已有）；或在比较器与 Arduino 之间加 74HC14；软件里加「锁定时间」，触发后小于最短合理周期的边沿一律忽略。</li>
+<li><strong>来源</strong>：<a href="https://arduino.stackexchange.com/questions/51640">https://arduino.stackexchange.com/questions/51640</a> （已打开）；Arduino 论坛「Interrupt woes - double pulses, weird timings and more」<a href="https://forum.arduino.cc/t/interrupt-woes-double-pulses-weird-timings-and-more/646394">https://forum.arduino.cc/t/interrupt-woes-double-pulses-weird-timings-and-more/646394</a> （仅搜索确认）。</li>
+</ul>
+<h4 id="d3-4-开集电极信号上拉到-12-v-再接-arduino">D3-4 开集电极信号上拉到 12 V 再接 Arduino</h4>
+<ul>
+<li><strong>现象</strong>：传感器或比较器由 12 V 供电，上拉电阻顺手接到 12 V，Arduino 引脚损坏或读数异常。</li>
+<li><strong>原因</strong>：ATmega328P 引脚绝对最大值为 VCC + 0.5 V（D1 已核实）。LM393 是开集电极输出，高电平等于上拉电压。</li>
+<li><strong>怎么排查</strong>：上电前万用表量比较器输出的高电平，必须 ≤ 5 V。</li>
+<li><strong>怎么修复</strong>：LM393 的上拉一律接 Arduino 的 5 V（比较器电源可以是 9–12 V，输出仍可上拉到 5 V）；比较器两地共地。</li>
+<li><strong>来源</strong>：ATmega328P 数据手册（D1 链接，本地核对）；Arduino 论坛「Interfacing with an Open Collector Output (12V system)」<a href="https://forum.arduino.cc/t/interfacing-with-an-open-collector-output-12v-system/75524">https://forum.arduino.cc/t/interfacing-with-an-open-collector-output-12v-system/75524</a> （仅搜索确认）。</li>
+</ul>
+<h4 id="d3-5-lm393-在-5-v-供电下门限设在-35-v-以上">D3-5 LM393 在 5 V 供电下门限设在 3.5 V 以上</h4>
+<ul>
+<li><strong>现象</strong>：Arduino 5 V 给 LM393 供电，门限分压设到 4 V 附近，输出不翻转或乱翻。</li>
+<li><strong>原因</strong>：LM393 输入共模范围上限约为 VCC − 2 V（高温下更低），5 V 供电时两个输入都应在约 0–3 V 内。</li>
+<li><strong>怎么排查</strong>：量门限点和信号的直流电平是否都低于 3 V。</li>
+<li><strong>怎么修复</strong>：比较器改用 9–12 V 供电（输出仍上拉到 5 V），或把信号和门限都分压到 3 V 以下。</li>
+<li><strong>来源</strong>：TI LM393 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> ；TI《Application Design Guidelines for LM339/LM393/TL331 Family Comparators》<a href="https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/14/snoaa35.pdf">https://e2e.ti.com/cfs-file/__key/communityserver-discussions-components-files/14/snoaa35.pdf</a> ；ESE 685400「Comparator doesn't compare inputs close to VCC」<a href="https://electronics.stackexchange.com/questions/685400">https://electronics.stackexchange.com/questions/685400</a> （均仅搜索确认；共模范围的具体数字正文以数据手册为准）。</li>
+</ul>
+<h4 id="d3-6-timer1-输入捕获扩展到-32-位时溢出和捕获同时发生">D3-6 Timer1 输入捕获扩展到 32 位时，溢出和捕获同时发生</h4>
+<ul>
+<li><strong>现象</strong>：低频（几 Hz）测周期时，偶尔差出整整 65536 个计数（16 MHz 无分频时约 4.1 ms，本人计算）。</li>
+<li><strong>原因</strong>：捕获发生在 TCNT1 刚溢出、溢出中断还没执行之前，ISR 拿到的 ICR1 很小，但软件溢出计数还没加 1。</li>
+<li><strong>怎么排查</strong>：长时间记录周期，看是否有恰好差 65536 个计数的离群值。</li>
+<li><strong>怎么修复</strong>：在捕获 ISR 中检查：若 TOV1 标志已置位且 ICR1 较小（例如 &lt; 0x8000），则溢出计数 +1 再合并；不要在 loop() 里改写 TCNT1。</li>
+<li><strong>来源</strong>：Arduino 论坛「Handling Timer Overflow Interrupts」<a href="https://forum.arduino.cc/t/handling-timer-overflow-interrupts/489152">https://forum.arduino.cc/t/handling-timer-overflow-interrupts/489152</a> ；「Config timer for input capture 328p chip」<a href="https://forum.arduino.cc/t/config-timer-for-input-capture-328p-chip/545282">https://forum.arduino.cc/t/config-timer-for-input-capture-328p-chip/545282</a> ；「Pulse and frequency counting using direct input on Timer1」（指出在 loop() 改 TCNT1 会丢计数）<a href="https://forum.arduino.cc/t/pulse-and-frequency-counting-using-direct-input-on-timer1/223478">https://forum.arduino.cc/t/pulse-and-frequency-counting-using-direct-input-on-timer1/223478</a> （均仅搜索确认）。</li>
+</ul>
+<h3 id="d4-补查统计">D4 补查统计</h3>
+<ul>
+<li>实际搜索：10 次；打开页面 3 个；数据手册 1 份（ATmega328P，本地核对）。</li>
+<li>[待核实]：核实 1 条，建议删除 0 条，保留 0 条。</li>
+<li>新增误区：6 条（D3-1 至 D3-6）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

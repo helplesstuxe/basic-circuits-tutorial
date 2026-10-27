@@ -98,12 +98,12 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <blockquote>
 <p><strong>最小补充：模数转换器（ADC）</strong>　它把输入电压变成一个数字，这个数字等于&quot;输入电压 ÷ 参考电压 VREF&quot;再乘一个固定的满量程数。所以 VREF 是它的&quot;尺子&quot;：尺子变长 10%，同一个输入读出来就小 10%。本节只用这一条性质。</p>
 </blockquote>
-<p><a class="img-link" href="img/30_p2_4_ratiometric.png"><img alt="电桥和模数转换器共用同一个激励 Vex：电桥两中点进仪表放大器，输出进模数转换器 IN；Vex 另经 Rr1、Rr2 两只 10 千欧分压后接到模数转换器的 VREF" src="img/30_p2_4_ratiometric.png" loading="lazy" /></a></p>
+<p><a class="img-link" href="img/30_p2_4_ratiometric.png"><img alt="电桥和模数转换器共用同一个激励 Vex：电桥两中点进仪表放大器，输出进模数转换器 IN；Vex 另经 Rr1、Rr2 两只 10 千欧分压，再经一个跟随器接到模数转换器的 VREF" src="img/30_p2_4_ratiometric.png" loading="lazy" /></a></p>
 <p><em>图 30-p2-4　比例测量：电桥激励和模数转换参考取自同一个 Vex</em></p>
-<p>图 30-p2-4 里，Vex 一路给电桥，另一路经 Rr1、Rr2 分成一半送到模数转换器的 VREF。读数 = 输出 ÷ VREF，而输出和 VREF 都与 Vex 成正比，Vex 在分子分母里约掉了：</p>
+<p>图 30-p2-4 里，Vex 一路给电桥，另一路经 Rr1、Rr2 分成一半，再经跟随器送到模数转换器的 VREF。读数 = 输出 ÷ VREF，而输出和 VREF 都与 Vex 成正比，Vex 在分子分母里约掉了：</p>
 <div class="math math-display">\[\frac{V_o - V_{MID}}{V_{REF}} = \frac{G \cdot V_{ex}\Delta R/(2(2R+\Delta R))}{V_{ex}/2} = \frac{G\Delta R}{2R+\Delta R}\]</div>
 <p>代数：G = 21、ΔR = 100 Ω，9 V 激励时输出比 V_MID 高 0.4701 V、VREF = 4.50 V；8 V 激励时 0.4179 V、4.00 V，两次之比都是 0.10448（code/30_sim.py 第 8 节）。这就叫<strong>比例测量</strong>（ratiometric），压力变送器普遍这样做，激励不必极稳。</p>
-<p>要注意分子是 <strong>Vo − V_MID</strong>，不是 Vo 对 0 V 的电压：模数转换器必须量&quot;输出比 V_MID 高多少&quot;。常见的两种做法：用差分输入的模数转换器，正输入接 Vo、负输入接 V_MID；或者让模数转换器的&quot;地&quot;就是 V_MID。如果模数转换器只能量对 0 V 的电压（例如 Arduino 的模拟输入），就要再量一次 V_MID，在程序里相减——而 V_MID 本身也等于 Vex/2，同样跟着激励走，相减之后比例关系仍然成立。图 30-p2-4 下方的小字提醒：真实芯片的 VREF 输入要低阻驱动，分压后通常还要加一个跟随器——和下一节的中点参考是同一个道理。</p>
+<p>要注意分子是 <strong>Vo − V_MID</strong>，不是 Vo 对 0 V 的电压：模数转换器必须量&quot;输出比 V_MID 高多少&quot;。常见的两种做法：用差分输入的模数转换器，正输入接 Vo、负输入接 V_MID；或者让模数转换器的&quot;地&quot;就是 V_MID。如果模数转换器只能量对 0 V 的电压（例如 Arduino 的模拟输入），就要再量一次 V_MID，在程序里相减——而 V_MID 本身也等于 Vex/2，同样跟着激励走，相减之后比例关系仍然成立。图 30-p2-4 里分压后已经画了一个跟随器：真实芯片的 VREF 输入要低阻驱动，不能直接接分压点——和下一节的中点参考是同一个道理。</p>
 <h2 id="五中点参考-v_mid单电源里的参考电压">五、中点参考 V_MID：单电源里的参考电压</h2>
 <p>LM358 用一节 9 V 电池供电，输出只能在 0 V 到 7.5 V 左右之间摆（ <a href="page3.html">30 仪表放大器与电桥 · 参数与调试篇</a> 第二节）。仪表放大器的输出要能&quot;比参考高&quot;也能&quot;比参考低&quot;，参考就得放在中间。做法见 图 30-p2-5。</p>
 <p><a class="img-link" href="img/30_p2_5_vground.png"><img alt="9 伏电池经 RM1、RM2 两只 10 千欧分压得到 4.5 伏，接到运放 U2B 的同相端，U2B 接成跟随器，输出就是 V_MID，约 4.5 伏；V_MID 上挂一只负载到 0 伏" src="img/30_p2_5_vground.png" loading="lazy" /></a></p>

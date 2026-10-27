@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>学生1 评审：37 过零检测与超声波渡越时间（TOF）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/student1/37.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="学生1-评审37-过零检测与超声波渡越时间tof">学生1 评审：37 过零检测与超声波渡越时间（TOF）</h1>
+<blockquote>
+<p>身份：高中物理电路基础，学过本教程 01–29；01–29 以外的都算没学过。
+读法：逐页读 page1–4 和全部配图（37_p1_1 … 37_p4_4）。练习先自己算，再对答案。code/37_sim.py 和 page4 的 Python 块复制到 /tmp/circuits-s1/ 里，用 /workspace/circuits-venv/bin/python 真跑。照图 37-p4-1 在脑子里逐孔搭面包板，对照图 37-p4-2（带孔位原理图）和 page4 的 ①～⑤ 文字。</p>
+</blockquote>
+<h2 id="一练习与例题逐题核对">一、练习与例题逐题核对</h2>
+<table>
+<thead>
+<tr>
+<th>位置</th>
+<th>我的答案</th>
+<th>页面答案</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page1 练习 1（15 cm、2.5 m/s）</td>
+<td>Δt = 2Lv/c² = 6.37 µs</td>
+<td>6.37 µs</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page1 练习 2（水 5 cm、0.5 m/s）</td>
+<td>22.8 ns</td>
+<td>22.8 ns</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page1 练习 3（无风，顺风方向晚 25 µs）</td>
+<td>近似式 25 µs·c²/(2L) = 7.36 m/s；方向是<strong>逆</strong>（Δt 为负）；两时间法得 −7.06 m/s</td>
+<td>约 7.36 m/s</td>
+<td>数对；方向与公式差异见建议 5</td>
+</tr>
+<tr>
+<td>page1 正文 3 m/s</td>
+<td>t1 577.64 / t2 587.83，Δt 10.19 µs，单向 5.09 µs</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page1 正文 门限法 ×1.1/×0.9</td>
+<td>686.25 / 687.62 → 1.37 µs</td>
+<td>写「1.38 µs」</td>
+<td>见建议 1</td>
+</tr>
+<tr>
+<td>page2 练习（25 cm）</td>
+<td>首达 728.36 µs，ICR1 ≈ (728.36+125.1)×16 ≈ 13655，比 20 cm 多 2330</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page2 练习（R_HY 1 MΩ / 2.2 MΩ）</td>
+<td>+59.0/+10.0 mV；+26.8/+4.5 mV</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page2 练习（100k 换 47k）</td>
+<td>V_TH−V_MID 可调 0～1.053 V</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page2 练习（一轮 10 ms）</td>
+<td>160000 滴答；/Q2 每 1 µs 0.5 mV</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page2 正文「四分之三周期（约 21 µs）」</td>
+<td>¾×25 = 18.75 µs；仿真武装 686.75→捕获 707.79 = 21.04 µs（武装在峰前）</td>
+<td>约 21 µs</td>
+<td>数对、说法不对，见建议 4</td>
+</tr>
+<tr>
+<td>page3 练习（120 Ω/180 Ω）</td>
+<td>41.7 / 27.8 mA</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 练习（幅度 ×0.8）</td>
+<td>0.8 &lt; 0.834 → 晚一个周期，732.80 µs</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 练习（幅度减半、门限减半到 84.6 mV）</td>
+<td>707.99 µs（同一周期）</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 练习（15 cm）</td>
+<td>线性外推 562 µs，模型 537.04 µs（早一个周期）</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 练习（30 °C）</td>
+<td>c = 349.04 m/s，573.00 µs，−9.69 µs → /Q2 少 9.69 mV</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 正文 驱动</td>
+<td>150 Ω：33.3 mA，τ 0.765 µs，基波保留 0.982，猝发期平均 2.04 mA</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 正文 放大</td>
+<td>增益 11，40 kHz 实际 10.88；高通 624 / 159 Hz；50 Hz 0.274</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+<tr>
+<td>page3 正文 斜率</td>
+<td>四点回归 2.9160 µs/mm → 342.9 m/s</td>
+<td>同</td>
+<td>✓；page4 写 2.913，见建议 3</td>
+</tr>
+<tr>
+<td>page3 正文 风扇</td>
+<td>702.67/712.92，Δt 10.25 → 3.014 m/s；两时间法 3.019</td>
+<td>同</td>
+<td>✓</td>
+</tr>
+</tbody>
+</table>
+<h2 id="二代码运行">二、代码运行</h2>
+<ul>
+<li><code>code/37_sim.py</code>（副本 /tmp/circuits-s1/c37/code/）：exit 0，用时 0.7 s，全部 assert 通过，不写文件。打印的数和页面逐项对上（例外见建议 1–3）。</li>
+<li>page4 的 Python 块（/tmp/circuits-s1/r37_p4_0.py）：exit 0。输出「斜率 2.9155 µs/mm → 声速 343.0 m/s；固定偏移 124.6 µs」「顺逆差 10.25 µs → 风速 3.01 m/s；两时间法 3.01 m/s」「读数合理 ✓」。<strong>注意</strong>：它用表里的预期值算出的斜率是 2.9155，不是 page4 第 9 行、图 37-p4-4 标题、第 283 行写的 2.913。</li>
+<li>page1–3 没有 Python 块。Arduino 程序（page4）无法在盒子上编译（没有 avr-gcc），我逐行读了：
+<ul>
+<li>Timer1 覆盖了 Arduino 的 PWM 设置；<code>k * HALF</code> 提升为 int，最大 3200，不溢出；发射时关中断。</li>
+<li>盲区末尾先清 ICF1 再放开 D4。</li>
+<li>/Q2 = 「D4 拉低（一轮开头）到捕获」这段为高，平均电压 = V5·t/5 ms，0.7078 V 对得上。没捕获时整轮为高，读 5.00 V，也对得上。</li>
+</ul>
+</li>
+<li>死链检查：page1–4 里所有 <code>../NN-xxx/pageN.md</code> 都存在，没有死链。page3 有一处链接指向 <code>../review/spice/37.md</code>（文件存在，我没读）。它是审读目录里的文件，见建议 9。</li>
+</ul>
+<h2 id="三page4-面包板与原理图对照逐孔">三、page4 面包板与原理图对照（逐孔）</h2>
+<p>我按 ①～⑤ 和图 37-p4-1 分区放大，逐孔核对了下面这些，都和原理图一致：</p>
+<ul>
+<li>TL072（8–11 列）、LM393（24–27 列）、74HC74（40–46 列）的每个脚位；</li>
+<li>V_MID 跟随器，以及 Rb/Rf/Rg/Cg 放大级；</li>
+<li>门限电位器网络：h20→h31，电位器 h31–h33，中间脚 i32→i26，100k g33–g36，+12 V→f36；</li>
+<li>过零比较器：10k c22–c27、10k d20–d26、R_HY a25–a27；</li>
+<li>/PRE1（i24→i43）、Q1→D2（g44→a42）、Q2→D8（a45）、/Q2（b46）；</li>
+<li>/CLR1、/CLR2→D4，/PRE2 接 VCC，D1、CLK1、GND 接地；</li>
+<li>两只 Rtx 和发射探头；</li>
+<li>三片芯片的电源和 Cd。</li>
+</ul>
+<p>图和文字有两处对不上：<strong>图上有、文字里没有的跳线</strong>（必改 1、2）。</p>
+<h2 id="四问题清单">四、问题清单</h2>
+<h3 id="必改2">必改（2）</h3>
+<ol>
+<li><strong>page4 第 147 行 ④，漏了 e29–f29 跨中缝跳线；过零比较器会没有上拉，整套电路静默失效。</strong>
+<ul>
+<li>文字写的是「7 脚（OUTB）经 b25→b29、j29 的 2.2k 上拉，c29→c43 接 11 脚 CLK2」。b29、c29 在第 29 列上半，j29 在下半，两半不通。</li>
+<li>图 37-p4-1 上其实画了一根浅蓝竖线 e29–f29，把两半连起来。原理图 37-p4-2 也只标了「j29→+5V」。</li>
+<li>同一页里 e20–f20、e22–f22、e39–f39 都明确写了，唯独这根没写。</li>
+<li>只照文字搭：LM393 OUTB 是开集电极，没有上拉就永远不会出高电平，CLK2 没有上升沿，Q2 永远不翻。结果是串口 miss=100、④ 读 5.00 V。</li>
+<li>第 5 步只检查 V_TH = 0.169 V，查不出这个错。故障表里「④ 读 5 V」那一行也指不到这里。</li>
+<li>建议改成「7 脚（OUTB）经 b25→b29，<strong>e29–f29 跨中缝</strong>，j29 的 2.2k 上拉到 +5 V，c29→c43 接 11 脚 CLK2」，原理图标注也补上。</li>
+</ul>
+</li>
+<li><strong>page4 第 141 行 ① 和第 163 行第 3 步，没说 R1 上端接 +12 V，跳线数也写错。</strong>
+<ul>
+<li>① 只写了「R1 在 h3–h5」，第 3 列下半怎么接到 +12 V 一字没提。图上是一根从上方 +12 V 轨拉到 g3 的红色长跳线，原理图 37-p4-2 也只在标签里写了「g3←+12V」。</li>
+<li>第 3 步说「插 R1、R2、Cm 和<strong>三根</strong>跳线」，可 ① 列了五根（g5–g6、h6→g10、h8–h9、i9→i20、e20–f20），图上再加上 +12 V→g3 一共六根。</li>
+<li>只照文字搭，V_MID = 0 V，后面所有级都不工作。第 3 步的检查（③ 约 6.0 V）能发现错，但文字给不出怎么修。</li>
+<li>建议在 ① 开头加「从上方 +12 V 轨用红跳线接 g3」，并把「三根跳线」改成实际根数。</li>
+</ul>
+</li>
+</ol>
+<h3 id="建议9">建议（9）</h3>
+<ol>
+<li><strong>page1 第 32 行和图 37-p1-2 的替代文字写「相差 1.38 µs」</strong>；page3 第 31 行和脚本都是 1.37 µs（687.62 − 686.25 = 1.37）。统一成 1.37。</li>
+<li><strong>page3 第 11 行图 37-p3-1 替代文字写「七级台阶」</strong>，后面却列了 8 个值（658.0 … 832.7）。改成「八级」。</li>
+<li><strong>斜率前后不一致。</strong>
+<ul>
+<li>page4 第 9 行、第 210 行附近的图 37-p4-4 标题（「每多 1 mm 多 2.913 mV」）、第 283 行计算值都写 2.913。</li>
+<li>2.913 是理论 1/c；表里四个点 620.3/678.5/736.9/795.2 回归出来是 2.916。page3 写 2.9160，page4 自己的 Python 块也打印 2.9155。</li>
+<li>学生拿实测值对 2.913，又看到页面自己的数据算出 2.916，会糊涂。建议说明「理论 2.913，按本节模型四点回归 2.916」，或者统一写 2.916。</li>
+</ul>
+</li>
+<li><strong>page2 第 84 行「要等约四分之三周期（约 21 µs）」。</strong>
+<ul>
+<li>¾ 周期是 18.75 µs。21 µs 是因为武装发生在峰前约 2 µs，仿真 686.75 → 707.79 = 21.04 µs。</li>
+<li>建议写成「武装在正峰之前一点，离下一个向上过零约 21 µs（比 ¾ 周期略多）」。</li>
+</ul>
+</li>
+<li><strong>page1 第 87–92 行练习 3。</strong>
+<ul>
+<li>晚的是顺风那次。按正文定义 Δt = t逆 − t顺 = −25 µs，算出的是约 7.36 m/s 的<strong>逆向</strong>风，答案只给了大小。</li>
+<li>7.36 是近似式 Δt·c²/2L 的结果。用 page3 推荐的两时间法算是 7.06 m/s，因为 25 µs 已经不算「很小」。</li>
+<li>建议补一句方向，并注明这是近似式。</li>
+</ul>
+</li>
+<li><strong>page4 第 145 行「f36←T+37 接 +12 V」的写法没解释过</strong>，学生看不懂「T+37」。建议写成「从上方 +12 V 轨第 37 列用红跳线接 f36」。</li>
+<li><strong>超出 01–29 的概念。</strong> 包括：
+<ul>
+<li>D 触发器 / 74HC74（01–29 里的「触发器」只指施密特触发器）；</li>
+<li>Timer1、TCNT1、ICR1、ICF1、寄存器写 1 清零（引用 36 节，学生没学过）；</li>
+<li>超声探头；</li>
+<li>page3 引到 33 带通、35 AGC 的链接。</li>
+<li>page2 §5 讲 FF1/FF2 讲得够用。但 /PRE 和 /CLR 同时为低时 Q、/Q 都为高，这一点没讲：盲区里如果发射串扰让武装比较器动作，就会出现这个状态；放开 /CLR 时 /PRE 仍为低，就是「误武装」。建议加一张 74HC74 的简短真值表，并说一句这个情况。</li>
+</ul>
+</li>
+<li><strong>page4 第 8 步和图 37-p4-3：风扇在发射探头正后方吹，探头本身挡住了连线上的风。</strong> 实测风速会比风扇标称值低，也和探头离风扇的距离有关。建议提醒「风扇稍偏、斜着吹过两探头连线」，或者说明测到的是路径平均风速。</li>
+<li><strong>page3（以及 page4 测量表）链接到 <code>../review/spice/37.md</code>。</strong> 这是审读目录里的文件，正式发布后读者未必能访问。建议放到正文目录或改成文字说明。另外，图 37-p4-2 里「LM393 B」的「B」被「LM393」字样压住了，很小的问题。</li>
+</ol>
+<p>（链接到还没上线的节：没有发现。上一页和下一页的 36、38 都已存在。）</p>
+<h2 id="五举一反三">五、举一反三</h2>
+<p><strong>结论：</strong></p>
+<ul>
+<li>门限法的时刻跟着幅度漂。「门限只负责武装，过零负责计时」把对幅度的敏感，从「每 10% 幅度 1.37 µs」降到「40 ns」。代价是幅度一旦出窗口（这对探头是 ×0.83～×1.25），就会<strong>整周期</strong>跳 25 µs。</li>
+<li>所以设计时要做三件事：
+<ul>
+<li>把门限放在相邻两峰（第 4、5 峰）的中点；</li>
+<li>让实际回波幅度落在窗口的几何中心附近（√(0.834×1.249) ≈ 1.02）；</li>
+<li>改距离、改增益、换探头时，先用第 9 步的门限扫描找台阶，把 V_TH 转回两次跳变的中间。</li>
+</ul>
+</li>
+<li>风速只依赖<strong>两个方向的差</strong> Δt。顺、逆两次如果一起跳周期，Δt 不受影响；只跳一边，就会多出 ±25 µs，等于几 m/s 的假风（20 cm 时 7.36 m/s）。所以两个方向的回波幅度要尽量一样，并且要几乎同时测。</li>
+</ul>
+<p><strong>变体电路：30 cm 风道风速计</strong>（仿真 /tmp/circuits-s1/v37.py，调用 code/37_sim.py 的回波模型）</p>
+<ul>
+<li><strong>要求：</strong> 探头间距从 20 cm 拉长到 30 cm，量 0～3 m/s 风，其他电路不变。</li>
+<li><strong>问题：</strong> 回波按 1/距离变成原来的 0.667，不在 ×0.834～×1.249 的窗口里。原电路（Rf 100k，40 kHz 增益 10.88）会改在第 6 个峰武装，可这个峰的窗口是 ×0.62～×0.83，0.667 离下沿只有约 7% 余量。
+<ul>
+<li>仿真结果：幅度再 ×0.85 就跳到 1041.6 µs，×1.3 又跳回 991.6 µs，在三个周期之间乱跳。</li>
+</ul>
+</li>
+<li><strong>改法：</strong> Rf 100k 换成 150k，增益 16。TL072 的 GBW 是 3 MHz，40 kHz 实际增益 15.65，回波回到 ×0.959，接近窗口中心。Cg 的 159 Hz 高通不变，50 Hz 增益仍小于 1。门限仍取 169 mV，再用第 9 步的扫描微调。</li>
+<li><strong>仿真结果（Rf 150k）：</strong>
+<ul>
+<li>幅度 ×1.0～×1.3 时，过零时刻稳定在同一周期（静风 999.0 µs 一档）；×0.85 时跳到 1024 µs 一档。按窗口算，容许范围约 ×0.87～×1.30，和原电路的 ±20% 相当；</li>
+<li>顺/静/逆 991.55/999.05/1006.80 µs，Δt = 15.25 µs（理论 2Lv/c² = 15.28 µs），算得 2.99 m/s；</li>
+<li>在 Rf 100k 的各档里 Δt 也都是 15.25，说明两边一起跳时风速不受影响，和结论一致。</li>
+</ul>
+</li>
+<li><strong>其他检查：</strong>
+<ul>
+<li>首达 874 µs，大于 350 µs 盲区；三程反射在 2622 µs，小于一轮 5 ms，不会混进下一轮。</li>
+<li>/Q2 约 1.0 V。斜率变成每 1 mm 2.913 mV 不变，风扇单向变化变成 7.6 mV，分辨率比 20 cm 好 1.5 倍。</li>
+</ul>
+</li>
+</ul>
+<h2 id="六统计">六、统计</h2>
+<ul>
+<li>必改 2，建议 9。</li>
+<li>代码：37_sim.py、page4 Python 块均跑通。数字对不上的有三处：1.38 与 1.37、斜率 2.913 与 2.916、「七级」与 8 个值。</li>
+<li>面包板：除了必改 1、2 这两根文字漏写的跳线，图、原理图、文字逐孔一致。</li>
+<li>死链：无。</li>
+</ul>
+<h2 id="复核-12026-10-27">复核 1（2026-10-27）</h2>
+<p>依据：只读页面、图和 code/，没有读 notes/ 和别人的报告。</p>
+<ul>
+<li>37_sim.py 复制到 /tmp/circuits-s1/c37r1/ 后运行，退出码 0。新增的「[首审]」assert 全过。</li>
+<li>page4 新的 Python 块运行后打印：斜率 2.9155 µs/mm、c 343.0 m/s、偏移 124.6 µs；A −5.12、B +5.13、Δt 10.25 µs → 3.01 m/s；两时间法 3.01 m/s；「读数合理 ✓」。</li>
+<li>图 p4-1、p4-2 逐孔对照，p4-3、p4-4 也看过。</li>
+</ul>
+<h3 id="首审-2-条必改">首审 2 条必改</h3>
+<ol>
+<li><strong>④ 漏写 e29–f29：已改好。</strong> l.148 写明了这根线，第 5 步 l.172 列入，l.174 加了 c29 检查，第 6 步手动检验也会暴露这个问题（见下文 (b)）。图 p4-1 上第 29 列有 e29–f29 的跳线。</li>
+<li><strong>R1 没接 +12 V、跳线数不对：已改好。</strong> l.142 写的是「红跳线从上方 +12 V 轨第 3 列接 g3」，l.164 写「六根跳线」，逐根列出 6 根，和图 p4-1 的 6 根一致。原理图标注「g3←+12V，h3–h5」。</li>
+</ol>
+<h3 id="首审-9-条建议">首审 9 条建议</h3>
+<ul>
+<li>1（1.37）：已改，page1 l.59/69 统一为 1.37。</li>
+<li>2（八级台阶）：已改，page3 l.11。</li>
+<li>3（2.913 和 2.916）：已改，page4 l.248 作了解释。</li>
+<li>4（¾ 周期）：已改，page2 l.123 写成 18.75 + 2.3 ≈ 21.04 µs，和模拟一致。</li>
+<li>5（练习 3 的反向风）：已改。page1 练习 3 给出近似式 −7.36、两时间法 −7.06；page2 例 0 说两者差约 0.3 m/s，复算对上。</li>
+<li>6（「f36←…」记法）：已改，原理图不再用这种记法。</li>
+<li>7（超纲概念）：已改。page2 l.86–115 加了 D 触发器框；page2 l.157 解释了 PORTD/PINx。</li>
+<li>8（风扇挡风）：部分采纳，见下文 (c)。</li>
+<li>9（review/spice 链接、「LM393 B」标签重叠）：链接已删，标签不再重叠。page3 l.5 的 review/spice/37.md 仍是纯文本，可以接受。</li>
+</ul>
+<h3 id="三处重点">三处重点</h3>
+<p><strong>(a) page2 l.86–115 的 D 触发器框：能读懂，/PRE、/CLR 同时为低的情况讲清楚了。</strong></p>
+<ul>
+<li>相机比喻、真值表、①–⑥ 的时序例子一步步接得上，第 6 步手动检验还能亲手验证。</li>
+<li>真值表第 3 行（l.98）写了两端同时为低时「Q 和 /Q 都是 1，松开后不确定」。l.102 说明了本电路什么时候会出现这种情况，以及后果：最多一轮早捕获，<code>min</code> 会把它暴露出来，下一轮被 D4 清零。这和 SN74HC74 手册一致。</li>
+<li>手册里还有一个细节：只有两端同时松开时结果才不确定；/CLR 先松开、/PRE 仍为低时 Q = 1 是确定的。页面写的「不确定」略有简化，不影响理解。</li>
+<li>跳步（建议）：
+<ul>
+<li>/Q 从没定义过，就是「Q 的反相」。可它出现在表的第 3 行，又是测点 ④ /Q2，第 6 步还要靠「④ ≈ 5 V 即 /Q2 = 1」来判断 Q2 = 0。建议补一句。</li>
+<li>FF1 为什么把 D1、CLK1 接地没有说明，只能从表的第 5 行自己推出来。</li>
+</ul>
+</li>
+</ul>
+<p><strong>(b) page4 的接线和第 6 步手动检验：三者在电气上一致；有 1 条新必改，是第 5 步把电阻写成了跳线。</strong></p>
+<p>逐孔核对的结果：</p>
+<ul>
+<li>①–⑤ 的每个孔，文字、图 p4-1、原理图 p4-2 一致。包括：
+<ul>
+<li>+12 V→g3、h20→i31（电位器在 h31–h33）、100k 在 g33–g36、+12 V 轨第 37 列→f36；</li>
+<li>i32→i26、b25→b29、e29–f29、j24/j29 上拉、c29→c43、i24→i43；</li>
+<li>d41→d39、e39–f39、g39–g40、j39→D4、g44→a42、b44→b40、a45→D8；</li>
+<li>Rtx 在 h50–h53、i52–i56，j50→D3、j52→D11。</li>
+</ul>
+</li>
+<li>第 3 步 6 根跳线，和图对上。</li>
+</ul>
+<p><strong>新必改 1（page4 l.172）</strong>：第 5 步写「以及跳线 g22→g25、h20→i31、+12 V→f36（红）、i32→i26、c22–c27、d20–d26、b25→b29、e29–f29」。其中 c22–c27、d20–d26 是 ③（l.146）和图里的两只 10k 电阻，不是跳线。</p>
+<ul>
+<li>图里第 5 步实际只有 6 根跳线，文字列了 8 根，数量对不上。</li>
+<li>照字面做的新生会多找两根线，或者用跳线代替 10k，把过零比较器的输入电阻短路。这样电路和 page2 +12.6/+2.1 mV 的回差分析就不一致了。</li>
+<li>改法：把这两项从跳线清单里删掉，因为句子前面已经写了「两只 10k」。</li>
+</ul>
+<p>第 6 步能不能查出漏线：</p>
+<ul>
+<li><strong>漏接 e29–f29：能查出。</strong> 只插 USB 时第 29 列上半没有上拉，CLK2 悬空。第 4 小步用测试线碰 d29 后，节点停在约 0 V，不会回到 1。到第 6 小步再碰也没有上升沿，④ 应变成约 0 V 却一直是约 5 V，异常很明显。</li>
+<li><strong>漏接 R1→+12 V：第 6 步查不出。</strong> 第 6 步不接 12 V，也不涉及 V_MID。不过第 3 步 ③ 应读约 6.0 V，漏接时 R2 把它拉到约 0 V，当场就能发现，所以整个流程能兜住。</li>
+</ul>
+<p>建议（不算必改）：</p>
+<ul>
+<li>l.174 的 c29 检查不可靠。漏接 e29–f29 时，万用表 10 MΩ 会把悬空的 c29 拉到约 0 V，和「约 0.1 V（输出低）」分不开，不会是页面说的「飘忽的几百毫伏」。可以改成「c29 和 j29 读数应相同」。</li>
+<li>第 6 步没有说第 6 小步 ④ 不变时该先查什么，建议加一句「先查 e29–f29、j29 上拉、c29→c43」。</li>
+<li>l.178 第 6 步又写了一遍「j24、j29 两只 2.2k 上拉」，第 5 步已经插过了，重复。</li>
+<li>原理图 p4-2 没有标 b25→b29、e29–f29、h20→i31、+12 V→f36、i24→i43 这些孔位。不矛盾，但如果要求「三者完全一致」，最好补上。</li>
+</ul>
+<p><strong>(c) page4 第 9 步（l.210–222）：数字对得上；探头挡风的问题只是减轻和说明了，没有消除。</strong></p>
+<ul>
+<li>计算：A 开减关 = 702.67 − 707.79 = −5.12 µs，B = 712.92 − 707.79 = +5.13 µs，Δt = 10.25 µs。
+<ul>
+<li>用斜率得出的 c 算出 3.01 m/s，两时间法 3.01 m/s。37_sim.py 未取整时是 −5.13/+5.13、3.014 m/s，差 0.01 µs，可以忽略。</li>
+<li>「1 mm = 2.913 µs ≈ 0.86 m/s」：Δt 每 1 m/s 是 3.40 µs，对上。「V5 变 0.4 % → ④ 变 2.8 mV」：707.8 × 0.004 ≈ 2.83，对上。</li>
+<li>图 p4-4 的柱子和标题一致；page3 l.94 的说法一致；想一想第 2、3 题一致。</li>
+</ul>
+</li>
+<li>方法：整根木条转 180°、每个方向「关→开→关」、只用开减关，确实消掉了放置误差和固定偏移，比首审时的拆探头对调好得多。</li>
+<li>挡风：
+<ul>
+<li>方向 A 时发射探头仍正对风扇，方向 B 时接收探头正对风扇。两个方向对称，所以不影响开减关的符号和 Δt 的量级，只会让量到的风速偏小。l.212 和想一想第 3 题已经说明了这一点。</li>
+<li>新问题（建议）：l.212 说风扇离发射探头 10～15 cm，但图 p4-3 按直尺比例（20 cm ≈ 464 px）画的距离只有约 3.4 cm，文字和图不一致。</li>
+<li>建议：图改成 10～15 cm；或者让风扇略高于、偏离探头连线斜吹，正文说明只有沿连线的分量起作用（page3 变式 6 的 cosθ 可以直接引用）。</li>
+</ul>
+</li>
+</ul>
+<h3 id="其他重做结果全部对上">其他重做结果（全部对上）</h3>
+<ul>
+<li>例 0：两种算法都是 2.00 m/s（2.003/2.001）。</li>
+<li>练习：6.37 µs、22.8 ns、7.36/−7.06 m/s、728.36 µs/13655（多 2330 格）、+26.8/+4.5 mV、+59.0/+10.0 mV、0～1.053 V、160000 格/0.5 mV、41.7/27.8 mA、682.80、707.99、503.85/478.76 µs、573.00 µs/−9.69 mV、32.2 ns（586 格）。</li>
+<li>反射多走的路：1.00 mm/2.9 µs、6.16 mm/17.9 µs。</li>
+<li>30 cm 残差 +24.9 µs。</li>
+</ul>
+<h3 id="新问题建议">新问题（建议）</h3>
+<ul>
+<li>page2 l.123：「FF2 需要的建立时间（SN74HC74 手册 4.5 V 时 20 ns）绰绰有余」重复了一遍。</li>
+</ul>
+<h3 id="结论">结论</h3>
+<p><strong>未通过：还剩 1 条必改</strong>（新必改 1：page4 l.172，第 5 步把两只 10k 写成了跳线，跳线数量和图不一致）。首审的 2 条必改都已改好。</p>
+<h2 id="复核-22026-10-27">复核 2（2026-10-27）</h2>
+<p>依据：只读页面、图和 code/，没有读 notes/ 和别人的报告。37_sim.py 复制到 /tmp/circuits-s1/c37r2/ 后运行，退出码 0，新增的「[r2]」assert 全过。page4 的 Python 块和复核 1 时完全相同，重跑结果一样：A −5.12、B +5.13、Δt 10.25 µs → 3.01 m/s，「读数合理 ✓」。图 p4-1（已重画）逐孔看过，p4-3 打开看过。</p>
+<h3 id="复核-1-的新必改-1page4-l172已改好">复核 1 的新必改 1（page4 l.172）：已改好</h3>
+<ul>
+<li>第 5 步的跳线清单现在是 g22→g25、h20→i31、+12 V→f36、i32→i26、b25→b29、e29–f29，共 6 根，并注明 c22–c27、d20–d26 是两只 10k 电阻。新图 p4-1 上第 5 步正好是这 6 根。</li>
+<li>重画的 p4-1 按 ①–⑤ 逐孔重搭了一遍，文字、图和原理图 p4-2 一致：
+<ul>
+<li>第 3 步 6 根跳线（+12 V→g3 等），第 4 步 3 根跳线；</li>
+<li>第 6 步：j41/j42/j46→GND、b44→b40、d41→d39、e39–f39、g39–g40、i24→i43、c29→c43、g44→a42、a45→D8、j50→D3、j52→D11，最后 j39→D4；</li>
+<li>电源线：a8、a24→+12 V，j11、j27→GND，a40→+5 V。</li>
+</ul>
+</li>
+</ul>
+<h3 id="采纳的建议">采纳的建议</h3>
+<ol>
+<li><strong>/Q 的定义（page2 l.92）、FF1 为什么接地（l.88）：对。</strong> /Q 是 Q 的反相，只有真值表第 3 行例外；④ 约 5 V 表示 Q2 = 0。CLK1 接地就永远没有上升沿；D1 接地是因为 CMOS 输入不能悬空。两处都讲清楚了。</li>
+<li><strong>c29 与 j29 读数应相同（page4 l.174）：对。</strong>
+<ul>
+<li>漏接 e29–f29 时，j29 只连着 2.2k 上拉，读约 5 V；c29 是悬空或被拉低的 OUTB，读约 0 V。两者不同，第 5 步当场就能查出来。</li>
+<li>漏接 j29 的 2.2k 上拉时，第 29 列上下两半仍然连通，c29 和 j29 都读约 0 V，读数相同，会被当成「约 0.1 V」放过去。所以第 5 步查不出，要到第 6 步（见下一条）。</li>
+</ul>
+</li>
+<li><strong>排查顺序（l.190）：按顺序推了一遍，两种漏接都能查出。</strong>
+<ul>
+<li>漏接 e29–f29：第 6 小步没有上升沿，④ 一直是约 5 V。按顺序查第 1 项 e29–f29，查到。</li>
+<li>漏接 j29 上拉：只插 USB 时 CLK2 悬空，碰过 d29 后停在约 0 V，第 6 小步没有上升沿，④ 一直是约 5 V。第 1 项正常，第 2 项 j29 上拉，查到。</li>
+<li>漏接 j24 上拉（另一只）：/PRE1 悬空。
+<ul>
+<li>如果它悬空在低电平，第 4 小步 ④ 就会变成约 0 V。l.190 没有这种情况的排查说明。</li>
+<li>如果它悬空在高电平，碰 h43 后 /PRE1 停在低电平，第 6 小步照样会「成功」，手动检验查不出来。</li>
+<li>要等接上 12 V 后 t_us 远小于 707.79，才能靠 page3 排错表「Q1 被提前置 1」这一行查到。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>重复的上拉（l.178）：已改成「已在第 5 步插好，不要再插」。</strong></li>
+<li><strong>图 p4-3：已按 10 cm 重画。</strong> 按直尺比例 20 cm ≈ 397 px，风扇到发射探头背面约 199 px = 10.0 cm，标注「10 cm（10～15 cm 都行）」，和 l.214 一致。</li>
+</ol>
+<h3 id="改动处的练习和数字全部对上">改动处的练习和数字（全部对上）</h3>
+<ul>
+<li>page3 l.94 新增的理论值：L/(c+v) − L/c = −5.049 µs，L/(c−v) − L/c = +5.138 µs，即 −5.05/+5.14 ✓。模型落在 125 ns 台阶上，两边都是 5.125 ✓；两位小数的读数相减得 −5.12/+5.13 ✓。</li>
+<li>page3 练习 2 和 l.125：×1.3 时是 682.797 µs，×1.4 时是 682.782 µs，相差 0.015 µs，约 0.02 µs，小于一格 62.5 ns ✓。</li>
+<li>page2 l.123：武装在峰前约 2.3 µs，18.75 + 2.3 ≈ 21 µs，模拟是 21.04 ✓。重复的那句已删掉。</li>
+</ul>
+<h3 id="新的建议不算必改">新的建议（不算必改）</h3>
+<ol>
+<li><strong>l.174 的检查改在只插 USB、不接 12 V 时做。</strong> 这时 LM393 不工作，c29 和 j29 都应读约 5 V，漏接 e29–f29 或漏接 j29 上拉都会读成约 0 V。再加一条「c24（或 h43）应约 5 V」，可以顺便查出 j24 上拉。</li>
+<li><strong>l.190 补一条：如果第 4 小步 ④ 就变成约 0 V，查 j24 的 2.2k 上拉和 i24→i43。</strong></li>
+<li><strong>图 p4-3 的 L = 20.0 cm 箭头画在两只探头中心之间（x 约 343–740）。</strong> 按图中比例，两个正面之间只有约 18 cm，和「量探头正面到正面」的标注不一致。这个问题是原来就有的。</li>
+<li><strong>原理图 p4-2 仍没标 b25→b29、e29–f29、h20→i31、+12 V→f36 这些孔位。</strong> 不矛盾，可以补上。</li>
+</ol>
+<h3 id="结论-1">结论</h3>
+<p><strong>通过</strong>。剩余必改 0 条。</p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>
