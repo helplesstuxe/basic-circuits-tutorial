@@ -731,7 +731,7 @@ def p4_5():
     bb.bb_probe(ax, "g15", "B", dx=1.2, dy=-3.3)
     bb.bb_probe(ax, "g14", "C", dx=-1.6, dy=-3.3)
     bb.bb_probe(ax, "T1-28", "D", dx=0.0, dy=1.0)
-    bb.bb_probe(ax, "a31", "F", dx=-1.0, dy=1.0)
+    bb.bb_probe(ax, "a31", "F", dx=-0.5, dy=1.4)
     bb.bb_probe(ax, "h34", "G", dx=2.2, dy=-2.3)
     _assert_common(net)
     must(net, [["f15", "h10", "i15", "j15", "j10", "i10"], ["f14", "g14", "h14", "i14"], ["i8", "j8", "j7", "g7", "B1-1"],

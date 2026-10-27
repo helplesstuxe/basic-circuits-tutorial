@@ -340,24 +340,25 @@ def p3_1():
 
 
 def p3_2():
-    vdc = G * sim.dcmax
+    vdc = -G * sim.dcmax                             # 电位器拧到 0 V 端：INA 输出 −976 mV（page3 符号约定：高于 V_MID 为正）
     _, y = sim.chain(T=12, eps=0.02, vdc=vdc, ac=False)
     _, y0 = sim.chain(T=12, eps=0.02, vdc=0.0, ac=False)
     leak = (sim.tail_stats(_, y)[0] - sim.tail_stats(_, y0)[0]) * 1e3
     _, ya = sim.chain(T=12, eps=0.02, vdc=vdc, ac=True)
     _, ya0 = sim.chain(T=12, eps=0.02, vdc=0.0, ac=True)
     leak_ac = (sim.tail_stats(_, ya)[0] - sim.tail_stats(_, ya0)[0]) * 1e3
-    duty = 2 * 0.01 * vdc * 1e3
+    duty = abs(2 * 0.01 * vdc * 1e3)
     _, yt = sim.chain(T=20, tone=sim.F50)
     rip = sim.tail_stats(_, yt, last=6.0)[1] * 1e3
     m0 = sim.tail_stats(*sim.chain(T=12))[0] * 1e3
-    m45 = sim.tail_stats(*sim.chain(T=12, phi_deg=45))[0] * 1e3
-    items = [(f"直流 {vdc*1e3:.0f} mV + 失配 2%，不加交流耦合", abs(leak), fs.C["bad"]),
+    m45 = sim.tail_stats(*sim.chain(T=12, phi_deg=45))[0] * 1e3   # 模拟值只在 page4 第 6 步答案框里用
+    loss_tri = m0 * 45 / 90                                       # 三角形定律：错 45° 读数剩 1 − 45/90 = 一半
+    items = [("直流 " + f"{vdc*1e3:.0f}".replace("-", "−") + f" mV（电位器拧到 0 V 端）+ 失配 2%，\n不加交流耦合（模拟 {leak:+.2f}；公式 +9.76）", abs(leak), fs.C["bad"]),
              ("同上，加了 CH/RH 交流耦合", abs(leak_ac), fs.C["fb"]),
              ("占空比偏 1%（不加交流耦合，2δ·V_DC）", duty, fs.C["bad"]),
              ("U3B 失调 7 mV × 2（翻转相减可消）", 14.0, fs.C["vout"]),
-             ("50 Hz 干扰造成的纹波（峰峰）", rip, fs.C["vout"]),
-             ("参考错 45°：读数少掉的部分", m0 - m45, fs.C["bad"])]
+             ("50 Hz：CF 上瞬时纹波峰峰（表上只跳 1～3 mV，平均不变）", rip, fs.C["vout"]),
+             ("参考错 45°：读数少掉的部分（三角形定律）", loss_tri, fs.C["bad"])]
     fig, ax = plt.subplots(figsize=(7.6, 3.2))
     y_ = np.arange(len(items))
     ax.barh(y_, [max(i[1], 0.05) for i in items], color=[i[2] for i in items], height=0.55)
@@ -368,7 +369,7 @@ def p3_2():
     ax.set_yticks(y_, [i[0] for i in items], fontsize=8.5)
     ax.invert_yaxis()
     ax.set_xlabel(f"对读数的影响 / mV（有用读数 {m0:.2f} mV）")
-    print(f"[图 38-p3-2] 误差来源：泄漏 {leak:.2f}/{leak_ac:.3f} mV，占空比 {duty:.2f}，失调 14，纹波 {rip:.2f}，45° 损失 {m0-m45:.2f}")
+    print(f"[图 38-p3-2] 误差来源：泄漏 {leak:.2f}/{leak_ac:.3f} mV，占空比 {duty:.2f}，失调 14，纹波 {rip:.2f}，45° 损失（三角形定律）{loss_tri:.2f}（模拟 {m0-m45:.2f}，不上图）")
     fs.save(fig, N, "38_p3_2_error_budget.png")
 
 

@@ -4,8 +4,9 @@
 页面值全部来自 code/32_sim.py（理想运放 + 公式）；这里用厂家宏模型逐项对照。
 网表副本写在临时目录（include 改成绝对路径），不往仓库里写文件。
 
-另有 vmode_cf_left.cir 不在本脚本里跑：它是 page4 第 8 步排错表「C_F 忘拔」一行的用例
-（C_F 10 nF 没拔、短线也没插），期望 B−A ≈ −0.0437 V。单独运行：cd spice/32 && ngspice -b vmode_cf_left.cir"""
+vmode_cf_left.cir 是 page4 第 8 步排错表「C_F 忘拔」一行的用例（C_F 10 nF 没拔、短线也没插），
+本脚本把它当作一项检查（cf_left），期望 B−A ≈ −0.0437 V（断言偏差 < 0.5 mV）。
+也可单独运行：cd spice/32 && ngspice -b vmode_cf_left.cir"""
 import subprocess, re, sys, pathlib, math, tempfile, importlib.util
 from concurrent.futures import ThreadPoolExecutor
 HERE = pathlib.Path(__file__).resolve().parent
@@ -51,6 +52,7 @@ def fmt(x):
 HOLD = (HERE / "hold.cir").read_text()
 VMODE = (HERE / "vmode.cir").read_text()
 PIEZO = (HERE / "piezo.cir").read_text()
+CF_LEFT = re.sub(r"(?s)\n\.control\n.*?\n\.endc\n", "\n", (HERE / "vmode_cf_left.cir").read_text())
 AC = (HERE / "ac.cir").read_text()
 
 
@@ -95,6 +97,14 @@ def vmode(cc):
     ctl = "tran 20u 60m 0 50u uic\n" + meas([("vm", "find v(vmid) at=28m"), ("o", "find v(out) at=50m")])
     v = ng(VMODE, ctl, need=["vm", "o"], params={"cc": cc})
     return v["o"] - v["vm"], v["vm"]
+
+
+def cf_left():
+    """page4 第 8 步排错：C_F 忘拔、短线没插（2 脚只经 C_F 接 1 脚），C_C 100 nF；读 55–59 ms 平均。"""
+    ctl = ("tran 10u 60m 0 10u uic\n" +
+           meas([("vb1", "avg v(out) from=55m to=59m"), ("va1", "avg v(vmid) from=55m to=59m")]))
+    v = ng(CF_LEFT, ctl, need=["vb1", "va1"])
+    return v["vb1"] - v["va1"]
 
 
 def slow():
@@ -179,6 +189,7 @@ def make_jobs():
         "h_back": lambda: hold(tback="60m"),
         "h_c10": lambda: hold(cc="10n"), "h_c100": lambda: hold(cc="100n"),
         "v0": lambda: vmode("1f"), "v10": lambda: vmode("10n"), "v100": lambda: vmode("100n"),
+        "cf_left": cf_left,
         "slow": slow, "rf10": rf10, "pz_hold": lambda: piezo("1e15"), "pz_rf": lambda: piezo("10Meg"), "tap": tap,
         "ac10": lambda: acsweep("10n"), "ac20": lambda: acsweep("20n"), "ac30": lambda: acsweep("30n"),
         "m1": lambda: mains("1n"), "m10": lambda: mains("10n"), "m100": lambda: mains("100n"),
@@ -207,6 +218,9 @@ def main():
         o, vm = R[k]
         row("p4 第 8 步", f"电压模式 C_C {cc*1e9:.0f} nF，B−A", sim.voltage_mode(-VM, cc=cc), o, "V",
             "输出贴近 0 V 轨" if cc == 0 else "")
+    cl = R["cf_left"]
+    row("p4 第 8 步", "电压模式 C_F 忘拔（无短线），B−A", -0.0437, cl, "V", "page4 排错行写的 SPICE 值")
+    assert abs(cl - (-0.0437)) < 0.5e-3, f"cf_left B−A = {cl:.5f} V，偏离页面 −0.0437 V"
     r = R["rf10"]
     row("p4 第 9 步", "断电插上 R_F 后：峰值 B−A", sim.charge_mode(-VM), r["p"] - r["vm"], "V", "DMM 看不到，SPICE 才看得到")
     row("p4 第 9 步", "断电插上 R_F 后：0.1 s 后", 0.45 * math.exp(-1), r["t1"] - r["vm"], "V")

@@ -796,12 +796,12 @@ def _lm386_schem(d, holes=False, blocks=False):
     d += u
     d += elm.Line().at(pot.tap).to(u.in2)
     H((pot.tap[0] + 0.05, pot.tap[1]), "f7 / i7", "top", 0.12)
-    H((8.2, 0.0), "i12 / f12", "bottom", 0.12)
+    H((7.8, -0.45), "i12 / f12", "left", 0.05)          # 写在 ③ 引线左边，不被引线穿过，也离脚号「3」远一点
     lab(d, (8.75, -0.3), "3", ha="center", fs_=8)
     lab(d, (8.75, 1.55), "2", ha="center", fs_=8)
     d += elm.Line().at(u.in1).to((8.4, 1.25))
     d += elm.Ground().at((8.4, 1.25))
-    H((8.2, 0.85), "2 脚接地：f11 / j11 → B−11", "left", 0.1)   # 紧贴 2 脚地符号，避开 C2 的地
+    H((8.2, 0.98), "2 脚接地：\nf11 / j11 → B−11", "left", 0.1)   # 两行写在 RP 竖线和 2 脚地符号之间，不压线、不挨 C2 的地
     # 6 脚电源 + C1、C2
     vx = u.vd[0]
     d += elm.Line().at(u.vd).to((vx, 3.6))

@@ -443,10 +443,11 @@ def _schem(d, holes=False):
     d += elm.Line().at((xw, tap[1])).to((xw, yA)).color(VM)
     d += elm.Resistor().endpoints((xpp, yA + 3.4), (xpp, yA + 5.8))
     d += elm.Vdd().at((xpp, yA + 5.8)).label("+12 V", fontsize=9)
-    ls.lab(d, (xpp - 0.45, yA + 4.6), "100 kΩ" + H("\ng33–g36"), ha="right", fs_=9)
+    ls.lab(d, (xpp - 0.45, yA + 4.6), "100 kΩ" + H("\ng33–g36\n+12 V→f36"), ha="right", fs_=9)
     ls.lab(d, (xpp - 0.45, yA + 2.2), "电位器 10 kΩ" + H("\nh31·h32·h33"), ha="right", fs_=9)
-    _vmid(d, (xpp, yA + 0.5), ha="right")
+    _vmid(d, (xpp, yA + 0.5), ha="right", hole=H("（h20→i31）"))
     ls.lab(d, (xw + 0.2, yA + 0.35), "V_TH", fs_=9, color=VM)
+    ls.lab(d, (xw + 0.15, tap[1] + 0.4), H("中间脚 i32→i26"), fs_=8.5)
     # LM393 B 过零
     cB = elm.Opamp(leads=True).right().flip().anchor("in2").at((xa_ + 3.0, yB))
     d += cB
@@ -486,6 +487,7 @@ def _schem(d, holes=False):
         d += elm.Vdd().at((x2, P["out"][1] + 2.0)).label("+5 V（Arduino）", fontsize=8.5)
         ls.lab(d, (x2 + 0.35, P["out"][1] + 1.0), "2.2 kΩ" + H("\nj24→+5 V" if nm == "arm" else "\nj29→+5 V"), fs_=8.5)
         outs[nm] = (x2, P["out"][1])
+    ls.lab(d, ((B["out"][0] + outs["zc"][0]) / 2, B["out"][1] - 0.75), H("b25→b29\ne29–f29"), ha="center", fs_=8.5)
     # ---------------- 74HC74：FF1 记「武装过了」，FF2 在下一个过零上升沿把 Q2 打成 1
     xf = outs["arm"][0] + 2.6
     ff1 = module("FF1（74HC74 前半）", left=("/PRE1 ④", "D1 ②", "CLK1 ③", "/CLR1 ①"), right=("Q1 ⑤",), w=3.4).right().anchor("/PRE1 ④").at((xf, outs["arm"][1] + 1.6))

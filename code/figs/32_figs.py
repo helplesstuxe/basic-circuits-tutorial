@@ -213,16 +213,19 @@ def p1_1():
         xq = -6.0
         d += elm.SourceI().at((xq, 0.0)).to((xq, 4.0)); ls.lab(d, (xq - 0.6, 2.0), "电荷 Q", ha="right", fs_=10)
         d += elm.Ground().at((xq, 0.0))
-        d += elm.Line().at((xq, 4.0)).to((-1.0, 4.0))
+        d += elm.Line().at((xq, 4.0)).to((0.2, 4.0))     # 运放右移，给下方的反馈回线让出 C_c 标注的位置
         for x, t in ((-4.4, "C_p\n传感器"), (-2.4, "C_c\n电缆")):
             d += elm.Dot().at((x, 4.0)); d += elm.Capacitor().at((x, 4.0)).to((x, 0.0)); d += elm.Ground().at((x, 0.0))
             ls.lab(d, (x + 0.45, 2.0), t, ha="left", fs_=9.5)
-        d += (f := elm.Opamp(leads=True).theta(0).anchor("in2").at((-1.0, 4.0)).flip())
+        d += (f := elm.Opamp(leads=True).theta(0).anchor("in2").at((0.2, 4.0)).flip())
         fo = f.absanchors["out"]
-        d += elm.Line().at(fo).to((fo[0] + 0.5, fo[1])); d += elm.Line().at((fo[0] + 0.5, fo[1])).to((fo[0] + 0.5, fo[1] + 1.8))
+        # 反馈线从运放下方绕回 − 端（− 端在下），不和上方 + 端的输入线交叉
         i1 = f.absanchors["in1"]
-        d += elm.Line().at((fo[0] + 0.5, fo[1] + 1.8)).to((i1[0] - 0.4, fo[1] + 1.8))
-        d += elm.Line().at((i1[0] - 0.4, fo[1] + 1.8)).to((i1[0] - 0.4, i1[1])); d += elm.Line().at((i1[0] - 0.4, i1[1])).to(i1)
+        assert i1[1] < 4.0, "flip 后 − 端应在 + 端下方"
+        yb = i1[1] - 1.2
+        d += elm.Line().at(fo).to((fo[0] + 0.5, fo[1])); d += elm.Line().at((fo[0] + 0.5, fo[1])).to((fo[0] + 0.5, yb))
+        d += elm.Line().at((fo[0] + 0.5, yb)).to((i1[0] - 0.4, yb))
+        d += elm.Line().at((i1[0] - 0.4, yb)).to((i1[0] - 0.4, i1[1])); d += elm.Line().at((i1[0] - 0.4, i1[1])).to(i1)
         d += elm.Dot(open=True).at((fo[0] + 1.2, fo[1])); d += elm.Line().at((fo[0] + 0.5, fo[1])).to((fo[0] + 1.2, fo[1]))
         ls.lab(d, (fo[0] + 1.4, fo[1]), "V", fs_=10, color=fs.C["vout"])
         ls.lab(d, (-3.4, -1.5), "Q 分到 C_p 和 C_c 上：\nV = Q / (C_p + C_c)", ha="center", fs_=9.5, color=fs.C["bad"])
@@ -557,7 +560,8 @@ def _s1(d, sp, up_lab="V_MID\n（h3，第 3 列）", dn_lab="0 V\n（j5 → B1�
     """S 端往左引出，挂拨动开关 S1：①（左下）接 V_MID，②（右下）接 0 V。"""
     x = sp[0] - 2.2
     d += elm.Line().at(sp).to((x, sp[1])); d += elm.Line().at((x, sp[1])).to((x, sp[1] - 0.6))
-    d += (sw := elm.SwitchSpdt2().at((x, sp[1] - 0.6)).down().anchor("a"))
+    # flip()：拨柄画在①（左）一侧，和第 1 步「S1 拨到①」一致（不 flip 时拨柄指向②）
+    d += (sw := elm.SwitchSpdt2().at((x, sp[1] - 0.6)).down().flip().anchor("a"))
     ls.lab(d, (x + 0.2, sp[1] + 0.45), "S1（公共脚 h4）", ha="center", fs_=9, color=fs.C["fb"])
     b_, c_ = sw.absanchors["b"], sw.absanchors["c"]
     lo, hi = (b_, c_) if b_[0] < c_[0] else (c_, b_)

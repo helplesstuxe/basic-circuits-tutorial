@@ -392,8 +392,8 @@ def report():
             vmax = np.inf
         th0 = steady(dts / dTn_per_W(0.0), 0.0)[0]
         res = (1 / (ntc_adc(25.5) - ntc_adc(24.5)))
-        vmax_s = f"{vmax:.2f}" if np.isfinite(vmax) else "5 以上（扫描上限）"
-        print(f"  ΔT={dts:g} K：静止空气占空 {need[0] / P_MAX * 100:.1f} %，电阻温升 {th0:.2f} K；功率够用到 v ≈ {vmax_s} m/s；"
+        vmax_s = f"v ≈ {vmax:.2f} m/s" if np.isfinite(vmax) else "v > 5 m/s（扫描上限）"
+        print(f"  ΔT={dts:g} K：静止空气占空 {need[0] / P_MAX * 100:.1f} %，电阻温升 {th0:.2f} K；功率够用到 {vmax_s}；"
               f"1 LSB 相对误差 {abs(res) / dts * 100:.1f} %")
     print("== 7b. PI 增益扫描（0→1 m/s 台阶，ΔT=2 K）==")
     step1 = lambda t: 0.0 if t < 120 else 1.0

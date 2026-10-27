@@ -175,7 +175,7 @@ np.savetxt(OUT / "w_idle.csv", np.column_stack([ti] + [np.interp(ti, wi[:, 0], w
 # ---------- 4. 故障与对照 ----------
 fl = ngspice("fault_in2gnd.cir", need=["flt_vdavg", "flt5_vdavg"])
 row("p3 排错表", "IN2 接地（00 = 滑行）：负载直流", P["flt_vd"], fl["flt_vdavg"], "V")
-row("p3 排错表", "IN2 接地：8 Ω 喇叭上直流功率", P["flt_p8"], fl["flt_p8"], "W")
+row("p3 排错表", "IN2 接地：8 Ω 喇叭上功率（含载波）", P["flt_p8"], fl["flt_p8"], "W")
 row("p3 排错表", "IN2 接 5 V（11 = 刹车）：负载直流", P["flt5_vd"], fl["flt5_vdavg"], "V")
 row("p3 排错表", "IN2 接 5 V：8 Ω 喇叭上直流功率", P["flt5_p8"], fl["flt5_p8"], "W")
 row("p3 排错表", "IN2 接 5 V：10 Ω 电阻上直流功率", P["flt5_p10"], fl["flt5_p10"], "W")
