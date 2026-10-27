@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>34 开关电容滤波与跟踪滤波 · 工程实战调研（工程实战派）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/34.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="34-开关电容滤波与跟踪滤波--工程实战调研工程实战派">34 开关电容滤波与跟踪滤波 · 工程实战调研（工程实战派）</h1>
+<blockquote>
+<p>依据：notes/00-design-part2.md、notes/PART2_BRIEF.md §10（单 9–12 V、允许 Arduino、核心结论可用万用表验证、555 可用于 34 但要有引脚图和一句话原理）、notes/34-research.md。34-switched-cap-filter/ 目前只有空的 img/，没有 page4 草稿，所以本节按 research 里的「page4 实验」方案来核查。
+数据手册数值都注明出自哪个表或哪一节。</p>
+</blockquote>
+<h2 id="1-真实产品参考设计怎么做">1. 真实产品/参考设计怎么做</h2>
+<h3 id="11-集成开关电容滤波器scf">1.1 集成开关电容滤波器（SCF）</h3>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>关键事实（出处）</th>
+<th>对本节的意义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TI MF10-N（SNOS547C）</td>
+<td>Electrical Characteristics（±5 V）：V+−V− 9–14 V；f_CLK 10 Hz–1.0 MHz（设计限值）；f_CLK/f_O 为 50:1 或 100:1，比例误差 ±0.6%（MF10A，Q=10，Mode 1）；时钟馈通典型 10 mV；最大电源电流 12 mA</td>
+<td>截止频率「由时钟决定」的工业实证。50:1 还是 100:1 由 pin 12（50/100/CL）的接法决定：接高为 50:1，接中点为 100:1</td>
+</tr>
+<tr>
+<td>MF10-N 单电源用法（&quot;SINGLE SUPPLY OPERATION&quot; 一节）</td>
+<td>V+ 取 8–14 V，V− 接地，AGND 必须接 V+/2，而且这个中点要「very clean」，在时钟频率上要呈低阻抗（可用电阻分压加旁路电容，或运放、稳压器）</td>
+<td>与 §10「单电源 + 缓冲分压虚地（节点 12）」完全一致，可在 page3 引用</td>
+</tr>
+<tr>
+<td>MF10-N &quot;SAMPLED DATA SYSTEM CONSIDERATIONS&quot;</td>
+<td>采样频率等于时钟频率；f_s/2+100 Hz 的输入会被当成 f_s/2−100 Hz；输出每个采样周期跳一次，形成台阶，可在输出加 RC 低通平滑；100:1 更不怕混叠，50:1 噪声低 3 dB</td>
+<td>page3 讲混叠和台阶时可直接引用这段原文</td>
+</tr>
+<tr>
+<td>ADI MAX7400 产品页</td>
+<td>8 阶椭圆低通，100:1 时钟/截止比，截止 1 Hz–10 kHz，+5 V 单电源，工作电流 2 mA，可自时钟（外接电容）或外部时钟；用途写明 ADC Anti-Aliasing</td>
+<td>「单 5 V、只调时钟就改截止」的现代例子。注意：这个页面 curl 打不开，只能用 WebFetch 打开</td>
+</tr>
+</tbody>
+</table>
+<h3 id="12-用分立开关做开关电容电阻">1.2 用分立开关做「开关电容电阻」</h3>
+<ul>
+<li><strong>TI CD4053B（SCHS047O）</strong>：三路 SPDT 模拟开关。
+<ul>
+<li>引脚（Table 4-3）：16 VDD，8 VSS，7 VEE，6 INH，11/10/9 为选择端 A/B/C；A 路的公共端是 14，X 端 12，Y 端 13。</li>
+<li>换道是先断后通：&quot;a break-before-make system eliminates channel overlap&quot;（Detailed Description）。因此 C1 不会把输入和输出直接短接，开关电容电阻这个用法成立。</li>
+<li><strong>导通电阻随 VDD 变化（§5.5 Electrical Characteristics，r_ON，0 ≤ V_IS ≤ VDD，25 °C）</strong>：VDD 5 V 时 470 Ω 典型、1050 Ω 最大；10 V 时 180/400 Ω；15 V 时 125/240 Ω。<strong>research 和 brief 里的「125 Ω」是 VDD 15 V 的典型值，在 5 V 下并不成立。</strong></li>
+<li>控制端 V_IH 最小值（§5.5）：VDD 5 V 时 3.5 V，10 V 时 7 V，15 V 时 11 V。</li>
+<li>OFF 通道漏电（§5.5，VDD 18 V）：25 °C 时 ±0.3 nA 典型、±100 nA 最大。</li>
+<li>绝对最大值（§5.1）：电源 −0.5 到 20 V；DC Input Current 任一输入 ±10 mA。</li>
+</ul>
+</li>
+<li><strong>TI NE555（ne555.pdf）</strong>：
+<ul>
+<li>电源：NA/NE/SA555 推荐 V_CC 4.5–16 V（Recommended Operating Conditions）。</li>
+<li>频率：f = 1.44/((R_A+2R_B)C)。</li>
+<li>输出高电平：V_CC = 5 V、I_OH = −100 mA 时 2.75 V 最小、3.3 V 典型（Electrical Characteristics）。手册没有给 5 V 轻载时的 V_OH 保证值，并注明 &quot;RL improves VOH&quot;。</li>
+</ul>
+</li>
+</ul>
+<h3 id="13-跟踪滤波的工业做法">1.3 跟踪滤波的工业做法</h3>
+<ul>
+<li>Emerson Rosemount 8800 涡街技术说明（已用 curl 打开）：文中写道 &quot;The digital filter is automatically adjusted during operation to track the change ... sometimes referred to as adaptive digital filtering or filter tracking&quot;，Figure 6/7 为 Adaptive High Pass Filter。这是「滤波器跟着信号频率走」的工业实例，只不过它是数字实现。</li>
+<li>用模拟 SCF 做跟踪的套路：MCU 先测频率 f（36 节），再输出时钟 N·f（N = 50 或 100），同时设一个幅度门限，信号低于门限就锁住时钟，避免零流量时「追噪声」。</li>
+</ul>
+<h3 id="14-布局要点">1.4 布局要点</h3>
+<ul>
+<li>CD4053 的 VDD 引脚就近接 0.1 µF；555 的 V_CC 也要就近 0.1 µF（555 翻转时有电流尖峰），pin 5（CONT）接 10 nF 到地。</li>
+<li><strong>INH（pin 6）必须接地，VEE（pin 7）在单电源下接 VSS</strong>。不用的 B、C 两路选择端（10、9）接地，不要悬空，不用的信号端也接地。</li>
+<li>时钟线远离 C2（保持电容）和 ADC 输入线；C2 用薄膜电容或 X7R 陶瓷，不要用电解（漏电会造成 τ 偏差）。</li>
+</ul>
+<h2 id="2-page4-实验逐点可行性核查">2. page4 实验逐点可行性核查</h2>
+<p>方案（research「page4 实验」）：CD4053 用 5 V 单电源、VEE 接地，A 路公共端接 C1 = 10 nF，两掷端分别接输入和输出，C2 = 1 µF 到地；555 产生约 9.86 kHz 时钟（或 100 nF 时约 1 kHz）；Arduino 给 0→5 V 阶跃，用 ADC 记录并测 τ。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>项</th>
+<th>结论</th>
+<th>依据/替代</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>电源</td>
+<td>可行，但要写清 5 V 的来源</td>
+<td>§10 规定单 9–12 V。用 Arduino 时取板上 5 V；不用 Arduino 时用 78L05 从 9 V 降压，或者让 CD4053 和 555 直接跑 9 V（见 #4）</td>
+</tr>
+<tr>
+<td>2</td>
+<td>CD4053 引脚</td>
+<td>需要在页面上给出</td>
+<td>16 VDD、8 VSS、7 VEE、6 INH 都接对；A 选择端 pin 11 接时钟；14 公共端接 C1；12（X）、13（Y）分别接输入和输出；B、C 选择端接地</td>
+</tr>
+<tr>
+<td>3</td>
+<td>导通电阻</td>
+<td>「125 Ω」写错，5 V 下是 470 Ω 典型、1050 Ω 最大</td>
+<td>SPICE 替代模型按 §10 用 125 Ω 可以，但正文要注明那是 15 V 的值，并加一组 1050 Ω 的仿真。已运行脚本表明：10 kHz、R_on = 1050 Ω 时，R_eq 只偏 1.7%，结论不变</td>
+</tr>
+<tr>
+<td>4</td>
+<td>时钟电平</td>
+<td><strong>LM358 弛张振荡器在 5 V 下不可靠；555 在 5 V 下没有保证值</strong></td>
+<td>CD4053 在 VDD 5 V 时 V_IH 最小 3.5 V。LM358 的输出高电平最多只到 V+−1.5 V = 3.5 V，正好压线。NE555 在 5 V 下只保证 2.75 V（−100 mA 条件），轻载没有给保证值。替代方案：①首选 Arduino <code>tone(pin, f)</code>，5 V 轨到轨、50% 占空比、频率准；②不用 Arduino 时，555 输出加 1 kΩ 上拉到 V_CC（手册说 RL improves VOH），或者 555 和 CD4053 都用 9 V（此时 V_IH 约 6.3 V，按 10 V 时 7 V 的比例估算，仍需上拉）[边界值按手册只能给出 5/10/15 V 三档]</td>
+</tr>
+<tr>
+<td>5</td>
+<td>555 频率</td>
+<td>正确</td>
+<td>1 k/6.8 k/10 nF → 9863 Hz（已运行）。占空比 53.4%，不是 50%，但对 R_eq 没有影响（R_on·C1 = 4.7–10.5 µs，远小于 47 µs 的低电平时间）</td>
+</tr>
+<tr>
+<td>6</td>
+<td>输入驱动电流</td>
+<td>有隐患</td>
+<td>Arduino 5 V 直接推 10 nF 加 470 Ω，峰值 10.6 mA，已超过 CD4053 §5.1 的「DC Input Current ±10 mA」（按保守理解适用于开关端）。<strong>输入串 1 kΩ</strong>，峰值降到 3.4 mA 以下。代价是 10 kHz 时 R_eq 偏 3.5–10%（已运行），所以时钟上限改为 5 kHz（偏差 ≤0.8%）</td>
+</tr>
+<tr>
+<td>7</td>
+<td>τ 量级</td>
+<td>1 kHz → 100 ms，5 kHz → 20 ms，10 kHz → 10 ms，<strong>万用表看不出来</strong></td>
+<td>Arduino 的 analogRead 每次约 100 µs，可以测 10–100 ms。<strong>为满足 §10「万用表可验证」，另加一个直流实验</strong>：5 V 经 100 kΩ 到节点（节点接 C2 = 1 µF），开关电容电阻从节点接到地。改变 f，用万用表读节点电压：500/1k/2k/4k Hz 分别为 3.31/2.49/1.66/1.00 V，与理论值 3.333/2.500/1.667/1.000 V 几乎一致（已含 10 MΩ 表内阻），纹波 10–33 mV</td>
+</tr>
+<tr>
+<td>8</td>
+<td>漏电</td>
+<td>可忽略</td>
+<td>OFF 漏电最大 100 nA × 100 kΩ = 10 mV（25 °C，§5.5，VDD 18 V 条件），比 4 kHz 时的 1.00 V 小两个数量级</td>
+</tr>
+<tr>
+<td>9</td>
+<td>台阶</td>
+<td>每个时钟一步，首步 49.5 mV</td>
+<td>已运行：C1/(C1+C2)·5 V。ADC 的 1 LSB ≈ 4.9 mV，能看到台阶，可当作「采样数据」的证据。要平滑可以在输出再加 RC</td>
+</tr>
+<tr>
+<td>10</td>
+<td>离散模型 vs 公式</td>
+<td>一致</td>
+<td>63% 点用 101 个周期，与公式的 100 个周期相差 1%</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Arduino</td>
+<td>可行</td>
+<td><code>tone()</code> 下限 31 Hz，会干扰 3、11 脚的 PWM（Arduino 参考手册）。时钟放 D9，阶跃放 D7，ADC 用 A0。ADC 源阻抗是 1 µF 电容，没有问题</td>
+</tr>
+<tr>
+<td>12</td>
+<td>混叠演示（可选）</td>
+<td>可做</td>
+<td>给 SCF 低通输入 f_CLK − 2 Hz 的方波，输出会出现 2 Hz 的慢摆动。用 Arduino 的第二个 tone 做不到（只能同时出一个 tone），可改用 555 做输入、Arduino 做时钟</td>
+</tr>
+</tbody>
+</table>
+<h3 id="需要作者改正的要点">需要作者改正的要点</h3>
+<ol>
+<li><strong>R_on = 125 Ω 是 VDD 15 V 的典型值</strong>。5 V 下应写 470 Ω 典型、1050 Ω 最大（SCHS047O §5.5）。SPICE 可以保留 125 Ω，但必须注明并补一组 1050 Ω 的对照。</li>
+<li><strong>时钟源</strong>：LM358 弛张振荡器在 5 V 下输出高电平到不了 CD4053 的 V_IH（3.5 V min），NE555 在 5 V 下也没有保证值。首选 Arduino <code>tone()</code>；不用 Arduino 时，555 加 1 kΩ 上拉。page2 的 555 框要有引脚图和一句原理（§10）。</li>
+<li><strong>输入串 1 kΩ 限流</strong>（峰值 ≤3.4 mA），时钟上限改为 5 kHz。成对比较用 1 kHz 和 5 kHz（τ = 100 ms 和 20 ms）。</li>
+<li><strong>加万用表直流实验</strong>：100 kΩ 加开关电容电阻组成分压器，节点电压随 f 变化（2.49 V@1 kHz → 1.66 V@2 kHz），满足 §10。</li>
+<li>INH 和 VEE 接地，不用的选择端和信号端接地，不能悬空；VDD 就近接 0.1 µF。</li>
+<li>C2 用薄膜或 X7R 电容，不要用电解。</li>
+<li>混叠、台阶、50:1/100:1 的说法可直接引用 MF10-N 手册 &quot;SAMPLED DATA SYSTEM CONSIDERATIONS&quot; 一节；单电源 AGND = V+/2 的要求与节点 12 虚地呼应。</li>
+</ol>
+<h3 id="arduino-草图要点供作者扩写成完整-sketch">Arduino 草图要点（供作者扩写成完整 sketch）</h3>
+<pre><code class="language-cpp">// D9 -&gt; CD4053 pin11 (A)；D7 -&gt; 1k -&gt; 输入端；A0 &lt;- C2 节点
+void setup(){ Serial.begin(115200); pinMode(7,OUTPUT); digitalWrite(7,LOW);
+  tone(9,1000); delay(2000);              // 1 kHz 时钟，先放电 2 s（5τ 以上）
+  unsigned long t0=micros(); digitalWrite(7,HIGH);
+  for(int i=0;i&lt;400;i++){ Serial.print(micros()-t0); Serial.print(','); Serial.println(analogRead(A0)); delay(1);} }
+void loop(){}
+</code></pre>
+<p>（串口打印会拖慢采样，实际每点约 1.x ms，需要用打印出的 micros 做时间轴。63% 点对应 ADC 读数约 646。）</p>
+<h2 id="3-python-计算已运行">3. Python 计算（已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng/s34.py</code></p>
+<pre><code class="language-python">import numpy as np
+print(&quot;== 1) 555 时钟 (NE555 公式 f=1.44/((RA+2RB)C)) ==&quot;)
+for RA,RB,C in [(1e3,6.8e3,10e-9),(1e3,6.8e3,100e-9)]:
+    tH=0.693*(RA+RB)*C; tL=0.693*RB*C
+    print(f&quot;RA={RA/1e3:.1f}k RB={RB/1e3:.1f}k C={C*1e9:.0f}n: f={1.44/((RA+2*RB)*C):8.1f} Hz  tH={tH*1e6:6.1f} us tL={tL*1e6:6.1f} us  占空比 {tH/(tH+tL)*100:4.1f}%&quot;)
+
+def transfer(V,C1,Ron,th,tl):
+    e1=np.exp(-th/(Ron*C1)); e2=np.exp(-tl/(Ron*C1))
+    return V*(1-e1)*(1-e2)/(1-e1*e2)   # 每周期 C1 上的电压变化 (稳态, 一端为 V 一端为 0)
+print(&quot;\n== 2) Ron 有限时等效电阻修正 (C1=10 nF): Req = V/(f*C1*ΔV) ==&quot;)
+C1=10e-9
+for f,th,tl,name in [(1e3,0.5e-3,0.5e-3,&quot;tone 1 kHz&quot;),(10e3,50e-6,50e-6,&quot;tone 10 kHz&quot;),(9860,54.1e-6,47.1e-6,&quot;555 9.86 kHz&quot;)]:
+    for Ron in [125,470,1050]:
+        dv=transfer(1.0,C1,Ron,th,tl)
+        Req=1/(f*C1*dv)
+        print(f&quot;{name:13s} Ron={Ron:5d}: Req={Req/1e3:8.2f} k (理想 {1/(f*C1)/1e3:7.2f} k, 偏差 {(Req*f*C1-1)*100:5.2f} %)&quot;)
+
+print(&quot;\n== 3) 万用表直流验证: 5 V -- R=100k -- 节点(C2=1uF) -- SC 电阻到地 ==&quot;)
+R=100e3; Rdmm=10e6; C2=1e-6
+for f in [500,1000,2000,4000]:
+    Req=1/(f*C1); Rp=1/(1/Req+1/Rdmm)
+    Vn=5*Rp/(R+Rp)
+    rip=Vn*C1/(C1+C2)
+    print(f&quot;f={f:5d} Hz: Req={Req/1e3:6.1f} k  V节点={Vn:5.3f} V (理想无表 {5*Req/(R+Req):5.3f})  每周期纹波≈{rip*1e3:5.1f} mV  建立 τ={(R*Req/(R+Req))*C2*1e3:5.1f} ms&quot;)
+print(&quot;CD4053 OFF 漏电上限 100 nA(25C) x 100k =&quot;, 100e-9*100e3*1e3, &quot;mV&quot;)
+
+print(&quot;\n== 4) SC 低通阶跃 (C1=10n 串在 in/out 之间, C2=1uF 到地): 离散电荷转移 ==&quot;)
+for f in [1e3,10e3]:
+    n=int(0.5*f) if f==1e3 else int(0.05*f)
+    v=0.0; vin=5.0; out=[]
+    a=C1/(C1+C2)
+    for k in range(n):
+        # 相1: C1 充到 vin; 相2: C1 与 C2 电荷均分
+        v=v+(vin-v)*a
+        out.append(v)
+    out=np.array(out); k63=np.argmax(out&gt;=0.632*vin)+1
+    tau_meas=k63/f; tau_th=C2/(f*C1)
+    print(f&quot;f={f:6.0f} Hz: 63% 用 {k63} 个周期 = {tau_meas*1e3:7.2f} ms, 公式 C2/(f C1) = {tau_th*1e3:7.2f} ms, 每步台阶首步 {vin*a*1e3:5.1f} mV&quot;)
+print(&quot;\n== 5) 时钟电平 vs CD4053 VIH(VDD=5 V) = 3.5 V min ==&quot;)
+print(&quot;LM358 @5V 输出高最多 V+-1.5 = 3.5 V -&gt; 正好压线, 不可靠&quot;)
+print(&quot;NE555 @5V VOH 2.75 min/3.3 typ (IOH=-100 mA 条件) -&gt; 轻载手册无保证值, 建议加上拉 1k 或改 Arduino tone()&quot;)
+print(&quot;Arduino 引脚 5 V 轨到轨 -&gt; 满足&quot;)
+</code></pre>
+<p>输出（已运行）：</p>
+<pre><code>== 1) 555 时钟 (NE555 公式 f=1.44/((RA+2RB)C)) ==
+RA=1.0k RB=6.8k C=10n: f=  9863.0 Hz  tH=  54.1 us tL=  47.1 us  占空比 53.4%
+RA=1.0k RB=6.8k C=100n: f=   986.3 Hz  tH= 540.5 us tL= 471.2 us  占空比 53.4%
+
+== 2) Ron 有限时等效电阻修正 (C1=10 nF): Req = V/(f*C1*ΔV) ==
+tone 1 kHz    Ron=  125: Req=  100.00 k (理想  100.00 k, 偏差 -0.00 %)
+tone 1 kHz    Ron=  470: Req=  100.00 k (理想  100.00 k, 偏差 -0.00 %)
+tone 1 kHz    Ron= 1050: Req=  100.00 k (理想  100.00 k, 偏差 -0.00 %)
+tone 10 kHz   Ron=  125: Req=   10.00 k (理想   10.00 k, 偏差  0.00 %)
+tone 10 kHz   Ron=  470: Req=   10.00 k (理想   10.00 k, 偏差  0.00 %)
+tone 10 kHz   Ron= 1050: Req=   10.17 k (理想   10.00 k, 偏差  1.72 %)
+555 9.86 kHz  Ron=  125: Req=   10.14 k (理想   10.14 k, 偏差  0.00 %)
+555 9.86 kHz  Ron=  470: Req=   10.14 k (理想   10.14 k, 偏差  0.01 %)
+555 9.86 kHz  Ron= 1050: Req=   10.32 k (理想   10.14 k, 偏差  1.72 %)
+
+== 3) 万用表直流验证: 5 V -- R=100k -- 节点(C2=1uF) -- SC 电阻到地 ==
+f=  500 Hz: Req= 200.0 k  V节点=3.311 V (理想无表 3.333)  每周期纹波≈ 32.8 mV  建立 τ= 66.7 ms
+f= 1000 Hz: Req= 100.0 k  V节点=2.488 V (理想无表 2.500)  每周期纹波≈ 24.6 mV  建立 τ= 50.0 ms
+f= 2000 Hz: Req=  50.0 k  V节点=1.661 V (理想无表 1.667)  每周期纹波≈ 16.4 mV  建立 τ= 33.3 ms
+f= 4000 Hz: Req=  25.0 k  V节点=0.998 V (理想无表 1.000)  每周期纹波≈  9.9 mV  建立 τ= 20.0 ms
+CD4053 OFF 漏电上限 100 nA(25C) x 100k = 10.0 mV
+
+== 4) SC 低通阶跃 (C1=10n 串在 in/out 之间, C2=1uF 到地): 离散电荷转移 ==
+f=  1000 Hz: 63% 用 101 个周期 =  101.00 ms, 公式 C2/(f C1) =  100.00 ms, 每步台阶首步  49.5 mV
+f= 10000 Hz: 63% 用 101 个周期 =   10.10 ms, 公式 C2/(f C1) =   10.00 ms, 每步台阶首步  49.5 mV
+
+== 5) 时钟电平 vs CD4053 VIH(VDD=5 V) = 3.5 V min ==
+LM358 @5V 输出高最多 V+-1.5 = 3.5 V -&gt; 正好压线, 不可靠
+NE555 @5V VOH 2.75 min/3.3 typ (IOH=-100 mA 条件) -&gt; 轻载手册无保证值, 建议加上拉 1k 或改 Arduino tone()
+Arduino 引脚 5 V 轨到轨 -&gt; 满足
+</code></pre>
+<p>补充：输入串 1 kΩ 后的影响（<code>/workspace/dsp-venv/bin/python /tmp/eng/s34b.py</code>，已运行）</p>
+<pre><code class="language-python">import numpy as np
+C1=10e-9
+def dv(V,Ra,Rb,th,tl):
+    e1=np.exp(-th/(Ra*C1)); e2=np.exp(-tl/(Rb*C1))
+    return V*(1-e1)*(1-e2)/(1-e1*e2)
+print(&quot;输入串 1k 限流后 (充电相 Rs+Ron, 放电相 Ron):&quot;)
+for f in [1e3,5e3,10e3]:
+    t=0.5/f
+    for Ron in [470,1050]:
+        d=dv(1,1000+Ron,Ron,t,t)
+        print(f&quot; f={f/1e3:4.0f} kHz Ron={Ron:4d}: Req 偏差 {(1/d-1)*100:6.2f} %   峰值电流 ≤ {5/(1000+Ron)*1e3:4.1f} mA&quot;)
+print(&quot;不串电阻时 Arduino 5 V 直推, Ron=470 typ: 峰值&quot;, round(5/470*1e3,1), &quot;mA (CD4053 绝对最大 DC 输入电流 ±10 mA)&quot;)
+</code></pre>
+<pre><code>输入串 1k 限流后 (充电相 Rs+Ron, 放电相 Ron):
+ f=   1 kHz Ron= 470: Req 偏差   0.00 %   峰值电流 ≤  3.4 mA
+ f=   1 kHz Ron=1050: Req 偏差   0.00 %   峰值电流 ≤  2.4 mA
+ f=   5 kHz Ron= 470: Req 偏差   0.11 %   峰值电流 ≤  3.4 mA
+ f=   5 kHz Ron=1050: Req 偏差   0.77 %   峰值电流 ≤  2.4 mA
+ f=  10 kHz Ron= 470: Req 偏差   3.45 %   峰值电流 ≤  3.4 mA
+ f=  10 kHz Ron=1050: Req 偏差  10.42 %   峰值电流 ≤  2.4 mA
+不串电阻时 Arduino 5 V 直推, Ron=470 typ: 峰值 10.6 mA (CD4053 绝对最大 DC 输入电流 ±10 mA)
+</code></pre>
+<h2 id="4-参考链接均已实际打开">4. 参考链接（均已实际打开）</h2>
+<ul>
+<li>TI MF10-N 数据手册 SNOS547C：<a href="https://www.ti.com/lit/ds/symlink/mf10-n.pdf">https://www.ti.com/lit/ds/symlink/mf10-n.pdf</a> （curl 下载 PDF）</li>
+<li>ADI MAX7400 产品页：<a href="https://www.analog.com/en/products/max7400.html">https://www.analog.com/en/products/max7400.html</a> （WebFetch 可打开，curl 打不开）</li>
+<li>TI CD4053B 数据手册 SCHS047O：<a href="https://www.ti.com/lit/ds/symlink/cd4053b.pdf">https://www.ti.com/lit/ds/symlink/cd4053b.pdf</a></li>
+<li>TI NE555 数据手册：<a href="https://www.ti.com/lit/ds/symlink/ne555.pdf">https://www.ti.com/lit/ds/symlink/ne555.pdf</a></li>
+<li>Arduino tone() 参考：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Advanced%20IO/tone.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Advanced IO/tone.adoc</a></li>
+<li>Arduino analogRead() 参考：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogRead.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogRead.adoc</a></li>
+<li>Emerson Rosemount 8800 Adaptive Digital Signal Processing 技术说明：<a href="https://www.emerson.com/documents/automation/technical-note-vortex-adaptive-digital-signal-processing-8800-series-rosemount-en-76500.pdf">https://www.emerson.com/documents/automation/technical-note-vortex-adaptive-digital-signal-processing-8800-series-rosemount-en-76500.pdf</a></li>
+<li>[待核实] VDD = 9 V 时 CD4053 的 V_IH：手册只给 5/10/15 V 三档，文中的 6.3 V 是按比例估算的，不能当数据用</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

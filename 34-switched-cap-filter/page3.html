@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>34 开关电容滤波与跟踪滤波 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/34-switched-cap-filter/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="34-开关电容滤波与跟踪滤波--参数与调试篇">34 开关电容滤波与跟踪滤波 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../20-active-filter/page3.html">20 有源滤波 · 参数与调试篇</a>、<a href="../24-oscillator/page3.html">24 振荡器 · 参数与调试篇</a></p>
+<h2 id="这一页解决什么问题">这一页解决什么问题</h2>
+<p><a href="page2.html">原理与实现篇</a> 把开关当成理想开关，得到 τ = <span class="math math-inline">\(C_2/(f_{CLK} C_1)\)</span> 。这一页回答四个实际问题：台阶有多大、时钟能调多宽、真实开关的电阻碍不碍事、混叠怎么防；最后预告「跟踪滤波」在工业上怎么做。</p>
+<h2 id="一台阶c2-和-c1-的比值是一对矛盾">一、台阶：C2 和 C1 的比值是一对矛盾</h2>
+<p><a href="page2.html">原理与实现篇</a> 第三节说过，输出是一级一级跳上去的，第一级台阶 = 输入 × <span class="math math-inline">\(C_1/(C_1 + C_2)\)</span> 。请看图 34-p3-1。</p>
+<p><a class="img-link" href="img/34_p3_1_staircase.png"><img alt="三种电容比的台阶" src="img/34_p3_1_staircase.png" loading="lazy" /></a></p>
+<p><em>图 34-p3-1　输入 4.5 V 时三种 C2/C1 比值的前 25 拍：横轴是拍数，左图全量程，右图把纵轴放大</em></p>
+<p>图 34-p3-1 的三条线用的是同一个时钟（104.4 Hz，每拍约 9.58 ms）、同一只 C1 = 10 nF。左图里红紫色（比值 10）的台阶又高又陡，25 拍就升到约 4 V；橙色（100）25 拍才到 1 V 左右，蓝色（1000）几乎贴在底上。右图把纵轴放大到 0～0.25 V，才看得清橙色每拍跳几十毫伏，蓝色每拍只跳几毫伏。三种比值的数字如下（脚本 code/34_sim.py 算出）：</p>
+<table>
+<thead>
+<tr>
+<th>C2/C1</th>
+<th>第一级台阶</th>
+<th>到 63% 要几拍</th>
+<th>104.4 Hz 时钟下的 τ</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10</td>
+<td>409.1 mV</td>
+<td>10.5</td>
+<td>0.096 s</td>
+</tr>
+<tr>
+<td>100</td>
+<td>44.6 mV</td>
+<td>100.5</td>
+<td>0.958 s</td>
+</tr>
+<tr>
+<td>1000</td>
+<td>4.5 mV</td>
+<td>1000.2</td>
+<td>9.58 s</td>
+</tr>
+</tbody>
+</table>
+<p>矛盾在于：比值越大，台阶越细、输出越平滑，但同一个时钟下 τ 也越长（表的最后一列，比值每大 10 倍，τ 就长 10 倍）。想要「又平滑又快」，只能提高时钟，让每拍更短。本节实验取 100。表中 44.6 mV 只是<strong>第一拍</strong>的台阶：之后每拍的台阶 = 当时剩下的差距 ÷ 101，越来越矮，升到 95% 附近时只剩 225 mV ÷ 101 ≈ 2.2 mV。而且时钟每秒走 104 拍，万用表每秒只刷新 2～3 次，一次刷新之间已经走了几十拍，所以表上看到的是平滑上升的读数，看不出台阶；台阶要用示波器才能看见。</p>
+<h2 id="二时钟能调多宽τ-与时钟成反比">二、时钟能调多宽：τ 与时钟成反比</h2>
+<p>请看图 34-p3-2。</p>
+<p><a class="img-link" href="img/34_p3_2_tau_vs_fclk.png"><img alt="τ 与时钟频率" src="img/34_p3_2_tau_vs_fclk.png" loading="lazy" /></a></p>
+<p><em>图 34-p3-2　τ 随时钟频率变化：直线是公式，叉号是 ngspice 仿真</em></p>
+<p>图 34-p3-2 的两根轴都按「每格乘 10」画，τ 与 <span class="math math-inline">\(f_{CLK}\)</span> 成反比，所以是一条往下斜的直线：时钟 10 Hz 时 τ = 10 s，100 Hz 时 1 s，1000 Hz 时 0.1 s。叉号是 ngspice 对 104.4 Hz 和 52.44 Hz 两个实验点的仿真，正好落在线上。</p>
+<p>这条线往两头延长都有边界：</p>
+<ul>
+<li><strong>时钟太慢</strong>：每拍间隔变长，C2 在两拍之间会经过负载慢慢漏电（见第三节的负载）；每一级台阶持续得更久，看起来更明显，但台阶的<strong>高度不变</strong>（高度只由 C1/(C1 + C2) 和当时的差距决定）；</li>
+<li><strong>时钟太快</strong>：每半个周期里，C1 必须来得及充满。这取决于开关自己的电阻，见第三节。</li>
+</ul>
+<h2 id="三真实开关的导通电阻与负载">三、真实开关的导通电阻与负载</h2>
+<p>真实电路里，C1 充电的路上串着两只「看不见的电阻」，C2 上还可能并着负载。请看图 34-p3-3。</p>
+<p><a class="img-link" href="img/34_p3_3_schem_ron_load.png"><img alt="真实开关与负载" src="img/34_p3_3_schem_ron_load.png" loading="lazy" /></a></p>
+<p><em>图 34-p3-3　实际电路：输入分压的 5 kΩ 内阻、开关内部的 R_on 串在 C1 的路上；RL 或万用表的 10 MΩ 并在 C2 上</em></p>
+<p>对照看：图 34-p3-3 左边，Vin 先经过「分压内阻 5 kΩ」（两只 10 kΩ 并联）到 AX；开关拨到 AX 时，电流再经过朱红色的 R_on 才进入 C1。右边的虚线电阻 RL 接在 C2 和地之间，和 C2 并联；万用表的表笔如果直接夹在 C2 上，也等于在这个位置并了一只 10 MΩ。</p>
+<p><strong>导通电阻 R_on</strong>。CD4053 的开关接通时并不是零电阻。TI 数据手册给出的典型 / 最大值随电源电压变化：</p>
+<table>
+<thead>
+<tr>
+<th>电源 VDD</th>
+<th>典型</th>
+<th>最大</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5 V</td>
+<td>470 Ω</td>
+<td>1050 Ω</td>
+</tr>
+<tr>
+<td>10 V</td>
+<td>180 Ω</td>
+<td>400 Ω</td>
+</tr>
+<tr>
+<td>15 V</td>
+<td>125 Ω</td>
+<td>240 Ω</td>
+</tr>
+</tbody>
+</table>
+<p>注意，常被引用的「125 Ω」只是 15 V 时的典型值。我们用 9 V，按 10 V 那一行估算。</p>
+<p>C1 经过 R_on 充电（图 34-p3-3 中间那一竖），本身也是一个小 RC，时间常数 R_on × C1。代入：180 Ω 时 1.8 µs，400 Ω 时 4.0 µs，就算按 5 V 最坏的 1050 Ω 也只有 10.5 µs。而时钟 104.4 Hz 的半个周期是 4.79 ms，是 R_on × C1 的 456～2661 倍。<a href="../01-components-basics/page2.html">01 元件基础</a> 第二节学过，过 5 个时间常数就基本充满了，所以 <strong>R_on 对本实验没有影响</strong>。ngspice 把 R_on 分别设为 470 Ω 和 1050 Ω，63% 时间都是 0.9619 s，与理想开关相同。</p>
+<p>输入分压的内阻（图 34-p3-3 左上，两只 10 kΩ 并联，5 kΩ）同理：5 kΩ × C1 = 50 µs，半周期里有 96 个这样的时间常数，也来得及。</p>
+<p>只有把时钟提高到几十 kHz 以上、半周期缩短到几个 µs 时，R_on 才会让 C1 充不满，τ 不再按 <span class="math math-inline">\(1/f_{CLK}\)</span> 缩短。</p>
+<p><strong>负载</strong>。我们的 <span class="math math-inline">\(R_{eq}\)</span> 约 957.9 kΩ，是个「很大的电阻」。如果像图 34-p3-3 右边那样在 C2 上直接接一个负载 RL，稳态时就成了 <span class="math math-inline">\(R_{eq}\)</span> 和 RL 的分压：RL 分到的电压 = 4.5 V × RL/(RL + <span class="math math-inline">\(R_{eq}\)</span> )。</p>
+<p><strong>先预测</strong>：接 RL = 1 MΩ，时钟 104.4 Hz 时跟随器读多少？时钟减半到 52.44 Hz 时，读数变大还是变小？<a href="page4.html">动手实验篇</a> 第 7 步要实测这两个数，先写下你的预测。</p>
+<details><summary>答案</summary>
+<ul>
+<li>时钟 104.4 Hz：4.5 V × 1/(1 + 0.9579) ≈ 2.298 V（ngspice 2.304 V）；</li>
+<li>时钟 52.44 Hz： <span class="math math-inline">\(R_{eq}\)</span> 加倍到 1906.9 kΩ，RL 分到的比例更小，读数降到 1.548 V（ngspice 1.555 V）。</li>
+</ul>
+</details>
+<p>普通数字万用表直流挡的输入电阻约 10 MΩ，直接接在 C2 上也会把读数拉低，并让 τ 变短。所以实验里万用表一律读<strong>跟随器的输出</strong>，跟随器的输入几乎不取电流，C2 的电压原样送出（<a href="../12-voltage-follower/page2.html">12 电压跟随器</a>）。<a href="page4.html">动手实验篇</a> 第 7 步会故意接一只 1 MΩ，让你亲眼看到这个效应。</p>
+<p><strong>C2 不要用电解电容</strong>。电解电容有漏电流，相当于在 C2 上并了一个负载，终值达不到输入值，而且时钟越慢误差越大。1 µF 用薄膜电容（代码 105）。</p>
+<h2 id="四混叠怎么防前面挡一挡后面磨一磨">四、混叠怎么防：前面挡一挡，后面磨一磨</h2>
+<p><a href="page2.html">原理与实现篇</a> 第五节说过，高于时钟一半的输入成分会冒充成低频。实用电路在开关电容前后各加一个普通 RC 低通。请看图 34-p3-4。</p>
+<p><a class="img-link" href="img/34_p3_4_schem_antialias.png"><img alt="抗混叠和平滑" src="img/34_p3_4_schem_antialias.png" loading="lazy" /></a></p>
+<p><em>图 34-p3-4　前置抗混叠 RC、开关电容、后置平滑 RC 三段串联</em></p>
+<p>图 34-p3-4 的三段分工：</p>
+<ul>
+<li><strong>① 前置抗混叠 RC（Rf、Cf）</strong>：截止频率取时钟的 1/10 左右。时钟 104.4 Hz 时，理想值是 10.4 Hz，离时钟 5.0 Hz 的干扰（99.4 Hz）被压到原来的 0.104。实际取常见值 Rf = 1.5 kΩ、Cf = 10 µF，截止约 10.6 Hz，99.4 Hz 剩 0.106。Cf 要远大于 C1（这里是 1000 倍）：C1 每拍从 Cf 上取一次电荷，Cf 大，它的电压几乎不被拉动；</li>
+<li><strong>② 开关电容低通</strong>：做真正的滤波，截止频率随时钟走，104.4 Hz 时钟下约 0.166 Hz；</li>
+<li><strong>③ 后置平滑 RC（Rs、Cs）</strong>：把时钟引起的小台阶磨平。它必须接在<strong>跟随器后面</strong>：如果直接挂在 C2 上，Rs、Cs 会像上一节的 RL 一样从 C2 分走电荷。取 Rs = 10 kΩ、Cs = 10 µF，截止约 1.59 Hz，104.4 Hz 的台阶只剩约 0.015。</li>
+</ul>
+<p>算一笔整体账（脚本算出）：前面说「1 Hz 的有用信号保留 0.995」，那只是第一段前置 RC 的结果；1 Hz 还要过 ② 的 0.166 Hz 低通，整体约 0.16（主要是 ② 的 0.164）。本节的低通本来就是给接近直流的慢信号用的。那个 99.4 Hz 干扰经 ① 剩 0.104，被采样后冒充成 5 Hz，再经 ② 又被压到 0.033，两段相乘约 0.0035。</p>
+<p>为什么前置 RC 不能直接代替开关电容？因为它的截止频率是钉死的，而开关电容的截止频率能用时钟拧。前置 RC 只要「远高于有用信号、远低于时钟」就行，要求很宽松。</p>
+<h2 id="五预告跟踪滤波">五、预告：跟踪滤波</h2>
+<p>有了「拧时钟就能移动滤波器」，跟踪滤波就很自然了。请看图 34-p3-5。</p>
+<p><a class="img-link" href="img/34_p3_5_tracking.png"><img alt="跟踪滤波框图" src="img/34_p3_5_tracking.png" loading="lazy" /></a></p>
+<p><em>图 34-p3-5　跟踪滤波框图：在滤波器输入端测频率，再把时钟设成信号频率的 100 倍</em></p>
+<p>图 34-p3-5 的流程是：</p>
+<ol>
+<li>在<strong>滤波器的输入端</strong>测出信号的频率 f（频率怎么测见 36 节施密特整形与频率/脉冲计数（即将上线），用施密特整形后数脉冲）；</li>
+<li>单片机把时钟设成 100f；</li>
+<li>集成开关电容带通滤波器的中心频率 = 时钟 ÷ 100，正好落在 f 上；</li>
+<li>流量变了，f 变了，时钟跟着变，窗口一直罩着信号。</li>
+</ol>
+<p>为什么要在输入端测，而不在滤波器输出端测？刚上电时时钟还没对准，窗口不在信号上，滤波器的输出几乎没有信号，从那里测不出 f，时钟就永远对不上。从输入端测就没有这个问题。</p>
+<p>为什么中心频率正好是「时钟 ÷ 100」？芯片里的带通是用积分器搭的（就是 <a href="../14-integrator/page1.html">14 积分器</a> 那种电路），每个积分器里的电阻都是开关电容，等效电阻 <span class="math math-inline">\(R = 1/(f_{CLK} C)\)</span> ，和本节的一样。电阻跟着时钟变小，RC 跟着变短，中心频率 <span class="math math-inline">\(f_0\)</span> 就和时钟成正比；芯片设计时把片内电容的比值定好，让比例正好是 1/100。</p>
+<p>脚本算出：信号 20 Hz 时时钟 2000 Hz，50 Hz 时 5000 Hz，200 Hz 时 20000 Hz。</p>
+<p>真正用的芯片是集成开关电容滤波器，以 <strong>MF10</strong>（TI 数据手册见文末参考资料）为例：一片里有两个通用二阶滤波器，可接成带通；第 12 脚接 V+ 时中心频率 = 时钟 ÷ 50，接地（±5 V 供电时的 0 V；单电源供电时接电源中点）时 = 时钟 ÷ 100；这个比值典型误差 ±0.2%、最大 ±0.6%（这是 MF10A 的数字；MF10C 最大 ±1.5%）；供电（V+ 到 V− 的总电压）9～14 V；输出上带着约 10 mV 的时钟残留，要靠后置 RC 磨掉。MF10 的数据手册专门有一节「SAMPLED DATA SYSTEM CONSIDERATIONS」（采样系统的注意事项），讲的就是本页第一节的台阶和第四节的混叠，可以对照阅读。</p>
+<p>另一种常见芯片 <strong>MAX7400</strong> 是 8 阶椭圆<strong>低通</strong>（阶数越高，通带外掉得越陡；「椭圆」是一种掉得特别陡、但通带里有小波纹的设计），时钟 ÷ 100 = 截止频率。它不能当跟踪的带通，只能在跟踪电路里做抗混叠或平滑的低通。</p>
+<p>跟踪还有一个陷阱：流量为零、信号消失时，测频电路只能测到噪声，时钟跟着噪声乱跑，窗口「追噪声」。所以要加一个条件：<strong>信号幅度超过门限才更新时钟</strong>，门限的做法正是带回差的施密特比较器（<a href="../10-voltage-comparator/page1.html">10 电压比较器</a> 讲过回差，36 节会用它整形）。这一节先不进实验。</p>
+<h2 id="六故障排查表">六、故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>跟随器输出一上电就等于输入，没有慢慢升</td>
+<td>14 脚直接连到了 12 或 13 脚；或 C1、C2 插错位置</td>
+<td>断电后用通断挡查第 30、31、32 列之间有没有直接短路</td>
+<td>按动手实验篇第二阶段的面包板图重插 C1（a30）、C2（a31）</td>
+</tr>
+<tr>
+<td>输出一直是 0 V，换跳线也不动</td>
+<td>INH（6 脚）或 VEE（7 脚）悬空；VDD（16 脚）没接</td>
+<td>直流挡测 6、7、8 脚应为 0 V，16 脚应为 9 V</td>
+<td>第 33、34、35 列下半各接 GND，a28 接 +9 V</td>
+</tr>
+<tr>
+<td>输出乱跳，手一靠近就变</td>
+<td>控制脚 9、10 或 11 悬空；时钟线没插牢</td>
+<td>测 9、10 脚应为 0 V，11 脚直流挡约 4.4 V</td>
+<td>a34、a35 接 GND，重插 j11→a33</td>
+</tr>
+<tr>
+<td>时钟点读数接近 7.8 V 或 0.6 V 不变</td>
+<td>振荡器没振：Ct 没接、Rt 位置错</td>
+<td>断电，拔掉时钟线 j11→a33，再接回电池测第 11 列</td>
+<td>对照动手实验篇第一阶段的面包板图检查 Rt h11–h15、Ct j15、Rc i11–i16</td>
+</tr>
+<tr>
+<td>τ 变化的方向和预期相反（时钟加快，反而变慢）</td>
+<td>把 <span class="math math-inline">\(R_{eq} = 1/(f_{CLK} C_1)\)</span> 记成了 <span class="math math-inline">\(f_{CLK} C_1\)</span> ，以为时钟越快电阻越大</td>
+<td>看秒表：时钟减半后，63% 的时间应约加倍</td>
+<td>回到 <a href="page2.html">原理与实现篇</a> 第一节，用「每秒搬几次电荷」重推一遍</td>
+</tr>
+<tr>
+<td>时钟减半后 τ 没有加倍</td>
+<td>Rt 没换成两只 68 kΩ 串联：第二只应插 g13–g15，第一只改插 h11–h13</td>
+<td>秒表重测，同时看时钟点平均值是否仍约 4.4 V</td>
+<td>按测量表第 6 步重插 Rt</td>
+</tr>
+<tr>
+<td>终值明显低于 4.5 V</td>
+<td>万用表直接接在 C2 上；C2 是电解电容；RL 忘了拔</td>
+<td>表笔是否在第 15 列（跟随器输出）；看 C2 的型号</td>
+<td>改读跟随器；换薄膜电容；断电后拔掉 a21 的 RL</td>
+</tr>
+<tr>
+<td>τ 和计算值差 10%～20%，但时钟减半仍是两倍关系</td>
+<td>电容误差：C1、C2 常见 ±10%</td>
+<td>用电容挡测 C1、C2</td>
+<td>把实测电容填进 <a href="page4.html">动手实验篇</a> 的 Python 核对</td>
+</tr>
+<tr>
+<td>τ 偶尔突然变长，按一下面包板又恢复</td>
+<td>C1 引脚细或弯了，接触时好时坏；C1 一断开，电荷就搬不过去，输出停在原地</td>
+<td>读数停住时用笔帽轻压 C1（只按，不拔插），看读数是否马上继续走</td>
+<td>C1、C2 引脚剪短、插到底，换一排没被撑大的插孔</td>
+</tr>
+<tr>
+<td>把 C1 换成 100 pF 之后，τ 比算的短，换一排插孔又变</td>
+<td>开关芯片自己的引脚电容（数据手册：公共端约 9 pF、通道端约 5 pF）加上面包板排间电容，和 C1 并联一起搬电荷；C1 = 10 nF 时可以忽略，100 pF 时就占到约一成</td>
+<td>断电拔掉 C1，再接回电池，看输出是否仍在慢慢上升（那就是寄生电容在搬）</td>
+<td>C1 不要小于 1 nF</td>
+</tr>
+<tr>
+<td>输出上有随时钟跳的小毛刺，挪一下导线大小就变</td>
+<td>时钟线和 C1、C2 的线并排走，相邻导线间的小电容把时钟的跳变「耦合」过去</td>
+<td>断电，把天蓝色时钟线挪开 1 cm，再接回电池看</td>
+<td>时钟线从芯片另一侧绕，和信号线交叉时垂直交叉，不要并排</td>
+</tr>
+</tbody>
+</table>
+<p>表中「τ 和计算值差 10%～20%，但时钟减半仍是两倍关系」那一行说明了开关电容的一个优点：τ 只取决于 <strong>C2 与 C1 的比值</strong>和时钟。集成芯片里两只电容做在同一块硅片上，比值能做得很准，所以集成开关电容滤波器的频率比分立 RC 准得多。</p>
+<h2 id="七练习">七、练习</h2>
+<p>下面的数字都和正文不同，请自己算，不要回翻。</p>
+<p><strong>练习 1</strong>：C1 = 10 nF、C2 = 0.47 µF，时钟 500 Hz，τ 是多少？</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(R_{eq} = 1/(500 \times 10^{-8})\)</span> = 200 kΩ，τ = 200 kΩ × 0.47 µF = 94 ms。</p>
+</details>
+<p><strong>练习 2</strong>：时钟 104.4 Hz，在 C2 上接一只 2.2 MΩ 负载，跟随器输出的稳态读数是多少？时钟减半到 52.44 Hz 呢？为什么时钟减半后读数更低？</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(R_{eq}\)</span> ≈ 957.9 kΩ，与 2.2 MΩ 分压：4.5 V × 2.2/(2.2 + 0.958) ≈ 3.13 V。时钟减半， <span class="math math-inline">\(R_{eq}\)</span> 加倍到 1906.9 kΩ：4.5 V × 2.2/(2.2 + 1.907) ≈ 2.41 V。 <span class="math math-inline">\(R_{eq}\)</span> 变大，分到 RL 上的比例更小，所以读数更低。负载电阻比 1 MΩ 大，两种时钟下的读数都比正文的 1 MΩ 高。</p>
+</details>
+<p><strong>练习 3</strong>：时钟换成 208.8 Hz，输入里混进了一个 200 Hz 的干扰。不加前置 RC 时它会冒充成多少赫兹？前置 RC 的截止频率按「时钟的 1/10」取 20.88 Hz，200 Hz 的干扰还剩多少？</p>
+<details><summary>答案</summary>
+<p>离 200 Hz 最近的时钟整数倍是 1 倍的 208.8 Hz，差 8.8 Hz，所以冒充成约 8.8 Hz。前置 RC 对 200 Hz 的保留比例 = <span class="math math-inline">\(1/\sqrt{1 + (200/20.88)^2} \approx\)</span> 0.104。和正文 99.4 Hz 的结果几乎一样，这不是巧合：两次都按「时钟的 1/10」取截止，干扰又都紧挨着时钟，干扰频率约是截止频率的 9.5 倍（脚本算出 9.52 和 9.58），所以剩下的比例几乎不随时钟变。</p>
+</details>
+<p><strong>练习 4（变式）</strong>：跟踪滤波改用 MF10 的 <strong>50:1</strong> 模式（第 12 脚接 V+）。流量增大，信号从 50 Hz 变到 200 Hz，时钟要从多少变到多少？和 100:1 模式比，时钟是高了还是低了？如果这时信号突然消失，会发生什么？</p>
+<details><summary>答案</summary>
+<p>时钟从 2500 Hz 变到 10000 Hz（都是信号频率的 50 倍），只有 100:1 模式的一半，所以时钟低了。信号消失后测频电路只能测到噪声，时钟乱跑，窗口去「追噪声」；要加幅度门限，只有信号够大才更新时钟。</p>
+</details>
+<p><strong>练习 5（迁移）</strong>：把 <a href="../14-integrator/page1.html">14 积分器</a> 的输入电阻 R 换成本节的「开关 + C1」。C1 = 10 nF、积分电容 0.1 µF，时钟 104.4 Hz 时积分时间常数 RC 是多少？时钟加倍呢？这样做有什么好处？</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(R_{eq} = 1/(104.4 \times 10^{-8}) \approx\)</span> 957.9 kΩ，RC ≈ 957.9 kΩ × 0.1 µF ≈ 95.8 ms。时钟加倍， <span class="math math-inline">\(R_{eq}\)</span> 减半，RC 减半到约 47.9 ms，积分变快一倍。好处是积分快慢只由时钟和两只电容的比值决定：集成电路里做不出准确的大电阻，却能做出准确的电容比，时钟又可以用晶振做得很准。MF10 这类芯片里的积分器就是这样做的。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<ul>
+<li>C2/C1 越大，台阶越细，但同一时钟下 τ 越长；本实验取 100，台阶 44.6 mV；</li>
+<li>τ 与时钟成反比，时钟太快时要考虑 R_on，CD4053 的 R_on 在 5 V 时典型 470 Ω、10 V 时 180 Ω，本实验的时钟下影响可以忽略；</li>
+<li><span class="math math-inline">\(R_{eq}\)</span> 接近 1 MΩ，负载会和它分压，所以要用跟随器读数，C2 用薄膜电容；</li>
+<li>开关电容前加抗混叠 RC、后加平滑 RC；</li>
+<li>跟踪滤波：测频（见 36 节）→ 时钟 = 100f → MF10 带通跟着信号走；MAX7400 是低通，不是带通。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>TI CD4053B 数据手册（导通电阻随电源电压的表格）：<a href="https://www.ti.com/lit/ds/symlink/cd4053b.pdf">https://www.ti.com/lit/ds/symlink/cd4053b.pdf</a></li>
+<li>TI MF10-N 数据手册（50:1 / 100:1、时钟残留、SAMPLED DATA SYSTEM CONSIDERATIONS）：<a href="https://www.ti.com/lit/ds/symlink/mf10-n.pdf">https://www.ti.com/lit/ds/symlink/mf10-n.pdf</a></li>
+<li>ADI MAX7400 产品页（8 阶椭圆低通，100:1，1 Hz～10 kHz）：<a href="https://www.analog.com/en/products/max7400.html">https://www.analog.com/en/products/max7400.html</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

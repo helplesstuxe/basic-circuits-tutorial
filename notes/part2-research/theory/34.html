@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>34 开关电容滤波与跟踪滤波：理论研究笔记</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/34.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="34-开关电容滤波与跟踪滤波理论研究笔记">34 开关电容滤波与跟踪滤波：理论研究笔记</h1>
+<blockquote>
+<p>依据：notes/34-research.md（45 行）、PART2_BRIEF.md §10（第 2、3、7 条）。34-switched-cap-filter/ 目前只有 img/，没有页面，勘误针对研究笔记。计算脚本：/workspace/scratch/theory2/c34.py。</p>
+</blockquote>
+<h2 id="1-推导链高中起点">1. 推导链（高中起点）</h2>
+<ol>
+<li><strong>Q = CU + 电流 = 电荷/时间（高中）</strong>：C1 先接 V1 充到 Q = C1V1，再接 V2 变成 C1V2，每个时钟周期搬运 ΔQ = C1(V1−V2)。每秒 f_CLK 次 → 平均电流 I = f_CLK·C1·(V1−V2)，所以 R_eq = 1/(f_CLK·C1)（第 11 行 ✓）。类比&quot;小桶舀水&quot;。</li>
+<li><strong>代入 RC 低通</strong>：τ ≈ R_eq·C2 = C2/(f_CLK·C1)，截止频率 f_c = 1/(2πτ) ∝ f_CLK（第 12 行 ✓）。</li>
+<li><strong>精确离散模型（只用电荷守恒 + 等比数列）</strong>：每拍 C1（电压 V_in）与 C2（电压 V2）并联分享电荷，V2′ = (C1V_in + C2V2)/(C1+C2)。与终值的差距每拍乘 r = C2/(C1+C2)，n 拍后剩 rⁿ。剩 1/e 所需时间 τ_exact = T/ln(1 + C1/C2) ≈ T(C2/C1 + ½)。C1 = 10 nF、C2 = 1 µF：τ_exact = 100.50 T，比近似值大 0.50%（1 kHz：0.1005 s；10 kHz：10.05 ms）。可以只讲&quot;每拍差距乘 100/101&quot;，不用对数。</li>
+<li><strong>集成 SC 滤波器</strong>：把同一原理做成积分器，所以 f_0 只由时钟比决定。MF10：引脚 12 接 V+ → f_CLK/f_0 = 50:1，接 0 V（±5 V 供电时）→ 100:1；MAX7400：8 阶椭圆<strong>低通</strong>，时钟/截止 100:1。</li>
+<li><strong>跟踪滤波</strong>：先粗测信号频率 f（36 节），再令 f_CLK = 100·f（MF10，100:1），带通中心随流量移动。</li>
+<li><strong>代价</strong>：时钟台阶（MF10 手册 Mode 1、Q = 10 时时钟馈通典型 10 mV）；混叠——输入中 f_CLK 附近的成分被&quot;折&quot;到低频，要前置 RC 抗混叠、后置 RC 平滑（采样定理只给结论，不推导）。</li>
+</ol>
+<h2 id="2-符号表">2. 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>f_CLK, T</td>
+<td>开关时钟频率 / 周期</td>
+<td>Hz, s</td>
+</tr>
+<tr>
+<td>C1</td>
+<td>被切换的&quot;小桶&quot;电容（10 nF）</td>
+<td>nF</td>
+</tr>
+<tr>
+<td>C2</td>
+<td>输出积分/保持电容（1 µF）</td>
+<td>µF</td>
+</tr>
+<tr>
+<td>R_eq</td>
+<td>开关电容等效电阻 1/(f_CLK·C1)</td>
+<td>kΩ</td>
+</tr>
+<tr>
+<td>τ, τ_exact</td>
+<td>近似 / 精确离散时间常数</td>
+<td>s</td>
+</tr>
+<tr>
+<td>f_0, f_c</td>
+<td>带通中心 / 低通截止频率</td>
+<td>Hz</td>
+</tr>
+<tr>
+<td>r_ON</td>
+<td>CD4053B 导通电阻</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td>R_A, R_B, C</td>
+<td>555 定时元件</td>
+<td>kΩ, nF</td>
+</tr>
+<tr>
+<td>t_H, t_L, D</td>
+<td>555 高/低电平时间、占空比</td>
+<td>s, %</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误与补充">3. 勘误与补充</h2>
+<ol>
+<li><strong>第 6、36 行 &quot;CD4053B 导通电阻 125 Ω（典型）&quot;</strong>：125 Ω 是手册首页 &quot;over input range for VDD = 15V&quot; 的值。page4 用 5 V 单电源（第 40 行），表中 VDD = 5 V 时 r_ON 典型 470 Ω、最大 1050 Ω（25 °C）；10 V 时 180/400 Ω。SPICE 计划应改用 470 Ω（并跑 1050 Ω 最坏情况）。与 35 节同一问题，也与 BRIEF §4&quot;统一 125 Ω&quot;冲突，请协调人定。影响（<a href="http://c34.py">c34.py</a> 含 r_ON 的逐拍仿真，D = 53.4%）：1 kHz 时 t63 不变（0.101 s）；10 kHz 时 470 Ω 不变（10.1 ms），1050 Ω 变成 10.3 ms（+2%）。结论对本实验影响小，但数值要用对。</li>
+<li><strong>第 21 行 τ 值</strong>：近似 0.1 s/10 ms 正确；精确离散值 0.1005 s/10.05 ms（+0.5%），review/spice/34.md 对比时以此为准，不要把 0.5% 当成 SPICE 误差。</li>
+<li><strong>第 20 行 R_eq</strong>：1 nF、10 kHz → 100 kΩ ✓。另注：第 21 行的 C1 = 10 nF 在 1 kHz 时 R_eq = 100 kΩ、10 kHz 时 10 kΩ，正文两组例子的 C1 不同（1 nF 与 10 nF），建议写明以免混淆。</li>
+<li><strong>第 22、41 行 555</strong>：f = 1.44/((1 k + 2×6.8 k)×10 nF) = 9.863 kHz ✓；用 0.693 系数算得 9.884 kHz（两系数差 0.2%，正文选一个统一）。C = 100 nF → 986 Hz（第 41 行&quot;约 1 kHz&quot; ✓）。t_H = 54.1 µs，t_L = 47.1 µs，D = 53.4%。</li>
+<li><strong>第 41 行与 BRIEF §10.7</strong>：BRIEF 规定能用 24 节 LM358 振荡器替代的优先用它；555 第一次出现时给引脚图、原理图和一句话原理，且明确是新器件。研究笔记写&quot;或改用&quot;，应改为&quot;优先 LM358，555 为备选&quot;（或说明为何必须用 555）。</li>
+<li><strong>新增：时钟高电平是否够驱动 CD4053 控制端</strong>：CD4053B 在 VDD = 5 V 时 V_IH(min) = 3.5 V。LM358B 5 V 供电、1 mA 时输出离正轨典型 1.4 V（最大 1.48 V）→ 约 3.5–3.6 V，<strong>刚好卡在门限</strong>；NE555 5 V 时手册只给 I_OH = −100 mA 的 2.75/3.3 V，轻载值没给 [待核实]。建议：LM358 振荡器后加上拉/比较器，或 CD4053 控制端用 Arduino 数字脚驱动（5 V CMOS 电平），并在页面说明 V_IH。</li>
+<li><strong>第 13–14 行</strong>：MF10 两种时钟比由引脚 12 选（50:1 对应接 V+、100:1 对应接 0 V），手册给典型误差 ±0.2%、最大 ±0.6%（MF10A，Q = 10，Mode 1）。MF10 供电 V+ − V− 为 9–14 V，符合 §10.3 的 9–12 V 单电源 + 虚地。<strong>MAX7400 是低通</strong>，不能做第 14 行的&quot;带通中心&quot;跟踪，只能做跟踪的抗混叠/平滑低通；跟踪带通应写 MF10。</li>
+<li><strong>第 5 行 MAX7400</strong>：已用 WebFetch 确认：8 阶椭圆低通，1 Hz–10 kHz，100:1，+5 V，2 mA，阻带 82 dB，过渡比 1.5 ✓。</li>
+<li><strong>新增：第 42 行 Arduino ADC 读 C2</strong>：C2 节点源阻抗就是 R_eq（1 kHz 时 100 kΩ）。ATmega328P 手册（Microchip DS40002061A，电气特性表）I/O 引脚输入漏电流 I_IL/I_IH 最大 1 µA（V_CC = 5.5 V），最坏误差 1 µA × 100 kΩ = 0.1 V（典型远小于此）。建议 ADC 前加 LM358 跟随器，或只用万用表读稳态，满足 §10.2 万用表可验证。</li>
+<li><strong>第 29 行&quot;追噪声&quot;</strong>：补一句，用 35/36 节的幅度门限（横河原文：施密特触发器只检出超过一定幅度的信号）做锁定条件，前后节呼应。</li>
+</ol>
+<h2 id="4-超纲工具与绕开办法">4. 超纲工具与绕开办法</h2>
+<ul>
+<li>指数/对数：用&quot;每拍差距乘 100/101，101 拍后剩约 37%&quot;代替 ln；(1 − 1/101)¹⁰¹ ≈ 1/e 可用计算器验证。</li>
+<li>采样/混叠：用&quot;车轮倒转&quot;或&quot;频闪&quot;类比，只给 f_CLK ± f 会折到 f 的结论。</li>
+</ul>
+<h2 id="5-参考来源本次实际打开">5. 参考来源（本次实际打开）</h2>
+<ul>
+<li>TI MF10-N 数据手册 <a href="https://www.ti.com/lit/ds/symlink/mf10-n.pdf">https://www.ti.com/lit/ds/symlink/mf10-n.pdf</a> （curl 本地文本）：50:1/100:1（引脚 12），f_CLK 最大 1.5 MHz（典型），V+ − V− 9–14 V，时钟馈通 10 mV。</li>
+<li>ADI MAX7400 产品页 <a href="https://www.analog.com/en/products/max7400.html">https://www.analog.com/en/products/max7400.html</a> （WebFetch）：见勘误 8。</li>
+<li>TI CD4053B <a href="https://www.ti.com/lit/ds/symlink/cd4053b.pdf">https://www.ti.com/lit/ds/symlink/cd4053b.pdf</a> （curl）：r_ON 5 V 470/1050 Ω、10 V 180/400 Ω、15 V 125/240 Ω；V_IH 5 V 时 3.5 V；OFF 漏电 ±10 pA 典型。</li>
+<li>TI NE555 <a href="https://www.ti.com/lit/ds/symlink/ne555.pdf">https://www.ti.com/lit/ds/symlink/ne555.pdf</a> （curl）：V_OH（5 V、−100 mA）2.75/3.3 V。</li>
+<li>TI LM358B <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> （curl）：正轨摆幅 1.4/1.48 V（1 mA）。</li>
+<li>Microchip ATmega48A/…/328P 数据手册 DS40002061A <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf</a> （curl）：I_IL/I_IH 最大 1 µA。</li>
+</ul>
+<h2 id="6-待核实">6. [待核实]</h2>
+<ul>
+<li>Emerson 8800 ADSP 技术说明（第 8 行；本节未重新打开）。</li>
+<li>NE555 在 5 V、轻负载（CMOS 输入）下的 V_OH。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

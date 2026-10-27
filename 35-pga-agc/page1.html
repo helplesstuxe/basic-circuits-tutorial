@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/35-pga-agc/page1.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="35-程控增益与-agc--直觉篇">35 程控增益与 AGC · 直觉篇</h1>
-<p>上一页：34 节开关电容滤波与跟踪滤波（即将上线） · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a>、<a href="../09-precision-rectifier/page1.html">09 精密整流 · 直觉篇</a>、<a href="../14-integrator/page1.html">14 积分电路 · 直觉篇</a></p>
+<p><a href="../34-switched-cap-filter/page4.html">上一页：34 开关电容滤波与跟踪滤波 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../13-bridge-rectifier/page1.html">13 桥式整流 · 直觉篇</a>、<a href="../09-precision-rectifier/page1.html">09 精密整流 · 直觉篇</a>、<a href="../14-integrator/page1.html">14 积分电路 · 直觉篇</a></p>
 <h2 id="为什么一个固定的放大倍数不够用">为什么一个固定的放大倍数不够用</h2>
 <p>前面几节做的放大器，放大倍数都是焊死的：<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a> 里换一只电阻，倍数就变，但电路一旦搭好，倍数就固定了。流量测量里偏偏有很多信号，大小会变好几十倍甚至上百倍。</p>
 <ul>
@@ -75,7 +75,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>信号从左往右走：传感器的小信号进程控增益放大器（PGA，Programmable Gain Amplifier），放大后进 ADC，单片机拿到读数。单片机做的事情很简单：读数超过满量程的 90 % 就降一档，低于 30 % 就升一档，然后通过下面那根选档线告诉 PGA 换哪个电阻。这样一圈就是一个反馈环，和运放的负反馈道理一样，只不过它是用程序一步一步走的，所以叫<strong>数字 AGC</strong>。</p>
 <p>程控增益有三种常见做法：</p>
 <ol>
-<li><strong>模拟开关换电阻</strong>：同相放大器的放大倍数是 <span class="math math-inline">\(1 + R_f/R_g\)</span> ，用一个 8 选 1 的模拟开关（CD4051）从六只 <span class="math math-inline">\(R_g\)</span> 里挑一只，倍数就跟着变。这就是本节动手实验搭的电路，便宜、好懂，但开关本身有几百欧电阻，会带来误差，<a href="page2.html">35 程控增益与 AGC · 原理与实现篇</a> 专门讲它（电路图见那一页「二、最直接的接法」）。模拟开关在 34 节开关电容滤波与跟踪滤波（即将上线） 用过：它是一只由数字脚控制通断的“电子开关”，接通时不是导线，而是几百欧的电阻，而且被开关的信号电压不能超出它自己的电源。</li>
+<li><strong>模拟开关换电阻</strong>：同相放大器的放大倍数是 <span class="math math-inline">\(1 + R_f/R_g\)</span> ，用一个 8 选 1 的模拟开关（CD4051）从六只 <span class="math math-inline">\(R_g\)</span> 里挑一只，倍数就跟着变。这就是本节动手实验搭的电路，便宜、好懂，但开关本身有几百欧电阻，会带来误差，<a href="page2.html">35 程控增益与 AGC · 原理与实现篇</a> 专门讲它（电路图见那一页「二、最直接的接法」）。模拟开关在 <a href="../34-switched-cap-filter/page2.html">34 开关电容滤波与跟踪滤波 · 原理与实现篇</a> 用过：它是一只由数字脚控制通断的“电子开关”，接通时不是导线，而是几百欧的电阻，而且被开关的信号电压不能超出它自己的电源。</li>
 <li><strong>集成 PGA</strong>：例如 PGA113，用 SPI 串口写一个数就选好增益，开关误差在芯片里已经处理好了。</li>
 <li><strong>线性分贝的可变增益放大器（VGA）</strong>：例如 ADI 的 AD8331，增益不是一档一档的，而是由一个控制电压连续调节，每伏 50 dB（dB 是分贝，下面「回顾：分贝」再复习一次），在低增益模式下从 −4.5 dB 调到 43.5 dB。它是超声接收链里的常客。</li>
 </ol>

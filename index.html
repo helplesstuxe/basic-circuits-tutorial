@@ -51,8 +51,8 @@ mjx-container{max-width:100%}
 <p><a class="img-link" href="img/00_dag.png"><img alt="图 00-1 知识点依赖图" src="img/00_dag.png" loading="lazy" /></a></p>
 <p><em>图 00-1　知识点依赖图：箭头从前置指向后继，颜色区分线索。由 <a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/code/figs/00_figs.py">code/figs/00_figs.py</a> 生成。</em></p>
 <p>阅读顺序就是编号顺序，按它读不会遇到「没学过的概念」：</p>
-<p>01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 35 → 40 → 41</p>
-<p>第二部分「流量计信号链与功放」（30–45，设计见 <a href="notes/00-design-part2.html">notes/00-design-part2.md</a>）正在陆续上线，目前已上线 30、35、40、41，后面的节点审完一批发布一批。还没上线的节点在导航条和正文里写成「NN 节…（即将上线）」，不是链接：读完 30 page4 请从下面的目录表进入 35，读完 35 page4 再进入 40（40 page4 的「下一页」直接到 41）。</p>
+<p>01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30 → 33 → 34 → 35 → 40 → 41</p>
+<p>第二部分「流量计信号链与功放」（30–45，设计见 <a href="notes/00-design-part2.html">notes/00-design-part2.md</a>）正在陆续上线，目前已上线 30、33、34、35、40、41，后面的节点审完一批发布一批。还没上线的节点在导航条和正文里写成「NN 节…（即将上线）」，不是链接：读完 30 page4 请从下面的目录表进入 33（33 page4 → 34 → 35 的「下一页」直接相连），读完 35 page4 再从目录表进入 40（40 page4 的「下一页」直接到 41）。</p>
 <p>每个节点内部按 page1 → page2 → page3 → page4 读完，再进入下一个节点。例如开头是：01 page1 → 01 page2 → 01 page3 → 01 page4 → 02 page1 → … → 02 page4 → 03 page1 → …，目前最后一页是 41 page4。每页第 3 行的导航条就按这个顺序排好了「上一页」「下一页」：page3 的下一页是本节点的 page4，page4 的下一页是下一个节点的 page1，29 page4 的下一页回到本 README。</p>
 <h2 id="目录">目录</h2>
 <p>前置知识是 01、02、03，其余是 20 个标准电路；06、07、23、26、28、29 是扩展篇，讲电子制作中最常用的开关、驱动与隔离电路，标准与其余节点相同。</p>
@@ -309,6 +309,22 @@ mjx-container{max-width:100%}
 <td>已完成（第二部分）</td>
 </tr>
 <tr>
+<td>33</td>
+<td>带通与 50 Hz 陷波</td>
+<td><a href="33-bandpass-notch/page1.html">33-bandpass-notch</a></td>
+<td></td>
+<td>作者 B</td>
+<td>已完成（第二部分）</td>
+</tr>
+<tr>
+<td>34</td>
+<td>开关电容滤波与跟踪滤波</td>
+<td><a href="34-switched-cap-filter/page1.html">34-switched-cap-filter</a></td>
+<td></td>
+<td>作者 B</td>
+<td>已完成（第二部分）</td>
+</tr>
+<tr>
 <td>35</td>
 <td>程控增益与 AGC</td>
 <td><a href="35-pga-agc/page1.html">35-pga-agc</a></td>
@@ -377,7 +393,7 @@ circuits-venv/bin/python tools/run_blocks.py --scripts  # 运行 code/ 里全部
 <li>
 <p><strong>ngspice</strong>（本仓库在 ngspice-44.2 下测试）。下面这些要调用它，没装就会报错：</p>
 <ul>
-<li><code>spice/</code> 下全部 33 个 <code>run.py</code>；</li>
+<li><code>spice/</code> 下全部 35 个 <code>run.py</code>；</li>
 <li><code>code/18_sim.py</code>（其中的 <code>lm358()</code> 调用 ngspice）和 <code>code/figs/18_figs.py</code>（通过 <code>18_sim.lm358</code> 间接调用）；</li>
 <li><code>code/figs/02_figs.py</code>、<code>03_figs.py</code>、<code>05_figs.py</code>、<code>08_figs.py</code>、<code>12_figs.py</code>、<code>16_figs.py</code>。</li>
 </ul>
