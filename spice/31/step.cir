@@ -1,0 +1,16 @@
+* 31 跨阻放大器：光电二极管 = 理想电流源 + C_D；看 C_F 对阶跃响应的影响（page2 / page3）
+.include ../models/LMC648x_TI.lib
+.param rf=1Meg cf=0 cd=70p iph=1u
+* 单电源 5 V、同相端 0.9016 V 的电路，整体平移 −0.9016 V 后完全等价：V+ = 4.0984 V，V− = −0.9016 V，同相端 = 0 V。
+* 这样做只是为了让 ngspice 的直流工作点收敛（单电源写法下 TI 宏模型的 gmin/source stepping 不收敛）；输出电压读数 + 0.9016 V 即为实物读数。
+VCC vcc 0 DC 4.0984
+VEE vee 0 DC -0.9016
+VB vb 0 DC 0
+XU1 vb inm vcc vee out LMC648x
+RF out inm {rf}
+CF out inm {cf}
+* 光电二极管：结电容 70 pF（运放自身 3 pF 已在模型里）；光电流从反相端流向 0 V（阴极接反相端）
+CD inm 0 {cd}
+IPH inm 0 PULSE(0 {iph} 50u 20n 20n 1 2)
+.tran 20n 400u 0 20n
+.end

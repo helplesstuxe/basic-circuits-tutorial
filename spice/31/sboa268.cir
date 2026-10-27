@@ -1,0 +1,10 @@
+* TI SBOA268 例子复现：RF 100k ∥ CF 150p（原文叫 R1、C1，这里改名，免得和本节去耦电容 C1 重名），Ci 6 pF。原文用 OPA170 ±15 V，这里换成 LMC648x ±5 V（小信号带宽只由 RF·CF 决定）
+.include ../models/LMC648x_TI.lib
+VCC vcc 0 DC 5
+VEE vee 0 DC -5
+XU1 0 inm vcc vee out LMC648x
+RF out inm 100k
+CF out inm 150p
+IIN 0 inm DC 0 AC 1u
+.ac dec 50 10 10Meg
+.end

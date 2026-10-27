@@ -1,0 +1,24 @@
+* 31 跨阻放大器：page4 实验电路（直流校准 + 换运放 + 慢速 τ 演示）
+* 运放 U1A：TI LMC648x 宏模型（或 LM358 模型，由 run.py 替换 XU1 一行）；Arduino 5V 当理想 5 V 源
+.include ../models/LMC648x_TI.lib
+.include ../models/LMx58_LM2904.lib
+.param rcalto=0 rf=1Meg cf=1p
+VCC vcc 0 DC 5
+RB1 vcc vb 10k
+RB2 vb 0 2.2k
+CB vb 0 100n
+XU1 vb inm vcc 0 out LMC648x
+RF out inm {rf}
+CF out inm {cf}
+* 校准电阻：一端在反相端 inm，另一端 rc 接 0 V 或 5 V（rcalto = 0 或 5）
+RCAL inm rc 10Meg
+VRC rc 0 DC {rcalto}
+* LM358 宏模型在单电源下直流工作点会落到非物理解（输入 6 V），run.py 对它用 .ic + uic 从正常状态起步
+.ic v(vb)=0.9 v(inm)=0.9 v(out)=0.95
+.control
+op
+echo "RES vb $&v(vb)"
+echo "RES vout $&v(out)"
+echo "RES vinm $&v(inm)"
+.endc
+.end

@@ -1,6 +1,6 @@
 # 30 仪表放大器与电桥 · 动手实验篇
 
-[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · 下一页：31 节跨阻放大器（TIA）（即将上线） · 前置节点：[12 电压跟随器 · 直觉篇](../12-voltage-follower/page1.md)、[16 差分放大 · 动手实验篇](../16-differential-amp/page4.md)
+[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [下一页：31 跨阻放大器（TIA） · 直觉篇](../31-transimpedance-amp/page1.md) · 前置节点：[12 电压跟随器 · 直觉篇](../12-voltage-follower/page1.md)、[16 差分放大 · 动手实验篇](../16-differential-amp/page4.md)
 
 ## 这次实验要验证什么
 

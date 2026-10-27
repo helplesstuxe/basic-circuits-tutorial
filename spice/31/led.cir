@@ -1,0 +1,17 @@
+* 31 跨阻放大器 page4 第 8、9 步：LED 驱动 = 24 节的弛张振荡器（LM358 B 半边）+ 跟随器（A 半边）+ RLED 1k + 红色 LED
+* 振荡器与 spice/24/relax.cir 相同（RA=RB=RC=10k，R、C 可换）；跟随器同相端接振荡器输出，输出经 1 kΩ 驱动 LED 到 0 V。
+.include ../models/LMx58B_LM2904B.lib
+.include ../models/LED_red_ltspice.lib
+.param rt=10k ct=100n
+VCC vcc 0 5
+RA vcc p 10k
+RB p 0 10k
+RC o p 10k
+RT o n {rt}
+CT n 0 {ct} IC=0
+XOSC p n vcc 0 o LMX58B_LM2904B
+XFOL o f vcc 0 f LMX58B_LM2904B
+RLED f a 1k
+DLED a 0 APT1608SURCK
+.tran 1u 20m 0 1u uic
+.end
