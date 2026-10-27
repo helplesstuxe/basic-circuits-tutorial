@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>41 4–20 mA 电流环 · 理论审校（theory）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/41.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="41-420-ma-电流环--理论审校theory">41 4–20 mA 电流环 · 理论审校（theory）</h1>
+<blockquote>
+<p>计算脚本：/workspace/calc/c41.py（本会话已运行，以下数值都出自脚本输出）。记号依 00-design-part2 §4：回路电流 <span class="math math-inline">\(I_{LOOP}\)</span> ，采样电阻 <span class="math math-inline">\(R_S\)</span> 。供电依 §10.3：单 12 V。</p>
+</blockquote>
+<h2 id="1-推导链从高中串联电路出发">(1) 推导链（从高中串联电路出发）</h2>
+<ol>
+<li>
+<p><strong>串联电流处处相等（高中）</strong>。回路 = 电源 <span class="math math-inline">\(V_{SUP}\)</span> → 导线 <span class="math math-inline">\(R_w\)</span> → 接收电阻 <span class="math math-inline">\(R_{rx}\)</span> → 变送器 → 回到电源。基尔霍夫电压定律：
+<span class="math math-inline">\(V_{SUP} = I_{LOOP}(R_w + R_{rx}) + V_{TX}\)</span> ，其中 <span class="math math-inline">\(V_{TX}\)</span> 是变送器两端的电压。
+变送器是一个“受控电流源”：它自己调节 <span class="math math-inline">\(V_{TX}\)</span> ，让 <span class="math math-inline">\(I_{LOOP}\)</span> 只由输入信号决定。所以 <span class="math math-inline">\(R_w\)</span> 变大时，变的是 <span class="math math-inline">\(V_{TX}\)</span> ，不是 <span class="math math-inline">\(I_{LOOP}\)</span> 。
+对比电压传输：信号电压 <span class="math math-inline">\(V\)</span> 经导线到电阻 <span class="math math-inline">\(R_{in}\)</span> 后，接收到的是 <span class="math math-inline">\(V\cdot R_{in}/(R_{in}+R_w)\)</span> ，会随导线变化。</p>
+</li>
+<li>
+<p><strong>顺从极限</strong>。条件 <span class="math math-inline">\(V_{TX}\ge V_{TX,min}\)</span> 意味着
+<span class="math math-inline">\(R_w+R_{rx}\le (V_{SUP}-V_{TX,min})/I_{max}\)</span> ，其中 <span class="math math-inline">\(I_{max}=20\)</span> mA。</p>
+<ul>
+<li>24 V、7.5 V（XTR115 最低供电）时为 825 Ω；</li>
+<li>12 V、7.5 V 时为 225 Ω，这已经比 250 Ω 小，所以 12 V 环路配 XTR115 + 250 Ω 本身就不够。
+超出极限时，电流被“削顶”在 <span class="math math-inline">\((V_{SUP}-V_{TX,min})/R_{total}\)</span> 。</li>
+</ul>
+</li>
+<li>
+<p><strong>活零点</strong>。线性映射 <span class="math math-inline">\(I_{LOOP}=4\ \text{mA}+16\ \text{mA}\times x\)</span> ， <span class="math math-inline">\(x\)</span> 为 0–1 的量程比例。
+0 mA 不在映射内，所以 0 mA 只能表示断线或掉电。
+两线制变送器自己的耗电 <span class="math math-inline">\(I_{self}\)</span> 也在回路电流中，要满足 <span class="math math-inline">\(I_{self}\lt\)</span> 最小输出电流。在 NE43 下，要能报 ≤ 3.6 mA 的低报警，就要求 <span class="math math-inline">\(I_{self}\lt 3.6\)</span> mA（再留余量）。</p>
+<ul>
+<li>XTR115： <span class="math math-inline">\(I_{MIN}\)</span> = 0.2 mA 典型、0.25 mA 最大，静态电流 200 µA；</li>
+<li>DAC161S997：低报警 3.375 mA、高报警 21.75 mA，这是芯片的默认值，与 NE43 的 ≤ 3.6 / ≥ 21 一致。</li>
+</ul>
+</li>
+<li>
+<p><strong>接收</strong>。欧姆定律 <span class="math math-inline">\(V=I_{LOOP}R_{rx}\)</span> ：250 Ω 给 1/3/5 V（4/12/20 mA），100 Ω 给 0.4/1.2/2.0 V。</p>
+</li>
+<li>
+<p><strong>V→I（回指 39 的恒流源）</strong>。运放同相端接 <span class="math math-inline">\(V_{in}\)</span> ，反相端接发射极。负反馈使 <span class="math math-inline">\(V_E=V_{in}\)</span> ，所以 <span class="math math-inline">\(I_E=V_{in}/R_S\)</span> 。
+<span class="math math-inline">\(I_C=I_E\cdot\beta/(\beta+1)\)</span> ： <span class="math math-inline">\(\beta\approx 100\)</span> 时，0.4–2.0 V 配 <span class="math math-inline">\(R_S=100\)</span> Ω 给 3.96–19.8 mA，误差约 1%，可校准。也可以用 MOSFET 消除这个误差，但这超出本节范围。</p>
+<ul>
+<li>运放输入共模：0.4–2.0 V 在 LM358 的 <span class="math math-inline">\((V-)\ldots(V+)-2\)</span> V 范围内（12 V 时上限 10 V）；</li>
+<li>运放输出 ≈ <span class="math math-inline">\(V_{in}+0.7\)</span> V ≤ 2.7 V，能驱动。</li>
+</ul>
+</li>
+<li>
+<p><strong>本电路（低边 NPN + 发射极 <span class="math math-inline">\(R_S\)</span> ）的顺从极限</strong>。
+<span class="math math-inline">\(V_{SUP}=I(R_{rx}+R_x)+V_{CE}+I R_S\)</span> 。晶体管饱和时 <span class="math math-inline">\(V_{CE}\to V_{CE(sat)}\approx 0.2\)</span> V（ST 2N3904：10 mA/1 mA 和 50 mA/5 mA 时最大 0.2 V）。</p>
+<ul>
+<li>20 mA 时： <span class="math math-inline">\(R_{rx}+R_x\le(12-2.0-0.2)/0.02=490\)</span> Ω，所以 250 Ω 之外还能串 ≤ 240 Ω（ <span class="math math-inline">\(V_{CE(sat)}\)</span> 取 0.3 V 时为 235 Ω）。</li>
+<li>串 <span class="math math-inline">\(R_x\)</span> 后能达到的最大电流：
+<table>
+<thead>
+<tr>
+<th><span class="math math-inline">\(R_x\)</span></th>
+<th>0 Ω</th>
+<th>100 Ω</th>
+<th>220 Ω</th>
+<th>470 Ω</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>最大电流</td>
+<td>33.7 mA</td>
+<td>26.2 mA</td>
+<td>20.7 mA（刚好够）</td>
+<td>14.4 mA（削顶）</td>
+</tr>
+<tr>
+<td>所以 470 Ω 那一档必然读到约 14.4 mA，而不是 20 mA。这正好是“找顺从极限”的演示。</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+</li>
+<li>
+<p><strong>晶体管功耗</strong>。 <span class="math math-inline">\(P=I(12-350I)\)</span> 。
+对 <span class="math math-inline">\(I\)</span> 求最大值（配方即可，不需要导数）： <span class="math math-inline">\(I=12/700=17.1\)</span> mA 时 <span class="math math-inline">\(P=0.103\)</span> W；20 mA 时 0.100 W；4 mA 时 0.042 W。
+ST 2N3904： <span class="math math-inline">\(P_{tot}\)</span> 625 mW（25 °C）， <span class="math math-inline">\(I_C\)</span> 200 mA。余量充足，BD139 不是必需的。</p>
+</li>
+<li>
+<p><strong>Arduino PWM + RC 作 DAC（回指 Part 1 的 D、T）</strong>。</p>
+<ul>
+<li><span class="math math-inline">\(\overline{v}=D\cdot 5\)</span> V。D9 默认 490 Hz（Arduino reference）， <span class="math math-inline">\(T=2.04\)</span> ms， <span class="math math-inline">\(\tau=10\ \text{kΩ}\times10\ \text{µF}=0.1\)</span> s。</li>
+<li>纹波 p-p ≈ <span class="math math-inline">\(5\cdot D(1-D)\cdot T/\tau\)</span> ，最大在 <span class="math math-inline">\(D=0.5\)</span> 时为 25.5 mV，对应 0.255 mA（1.6% 量程）。本节实际只用 <span class="math math-inline">\(D\le 0.4\)</span> ，纹波 ≤ 24.5 mV。</li>
+<li>建立时间约 <span class="math math-inline">\(5\tau\)</span> = 0.5 s。</li>
+<li>8 位分辨率：1 LSB = 5/255 = 19.6 mV，对应 0.196 mA（1.2% 量程）。0.4–2.0 V 只用到约 81 档，PWM 值为 20/61/102 对应 4/12/20 mA。</li>
+<li><span class="math math-inline">\(\overline{v}\)</span> 正比于 Arduino 的 5 V（USB 5 V ±5% 会带来 ±5% 电流误差），所以必须用万用表实测 <span class="math math-inline">\(R_S\)</span> 两端电压来校准。</li>
+</ul>
+</li>
+<li>
+<p><strong>读回分辨率</strong>。A0 读 100 Ω（0–5 V 参考，10 位）：1 LSB = 4.88 mV，对应 0.049 mA。</p>
+</li>
+</ol>
+<h2 id="2-符号表">(2) 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(I_{LOOP}\)</span></td>
+<td>回路电流（4–20 mA）</td>
+<td>mA</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{SUP}\)</span></td>
+<td>回路电源</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{TX}\)</span>, <span class="math math-inline">\(V_{TX,min}\)</span></td>
+<td>变送器两端电压 / 维持线性所需最低电压</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_w\)</span>, <span class="math math-inline">\(R_{rx}\)</span>, <span class="math math-inline">\(R_x\)</span></td>
+<td>导线电阻 / 接收电阻（250 Ω） / 实验串联电阻</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_S\)</span></td>
+<td>发射极采样电阻（100 Ω）</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{in}\)</span></td>
+<td>V→I 输入电压（0.4–2.0 V）</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\beta\)</span></td>
+<td>晶体管电流放大系数</td>
+<td>1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{CE(sat)}\)</span></td>
+<td>饱和压降</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(I_{IN}\)</span>, <span class="math math-inline">\(R_{IN}\)</span></td>
+<td>XTR115 输入电流 / 输入电阻（ <span class="math math-inline">\(I_O=100\cdot I_{IN}\)</span> ）</td>
+<td>µA, kΩ</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(I_{self}\)</span></td>
+<td>两线制变送器自身耗电</td>
+<td>mA</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(D\)</span>, <span class="math math-inline">\(T\)</span>, <span class="math math-inline">\(\tau\)</span></td>
+<td>PWM 占空比 / 周期 / RC 时间常数（沿用 Part 1）</td>
+<td>1, ms, s</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(x\)</span></td>
+<td>量程比例 0–1</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误针对-notes41-researchmd">(3) 勘误（针对 notes/41-research.md）</h2>
+<ul>
+<li><strong>E1【严重·安全】第 45 行 page4 回路</strong>：“12 V → 250 Ω（A0 读 1–5 V）→ 晶体管 → 100 Ω → 地”。
+250 Ω 处在高边，A0 测的是对地电压：4/12/20 mA 时为 11/9/7 V，拔线时为 12 V。ATmega328P 绝对最大值是 <span class="math math-inline">\(V_{CC}+0.5\)</span> V = 5.5 V，注入电流在 <span class="math math-inline">\(V_{CC}\)</span> = 5 V 时为 ±1 mA；而经 250 Ω 的钳位电流可达 (12−5.5)/250 = 26 mA，会损坏 Arduino。
+改为：
+<ul>
+<li>A0 读 100 Ω 采样电阻（对地 0.4–2.0 V）；</li>
+<li>250 Ω 两端的 1–5 V 只用万用表测，作为“接收端读数”。
+可选：A0 串 10 kΩ，钳位电流降到 0.63 mA 作为额外保护。这一点同时影响 00-design §6 的 41 page4 “250 Ω → 1–5 V 给 Arduino ADC”。
+断线检测仍有效：拔线后 100 Ω 上为 0 V，程序判 <span class="math math-inline">\(I\lt 3.6\)</span> mA 报断线。</li>
+</ul>
+</li>
+<li><strong>E2 第 25 行</strong>：825/225 Ω 计算正确。要补一句：12 V 时 225 Ω &lt; 250 Ω，所以 12 V 回路配 XTR115（最低 7.5 V）时连 250 Ω 都带不动。page4 的分立电路最低压降只有约 2.2 V，所以能带 490 Ω，不能拿 225 Ω 去预测本电路。</li>
+<li><strong>E3 第 46 行“串 100/220/470 Ω 找顺从极限”</strong>：应给出预测（见推导 6）：
+<ul>
+<li>100 Ω 正常；</li>
+<li>220 Ω 处在边缘（20.7 mA 上限）；</li>
+<li>470 Ω 时 20 mA 设定点被削到约 14.4 mA（4、12 mA 仍正常）。
+SPICE（第 41 行）应能复现约 490 Ω 的总负载拐点。</li>
+</ul>
+</li>
+<li><strong>E4 第 10 行 TIDUAO7</strong>：“顺从电压 V_S − 12 V（表中另列 7.5 V）”要说清楚。原文 Table 1 中 Loop Compliance Voltage 的目标是 12 V，实测是 7.5 V，即变送器自身所需电压。可用于负载的电压 = <span class="math math-inline">\(V_{SUP}-I_{OUT}R_{LOAD}\)</span> 的约束（eq. 5）。“V_S − 12 V”是设计目标下留给负载的电压。</li>
+<li><strong>E5 第 8 行</strong>：XTR115 的 <span class="math math-inline">\(I_{MIN}\)</span> 为 0.2 mA 典型、0.25 mA 最大， <span class="math math-inline">\(I_{LIM}\)</span> 32 mA，都与手册一致。可补一句：这些值与 NE43 报警的关系见推导 3。</li>
+<li><strong>E6 第 44 行</strong>：PWM + RC 未给纹波和分辨率。应补：490 Hz，纹波 ≤ 25.5 mV（0.255 mA）；LSB 0.196 mA；建立约 0.5 s；需要用万用表校准（§10.2）。</li>
+<li><strong>E7 第 44 行“2N3904（或 BD139）”</strong>：最大功耗约 0.103 W（17 mA 处），远小于 625 mW，所以 2N3904 足够。写成“BD139 可选”即可。</li>
+<li><strong>E8 第 22 行</strong>： <span class="math math-inline">\(I=V_{in}/R_S\)</span> 实际是 <span class="math math-inline">\(I_E\)</span> 。 <span class="math math-inline">\(I_C\)</span> 小约 <span class="math math-inline">\(1/(\beta+1)\)</span> ≈ 1%，应注明或校准。</li>
+<li><strong>E9 第 12 行 Beckhoff</strong>：NE43（2003-02-03 版）的表述应为“故障 0 ≤ I ≤ 3.6 mA；测量 3.8 \lt I \lt 20.5 mA；故障 ≥ 21.0 mA”，与原文一致。补充：3.6–3.8 和 20.5–21.0 mA 是 NE43 留的过渡区。WAGO 手册 Table 19 也是 ≤ 3.6 置错误位、≥ 21 置溢出错误位。程序阈值建议 \lt 3.6 mA 判断线、\gt 21 mA 判故障。</li>
+<li><strong>E10 第 14 行 NAMUR</strong>：页面标注的日期是 07/27/2021（新闻），修订版版本号为 Edition 2021-07-26。笔记写的“2021-07-26 修订”可保留，但应注明“新版细节未读，数值仍按 2003 版”。</li>
+<li>其他数值（1–5 V、0.4–2.0 V、200 µA、25 kΩ、3.375/21.75 mA）均经 Python 和原文核对无误。</li>
+</ul>
+<h2 id="4-参考本会话已打开并核对内容">(4) 参考（本会话已打开并核对内容）</h2>
+<ul>
+<li>TI XTR115/116 <a href="https://www.ti.com/lit/ds/symlink/xtr115.pdf">https://www.ti.com/lit/ds/symlink/xtr115.pdf</a> ——200 µA；7.5–36 V； <span class="math math-inline">\(I_{LIM}\)</span> 32 mA； <span class="math math-inline">\(I_{MIN}\)</span> 0.2/0.25 mA； <span class="math math-inline">\(I_O=100\cdot I_{IN}\)</span> 。</li>
+<li>TI TIDUAO7 <a href="https://www.ti.com/lit/ug/tiduao7/tiduao7.pdf">https://www.ti.com/lit/ug/tiduao7/tiduao7.pdf</a> ——≤ 36 V；“Loop Compliance Voltage: VS – 12 V”；Table 1 目标 12 V、实测 7.5 V；§2.4 eq. 5。</li>
+<li>TI DAC161S997 <a href="https://www.ti.com/lit/ds/symlink/dac161s997.pdf">https://www.ti.com/lit/ds/symlink/dac161s997.pdf</a> ——IERRL 3.375 mA、IERRH 21.75 mA（默认值）。</li>
+<li>Beckhoff Infosys <a href="https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html">https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html</a> ——NE43 03/02/2003 版边界：0 ≤ C_A ≤ 3.6 mA；3.8 \lt C_M \lt 20.5 mA；C_A ≥ 21.0 mA。</li>
+<li>WAGO 750-492/040-001 手册 <a href="https://www.wago.com/wagoweb/documentation/750/eng_manu/modules/m07500492_00400001_0en.pdf">https://www.wago.com/wagoweb/documentation/750/eng_manu/modules/m07500492_00400001_0en.pdf</a> ——3.8…20.5 mA；Table 19：≤ 3.6 / ≥ 21 报错；输入阻抗 \lt 270 Ω @ 20 mA。</li>
+<li>NAMUR <a href="https://www.namur.net/en/publications/news-archive/ne-43-has-been-revised.html">https://www.namur.net/en/publications/news-archive/ne-43-has-been-revised.html</a> ——NE43 Edition 2021-07-26，引入安全裕量。</li>
+<li>TI LM358B <a href="https://www.ti.com/lit/ds/symlink/lm358.pdf">https://www.ti.com/lit/ds/symlink/lm358.pdf</a> ——VCM 为 (V–) 至 (V+) – 2 V（全温）。</li>
+<li>ST 2N3904 数据手册 <a href="https://www.sparkfun.com/datasheets/Components/2N3904.pdf">https://www.sparkfun.com/datasheets/Components/2N3904.pdf</a> （ST 原版文件）—— <span class="math math-inline">\(I_C\)</span> 200 mA， <span class="math math-inline">\(P_{tot}\)</span> 625 mW， <span class="math math-inline">\(V_{CE(sat)}\)</span> ≤ 0.2 V。</li>
+<li>Microchip ATmega328P（汽车级）数据手册 <a href="https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/Atmel-7810-Automotive-Microcontrollers-ATmega328P_Datasheet.pdf</a> ——引脚电压 −0.5… <span class="math math-inline">\(V_{CC}\)</span>+0.5 V；注入电流 ±1.0 mA（ <span class="math math-inline">\(V_{CC}\)</span> = 5 V）。注意：这是汽车级版本，UNO 用的商用版 ATmega328P 绝对最大值相同，但本会话只打开了汽车级版，商用版本 「[待核实]」。</li>
+<li>Arduino analogWrite reference <a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogWrite.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogWrite.adoc</a> ——UNO D9 490 Hz。</li>
+</ul>
+<h3 id="待核实">「[待核实]」</h3>
+<ul>
+<li>NAMUR NE43 原文（付费/会员，未打开）：数值一律引用 Beckhoff/WAGO（§10.6）。</li>
+<li>商用级 ATmega328P 数据手册的绝对最大值（只核对了汽车级版本）。</li>
+<li>TI XTR110、XTR111（笔记引用了，本会话未重新打开）。</li>
+<li>ADI AD623（笔记已标未用）。</li>
+<li><span class="math math-inline">\(\beta\approx100\)</span> 只用于量级估算，2N3904 在 20 mA 时的 hFE 未逐条核对。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 热式流量与 RTD 恒温差 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/40-thermal-flow/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="40-热式流量与-rtd-恒温差--动手实验篇">40 热式流量与 RTD 恒温差 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../41-current-loop-4-20ma/page1.html">下一页：41 4–20 mA 电流环 · 直觉篇</a> · 前置节点：<a href="../06-mosfet-switch/page4.html">06 MOS 管开关 · 动手实验篇</a>、<a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a>、<a href="../10-voltage-comparator/page4.html">10 电压比较器 · 动手实验篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>本页用两颗 10 kΩ NTC、一只 560 Ω 电阻、一只 IRLZ44N 和 Arduino 搭一个小小的热式风速计，分两段搭：</p>
+<ul>
+<li><strong>第 1 段</strong>：两路 NTC 分压接 A0、A1，只测温，不加热。验证 <a href="page2.html">原理与实现篇</a>「一、NTC 分压」的电压和查表法。</li>
+<li><strong>第 2 段</strong>：加上 MOS 管开关和加热电阻，跑开关控温，把温差钉在 2 K。</li>
+</ul>
+<p>要亲手看到四件事：</p>
+<ol>
+<li>25 °C 附近，NTC 分压点在 2.5 V 左右，每升 1 K 降约 55 mV；把 NTC 贴到一杯温水的杯壁上，电压明显下降。</li>
+<li>MOS 管开透时漏极只剩不到 1 mV，加热电流 16 mA、功率约 0.145 W，电阻表面最高约 42 °C（用 N1 的读数看，不用手试）。</li>
+<li>用纸片或 USB 风扇吹，平均占空比上升；风停后回落。占空比就是风速信号。</li>
+<li>拔掉环境 NTC 补偿（程序里改一个开关），把环境 NTC 贴到温水杯壁上，读数就乱了。</li>
+</ol>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>只用 12 V 及以下的直流电。</strong> 本页的加热器用一只 9 V 电池或 9 V 直流适配器单独供电，Arduino 用 USB 供电。不需要任何市电设备。</li>
+<li><strong>加热器的功率和温度上限（必须遵守）：</strong>
+<ul>
+<li>本页的加热器是 <strong>560 Ω、2 W 的金属膜电阻接 9 V</strong>：电流 16.07 mA，功率 0.1446 W，只用了额定功率的 7.2 %。</li>
+<li>按电阻手册的热阻 75～115 K/W 算，即使程序出错、加热器 100 % 一直开着，在 25 °C 室温下电阻表面最高 <strong>35.8～41.6 °C</strong>（按 9.0 V 算；新电池 9.6 V 时 37.3～43.9 °C），低于 45 °C 的切断线，也远低于会烫伤的温度。不过手册的热阻是焊在电路板上的值，插在面包板上、引线较长时实际热阻可能更大［待核实］，所以程序的 45 °C 切断不能省。即便如此，<strong>温度一律看 N1 的读数或用测温探头、万用表测温档量，不要用手去试。</strong></li>
+<li>程序里还有<strong>软件过温切断</strong>：加热 NTC 读到 <strong>45 °C</strong> 以上，或 NTC 断线、短路，立刻关加热并锁死，直到按复位键。</li>
+</ul>
+</li>
+<li><strong>47 Ω 一律不用。</strong> 47 Ω 接 12 V 是 3.06 W，超过 2 W 额定；接 9 V 是 1.72 W，表面温升可达 129～198 K；网上常见的“47 Ω 接 5 V”也有 0.53 W，表面会到 65～86 °C，会烫伤。</li>
+<li><strong>手上没有 560 Ω 时</strong>，用 680 Ω～1 kΩ 之间任何一只 2 W 电阻接 9 V（先按 <span class="math math-inline">\(P = V^2/R\)</span> 算，最坏表面温度不超过 45 °C）：680 Ω 是 0.119 W、最坏 38.7 °C；1 kΩ 是 0.081 W、最坏 34.3 °C（<code>code/40_sim.py</code> 第 8 部分）。阻值越大越安全，代价是无风占空变大、量程变小（<a href="page2.html">原理与实现篇</a>例 2）。</li>
+<li><strong>温水杯</strong>：步骤里用来给 NTC 加热的温水先用测温探头或万用表测温档量，<strong>不超过 40 °C</strong>；只用干燥的杯子外壁去贴 NTC，杯子下垫毛巾，不要把水洒到面包板上。</li>
+<li><strong>NTC 的上限</strong>：NTCLE100E3 连续工作温度最高 125 °C；本实验远低于它，但不要把 NTC 直接贴在烙铁、灯泡等发热体上。</li>
+<li><strong>共地</strong>：9 V 电源的负极必须接到面包板 0 V 轨，和 Arduino GND 连通，否则 D9 控制不了 MOS 管。9 V 正极只能接下方 +9 V 轨，<strong>千万不要碰到 Arduino 的 5V 或 A0、A1</strong>（Arduino 引脚最高只能承受 5 V）。</li>
+<li><strong>接线、改线之前先断电</strong>：拔下 9 V 电池扣和 USB 线。</li>
+<li><strong>N1 和 <span class="math math-inline">\(R_H\)</span> 只用绝缘胶带包</strong>：铝箔胶带导电，一旦碰到裸引脚，就会把 <span class="math math-inline">\(R_H\)</span> 那头的 +9 V 接到 N1 那头的 A0 节点（第 21 列上下半），烧坏 Arduino。用 Kapton 一类的绝缘耐热胶带，只缠两个元件的本体，引脚露在外面互不接触。</li>
+<li>如果闻到焦味、看到元件变色或冒烟，或 N1 读数超过 45 °C，立刻拔掉 9 V 电池，多半是电阻用错了（色环看错）或 9 V 接到了不该接的地方。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>NTC 热敏电阻</td>
+<td>10 kΩ、B ≈ 3977 K（如 Vishay NTCLE100E3103）</td>
+<td>2</td>
+<td>N1 加热用，N2 测环境；同一批次更好</td>
+</tr>
+<tr>
+<td>分压电阻 <span class="math math-inline">\(R_S\)</span></td>
+<td>10 kΩ，1 %</td>
+<td>2</td>
+<td>每颗 NTC 配一只</td>
+</tr>
+<tr>
+<td>加热电阻 <span class="math math-inline">\(R_H\)</span></td>
+<td>560 Ω，2 W 金属膜（如 Vishay PR02）</td>
+<td>1</td>
+<td><strong>不要用 47 Ω</strong></td>
+</tr>
+<tr>
+<td>MOS 管</td>
+<td>IRLZ44N（TO-220，逻辑电平）</td>
+<td>1</td>
+<td>5 V 栅压就能开透</td>
+</tr>
+<tr>
+<td>栅极电阻 <span class="math math-inline">\(R_G\)</span></td>
+<td>100 Ω</td>
+<td>1</td>
+<td>限栅极充电电流</td>
+</tr>
+<tr>
+<td>栅极下拉 <span class="math math-inline">\(R_{PD}\)</span></td>
+<td>100 kΩ</td>
+<td>1</td>
+<td>复位时保证关断</td>
+</tr>
+<tr>
+<td>主控</td>
+<td>Arduino Uno 或兼容板</td>
+<td>1</td>
+<td>USB 供电</td>
+</tr>
+<tr>
+<td>加热电源</td>
+<td>9 V 电池 + 电池扣，或 9 V 直流适配器</td>
+<td>1</td>
+<td>只给加热器</td>
+</tr>
+<tr>
+<td>耐热绝缘胶带</td>
+<td>Kapton（聚酰亚胺）胶带；<strong>不要用铝箔胶带</strong>（导电）</td>
+<td>一小段</td>
+<td>把 N1 头部和 <span class="math math-inline">\(R_H\)</span> 本体包在一起，只包本体、不碰引脚</td>
+</tr>
+<tr>
+<td>风源</td>
+<td>USB 小风扇（最好有档位）或一张硬纸片</td>
+<td>1</td>
+<td>风速计可选，用来标定</td>
+</tr>
+<tr>
+<td>导线</td>
+<td>约 15 cm 的杜邦线</td>
+<td>2</td>
+<td>把 N2 引到上风处</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>直流电压挡 2 V / 20 V / 200 mV，电阻挡</td>
+<td>1</td>
+<td></td>
+</tr>
+<tr>
+<td>面包板、跳线</td>
+<td>30 列以上</td>
+<td>若干</td>
+<td>橙色电源，黑色 0 V，绿色信号</td>
+</tr>
+</tbody>
+</table>
+<p>搭之前用电阻挡量出 <span class="math math-inline">\(R_H\)</span> 、两只 <span class="math math-inline">\(R_S\)</span> 的实际阻值，室温下两颗 NTC 的阻值也记下来（看两颗差多少）。</p>
+<h2 id="第-1-段两路-ntc-测温">第 1 段：两路 NTC 测温</h2>
+<p><a class="img-link" href="img/40_p4_1_breadboard_ntc.png"><img alt="30 列面包板俯视图：上方最外侧轨接 Arduino 5V（+5 V，橙），第二条轨接 Arduino GND（0 V，黑）；下方第二条轨 0 V，最外侧标“+9 V（第 2 段才接）”；第 2 列一根黑线连通上下 0 V 轨。左边：a3 橙线到 +5 V 轨，R_S2 10k 插 b3–b7，N2 环境 NTC 插 c7–c11，a11 黑线到 0 V 轨，a7 引绿线到 Arduino A1；右边：a17 橙线到 +5 V，R_S1 10k 插 b17–b21，N1 加热 NTC 插 c21–c25，a25 黑线到 0 V，a21 引绿线到 Arduino A0。紫色圆圈标出 e7 ① A1 分压、e21 ② A0 分压；底部注明 N2 用两根约 15 cm 的导线引到风扇上风处，离加热器 ≥ 5 cm" src="img/40_p4_1_breadboard_ntc.png" loading="lazy" /></a></p>
+<p><em>图 40-p4-1　第 1 段：两路 NTC 分压的面包板接线</em></p>
+<p><a class="img-link" href="img/40_p4_2_schem_lab.png"><img alt="图 40-p4-1 对应的原理图：左边“环境（上风处）”：+5 V 轨经 R_S2 10k（b3–b7）到中点，中点经 N2 环境 NTC（c7–c11）到地，中点绿线接 Arduino A1，测量点①；右边“加热（贴着 R_H）”：+5 V 轨经 R_S1 10k（b17–b21）到中点，经 N1 加热 NTC（c21–c25）到地，中点接 Arduino A0，测量点②。底部注明灰色小字是面包板孔位、黄色圆圈是测量点；上下两条 0 V 轨由第 2 列的黑线连通；+5 V、0 V 都来自 Arduino（USB 供电），25 °C 时①②都应约 2.50 V；每个分压点右边有一只灰色点线画的选装电容“C 100 nF（选装）”，分别从 e7、e21 接到 0 V 轨，读数跳字时才加，加之前先断电" src="img/40_p4_2_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 40-p4-2　图 40-p4-1 对应的电路原理图（灰色小字是孔位，黄色圆圈是测量点，灰色点线是选装的 100 nF）</em></p>
+<p><strong>对照看</strong>：两路分压完全一样，只是位置不同。原理图上“ <span class="math math-inline">\(R_S\)</span> 下端和 NTC 上端相连、再接 A1”这一个节点，在面包板上就是第 7 列上半（a7～e7）： <span class="math math-inline">\(R_S2\)</span> 的右脚插 b7，N2 的左脚插 c7，绿线从 a7 引出，① 测量点在 e7，五个孔同属一个节点。同理第 21 列上半是 A0 节点。N2 的两只脚插 c7、c11，但 N2 本体要用两根 15 cm 杜邦线接长，放到风扇上风处、离加热器至少 5 cm，否则它测到的就不是“环境”。灰色点线的 100 nF 平时不装，只有 A0、A1 读数跳字时才加（见本页“常见的怪现象”）。</p>
+<ol>
+<li><strong>铺电源轨。</strong> Arduino 5V 接上方最外侧轨，GND 接上方第二条轨；第 2 列一根黑线连通上方 0 V 轨和下方 0 V 轨（第 2 段要用）。先不插 USB。</li>
+<li><strong>环境路（左）。</strong> 橙线 a3 → +5 V 轨； <span class="math math-inline">\(R_S2\)</span> 10 kΩ 插 b3–b7；N2 插 c7–c11（或用杜邦线接长）；黑线 a11 → 0 V 轨；绿线 a7 → Arduino A1。</li>
+<li><strong>加热路（右）。</strong> 橙线 a17 → +5 V 轨； <span class="math math-inline">\(R_S1\)</span> 插 b17–b21；N1 插 c21–c25；黑线 a25 → 0 V 轨；绿线 a21 → Arduino A0。</li>
+<li><strong>检查后通电。</strong> 插 USB，按下面的测量表量 ①、②。</li>
+</ol>
+<p>画图脚本会检查两路分压的每一处连接，并确认 +5 V 和 0 V 轨不相连、两个中点互不相连；接错一处图就画不出来。</p>
+<h3 id="第-1-段测量表">第 1 段测量表</h3>
+<p>「应该读到」来自 Vishay 手册的 NTC 公式和 SPICE（25 °C 时 2.500 V，45 °C 时 1.521 V）。室温不一定是 25 °C，所以下面按室温给范围。本表黑表笔都接 0 V 轨。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>+5 V 轨</td>
+<td>+5 V 轨</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>4.7～5.1 V</td>
+<td>0：USB 没插好</td>
+</tr>
+<tr>
+<td>2</td>
+<td>室温下 ① A1 分压</td>
+<td>e7</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>20 °C 约 2.78 V，25 °C 约 2.50 V，30 °C 约 2.23 V</td>
+<td>接近 5 V：NTC 没插好；接近 0： <span class="math math-inline">\(R_S\)</span> 没插好</td>
+</tr>
+<tr>
+<td>3</td>
+<td>室温下 ② A0 分压</td>
+<td>e21</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>与 ① 相差不超过约 0.05 V</td>
+<td>差很多：两颗 NTC 阻值不同或插错电阻</td>
+</tr>
+<tr>
+<td>4</td>
+<td>把 N1 贴在温水杯外壁约 30 s（水温先用测温探头或万用表测温档量，约 40 °C，不要更热）</td>
+<td>e21</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>一路下降，降到约 2.07～1.82 V（N1 被杯壁烘到约 33～38 °C；隔着杯壁，达不到水温）</td>
+<td>不变：贴的是 N2</td>
+</tr>
+<tr>
+<td>5</td>
+<td>移开杯子 1 分钟后</td>
+<td>e21</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>慢慢回到步骤 3 的值</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>步骤 4 回升得很慢，大约要 1 分钟，这就是 NTC 的热时间常数（手册约 15 s，再加上引线和杯壁接触的影响），它会在第 2 段限制控温的速度。</p>
+<h2 id="第-2-段加热器和开关控温">第 2 段：加热器和开关控温</h2>
+<p>断电，在第 1 段基础上加 MOS 管和加热器，加热器由 9 V 单独供电。</p>
+<p><a class="img-link" href="img/40_p4_3_breadboard_heater.png"><img alt="30 列面包板俯视图，在图 40-p4-1 的基础上增加：下方最外侧轨接 9 V 电源 +（+9 V，橙），下方第二条轨接 9 V 电源 −（0 V）；Arduino D9 绿线从下方引入 j19；R_G 100 插 g19–g23；绿线 h23 → h27；IRLZ44N 插 f27（G）、f28（D）、f29（S）；R_PD 100k 从 j27 接到 0 V 轨；R_H 560 Ω 2 W 插 i21–i25，j21 橙线接 +9 V 轨，g25 绿线弯到 g28（漏极）；j29 黑线接 0 V 轨。两个橙色小虚线框分别圈住 N1 头部和 R_H 本体，中间一条橙色虚线双箭头，旁边写着“N1 头部弯过来贴 R_H 本体，用 Kapton 绝缘胶带只包本体，不碰引脚”。紫色圆圈标出 h28 ③ 漏极 D、j23 ④ 栅极 G" src="img/40_p4_3_breadboard_heater.png" loading="lazy" /></a></p>
+<p><em>图 40-p4-3　第 2 段：加上 MOS 管开关和 560 Ω 加热器（N1 头部与 R_H 本体用绝缘胶带包在一起）</em></p>
+<p><a class="img-link" href="img/40_p4_4_schem_lab.png"><img alt="图 40-p4-3 对应的原理图：+9 V 轨（j21）经 R_H 560 Ω 2 W（i21–i25，g25→g28 接 D）到 Q1 IRLZ44N 漏极，测量点③；源极（j29）接 0 V 轨；Arduino D9（j19）经 R_G 100 Ω（g19–g23）到栅极，测量点④，绿线 h23→h27；栅极经 R_PD 100k（j27）到 0 V 轨。右侧 +5 V 经 R_S1 10k 到 A0，再经 N1 到地，测量点②；一根橙色虚线从 R_H 指到 N1，写“胶带包在一起（热量从 R_H 传到 N1）”。底部注明 9 V 电源 − 接下方 0 V 轨第 1 列，+ 接最下方 +9 V 轨第 1 列；Arduino GND 经上方 0 V 轨、第 2 列黑线与它相连（共地）；③ 加热开时约 0.3 mV、关时约 9 V；④ 开时约 5 V、关时 0 V；N2（环境）一路同图 40-p4-2，没有画出" src="img/40_p4_4_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 40-p4-4　图 40-p4-3 对应的电路原理图</em></p>
+<p><strong>对照看</strong>：图 40-p4-4 里“D9 → <span class="math math-inline">\(R_G\)</span> → 栅极”在面包板上是 j19（D9 进来）→ <span class="math math-inline">\(R_G\)</span> 插 g19–g23 → 绿线 h23 → h27 → IRLZ44N 的 G 脚 f27； <span class="math math-inline">\(R_{PD}\)</span> 也插在第 27 列（j27），所以栅极、下拉电阻、绿线共用第 27 列下半。④ 量 j23（和 g23、h23 同属第 23 列下半）：i23 被 <span class="math math-inline">\(R_H\)</span> 的本体盖住，表笔插不进去，所以换到同一列空着的 j23。</p>
+<p>“ <span class="math math-inline">\(R_H\)</span> 一端接 +9 V、另一端接漏极”在面包板上是： <span class="math math-inline">\(R_H\)</span> 插 i21–i25，j21 接 +9 V 轨，g25 一根短绿线跨到 g28（D 脚）。</p>
+<p>注意第 21 列<strong>下半</strong>是 +9 V，<strong>上半</strong>是 A0 节点，两者隔着凹槽不相通。最危险的错误是把 +9 V 那根橙线插到第 21 列上半（a21–e21）：9 V 会直接加到 A0 上烧坏 Arduino。 <span class="math math-inline">\(R_H\)</span> 插到上半（例如空着的 d21–d25 或 e21–e25 那一排）不会把 9 V 送进 A0，但它会和 N1 并在一起（第 25 列上半经黑线接 0 V），加热器不通电，读数也全错。</p>
+<p>N1 和 <span class="math math-inline">\(R_H\)</span> 在面包板上相邻（第 21～25 列，凹槽两侧），把 N1 的引脚轻轻弯过去，让它的头贴在 <span class="math math-inline">\(R_H\)</span> 的本体上，用 Kapton 绝缘胶带只在两个本体上缠两圈（图 40-p4-3 两个橙色虚线小框）。N1 的引脚（第 21 列上半是 A0）和 <span class="math math-inline">\(R_H\)</span> 的引脚（第 21 列下半是 +9 V）绝不能互相碰到，也不能被导电的东西连起来。</p>
+<ol>
+<li>
+<p><strong>断电。</strong> 拔 USB，不要接 9 V。</p>
+</li>
+<li>
+<p><strong>插 MOS 管。</strong> IRLZ44N 印字面朝自己，三只脚从左到右 G、D、S 插 f27、f28、f29。</p>
+</li>
+<li>
+<p><strong>栅极。</strong> <span class="math math-inline">\(R_G\)</span> 100 Ω 插 g19–g23；绿线 h23 → h27； <span class="math math-inline">\(R_{PD}\)</span> 100 kΩ 从 j27 接到下方 0 V 轨；绿线从 Arduino D9 接 j19。</p>
+</li>
+<li>
+<p><strong>加热器。</strong> <span class="math math-inline">\(R_H\)</span> 560 Ω 插 i21–i25（<strong>下半</strong>）；橙线 j21 → 下方 +9 V 轨；绿线 g25 → g28；黑线 j29 → 下方 0 V 轨。</p>
+</li>
+<li>
+<p><strong>贴 N1。</strong> 把 N1 头部贴在 <span class="math math-inline">\(R_H\)</span> 本体中间，用 Kapton 绝缘胶带缠紧，只缠本体；缠完看一眼两个元件的引脚有没有碰在一起。</p>
+</li>
+<li>
+<p><strong>检查后通电。</strong> USB 和 9 V 都不接，用万用表电阻挡（20 kΩ 挡）量两处，<strong>表笔方向要照下面写的接</strong>：</p>
+<ul>
+<li><strong>红笔 +9 V 轨、黑笔 0 V 轨</strong>：中间串着 <span class="math math-inline">\(R_H\)</span> 和关断的 MOS 管，应显示超量程（或几百 kΩ 以上）。如果只有 560 Ω 左右，说明 MOS 管的 D、S 插反了、管子已击穿，或 <span class="math math-inline">\(R_H\)</span> 那头误插到了 0 V。</li>
+<li><strong>红笔 +9 V 轨、黑笔 e21（② A0 节点）</strong>：也应超量程。如果读到接近 0 Ω，说明 +9 V 橙线插到了第 21 列上半，和 A0 节点直接连通了，通电后 9 V 会直接进 A0，必须先改线。注意： <span class="math math-inline">\(R_H\)</span> 误插到上半时，这一项和上一项仍然都是超量程，万用表查不出来，所以还要用眼睛确认 <span class="math math-inline">\(R_H\)</span> 两只脚在 i21、i25（凹槽下方），橙线在 j21。</li>
+<li>为什么要规定方向：IRLZ44N 内部 S 到 D 之间有一只“体二极管”（MOS 管制造时自带的）。表笔反过来（黑笔 +9 V、红笔 0 V）时，万用表电阻挡输出的小电流正好让这只二极管导通，完好的管子也会读到 560 Ω 加一只二极管压降对应的“阻值”，新手会误以为接错。所以只按上面的方向量；方向对了还读到低阻，才是真有问题。</li>
+</ul>
+<p>确认后插 USB，上传程序，最后接 9 V。</p>
+</li>
+</ol>
+<p>画图脚本会检查栅极、下拉、加热器、漏极、源极的每一处连接，并确认 +9 V 轨和 +5 V 轨、0 V 轨都不相连；接错一处图就画不出来。</p>
+<h3 id="arduino-程序">Arduino 程序</h3>
+<blockquote>
+<p><strong>第一次用 Arduino？</strong> 上传方法见 <a href="../35-pga-agc/page4.html">35 程控增益与 AGC · 动手实验篇</a>「最小必要知识：Arduino 上手」。</p>
+</blockquote>
+<p>程序做五件事：① 读 A0、A1，用查表把 ADC 读数换成温度；② 开机前 10 s 不加热，记下两颗 NTC 的读数差当“零点”；③ 迟滞开关控温（1.8 / 2.2 K）；④ 统计最近 3 个开关周期的平均占空；⑤ 过温、断线保护。</p>
+<pre><code class="language-cpp">// 40 热式风速计：迟滞开关控温（温差 2 K），输出平均占空比
+const int   PIN_HEAT = 9;
+const float T_SET = 2.0, HYS = 0.2;   // 温差门限 1.8 / 2.2 K
+const float T_CUTOFF = 45.0;          // 加热 NTC 过温切断
+const bool  COMPENSATE = true;        // false = 不用 N2 实时补偿（思考题用）
+const int   MODE = 0;                 // 0 开关控温；1 恒功率 60 %；2 加热 100 % 测试（上电后第 40 s 自动停）
+
+// 查表：10、15、...、60 °C 时的 ADC 读数（R_S = 10 kΩ，Vishay 手册公式）
+const float CNT[] = {681.2, 625.5, 568.6, 512.0, 457.0, 404.7, 356.0, 311.5, 271.4, 235.6, 204.1};
+const int   NT = 11;
+
+float cntToT(float c) {               // ADC 读数 → 温度（°C），两点之间按直线插值
+  if (c &gt;= CNT[0]) return 10.0;
+  for (int i = 0; i &lt; NT - 1; i++)
+    if (c &gt;= CNT[i + 1]) return 10.0 + 5.0 * i + 5.0 * (CNT[i] - c) / (CNT[i] - CNT[i + 1]);
+  return 60.0;
+}
+float readCnt(int pin) { long s = 0; for (int i = 0; i &lt; 16; i++) s += analogRead(pin); return s / 16.0; }
+
+bool fault = false, heat = false;
+float zero = 0, amb0 = 25.0;
+unsigned long tOn = 0, tCycle = 0, tLastPrint = 0, tLastSwitch = 0;
+float duty[3] = {0, 0, 0}; int nd = 0;
+int skip = 2;                         // 开机后前 2 个周期不准，不计入 duty3
+
+void setHeat(bool on) { heat = on; digitalWrite(PIN_HEAT, on ? HIGH : LOW); }
+
+void setup() {
+  pinMode(PIN_HEAT, OUTPUT); setHeat(false);
+  Serial.begin(9600);
+  float s = 0, a = 0;                  // 前 10 s 不加热：记零点和开机时的环境温度
+  for (int i = 0; i &lt; 100; i++) {
+    float t1 = cntToT(readCnt(A0)), t2 = cntToT(readCnt(A1));
+    s += t1 - t2; a += t2; delay(100);
+  }
+  zero = s / 100; amb0 = a / 100;
+  Serial.print(&quot;zero(K)=&quot;); Serial.println(zero, 3);
+  tCycle = tLastSwitch = millis();
+}
+
+void loop() {
+  float c1 = readCnt(A0), c2 = readCnt(A1);
+  float t1 = cntToT(c1), t2 = cntToT(c2);
+  // 保护：过温、NTC 断线（读数接近 1023）或短路（接近 0）→ 关加热并锁死
+  if (t1 &gt; T_CUTOFF || c1 &gt; 1000 || c1 &lt; 20 || c2 &gt; 1000 || c2 &lt; 20) fault = true;
+  if (fault) { analogWrite(PIN_HEAT, 0); heat = false;
+               if (millis() - tLastPrint &gt; 1000) { Serial.println(&quot;FAULT: heater off, press reset&quot;); tLastPrint = millis(); }
+               return; }
+
+  float ref = COMPENSATE ? t2 : amb0;
+  float dT = t1 - ref - zero;
+  unsigned long now = millis();
+
+  if (MODE == 1) analogWrite(PIN_HEAT, 153);              // 153/255 = 60 %
+  else if (MODE == 2) analogWrite(PIN_HEAT, now &lt; 40000UL ? 255 : 0);
+  else {
+    if (!heat &amp;&amp; dT &lt; T_SET - HYS) {                      // 关 → 开：一个周期结束
+      unsigned long period = now - tCycle;
+      if (period &gt; 0) {
+        if (skip &gt; 0) skip--;
+        else { duty[nd % 3] = 100.0 * tOn / period; nd++; }
+      }
+      tCycle = now; tOn = 0; tLastSwitch = now; setHeat(true);
+    } else if (heat &amp;&amp; dT &gt; T_SET + HYS) {
+      tOn = now - tCycle; tLastSwitch = now; setHeat(false);
+    }
+  }
+
+  if (now - tLastPrint &gt;= 1000) {
+    tLastPrint = now;
+    float avg = 0; int k = nd &lt; 3 ? nd : 3;
+    for (int i = 0; i &lt; k; i++) avg += duty[i];
+    if (k) avg /= k;
+    Serial.print(now / 1000); Serial.print(&quot; s  N1=&quot;); Serial.print(t1, 2);
+    Serial.print(&quot;  N2=&quot;); Serial.print(t2, 2); Serial.print(&quot;  dT=&quot;); Serial.print(dT, 2);
+    Serial.print(&quot;  heat=&quot;); Serial.print(heat);
+    Serial.print(&quot;  duty3=&quot;); Serial.print(avg, 1);
+    if (MODE == 0 &amp;&amp; heat &amp;&amp; now - tLastSwitch &gt; 120000UL) Serial.print(&quot;  OVER-RANGE&quot;);
+    Serial.println();
+  }
+  delay(100);
+}
+</code></pre>
+<p>几点说明：</p>
+<ul>
+<li>断线保护很重要：N1 断线时分压点被 <span class="math math-inline">\(R_S\)</span> 拉到 5 V，读数接近 1023，查表会读成“很冷”，如果没有这条判断，程序会让加热器一直开着。</li>
+<li>加热器连续开着超过 120 s 还碰不到上门限 2.2 K，就打印 <code>OVER-RANGE</code>（超量程）。按模型，开关控温的量程上限约 2.6 m/s（全开时温差刚好 2.2 K），对应 <a href="page3.html">参数与调试篇</a>「二」里 3 m/s 的情况。</li>
+<li><code>MODE = 2</code> 只用来做下表的第 7 步（量加热电流）：上电后先 10 s 不加热（记零点），接着全开约 30 s，到上电后第 40 s 自动关断。</li>
+<li>开机后前 2 个开关周期不计入 duty3：第一个周期从“刚上电、温差为 0”开始，开、关时间都不正常，算进去会把平均占空拉偏。</li>
+</ul>
+<h3 id="第-2-段测量表">第 2 段测量表</h3>
+<p>「应该读到」来自 SPICE（加热电流、MOS 管压降）和 Python 热模型（温升、占空，示意参数，你的数值会因胶带贴法、气流不同而偏离，看趋势即可）。黑表笔大多接 0 V 轨，第 7 步例外（量 <span class="math math-inline">\(R_H\)</span> 两端）；读串口的步骤不用表笔，记作“—”。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>+9 V 轨</td>
+<td>+9 V 轨</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>8.5～9.6 V（新电池偏高）</td>
+<td>0：电池扣没接好</td>
+</tr>
+<tr>
+<td>2</td>
+<td><code>MODE = 0</code> 上传，前 10 s 串口打印 zero</td>
+<td>串口</td>
+<td>—</td>
+<td>—</td>
+<td>绝对值小于 0.3 K</td>
+<td>很大：N2 离你的身体或杯子太近，或两颗 NTC 公差大</td>
+</tr>
+<tr>
+<td>3</td>
+<td>加热开着时（串口 heat=1）量 ④ 栅极</td>
+<td>j23</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>约 5.0 V（ <span class="math math-inline">\(R_G\)</span> 、 <span class="math math-inline">\(R_{PD}\)</span> 分压 4.995 V）</td>
+<td>0：D9 线没接到 j19</td>
+</tr>
+<tr>
+<td>4</td>
+<td>加热开着时量 ③ 漏极</td>
+<td>h28</td>
+<td>0 V 轨</td>
+<td>直流 200 mV</td>
+<td>约 0.3 mV（SPICE 0.3364 mV），万用表可能显示 0.0</td>
+<td>几伏：MOS 管没开透或插反</td>
+</tr>
+<tr>
+<td>5</td>
+<td>加热关着时量 ③ 漏极</td>
+<td>h28</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>约 9 V（等于 +9 V 轨）</td>
+<td>0： <span class="math math-inline">\(R_H\)</span> 没接到 +9 V</td>
+</tr>
+<tr>
+<td>6</td>
+<td>无风、稳定 3 分钟后的平均占空 duty3</td>
+<td>串口</td>
+<td>—</td>
+<td>—</td>
+<td>约 30 %（模型 29.7 %）</td>
+<td>100 %：胶带没缠紧，N1 感受不到热</td>
+</tr>
+<tr>
+<td>7</td>
+<td><code>MODE = 2</code>，串口出现 zero 之后的 30 s 内量 <span class="math math-inline">\(R_H\)</span> 两端电压</td>
+<td>j21</td>
+<td>g25</td>
+<td>直流 20 V</td>
+<td>约 9.0 V，按 <span class="math math-inline">\(I = V/R_H\)</span> 算出约 16 mA（SPICE 16.07 mA）</td>
+<td>远小于 9 V：MOS 管没开透</td>
+</tr>
+<tr>
+<td>8</td>
+<td>回到 <code>MODE = 0</code>，硬纸片在 20 cm 外持续扇风</td>
+<td>串口</td>
+<td>—</td>
+<td>—</td>
+<td>duty3 明显升高；停扇后 1～2 分钟回落</td>
+<td>不变：风没吹到 N1/R_H</td>
+</tr>
+<tr>
+<td>9</td>
+<td>USB 风扇对着探头，分别开低档、高档</td>
+<td>串口</td>
+<td>—</td>
+<td>—</td>
+<td>每档稳定后的 duty3 不同，档越高越大（模型：1 m/s 约 65 %，2 m/s 约 80 %）</td>
+<td>一直 100 % + OVER-RANGE：风速超过约 2.6 m/s（开关控温的量程上限），把风扇移远或调低档</td>
+</tr>
+<tr>
+<td>10</td>
+<td>把 N2 贴到温水杯外壁 30 s（杯子不要靠近 N1）</td>
+<td>串口</td>
+<td>—</td>
+<td>—</td>
+<td>N2 被杯子烘热，程序以为环境变热、温差不够，加热器一直开着，duty3 先明显升高；拿开杯子后 N2 回落，加热器停一阵，1～2 分钟后 duty3 回到原值附近。这说明 N2 必须放在只感受气流温度的地方</td>
+<td>duty3 不动：N2 没贴到杯壁，或 <code>COMPENSATE</code> 是 false</td>
+</tr>
+<tr>
+<td>11</td>
+<td>改 <code>COMPENSATE = false</code> 重新上传，重复步骤 10</td>
+<td>串口</td>
+<td>—</td>
+<td>—</td>
+<td>N2 贴杯壁时 duty3 不受影响；但等房间温度变了（比如开空调），读数就漂了</td>
+<td>—</td>
+</tr>
+<tr>
+<td>12</td>
+<td><code>MODE = 1</code>（恒功率 60 %）重新上传，无风等 3 分钟记 dT，再重复步骤 8</td>
+<td>串口看 dT</td>
+<td>—</td>
+<td>—</td>
+<td>无风 dT 约 4.2 K，有风降到约 1.8 K；变化要 30～70 s 才稳定</td>
+<td>dT 超过 6 K：胶带包得太厚、N1 离风太远；N1 到 45 °C 会自动切断</td>
+</tr>
+</tbody>
+</table>
+<p>常见的“怪现象”和对策：</p>
+<ul>
+<li><strong>不开风扇，dT 也在 ±0.5 K 里慢慢漂。</strong> 空调、开门、人走动都会带起气流，人体靠近也会烤热 NTC。用一截纸筒或硬纸板卷成的风道罩住探头，读数取 30 s 平均。</li>
+<li><strong>A0 读数每次跳好几个字。</strong> 10 kΩ 分压点阻抗较高，长引线容易拾取干扰。<strong>先拔 9 V 电池扣和 USB</strong>，再在 e21（② 分压点）到 0 V 轨之间加一只 100 nF 电容（见图 40-p4-2 灰色点线，选装），把 N2 的两根引线绞在一起，远离 9 V 线。程序里每次读 16 次取平均，已经帮了一半。</li>
+<li><strong>N2 读数也跟着加热升高。</strong> N2 离加热器太近，或在它的下风处。把 N2 挪到上风处、离 <span class="math math-inline">\(R_H\)</span> 至少 5 cm，不要和 <span class="math math-inline">\(R_H\)</span> 贴在同一块胶带上。断开 9 V 时两颗 NTC 应读数一致；加热后 N2 升高不应超过约 0.5 K。</li>
+<li><strong>碰一下胶带，dT 就变。</strong> N1 和 <span class="math math-inline">\(R_H\)</span> 之间的接触热阻随压力变化。胶带缠紧后不要再去按压它。</li>
+<li><strong>电池用了一阵，占空整体偏高。</strong> 加热功率是 <span class="math math-inline">\(D \cdot V^2 / R_H\)</span> ，电池从 9.6 V 降到 8.5 V，同样占空下功率少了约 22 %，程序只好开更久。标定前后各量一次 +9 V 轨；要长期用，换 9 V 适配器。</li>
+<li><strong>为什么 <span class="math math-inline">\(R_H\)</span> 可以插在面包板上？</strong> 因为本页的 560 Ω 方案最坏情况只有约 42 °C，面包板塑料承受得了。换成大功率加热器时，必须把它装在陶瓷片或木片上，不能插在面包板上。</li>
+</ul>
+<p>几处值得算一算：</p>
+<ul>
+<li><strong>第 7 步算功率。</strong> 若读到 8.98 V， <span class="math math-inline">\(R_H\)</span> 实测 556 Ω，则 <span class="math math-inline">\(I\)</span> = 8.98 / 556 = 16.15 mA， <span class="math math-inline">\(P\)</span> = 8.98² / 556 = 0.145 W。乘以你测到的平均占空，就是平均加热功率：30 % 时约 43 mW。</li>
+<li><strong>第 6 步和第 9 步的比值。</strong> 无风 30 %、有风 65 %，加热功率涨了一倍多，对应散热能力从约 20 mW/K 涨到约 48 mW/K（<a href="page1.html">直觉篇</a> 的 King 曲线）。</li>
+<li><strong>为什么步骤 11 把 N2 贴杯壁反而“不受影响”？</strong> 不补偿时程序根本不看 N2 的实时读数，这恰恰是它的问题：真正的气体温度变了，它也不知道。比较两种设置下的现象，就明白为什么要用 N2 实时补偿。</li>
+</ul>
+<h3 id="标定选做">标定（选做）</h3>
+<p>有风速计的话，在 3～5 个风速下记录稳态 duty3，把这些点填进下面 Python 程序的 <code>CAL</code>，就得到你自己探头的“占空 → 风速”曲线。曲线弯的地方（低风速段）多放一个点。</p>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>本页本来就是慢变化，万用表和串口监视器足够：</p>
+<ul>
+<li><strong>串口绘图器</strong>：Arduino IDE 的“工具 → 串口绘图器”可以把 dT 和 heat 画成曲线，相当于一台慢速示波器，能看到 <a href="page3.html">参数与调试篇</a>「一、开关控温」那张图里的锯齿。</li>
+<li><strong>PWM 波形</strong>：<code>MODE = 1</code> 时 D9 是 490 Hz 方波，万用表直流挡量 ④ 读到的是平均值，约 0.6 × 5 V = 3.0 V；这正是“平均值 = 占空 × 幅度”的验证。</li>
+<li>看不到的：MOS 管开关瞬间的边沿（微秒级），本实验不需要。</li>
+</ul>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>把你量到的数填进第一部分（下面是示例值），代码算出加热电流和功率，把每个实测值和计算值并排比较（偏差超过 10 % 会提示先查哪里；漏极电压太小，只看是否低于 10 mV），再把 ADC 读数换成温度，并用你的标定点拟合占空 → 风速曲线。示例标定点按<a href="page3.html">参数与调试篇</a>「二、标定」的结论，在低风速段多放了 0.5 m/s 一个点；拟合用二次多项式，5 个点比 3 个系数多 2 个，打印出的残差才能说明拟合好不好。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import numpy as np
+
+# ---- 1. 你量到的值（示例值，换成你自己的）----
+V_H        = 8.98     # 第 7 步：R_H 两端电压（V）
+R_H        = 556.0    # 搭之前用电阻挡量的 R_H（Ω）
+V_gate     = 4.98     # 第 3 步：④ 栅极（V）
+V_drain_on = 0.00032  # 第 4 步：③ 漏极，加热开（V）
+duty0      = 30.5     # 第 6 步：无风平均占空（%）
+V_A1       = 2.51     # 第 1 段第 2 步：万用表量的 ①（V）
+cnt_room   = 509      # 同一时刻串口里 A1 的 ADC 读数
+CAL = [(0.0, 30.5), (0.5, 55.0), (1.0, 63.0), (2.0, 79.0), (2.5, 86.0)]   # (风速 m/s, 平均占空 %)
+
+def check(name, meas, calc, hint):
+    dev = (meas - calc) / calc * 100
+    print(f&quot;{name}：实测 {meas:.4g}，计算 {calc:.4g}，偏差 {dev:+.1f} %&quot;)
+    if abs(dev) &gt; 10:
+        print(f&quot;  偏差超过 10 %，先查：{hint}&quot;)
+
+# ---- 2. 加热电流、功率、温升上限 ----
+I = V_H / R_H
+P = V_H**2 / R_H
+check(&quot;加热电流 mA&quot;, I * 1e3, 16.07, &quot;MOS 管是否开透、R_H 色环是否看错&quot;)
+check(&quot;④ 栅极 V&quot;, V_gate, 4.995, &quot;D9 线、R_G 是否接在 j19、g19–g23&quot;)
+print(f&quot;③ 漏极（开）：实测 {V_drain_on*1e3:.2f} mV（SPICE 0.34 mV）&quot;)   # 太小，不用相对偏差
+if V_drain_on &gt; 0.01:
+    print(&quot;  超过 10 mV，先查：MOS 管型号（要 IRLZ44N）、S 脚是否接 0 V 轨&quot;)
+check(&quot;无风平均占空 %&quot;, duty0, 29.7, &quot;胶带是否缠紧、N2 是否离加热器 ≥ 5 cm、+9 V 轨电压&quot;)
+check(&quot;① 万用表 vs ADC 换算 V&quot;, V_A1, cnt_room * 5 / 1024, &quot;Arduino 5V 是否偏低、A1 线是否接在 a7&quot;)
+print(f&quot;无风平均功率 {P*duty0/100*1e3:.1f} mW&quot;)
+for rth in (75, 115):
+    print(f&quot;热阻 {rth} K/W：100 % 一直开着的表面温度 {25 + P*rth:.1f} °C（必须 &lt; 45 °C）&quot;)
+
+# ---- 3. ADC → 温度（和 Arduino 同一张表）----
+T_TAB = np.arange(10, 65, 5)
+CNT = np.array([681.2, 625.5, 568.6, 512.0, 457.0, 404.7, 356.0, 311.5, 271.4, 235.6, 204.1])
+t_room = np.interp(cnt_room, CNT[::-1], T_TAB[::-1])
+print(f&quot;A1 读数 {cnt_room} → 室温 {t_room:.2f} °C&quot;)
+
+# ---- 4. 标定曲线：占空 → 风速（二次多项式；点数比阶数多 2，残差才有意义）----
+v = np.array([c[0] for c in CAL]); d = np.array([c[1] for c in CAL])
+deg = min(2, len(CAL) - 2)
+coef = np.polyfit(d, v, deg)
+for di in (45.0, 70.0):
+    print(f&quot;平均占空 {di:.0f} % → 风速约 {np.polyval(coef, di):.2f} m/s&quot;)
+res = v - np.polyval(coef, d)
+print(&quot;标定点残差（m/s）：&quot;, np.round(res, 3))
+</code></pre>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>实测值</th>
+<th>计算值 / 模型值</th>
+<th>偏差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>+5 V 轨 / +9 V 轨</td>
+<td></td>
+<td>5.0 V / 9 V</td>
+<td></td>
+</tr>
+<tr>
+<td>室温下 ① / ②</td>
+<td></td>
+<td>25 °C 时 2.500 V</td>
+<td></td>
+</tr>
+<tr>
+<td>N1 贴温水杯壁后 ②</td>
+<td></td>
+<td>约 1.8～2.1 V</td>
+<td></td>
+</tr>
+<tr>
+<td>零点 zero</td>
+<td></td>
+<td>0 K</td>
+<td></td>
+</tr>
+<tr>
+<td>④ 栅极（开）</td>
+<td></td>
+<td>4.995 V</td>
+<td></td>
+</tr>
+<tr>
+<td>③ 漏极（开 / 关）</td>
+<td></td>
+<td>0.34 mV / 9 V</td>
+<td></td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(R_H\)</span> 电压、电流、功率</td>
+<td></td>
+<td>9.0 V、16.07 mA、144.6 mW</td>
+<td></td>
+</tr>
+<tr>
+<td>无风平均占空</td>
+<td></td>
+<td>29.7 %（开关控温模型）</td>
+<td></td>
+</tr>
+<tr>
+<td>扇风 / 风扇低档 / 高档平均占空</td>
+<td></td>
+<td>升高</td>
+<td></td>
+</tr>
+<tr>
+<td>恒功率 dT：无风 ___ K / 有风 ___ K</td>
+<td></td>
+<td>4.2 K / 1.8 K（模型）</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="思考题">思考题</h3>
+<p><strong>1. 为什么程序要先判断“NTC 断线”，而不只是判断“温度超过 45 °C”？</strong></p>
+<details><summary>答案</summary>
+<p>NTC 断线时，分压点被 <span class="math math-inline">\(R_S\)</span> 拉到 5 V，ADC 读数接近 1023，查表得到的是“很冷”（10 °C 以下）。只看“超过 45 °C”永远不会触发，而温差显得很小，开关控温会让加热器一直开。本页的 560 Ω 加热器即使一直开也只到约 42 °C，但换成大功率加热器时，这就是火灾隐患。安全保护要考虑“传感器自己坏了”的情况。</p>
+</details>
+<p><strong>2. 如果把设定温差从 2 K 改成 1.5 K（参数与调试篇的表里没有这一行），无风时占空会变成多少？能测的最大风速怎么变？1 个 ADC 字的相对误差呢？</strong></p>
+<details><summary>答案</summary>
+<p>按<a href="page3.html">参数与调试篇</a>的模型，无风占空和设定温差成正比：28.3 % × 1.5 ÷ 2 ≈ 21.3 %（PI 理想值，模型 21.26 %）。功率够用的风速变大到 5 m/s 以上（模型只扫到 5 m/s），但本节的标定点最高只到 2.5 m/s（第一部分的 CAL）：超出标定范围的那一段没有标定点，拟合曲线外推不可信，所以能用的量程仍由标定决定，多出来的功率余量用不上。代价是 1 个 ADC 字（约 0.089 K）的相对误差从 4.5 % 升到 0.089 ÷ 1.5 ≈ 5.9 %。设定温差是“分辨率”和“量程”之间的取舍。</p>
+</details>
+<p><strong>3. 为什么开关控温的平均占空要等 3 个周期才更新？能不能每个周期都更新？</strong></p>
+<details><summary>答案</summary>
+<p>单个周期里，开和关的时间会因为 ADC 噪声、气流的小扰动而来回跳，单个周期的占空比很“毛”。取最近 3 个周期平均，用速度换平稳。代价是更新慢：每个周期约 20～28 s，3 个就是 1 分钟左右，所以模型里 t90 是 60～84 s。想又快又稳，就要换 PI 控制（<a href="page3.html">参数与调试篇</a>「四」）。</p>
+</details>
+<p><strong>4. 工业热式流量计的 CTA 能在毫秒级响应，你的面包板版本为什么做不到？</strong></p>
+<details><summary>答案</summary>
+<p>工业热膜同时是加热器和测温元件，热容极小，运放直接闭环。面包板版本的 N1 贴在加热电阻外面，热量要穿过胶带和 NTC 的环氧外壳，NTC 自己的热时间常数约 15 s；控制回路再快，也快不过传感器“感觉到”温度变化的速度。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>我能说出 NTC 分压的中点电压随温度怎样变，并用查表 + 插值把 ADC 读数换成温度。</li>
+<li>我能算出 560 Ω 接 9 V 的电流和功率，并说出为什么不能用 47 Ω 接 12 V。</li>
+<li>我能说出 MOS 管开透时漏极为什么只剩零点几毫伏。</li>
+<li>我能解释为什么恒温差法里“平均占空”就是风速信号。</li>
+<li>我能说出环境 NTC 的作用，以及程序里过温、断线保护分别防什么。</li>
+</ul>
+<h2 id="小结">小结</h2>
+<ul>
+<li>第 1 段：两路 NTC 分压，25 °C 约 2.5 V，每 K 约 55 mV；查表插值就能在 Arduino 上测温。</li>
+<li>第 2 段：IRLZ44N 低边开关 + 560 Ω / 9 V 加热器，导通 16.07 mA、0.1446 W，最坏情况表面约 42 °C，另有 45 °C 软件切断和断线保护。</li>
+<li>迟滞开关控温把温差钉在 1.8～2.2 K，平均占空随风速升高；环境 NTC 实时补偿不能省。</li>
+<li>面包板版本受 NTC 约 15 s 热时间常数限制，响应是几十秒级；工业 CTA 用热膜 + 运放电桥做到毫秒级。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Vishay NTCLE100E3 数据手册（10 kΩ、B25/85 = 3977 K、耗散系数 7 mW/K、热时间常数 15 s、−40～125 °C）：<a href="https://www.vishay.com/docs/29049/ntcle100.pdf">https://www.vishay.com/docs/29049/ntcle100.pdf</a></li>
+<li>Vishay PR01/PR02/PR03 功率金属膜电阻数据手册（PR02 2 W、热阻 75 / 115 K/W）：<a href="https://www.vishay.com/docs/28729/pr010203.pdf">https://www.vishay.com/docs/28729/pr010203.pdf</a></li>
+<li>Infineon IRLZ44N 数据手册：<a href="https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725">https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725</a></li>
+<li>Arduino <code>analogWrite()</code> 参考（D9 约 490 Hz）：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogWrite.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogWrite.adoc</a></li>
+<li>METU AE547 热线风速仪讲义（King 定律、标定）：<a href="https://ocw.metu.edu.tr/pluginfile.php/1871/mod_resource/content/0/AE547/AE547_9_Hotwire-son.pdf">https://ocw.metu.edu.tr/pluginfile.php/1871/mod_resource/content/0/AE547/AE547_9_Hotwire-son.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

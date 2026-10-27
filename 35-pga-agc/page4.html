@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>35 程控增益与 AGC · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/35-pga-agc/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="35-程控增益与-agc--动手实验篇">35 程控增益与 AGC · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · 下一页：36 节施密特整形与频率/脉冲计数（即将上线） · 前置节点：<a href="../08-noninverting-amp/page4.html">08 同相放大 · 动手实验篇</a>、<a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<p>本页用一片 LM358 和一片 CD4051 搭出 <a href="page2.html">35 程控增益与 AGC · 原理与实现篇</a> 「二、最直接的接法：开关串在 R_g 里」那张六档程控增益放大器，全部用 5 V 直流、万用表就能完成。要亲手验证四件事：</p>
+<ol>
+<li><strong>先预测，再测量。</strong> 动手之前，用 08 节的公式 <span class="math math-inline">\(1 + R_f/R_g\)</span> 把六档的理想倍数算出来，填进文末记录表的「理想值（测前填）」一列；然后拨动三根选择线，用万用表逐档量出实际倍数。</li>
+<li>比较两列：低倍数档几乎一样，高倍数档实测明显偏小。差在哪里？原因是 CD4051 的导通电阻 <span class="math math-inline">\(R_{on}\)</span> 串在 <span class="math math-inline">\(R_g\)</span> 里；用两个测量点就能把 <span class="math math-inline">\(R_{on}\)</span> 反算出来（原理与实现篇「二」）。</li>
+<li>运放的失调会被放大：输入接地时，X5 档的输出不是 0，而是约 0.13 V（<a href="page3.html">35 程控增益与 AGC · 参数与调试篇</a> 「五、运放失调」）。</li>
+<li>有 Arduino 的话，再把原理与实现篇「五、数字 AGC：一条规则加一点回差」的换档规则烧进去，转动电位器，看它自己选档。</li>
+</ol>
+<p>本页的输入是直流，所以不需要原理与实现篇「四」的精密峰值检波：直流的“峰值”就是它本身。真正放大交流信号时，才要先检波再交给换档规则。</p>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li><strong>只用 12 V 及以下的直流电。</strong> 按全书约定，总电源是一只 9 V 电池组或 9～12 V 直流适配器，插在 Arduino 的圆形 DC 插座上，由板载稳压器变成 5 V；面包板上的芯片只接 Arduino 的 5V 脚。上传程序、看串口时 USB 线可以同时插着，Uno 会自动改用 DC 插座供电。没有适配器时，只用电脑 USB 的 5 V，或一个 5 V 的 USB 电源模块，或 3 节 AA 电池（约 4.5 V）也能完成全部测量；用电池时 CD4051 的 <span class="math math-inline">\(R_{on}\)</span> 会比 5 V 时更大，高倍数档读数更低，LM358 的输出上限也降到约 3.3 V。不需要任何市电设备，不要把 9 V 或 12 V 接到 CD4051 和 LM358 上。</li>
+<li><strong>CD4051 的任何引脚都不能超出电源范围。</strong> 它的信号脚和选择脚只能在 0 V 和 VDD（16 脚）之间。先给 16 脚通电，再接信号；不要在 CD4051 没上电时把电位器或 Arduino 的信号接进去，否则电流会从内部保护二极管倒灌。</li>
+<li><strong>CMOS 芯片怕静电。</strong> 拿 CD4051 之前先摸一下金属的桌腿或电脑机壳放掉身上的静电，尽量拿芯片的两头，不要摸引脚。</li>
+<li><strong>选择线和 INH 不能悬空。</strong> 没接 Arduino 时，A、B、C 三根线必须插到 +5 V 轨或 0 V 轨上；6 脚 INH 一直接地。悬空的 CMOS 输入会乱跳，档位随手一靠近就变。</li>
+<li><strong>元件会不会发热：</strong> 整个电路电流约 2 mA，任何元件都不会热。不要用手去试芯片热不热；如果闻到焦味、看到芯片变色或冒烟，立刻断电，多半是电源接反了。</li>
+<li><strong>接线、改线之前先断电</strong>（拔下 USB 线或电池盒）。唯一例外：本页要频繁改动的选择线 A/B/C 和输入线（d13 / d17），它们只连着 5 V 以内的小信号，可以通电时改插，但不要碰到其他引脚。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>型号或数值</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>运放</td>
+<td>LM358（DIP-8）</td>
+<td>1</td>
+<td>只用 A 组；B 组接成跟随器、输入接地</td>
+</tr>
+<tr>
+<td>模拟开关</td>
+<td>CD4051B（DIP-16）</td>
+<td>1</td>
+<td>八选一，本页用 X0～X5 六路</td>
+</tr>
+<tr>
+<td>反馈电阻 <span class="math math-inline">\(R_f\)</span></td>
+<td>100 kΩ，1 %</td>
+<td>1</td>
+<td>1 脚输出到 2 脚反相端</td>
+</tr>
+<tr>
+<td>档位电阻 <span class="math math-inline">\(R_g\)</span></td>
+<td>100 kΩ、24 kΩ、11 kΩ、5.1 kΩ、2 kΩ、1 kΩ，1 %</td>
+<td>各 1</td>
+<td>分别接 X0～X5</td>
+</tr>
+<tr>
+<td>输入分压电阻</td>
+<td>15 kΩ、10 kΩ、1 kΩ</td>
+<td>各 1</td>
+<td>15 kΩ 限制电位器的最高电压；10 kΩ + 1 kΩ 组成 ÷11</td>
+</tr>
+<tr>
+<td>电位器</td>
+<td>10 kΩ 线性（三脚）</td>
+<td>1</td>
+<td>调输入电压</td>
+</tr>
+<tr>
+<td>输出串联电阻</td>
+<td>1 kΩ</td>
+<td>1</td>
+<td>保护 Arduino 的 A0 脚</td>
+</tr>
+<tr>
+<td>去耦电容</td>
+<td>100 nF 瓷片</td>
+<td>2</td>
+<td>分别靠近 LM358 的 8 脚和 CD4051 的 16 脚</td>
+</tr>
+<tr>
+<td>主控（可选）</td>
+<td>Arduino Uno 或兼容板</td>
+<td>1</td>
+<td>供 5 V、选档、读数；没有也能做</td>
+</tr>
+<tr>
+<td>万用表</td>
+<td>直流电压挡 2 V / 20 V（最好有 200 mV 挡）</td>
+<td>1</td>
+<td>量小信号时 200 mV 挡更准；选做的交流验证要交流 200 mV 挡</td>
+</tr>
+<tr>
+<td>选做（交流验证）</td>
+<td>10 µF 电解电容 1 只；信号源（手机信号发生器 App + 3.5 mm 转接线，或函数信号发生器）</td>
+<td>各 1</td>
+<td>只在“没有示波器怎么办”里用</td>
+</tr>
+<tr>
+<td>面包板、跳线</td>
+<td>400 孔以上</td>
+<td>若干</td>
+<td>橙色接 +5 V，黑色接 0 V，绿色是信号</td>
+</tr>
+</tbody>
+</table>
+<p>搭之前用电阻挡量出六只 <span class="math math-inline">\(R_g\)</span> 和 <span class="math math-inline">\(R_f\)</span> 的实际阻值记下，Python 核对时要用。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p>电路就是原理与实现篇「二、最直接的接法」的六档串联接法，前面多了一个产生小输入电压的电位器分压。请先看图 35-p4-1，找到左边的 LM358（第 4～7 列）、右边的 CD4051（第 20～27 列），以及中间第 12～17 列的电位器和 ÷11 分压，再照下面的步骤插线。</p>
+<p><a class="img-link" href="img/35_p4_1_bb_pga.png"><img alt="30 列面包板俯视图：上方最外侧轨接 Arduino 5V（橙），第二条轨接 Arduino GND（0 V）；下方第二条轨是 0 V，最外侧不用，第 30 列一根黑线连通上下 0 V。左边 LM358 跨凹槽插在第 4 到 7 列，1 脚在 f4；Rf 100k 在 g4 到 g9，1k 输出电阻在 i4 到 i1，j1 绿线引到 Arduino A0；h5 到 h9 一根向上拱的绿色弧线把 2 脚延到第 9 列；中间上半区 15k 在 b10 到 b12，10k 电位器占 c12 到 c14，10k 在 b13 到 b17，1k 从第 17 列接到 0 V 轨，一根绿线从 d13 绕过凹槽、沿 h、i 两行之间插到 h6（3 脚所在的第 6 列下半）；c17 到 c18 是一只选做的 10 µF 电解电容（+ 脚在 c17），a18 一根选做的绿线向上引出，标着“信号源信号夹夹这根线”，只在交流验证时才插；右边 CD4051 插在第 20 到 27 列，上排 100k、24k、11k、5.1k 接 X0 到 X3 并落到 0 V 轨，下排 2k、1k 接 X4、X5；i22 到 i9 一根绿线把 COM 接到反相端；第 25 到 27 列三根绿线引到 Arduino D2、D3、D4；两只 100n 电容分别在两颗芯片的电源脚旁；紫色圆圈标出 j4 输出①、j9 反相端②、h24 X5 脚③、h6 同相端④" src="img/35_p4_1_bb_pga.png" loading="lazy" /></a></p>
+<p><em>图 35-p4-1　六档程控增益放大器的面包板接线（① 输出，② 反相端，③ X5 脚，④ 同相端 / 输入）</em></p>
+<p>面包板上两颗芯片加八只电阻，只看孔位容易乱。先对照图 35-p4-2 的电路原理图认清每一列是哪个节点，再动手插线。</p>
+<p><a class="img-link" href="img/35_p4_2_schem_lab.png"><img alt="图 35-p4-1 对应的电路原理图：+5 V 经 RA 15k、10k 电位器 RP 到地，滑动端 d13 一路经绿线接 LM358 的 3 脚（测量点④），另一路经 R10 10k、R1 1k 到地，中点在第 17 列是 ÷11；LM358 的 1 脚输出（测量点①）经 RO 1k 接 Arduino A0，RF 100k 从 1 脚接到 2 脚（第 9 列，测量点②）；2 脚经绿线 i22 到 i9 接 CD4051 的 3 脚 COM；CD4051 的 13 X0、14 X1、15 X2、12 X3、1 X4、5 X5 分别经 100k、24k、11k、5.1k、2k、1k 接地，5 脚 X5 处是测量点③；6 INH、7 VEE、8 VSS 接地；底部注明 16 脚 VDD 接 +5 V，11 A、10 B、9 C 接 Arduino D2、D3、D4，没有 Arduino 时三根线分别插到 +5 V 或地手动选档" src="img/35_p4_2_schem_lab.png" loading="lazy" /></a></p>
+<p><em>图 35-p4-2　图 35-p4-1 对应的电路原理图（灰色小字是面包板孔位，黄色圆圈是测量点）</em></p>
+<p><strong>对照看</strong>：面包板的连通规则见 <a href="../01-components-basics/page4.html">01 元件速成 · 动手实验篇</a>：同一列的 a–e、f–j 各自连通，凹槽两边不通。两颗芯片都跨在凹槽上，所以第 4 列下半是 LM358 的 1 脚（输出），上半是 8 脚（电源）；第 22 列上半是 CD4051 的 14 脚 X1，下半是 3 脚 COM，两者互不相通，这一点最容易搞错。原理图里“COM 接到反相端”在面包板上就是 i22 到 i9 那根绿线；“滑动端接 3 脚”就是 d13 到 h6 那根绿线，它的上端改插 d17（原理图里灰色点线那一路），输入就变成滑动端电压的 1/11；第 9 步再改插 0 V 轨。d17 这个孔一直留给输入线，所以“没有示波器怎么办”里选做的 10 µF 不插 d17：它的 + 脚插同一列上半的空孔 c17（和 d17 天然相通，就是原理图 35-p4-3 里的 d17 节点），− 脚插 c18，a18 再插一根跳线给信号源的信号夹；这三样平时都不插。原理图上还画了：整块板的 +5 V 和 0 V 来自 Arduino 的 5V、GND（第 30 列把上下两条 0 V 轨连通）；两只 100 nF 去耦电容分别在第 4 列和第 20 列上半；LM358 用不到的 B 组接成跟随器（c5–c6）、同相端接地（a7）。</p>
+<ol>
+<li><strong>铺电源轨。</strong> Arduino 的 5V 接上方最外侧轨，GND 接上方第二条轨（0 V）；第 30 列一根黑线把上方 0 V 和下方第二条轨连起来。没有 Arduino 就用 USB 电源模块或 3 节 AA 电池，正极接 +5 V 轨、负极接 0 V 轨。先不要通电。</li>
+<li><strong>插 LM358。</strong> 缺口朝左，1 脚在 f4、8 脚在 e4。橙线 a4 → +5 V 轨（8 脚）；黑线 j7 → 下方 0 V 轨（4 脚）。不用的 B 组：绿短线 c5–c6 把 7、6 脚连成跟随器，黑线 a7 → 上方 0 V 轨把 5 脚接地。一只 100 nF 从第 4 列上半接到 0 V 轨。</li>
+<li><strong>插反馈和输出。</strong> <span class="math math-inline">\(R_f\)</span> 100 kΩ 插 g4–g9；一根绿色短线 h5–h9 把 2 脚延到第 9 列；1 kΩ 插 i4–i1，j1 引一根绿线到 Arduino A0（没有 Arduino 就空着）。</li>
+<li><strong>插输入分压。</strong> 橙线 a10 → +5 V 轨；15 kΩ 插 b10–b12；电位器三脚插 c12、c13（中间滑动端）、c14；黑线 a14 → 0 V 轨；10 kΩ 插 b13–b17；1 kΩ 从 a17 接 0 V 轨。最后一根绿线把 d13 接到 h6（第 6 列下半，正对 LM358 的 3 脚；别插到第 7 列，那是 4 脚 GND）。</li>
+<li><strong>插 CD4051。</strong> 缺口朝左，1 脚在 f20、16 脚在 e20。橙线 a20 → +5 V 轨（16 脚 VDD）；另一只 100 nF 从第 20 列上半接到 0 V 轨。上排 <span class="math math-inline">\(R_g\)</span> ：第 23 列 100 kΩ（X0）、第 22 列 24 kΩ（X1）、第 21 列 11 kΩ（X2）、第 24 列 5.1 kΩ（X3），另一端都接上方 0 V 轨；下排：2 kΩ 从 j20（X4）、1 kΩ 从 j24（X5）接下方 0 V 轨。</li>
+<li><strong>接 COM 和控制脚。</strong> 绿线 i22 → i9（3 脚 COM 接反相端）；j25、j26、j27 三根黑线接下方 0 V 轨（6 脚 INH、7 脚 VEE、8 脚 VSS）；第 25、26、27 列上半（11 脚 A、10 脚 B、9 脚 C）各引一根绿线，接 Arduino D2、D3、D4；没有 Arduino 时这三根线先都插到 0 V 轨（X0 档）。</li>
+<li><strong>检查后通电。</strong> 对照图 35-p4-2 逐根检查：两颗芯片的电源脚、COM 到 2 脚、每只 <span class="math math-inline">\(R_g\)</span> 的一端在对应的 X 脚、另一端在 0 V；输入线上端在 d13，选做的 10 µF 和 a18 跳线这时都不插。通电后先量测量表第 1 步。</li>
+</ol>
+<p>档位号 <span class="math math-inline">\(k = 4C + 2B + A\)</span> ，C、B、A 接 +5 V 算 1、接 0 V 算 0。例如 X5 = 101，就是 C 接 +5 V、B 接 0 V、A 接 +5 V。</p>
+<p>画图脚本会检查两颗芯片的电源脚、COM 到反相端、六只 <span class="math math-inline">\(R_g\)</span> 、分压和输入线的每一处连接，确认选做的 10 µF 插在 c17–c18、和第 17 列相通却不占 d17，并确认 +5 V 轨和 0 V 轨互不相连；接错一处图就画不出来。</p>
+<h2 id="最小必要知识arduino-上手第一次上传程序">最小必要知识：Arduino 上手（第一次上传程序）</h2>
+<p>按本教程的阅读顺序，这是你<strong>第一次</strong>往 Arduino 里上传程序。第一部分里 Arduino 只当过 5 V 电源或一个引脚，没写过程序也没关系。本页只用到它的四样东西：5 V 电源、GND、三个数字输出脚、一个模拟输入脚。后面 36～42 节再用 Arduino 时都会回指这个框。</p>
+<ul>
+<li><strong>装软件</strong>：到 Arduino 官网的下载页（见文末参考资料）下载 Arduino IDE 2（Windows、macOS、Linux 都有）并安装。第一次启动时它会提示安装开发板支持包和 USB 驱动，都点“安装/允许”。</li>
+<li><strong>接板子</strong>：用 USB 线把 Arduino Uno 接到电脑，板上标着 ON 的电源灯会亮。此时<strong>面包板先不要接</strong>，先确认板子本身能上传。</li>
+<li><strong>选板子和端口</strong>：菜单“工具 → 开发板”选 Arduino Uno；“工具 → 端口”选新出现的那个（Windows 上是 COM 几，macOS 上是 /dev/cu.usbmodem 开头，Linux 上是 /dev/ttyACM0 一类）。分不清哪个时，拔掉 USB 看哪个消失。列表里一个端口都没有：换一根能传数据的 USB 线（有些线只能充电），或者重装驱动。</li>
+<li><strong>先上传一个示例试手</strong>：菜单“文件 → 示例 → 01.Basics → Blink”，点左上角的向右箭头“上传”。下方提示“上传成功”（Done uploading）后，板上标 L 的小灯每秒闪一次，说明整条链路通了。报错 “not in sync” 或 “port busy” 多半是端口选错或串口监视器还开着。</li>
+<li><strong>上传本节程序</strong>：新建一个文件，把下面的程序整段粘贴进去，同样点“上传”。再点右上角的放大镜打开“串口监视器”，右下角波特率选 9600，就能看到读数。改了程序要重新点“上传”才会生效。</li>
+<li><strong>读引脚编号</strong>：板子一侧排针旁印着 0～13，这是数字脚，程序里的 <code>2</code>、<code>3</code>、<code>4</code> 就是印着 2、3、4 的那三个孔（文中写作 D2、D3、D4，旁边带“~”的 3、5、6、9、10、11 还能输出 PWM，后面几节会用）；另一侧印着 A0～A5，是模拟输入脚，程序里写 <code>A0</code>。电源排针上印着 5V、3.3V、GND、VIN，本页只用 5V 和 GND。</li>
+<li><strong>模拟输入读数</strong>：<code>analogRead(A0)</code> 把 0～5 V 变成 0～1023 的整数，一个字约 4.883 mV；<code>Serial.println()</code> 把数打印到串口监视器。</li>
+<li><strong>5V 和 GND</strong>：板子电源排针上的 5V 和 GND 就是面包板的 +5 V 轨和 0 V 轨。电脑 USB 的 5 V 实际可能在 4.7～5.1 V 之间，而 <code>analogRead</code> 就是拿它当参考，所以先用万用表量一下，把程序里的 <code>VREF</code> 改成实测值。</li>
+</ul>
+<blockquote>
+<p>⚠️ 下面的程序<strong>未经运行验证</strong>：我们没有在真实的 Arduino 上跑过它，只用 Python 模拟过同样的换档规则（原理与实现篇「五」）。上传后如果行为和描述不同，先看串口监视器打印的档位和读数。</p>
+</blockquote>
+<pre><code class="language-cpp">// 未经运行验证
+// 35 程控增益：Arduino Uno 选档 + 自动换档读数
+// A/B/C 选择线接 D2/D3/D4，LM358 输出经 1k 接 A0
+const int PIN_A = 2, PIN_B = 3, PIN_C = 4;
+// 每档的实际倍数：先用下面的 Python 核对，再把实测值填进来
+const float GAIN[6] = {1.995, 5.087, 9.718, 18.95, 41.49, 69.03};
+const float VREF = 5.00;   // 用万用表量 5V 脚，填实测值
+const float FS = 3.0, DOWN = 0.90, UP = 0.30;
+const int FIXED = -1;      // 0~5：固定在这一档（做测量表时用）；-1：自动换档
+
+int k = 0;                 // 当前档位
+bool skipNext = true;      // 换档后的第一次读数丢掉
+
+void setGear(int g) {
+  digitalWrite(PIN_A, g &amp; 1);
+  digitalWrite(PIN_B, (g &gt;&gt; 1) &amp; 1);
+  digitalWrite(PIN_C, (g &gt;&gt; 2) &amp; 1);
+}
+
+void setup() {
+  pinMode(PIN_A, OUTPUT);
+  pinMode(PIN_B, OUTPUT);
+  pinMode(PIN_C, OUTPUT);
+  Serial.begin(9600);
+  k = (FIXED &gt;= 0) ? FIXED : 0;
+  setGear(k);
+  delay(10);
+}
+
+void loop() {
+  int n = analogRead(A0);
+  float vout = n * VREF / 1024.0;
+  if (skipNext) {
+    skipNext = false;                        // 刚换完档，这次不算
+  } else if (FIXED &lt; 0 &amp;&amp; vout &gt; DOWN * FS &amp;&amp; k &gt; 0) {
+    k--; setGear(k); skipNext = true;        // 太大：降一档
+  } else if (FIXED &lt; 0 &amp;&amp; vout &lt; UP * FS &amp;&amp; k &lt; 5) {
+    k++; setGear(k); skipNext = true;        // 太小：升一档
+  } else {
+    float vin = vout / GAIN[k];
+    Serial.print(&quot;X&quot;); Serial.print(k);
+    Serial.print(&quot;  n=&quot;); Serial.print(n);
+    Serial.print(&quot;  Vout=&quot;); Serial.print(vout, 3);
+    Serial.print(&quot; V  Vin=&quot;); Serial.print(vin * 1000.0, 2);
+    Serial.println(&quot; mV&quot;);
+  }
+  delay(20);
+}
+</code></pre>
+<p><strong>没有 Arduino 也能做完整个实验</strong>：用 USB 电源模块或电池供电，把 A、B、C 三根线手动插到 +5 V 轨或 0 V 轨来选档，用万用表量①代替 <code>analogRead</code>。自动换档那一步（第 11 步）做不了，但可以自己当“程序”：看①的读数，超过 2.7 V 就手动降一档，低于 0.9 V 就升一档。</p>
+<h2 id="测量表">测量表</h2>
+<p><strong>有 Arduino 时怎么选档</strong>：选择线已经接到 D2、D3、D4，档位由程序决定。把程序里的 <code>FIXED</code> 改成 0～5 再上传，就固定在那一档（第 3～10 步都这样做）；改回 <code>-1</code> 就是自动换档（第 11 步）。这时<strong>不要</strong>再把 A/B/C 线拔下来插到电源轨上：Arduino 的引脚正输出 0 V 时被插到 +5 V，等于把它短路。下表里写的“A 接 +5 V”等，只适用于没有 Arduino、手动选档的情况。</p>
+<p>没有 Arduino 时，按下表把三根线插到 +5 V 轨（1）或 0 V 轨（0）：</p>
+<table>
+<thead>
+<tr>
+<th>档</th>
+<th>C（第 27 列）</th>
+<th>B（第 26 列）</th>
+<th>A（第 25 列）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>X0</td>
+<td>0</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>X1</td>
+<td>0</td>
+<td>0</td>
+<td>1</td>
+</tr>
+<tr>
+<td>X2</td>
+<td>0</td>
+<td>1</td>
+<td>0</td>
+</tr>
+<tr>
+<td>X3</td>
+<td>0</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td>X4</td>
+<td>1</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>X5</td>
+<td>1</td>
+<td>0</td>
+<td>1</td>
+</tr>
+</tbody>
+</table>
+<p>「应该读到」的数来自 ngspice 仿真：运放用 TI 的 LM358 模型，CD4051 用理想开关串 470 Ω 代替（TI 手册 5 V 时的典型值），输入用理想电压源，只取图 35-p4-2 里 ④ 到 ① 的部分。黑表笔一律接 0 V 轨。前三档（X0～X2）输入线插 d13，直接用滑动端电压；后三档（X3～X5）把输入线上端改插 d17，用 ÷11 后的小电压，这样电位器转一点只变一点，好调。<strong>倍数一律用 ①÷② 来算</strong>：②是反相端，它和④只差运放的失调（仿真约 1.9 mV，手册最大 ±7 mV），用②当分母，测出的倍数本身就不受失调影响。但这只是让倍数准；以后拿这个倍数去换算读数时，失调还在，要靠第 9 步的零点去扣。②和④在 2 V 以下时用 2 V 挡，读到小数点后三位（1 mV）。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>电源轨</td>
+<td>+5 V 轨</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>4.7～5.1 V（USB）；电池约 4.5 V</td>
+<td>0：USB 线或电池盒没接好</td>
+</tr>
+<tr>
+<td>2</td>
+<td>输入线插 d13，电位器从一头转到另一头时滑动端的范围</td>
+<td>d13</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>0～约 1.29 V</td>
+<td>一直约 0 V：15 kΩ 没插或插错列，电位器上端没接到电源；一直接近 5 V：15 kΩ 被短路，或电位器上端直接插到了 +5 V</td>
+</tr>
+<tr>
+<td>3</td>
+<td>X0（C、B、A 全接 0 V）：调④到 1.000 V，量②和①</td>
+<td>h6、j9、j4</td>
+<td>0 V 轨</td>
+<td>④②：直流 2 V；①：直流 20 V</td>
+<td>② 1.002 V，① 1.997 V，倍数 1.994</td>
+<td>①等于④：COM 没接到反相端</td>
+</tr>
+<tr>
+<td>4</td>
+<td>X1（手动：A 接 +5 V；有 Arduino：<code>FIXED = 1</code>）：调④到 0.400 V</td>
+<td>j9、j4</td>
+<td>0 V 轨</td>
+<td>②：直流 2 V；①：直流 20 V</td>
+<td>② 0.402 V，① 2.043 V，倍数 5.08</td>
+<td>倍数没变：A 线没插到 D2 / +5 V</td>
+</tr>
+<tr>
+<td>5</td>
+<td>X2（B 接 +5 V，A 接 0 V）：调④到 0.200 V</td>
+<td>j9、j4</td>
+<td>0 V 轨</td>
+<td>②：直流 2 V；①：直流 2 V / 20 V</td>
+<td>② 0.202 V，① 1.961 V，倍数 9.71</td>
+<td>—</td>
+</tr>
+<tr>
+<td>6</td>
+<td>输入线上端改插 d17；X3（A、B 接 +5 V）：调④到 0.100 V</td>
+<td>j9、j4</td>
+<td>0 V 轨</td>
+<td>直流 200 mV / 20 V</td>
+<td>② 101.9 mV，① 1.930 V，倍数 18.9</td>
+<td>④调不下去：输入线还在 d13</td>
+</tr>
+<tr>
+<td>7</td>
+<td>X4（C 接 +5 V，A、B 接 0 V）：调④到 50.0 mV</td>
+<td>j9、j4</td>
+<td>0 V 轨</td>
+<td>直流 200 mV / 20 V</td>
+<td>② 51.9 mV，① 2.152 V，倍数 41.5</td>
+<td>—</td>
+</tr>
+<tr>
+<td>8</td>
+<td>X5（C、A 接 +5 V）：调④到 30.0 mV，再量③</td>
+<td>j9、h24、j4</td>
+<td>0 V 轨</td>
+<td>直流 200 mV / 20 V</td>
+<td>② 31.9 mV，③ 21.7 mV，① 2.202 V，倍数 69.0</td>
+<td>倍数接近 101：你的 CD4051 导通电阻很小，或在用 VDD 更高的电源；倍数在 50～69 之间：你的芯片 <span class="math math-inline">\(R_{on}\)</span> 偏大（取手册 5 V 最大值时约 49.8 倍），属正常，按实测值写进 <code>GAIN[]</code></td>
+</tr>
+<tr>
+<td>9</td>
+<td>仍在 X5，输入线上端改插 0 V 轨</td>
+<td>j4</td>
+<td>0 V 轨</td>
+<td>直流 2 V</td>
+<td>约 0.133 V（失调 × 69；手册最坏可到约 0.48 V）</td>
+<td>读到 0 V 附近：你那只芯片的失调是负的，输出贴住了 0 V，这时零点读不出来，可改用第 8 步的小输入做校准</td>
+</tr>
+<tr>
+<td>10</td>
+<td>切到 X1，输入线插回 d13，把电位器转到最大</td>
+<td>j4</td>
+<td>0 V 轨</td>
+<td>直流 20 V</td>
+<td>① 停住不再上升：手册保证 ≥ 3.5 V（离 V+ 最多 1.5 V），仿真约 3.8 V；4.5 V 电池约 3.3 V</td>
+<td>一直跟着涨到 5 V：你的运放不是 LM358</td>
+</tr>
+<tr>
+<td>11</td>
+<td>选做（需 Arduino）：程序设 <code>FIXED = -1</code>，慢慢转电位器</td>
+<td>串口监视器</td>
+<td>—</td>
+<td>—</td>
+<td>档位自己从 X0 一路升到 X5（或反过来）；Vin 读数随电位器连续变化，没有跳变</td>
+<td>两档来回跳：检查 UP 是否被改大</td>
+</tr>
+</tbody>
+</table>
+<p>几处值得算一算：</p>
+<ul>
+<li><strong>第 8 步反算 <span class="math math-inline">\(R_{on}\)</span> 。</strong> 流过 <span class="math math-inline">\(R_g\)</span> （1 kΩ）的电流是 ③÷1 kΩ = 21.7 µA；②和③之差 31.9 − 21.7 = 10.2 mV 就是这个电流在开关上的压降，所以 <span class="math math-inline">\(R_{on}\)</span> = 10.2 mV ÷ 21.7 µA ≈ 470 Ω，和仿真里设的值一致。手册给的 5 V 数据是典型 470 Ω、最大 1050 Ω，你的芯片落在哪里看批次和温度。</li>
+<li><strong>第 3～8 步的输出都在 2 V 左右</strong>：这是故意的。输入电压按“倍数 × 输入 ≈ 2 V”挑过，正好落在原理与实现篇换档规则的 30 %～90 % 窗口里（0.9～2.7 V），Arduino 读数约 395～451 个字。</li>
+</ul>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>本页本身全是直流，万用表就够了。下面这些现象需要信号发生器加示波器才能看清：</p>
+<ul>
+<li>
+<p><strong>带宽随档位变窄</strong>：见下一条交流验证前的“先猜”。没有示波器时<strong>别想用万用表测带宽</strong>：大多数万用表的交流挡在几百 Hz 以上读数就开始偏小，20 kHz 时读数变小，分不清是放大器还是表的原因。</p>
+</li>
+<li>
+<p><strong>只用万用表，能验证的是低频交流倍数。</strong></p>
+<p><strong>先猜</strong>：50 Hz 的交流倍数会比你在第 8 步测出的直流倍数小吗？换成 20 kHz 呢？（提示：带宽约等于增益带宽积 ÷ 倍数，见参数与调试篇「一、运放带宽」。）</p>
+<details><summary>答案</summary>
+<p>50～200 Hz 远低于带宽，交流倍数几乎和直流一样。20 kHz 已超过 X5 的带宽，倍数会明显变小：经典 LM358（0.7 MHz）在 X5（69 倍）带宽约 10 kHz、X0（2 倍）约 350 kHz；LM358B（1.2 MHz）在 X5 约 17 kHz、X0 约 600 kHz；仿真模型在两者之间（X5 约 14 kHz）。不过万用表交流挡在 20 kHz 也读不准，要用示波器看。</p>
+</details>
+<p><strong>为什么要垫直流</strong>：本电路单 5 V 供电，输入不能低于 0 V，交流信号必须骑在一个正的直流上。</p>
+<p><strong>为什么不能垫 <span class="math math-inline">\(V_{MID}\)</span></strong> （ <span class="math math-inline">\(V_{MID}\)</span> ：电源一半、约 2.5 V 的参考点）：很多单电源电路这么做，但本电路 <span class="math math-inline">\(R_g\)</span> 下端接地，直流也被放大 69 倍，2.5 V 的偏置会让输出直接顶死。所以只垫约 20 mV。</p>
+<p><strong>操作步骤</strong>（接法见图 35-p4-3）：</p>
+<ol>
+<li><strong>先断电</strong>。档位放 X5，输入线上端插 d17；10 µF 的 + 脚插 c17（和 d17 同一列上半，天然相通），− 脚插 c18；a18 插一根跳线，信号源的信号夹夹在这根线上，信号源的地夹接 0 V 轨。插之前先把信号源幅度旋到最小，频率取 50～200 Hz。</li>
+<li>检查无误后<strong>通电</strong>。先只看直流：把滑动端调到约 0.22 V，④就有约 20 mV 直流。</li>
+<li>把信号源幅度从最小慢慢往上调，直到④的交流读数约 7 mV（有效值，峰值约 10 mV）。④的交流不要超过约 14 mV（有效值）：20 mV ÷ √2 ≈ 14 mV，这时峰值正好 20 mV，波谷碰到 0 V；按约 7 mV 做，留了一倍余量。X5 档时①的直流约 1.5 V，交流峰值约 0.69 V，摆动范围约 0.8～2.2 V，不会碰到 0 V 和输出上限。</li>
+<li>用交流挡分别读④和①：④用交流 200 mV 挡，①用交流 2 V 挡；如果你的表交流挡最低只有 2 V，④读不准，这一项只看个大概。比值应接近你在第 8 步测出的直流倍数。</li>
+<li>量完先把幅度调回最小，<strong>断电后</strong>再拆 10 µF、a18 跳线和信号源。</li>
+</ol>
+<p>这条交流支路的接法见图 35-p4-3。它是在图 35-p4-2 输入网络的基础上，在第 17 列多接出一只 10 µF 电容和一台信号源。</p>
+<p><a class="img-link" href="img/35_p4_3_ac_inject.png"><img alt="图 35-p4-3 交流耦合注入的电路原理图：+5 V 经 RA 15k、电位器 RP 10k 到地，滑动端 d13 调到约 0.22 V，经 R10 10k、R1 1k 分压，中点 d17 的直流约 20 mV，用输入线接 LM358 的 3 脚（测量点④）；同一节点接 10 µF 电容的 + 端（面包板 c17），电容 − 端（c18）接信号源，信号夹夹 a18 跳线，信号源另一端接 0 V；图下注明 d17 对交流的等效电阻约 909 Ω，10 µF 在 50 Hz 的容抗约 318 Ω，以及先断电接好、通电后从最小调幅度、拆之前先断电" src="img/35_p4_3_ac_inject.png" loading="lazy" /></a></p>
+<p><em>图 35-p4-3　「低频交流倍数」验证的接法：直流偏置和交流信号在 d17 节点叠加后送到④</em></p>
+<p>图里左半边就是原来的直流偏置：滑动端的 0.22 V 经 ÷11 变成 d17 节点上约 20 mV，它让④始终高于 0 V。右半边是新加的交流支路：信号源经 10 µF 接到这个节点，电容挡住直流，只让交流通过，所以信号源本身的直流不会改变这 20 mV。</p>
+<p>电容的 + 端接第 17 列（c17），因为这里的直流（约 20 mV）比信号源一侧（0 V）高。</p>
+<p>d17 节点对交流的等效电阻只有约 909 Ω，10 µF 在 50 Hz 的容抗约 318 Ω，二者分压，信号源的读数会比④大一些，所以一律以④的交流读数为准去调。</p>
+</li>
+<li>
+<p><strong>换档瞬间的毛刺</strong>：开关切换时会有一个很短的尖峰，只有示波器能看到；这就是程序里要丢掉换档后第一次读数的原因。</p>
+</li>
+<li>
+<p><strong>峰值检测和模拟 AGC 的动态过程</strong>：见原理与实现篇「四、峰值检测」的检波波形图和参数与调试篇「四、模拟 AGC 的快慢」的三条响应曲线，都需要交流信号。</p>
+</li>
+</ul>
+<p>没有示波器时，第 11 步的串口监视器就是你的“慢速示波器”：每 20 ms 一行，能看出档位怎样一步步变化。</p>
+<h2 id="用-python-核对你的读数">用 Python 核对你的读数</h2>
+<p>代码用你量到的②、①算出每档的实际倍数，和“理想倍数”“串上 <span class="math math-inline">\(R_{on}\)</span> 后的倍数”比较，偏差超过 10 % 就提示；它还会用第 8 步的②、③反算 <span class="math math-inline">\(R_{on}\)</span> ，并预测 Arduino 应该读到多少个字。</p>
+<pre><code class="language-python"># 35 程控增益 · 动手实验核对：每档倍数、R_on 反算、失调
+
+# ---- 1. 你量到的值（示例值，换成你自己的）----
+RF = 100e3
+RG = [100e3, 24e3, 11e3, 5.1e3, 2e3, 1e3]             # 六只 R_g 的实测值
+V2 = [1.003, 0.4025, 0.2018, 0.1021, 0.0520, 0.0320]  # 第 3～8 步：② 反相端（V）
+V1 = [1.998, 2.040, 1.955, 1.925, 2.148, 2.195]       # 第 3～8 步：① 输出（V）
+V3_X5 = 0.0218                                        # 第 8 步：③ X5 脚（V）
+V1_ZERO = 0.13                                        # 第 9 步：输入接地时 X5 的 ①（V）
+VREF = 5.00                                           # 第 1 步：电源轨
+
+warn = 0
+def check(name, meas, calc):
+    global warn
+    dev = (meas - calc) / calc
+    flag = &quot;  ← 偏差超过 10 %&quot; if abs(dev) &gt; 0.10 else &quot;&quot;
+    warn += bool(flag)
+    print(f&quot;{name:&lt;14} 实测 {meas:9.3f}   计算 {calc:9.3f}   偏差 {dev * 100:+6.1f} %{flag}&quot;)
+
+# ---- 2. 由 ② ③ 反算开关导通电阻 ----
+i_x5 = V3_X5 / RG[5]
+ron = (V2[5] - V3_X5) / i_x5
+print(f&quot;X5：R_g 电流 {i_x5 * 1e6:.1f} µA，开关压降 {(V2[5] - V3_X5) * 1e3:.1f} mV → R_on ≈ {ron:.0f} Ω&quot;)
+if not 100 &lt;= ron &lt;= 1050:                              # X5 真正的检查：R_on 落在合理范围内
+    print(&quot;  ← R_on 不在 100～1050 Ω：查③是不是量在 X5 脚（h24）上&quot;)
+    warn += 1
+
+# ---- 3. 每档倍数：实测 ①/② 对比「串 R_on」的公式 ----
+for k in range(6):
+    g_meas = V1[k] / V2[k]
+    g_ideal = 1 + RF / RG[k]
+    g_ron = 1 + RF / (RG[k] + ron)
+    check(f&quot;X{k} 倍数&quot;, g_meas, g_ron)      # 注意：X5 的 R_on 就是用 X5 自己反算的，这一行几乎必然吻合
+    print(f&quot;{'':14} 理想值 {g_ideal:7.2f}，R_on 让它小了 {(1 - g_ron / g_ideal) * 100:4.1f} %，&quot;
+          f&quot;Arduino 应读 {V1[k] / VREF * 1024:4.0f} 字&quot;)
+
+# ---- 4. 失调：零输入输出 ÷ 倍数 ----
+vos = V1_ZERO / (V1[5] / V2[5])
+print(f&quot;失调电压约 {vos * 1e3:.2f} mV（LM358 手册最大 ±7 mV）&quot;)
+if abs(vos) &gt; 7e-3:
+    print(&quot;  ← 超过手册上限：查输入线是否真的接到了 0 V&quot;)
+    warn += 1
+print(&quot;全部在范围内&quot; if warn == 0 else f&quot;有 {warn} 项需要检查&quot;)
+</code></pre>
+<p>示例数据是按仿真值加了一点出入编的练习值，不是实测结果。X5 那一行的倍数几乎一定吻合（只差测量的出入），因为 <span class="math math-inline">\(R_{on}\)</span> 就是用 X5 的数据反算的；X5 真正要看的是反算出来的 <span class="math math-inline">\(R_{on}\)</span> 是否落在 100～1050 Ω 之间。如果只有高增益档（X4、X5）偏差大，多半是 <span class="math math-inline">\(R_{on}\)</span> 和示例不同，看反算出来的 <span class="math math-inline">\(R_{on}\)</span> ；如果每一档都按同一个比例偏，查 <span class="math math-inline">\(R_f\)</span> 的实际阻值；如果①根本不随档位变，回到测量表第 3 步查 COM 的连线。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>理想值（测前填）</th>
+<th>实测值</th>
+<th>计算值（串 <span class="math math-inline">\(R_{on}\)</span> 后）</th>
+<th>偏差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>+5 V 电源轨</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>滑动端电压范围</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X0 倍数（①÷②）</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X1 倍数</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X2 倍数</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X3 倍数</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X4 倍数</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X5 倍数</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>反算的 <span class="math math-inline">\(R_{on}\)</span></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>X5 零输入输出 / 失调</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>输出上限</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>选做：自动换档时的档位序列</td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h3 id="思考题">思考题</h3>
+<p><strong>1. 第 8 步（④ = 30 mV，②约 31.9 mV）里，假如你的 CD4051 的 <span class="math math-inline">\(R_{on}\)</span> 正好是手册最大值 1050 Ω，③、②与③之差、①各大约是多少？</strong></p>
+<details><summary>答案</summary>
+<p>反相端对地是 1 kΩ + 1.05 kΩ = 2.05 kΩ，电流 31.9 mV ÷ 2.05 kΩ ≈ 15.6 µA；③ = 15.6 µA × 1 kΩ ≈ 15.6 mV；②−③ ≈ 16.3 mV 落在开关上；倍数 1 + 100/2.05 ≈ 49.8，① ≈ 31.9 mV × 49.8 ≈ 1.59 V。开关电阻越大，压降在②和③之间占得越多，倍数掉得越狠。这正是原理与实现篇「三」要改成抽头接法的原因：让开关处在不流电流的位置。</p>
+</details>
+<p><strong>2. 如果把 CD4051 换成导通电阻只有约 5 Ω 的模拟开关，X5 的倍数会变成多少？还需要用①÷②来算吗？</strong></p>
+<details><summary>答案</summary>
+<p>倍数 = 1 + 100 k / (1 k + 5) ≈ 100.5，只比 101 小约 0.5 %。①÷②仍然建议用：②和④之差是运放的失调，和开关无关。如果用④当分母，2.202 V ÷ 30 mV = 73.4，比 69.0 多出约 6 %，多出来的就是 1.9 mV 失调被当成了信号。</p>
+</details>
+<p><strong>3. X5 档输入接地时，Arduino 读到 27 个字；把输入调到 30 mV 后读到 451 个字。按 <code>GAIN[5] = 69.03</code>、一个字 4.883 mV，扣零点和不扣零点，分别换算出多少 mV？怎样在程序里改？</strong></p>
+<details><summary>答案</summary>
+<p>扣零点：(451 − 27) × 4.883 mV = 2.070 V，÷ 69.03 = 29.99 mV，就是真实的 30 mV。不扣：451 × 4.883 mV = 2.202 V，÷ 69.03 = 31.9 mV，多了约 6 %。改法：上电时把输入接地，在每一档各读一次输出，记成 <code>ZERO[k]</code>；以后每次用 <code>(vout - ZERO[k]) / GAIN[k]</code> 换算。这叫零点校准。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>我能看懂 CD4051 的 A、B、C 三根选择线怎样选中 X0～X7，并能手动选出任意一档。</li>
+<li>我能用①÷②量出每一档的实际倍数，并说出为什么不用①÷④。</li>
+<li>我能用②、③两个测量点反算出开关的导通电阻。</li>
+<li>我能说出输入接地时输出不为 0 的原因，以及零点校准怎么做。</li>
+<li>我能把数字 AGC 的换档规则写进 Arduino，并说出为什么换档后要丢掉一次读数。</li>
+</ul>
+<h2 id="小结">小结</h2>
+<ul>
+<li>六档程控增益放大器只要一片 LM358、一片 CD4051 和八只电阻，5 V 供电、万用表就能逐档验证。</li>
+<li>串联接法的高增益档被 <span class="math math-inline">\(R_{on}\)</span> 拉低：X5 理想 101，实际约 69；②、③两点能把 <span class="math math-inline">\(R_{on}\)</span> 反算出来。</li>
+<li>倍数用①÷②算，倍数本身不受失调影响；但读数里失调还在，输入接地时的输出就是“失调 × 倍数”，要做零点校准。</li>
+<li>没有 Arduino 时，手动插选择线也能完成全部测量；有 Arduino 就能看到自动换档。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Arduino 官方：analogRead() 参考：<a href="https://docs.arduino.cc/language-reference/en/functions/analog-io/analogRead/">https://docs.arduino.cc/language-reference/en/functions/analog-io/analogRead/</a></li>
+<li>Arduino 官方：digitalWrite() 参考：<a href="https://docs.arduino.cc/language-reference/en/functions/digital-io/digitalwrite/">https://docs.arduino.cc/language-reference/en/functions/digital-io/digitalwrite/</a></li>
+<li>Arduino IDE 下载页：<a href="https://www.arduino.cc/en/software">https://www.arduino.cc/en/software</a></li>
+<li>TI CD4051B 数据手册（导通电阻、引脚图）：<a href="https://www.ti.com/lit/ds/symlink/cd4051b.pdf">https://www.ti.com/lit/ds/symlink/cd4051b.pdf</a></li>
+<li>TI LM358 数据手册（失调、输出摆幅）：<a href="https://www.ti.com/lit/ds/symlink/lm358.pdf">https://www.ti.com/lit/ds/symlink/lm358.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

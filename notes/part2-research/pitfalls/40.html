@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 热式流量与 RTD 恒温差 · 误区与排查（反方研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/40.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="40-热式流量与-rtd-恒温差--误区与排查反方研究员">40 热式流量与 RTD 恒温差 · 误区与排查（反方研究员）</h1>
+<blockquote>
+<p>依据：notes/40-research.md、PART2_BRIEF §10。
+本地核对了 IRLZ44N 数据手册，并下载、核对了 Vishay NTCLE100 数据手册。
+「本人计算」只作演示。</p>
+</blockquote>
+<h2 id="a-新手误区与边界失效">A. 新手误区与边界失效</h2>
+<h3 id="a1-用-12-v-电源给-47-ω--2-w-加热3-w-超额定">A1 用 12 V 电源给 47 Ω / 2 W 加热：3 W 超额定</h3>
+<ul>
+<li><strong>现象</strong>：电阻冒烟、变色，面包板熔化。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>page4 按 5 V 计算是 0.53 W。但 BRIEF §10 统一用 9–12 V 单电源，学生很可能把加热器也接到 12 V：12²/47 ≈ 3.06 W，超过 2 W（本人计算）。</li>
+<li>9 V 时为 1.72 W，接近额定值，表面会非常烫。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：上电前用万用表测加热器回路的电源电压；按 P = V²/R 计算，确认 ≤ 额定值的 50 %。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>加热器单独接 5 V（例如独立的 USB 充电头，不要接 Arduino 的 5 V，见 A2）。</li>
+<li>一定要用 12 V 时，改用 150 Ω / 2 W，约 0.96 W（本人计算）。</li>
+<li>软件中把 PWM 占空比上限设为 50 %。</li>
+<li>加热器装在陶瓷片或木片上，不要插在面包板上。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人计算；P = V²/R。</li>
+</ul>
+<h3 id="a2-加热电流从-arduino-的-5-v-取adc-参考被-pwm-调制">A2 加热电流从 Arduino 的 5 V 取：ADC 参考被 PWM 调制</h3>
+<ul>
+<li><strong>现象</strong>：NTC 读数随 PWM 占空比跳动；CTA 环路自己振荡。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>约 106 mA 的 490 Hz 方波电流流过 USB 线和 Arduino 板上的地线、5 V 线。</li>
+<li>AVcc（ADC 参考）和 NTC 分压的地都跟着跳。分压虽然是比例式的，但两点之间的地电位差不会相消（本人推导）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 AC 档看 Arduino 5 V 引脚和 A0，看是否有 490 Hz 方波。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>加热器用独立电源，只在 MOSFET 源极处与 Arduino 共地一点。</li>
+<li>NTC 分压从 Arduino 5 V 取电，就近加 10 µF。</li>
+<li>ADC 每次采样取 8–16 次平均，覆盖整数个 PWM 周期。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：ESE 117994 <a href="https://electronics.stackexchange.com/questions/117994">https://electronics.stackexchange.com/questions/117994</a> （39 节已打开，共地压降）；本人推导。</li>
+</ul>
+<h3 id="a3-page4-用的是-ntc不是-rtd公式和线性都不同">A3 page4 用的是 NTC，不是 RTD：公式和线性都不同</h3>
+<ul>
+<li><strong>现象</strong>：照抄 R = R0(1 + A·T + B·T²) 换算 NTC 的温度，结果完全不对。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>NTC 是负温度系数，而且强非线性。</li>
+<li>Vishay NTCLE100E3 10 kΩ：B25/85 = 3977 K，25 °C 时温度系数约 −4.38 %/K（数据手册表格）。</li>
+<li>Callendar–Van Dusen 公式只适用于铂 RTD。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：用一个已知温度（例如室温计读数）校验换算结果。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>正文明确：理论讲 RTD，page4 用 NTC 代替。</li>
+<li>换算用 B 值公式 1/T = 1/T0 + ln(R/R0)/B，或 Steinhart–Hart。</li>
+<li>恒温差控制只需要两只 NTC 的温差，可以只在工作点附近线性化。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Vishay NTCLE100 数据手册 <a href="https://www.vishay.com/docs/29049/ntcle100.pdf">https://www.vishay.com/docs/29049/ntcle100.pdf</a> （已下载核对）；TI SBAA275A <a href="https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf">https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf</a> （研究笔记作者已打开）。</li>
+</ul>
+<h3 id="a4-ntc-的热时间常数约-15-scta-的-pi-参数照抄就会振荡">A4 NTC 的热时间常数约 15 s：CTA 的 PI 参数照抄就会振荡</h3>
+<ul>
+<li><strong>现象</strong>：PI 控制下 ΔT 在 10 °C 上下大幅摆动，周期几十秒；或者过冲到 20 °C 以上。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>数据手册：NTCLE100 的热时间常数 τ 约 15 s（仅供参考）。再加上加热器和导热胶的热容，回路滞后几十秒。</li>
+<li>「CTA 响应更快」是指工业 CTA 用小热容元件、高带宽回路。用面包板上 2 W 电阻做的 CTA 未必比 CMA 快（本人判断）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：先做开环阶跃：PWM 从 0 跳到 50 %，记录温度曲线，读出时间常数和静态增益。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>按阶跃响应整定：从纯 P 开始，增益减半后再加很小的 I。</li>
+<li>控制周期 ≥ 0.5 s。</li>
+<li>正文对 page3 的「CTA 快」加限定说明。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Vishay NTCLE100 数据手册（同 A3，「Thermal time constant τ 15 s」）。</li>
+</ul>
+<h3 id="a5-积分饱和windup风扇开到高档时-δt-达不到-10-c">A5 积分饱和（windup）：风扇开到高档时 ΔT 达不到 10 °C</h3>
+<ul>
+<li><strong>现象</strong>：高档风时 PWM 卡在 255；风扇一关，温度冲得很高，很久才回落。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>最大功率（5 V 下 0.53 W）不足以在强风下维持 10 °C 温差，积分项就会无限累积。</li>
+<li>这时 PWM = 100 % 不再代表流量（流量信号失效）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：串口打印积分项和 PWM。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>积分限幅（anti-windup）：PWM 饱和时停止积分。</li>
+<li>ΔT 设定值改为 5 °C，或者先测最高档风下 100 % PWM 能达到的 ΔT，再取它的 60 %（本人建议）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导（[待核实]：未检索 PID 积分饱和的参考资料）。</li>
+</ul>
+<h3 id="a6-参考-ntc-放错位置被加热器的热羽流或导热加热">A6 参考 NTC 放错位置：被加热器的热羽流或导热加热</h3>
+<ul>
+<li><strong>现象</strong>：没有风时温差偏小，随风向变化，而且风一来参考温度也变。</li>
+<li><strong>原因</strong>：参考 NTC 离加热器太近，或者在下游，或者两者装在同一块板或铜线上，导热把参考温度也抬高了。</li>
+<li><strong>排查</strong>：加热器断电，两只 NTC 的读数应一致；加热后参考 NTC 不应升高超过 0.5 °C（本人建议）。</li>
+<li><strong>修复</strong>：参考 NTC 放在上游 ≥ 5 cm 处，用细长引线悬空，不和加热器共用固定件。</li>
+<li><strong>来源</strong>：Sierra Instruments《Thermal Mass Flow Measurement of Fluid》<a href="https://www.sierrainstruments.com/prnews/Thermal%20Mass%20Flow%20Measurement%20of%20Fluid%2010.15.08.pdf">https://www.sierrainstruments.com/prnews/Thermal Mass Flow Measurement of Fluid 10.15.08.pdf</a> （研究笔记作者已打开：参考 RTD 测流体温度）</li>
+</ul>
+<h3 id="a7-mosfet-栅极悬空上传程序或复位时加热器全开">A7 MOSFET 栅极悬空：上传程序或复位时加热器全开</h3>
+<ul>
+<li><strong>现象</strong>：每次上传程序后加热器都在发烫，或者 Arduino 没上电时加热器也是半开状态。</li>
+<li><strong>原因</strong>：复位期间 D3 处于高阻，栅极悬空，感应电荷就可能让 IRLZ44N 导通（VGS(th) 只有 1.0–2.0 V）。</li>
+<li><strong>排查</strong>：拔掉 USB（加热器电源保留），测加热器两端的电压。</li>
+<li><strong>修复</strong>：栅极到源极接 10 kΩ 下拉；D3 到栅极串 100 Ω。</li>
+<li><strong>来源</strong>：IRLZ44N 数据手册（本地核对 VGS(th) 1.0–2.0 V；RDS(on) 在 VGS = 5 V 时为 0.025 Ω、4 V 时为 0.035 Ω）。URL [待核实]：本地 PDF，没有记录原始链接。</li>
+</ul>
+<h3 id="a8-ntc-自热随风速变化">A8 NTC 自热随风速变化</h3>
+<ul>
+<li><strong>现象</strong>：没有加热时，开风扇参考 NTC 的读数也会下降零点几 °C。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>10 kΩ / 10 kΩ 接 5 V，25 °C 时 NTC 功耗约 0.625 mW。</li>
+<li>数据手册耗散因子 δ 为 7 或 8.5 mW/K（表格版面有歧义，按保守值 7 计算），自热约 0.09 °C（本人计算）。</li>
+<li>δ 随风速增大，所以自热本身就是一个小的「热式流量计」。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：断开加热器，开关风扇，对比参考 NTC 读数的变化。</li>
+<li><strong>修复</strong>：分压电阻改为 47 kΩ（功耗降到约 1/4），或者只在采样时给分压供电（用一个 IO 脚供电）。</li>
+<li><strong>来源</strong>：Vishay NTCLE100 数据手册（同 A3，Dissipation factor δ）；TI SBAA275A（同 A3，自热 = P/E）。</li>
+</ul>
+<h3 id="a9-把-pwm-读数当成线性流量">A9 把 PWM 读数当成线性流量</h3>
+<ul>
+<li><strong>现象</strong>：风扇三档的 PWM 增量不成比例，被误认为测量出错。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>热损失随流速增大，但不是线性的（King 定律，研究笔记已标 [待核实]）。</li>
+<li>另外，PWM 占空比 ∝ 功率的前提是电源电压恒定，USB 电源随负载变化 0.2–0.3 V，功率就随 V² 变化（本人估算）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：同时用万用表测加热器的电源电压。</li>
+<li><strong>修复</strong>：功率按 P = D·V²/R 计算，V 实测；正文只说「单调但非线性」。</li>
+<li><strong>来源</strong>：Sierra《Thermal Mass Flow Measurement of Fluid》（同 A6）。</li>
+</ul>
+<h2 id="b-面包板实操问题">B. 面包板实操问题</h2>
+<h3 id="b1-房间气流手和人体热量">B1 房间气流、手和人体热量</h3>
+<ul>
+<li><strong>现象</strong>：没有开风扇，ΔT 也在 ±0.5 °C 内慢慢漂移。</li>
+<li><strong>原因</strong>：空调、开门、人走动形成的气流，以及手靠近的辐射。</li>
+<li><strong>排查</strong>：用纸盒罩住传感器，看漂移是否减小。</li>
+<li><strong>修复</strong>：用纸筒或 PVC 管做风道；读数取 30 s 平均。</li>
+<li><strong>来源</strong>：本人经验判断（[待核实]）。</li>
+</ul>
+<h3 id="b2-导热胶与机械固定">B2 导热胶与机械固定</h3>
+<ul>
+<li><strong>现象</strong>：每次碰一下，ΔT 就变；重复性差。</li>
+<li><strong>原因</strong>：NTC 和加热器之间的接触热阻随压力变化。</li>
+<li><strong>排查</strong>：轻压连接处时看读数是否变化。</li>
+<li><strong>修复</strong>：用导热胶或高温胶带固定，静置固化；不要只是用手夹住。</li>
+<li><strong>来源</strong>：本人经验判断（[待核实]）。</li>
+</ul>
+<h3 id="b3-ntc-长引线拾取噪声">B3 NTC 长引线拾取噪声</h3>
+<ul>
+<li><strong>现象</strong>：ADC 读数跳几个 LSB。</li>
+<li><strong>原因</strong>：10 kΩ 级的分压节点阻抗较高，长引线拾取 50 Hz 和 PWM 干扰。</li>
+<li><strong>排查</strong>：示波器看 A0 的波形。</li>
+<li><strong>修复</strong>：A0 对地接 100 nF；NTC 的引线绞合；远离加热电源线。</li>
+<li><strong>来源</strong>：ESE 462446 <a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a> （30 节已打开）</li>
+</ul>
+<h2 id="c-对-40-researchmd-的意见">C. 对 <a href="http://40-research.md">40-research.md</a> 的意见</h2>
+<ol>
+<li><strong>标题叫「RTD 恒温差」，page4 却用 NTC</strong>：正文要说明这个替代，换算公式也要换成 B 值公式（A3）。研究笔记没有引用任何 NTC 数据手册，可补 Vishay NTCLE100（已核对：B = 3977 K，−4.38 %/K，τ 约 15 s）。</li>
+<li><strong>电源</strong>：page4 写 5 V，但 BRIEF 规定 9–12 V 单电源。必须写明加热器用哪路电，以及为什么不能直接接 12 V（A1、A2）。</li>
+<li><strong>「CTA 响应更快」</strong>：在面包板的热容条件下未必成立（A4）。积分饱和（A5）也没有写。</li>
+<li><strong>MOSFET 栅极下拉</strong>没有写（A7）。另外，IRLZ44N 在 VGS = 5 V 时 RDS(on) 为 0.025 Ω，0.1 A 下几乎不发热，这一点正文可以说明。</li>
+<li><strong>SBAA275A 的「小薄膜元件约 2.5 mW/°C，大元件约 65 mW/°C」</strong>：沿用研究笔记作者所打开的内容，本人没有复核。</li>
+<li><strong>算例复核</strong>：138.5 Ω、0.1 mW、0.53 W 都正确（本人复核）。</li>
+</ol>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] 加热器的 P = V²/R ≤ 额定值的 50 %，并且没有插在面包板上</li>
+<li>[ ] 加热器用独立电源，只在一点共地</li>
+<li>[ ] 栅极有 10 kΩ 下拉、100 Ω 串联电阻</li>
+<li>[ ] 换算用 NTC 的 B 值公式；两只 NTC 不加热时读数一致</li>
+<li>[ ] 参考 NTC 在上游 ≥ 5 cm，不受加热器影响</li>
+<li>[ ] 先做开环阶跃，再整定 PI；有积分限幅</li>
+<li>[ ] 加了风道；读数取平均</li>
+<li>[ ] 没有用手去摸加热器</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<p>已打开或本地核对：</p>
+<ul>
+<li>Vishay NTCLE100 数据手册：<a href="https://www.vishay.com/docs/29049/ntcle100.pdf">https://www.vishay.com/docs/29049/ntcle100.pdf</a></li>
+<li>ESE 117994：<a href="https://electronics.stackexchange.com/questions/117994">https://electronics.stackexchange.com/questions/117994</a></li>
+<li>ESE 462446：<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a></li>
+<li>IRLZ44N 数据手册：本地 PDF，URL [待核实]</li>
+</ul>
+<p>研究笔记作者已打开（本人沿用）：</p>
+<ul>
+<li>TI SBAA275A：<a href="https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf">https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf</a></li>
+<li>Sierra《Thermal Mass Flow Measurement of Fluid》：<a href="https://www.sierrainstruments.com/prnews/Thermal%20Mass%20Flow%20Measurement%20of%20Fluid%2010.15.08.pdf">https://www.sierrainstruments.com/prnews/Thermal Mass Flow Measurement of Fluid 10.15.08.pdf</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>误区条数：12 条（A1–A9、B1–B3）。</li>
+<li>带外部 URL 的条数：8 条。A1、A5、B1、B2 没有外部 URL；A7 只有本地 PDF。</li>
+<li>[待核实]：4 处（A5、A7 的 URL、B1、B2）。</li>
+<li>搜索：本节约 1 次搜索 + 1 份 PDF 下载核对 + 1 份数据手册本地核对。数量远低于目标。</li>
+</ul>
+<h2 id="d-补查">D. 补查</h2>
+<blockquote>
+<p>本节补查实际搜索 10 次，另打开 2 个页面（Brett Beauregard《Improving the Beginner's PID: Reset Windup》、Modern Device「Wind Sensor Rev. C」产品页），并重读本地 Vishay NTCLE100 数据手册（/tmp/ds/ntcle100.pdf）。IRLZ44N 的原始链接在第一轮补查准备时已核对：从 Infineon 下载的 PDF 与本地 /workspace/pdfs/irlz44n.pdf 字节完全一致。</p>
+</blockquote>
+<h3 id="d1-待核实-项结论">D1 [待核实] 项结论</h3>
+<ul>
+<li><strong>A5（PID 积分饱和的参考资料）</strong>：已核实。Brett Beauregard（Arduino PID 库作者）原文：&quot;Reset windup is a trap that probably claims more beginners than any other. It occurs when the PID thinks it can do something that it can't. For example, the PWM output on an Arduino accepts values from 0-255&quot;。他的解法是 SetOutputLimits，到达上下限时 &quot;the pid stops summing (integrating)&quot;，并且同时限幅积分项和输出（<a href="http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-reset-windup/">http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-reset-windup/</a> ，已打开）。库源码 PID_v1.cpp：<a href="https://github.com/br3ttb/Arduino-PID-Library/blob/master/PID_v1.cpp">https://github.com/br3ttb/Arduino-PID-Library/blob/master/PID_v1.cpp</a> （仅搜索确认）。正文可以直接写：用 PID 库时调用 <code>SetOutputLimits(0, 255)</code>。</li>
+<li><strong>A7（IRLZ44N 数据手册 URL）</strong>：已核实。<a href="https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725">https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725</a> （下载后与本地 PDF 字节一致）。E 节中的「URL [待核实]」可以替换成这个链接。</li>
+<li><strong>A9（King 定律）</strong>：已核实（仅搜索确认，未打开原文）。King 1914 年原始论文：《On the convection of heat from small cylinders in a stream of fluid…》，Phil. Trans. R. Soc. A 214（<a href="https://royalsocietypublishing.org/rsta/article/214/509-522/373/40443/XII-On-the-convection-of-heat-from-small-cylinders">https://royalsocietypublishing.org/rsta/article/214/509-522/373/40443/XII-On-the-convection-of-heat-from-small-cylinders</a> ）。剑桥 Whittle 实验室热线页面给出 E² = A + B·Uⁿ 的形式，指数 n 约 0.45–0.5，需要标定（<a href="https://www-g.eng.cam.ac.uk/whittle/current-research/hph/hot-wire/hot-wire.html">https://www-g.eng.cam.ac.uk/whittle/current-research/hph/hot-wire/hot-wire.html</a> ）。正文写「热损失大致随流速的平方根增长」即可，不要写成线性。</li>
+<li><strong>B1（房间气流与人体热量）</strong>：已核实（有厂商资料间接支持）。Modern Device 的商用热式风速传感器 Rev. C 产品页原文：&quot;the sensor is exquisitely sensitive, with a small puff of air being sensed at a distance of 18-24&quot;（约 46–61 cm）；零风标定方法是 &quot;Simply put a glass over the sensor to block any breeze&quot;（<a href="https://moderndevice.com/products/wind-sensor">https://moderndevice.com/products/wind-sensor</a> ，已打开）。这与 B1「用纸盒罩住传感器」的排查方法一致。</li>
+<li><strong>B2（导热胶与机械固定）</strong>：已核实（仅搜索确认）。Electronics Cooling《Tech Brief: Thermocouple Attachment》<a href="https://www.electronics-cooling.com/2024/09/tech-brief-thermocouple-attachment/">https://www.electronics-cooling.com/2024/09/tech-brief-thermocouple-attachment/</a> ；Wavelength AN-TC08《Mounting and Soldering Nickel-Lead Thermistors》<a href="https://www.teamwavelength.com/download/applicationtechnotes/an-tc08.pdf">https://www.teamwavelength.com/download/applicationtechnotes/an-tc08.pdf</a> 。两者都讨论了胶层厚度、气隙造成的测温误差。具体百分比只见于搜索摘要，正文如要引用需打开原文核对 [待核实]。</li>
+<li>统计：已核实 5 条（A5、A7 URL、A9、B1、B2），删除 0 条，保留 0 条。</li>
+</ul>
+<h3 id="d2-新增误区">D2 新增误区</h3>
+<h4 id="d2-1-零风标定之后室温一变输出就漂走或饱和">D2-1 「零风」标定之后，室温一变，输出就漂走或饱和</h4>
+<ul>
+<li><strong>现象</strong>：早上标好零点，下午读数就不再为零；放大后的输出甚至贴到 0 V 或 5 V。</li>
+<li><strong>原因</strong>：Modern Device 对 Rev. C 的 Out 脚说明：&quot;This output voltage will saturate (hit Ground or +V) if the ambient temperature changes much from the temperature when the sensor was calibrated. … Higher sensitivity will make the sensor saturate more easily with ambient temperature change&quot;。恒温差回路如果参考 NTC 和被加热 NTC 的热环境不同，或者放大倍数过高，同样会出现这个问题。</li>
+<li><strong>怎么排查</strong>：串口同时打印参考温度和输出，看两者是否同步变化。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>软件中按参考 NTC 的温度修正零点。</li>
+<li>放大倍数不要太高。</li>
+<li>上电后先预热约 10 s 再读数（厂商注明 &quot;at start-up needs to be allowed to warm up about 10 seconds to thermally stabilize&quot;，本节的加热器热容更大，预热时间应以实测为准）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Modern Device「Wind Sensor Rev. C」<a href="https://moderndevice.com/products/wind-sensor">https://moderndevice.com/products/wind-sensor</a> （已打开）。Arduino 论坛「Wind sensor temp correction」<a href="https://forum.arduino.cc/t/wind-sensor-temp-correction/337175">https://forum.arduino.cc/t/wind-sensor-temp-correction/337175</a> （仅搜索确认）。</li>
+</ul>
+<h4 id="d2-2-传感器或加热器从-arduino-引脚--5-v-取电电流随风速变化影响精度">D2-2 传感器或加热器从 Arduino 引脚 / 5 V 取电：电流随风速变化，影响精度</h4>
+<ul>
+<li><strong>现象</strong>：ADC 读数随风速出现额外的、不是来自温度的变化。</li>
+<li><strong>原因</strong>：厂商原文：&quot;It's probably also not a good idea to hang the sensor power supply off a microcontroller pin… as the sensor draws a bit of current (~25 mA) and the current will also fluctuate with wind speed&quot;。本节加热器电流更大（约 100 mA 量级），对 5 V 和地线的影响更明显（与 A2 相同的机理）。</li>
+<li><strong>怎么排查 / 修复</strong>：同 A2。加热回路单独走地线，在一点与 Arduino 地汇合。另见 Arduino 论坛「PWM fans causing temp sensor (TMP36) erroneus values」<a href="https://forum.arduino.cc/t/pwm-fans-causing-temp-sensor-tmp36-erroneus-values-interference/531299">https://forum.arduino.cc/t/pwm-fans-causing-temp-sensor-tmp36-erroneus-values-interference/531299</a> （仅搜索确认）。</li>
+<li><strong>来源</strong>：同 D2-1。</li>
+</ul>
+<h3 id="d3-其他补充">D3 其他补充</h3>
+<ul>
+<li><strong>A8 耗散因子 7 还是 8.5 mW/K</strong>：仍有歧义。本地 pdftotext 版面为「7 / 8.5 mW/K / (for R25-value ≤ 680 Ω)」，搜索摘要的解读是「≤ 680 Ω 为 7，更高阻值为 8.5」，与版面上括号的位置不完全对应。A8 按保守值 7 mW/K 计算，结论（自热约 0.1 °C 量级）不受影响；正文建议写「约 7–8.5 mW/K」。</li>
+<li><strong>A1（电阻降额）</strong>：引线电阻的额定功率通常对应 70 °C 环境温度，超过后按线性降额（Vishay《General Information for Fixed Film Resistors》<a href="https://www.vishay.com/docs/20103/geninfo.pdf">https://www.vishay.com/docs/20103/geninfo.pdf</a> ，仅搜索确认；具体曲线以所用电阻的数据手册为准）。</li>
+<li><strong>A7（栅极下拉）</strong>：Arduino 论坛「N-Channel MOSFET overheating」<a href="https://forum.arduino.cc/t/n-channel-mosfet-overheating/516208">https://forum.arduino.cc/t/n-channel-mosfet-overheating/516208</a> 中有栅极下拉 10 kΩ 的讨论（仅搜索确认）。</li>
+</ul>
+<h3 id="d4-补查统计">D4 补查统计</h3>
+<ul>
+<li>实际搜索：10 次；打开页面 2 个；数据手册本地核对 1 份（NTCLE100）；URL 字节比对 1 份（IRLZ44N）。</li>
+<li>[待核实]：已核实 5 条，删除 0 条，保留 0 条。D1 B2 新增 1 处 [待核实]（胶层误差的百分比）。</li>
+<li>新增误区：2 条（D2-1、D2-2）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

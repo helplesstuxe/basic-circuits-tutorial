@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 热式流量与 RTD 恒温差 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/40-thermal-flow/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="40-热式流量与-rtd-恒温差--原理与实现篇">40 热式流量与 RTD 恒温差 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../06-mosfet-switch/page2.html">06 MOS 管开关 · 原理与实现篇</a>、<a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥 · 原理与实现篇</a>、39 节恒流源与线圈励磁驱动（即将上线）</p>
+<p>这一页把直觉篇的方框图拆成四块电路：<strong>测温（NTC 分压）</strong>、<strong>加热（MOS 管开关）</strong>、<strong>恒功率测量</strong>、<strong>工业上的 PT100 电桥</strong>。恒温差控制放到<a href="page3.html">参数与调试篇</a>。</p>
+<h2 id="一ntc-分压把温度变成-adc-读数">一、NTC 分压：把温度变成 ADC 读数</h2>
+<p>请看图 40-p2-1。</p>
+<p><a class="img-link" href="img/40_p2_1_ntc_div.png"><img alt="两个相同的分压电路：+5 V 经 R_S 10 kΩ 到中点，中点接 Arduino A0（左）或 A1（右），中点再经 NTC 到地。左边 NTC 是 N1，加热 NTC，贴在 RH 上；右边是 N2，环境 NTC，放在上风处。下面写着公式 V = 5 V × R_NTC / (R_S + R_NTC)，ADC 读数 = 1024 × R_NTC / (R_S + R_NTC)；25 °C 时 R_NTC = 10.00 kΩ → 2.500 V（512 字），45 °C 时 4.372 kΩ → 1.521 V（311.5 字）" src="img/40_p2_1_ntc_div.png" loading="lazy" /></a></p>
+<p><em>图 40-p2-1　NTC 分压电路</em></p>
+<p>NTC 和一只 10 kΩ 固定电阻 <span class="math math-inline">\(R_S\)</span> 串在 5 V 上，中点电压</p>
+<div class="math math-display">\[V = 5\ \text{V} \times \frac{R_{NTC}}{R_S + R_{NTC}}\]</div>
+<p>温度升高 → NTC 电阻下降 → 中点电压下降。Arduino Uno 的 ADC 以 5 V 为满量程、分 1024 份，读数 = 1024 × V / 5 V。请看图 40-p2-2。</p>
+<p><a class="img-link" href="img/40_p2_2_ntc_curve.png"><img alt="横轴温度 15 到 50 °C，纵轴 A0 电压（左）和 ADC 读数（右）。蓝色曲线从约 3.05 V 下降到约 1.35 V，20 °C 标 2.777 V，25 °C 标 2.500 V，45 °C 标 1.521 V；注释 25 °C 附近每升 1 K 降 54.7 mV（11.21 字），45 °C 附近每升 1 K 降 41.4 mV（8.47 字）" src="img/40_p2_2_ntc_curve.png" loading="lazy" /></a></p>
+<p><em>图 40-p2-2　NTC 分压点电压与 ADC 读数随温度的变化</em></p>
+<table>
+<thead>
+<tr>
+<th>温度</th>
+<th>20 °C</th>
+<th>25 °C</th>
+<th>30 °C</th>
+<th>35 °C</th>
+<th>40 °C</th>
+<th>45 °C</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R_NTC</td>
+<td>12488 Ω</td>
+<td>10000 Ω</td>
+<td>8059 Ω</td>
+<td>6535 Ω</td>
+<td>5330 Ω</td>
+<td>4372 Ω</td>
+</tr>
+<tr>
+<td>A0 电压</td>
+<td>2.777 V</td>
+<td>2.500 V</td>
+<td>2.231 V</td>
+<td>1.976 V</td>
+<td>1.738 V</td>
+<td>1.521 V</td>
+</tr>
+<tr>
+<td>ADC 读数</td>
+<td>568.6</td>
+<td>512.0</td>
+<td>457.0</td>
+<td>404.7</td>
+<td>356.0</td>
+<td>311.5</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>25 °C 附近每升 1 K，电压降 54.73 mV，相当于 11.21 个 ADC 字（“字”是 ADC 读数最小的一格：Arduino 的 10 位 ADC 把 0～5 V 分成 1024 格，一格约 4.88 mV），<strong>1 个字 ≈ 0.089 K</strong>；</li>
+<li>45 °C 附近每升 1 K 降 41.36 mV（8.47 字），曲线变缓。</li>
+</ul>
+<p>选 <span class="math math-inline">\(R_S\)</span> = 10 kΩ 等于 NTC 在 25 °C 的阻值，是为了让室温附近的斜率最大、中点正好在 2.5 V。</p>
+<p><strong>查表法</strong>：NTC 的电阻和温度是指数关系 <span class="math math-inline">\(R = R_{25}\cdot e^{B(1/T_K - 1/298.15)}\)</span> （ <span class="math math-inline">\(T_K\)</span> 是开尔文温度；B 值是 NTC 材料的常数，描述电阻随温度变化有多快，B 越大越灵敏，Vishay 10 kΩ 型 B = 3977 K）。不必在 Arduino 上算指数：把上表的“ADC 读数 → 温度”抄进程序，读到 430 字时，它落在 457.0（30 °C）和 404.7（35 °C）之间，按直线插值：</p>
+<div class="math math-display">\[\vartheta \approx 30 + 5 \times \frac{457.0 - 430}{457.0 - 404.7} = 32.58\ ^\circ\text{C}\]</div>
+<p>用公式精确反算是 32.54 °C，插值误差约 0.04 K，比 1 个 ADC 字（0.089 K）还小。上表用的是 Vishay 手册给出的扩展公式（指数里多了 1/T²、1/T³ 两项），比只用 B 值的简化公式更准：35 °C 时扩展公式给 6535 Ω，简化公式给 6486 Ω，差 0.7 %。下面的 Python 生成这张表，并核对插值误差：</p>
+<pre><code class="language-python">import numpy as np
+R25, RS = 10e3, 10e3
+# Vishay NTCLE100E3 手册里 B25/85 = 3977 K 那一行的扩展公式系数：R/R25 = exp(A + B/T + C/T² + D/T³)
+A, B, C, D = -14.6337, 4791.842, -115334.0, -3.730535e6
+
+def r_ntc(t):          # t: °C
+    T = t + 273.15
+    return R25 * np.exp(A + B / T + C / T**2 + D / T**3)
+
+def adc(t):
+    r = r_ntc(t)
+    return 1024 * r / (RS + r)
+
+temps = np.arange(20, 50, 5)
+table = adc(temps)
+for t, c in zip(temps, table):
+    print(f&quot;{t:2d} °C : R = {r_ntc(t):6.0f} Ω, V = {5*c/1024:.3f} V, ADC = {c:6.1f}&quot;)
+
+# 查表 + 直线插值（np.interp 要求横轴递增，所以把表倒过来）
+cnt = 430
+t_lut = np.interp(cnt, table[::-1], temps[::-1])
+# 精确反算：二分法求 adc(t) = cnt
+lo, hi = 0.0, 80.0
+for _ in range(60):
+    mid = (lo + hi) / 2
+    lo, hi = (mid, hi) if adc(mid) &gt; cnt else (lo, mid)
+print(f&quot;ADC {cnt}：查表 {t_lut:.2f} °C，精确 {lo:.2f} °C，差 {t_lut - lo:+.3f} K&quot;)
+i = 5 / (RS + R25)
+print(f&quot;NTC 自热：电流 {i*1e3:.3f} mA，功耗 {i**2*R25*1e3:.3f} mW，按 7 mW/K 自热 {i**2*R25/7e-3:.3f} K&quot;)
+# 只用 B 值的简化公式，和手册扩展公式差多少
+rb = R25 * np.exp(3977 * (1 / 308.15 - 1 / 298.15))
+print(f&quot;35 °C：扩展公式 {r_ntc(35):.0f} Ω，B 值简化公式 {rb:.0f} Ω&quot;)
+</code></pre>
+<p>自热：25 °C 时 NTC 上流 0.250 mA，耗 0.625 mW，自热 0.089 K。它对两颗 NTC 几乎一样，算温差时大部分会抵消。</p>
+<h2 id="二加热器一只电阻--一只-mos-管开关">二、加热器：一只电阻 + 一只 MOS 管开关</h2>
+<p>请看图 40-p2-3。</p>
+<p><a class="img-link" href="img/40_p2_3_heater.png"><img alt="原理图：+9 V 经 R_H 560 Ω（2 W）= 加热器，到 Q1 IRLZ44N 的漏极，源极接地；Arduino D9（0/5 V）经 R_G 100 Ω 到栅极，栅极经 R_PD 100 kΩ 到地。右侧蓝色箭头注明导通时 9 V ÷ 560 Ω = 16.07 mA，P = 0.1446 W（只用了 2 W 额定的 7.2 %）。底部写着 Arduino 的 GND 必须和 9 V 电源的负极接在一起（共地），否则 D9 的 5 V 加不到栅—源之间" src="img/40_p2_3_heater.png" loading="lazy" /></a></p>
+<p><em>图 40-p2-3　IRLZ44N 低边开关驱动 560 Ω 加热器</em></p>
+<p>这就是 <a href="../06-mosfet-switch/page2.html">06 MOS 管开关</a> 的低边开关：D9 输出 5 V 时 IRLZ44N 完全导通，工作在电阻很小的导通区（欧姆区），像一根导线；输出 0 V 时关断。IRLZ44N 是“逻辑电平”MOS 管，手册给出 <span class="math math-inline">\(V_{GS}\)</span> = 5 V 时导通电阻不超过 0.025 Ω，所以 Arduino 的 5 V 就能把它开透。</p>
+<ul>
+<li><span class="math math-inline">\(R_G\)</span> = 100 Ω：限制给栅极电容充电的瞬间电流，保护 D9；</li>
+<li><span class="math math-inline">\(R_{PD}\)</span> = 100 kΩ：Arduino 复位、D9 还没设成输出时，把栅极拉到 0 V，加热器不会乱开。</li>
+</ul>
+<p>导通时：</p>
+<div class="math math-display">\[I = \frac{9\ \text{V}}{560\ \Omega} = 16.07\ \text{mA},\quad P = \frac{(9\ \text{V})^2}{560\ \Omega} = 0.1446\ \text{W}\]</div>
+<p>SPICE 复核：电流 16.07 mA，MOS 管两端只剩 0.3364 mV，管子自己只耗约 0.0054 mW。</p>
+<p><strong>为什么不用 47 Ω？</strong> 网上很多例子拿 47 Ω 电阻当加热器。算一下功率和温升（PR02 金属膜电阻手册：2 W 额定，焊在板上的热阻 75～115 K/W）：</p>
+<table>
+<thead>
+<tr>
+<th>电源</th>
+<th>加热电阻</th>
+<th>电流</th>
+<th>功率</th>
+<th>按 75～115 K/W 的温升</th>
+<th>结论</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>5 V</td>
+<td>47 Ω</td>
+<td>106.4 mA</td>
+<td>0.532 W</td>
+<td>40～61 K</td>
+<td>表面 65～86 °C，会烫伤，不用</td>
+</tr>
+<tr>
+<td>9 V</td>
+<td>47 Ω</td>
+<td>191.5 mA</td>
+<td>1.723 W</td>
+<td>129～198 K</td>
+<td>接近额定，危险</td>
+</tr>
+<tr>
+<td>12 V</td>
+<td>47 Ω</td>
+<td>255.3 mA</td>
+<td>3.064 W</td>
+<td>230～352 K</td>
+<td><strong>超过 2 W 额定</strong>，禁止</td>
+</tr>
+<tr>
+<td>12 V</td>
+<td>560 Ω</td>
+<td>21.4 mA</td>
+<td>0.257 W</td>
+<td>19～30 K</td>
+<td>表面可到 55 °C，不推荐</td>
+</tr>
+<tr>
+<td><strong>9 V</strong></td>
+<td><strong>560 Ω</strong></td>
+<td><strong>16.07 mA</strong></td>
+<td><strong>0.1446 W</strong></td>
+<td><strong>10.8～16.6 K</strong></td>
+<td><strong>本节采用</strong></td>
+</tr>
+</tbody>
+</table>
+<p>一句话：<strong>47 Ω 一律不用。</strong></p>
+<ul>
+<li>12 V 接 47 Ω 是 3.06 W，超过 2 W 额定，冒烟、熔化面包板；</li>
+<li>9 V 接 47 Ω 是 1.72 W，温升 129～198 K；</li>
+<li>就连 5 V 接 47 Ω 也有 0.532 W，表面 65～86 °C，会烫伤。</li>
+</ul>
+<p>本书用 560 Ω、9 V：最坏情况（25 °C 室温、热阻 115 K/W、100 % 一直开着）表面也只有 41.6 °C，而且程序还会在 NTC 超过 45 °C 时强制关断（见<a href="page4.html">动手实验篇</a>的安全须知）。手上没有 560 Ω 时，用 680 Ω～1 kΩ 之间任何一只 2 W 电阻接 9 V（先按 <span class="math math-inline">\(P = V^2/R\)</span> 算，最坏表面温度不超过 45 °C）。怎么算，见第五节例 2。</p>
+<p><strong>PWM 的平均功率</strong>：如果用 <code>analogWrite()</code> 让 D9 输出占空比为 D 的方波（Arduino Uno 的 D9 默认约 490 Hz），加热器一会儿全开、一会儿全关，平均功率是</p>
+<div class="math math-display">\[\overline{P} = D \cdot \frac{V^2}{R}\]</div>
+<p>D = 50 % 时 0.5 × 0.1446 W = 72.32 mW；SPICE 用真实开关波形算出 72.39 mW，MOS 管连开关过程在内平均只耗 0.04355 mW。热时间常数是几十秒，远远长于 490 Hz 的周期（约 2 ms），所以电阻感受到的只有平均功率，这就是 <a href="../26-h-bridge/page1.html">26 H 桥</a> 里 PWM 调速的同一个道理。</p>
+<h2 id="三恒功率cp功率固定看温差">三、恒功率（CP）：功率固定，看温差</h2>
+<p>最简单的测法：占空比固定在 60 %，一直读两颗 NTC 的温差 Δϑ = ϑ(N1) − ϑ(N2)。请看图 40-p2-4。</p>
+<p><a class="img-link" href="img/40_p2_4_cp_resp.png"><img alt="上图风速：0 到 120 s 为 0，120 到 300 s 为 1 m/s，300 到 480 s 为 2 m/s，之后回到 0。下图温差：蓝色实线是加热 NTC 的真实温升，灰色细线是 Arduino 算出的温差（带 ADC 量化）。0 到 120 s 升到约 4.1 K；风到 1 m/s 后降到 1.81 K，标 t90 = 33.1 s；到 2 m/s 降到 1.45 K，t90 = 28.6 s；风停后回升到 4.22 K，t90 = 67.8 s" src="img/40_p2_4_cp_resp.png" loading="lazy" /></a></p>
+<p><em>图 40-p2-4　恒功率（CP）法对风速台阶的响应（示意参数）</em></p>
+<p>图注：Python 热模型，示意参数（加热电阻热容 0.4 J/K、静止空气 100 K/W、导热胶带耦合 20 mW/K；NTC 的热容由手册 τ × δ 得到）。</p>
+<table>
+<thead>
+<tr>
+<th>风速变化</th>
+<th>温差</th>
+<th>到 90 % 变化的时间 t90</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0 → 1 m/s</td>
+<td>降到 1.81 K</td>
+<td>33.1 s</td>
+</tr>
+<tr>
+<td>1 → 2 m/s</td>
+<td>降到 1.45 K</td>
+<td>28.6 s</td>
+</tr>
+<tr>
+<td>2 → 0 m/s</td>
+<td>回升到 4.22 K</td>
+<td>67.8 s</td>
+</tr>
+</tbody>
+</table>
+<p>两个问题一眼可见：</p>
+<ol>
+<li><strong>慢</strong>：每次风速变化，温度都要像 RC 充放电那样重新走到新平衡点，t90 是 30～70 s。风停时最慢，因为没风时散热能力 δ 最小，热时间常数 <span class="math math-inline">\(C_{th}/\delta\)</span> 最长。</li>
+<li><strong>高速段灵敏度低</strong>：1→2 m/s 温差只从 1.81 K 降到 1.45 K，差 0.36 K，只有 4 个 ADC 字。这正是直觉篇 King 定律“先快后慢”的结果。</li>
+</ol>
+<p>恒温差法（<a href="page3.html">参数与调试篇</a>）用控制回路一并解决这两个问题。</p>
+<h2 id="四工业做法pt100-电桥--仪表放大器">四、工业做法：PT100 电桥 + 仪表放大器</h2>
+<p>工业热式流量计常用两支铂电阻：一支加热，一支测气体温度。PT100 的电阻按 Callendar–Van Dusen 公式（0 °C 以上）</p>
+<div class="math math-display">\[R(\vartheta) = R_0 (1 + A\vartheta + B\vartheta^2),\quad R_0 = 100\ \Omega,\ A = 3.9083\times10^{-3},\ B = -5.775\times10^{-7}\]</div>
+<p>这里的 A、B 就是直觉篇说要和 King 定律的 a、b 分开的那两个系数。<strong>这个公式只适用于铂电阻</strong>：<a href="page4.html">动手实验篇</a>用的 NTC 电阻随温度下降、曲线是指数形，套这个公式会完全算错，NTC 一律用本页第一节的对照表（由 Vishay 手册公式生成）。25 / 50 / 100 °C 时分别是 109.735 / 119.397 / 138.505 Ω。请看图 40-p2-5。</p>
+<p><a class="img-link" href="img/40_p2_5_pt100.png"><img alt="惠斯通电桥原理图：+2.5 V 基准接到桥顶，左臂 R1 2.4 kΩ 到 A 点再经 PT100（R_T）到地，右臂 R2 2.4 kΩ 到 B 点再经 R3 100 Ω（= 0 °C 的 PT100）到地。A 点接仪表放大器 + 端，B 点接 − 端，仪表放大器 G = 100（30 节），输出 V_o。图下写着差压 V_A − V_B：25 °C 9.309 mV、50 °C 18.48 mV、100 °C 36.41 mV（放大 100 倍后 0.931 / 1.848 / 3.641 V）；流过 PT100 的电流约 1 mA（0 °C 1.000 mA，100 °C 0.985 mA），自热只有几十 mK" src="img/40_p2_5_pt100.png" loading="lazy" /></a></p>
+<p><em>图 40-p2-5　PT100 电桥与仪表放大</em></p>
+<p>这是 <a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥</a> 的电路，只是把应变片换成 PT100：</p>
+<ul>
+<li>2.4 kΩ 远大于 100 Ω，桥臂电流几乎恒定（0 °C 时 1.000 mA，100 °C 时 0.985 mA），作用上接近 39 节恒流源（即将上线） 的恒流激励；</li>
+<li>差压只有每度约 0.37 mV，要靠 G = 100 的仪表放大器放大：25 °C 9.309 mV → 0.9309 V，100 °C 36.41 mV → 3.641 V；</li>
+<li>因为桥臂电流随温度略变，加上 PT100 本身的二次项，输出不是严格直线：0～100 °C 两端连直线，50 °C 处偏 0.757 K。</li>
+</ul>
+<p><strong>为什么激励电流不能大？</strong> PT100 自热 = I²R / δ。以 δ = 2.5 mW/K 估算（假设值，代表小薄膜 PT100 在静止空气里的量级）：</p>
+<table>
+<thead>
+<tr>
+<th>激励电流</th>
+<th>功耗</th>
+<th>自热</th>
+<th>信号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.5 mA</td>
+<td>0.025 mW</td>
+<td>0.010 K</td>
+<td>0.195 mV/K</td>
+</tr>
+<tr>
+<td>1 mA</td>
+<td>0.100 mW</td>
+<td>0.040 K</td>
+<td>0.391 mV/K</td>
+</tr>
+<tr>
+<td>5 mA</td>
+<td>2.500 mW</td>
+<td>1.000 K</td>
+<td>1.954 mV/K</td>
+</tr>
+</tbody>
+</table>
+<p>电流加大 5 倍，信号大 5 倍，自热却大 25 倍，所以测温用的 RTD 激励一般不超过 1 mA。热式流量计里<strong>加热用的那一支</strong>反而要故意通大电流把自己烘热，两支元件的角色完全不同。</p>
+<p><a href="page4.html">动手实验篇</a>没有用 PT100：仪表放大器和精密基准对第一次做实验太贵、太复杂。我们用两颗 NTC 加分压电阻，电阻的相对变化率大约是 PT100 的 12 倍（−4.38 %/K 对 0.354 %/K），直接进 Arduino；测量原理（加热—测环境—看温差或看功率）完全相同。</p>
+<h2 id="五例题给加热器挑电阻">五、例题：给加热器挑电阻</h2>
+<p>三道题由完整到留空再到变体，都用同一套算法：先算全开功率 <span class="math math-inline">\(P = V^2/R\)</span> ，再用最坏热阻 115 K/W 算表面温度，最后看平均功率要多大占空。下面的数都由 <code>code/40_sim.py</code> 第 8 部分算出。无风时把温差撑到 2 K 需要的平均功率约 41.0 mW（<a href="page3.html">参数与调试篇</a>的模型）。</p>
+<p><strong>例 1（完整示范）</strong>　9.0 V 接 560 Ω，占空 40 %。求电流、全开功率、平均功率和最坏表面温度。</p>
+<ol>
+<li>电流 <span class="math math-inline">\(I\)</span> = 9.0 V ÷ 560 Ω = 16.07 mA；</li>
+<li>全开功率 <span class="math math-inline">\(P = 9.0^2 / 560\)</span> = 0.1446 W；</li>
+<li>平均功率 = 0.40 × 0.1446 W = 57.9 mW；</li>
+<li>最坏表面温度：程序出错、100 % 一直开着时，25 + 0.1446 × 115 = 41.6 °C，低于 45 °C 切断线，合格。</li>
+</ol>
+<p>注意第 4 步一定按 100 % 算，不能按 40 % 算：占空是程序给的，程序会出错。</p>
+<p><strong>例 2（留空练习）</strong>　改用 1 kΩ 接 9.0 V。照例 1 的四步填空：</p>
+<ol>
+<li>电流 <span class="math math-inline">\(I\)</span> = ___ mA；</li>
+<li>全开功率 <span class="math math-inline">\(P\)</span> = ___ mW；</li>
+<li>最坏表面温度 = 25 + ___ × 115 = ___ °C；</li>
+<li>无风时要 41.0 mW 平均功率，占空 = 41.0 ÷ ___ = ___ %。</li>
+</ol>
+<details><summary>答案</summary>
+<ol>
+<li>9.0 ÷ 1000 = 9.0 mA；</li>
+<li><span class="math math-inline">\(9.0^2 / 1000\)</span> = 81 mW；</li>
+<li>25 + 0.081 × 115 = 34.3 °C；</li>
+<li>41.0 ÷ 81 ≈ 50.6 %。</li>
+</ol>
+<p>更安全，但无风就要一半占空，剩给风的余量少了，量程变小。</p>
+<p>补充：680 Ω 接 9 V 时全开 <span class="math math-inline">\(9.0^2/680\)</span> = 0.119 W，最坏 25 + 0.119 × 115 = 38.7 °C，也低于 45 °C，所以 680 Ω～1 kΩ 都能用。</p>
+</details>
+<p><strong>例 3（变体）</strong>　假如只有 12 V 电源（≤ 12 V 直流，仍在允许范围；这里只做纸面计算，本节实验仍用 9 V），要求最坏表面温度不超过 45 °C，加热电阻至少要多大？从 E12 系列里挑一只。</p>
+<details><summary>答案</summary>
+<p>反过来算：允许的温升是 45 − 25 = 20 K，所以 <span class="math math-inline">\(P\)</span> ≤ 20 ÷ 115 = 0.174 W；再由 <span class="math math-inline">\(P = V^2/R\)</span> 得 <span class="math math-inline">\(R \ge 12^2 / 0.174\)</span> ≈ 828 Ω。离 828 Ω 最近的 E12 值是 820 Ω，但它比 828 Ω 小：全开 <span class="math math-inline">\(12^2/820\)</span> = 0.176 W，最坏 25 + 0.176 × 115 = 45.2 °C，超线，所以只能往大取 1 kΩ：0.144 W，最坏 25 + 0.144 × 115 = 41.6 °C。这正好说明上面表里“12 V 接 560 Ω（最坏 55 °C）不推荐”的原因。</p>
+</details>
+<h2 id="小结">小结</h2>
+<ul>
+<li>NTC 分压 + 查表：25 °C 附近 1 个 ADC 字 ≈ 0.089 K，5 °C 一格的查表插值误差约 0.04 K。</li>
+<li>加热器：9 V、560 Ω、IRLZ44N 低边开关，导通 16.07 mA / 0.1446 W；PWM 平均功率 <span class="math math-inline">\(D\cdot V^2/R\)</span> 。</li>
+<li>47 Ω 一律不用：接 12 V 是 3.06 W，超过 2 W 额定；接 5 V 表面也有 65～86 °C。挑加热电阻先算 <span class="math math-inline">\(P = V^2/R\)</span> ，再按最坏 115 K/W 算温度，不超过 45 °C。</li>
+<li>恒功率法简单但慢（t90 30～70 s），高速段温差变化小。</li>
+<li>工业上用 PT100 电桥 + 仪表放大器，激励 ≤ 1 mA，避免自热。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>Vishay NTCLE100E3 数据手册：<a href="https://www.vishay.com/docs/29049/ntcle100.pdf">https://www.vishay.com/docs/29049/ntcle100.pdf</a></li>
+<li>Infineon IRLZ44N 数据手册（逻辑电平 MOS 管，V_GS = 5 V 时 R_DS(on) ≤ 0.025 Ω）：<a href="https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725">https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725</a></li>
+<li>Vishay PR01/PR02/PR03 功率金属膜电阻数据手册（PR02 2 W，热阻 75 / 115 K/W）：<a href="https://www.vishay.com/docs/28729/pr010203.pdf">https://www.vishay.com/docs/28729/pr010203.pdf</a></li>
+<li>Arduino <code>analogWrite()</code> 参考（D9 约 490 Hz）：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogWrite.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogWrite.adoc</a></li>
+<li>TI 应用笔记 SBAA275A（RTD 测量电路与 Callendar–Van Dusen 公式）：<a href="https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf">https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

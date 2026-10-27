@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>41 4–20 mA 电流环 · 误区与排查（反方研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/41.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="41-420-ma-电流环--误区与排查反方研究员">41 4–20 mA 电流环 · 误区与排查（反方研究员）</h1>
+<blockquote>
+<p>依据：notes/41-research.md、PART2_BRIEF §10。
+XTR115 数据手册已在本地核对。
+page4 回路：12 V → 250 Ω → 2N3904 → 100 Ω → 地。
+「本人计算」只作演示。</p>
+</blockquote>
+<h2 id="a-新手误区与边界失效">A. 新手误区与边界失效</h2>
+<h3 id="a1-page4-把-250-ω-放在高边a0-会看到-711-v损坏-arduino">A1 page4 把 250 Ω 放在高边：A0 会看到 7–11 V，损坏 Arduino</h3>
+<ul>
+<li><strong>现象</strong>：Arduino 读数一直是 1023；严重时 A0 引脚损坏。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>250 Ω 的上端接 12 V，下端接晶体管集电极。下端对地电压 = 12 V − I·250 Ω = 11 V（4 mA）到 7 V（20 mA）（本人计算）。</li>
+<li>「1–5 V」是 250 Ω 两端的电压差，不是对地电压。A0 直接接下端，就已经超过 5 V。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：接 Arduino 之前，用万用表测 250 Ω 两端各自对地的电压。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>方案一（简单）：250 Ω 两端各用一组 10 kΩ / 4.7 kΩ 分压（12 V → 3.84 V），分别接 A0 和 A1，软件中相减后乘 3.13。分辨率降到约 0.32–1.6 V 的量程（本人计算）。</li>
+<li>方案二：用 30 节的 INA 做高边差分测量。</li>
+<li>方案三：Arduino 只读发送端 100 Ω 上的电压，接收电流由万用表串联测量（但见 A3）。</li>
+<li>正文必须修改回路图，或者明确写出「不能直接接 A0」。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人计算；ATmega328P 数据手册 <a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a> （引脚绝对最大值，仅搜索确认）。</li>
+</ul>
+<h3 id="a2-基极电流误差i_c--i_e">A2 基极电流误差：I_C ≠ I_E</h3>
+<ul>
+<li><strong>现象</strong>：100 Ω 上算出的电流是 20.0 mA，串联的万用表读到 19.8 mA 左右。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>运放控制的是发射极电流 I_E = V_in/100 Ω。流过回路（250 Ω）的却是 I_C = I_E·β/(β+1)。</li>
+<li>onsemi 2N3904 数据手册：hFE 在 10 mA 下为 100–300，所以误差约 0.3–1 %（本人计算）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：万用表串联在 12 V 与 250 Ω 之间测 I_C，与 V(100 Ω)/100 比较。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>改用 MOSFET（例如 2N7000，栅极没有直流电流），或者用达林顿管（TI SBOA326 就是用达林顿管的 V-I 电路）。</li>
+<li>或者在正文中说明 1 % 量级的误差。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>onsemi 2N3904 数据手册 <a href="https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf">https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf</a> （仅搜索确认）</li>
+<li>TI SBOA326 <a href="https://www.ti.com/lit/an/sboa326/sboa326.pdf">https://www.ti.com/lit/an/sboa326/sboa326.pdf</a> （仅搜索确认）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a3-超出顺从电压后发送端仍然显示正确">A3 超出顺从电压后，发送端仍然「显示正确」</h3>
+<ul>
+<li><strong>现象</strong>：串入 470 Ω 后，100 Ω 上仍然是 2.0 V，但万用表测到的回路电流明显小于 20 mA。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>晶体管饱和后，运放把输出推高，基极灌入大电流。I_E 仍被维持在 V_in/100（I_E = I_C + I_B），但 I_C 下降，相当于电流从基极绕过了回路。</li>
+<li>研究笔记「常见错误」中的「被削顶还以为正确」在这里更隐蔽：发送端自检看不出来。</li>
+<li>预算：20 mA 时 250 Ω 压降 5 V，100 Ω 压降 2 V，V_CE(sat) 约 0.3 V，余量约 4.7 V → 额外回路电阻 ≤ 235 Ω。所以串 100 Ω、220 Ω 还正常，串 470 Ω 就失效（本人计算）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：
+<ul>
+<li>万用表测运放输出电压：接近电源轨，说明已经超出顺从电压。</li>
+<li>同时测 V_CE：&lt; 0.5 V 即饱和。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：
+<ul>
+<li>基极串 1 kΩ，限制饱和时的基极电流。</li>
+<li>软件中监测运放输出（经分压后接一个 ADC 脚），超过阈值就报「超顺从」。</li>
+<li>用 MOSFET 时不存在这个问题（栅极没有电流）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导；XTR115 数据手册 <a href="https://www.ti.com/lit/ds/symlink/xtr115.pdf">https://www.ti.com/lit/ds/symlink/xtr115.pdf</a> （本地核对：回路电源 7.5–36 V、compliance 说明）。</li>
+</ul>
+<h3 id="a4-运放--晶体管电流源自激">A4 运放 + 晶体管电流源自激</h3>
+<ul>
+<li><strong>现象</strong>：万用表读数正常，示波器上 100 Ω 两端却有几百 kHz 的振荡；接上长线后读数漂移。</li>
+<li><strong>原因</strong>：晶体管的电容、基极驱动阻抗和回路线缆的电容让反馈回路相位裕度不足。TI 的 V-I 电路说明中加入了补偿电容，并指出基极可能需要隔离电阻。</li>
+<li><strong>排查</strong>：示波器 AC 档看 100 Ω 上端和运放输出。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>基极串 1 kΩ。</li>
+<li>运放输出到反相端之间接 10 nF，同时反相端到 100 Ω 之间串 1 kΩ（RC 补偿，本人给的起点值）。</li>
+<li>集电极到地并接 10 nF。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：
+<ul>
+<li>TI SBOA326（同 A2，仅搜索确认）</li>
+<li>TI E2E 156111「Understanding this Precision Current Sink」<a href="https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/156111/understanding-this-precision-current-sink">https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/156111/understanding-this-precision-current-sink</a> （仅搜索确认）</li>
+<li>AAC 论坛「4-20mA Current Loop Oscillations」<a href="https://forum.allaboutcircuits.com/threads/4-20ma-current-loop-oscillations.75487/">https://forum.allaboutcircuits.com/threads/4-20ma-current-loop-oscillations.75487/</a> （仅搜索确认）</li>
+</ul>
+</li>
+</ul>
+<h3 id="a5-pwm--rc-设定值分辨率和纹波">A5 PWM + RC 设定值：分辨率和纹波</h3>
+<ul>
+<li><strong>现象</strong>：设定 12 mA 时，实际是 11.8 或 12.2 mA，调不到整数值；示波器上可以看到电流有纹波。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>8 位 PWM 的步长为 5 V/255 ≈ 19.6 mV，对应 0.196 mA。0.4–2.0 V 只用到约 82 级，每级约占量程的 1.2 %（本人计算）。</li>
+<li>RC 为 10 kΩ / 10 µF（τ = 0.1 s），490 Hz 纹波约 16 mV 峰峰值，对应约 0.16 mA 峰峰值（本人一阶估算）。</li>
+<li>设定后需要约 0.5 s 才能稳定。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 AC 档测 RC 输出；万用表读电流。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>PWM 后先分压 2.5:1（5 V → 2 V），让 255 级覆盖整个量程。</li>
+<li>用两级 RC 减小纹波。</li>
+<li>每次设定后等 ≥ 0.5 s 再读数。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人计算。</li>
+</ul>
+<h3 id="a6-250-ω-上满量程正好-5-v超量程和报警电流读不到">A6 250 Ω 上满量程正好 5 V：超量程和报警电流读不到</h3>
+<ul>
+<li><strong>现象</strong>：设定 21–22 mA（模拟故障）时，读数停在 20 mA 上。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>250 Ω × 20 mA = 5 V，等于 ADC 满量程。NAMUR NE43 规定的 20.5 mA 上限和 ≥ 21 mA 故障都超出了量程。</li>
+<li>USB 5 V 本身也只有 4.75–5.25 V 左右（[待核实]），ADC 的参考跟着变。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：设定 21 mA，看读数。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>接收电阻改为 200–220 Ω，或者按 A1 方案一分压。</li>
+<li>用万用表测 5 V 引脚的实际电压，并在软件中代入。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：Beckhoff NE43 说明页 <a href="https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html">https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html</a> （研究笔记作者已打开）</li>
+</ul>
+<h3 id="a7-断线检测拔线后-adc-悬空读数是随机的">A7 断线检测：拔线后 ADC 悬空，读数是随机的</h3>
+<ul>
+<li><strong>现象</strong>：拔掉回路线后，读数在 0–3 mA 之间跳，有时还会误报「正常 4 mA」。</li>
+<li><strong>原因</strong>：接收电阻断开后，A0 或分压点悬空，ADC 采样电容残留上一通道的电压。</li>
+<li><strong>排查</strong>：拔线后连续打印 ADC 读数。</li>
+<li><strong>修复</strong>：每个 ADC 输入对地接 100 kΩ–1 MΩ 下拉；按 NE43，≤ 3.6 mA 判为故障，不要用「= 0」来判断。</li>
+<li><strong>来源</strong>：Beckhoff NE43 说明页（同 A6）；WAGO 750-492/040-001 手册 <a href="https://www.wago.com/wagoweb/documentation/750/eng_manu/modules/m07500492_00400001_0en.pdf">https://www.wago.com/wagoweb/documentation/750/eng_manu/modules/m07500492_00400001_0en.pdf</a> （研究笔记作者已打开）。</li>
+</ul>
+<h3 id="a8-xtr115-在-12-v-下推不动-250-ω">A8 XTR115 在 12 V 下推不动 250 Ω</h3>
+<ul>
+<li><strong>现象</strong>：（变体实验）XTR115 用 12 V 回路电源接 250 Ω，到不了 20 mA。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>XTR115 的 V+ 最小为 7.5 V（数据手册推荐范围），12 − 7.5 = 4.5 V，4.5 V/20 mA = 225 Ω &lt; 250 Ω（研究笔记自己的算例就是 225 Ω）。</li>
+<li>数据手册还说，加反接保护二极管后，顺从电压约为 9 V。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：万用表测 XTR115 V+ 到 IO 的电压，看是否 ≥ 7.5 V。</li>
+<li><strong>修复</strong>：回路电源用 24 V（超过 BRIEF 的 12 V 上限，不推荐）；或者接收电阻改为 100 Ω（0.4–2.0 V）。</li>
+<li><strong>来源</strong>：XTR115 数据手册（同 A3，本地核对：「Power supply voltage 7.5 / 24 / 36 V」以及「compliance voltage of approximately 9V」）。</li>
+</ul>
+<h3 id="a9-晶体管功耗">A9 晶体管功耗</h3>
+<ul>
+<li><strong>现象</strong>：（一般不会发生）晶体管发热。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>4 mA 时 V_CE ≈ 12 − 1 − 0.4 = 10.6 V，功耗约 42 mW；功耗最大的点约在 17 mA，约 0.1 W。</li>
+<li>250 Ω 被短路时为 20 mA × 10 V = 0.2 W（本人计算）。</li>
+<li>2N3904 的 TO-92 封装可以承受（onsemi 数据手册给出 625 mW [待核实，只依据搜索摘要的电流额定，功耗未核对]）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：用手指背轻触晶体管。</li>
+<li><strong>修复</strong>：长时间短路测试时改用 BD139。</li>
+<li><strong>来源</strong>：本人计算；onsemi 2N3904 数据手册（同 A2）。</li>
+</ul>
+<h2 id="b-面包板实操问题">B. 面包板实操问题</h2>
+<h3 id="b1-万用表串入回路后改变了回路电阻">B1 万用表串入回路后改变了回路电阻</h3>
+<ul>
+<li><strong>现象</strong>：串入万用表之后，接近顺从极限的点提前失效。</li>
+<li><strong>原因</strong>：万用表 mA 档的分流电阻有几 Ω 到十几 Ω（[待核实]，依型号而定）。</li>
+<li><strong>排查</strong>：用另一块表测万用表两端的压降。</li>
+<li><strong>修复</strong>：顺从电压测试时只用 ADC 读，或者改用 µA/mA 低负担档。</li>
+<li><strong>来源</strong>：本人经验判断（[待核实]）。</li>
+</ul>
+<h3 id="b2-共地与长线">B2 共地与长线</h3>
+<ul>
+<li><strong>现象</strong>：用几米长的线模拟「远距离」时，读数不变（这是对的），但噪声变大。</li>
+<li><strong>原因</strong>：电流环抗压降，但不抗容性耦合进来的高频噪声；两线没有绞合，就会拾取 50 Hz。</li>
+<li><strong>排查</strong>：示波器看接收电阻两端的电压。</li>
+<li><strong>修复</strong>：两线绞合；接收端并接 100 nF（与 250 Ω 构成 τ = 25 µs）；见 A4 的补偿。</li>
+<li><strong>来源</strong>：ESE 462446 <a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a> （30 节已打开）</li>
+</ul>
+<h2 id="c-对-41-researchmd-的意见">C. 对 <a href="http://41-research.md">41-research.md</a> 的意见</h2>
+<ol>
+<li><strong>page4 回路图中 250 Ω 在高边，「Arduino A0 读 1–5 V」不成立</strong>：A0 对地会看到 7–11 V（A1）。这是硬伤，必须改。</li>
+<li><strong>V→I 电路的隐藏误差</strong>：基极电流误差（A2）；超出顺从电压时发送端仍然「显示正确」（A3）；自激（A4）。建议 page4 改用 MOSFET，或至少基极串 1 kΩ。</li>
+<li><strong>SPICE 计划中「找电流开始偏离的回路电阻」</strong>：要同时画 I_C 和 I_E，否则会被 A3 的现象误导。</li>
+<li><strong>PWM 分辨率</strong>：8 位下 0.4–2.0 V 只有约 82 级（A5）。</li>
+<li><strong>XTR115 在 12 V 下推不动 250 Ω</strong>（A8）。研究笔记给出了 225 Ω 的算例，却没有写出这个结论。</li>
+<li><strong>算例复核</strong>：825 Ω、225 Ω、1–5 V、0.4–2.0 V、25 kΩ 都正确（本人复核）。XTR115 的 R_IN = 25 kΩ 是按 I_IN = 200 µA 计算的。数据手册的测试条件是 R_IN = 20 kΩ（本地核对），这不矛盾。</li>
+<li><strong>TIDUAO7 的「V_S − 12 V」与 7.5 V</strong>：研究笔记已提醒要注明条件，本人没有复核。</li>
+</ol>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] 接 A0 / A1 之前用万用表确认对地电压 ≤ 5 V（250 Ω 在高边时必须分压或差分测量）</li>
+<li>[ ] 晶体管基极串 1 kΩ，或改用 MOSFET</li>
+<li>[ ] 示波器确认 100 Ω 上没有振荡</li>
+<li>[ ] 串联万用表测 I_C，与 V(100 Ω)/100 对比</li>
+<li>[ ] 顺从电压测试时同时看运放输出是否接近电源轨</li>
+<li>[ ] 接收电阻和 ADC 量程能覆盖 3.6–21 mA</li>
+<li>[ ] ADC 输入有下拉；断线判据是 ≤ 3.6 mA</li>
+<li>[ ] 回路线绞合</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<p>已打开或本地核对：</p>
+<ul>
+<li>XTR115 数据手册：<a href="https://www.ti.com/lit/ds/symlink/xtr115.pdf">https://www.ti.com/lit/ds/symlink/xtr115.pdf</a></li>
+<li>ESE 462446：<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a></li>
+</ul>
+<p>研究笔记作者已打开（本人沿用）：</p>
+<ul>
+<li>Beckhoff NE43：<a href="https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html">https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html</a></li>
+<li>WAGO 750-492/040-001：<a href="https://www.wago.com/wagoweb/documentation/750/eng_manu/modules/m07500492_00400001_0en.pdf">https://www.wago.com/wagoweb/documentation/750/eng_manu/modules/m07500492_00400001_0en.pdf</a></li>
+</ul>
+<p>仅搜索确认：</p>
+<ul>
+<li>onsemi 2N3904：<a href="https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf">https://www.onsemi.com/pdf/datasheet/2n3904-d.pdf</a></li>
+<li>TI SBOA326：<a href="https://www.ti.com/lit/an/sboa326/sboa326.pdf">https://www.ti.com/lit/an/sboa326/sboa326.pdf</a></li>
+<li>TI E2E 156111：<a href="https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/156111/understanding-this-precision-current-sink">https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/156111/understanding-this-precision-current-sink</a></li>
+<li>AAC 4-20mA 振荡：<a href="https://forum.allaboutcircuits.com/threads/4-20ma-current-loop-oscillations.75487/">https://forum.allaboutcircuits.com/threads/4-20ma-current-loop-oscillations.75487/</a></li>
+<li>ATmega328P 数据手册：<a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>误区条数：11 条（A1–A9、B1–B2）。</li>
+<li>带外部 URL 的条数：9 条。A5、B1 没有外部 URL。</li>
+<li>[待核实]：3 处（A6 USB 电压范围、A9 的 625 mW、B1 万用表分流电阻）。</li>
+<li>搜索：本节约 2 次搜索 + 1 份数据手册本地核对。数量远低于目标。</li>
+</ul>
+<h2 id="d-补查实际搜索-10-次另用-curl-抓取-arduino-论坛帖-json-2-个下载-pdf-1-份">D. 补查（实际搜索 10 次；另用 curl 抓取 Arduino 论坛帖 JSON 2 个、下载 PDF 1 份）</h2>
+<h3 id="d1-待核实-逐条处理">D1. [待核实] 逐条处理</h3>
+<ul>
+<li><strong>A6（USB 5 V 4.75–5.25 V）</strong>：已核实，但需改写。
+<ul>
+<li>USB 2.0 端口规范为 4.75–5.25 V，经总线供电 hub 下游口最低 4.4 V。来源：Tek USB 2.0 合规测试应用笔记 <a href="https://download.tek.com/document/USB20%20ComplianceTestingAppNote55W614000%20060624.pdf">https://download.tek.com/document/USB20 ComplianceTestingAppNote55W614000 060624.pdf</a> （仅搜索确认）。</li>
+<li>ECN 已把供电侧上限放宽到 5.5 V。来源：EEVblog 帖（已打开）<a href="https://www.eevblog.com/forum/chat/they-raised-max-usb-output-voltage-from-5-25v-to-5-50v-retroactively/">https://www.eevblog.com/forum/chat/they-raised-max-usb-output-voltage-from-5-25v-to-5-50v-retroactively/</a></li>
+<li>Arduino 板上 5 V 引脚经过保险丝等器件后还会再低一点。论坛实测例子：楼主在 USB + 9 V 供电时测得 5 V 引脚为 4.83 V，Grumpy_Mike 回复说换一种供电方式值又会不同（已打开）。来源：<a href="https://forum.arduino.cc/t/is-analogread-reference-voltage-actually-4-9v/245802">https://forum.arduino.cc/t/is-analogread-reference-voltage-actually-4-9v/245802</a></li>
+<li>建议正文写成：「USB 电压约 4.4–5.5 V，板上 5 V 引脚常见 4.8 V 左右，必须实测」。</li>
+</ul>
+</li>
+<li><strong>A9（2N3904 TO-92 625 mW）</strong>：已核实。
+<ul>
+<li>本地数据手册的 Thermal Characteristics 表：2N3904 Total Device Dissipation 625 mW（TA = 25 °C），25 °C 以上降额 5.0 mW/°C，RθJA 200 °C/W，RθJC 83.3 °C/W。</li>
+<li>手册为 Fairchild/onsemi 版 2N3904/MMBT3904/PZT3904，已存为 /workspace/pdfs/2n3904_onsemi_digikey.pdf（cp -n，新文件）。来源：<a href="https://media.digikey.com/pdf/Data%20Sheets/ON%20Semiconductor%20PDFs/2N3904,MMBT3904,PZT3904.pdf">https://media.digikey.com/pdf/Data Sheets/ON Semiconductor PDFs/2N3904,MMBT3904,PZT3904.pdf</a></li>
+<li>本人计算：短路时 0.2 W × 200 °C/W ≈ 40 °C 温升，可以承受；室温 40 °C 时允许功耗约 625 − 15 × 5 = 550 mW，仍够用。</li>
+</ul>
+</li>
+<li><strong>B1（mA 档分流电阻几 Ω 到十几 Ω）</strong>：部分核实，建议改写。
+<ul>
+<li>Fluke 287/289 的 50 mA 和 400 mA 档负担电压为 1.8 mV/mA，等效约 1.8 Ω（仅搜索确认）。来源：<a href="https://media.fluke.com/b1d069ee-f650-436e-9a3a-b10800c1817d_original%20file.pdf">https://media.fluke.com/b1d069ee-f650-436e-9a3a-b10800c1817d_original file.pdf</a></li>
+<li>Fluke 8808A 的 20 mA 和 200 mA 档用 1 Ω 分流电阻（仅搜索确认）。来源：<a href="https://assets.fluke.com/manuals/8808a___umeng0000.pdf">https://assets.fluke.com/manuals/8808a___umeng0000.pdf</a></li>
+<li>「十几 Ω」这个说法没有找到依据，仍未核实。建议改为：「约 1 Ω 到数 Ω，依型号而定，以说明书上的负担电压（mV/mA）为准」。</li>
+<li>原理参考 Fluke 博客 <a href="https://www.fluke.com/en-us/learn/blog/electrical/can-you-live-with-the-burden">https://www.fluke.com/en-us/learn/blog/electrical/can-you-live-with-the-burden</a> （仅搜索确认）。</li>
+</ul>
+</li>
+<li><strong>B1 来源「本人经验」</strong>：已用上面两份 Fluke 文档替代，可以去掉「本人经验」字样。</li>
+<li>统计：已核实 2（A6、A9），部分核实后改写 1（B1），删除 0。</li>
+</ul>
+<h3 id="d2-新增坑">D2. 新增坑</h3>
+<h4 id="d2-1-变送器故障时把整条回路电流灌进-arduino-引脚">D2-1 变送器故障时把整条回路电流灌进 Arduino 引脚</h4>
+<ul>
+<li><strong>现象</strong>：读数突然一直是 0，不是悬空乱跳。检查发现模拟引脚已经损坏。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>变送器坏了，不再限制在 20 mA，24 V 电源能给多少电流就流进来多少。</li>
+<li>楼主用的是 51 Ω 采样电阻加 1.1 V 内部参考，引脚直接接采样节点。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：断开引脚，测采样电阻两端电压是否超过 VCC。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>采样节点和模拟引脚之间串一个电阻。wvmarle 建议不超过 10 kΩ：最坏情况 (24 − 5)/10 k ≈ 1.9 mA 流过钳位二极管，他自己倾向于控制在 1 mA 以内。</li>
+<li>他还指出，并联稳压管会在接近 3.3 V 前就开始导通，影响精度，而且稳压管本身也可能先被烧掉。</li>
+<li>与 ATmega328P 数据手册的引脚绝对最大值 −0.5 V 到 VCC + 0.5 V 对照，必须有限流。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：<a href="https://forum.arduino.cc/t/safely-reading-a-malfunctioning-4-20ma-sensor/637220">https://forum.arduino.cc/t/safely-reading-a-malfunctioning-4-20ma-sensor/637220</a> （已通过论坛 JSON 读取原文）</li>
+</ul>
+<h4 id="d2-2-a6-的修复值-220-ω-在故障高位时可能仍然超量程">D2-2 A6 的修复值 220 Ω 在故障高位时可能仍然超量程</h4>
+<ul>
+<li><strong>现象</strong>：改成 220 Ω 之后，模拟故障高电流时读数依然顶到 1023。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>搜索结果称，符合 NE43 的变送器高故障输出在 21.5–22.8 mA（仅搜索确认，二手页面）。来源：<a href="https://www.sensorsedgehub.com/industrial-sensors/namur-ne43-fault-currents-explained">https://www.sensorsedgehub.com/industrial-sensors/namur-ne43-fault-currents-explained</a></li>
+<li>本人计算：22.8 mA × 220 Ω = 5.02 V，已经超过实测约 4.83 V 的参考电压；22.8 mA × 200 Ω = 4.56 V，还有余量。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：用实测 VCC 除以 22.8 mA，得到允许的最大电阻。</li>
+<li><strong>怎么修复</strong>：正文建议用 200 Ω，或者改用外部基准。判定规则按 NE43：≤ 3.6 mA 或 ≥ 21 mA 判为故障，3.8–20.5 mA 为有效测量。
+<ul>
+<li>NE43 门限来源：Beckhoff <a href="https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html">https://infosys.beckhoff.com/content/1033/ioanalogmanual/3904850187.html</a></li>
+<li>门限也被 Siemens 文档引用（仅搜索确认）：<a href="https://docs.tia.siemens.cloud/r/simatic_et_200sp_manual_collection_enus_20/device-specific-information/i/o-modules/et-200sp-ha-ex-module/ex-ai-2xi-2-wire-hart/configuring/explanation-of-parameters/failure-monitoring-according-to-ne43">https://docs.tia.siemens.cloud/r/simatic_et_200sp_manual_collection_enus_20/device-specific-information/i/o-modules/et-200sp-ha-ex-module/ex-ai-2xi-2-wire-hart/configuring/explanation-of-parameters/failure-monitoring-according-to-ne43</a></li>
+</ul>
+</li>
+</ul>
+<h4 id="d2-3-回路电源不够接收电阻和变送器最低电压要一起算">D2-3 回路电源不够：接收电阻和变送器最低电压要一起算</h4>
+<ul>
+<li><strong>现象</strong>：电流在 15–20 mA 段被削平，到不了满量程。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>V_supply ≥ V_tx(min) + 20 mA × R_total，R_total 要包括线阻和万用表。</li>
+<li>例子：变送器最低 10 V，加 250 Ω，需要 15 V。</li>
+<li>XTR115 本地手册写 &quot;Wide loop supply range: 7.5V to 36V&quot;，即本身至少需要 7.5 V。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：在 20 mA 时测变送器两端电压。</li>
+<li><strong>怎么修复</strong>：提高回路电源，或者减小接收电阻。</li>
+<li><strong>来源</strong>：
+<ul>
+<li>NOSHOK 应用笔记（仅搜索确认）：<a href="https://www.noshok.com/pdf/reference/The_Minimum_Power_Supply_Voltage_Required_For_A_2_Wire_4%20mA_to_20_mA_Loop.pdf">https://www.noshok.com/pdf/reference/The_Minimum_Power_Supply_Voltage_Required_For_A_2_Wire_4 mA_to_20_mA_Loop.pdf</a></li>
+<li>本地 /workspace/pdfs/xtr115.txt 第 13 行。</li>
+</ul>
+</li>
+</ul>
+<h4 id="d2-4-bjt-电流源采的是发射极电流存在-1β1-的系统误差">D2-4 BJT 电流源采的是发射极电流，存在 1/(β+1) 的系统误差</h4>
+<ul>
+<li><strong>现象</strong>：回路电流始终比设定值小约 1%。</li>
+<li><strong>原因</strong>：I_C = I_E − I_B。β = 100 时误差约 1%（本人计算 1/101）。</li>
+<li><strong>怎么排查</strong>：用表测回路电流，与 V_set/R_sense 比较。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>改用 MOSFET（栅极没有直流电流），或者在软件里校准 4 mA 和 20 mA 两个点。</li>
+<li>要注意 MOSFET 加运放可能振荡，见 <a href="http://39.md">39.md</a> 的 D2-1（加栅极电阻和补偿）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI SLOA026A（仅搜索确认）<a href="https://www.ti.com/lit/an/sloa026a/sloa026a.pdf">https://www.ti.com/lit/an/sloa026a/sloa026a.pdf</a> ；AAC NPN vs MOSFET 帖（仅搜索确认）<a href="https://forum.allaboutcircuits.com/threads/constant-current-source-npn-vs-mosfet.118751/">https://forum.allaboutcircuits.com/threads/constant-current-source-npn-vs-mosfet.118751/</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 热式流量与 RTD 恒温差：资深教师审读</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/40.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="40-热式流量与-rtd-恒温差资深教师审读">40 热式流量与 RTD 恒温差：资深教师审读</h1>
+<p>审读对象：<code>40-thermal-flow/page1.md</code>～<code>page4.md</code>，以及 <code>img/</code> 下全部 19 张图（40_p1_1～40_p4_4，每张都用图片方式打开看过）。
+对照文件：<code>review/part2/teacher/00-plan-review.md</code>（L52 本节问题行、L100 本节教学方法、L125 本节必备图，以及其中必改-11、12、13、24）、<code>review/teacher/best-practices.md</code>（原则编号 [1]～[6]）、<code>notes/00-design-part2.md</code> §40（L311–331）和 L438 安全条、<code>notes/PART2_BRIEF.md</code>（L36 原理图规则、L185 不得用手试温度）、<code>notes/AUTHOR_GUIDE.md</code>（L28–48 四页结构、L61 面包板图配原理图、L81–82 图号与答案图、§1 交叉引用必须是链接），以及第一部分 01（page1 L37 τ = RC）、06、10（page1 L56 回差）、14、26（page1 L62 PWM 平均）和 35 page4「Arduino 上手」、39 page2；另看了 <code>review/spice/40.md</code> 和 <code>code/40_sim.py</code>。
+核算方式：把 page2 的 Python 块（L42–75）、page4 的 Python 块（L252–284）和 <code>code/40_sim.py</code> 复制到 <code>/tmp/rv40/</code> 运行，打印值与正文一致（NTC 表 568.6/512.0/…/311.5、ADC 430 → 32.58 °C（精确 32.54 °C）、自热 0.089 K、16.07 mA/0.1446 W、35.8～41.6 °C、60 % 占空稳态 4.23/1.81 K 和 63 % 时间 34/19 s、开关控温 29.3→64.4→80.0→29.5 %、标定 −12.0 %、补偿 64.7→34.4 %、设定温差表、PI 三组 t90）；page4 Arduino 程序的查表数组 CNT[]（10～60 °C 共 11 点）用 Vishay 扩展公式逐点重算，全部吻合；另手算了 page1 δ 表差值 27.5/9.4 mW/K、PT100 0.354 %/K 与「灵敏 12 倍」（4.38/0.354 = 12.4）、风道 12 L/min、page2 47 Ω 三档功率、PT100 自热表、page3 CTA 电桥 22.31 Ω/30.0 K/60.8 倍、page4 9.6 V 时 37.3～43.9 °C、栅极 4.995 V、8.5 V 电池功率少 21.6 %，均与正文吻合。仓库页面、图、代码和 git 都没有动。</p>
+<p>原则编号沿用 <a href="http://best-practices.md">best-practices.md</a>：
+[1] 控制认知负荷（NSW CESE 2017：<a href="https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory">https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory</a> ；Rosenshine 2012：<a href="https://www.aft.org/ae/spring2012/rosenshine">https://www.aft.org/ae/spring2012/rosenshine</a> ）
+[2] 样例与渐隐样例（Pashler 等 2007，IES 建议 2：<a href="https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf">https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf</a> ）
+[3] 提取练习与间隔复习（Pashler 2007 建议 1、5；<a href="https://www.learningscientists.org/blog/2016/6/23-1">https://www.learningscientists.org/blog/2016/6/23-1</a> ）
+[4] 图文双编码（Pashler 2007 建议 3；<a href="https://www.learningscientists.org/blog/2016/9/1-1">https://www.learningscientists.org/blog/2016/9/1-1</a> ）
+[5] 先处理误区（PRPER 20, 020128（2024）：<a href="https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128">https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128</a> ）
+[6] 由具体到抽象（Pashler 2007 建议 4；Rosenshine 2012）</p>
+<h2 id="一总体评分">一、总体评分</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>从「吹热茶」和「纸片扇 NTC、读数往下掉」的具体现象出发，用热↔电类比表（电流↔热功率、电容↔热容、电导↔δ）把 01 的 RC 迁移过来，再用带数字的 King 曲线、恒功率→开关控温→PI→工业 CTA 电桥一路加深；计划里的必改-11（用 δ）、12（主实验开关控温、PI 放 page3 加知识框）、13（NTC 知识框 + 分压图）、24（每段面包板图 + 原理图 + 对照看）都已落实，深度和难度台阶都合适。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>主线清楚、安全须知写得很细；但有几处会卡住读者：page3 PI 知识框的公式把引用框拆成两半，而且 <span class="math math-inline">\(K_p\)</span> 、 <span class="math math-inline">\(T_i\)</span> 没说是什么意思、什么单位；page4 的 MODE 2 一处写 30 s、两处写 40 s；测量表说「黑表笔一律接 0 V」，第 7 步却要黑表笔接 g25；测量点 ④ 定在 i23，正好在 <span class="math math-inline">\(R_H\)</span> 本体下面；page3 设定温差表说 2 K「够用到 3.36 m/s」，前一节却说 3 m/s 已超量程；全篇约 19 处「page4」「第 2 页」是纯文字，不是链接。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>差</td>
+<td>全节没有一道例题、一道练习：page2 缺 AUTHOR_GUIDE L28 要求的渐隐式例题（完整示范 → 留空 → 变体迁移），page3 缺 L48 要求的「至少 3 道、由易到难、最后一道变体迁移」练习，只有 page4 的 4 道实验思考题；参数表（47 Ω 三档、设定温差、 <span class="math math-inline">\(K_p\)</span> 三档）都只给结果，没让读者自己动手算一次；也没有回顾 39/30/10 的提取题。</td>
+</tr>
+</tbody>
+</table>
+<p>③ 评为「差」，按要求转成必改-01（page2 补渐隐例题）和必改-02（page3 补练习题），两条都给了可以直接贴进去的题目和答案。</p>
+<h2 id="二逐条意见">二、逐条意见</h2>
+<h3 id="必改">必改</h3>
+<h3 id="必改-01page2-没有渐隐式例题">必改-01　page2 没有渐隐式例题</h3>
+<ul>
+<li><strong>位置</strong>：page2 L167（「page4 没有用 PT100……」）之后、L169「## 小结」之前，整页没有任何「例 1 / 例 2 / 例 3」。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE L28 要求 page2 结尾是「完整示例 → 关键步骤留空 → 变体迁移」。本页的加热器选型（L98–108 表格）是全节最需要读者自己会算的一步，现在只给了结果，读者看完也不会给别的电阻、别的电源选型。</li>
+<li><strong>改法</strong>：在 L168 插入一节「## 五、例题」，内容如下（数字已核算）：
+<ul>
+<li><strong>例 1（完整示范）</strong>：沿用图 40-p2-3（9.0 V、 <span class="math math-inline">\(R_H\)</span> = 560 Ω），平均占空 40 %。全开电流 <span class="math math-inline">\(I = 9.0/560 = 16.07\ \text{mA}\)</span> ；全开功率 <span class="math math-inline">\(P = 9.0^2/560 = 0.1446\ \text{W}\)</span> ；平均功率 <span class="math math-inline">\(0.4 \times 0.1446 = 57.9\ \text{mW}\)</span> ；最坏情况（100 % 一直开着、热阻 115 K/W、室温 25 °C）表面温度 <span class="math math-inline">\(25 + 0.1446 \times 115 = 41.6\ °\text{C}\)</span> ，低于 45 °C 切断线。</li>
+<li><strong>例 2（留空练习）</strong>：把 <span class="math math-inline">\(R_H\)</span> 换成 1 kΩ，仍接 9.0 V。全开电流 ____ mA，全开功率 ____ mW；最坏表面温度 25 + ____ × 115 = ____ °C；无风时要维持 2 K 温差需要约 41.0 mW，占空应是 ____ %。（答案折叠：9.0 mA；81 mW；0.081，34.3 °C；41.0 ÷ 81 ≈ 50.6 %。）</li>
+<li><strong>例 3（变体迁移）</strong>：手边只有 12 V 适配器，要求最坏情况表面不超过 45 °C（室温 25 °C、热阻 115 K/W）。 <span class="math math-inline">\(R_H\)</span> 至少要多大？取标准阻值后功率是多少？（答案折叠： <span class="math math-inline">\(P \le (45-25)/115 = 0.174\ \text{W}\)</span> ， <span class="math math-inline">\(R_H \ge 12^2/0.174 \approx 828\ \Omega\)</span> ，取 1 kΩ，功率 0.144 W，和 9 V/560 Ω 几乎一样，最坏 41.6 °C。）</li>
+<li>例 2、例 3 的答案用 <code>&lt;details&gt;&lt;summary&gt;答案&lt;/summary&gt;</code>，<code>&lt;summary&gt;</code> 后空一行。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：渐隐样例先给完整步骤再逐步撤掉支架，能降低初学者的负荷并促成迁移 [2]；例 3 把「先算 <span class="math math-inline">\(P = V^2/R\)</span> 再选阻值」用到新电源上，对应 page3 误区表第一行 [5]。</li>
+</ul>
+<h3 id="必改-02page3-一道练习题都没有">必改-02　page3 一道练习题都没有</h3>
+<ul>
+<li><strong>位置</strong>：page3 L169（误区表最后一行）之后、L171「## 小结」之前。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE L48 要求 page3 至少 3 道练习，由易到难，最后一道变体迁移，答案折叠。本页有很好的参数表（设定温差、 <span class="math math-inline">\(K_p\)</span> 、补偿），但没有一道题让读者自己推一次「改了参数会怎样」。</li>
+<li><strong>改法</strong>：插入「## 八、练习」，四道题（答案均折叠，数字已核算）：
+<ul>
+<li><strong>练习 1</strong>：电池从 9.0 V 降到 8.5 V，无风时散热需要的平均功率仍是 41.0 mW，平均占空从 28.3 % 变成多少？（答案：全开功率 <span class="math math-inline">\(8.5^2/560 = 129.0\ \text{mW}\)</span> ，占空 41.0 ÷ 129.0 ≈ 31.8 %；所以标定前后要量电池电压。）</li>
+<li><strong>练习 2</strong>：把设定温差从 2 K 改成 3 K。1 个 ADC 字（约 0.089 K）的相对误差变成多少？无风占空大约是多少？（答案：0.089 ÷ 3 ≈ 3.0 %；需要的功率和温差成正比，28.3 % × 1.5 ≈ 42.5 %，和第三节的表一致。）</li>
+<li><strong>练习 3</strong>：风速 1 m/s，不做环境补偿，环境升高 0.5 K。程序以为的温差比真实温差大多少？平均占空大约变成多少？（答案：大 0.5 K，程序只把真实温差撑到 1.5 K；功率和温差成正比，66.4 % × 1.5/2 ≈ 49.8 %，按标定会读成 0.5 m/s 以下。）</li>
+<li><strong>练习 4（变体迁移）</strong>：图 40-p3-5 的模拟 CTA 电桥，想让热膜比环境热 20 K 而不是 30 K（ <span class="math math-inline">\(R_A\)</span> = 20 Ω、 <span class="math math-inline">\(R_B\)</span> = 200 Ω 不变，α = 0.00385 /K）。 <span class="math math-inline">\(R_C\)</span> 该取多少？（答案：热膜热态电阻 <span class="math math-inline">\(20 \times (1 + 0.00385 \times 20) = 21.54\ \Omega\)</span> ；电桥平衡 <span class="math math-inline">\(R_C = R_B \times 21.54 / 20 = 215.4\ \Omega\)</span> 。）</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：读者需要自己从记忆里把关系提取出来、在新数字上用一次，才能举一反三 [3]；练习 4 把同一个「电桥平衡」思路迁到另一种控温实现上 [2]。</li>
+</ul>
+<h3 id="必改-0347-ω-接-5-v-的退路前后矛盾而且不安全">必改-03　47 Ω 接 5 V 的「退路」前后矛盾，而且不安全</h3>
+<ul>
+<li><strong>位置</strong>：page4 L26 末句「如果你手上只有 47 Ω，只能接 5 V，程序里把占空比上限设成 33 % 以下，并保留 45 °C 切断。」；page2 L108 第二句「如果手头只有 47 Ω，只能从 5 V 供电，并在程序里把占空比限制在 33 % 以下……」。</li>
+<li><strong>问题</strong>：同一句话前面刚说「47 Ω 接 5 V……会烫伤，本书不采用」，后面又给出这个接法；实验里唯一的 5 V 是 Arduino 的 5V 脚（约 106 mA），page3 误区表 L162 明确说加热电流不要从 Arduino 5V 取；page4 的程序也没有「占空上限」这个设置，开关控温时加热器一开就是 100 %。读者照做会得到 65～86 °C 的表面温度。</li>
+<li><strong>改法</strong>：两处都删掉这句，换成：「手上没有 560 Ω 时，用 470 Ω～1 kΩ 之间任何一只 2 W 电阻接 9 V（先按 <span class="math math-inline">\(P = V^2/R\)</span> 算，最坏表面温度不超过 45 °C）；47 Ω 一律不用。」（核算：470 Ω 接 9 V 为 0.172 W，最坏 44.8 °C，已贴近切断线，若觉得太近可只写 680 Ω～1 kΩ：680 Ω 为 0.119 W、最坏 38.7 °C。）</li>
+<li><strong>为什么</strong>：安全规则只能有一个说法，不能给读者留「看情况」的口子；先处理「网上例子照抄」这个误区 [5]，并符合 00-design-part2 L438 和 PART2_BRIEF L185 的安全要求。</li>
+</ul>
+<h3 id="必改-04测量点-④-定在-i23正好压在-r_h-本体下面">必改-04　测量点 ④ 定在 i23，正好压在 <span class="math math-inline">\(R_H\)</span> 本体下面</h3>
+<ul>
+<li><strong>位置</strong>：page4 L210 测量表第 3 步「红表笔 i23」；图 40-p4-3 的「④ 栅极 G」圆圈画在 i23。</li>
+<li><strong>问题</strong>：图 40-p4-3 里 <span class="math math-inline">\(R_H\)</span> 插 i21–i25，本体横跨 i22～i24，i23 这个孔被电阻本体盖住，表笔伸不进去；手机上看图，④ 的圆圈和 <span class="math math-inline">\(R_H\)</span> 叠在一起，读者会以为要量 <span class="math math-inline">\(R_H\)</span> 。第 23 列下半的 j23 是空的，同样是栅极节点。</li>
+<li><strong>改法</strong>：图 40-p4-3 把 ④ 圆圈移到 j23；page4 L210 改为「| 3 | 加热开着时（串口 heat=1）量 ④ 栅极 | j23 | 直流 20 V | ……」；L98 附近的「对照看」补一句「④ 量 j23（和 g23、h23 同属第 23 列下半）」。图 40-p4-4 的 ④ 不用动。</li>
+<li><strong>为什么</strong>：测量点要画在能下表笔的位置，图和文字指同一个孔，读者才能照图操作 [4]。</li>
+</ul>
+<h3 id="必改-05page4加-100-nf-电容只有文字没有原理图">必改-05　page4「加 100 nF 电容」只有文字，没有原理图</h3>
+<ul>
+<li><strong>位置</strong>：page4 L224「在 e21 到 0 V 轨之间加一只 100 nF 电容」。</li>
+<li><strong>问题</strong>：这是一处改接线，PART2_BRIEF L36、AUTHOR_GUIDE L61 要求讲电路连接的文字旁都要有原理图；读者不知道这只电容接在分压点哪一侧、另一脚插哪个孔。</li>
+<li><strong>改法</strong>：在图 40-p4-2 的 N1 分压电路里，用灰色点线（参考/选装）画一只「C 100 nF（选装）」从 ② 节点接地，孔位标「e21 → 0 V 轨」；L224 改为「在 e21（② 分压点）到 0 V 轨之间加一只 100 nF 电容，见图 40-p4-2 里灰色点线的那只（选装）。」N2 那一路如需同样处理，也在图上画出（e7）。</li>
+<li><strong>为什么</strong>：每段讲连接的文字都要有图对应，图文双编码才能落地 [4]。</li>
+</ul>
+<h3 id="必改-06mode-2-的加热时长一处写-30-s两处写-40-s">必改-06　MODE 2 的加热时长一处写 30 s、两处写 40 s</h3>
+<ul>
+<li><strong>位置</strong>：page4 L121 程序注释「2 加热 100 % 测试（30 s 后自动停）」；L169 <code>now &lt; 40000UL</code>；L200「<code>MODE = 2</code> …… 40 s 后自动关断」；L214 第 7 步「40 s 内量」。</li>
+<li><strong>问题</strong>：<code>millis()</code> 从上电算起，setup 里不加热的零点采样就要约 10 s（100 次 × 100 ms，再加读 ADC 的时间），所以加热实际只有约 30 s，到上电后第 40 s 关断。注释对，正文两处错；读者按「40 s 内」量，最后 10 s 量到的是 0。</li>
+<li><strong>改法</strong>：L200 改为「<code>MODE = 2</code> 只用来做下表的第 7 步：上电后先 10 s 不加热（记零点），接着全开约 30 s，到上电后第 40 s 自动关断。」L214 改为「<code>MODE = 2</code>，串口出现 zero 之后的 30 s 内量……」。</li>
+<li><strong>为什么</strong>：同一个数字前后不一致，读者会怀疑自己接错线，增加不必要的负荷 [1]。</li>
+</ul>
+<h3 id="必改-07测量表缺黑表笔列第-7-步又违反黑表笔一律接-0-v">必改-07　测量表缺「黑表笔」列，第 7 步又违反「黑表笔一律接 0 V」</h3>
+<ul>
+<li><strong>位置</strong>：page4 L74–82 第 1 段测量表、L204–219 第 2 段测量表；L204「黑表笔一律接 0 V 轨」与 L214 第 7 步「红笔 j21、黑笔 g25」「j21 / g25」。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE L38 规定测量表的列是「步骤 | 测什么 | 红表笔 | 黑表笔 | 挡位 | 应该读到 | 读不到时先查」，两张表都少了「黑表笔」列，改成一句表前说明；结果第 7 步恰好是例外，读者若按「一律接 0 V」去量，红笔 j21 读到的是 +9 V 轨电压，不是 <span class="math math-inline">\(R_H\)</span> 两端电压。</li>
+<li><strong>改法</strong>：两张表都补「黑表笔」列，普通行填「0 V 轨」，串口行填「—」，第 7 步填红「j21」、黑「g25」；删掉 L72 后和 L204 的「黑表笔一律接 0 V 轨」，改为「黑表笔大多接 0 V 轨，第 7 步例外（量 <span class="math math-inline">\(R_H\)</span> 两端）」。</li>
+<li><strong>为什么</strong>：固定格式让读者每一步只看一处，减少找信息的负荷 [1]；把例外写在表里，避免「一律」造成的误操作 [5]。</li>
+</ul>
+<h3 id="必改-08page4-核对代码不满足-author_guide-第-8-项示例标定点还用了-page3-说过不好的那一组">必改-08　page4 核对代码不满足 AUTHOR_GUIDE 第 8 项，示例标定点还用了 page3 说过不好的那一组</h3>
+<ul>
+<li><strong>位置</strong>：page4 L252–284。</li>
+<li><strong>问题</strong>：① 开头没有 <code>sys.path</code> 两行；② 只打印计算值，没有把读者的实测值和计算值比较，也没有「偏差超过 10 % 打印提示」；③ 示例 <code>CAL</code> 用的正是 0、1、2、2.5 m/s 四点，而 page3 L51–56 刚说明这一组在 0.5 m/s 处误差 −12 %，L238 也说「低风速段多放一个点」；④ <code>deg = min(3, len(CAL) - 1)</code> 在 4 个点时就是三次多项式穿过全部 4 点，打印的「标定点残差」永远是 0（实测运行结果 <code>[-0. 0. 0. 0.]</code>），这个输出没有意义。</li>
+<li><strong>改法</strong>：开头加和其他节相同的两行 <code>sys.path</code>；在第 1 部分加「你量到的读数」：<code>V_gate = 4.98</code>、<code>V_drain_on = 0.0003</code>、<code>duty0 = 30.5</code>、<code>V_A1 = 2.51</code>，第 2 部分算出期望值后统一用 <code>check(名称, 实测, 计算)</code> 比较，<code>abs(实测-计算)/计算 &gt; 0.10</code> 时打印「偏差超过 10 %，先查……」；示例 <code>CAL</code> 改成五点 <code>[(0.0, 30.5), (0.5, 55.0), (1.0, 63.0), (2.0, 79.0), (2.5, 86.0)]</code>，拟合阶数改为 <code>deg = min(2, len(CAL) - 2)</code>，这样残差才能反映拟合好坏。</li>
+<li><strong>为什么</strong>：让读者把自己的实测数和计算数并排比较，是提取和自我检查的环节 [3]；示例数据要示范正文的结论，不能和它相反 [5]。</li>
+</ul>
+<h3 id="必改-09设定温差表说-2-k够用到-336-ms与3-ms-超量程矛盾283-293-297--三个无风占空未解释">必改-09　设定温差表说 2 K「够用到 3.36 m/s」，与「3 m/s 超量程」矛盾；28.3 %、29.3 %、29.7 % 三个无风占空未解释</h3>
+<ul>
+<li><strong>位置</strong>：page3 L106「| 2 K | 28.3 % | 2.70 K | 约 3.36 m/s | 4.5 % |」与 L43「3 m/s 时最后 60 s 加热器 100 % 开着……超出量程」；无风占空 L25 写 29.3 %、L41 写 29.7 %、L106 写 28.3 %，page4 L213、L297 用 29.7 %，L315 思考题用 28.3 %。</li>
+<li><strong>问题</strong>：模型里 3.36 m/s 和 28.3 % 是 PI 理想稳态（温差正好 2 K），29.3/29.7 % 是开关控温（温差在 1.8～2.5 K 之间来回、平均高于 2 K）。正文没说这层区别，细心读者会觉得数据打架。</li>
+<li><strong>改法</strong>：L106 表头「功率够用到」改为「功率够用到（PI 理想值）」，表下加一句：「表中占空和量程按温差正好等于设定值算（PI 稳态）。开关控温时温差平均略高于 2 K，所以无风占空是 29.3～29.7 %，而且 3 m/s 就已经顶满（见第二节），实际量程要比表里留出余量。」page4 L315 的「28.3 %」后补「（PI 理想值）」。</li>
+<li><strong>为什么</strong>：同一物理量出现三个数时，要先告诉读者为什么不同，否则会形成「模型不可信」的误解 [5]。</li>
+</ul>
+<h3 id="必改-10page3-pi-知识框公式把框拆成两半-k_p--t_i-没解释">必改-10　page3 PI 知识框：公式把框拆成两半， <span class="math math-inline">\(K_p\)</span> 、 <span class="math math-inline">\(T_i\)</span> 没解释</h3>
+<ul>
+<li><strong>位置</strong>：page3 L75–84。</li>
+<li><strong>问题</strong>：L78–80 的 <code>$$…$$</code> 前面没有 <code>&gt;</code>，渲染出来是「半个框 + 一行公式 + 另半个框」；L86 起就用 <span class="math math-inline">\(T_i\)</span> = 10 s、 <span class="math math-inline">\(K_p\)</span> = 0.1/0.6/2.0 比较，但读者不知道 <span class="math math-inline">\(T_i\)</span> 是「积分时间」，也不知道 <span class="math math-inline">\(K_p = 0.6\)</span> 是「温差差 1 K 就多给 60 % 占空」。积分号 ∫ 对高中读者也需要一句话解释。</li>
+<li><strong>改法</strong>：公式行改成在框内的单行写法 <code>&gt; $D = K_p e + \dfrac{K_p}{T_i}\int e\,\mathrm{d}t$</code>（或拆成两行文字公式），框内再加两条：
+<ul>
+<li>「 <span class="math math-inline">\(K_p\)</span> 叫比例系数，单位是 1/K：这里 <span class="math math-inline">\(e\)</span> 用 K、 <span class="math math-inline">\(D\)</span> 用 0～1 表示， <span class="math math-inline">\(K_p\)</span> = 0.6 就是温差差 1 K、占空多给 60 %。」</li>
+<li>「 <span class="math math-inline">\(T_i\)</span> 叫积分时间，单位 s：误差保持不变时，积分项要用 <span class="math math-inline">\(T_i\)</span> 这么长的时间才攒到和比例项一样大。 <span class="math math-inline">\(T_i\)</span> 越小，积分越猛。∫ e dt 就是误差 × 时间的累加，和 14 节里电容电压是电流 × 时间的累加一样。」</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：新符号首次出现必须说清含义和单位，否则后面的参数表读不懂 [1]；用 14 的电容累加类比，是由具体到抽象 [6]。</li>
+</ul>
+<h3 id="必改-11全节约-19-处跨页引用是纯文字不是链接">必改-11　全节约 19 处跨页引用是纯文字，不是链接</h3>
+<ul>
+<li><strong>位置</strong>：page1 L15「见 page4 用的元件」、L38「page4 的 NTC」、L64「（page3 会做）」、L80「page4 的实验」、L104「（第 2 页）」、L105「（第 3 页）」、L107「page4 的 NTC」；page2 L5「第 3 页」、L108「page4 的安全须知」、L137「（第 3 页）」、L145「page4 用的 NTC」、L167「page4 没有用 PT100」；page3 L5「第 2 页」、L112「page4 的开关控温程序」、L145「和 page4 的差别」两处、L163「page2 第一节」。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE §1 规定跨页引用必须写成链接（用 <code>(^|[^/A-Za-z_-])page ?[1234]([^.0-9a-z_]|$)</code> 检查应为 0 条）；本节这条检查命中 11 行，另有「第 N 页」纯文字 8 行（含 page1 L11、L62、L78，这三处也一并改成链接）。手机读者点不过去，也看不出「page4」是哪一篇。</li>
+<li><strong>改法</strong>：统一换成带篇名的链接，例如 page1 L64「读数一定要按标定曲线换算（<a href="../../../40-thermal-flow/page3.html">参数与调试篇</a>「二、标定」会做）」；page1 L104「慢（详见<a href="../../../40-thermal-flow/page2.html">原理与实现篇</a>）」；page2 L108「（<a href="../../../40-thermal-flow/page4.html">动手实验篇</a>的安全须知）」；page3 L145「<strong>和<a href="../../../40-thermal-flow/page4.html">动手实验篇</a>的差别</strong>」；page3 L163「NTC 用手册公式生成的对照表（<a href="../../../40-thermal-flow/page2.html">原理与实现篇</a>第一节）」。其余同理，改完再跑一次上面的 grep 确认为 0。</li>
+<li><strong>为什么</strong>：引用能一点就到，读者才会真的回去对照，降低翻找负荷 [1]。</li>
+</ul>
+<h3 id="必改-12page3-调试对照表缺怎么改列">必改-12　page3 调试对照表缺「怎么改」列</h3>
+<ul>
+<li><strong>位置</strong>：page3 L149–155。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE L45 规定故障排查表固定四列「现象 | 原因 | 怎么查 | 怎么改」，本表只有三列，「怎么改」被塞进「怎么查」（如「程序里减掉这个零点」「把设定改成 1 K 试试」），查和改混在一格，读者不知道查完该做什么。</li>
+<li><strong>改法</strong>：表头改为「| 现象 | 原因 | 怎么查 | 怎么改 |」，「可能原因」改「原因」，逐行拆开，例如第 1 行：「| 两颗 NTC 室温下读数差 0.3 K 以上 | 元件公差 | 断开加热，同一温度下记两颗读数的差 | 程序开机 10 s 记零点并减掉（page4 程序已做） |」；第 3 行：「| 温差总是负数 | A0、A1 接反，或公式 N1、N2 写反 | 把加热 NTC 贴到温水杯外壁（≤ 40 °C，先用测温探头量），看哪一路升温 | 对调 A0/A1 两根线，或改程序里的 t1、t2 |」；第 5 行「怎么改」填「打开 <code>COMPENSATE = true</code>，N2 放上风处」。</li>
+<li><strong>为什么</strong>：固定的四列格式让读者形成「看现象→查→改」的套路，可迁移到其他节 [1][2]。</li>
+</ul>
+<h3 id="建议">建议</h3>
+<h3 id="建议-01图-40-p1-2-图例写δ--p--δt正文写-δϑ">建议-01　图 40-p1-2 图例写「δ = P / ΔT」，正文写 Δϑ</h3>
+<ul>
+<li><strong>位置</strong>：图 40-p1-2 图例；page1 L40 起正文用 ϑ。</li>
+<li><strong>改法</strong>：图例改为「δ = P / Δϑ」，或正文在 L40 加一句「图里写的 ΔT 就是 Δϑ」。</li>
+<li><strong>为什么</strong>：同一个量图文用两个符号，会被当成两件事 [4]。</li>
+</ul>
+<h3 id="建议-02-r_s-分压电阻和-r_s-热膜只差大小写又和-39-的采样电阻-r_s-撞名">建议-02　 <span class="math math-inline">\(R_S\)</span> （分压电阻）和 <span class="math math-inline">\(R_s\)</span> （热膜）只差大小写，又和 39 的采样电阻 <span class="math math-inline">\(R_S\)</span> 撞名</h3>
+<ul>
+<li><strong>位置</strong>：page2 §一及图 40-p2-1、40-p4-2 的 R_S1/R_S2；page3 §五（L114 起）及图 40-p3-5 的热膜 <span class="math math-inline">\(R_s\)</span> 。</li>
+<li><strong>改法</strong>：热膜改叫 <span class="math math-inline">\(R_{F}\)</span> （film）或 <span class="math math-inline">\(R_w\)</span> ；分压电阻可保留 <span class="math math-inline">\(R_S\)</span> ，但在 page2 L11 注明「这里的 <span class="math math-inline">\(R_S\)</span> 是分压用的串联电阻，和 39 的采样电阻不是一回事」。</li>
+<li><strong>为什么</strong>：手机上大小写难辨，同名异义会干扰 [1]。</li>
+</ul>
+<h3 id="建议-03图内标注用下划线字面写法">建议-03　图内标注用下划线字面写法</h3>
+<ul>
+<li><strong>位置</strong>：图 40-p2-1「R_S」、40-p2-3「R_G」「R_PD」「R_H」、40-p3-4 图例「K_p」「T_i」、40-p3-5「R_A」「R_B」「R_C」、40-p4-1～4。</li>
+<li><strong>改法</strong>：图内统一改为下标（如 matplotlib 的 <code>$R_S$</code>），与正文 <span class="math math-inline">\(R_S\)</span> 一致。</li>
+<li><strong>为什么</strong>：图文符号写法一致，读者才能一眼对上 [4]。</li>
+</ul>
+<h3 id="建议-04图-40-p3-3-两条线是橙和深橙手机上分不清不补偿的情形应按配色规则用朱红色">建议-04　图 40-p3-3 两条线是「橙」和「深橙」，手机上分不清；不补偿的情形应按配色规则用朱红色</h3>
+<ul>
+<li><strong>位置</strong>：图 40-p3-3 及 page3 L62 图注。</li>
+<li><strong>改法</strong>：补偿线保持橙色实线，不补偿线改朱红色并在末端加 ×（AUTHOR_GUIDE 配色：朱红色带× = 错误/故障情形），图注同步改为「朱红色线不补偿」。</li>
+<li><strong>为什么</strong>：错误做法要在视觉上一眼区分 [4][5]。</li>
+</ul>
+<h3 id="建议-05图-40-p2-5-0-c-的-pt100字样被运放--输入线穿过">建议-05　图 40-p2-5「（= 0 °C 的 PT100）」字样被运放 + 输入线穿过</h3>
+<ul>
+<li><strong>位置</strong>：图 40-p2-5 参考电阻旁标注。</li>
+<li><strong>改法</strong>：标注左移或换行，避开导线。</li>
+<li><strong>为什么</strong>：文字压线在手机上难读 [4]。</li>
+</ul>
+<h3 id="建议-06面包板图测量点用紫色圈原理图用黄色圈">建议-06　面包板图测量点用紫色圈，原理图用黄色圈</h3>
+<ul>
+<li><strong>位置</strong>：图 40-p4-1、40-p4-3（紫色圈 ①～④）与图 40-p4-2、40-p4-4（黄色圈 ①～④）。</li>
+<li><strong>改法</strong>：两类图统一同一种颜色，或在「对照看」里说明「面包板图的紫色圈 = 原理图的黄色圈」。</li>
+<li><strong>为什么</strong>：同一个测量点在两张图里颜色不同，会让读者怀疑不是同一个点 [4]。</li>
+</ul>
+<h3 id="建议-07五点标定-05-ms-误差-19-是拟合残差和四点的预测误差不能直接比">建议-07　「五点标定 0.5 m/s 误差 −1.9 %」是拟合残差，和四点的预测误差不能直接比</h3>
+<ul>
+<li><strong>位置</strong>：page3 L53 表格「0.491 m/s（−1.9 %）」、L174 小结「五点 −1.9 %」。</li>
+<li><strong>改法</strong>：L53 这一格改为「（0.5 m/s 已是标定点，残差 −1.9 %）」，比较用 1.5 m/s 那一行（+3.3 % → +2.7 %）；或者小结写「0.5 m/s 处四点标定 −12.0 %，把它补进标定点后，该处残差只有 −1.9 %」。</li>
+<li><strong>为什么</strong>：避免读者以为「多一个点就能让任意风速都准」这个误解 [5]。</li>
+</ul>
+<h3 id="建议-08arduino-程序第一个周期会记下-0--占空">建议-08　Arduino 程序第一个周期会记下 0 % 占空</h3>
+<ul>
+<li><strong>位置</strong>：page4 L171–174。</li>
+<li><strong>问题</strong>：开机后 heat = false、dT ≈ 0 &lt; 1.8，第一次进入 loop 就走「关 → 开」分支，<code>period</code> 只有几毫秒、<code>tOn = 0</code>，于是 <code>duty[0] = 0</code>；随后第一次升温周期又特别长。前 2～3 个周期的 duty3 都不可信，读者在第 6 步前若盯着串口会困惑。</li>
+<li><strong>改法</strong>：加一个 <code>int skip = 2;</code>，在 <code>if (period &gt; 0)</code> 里先 <code>if (skip &gt; 0) skip--; else { duty[nd % 3] = …; nd++; }</code>；并在 L196 的「几点说明」加一句「开机后前 2 个开关周期不计入 duty3」。</li>
+<li><strong>为什么</strong>：程序行为要和测量表的「应该读到」一致，减少无谓的排查 [1]。</li>
+</ul>
+<h3 id="建议-09page1测风速就能算流量和更接近测质量流量需要一句话衔接">建议-09　page1「测风速就能算流量」和「更接近测质量流量」需要一句话衔接</h3>
+<ul>
+<li><strong>位置</strong>：page1 L84–94。</li>
+<li><strong>改法</strong>：L94 后加：「严格说，探头感受到的是『每秒吹过来多少千克空气』，标定时按室温、一个大气压换成 m/s；气温或气压变化很大时，读到的风速要按密度修正。」</li>
+<li><strong>为什么</strong>：先说「v × A」再说「质量流量」，读者会觉得前后矛盾，需要先化解 [5]。</li>
+</ul>
+<h3 id="建议-10几个术语第一次出现时缺一句解释">建议-10　几个术语第一次出现时缺一句解释</h3>
+<ul>
+<li><strong>位置</strong>：page2 L31「1 个 ADC 字」（「字」= ADC 读数的最小一格）；page2 L36「B = 3977 K」（B 值是什么）；page1 L107、page3 L116「热膜 / 热线」；page3 L164「开环阶跃」。</li>
+<li><strong>改法</strong>：分别加括号：「1 个 ADC 字（ADC 读数最小的一格，10 位 ADC 把 0～5 V 分成 1024 格）」；「B 值（描述 NTC 电阻随温度变化快慢的常数，越大越灵敏）」；「热线（几微米粗的铂丝）/ 热膜（陶瓷上镀的一层金属膜），两者都同时当加热器和温度计」；「开环阶跃（不让程序调节，直接把占空从 0 跳到 60 %，看温差怎么变）」。</li>
+<li><strong>为什么</strong>：术语首次出现就解释，避免读者带着不懂的词往下读 [1]。</li>
+</ul>
+<h3 id="建议-11缺一组回顾前置节点的提取题">建议-11　缺一组回顾前置节点的提取题</h3>
+<ul>
+<li><strong>位置</strong>：page1 L5 之后（或 page2 L5 之后）。</li>
+<li><strong>改法</strong>：加「先回顾三问」（答案折叠）：① 01 里 RC 充电，过 1 个 τ 到多少？（约 63 %，本节温升曲线同理）② 10 里回差有什么用？（防止在门限附近来回翻转，本节 1.8/2.2 K 就是回差）③ 30 里电桥输出为什么要接仪表放大器？（电桥差压只有几毫伏且两端都不接地）。</li>
+<li><strong>为什么</strong>：在用到旧知识之前先提取一次，比直接给链接记得更牢 [3]。</li>
+</ul>
+<h3 id="建议-12-r_h-插-i21i25-的孔距和-n1-的贴法需要核实">建议-12　 <span class="math math-inline">\(R_H\)</span> 插 i21–i25 的孔距和 N1 的贴法需要核实</h3>
+<ul>
+<li><strong>位置</strong>：图 40-p4-3、page4 L96–98 搭建步骤。</li>
+<li><strong>问题</strong>：PR02 2 W 电阻本体长约 10 mm，i21–i25 跨 4 格（10.16 mm），引脚折弯后可能插不进去［待核实］；N1 插在上半区 c21–c25，要贴到下半区 i 行的 <span class="math math-inline">\(R_H\)</span> 本体上，需要把 NTC 引脚弯过中间凹槽约 15 mm，图上看不出怎么弯。</li>
+<li><strong>改法</strong>： <span class="math math-inline">\(R_H\)</span> 改插 i20–i26（或注明「按你的电阻实际引脚距离，跨 5～6 格均可，同列下半其他孔不变」）；在搭建步骤里配一张小插图或文字「N1 的头朝下弯，越过中间凹槽，平贴在 <span class="math math-inline">\(R_H\)</span> 本体中段，再用胶带缠两圈」。</li>
+<li><strong>为什么</strong>：搭建步骤的关键动作要图文都有 [4]。</li>
+</ul>
+<h3 id="建议-13模拟-cta-电桥的驱动能力和启动问题提一句">建议-13　模拟 CTA 电桥的驱动能力和启动问题提一句</h3>
+<ul>
+<li><strong>位置</strong>：page3 L114–145、图 40-p3-5。</li>
+<li><strong>改法</strong>：L130 后加：「电桥顶端要提供约 3 V、几十毫安（例如 v = 1 m/s 时约 3.1 V ÷ 42 Ω ≈ 74 mA），普通运放输出给不了这么大电流，实际产品在运放后面加一只三极管做电流放大；另外电桥平衡时差压为 0，上电瞬间输出可能停在 0，实际电路会加一点失调让它起振［待核实］。」</li>
+<li><strong>为什么</strong>：避免读者照图用 LM358 去搭而失败，先处理「原理图 = 能直接用」这个误解 [5]。</li>
+</ul>
+<h3 id="建议-14两处长段落拆开">建议-14　两处长段落拆开</h3>
+<ul>
+<li><strong>位置</strong>：page2 L108（47 Ω 安全段，约 200 字）；page3 L112（积分饱和段，约 260 字）。</li>
+<li><strong>改法</strong>：L108 拆成「结论一句 + 三条列表（12 V/9 V/5 V 各是多少瓦、多少度）」；L112 拆成「是什么 / 后果 / 怎么防 / Arduino 上怎么做」四条。</li>
+<li><strong>为什么</strong>：手机屏幕上一段超过三行就容易丢主线 [1]。</li>
+</ul>
+<h3 id="建议-150089在-page1-出现两次意义不同">建议-15　「0.089」在 page1 出现两次，意义不同</h3>
+<ul>
+<li><strong>位置</strong>：page1 L38 NTC 自热 0.089 K；page2 L31、page3 L99「1 字 ≈ 0.089 K」。</li>
+<li><strong>改法</strong>：page2 L31 后加一句「（和直觉篇算的自热 0.089 K 数值碰巧相同，是两件事）」。</li>
+<li><strong>为什么</strong>：巧合相同的数字容易被读者当成同一个量 [5]。</li>
+</ul>
+<h3 id="建议-16page4-第-10-步补偿时-duty3-先跳一下应说明跳的方向和原因">建议-16　page4 第 10 步「补偿时 duty3 先跳一下」应说明跳的方向和原因</h3>
+<ul>
+<li><strong>位置</strong>：page4 L217。</li>
+<li><strong>改法</strong>：「应该读到」改为「N2 被杯子烘热，程序以为环境变热、温差不够，加热器一直开着，duty3 先明显升高；拿开杯子后 N2 回落，加热器停一阵，1～2 分钟后 duty3 回到原值附近。这正说明 N2 必须放在只感受气流温度的地方。」</li>
+<li><strong>为什么</strong>：先让读者预测现象的方向，再用实验确认，能处理「补偿 = 万能」的误解 [5]。</li>
+</ul>
+<h3 id="建议-17计划要求的有风无风恒功率对比在实验里只是选做">建议-17　计划要求的「有风/无风恒功率对比」在实验里只是选做</h3>
+<ul>
+<li><strong>位置</strong>：page4 L219 第 12 步「选做」。</li>
+<li><strong>改法</strong>：改为必做（只需改 MODE 重新上传一次，约 5 分钟），并在记录表 L288 起加一行「恒功率 dT：无风 ___ K / 有风 ___ K（模型 4.2 / 1.8 K）」。</li>
+<li><strong>为什么</strong>：00-plan-review L100 的教学方法 ③ 是对比实验；亲手对比恒功率和恒温差，比只看图 40-p1-1 更能建立「两种方法」的概念 [5][6]。</li>
+</ul>
+<h3 id="建议-18加热器热阻按手册-pcb-安装值面包板上可能更高">建议-18　加热器热阻按手册 PCB 安装值，面包板上可能更高</h3>
+<ul>
+<li><strong>位置</strong>：page4 L23「按电阻手册的热阻 75～115 K/W 算」。</li>
+<li><strong>改法</strong>：补半句：「插在面包板上、引线较长时实际热阻可能更大［待核实］，所以程序的 45 °C 切断不能省。」</li>
+<li><strong>为什么</strong>：安全余量的前提要说清楚，避免读者把模型值当作保证 [5]。</li>
+</ul>
+<h2 id="三计数">三、计数</h2>
+<p>用脚本统计本文件中以「### 必改-」和「### 建议-」开头的标题：</p>
+<pre><code class="language-bash">rg -c '^### 必改-' review/part2/teacher/40.md   # 必改条数
+rg -c '^### 建议-' review/part2/teacher/40.md   # 建议条数
+</code></pre>
+<p><strong>必改 12、建议 18</strong>。</p>
+<h2 id="复核2026-10-27">复核（2026-10-27）</h2>
+<p>复核对象：<code>40-thermal-flow/page1.md</code>～<code>page4.md</code> 当前版本，以及 notes/part2-status.log 第 70 行「40-thermal-flow fix done (author C)」。</p>
+<p><strong>先说明时间顺序</strong>：第 70 行的修改时间是 18:06，四页最后修改时间是 18:05（page2/3/4）和 17:48（page1），图目录 19 张图全部是 18:05 生成；而本文件（初审）写于 18:15，审的就是这一版。第 70 行自报的改动（删除手捏 NTC、改温水杯、安全须知数值化、page3 常见误区表、防积分饱和）在初审时已经在页面里，<strong>初审之后作者没有再改过 40 节</strong>。下面逐条核对的结论因此几乎全是「未改」，请作者按初审「二、逐条意见」处理。</p>
+<p>复核方式：四页逐段重读；确认图片未重新生成后，仍用 Read 打开了图 40-p4-3 核对测量点位置；把 page2、page4 的 Python 块复制到 <code>/tmp/rv/40/</code> 运行：page2 打印 NTC 表 568.6 / 512.0 / 457.0 / 404.7 / 356.0 / 311.5、「ADC 430：查表 32.58 °C，精确 32.54 °C」、自热 0.089 K、35 °C 扩展 6535 Ω / 简化 6486 Ω；page4 打印 16.15 mA、145.0 mW、35.9 / 41.7 °C、室温 25.27 °C、「标定点残差（m/s）： [-0. 0. 0. 0.]」——与正文一致，也说明初审必改-08 指出的「残差恒为 0」仍在。另核算 page4 L81「约 2.07～1.82 V ↔ 33～38 °C」：按 page2 表插值 33 °C ≈ 2.08 V、38 °C ≈ 1.83 V，正确。</p>
+<h3 id="一旧必改逐条核对">一、旧必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据（页面、行号、现在的原句）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-01 page2 渐隐例题</td>
+<td>❌ 未改</td>
+<td>page2 L165–169：「电流加大 5 倍……」「page4 没有用 PT100……」之后直接是「## 小结」，全页没有「例 1 / 例 2 / 例 3」。</td>
+</tr>
+<tr>
+<td>必改-02 page3 练习题</td>
+<td>❌ 未改</td>
+<td>page3 L157–169「七、常见误区」之后直接是 L171「## 小结」，没有练习。</td>
+</tr>
+<tr>
+<td>必改-03 47 Ω 接 5 V 退路（安全）</td>
+<td>❌ 未改</td>
+<td>page4 L26 末句仍是「如果你手上只有 47 Ω，只能接 5 V，程序里把占空比上限设成 33 % 以下，并保留 45 °C 切断。」page2 L108 仍是「如果手头只有 47 Ω，只能从 5 V 供电，并在程序里把占空比限制在 33 % 以下……」；程序里仍没有「占空上限」设置（L168–177）。</td>
+</tr>
+<tr>
+<td>必改-04 测量点 ④ 在 i23</td>
+<td>❌ 未改</td>
+<td>page4 L210「</td>
+</tr>
+<tr>
+<td>必改-05 100 nF 电容无图</td>
+<td>❌ 未改</td>
+<td>page4 L224「在 e21 到 0 V 轨之间加一只 100 nF 电容」，图 40-p4-2 中没有选装电容。</td>
+</tr>
+<tr>
+<td>必改-06 MODE 2 的 30 s / 40 s</td>
+<td>❌ 未改</td>
+<td>L121 注释「30 s 后自动停」；L200「40 s 后自动关断」；L214「<code>MODE = 2</code>，40 s 内量」。</td>
+</tr>
+<tr>
+<td>必改-07 测量表缺「黑表笔」列</td>
+<td>❌ 未改</td>
+<td>L74「黑表笔一律接 0 V 轨」、L76 表头仍无「黑表笔」列；L204 同样「一律」，而 L214 第 7 步「红笔 j21、黑笔 g25」。</td>
+</tr>
+<tr>
+<td>必改-08 核对代码</td>
+<td>❌ 未改</td>
+<td>L252–284：仍无实测与计算的比较和 10 % 提示；<code>CAL</code> 仍是 0、1、2、2.5 m/s 四点（L260）；<code>deg = min(3, len(CAL) - 1)</code>（L278），运行残差 <code>[-0. 0. 0. 0.]</code>。</td>
+</tr>
+<tr>
+<td>必改-09 3.36 m/s 与超量程、三个无风占空</td>
+<td>❌ 未改</td>
+<td>page3 L106「</td>
+</tr>
+<tr>
+<td>必改-10 PI 知识框</td>
+<td>❌ 未改</td>
+<td>page3 L78–80 的 <code>$$</code> 块前仍无 <code>&gt;</code>，框被拆成两半；L86 起用 T_i、K_p，仍无含义和单位。</td>
+</tr>
+<tr>
+<td>必改-11 跨页纯文字引用</td>
+<td>❌ 未改</td>
+<td>例：page1 L11「本节第 4 页」、L15「见 page4 用的元件」、L64「（page3 会做）」；page2 L5「第 3 页」、L137「（第 3 页）」；page3 L5「第 2 页」、L145「<strong>和 page4 的差别</strong>」、L163「（page2 第一节）」。</td>
+</tr>
+<tr>
+<td>必改-12 调试表缺「怎么改」列</td>
+<td>❌ 未改</td>
+<td>page3 L149 表头仍是「</td>
+</tr>
+</tbody>
+</table>
+<p><strong>旧必改 12 条：改好 0 条，未改 12 条。</strong></p>
+<h3 id="二建议项采纳情况">二、建议项采纳情况</h3>
+<p>建议-01～18 均未采纳（页面在初审后没有修改）。其中与安全有关的建议-18（面包板上热阻可能更大，切断不能省）和与 ③ 有关的建议-11（先回顾三问）、建议-17（恒功率对比改必做）请与必改一并考虑。</p>
+<h3 id="三修改带来的新问题">三、修改带来的新问题</h3>
+<p>本轮页面没有修改，没有「修改带来的」新问题。以下两条是按复核要求重新打分、重查规则时产生的：</p>
+<h4 id="新必改">新必改</h4>
+<p><strong>新必改-01　③ 举一反三仍为「差」</strong></p>
+<ul>
+<li>位置：page2 L167 之后、page3 L169 之后。</li>
+<li>问题：全节仍然没有一道例题、一道练习；只有 page4 L311 思考题 2（2 K → 4 K）算一道参数变化推理题。</li>
+<li>改法：直接把初审必改-01（例 1 完整示范 9 V/560 Ω → 例 2 留空 1 kΩ → 例 3 迁移到 12 V 求最小 <span class="math math-inline">\(R_H\)</span> ）和必改-02（练习 1 电池 8.5 V、练习 2 设定 3 K、练习 3 不补偿环境升 0.5 K、练习 4 CTA 电桥 20 K 求 <span class="math math-inline">\(R_C\)</span> = 215.4 Ω）贴进去，答案用 <code>&lt;details&gt;</code>；再在 page1 开头加建议-11 的「先回顾三问」（01 的 63 %、10 的回差、30 的电桥 + 仪表放大器），完成与前面节点的对比。</li>
+<li>为什么：没有例题和练习，读者看完不会给别的电阻、别的电源选型，也没有提取练习；这是 AUTHOR_GUIDE 对 page2、page3 结构的硬性要求。</li>
+</ul>
+<h4 id="新建议">新建议</h4>
+<p><strong>新建议-01　page4 L224 加电容没有说先断电</strong>：原句「在 e21 到 0 V 轨之间加一只 100 nF 电容」。这是实验进行中（第 2 段已经接了 9 V）的改线，读者很可能带电插。改为「<strong>先拔 9 V 电池扣和 USB</strong>，再在 e21（② 分压点）到 0 V 轨之间加一只 100 nF 电容（见图 40-p4-2 灰色点线，选装）」，与必改-05 一起改。为什么：L30 的「接线、改线之前先断电」离这里很远，排错时读者不会回头看。</p>
+<h3 id="四三项评分复核">四、三项评分（复核）</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>与初审相同：吹热茶 → 纸片扇 NTC → 热↔电类比表 → King 曲线 → 恒功率 → 开关控温 → PI → CTA 电桥，「为什么」讲得透（如 page3 L32 冲过门限的原因、L145 面包板为什么快不起来）。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>初审指出的卡点全部仍在：PI 框被拆开且 K_p、T_i 无解释（page3 L75–86），MODE 2 时长前后不一（page4 L121/L200/L214），「黑表笔一律接 0 V」与第 7 步矛盾，④ 测量点被 R_H 盖住，三个无风占空无解释，跨页引用不是链接。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>差</td>
+<td>无例题、无练习、无前置节点回顾题；仅 page4 思考题 2 有参数变化推理。已列为新必改-01。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="五连接文字旁必须有原理图复查">五、「连接文字旁必须有原理图」复查</h3>
+<ul>
+<li>❌ page4 L224「在 e21 到 0 V 轨之间加一只 100 nF 电容」：无图（旧必改-05）。</li>
+<li>✅ page1 方框图 40-p1-4；page2 NTC 分压（40-p2-1）、加热器（40-p2-3）、PT100 电桥（40-p2-5）；page3 CTA 电桥（40-p3-5）；page4 两张面包板图 40-p4-1、40-p4-3 各有对应原理图 40-p4-2、40-p4-4 和「对照看」。</li>
+</ul>
+<h3 id="六安全复查">六、安全复查</h3>
+<ul>
+<li>用手试温度：✅ 已无手捏/手摸步骤；page4 L15「用 N1 的读数看，不用手试」、L24「不要用手去试」、page3 L169 误区表专列一行。</li>
+<li>带电改线：page4 L30「接线、改线之前先断电」✅；L224 加电容未提断电（新建议-01）。</li>
+<li>❌ <strong>47 Ω 接 5 V 的「退路」仍在</strong>（page4 L26、page2 L108，旧必改-03）：同一段先说「会烫伤，本书不采用」，后面又教怎么接，程序里也没有占空上限，照做会得到 65～86 °C 的表面温度。这是本节<strong>发布前必须先改的安全问题</strong>。</li>
+</ul>
+<h3 id="七结论">七、结论</h3>
+<p><strong>不能发布。</strong> 初审后 40 节没有再修改，12 条必改全部未落实，其中必改-03 是安全问题；③ 举一反三仍为「差」。</p>
+<p><strong>计数：未改好的旧必改 12 条（01～12）；新必改 1 条；新建议 1 条。</strong></p>
+<h2 id="复核2026-10-27第-2-轮">复核（2026-10-27，第 2 轮）</h2>
+<p>复核对象：<a href="http://xn--page14-m368a.md">page1～4.md</a>（box 时间 19:04～19:14 修改）与 img/ 下全部 19 张图（19:14 重新生成）。<code>notes/part2-status.log</code> 中作者自报的改动只作参考，以下结论都以页面为准。</p>
+<p>复核方式：</p>
+<ul>
+<li>四页逐段重读。</li>
+<li>图 40-p4-3 用 PIL 放大到约 3 倍，逐孔核对：a7/a21 绿线，a11/a25 黑线，a3/a17 橙线，R_S2 b3–b7，N2 c7–c11，R_S1 b17–b21，N1 c21–c25，①e7，②e21，R_G g19–g23，h23→h27，IRLZ44N f27/f28/f29，g25→g28，R_H i21–i25，③h28，④j23，j19 D9，j21→+9 V 轨，R_PD j27→0 V 轨，j29→0 V 轨，第 2 列黑线连上下 0 V 轨。以上全部与 page4 文字一致。</li>
+<li>用 Read 打开了图 40-p4-2、40-p4-4、40-p1-2、40-p3-3、40-p2-5。</li>
+<li>page2、page4 的代码复制到 /tmp 运行，<code>tools/run_blocks.py</code> 结果为 PASS 2 / FAIL 0。<code>check_github_math</code>、<code>check_figs</code>、<code>count_cjk</code> 四页全部 OK。</li>
+<li><code>code/40_sim.py</code> 第 8 部分在本机因缺 scipy，跑到练习 3 后停止。剩下几个数用同一模型的二分法补算：3 m/s 全开 2.09 K，开关法 2.61 m/s，PI 法 3.36 m/s，与页面一致。</li>
+<li>例题和练习全部手算了一遍：16.07 mA、0.1446 W、57.9 mW、41.6 °C；9.0 mA、81 mW、34.3 °C、50.6 %；828 Ω，1 kΩ 时 41.6 °C；31.8 %；3.0 %、42.5 %；49.8 %；21.54 Ω，R_C = 215.4 Ω。全部正确。</li>
+</ul>
+<h3 id="一旧必改逐条核对-1">一、旧必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-01 page2 渐隐例题</td>
+<td>✅</td>
+<td>page2 L175「## 五、例题：给加热器挑电阻」：例 1 完整四步（L179–186），例 2 留空并折叠答案（L188–204），例 3 迁移到 12 V 反求 R ≥ 828 Ω（L206–212）。数值核对无误。但 L114 提前泄露了例 2 的答案，见新必改-01。</td>
+</tr>
+<tr>
+<td>必改-02 page3 练习题</td>
+<td>✅</td>
+<td>page3 L176「## 八、练习」共 4 题：降压、改设定温差、不补偿、CTA 电桥迁移，答案都折叠，数值全对。练习 2 可以直接查表，见新必改-02。</td>
+</tr>
+<tr>
+<td>必改-03 47 Ω 接 5 V 退路（安全）</td>
+<td>✅</td>
+<td>page2 L108「一句话：<strong>47 Ω 一律不用。</strong>」后面是三条理由。L114 退路已改成「用 680 Ω～1 kΩ 之间任何一只 2 W 电阻接 9 V」。page4 L26「<strong>47 Ω 一律不用。</strong>……网上常见的“47 Ω 接 5 V”也有 0.53 W，表面会到 65～86 °C，会烫伤。」全节 grep「33 %」「占空比上限」均为 0 处。</td>
+</tr>
+<tr>
+<td>必改-04 测量点 ④ 在 i23</td>
+<td>✅</td>
+<td>page4 L222 第 3 步红表笔「j23」。L100 解释了「i23 被 <span class="math math-inline">\(R_H\)</span> 的本体盖住……换到同一列空着的 j23」。图 40-p4-3 放大后 ④ 圈正好在 j23，R_H 本体只盖住 i22–i24。</td>
+</tr>
+<tr>
+<td>必改-05 100 nF 无原理图</td>
+<td>✅</td>
+<td>图 40-p4-2 两路分压点各画了一只灰色点线「C 100 nF（选装）」，旁注「e7→0 V 轨」「e21→0 V 轨」，图注写「加之前先断电」。page4 L63 图题、L65 对照看、L236 正文都指向它。</td>
+</tr>
+<tr>
+<td>必改-06 MODE 2 的 30 s / 40 s</td>
+<td>✅</td>
+<td>L128 注释「上电后第 40 s 自动停」；L211「先 10 s 不加热（记零点），接着全开约 30 s，到上电后第 40 s 自动关断」；L226 第 7 步「串口出现 zero 之后的 30 s 内」。三处口径一致。</td>
+</tr>
+<tr>
+<td>必改-07 黑表笔列与第 7 步</td>
+<td>✅</td>
+<td>L76「本表黑表笔都接 0 V 轨」，L78 与 L218 两表都加了「黑表笔」列。L216「黑表笔大多接 0 V 轨，第 7 步例外」，L226 第 7 步红 j21、黑 g25。</td>
+</tr>
+<tr>
+<td>必改-08 核对代码</td>
+<td>✅</td>
+<td>L282 起有 <code>check()</code>：实测与计算并排比较，偏差超过 10 % 时提示先查哪里。<code>CAL</code> 改成 0/0.5/1/2/2.5 m/s 五点。拟合 <code>deg=min(2,len-2)</code>，残差 [0.012 −0.069 0.056 0.032 −0.03]，不再是全 0。但漏极这一项的判据有问题，见新必改-03。</td>
+</tr>
+<tr>
+<td>必改-09 3.36 m/s、三个无风占空</td>
+<td>✅</td>
+<td>page3 L43 解释了 3 m/s 超量程的原因：「3 m/s 全开时温差能到 2.09 K（PI 稳态只要 95.8 % 占空）」，问题在开关法的回差，开关法的上限是 2.61 m/s。L104 表头改为「功率够用到（PI 理想值）」，L111 说明 28.3 %（PI 理想值）、29.3 %、29.7 % 三者的来历。</td>
+</tr>
+<tr>
+<td>必改-10 PI 知识框</td>
+<td>✅</td>
+<td>page3 L78「&gt; <span class="math math-inline">\(D = K_p e + \dfrac{K_p}{T_i}\int e\thinspace\mathrm{d}t\)</span> 」已在框内。L82 起写明 <span class="math math-inline">\(K_p\)</span> 单位 1/K、「温差差 1 K、占空多给 60 %」， <span class="math math-inline">\(T_i\)</span> 单位 s，含义也说清了。</td>
+</tr>
+<tr>
+<td>必改-11 跨页纯文字引用</td>
+<td>✅</td>
+<td>grep「page[1-4]」「第 N 页」的纯文字引用为 0 处，全部改成 <a href="../../../40-thermal-flow/page4.html">动手实验篇</a> 这类链接（如 page1 L39、L43、L108、L135，page3 L117、L150、L156）。</td>
+</tr>
+<tr>
+<td>必改-12 调试表「怎么改」列</td>
+<td>✅</td>
+<td>page3 L154 表头「</td>
+</tr>
+<tr>
+<td>上轮新必改-01 ③ 举一反三为「差」</td>
+<td>✅</td>
+<td>有渐隐例题（page2 第五节）、参数变化练习（page3 第八节练习 1～3）、新场景迁移（练习 4 CTA 电桥、例 3 的 12 V），page1 L5–31 加了「## 先回顾三问」（01 的 63 %、10 的回差、30 的电桥）。③ 本轮升为「一般」，见第四节。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>旧必改 12 条加上轮新必改 1 条，全部改好。</strong></p>
+<h3 id="二建议项采纳情况-1">二、建议项采纳情况</h3>
+<ul>
+<li><strong>已采纳：</strong>
+<ul>
+<li>建议-07：page3 L53、L215 改为「拟合残差」的说法。</li>
+<li>建议-08：L146 <code>int skip = 2</code>，L212 有解释。</li>
+<li>建议-11：page1 回顾三问。</li>
+<li>建议-14：page3 L113–117 防积分饱和拆成列表。</li>
+<li>建议-16：第 10 步写了跳的方向和原因。</li>
+<li>建议-17：恒功率对比改为必做第 12 步，L326 记录表加了一行。</li>
+<li>建议-18：L24 面包板热阻［待核实］，切断不能省。</li>
+<li>上轮新建议-01：L236「<strong>先拔 9 V 电池扣和 USB</strong>」。</li>
+</ul>
+</li>
+<li><strong>部分采纳：</strong> 建议-12。L100 写了 N1 引脚怎么弯、Kapton 胶带只缠本体，L32 有胶带警告；R_H 孔距是否插得下 2 W 电阻仍没有说明。</li>
+<li><strong>未采纳：</strong>
+<ul>
+<li>建议-01：图 40-p1-2 图例仍是「δ = P / ΔT」，正文用 Δϑ。</li>
+<li>建议-02： <span class="math math-inline">\(R_S\)</span> 和 <span class="math math-inline">\(R_s\)</span> 仍只差大小写。</li>
+<li>建议-03：图 40-p4-3 等图里仍是 R_S2、R_H 这类下划线字面写法。</li>
+<li>建议-04：图 40-p3-3 仍是橙和深橙两条线。</li>
+<li>建议-05：图 40-p2-5 中「（= 0 °C 的 PT100）」仍被运放 + 输入线穿过。</li>
+<li>建议-06：面包板图用紫圈，原理图用黄圈。</li>
+<li>建议-09、建议-10：「ADC 字」「B 值」「热膜/热线」第一次出现时仍没有解释。</li>
+<li>建议-13、建议-15。</li>
+</ul>
+</li>
+</ul>
+<h3 id="三本轮修改带来的新问题">三、本轮修改带来的新问题</h3>
+<h4 id="新必改-1">新必改</h4>
+<p><strong>新必改-01　page2 L114 提前泄露例 2 的答案</strong></p>
+<ul>
+<li>位置：page2 第二节「为什么不用 47 Ω」段末。</li>
+<li>原句：「手上没有 560 Ω 时，用 680 Ω～1 kΩ 之间任何一只 2 W 电阻接 9 V（……）：680 Ω 最坏 38.7 °C，1 kΩ 最坏 34.3 °C。下面第五节的例题就是这样算的。」</li>
+<li>问题：例 2 第 3 空要学生自己算的正是「1 kΩ 最坏 34.3 °C」。学生读到例 2 时已经看过答案，留空就失去了作用。</li>
+<li>改法：删掉「：680 Ω 最坏 38.7 °C，1 kΩ 最坏 34.3 °C」，改成「……不超过 45 °C）。怎么算，见第五节例 2。」</li>
+<li>如果想保留「680 Ω 也能用」这个信息：把 680 Ω 的 38.7 °C 放进例 2 的折叠答案里作为补充。</li>
+</ul>
+<p><strong>新必改-02　page3 练习 2 的答案可以直接从第四节的表里抄</strong></p>
+<ul>
+<li>位置：page3 L188 练习 2。</li>
+<li>问题：题目问「设定温差从 2 K 改成 3 K」的误差、无风占空和量程。可是 L104 起的设定温差表里，3 K 一行就印着 42.5 %、1.02 m/s、3.0 %，答案自己也写了「（第四节的表）」。学生不用推理，抄表就能答完，起不到「参数变化推理」的作用。page4 思考题 2 问的 4 K 同样在表里，但那是旧题，列为新建议-05。</li>
+<li>改法：把练习 2 改成表里没有的 2.5 K。</li>
+<li>改后题目：「把设定温差从 2 K 改成 2.5 K（第四节的表里没有这一行）。1 个 ADC 字的相对误差变成多少？无风占空大约多少？能测的最大风速会落在表里哪两个数之间？」</li>
+<li>改后答案：0.089 ÷ 2.5 ≈ 3.6 %；无风占空 28.3 % × 2.5/2 ≈ 35.4 %（PI 理想值）；量程介于 3 K 的 1.02 m/s 和 2 K 的 3.36 m/s 之间（模型约 1.8 m/s）。答案里把「（第四节的表）」改成「对照第四节的表检验」。</li>
+<li>以上数据我用 40_sim 的同一模型算过：2.5 K 时占空 35.43 %，PI 量程 1.81 m/s。</li>
+</ul>
+<p><strong>新必改-03　page4 核对代码里漏极一项的判据会误报</strong></p>
+<ul>
+<li>位置：page4 L290。</li>
+<li>原句：<code>check(&quot;③ 漏极（开）V&quot;, V_drain_on, 0.3364e-3, &quot;MOS 管型号（要 IRLZ44N）、S 脚是否接 0 V 轨&quot;)</code>。</li>
+<li>问题：
+<ul>
+<li><code>check()</code> 用的是相对偏差。可是 L223 第 4 步的表格明说「万用表可能显示 0.0」。读者照实填 0.0，偏差就是 −100 %，程序提示「偏差超过 10 %，先查：MOS 管型号……」。</li>
+<li>200 mV 挡分辨率是 0.1 mV，填 0.2 或 0.5 mV 也都超过 10 %。</li>
+<li>结果是电路完全正常时，程序也会让学生去怀疑 MOS 管。</li>
+</ul>
+</li>
+<li>改法：漏极这一项改成绝对判据，不调用 <code>check()</code>。例如：
+<code>print(f&quot;③ 漏极（开）：实测 {V_drain_on*1e3:.2f} mV（SPICE 0.34 mV）&quot;)</code>
+<code>if V_drain_on &gt; 0.01: print(&quot;  超过 10 mV，先查：MOS 管型号（要 IRLZ44N）、S 脚是否接 0 V 轨&quot;)</code></li>
+<li>同时在 L262 的说明里加一句：「漏极电压太小，只看是否低于 10 mV。」</li>
+</ul>
+<p><strong>新必改-04　page3 调试表「温差总是负数」一行没有先断电（安全）</strong></p>
+<ul>
+<li>位置：page3 L158。</li>
+<li>原句：「怎么查」写「把加热 NTC 贴到温水杯外壁……」；「怎么改」写「对调 A0/A1 两根线」。</li>
+<li>问题：
+<ul>
+<li>N1 是用胶带和 <span class="math math-inline">\(R_H\)</span> 缠在一起的， <span class="math math-inline">\(R_H\)</span> 下半插在 +9 V 的第 21 列。带着 9 V 去拆胶带、挪 N1，引脚很容易碰到 +9 V 那一列。</li>
+<li>「对调两根线」就是带电改线。</li>
+<li>page4 安全须知要求「接线、改线之前先断电」，这一行是全节唯一的例外。</li>
+</ul>
+</li>
+<li>改法：
+<ul>
+<li>「怎么查」改为「先拔 9 V 电池扣（USB 留着看读数），再拆开胶带，把加热 NTC 贴到温水杯外壁……」</li>
+<li>「怎么改」改为「拔掉 9 V 和 USB，再对调 A0/A1 两根线，或改程序里的 t1、t2」。</li>
+</ul>
+</li>
+</ul>
+<h4 id="新建议-1">新建议</h4>
+<ul>
+<li><strong>新建议-01　page3 练习 3 题干缺已知数据</strong>：66.4 %（1 m/s、2 K）和 55.2 %（0.5 m/s、2 K）都是在答案里才第一次出现，学生只看题干没法算。建议在题干补一句：「已知 PI 理想情况下维持 2 K：1 m/s 要 66.4 %，0.5 m/s 要 55.2 %。」</li>
+<li><strong>新建议-02　page2 例 3 没说为什么不选 E12 的 820 Ω</strong>：答案只写「取 1 kΩ」。820 Ω 是离 828 Ω 最近的 E12 值，学生自然会问它行不行。建议补一句：「820 Ω 比 828 Ω 小，最坏 25 + 0.176 × 115 = 45.2 °C，超线，所以往上取 1 kΩ。」这样「往大取」的规则也讲清楚了。</li>
+<li><strong>新建议-03　page4 L100 的「a21–a25」两个孔已经被占用</strong>：原句「 <span class="math math-inline">\(R_H\)</span> 插到上半（a21–a25）……」。可是 a21 插着去 A0 的绿线，a25 插着去 0 V 的黑线，这个错法在图上做不出来。建议改为「插到上半（例如 b21–b25 或 d21–d25 那一排）」。另外这段「对照看」约 600 字，建议从「注意第 21 列下半是 +9 V」起另起一段，再从「N1 和 <span class="math math-inline">\(R_H\)</span> 在面包板上相邻」起再分一段。</li>
+<li><strong>新建议-04　page4 L266 的 <code>sys.path.insert(... &quot;code/figs&quot;)</code> 多余</strong>：后面没有从这个目录导入任何东西，注释又要求「在仓库根目录运行」，反而增加学生出错的机会。建议删掉 L265–266 这两行。</li>
+<li><strong>新建议-05　page4 L338 思考题 2（4 K）也能直接查表</strong>：理由和新必改-02 一样。建议改成 1.5 K。按模型，无风占空 21.3 %，量程超出 5 m/s 的标定范围，1 字误差 5.9 %。这样还能顺便引出「量程超过标定范围也没用」。</li>
+<li><strong>新建议-06　图 40-p4-3「④ 栅极 G」标签压住了底部列号「25」</strong>：放大后看起来像「G5」。建议把标签移到 j23 左下方，或把列号行下移。</li>
+<li><strong>新建议-07　图 40-p4-4 的 ④ 旁边没有孔位</strong>：图中只写了「绿线 h23→h27」，学生要回正文才知道量 j23。建议在 ④ 旁加灰色小字「j23」，和图 40-p4-2 标孔位的做法一致。</li>
+</ul>
+<h3 id="四三项评分第-2-轮">四、三项评分（第 2 轮）</h3>
+<table>
+<thead>
+<tr>
+<th>标准</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>仍从「对热的东西吹气」「纸片扇 NTC」的现象和热↔电类比讲起，经 King 定律、分压查表、P = V²/R 一步步到 PI、CTA 电桥和标定。这一轮补上了「3 m/s 为什么超量程」（L43）、「三个无风占空为什么不同」（L111）、「i23 为什么换 j23」这类「为什么」。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>旧问题大部分解决了：PI 框完整、 <span class="math math-inline">\(K_p\)</span>/ <span class="math math-inline">\(T_i\)</span> 有单位和含义，跨页引用都是链接，测量表有黑表笔列，防积分饱和拆成列表，第 6 步讲了表笔方向和体二极管。尚有：「ADC 字」「B 值」「热膜/热线」第一次出现仍没有解释（建议-10）；page4 L100「对照看」一段约 600 字，信息太密（新建议-03）；练习 3 题干缺已知量（新建议-01）。不影响高中生读懂主线，所以评「一般」而不是「差」。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td>结构齐了：例 1 完整 → 例 2 留空 → 例 3 迁移到 12 V，参数变化练习有降压、改设定温差、不补偿，新场景迁移有 CTA 电桥，开头有回顾前置节点的三问。但例 2 的答案在 L114 先给了（新必改-01），练习 2 和思考题 2 能查表（新必改-02、新建议-05），渐隐和推理的效果打了折扣。改完新必改-01、02 后可评「好」。</td>
+</tr>
+</tbody>
+</table>
+<p>本轮没有「差」，所以没有因评分产生新必改。</p>
+<h3 id="五连接文字旁必须有原理图复查-1">五、「连接文字旁必须有原理图」复查</h3>
+<ul>
+<li>page4 第 1 段：面包板图 40-p4-1 配原理图 40-p4-2，L65「对照看」逐节点对应。选装的 100 nF 已画进 40-p4-2，L236 的加电容文字也指向它。✅</li>
+<li>page4 第 2 段：面包板图 40-p4-3 配原理图 40-p4-4，L100「对照看」逐节点对应。放大逐孔核对，两图与文字一致。✅</li>
+<li>page2 第二节加热器（图 40-p2-3/4）、第四节 PT100 电桥（图 40-p2-5）、page3 第五节 CTA 电桥（图 40-p3-5，练习 4 也用它）都有原理图。✅</li>
+<li>「换 680 Ω～1 kΩ」只换元件值，连接不变，沿用图 40-p4-3/4。✅</li>
+<li>本条规则全部满足。</li>
+</ul>
+<h3 id="六安全复查-1">六、安全复查</h3>
+<ul>
+<li><strong>47 Ω 接 5 V 退路</strong>：已删。page2 L108–114 与 page4 L26 都写「47 Ω 一律不用」，连「47 Ω 接 5 V」也明确会烫伤。退路改为 680 Ω～1 kΩ 接 9 V，最坏 38.7/34.3 °C，低于 45 °C。grep「33 %」「占空比上限」均为 0 处。✅</li>
+<li><strong>用手试温度</strong>：grep 全节「手」字，只有「手册」「动手」「手上没有」和禁止句：page3 L174「用手去试加热器热不热」列为误区；page4 L15「用 N1 的读数看，不用手试」。page3 L159「手离开 30 cm」说的是不要干扰读数，不是试温。✅</li>
+<li><strong>带电改线</strong>：
+<ul>
+<li>page4 安全须知「接线、改线之前先断电」✅</li>
+<li>L236 加电容「先拔 9 V 电池扣和 USB」✅（上轮新建议-01 已落实）</li>
+<li>第 6 步的电阻检查在断电下做 ✅</li>
+<li>例外：page3 调试表「温差总是负数」一行拆胶带、对调 A0/A1 没有先断电 ❌，列为新必改-04。</li>
+</ul>
+</li>
+<li><strong>其他</strong>：
+<ul>
+<li>Kapton 胶带只缠本体（L32）✅</li>
+<li>45 °C 程序切断 + 面包板热阻［待核实］（L24）✅</li>
+<li>例 3 写明 12 V「只做纸面计算，本节实验仍用 9 V」✅</li>
+</ul>
+</li>
+</ul>
+<h3 id="七结论-1">七、结论</h3>
+<p><strong>暂不能发布，改完 4 条新必改即可发布，不需要再大改。</strong></p>
+<ul>
+<li>旧必改 12 条和上轮新必改 1 条已全部改好。最主要的安全问题「47 Ω 接 5 V」已经删除，四页的数字都由代码和手算核对过。</li>
+<li>本轮修改又带出 4 条新必改，每条只需改一两句：
+<ul>
+<li>2 条剧透：例 2 的答案提前出现；练习 2 能直接抄表。</li>
+<li>1 条代码误报：漏极填 0.0 会报错。</li>
+<li>1 条安全：调试表里对调 A0/A1、拆胶带没有先断电。</li>
+</ul>
+</li>
+<li>作者改完后再做一次简短复核即可。</li>
+</ul>
+<p><strong>计数：未改好的旧必改 0 条；新必改 4 条；新建议 7 条。</strong></p>
+<h2 id="复核2026-10-27第-3-轮">复核（2026-10-27，第 3 轮）</h2>
+<p>本轮只做定点复核：核对第 2 轮的新必改 1–4 和建议，并检查修改处有没有带来新问题。证据以页面和 PNG 为准，状态日志 L107 只作参考。运行用的是去掉 .git 的仓库副本 /tmp/rv3：run_blocks（page2、page4）PASS，check_figs、check_github_math、count_cjk 均通过。</p>
+<h3 id="一三项评分第-3-轮">一、三项评分（第 3 轮）</h3>
+<table>
+<thead>
+<tr>
+<th>标准</th>
+<th>上轮</th>
+<th>本轮</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td><strong>好</strong></td>
+<td>主线没变，仍从现象、类比讲起，一步步到 PI 和 CTA 电桥。本轮补的 820 Ω 反例（page2 L212）和练习 2 的 2.5 K（page3 L188–194），都是让学生自己推「为什么」。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td><strong>一般</strong></td>
+<td>page4「对照看」已拆成 L100/102/104/106 四段，练习 3 题干补了已知量，阅读负担明显下降。仍差一点：「ADC 字」「B 值」「热膜/热线」第一次出现时还是没有解释（旧建议-09/10，page2 L31、L40，page1 L135）。不影响读懂主线，不评「差」。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td><strong>好</strong></td>
+<td>剧透已删（page2 L114）；练习 2 改成表里没有的 2.5 K，思考题 2 改成 1.5 K（page4 L346–350），都要学生自己推，不能查表。渐隐例题、参数变化、新场景迁移三层都有效。</td>
+</tr>
+</tbody>
+</table>
+<p>三项都没有「差」。</p>
+<h3 id="二第-2-轮新必改逐条核对">二、第 2 轮新必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>新必改-01 page2 L114 剧透例 2 的答案</td>
+<td>✅ 改好</td>
+<td>L114 只保留了退路「680 Ω～1 kΩ 接 9 V」，34.3 °C 这类数字没有了。例 2 的答案只在 L188–206 的折叠答案里出现，L204 补了 680 Ω 的核算。page4 L27 虽然写了 38.7/34.3 °C，但学生到动手篇时已经做完 page2 的例题，不算剧透。</td>
+</tr>
+<tr>
+<td>新必改-02 练习 2 能查表</td>
+<td>✅ 改好</td>
+<td>page3 L188–194 题目改成 2.5 K，第四节表里没有这一行。我按模型重算：无风占空 35.43 %、量程约 1.81 m/s，和答案一致；1/1.5/2/2.5/3/4 K 的占空 14.2/21.26/28.35/35.43/42.52/56.69 % 也全部自洽。</td>
+</tr>
+<tr>
+<td>新必改-03 漏极一项会误报</td>
+<td>✅ 改好</td>
+<td>page4 L285–289 的 <code>check()</code> 对一般量仍用 10 % 相对偏差，符合 AUTHOR_GUIDE L38；L296–298 对接近 0 V 的量改用 10 mV 绝对门限，漏极填 0.0 不再误报。副本运行默认值时没有误报。</td>
+</tr>
+<tr>
+<td>新必改-04 page3 调试表对调 A0/A1 没断电（安全）</td>
+<td>✅ 改好</td>
+<td>page3 L158「温差总是负数」一行的「怎么改」列已写成先断电（拔 9 V 电池扣和 USB），再对调 A0/A1。L196 也一致。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>第 2 轮新必改 4 条，全部改好。</strong></p>
+<h3 id="三建议采纳情况">三、建议采纳情况</h3>
+<ul>
+<li>建议-01（练习 3 题干补已知量）：✅ 已采纳。page3 题干给出 66.4 %、55.2 %。</li>
+<li>建议-02（820 Ω 为什么不行）：✅ 已采纳。page2 L212「820 Ω……45.2 °C，超线」。</li>
+<li>建议-03（a21–a25 被占用，「对照看」分段）：✅ 已采纳。page4 L104 改成「d21–d25 或 e21–e25」，查图这两排是空的；「对照看」拆成 L100/102/104/106 四段。</li>
+<li><strong>建议-04 撤回，与作者规范冲突。</strong> AUTHOR_GUIDE L38 规定每个 Python 代码块都要有 sys.path 这两行，page4 保留它们是对的。</li>
+<li>建议-05（思考题 2 改 1.5 K）：✅ 已采纳。page4 L346–350。</li>
+<li>建议-06（图 40-p4-3 标签压住列号 25）：✅ 已采纳。放大看列号 25 已经清楚。但标签换位置后又压住了别的线，见下面新建议-01。</li>
+<li>建议-07（图 40-p4-4 的 ④ 旁加孔位）：✅ 已采纳。④ 旁有「量 j23」。</li>
+</ul>
+<h3 id="四本轮修改带来的新问题">四、本轮修改带来的新问题</h3>
+<h4 id="新必改-2">新必改</h4>
+<p>无。</p>
+<h4 id="新建议-2">新建议</h4>
+<ul>
+<li><strong>新建议-01　图 40-p4-3「④ 栅极 G」标签压住了橙线端点</strong>：标签挪开列号后，正好盖在 j21 → +9 V 那根橙线的上端，看不清这根线插在哪个孔。建议把标签移到 ④ 圈左下方的空白处，或给标签加白底并让开 j21。理由：这是全图唯一带 +9 V 的跨线，孔位必须一眼看清。</li>
+<li><strong>新建议-02　page3 设定温差表 4 K 一行量程「约 0.33 m/s」</strong>：模型算出来是 0.321 m/s，按两位有效数字应写「约 0.32」。这是旧数值，不影响理解，顺手改即可。</li>
+</ul>
+<h3 id="五规则复查">五、规则复查</h3>
+<ul>
+<li><strong>剧透</strong>：在 page1–page3 grep 34.3、38.7、45.2、35.4、1.81，都只出现在折叠答案里，或者出现在讲到那个例子之后。✅</li>
+<li><strong>原理图规则</strong>：本轮新增和改动的连接文字只有 page4 L104 的「d21–d25 或 e21–e25」，属于「错法」说明，对应的原理图是图 40-p4-2。✅</li>
+<li><strong>安全</strong>：对调 A0/A1 已要求先断电；47 Ω 一律不用；不用手试温度。✅</li>
+<li><strong>孔位</strong>：d21–d25、e21–e25、j23 在图 40-p4-3 上都是空孔，没有冲突。✅</li>
+</ul>
+<h3 id="六结论">六、结论</h3>
+<p><strong>可发布。</strong> 第 2 轮 4 条新必改全部改好；建议 01/02/03/05/06/07 已采纳，建议 04 撤回。新建议 2 条都是图面和小数值的顺手修改，不影响发布。</p>
+<p><strong>计数：未改好的必改 0 条；新必改 0 条；新建议 2 条。</strong></p>
+<blockquote>
+<p><strong>本轮复核勘误（复核人补记）：</strong>
+① 第二节新必改-04 的证据里「L196 也一致」写错了。page3 L196 是练习 3，和这条无关。这条的证据只有 page3 L158：「怎么改」列写的是「拔掉 9 V 和 USB，再对调 A0/A1 两根线」，结论仍是 ✅。
+② 第五节剧透复查里的「1.81」：page1 L50、page2 L134/L141 出现的是「1 m/s 时温差 1.81 K」，和练习 2 答案里的 1.81 m/s 不是同一个量，不算剧透。34.3（page2 L199）、38.7（L204）、45.2（L212）、35.4（page3 L192）都在 <code>&lt;details&gt;</code> 折叠答案里（page2 L195–206、L210–214，page3 L190–194）。结论不变。</p>
+</blockquote>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>40 热式流量与恒温差 · 工程实战调研（工程实战派）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/40.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="40-热式流量与恒温差--工程实战调研工程实战派">40 热式流量与恒温差 · 工程实战调研（工程实战派）</h1>
+<blockquote>
+<p>依据：PART2_BRIEF §5、§10（单 9–12 V；允许 Arduino Uno/Nano，首次使用要有「最小必要知识」框和完整草图；加热元件可能超过 60 °C，只用 NTC/温度计测，不用手摸；核心结论要能用万用表验证）、notes/40-research.md、<a href="http://00-design-part2.md">00-design-part2.md</a> 第 40 节。40-thermal-flow/ 目前只有 img/（含 40_p4_*.png），没有 page4 的 .md 草稿，下面按 research 的「page4 实验」方案核查。</p>
+</blockquote>
+<h2 id="1-真实产品参考设计怎么做">1. 真实产品/参考设计怎么做</h2>
+<h3 id="11-工业热式热扩散式质量流量计sierra-instruments-资料">1.1 工业热式（热扩散式）质量流量计：Sierra Instruments 资料</h3>
+<ul>
+<li>原理：King（1914）&quot;published his famous King's Law revealing how a heated wire immersed in a fluid flow measures the mass velocity&quot;。最常见的结构是一支<strong>加热的速度 RTD（T1）<strong>加一支</strong>测流体温度的 RTD（Tf）</strong>，两支并排插在流体里。</li>
+<li><strong>两种工作方式</strong>（§3.5）：
+<ul>
+<li>3.5.1 恒温差：&quot;maintains at a constant value the difference ΔT = T1 – Tf … The output signal is the electrical power W supplied to the heated velocity sensor&quot;；</li>
+<li>3.5.2 <strong>恒电流</strong>：&quot;maintains at a constant value the electrical current I … The output signal is ΔT&quot;。工业上的第二种方式是恒电流，research 写的是「恒功率（CMA）」。面包板上用电阻加热器时，电阻几乎不随温度变，恒 PWM 约等于恒功率，所以做法可以保留，但正文要说明工业上叫「恒电流」。</li>
+</ul>
+</li>
+<li>&quot;Their sensitivity is highest at lower flows&quot;（§4.1.1），<strong>不适合液体</strong>（§4.1.2，液体导热太好）→ page4 用空气 + 风扇正合适。&quot;all thermal dispersion flowmeters should be flow calibrated&quot;（§4）→ 输出是非线性的，要标定。</li>
+<li>King 定律的具体公式这份资料没有给出 → 正文仍不写式子，保持「[待核实]」。</li>
+</ul>
+<h3 id="12-温度传感器vishay-ntcle100e310-kωb2585--3977-k">1.2 温度传感器：Vishay NTCLE100E3（10 kΩ，B25/85 = 3977 K）</h3>
+<ul>
+<li>技术参数表：R25 公差 ±2/3/5 %；B 公差 ±0.75 %（10 kΩ 那一行）；工作温度 −40 到 +125 °C（零功率连续）；热时间常数 τ = 15 s；<strong>耗散系数 δ = 7 mW/K</strong>（R25 &gt; 680 Ω）；55 °C 下最大功耗 500 mW。</li>
+<li>数据手册给出扩展 Steinhart–Hart 系数（B = 3977 行：A1 = 3.354016e−3、B1 = 2.569850e−4、C1 = 2.620131e−6、D1 = 6.383091e−8），在 25–125 °C 内误差 ≤0.005 °C。Python 第 1 部分用的就是这些系数。</li>
+<li>网店常见「10K B3950」NTC 不是这一型号，系数要用卖家给的 β，精度不保证。核心实验只需要<strong>温差</strong>，并且有零点校准，影响不大。</li>
+</ul>
+<h3 id="13-加热器vishay-pr022-w-金属膜功率电阻">1.3 加热器：Vishay PR02（2 W 金属膜功率电阻）</h3>
+<ul>
+<li>技术参数表：PR02 Cu 引线 P70 = <strong>2 W</strong>，热阻 <strong>R_th = 75 K/W</strong>；&quot;maximum permissible hot-spot temperature is … 220 °C for PR02&quot;。</li>
+<li>→ 0.53 W 时热点温升约 40 K（25 °C 环境下约 65 °C，<strong>超过 60 °C</strong>，符合 brief 的提醒）。12 V 直接加在 47 Ω 上是 3.06 W，热点约 255 °C，<strong>超过额定功率和 220 °C 上限</strong>（Python 第 4 部分）。</li>
+</ul>
+<h3 id="14-功率开关irlz44ninfineonir-数据手册">1.4 功率开关：IRLZ44N（Infineon/IR 数据手册）</h3>
+<ul>
+<li>R_DS(on) = 0.025 Ω（V_GS = 5.0 V，I_D = 25 A），V_GS(th) 1.0–2.0 V → Arduino 5 V 可以直接驱动。100 mA 级加热电流下功耗不到 1 mW，不需要散热片。</li>
+<li>纯电阻负载，不需要续流二极管。栅极串 100 Ω，10 kΩ 下拉到地（上电/复位期间 D3 是高阻，确保 MOSFET 关断）。</li>
+</ul>
+<h3 id="15-rtd理论部分对照ti-sbaa275a">1.5 RTD（理论部分对照）：TI SBAA275A</h3>
+<ul>
+<li>讲 RTD 测量基础、比率法、电流源交换等。PT100 小信号要用电桥 + INA（回指 30）。page4 改用 NTC，信号大，Arduino ADC 可以直接读。</li>
+</ul>
+<h3 id="16-布局要点">1.6 布局要点</h3>
+<ul>
+<li>加热器电流回路（12 V → 电阻 → MOSFET → GND）<strong>单独走线回到电源地</strong>，不和 NTC 分压的地共用一段细线，否则 490 Hz PWM 电流会在地线上产生压降，混进 ADC 读数。</li>
+<li>NTC 分压从 Arduino 5 V 供电（和 AVCC 同源）→ 比率测量，5 V 波动自动抵消。<strong>不要用 12 V 供电</strong>，否则可能超过 A0 的绝对最大值。</li>
+<li>加热 NTC 用导热胶或耐热胶带贴在 PR02 本体中部（热点）。参考 NTC 放在<strong>上风处</strong>，离加热器 ≥5 cm，也别放在加热器正上方（静风时热空气往上走）。</li>
+<li>加热器用陶瓷片或木块架空，不要直接插在面包板上（热点 65 °C 以上，长时间会烫坏塑料），用杜邦线引出。</li>
+</ul>
+<h2 id="2-page4-实验逐点可行性核查">2. page4 实验逐点可行性核查</h2>
+<p>推荐方案：<strong>单 12 V。PR02 100 Ω/2 W 当加热器 → IRLZ44N（D3 PWM）。两只 10 kΩ NTC 各配 10 kΩ 接 Arduino 5 V → A0（加热）/A1（参考）。USB 风扇三档（或固定风扇改距离）。</strong></p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>项目</th>
+<th>结论</th>
+<th>依据 / 改法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>47 Ω @5 V = 0.53 W</td>
+<td>算对了，但和单电源冲突</td>
+<td>brief §10 是单 9–12 V。如果 47 Ω 直接挂 12 V：3.06 W，是 PR02 额定的 153%，热点约 255 °C &gt; 220 °C（Python 第 4 部分）。从 Arduino 5 V 脚取 106 mA：12 V 经板载稳压器（SPX1117M3-L-5，Uno 数据手册）要多耗约 0.74 W，稳压器会很烫。<strong>改法 A（推荐）</strong>：100 Ω/2 W 接 12 V，满占空比 1.44 W（72% 额定，热点约 133 °C，只有程序跑飞时才会到），软件把占空比上限设为 40%（0.58 W，热点约 68 °C）。<strong>改法 B</strong>：47 Ω 接 12 V，软件上限 17%。这种做法程序一出错就是 3 W，不推荐。</td>
+</tr>
+<tr>
+<td>2</td>
+<td>加热电阻规格</td>
+<td>写清型号与额定</td>
+<td>写「2 W 金属膜（如 Vishay PR02），R_th 约 75 K/W」。不要用 1/4 W 碳膜。</td>
+</tr>
+<tr>
+<td>3</td>
+<td>温度会超过 60 °C</td>
+<td>是</td>
+<td>0.58 W × 75 K/W ≈ 43 K → 约 68 °C。只用 NTC 读数，不用手摸，按 brief §5 写安全须知。草图里加<strong>超温保护</strong>：加热 NTC &gt; 90 °C 或读数开路/短路时立刻关断加热。</td>
+</tr>
+<tr>
+<td>4</td>
+<td>NTC 是否超限</td>
+<td>要受控</td>
+<td>NTCLE100 连续工作上限 +125 °C。100 Ω 满功率时热点约 133 °C &gt; 125 °C → 占空比上限和超温保护同时也在保护 NTC。</td>
+</tr>
+<tr>
+<td>5</td>
+<td>NTC 分压与 ADC</td>
+<td>可行</td>
+<td>10 kΩ + 10 kΩ、5 V：25 °C 时 54.7 mV/K = 11.2 LSB/K（0.089 K/LSB）；65 °C 时 0.195 K/LSB。加热那一路改用 3.3 kΩ，65 °C 时提高到 0.117 K/LSB（Python 第 2 部分）。每次读数平均 16 次。戴维南阻抗 ≤10 kΩ，满足 ADC 源阻抗建议（<a href="http://30.md">30.md</a>）。</td>
+</tr>
+<tr>
+<td>6</td>
+<td>NTC 自热</td>
+<td>可忽略</td>
+<td>10 kΩ 分压时 NTC 最大功耗 0.625 mW / 7 mW/K = 0.09 K；3.3 kΩ 时约 0.26 K，而且基本恒定，零点校准会把它扣掉。</td>
+</tr>
+<tr>
+<td>7</td>
+<td>两只 NTC 的差</td>
+<td><strong>必须零点校准</strong></td>
+<td>R25 ±2 % 时两只最坏相差 0.91 K，±5 % 时相差 2.29 K（Python 第 3 部分），和 CTA 设定的 10 K 相比不能忽略。草图开机先关加热、静置约 1 min，平均 20 s 记下偏差 ΔT0，之后都减去它。也可以用万用表电阻档量两只 NTC，换算后对比。</td>
+</tr>
+<tr>
+<td>8</td>
+<td>温度换算</td>
+<td>简化 β 公式够用</td>
+<td>用 B = 3977 的 β 公式代替完整公式，在 25–80 °C 内误差 ≤0.31 K（Python 第 6 部分）。两只 NTC 的误差方向相同，求差时还会再抵消一部分。</td>
+</tr>
+<tr>
+<td>9</td>
+<td>PWM D3 → IRLZ44N</td>
+<td>可行</td>
+<td>Uno/Nano 的 D3 PWM 是 490 Hz（analogWrite.adoc 表格）。热时间常数是几十秒，PWM 纹波对温度没有影响。R_DS(on) 0.025 Ω → 功耗 0.36 mW。</td>
+</tr>
+<tr>
+<td>10</td>
+<td>CMA（固定 PWM，风扇三档）</td>
+<td>可行</td>
+<td>一阶热模型（<strong>假设</strong> C_th = 1 J/K，热阻：静风 75、风扇低 40、风扇高 25 K/W，需实测），P = 0.13 W 时温差 9.75 / 5.20 / 3.25 K；换一档后 90% 稳定约 63 s（τ = C·R_th）。每档至少等 3–5 min 再读数。</td>
+</tr>
+<tr>
+<td>11</td>
+<td>CTA（PI 控温差 = 10 K，读 PWM）</td>
+<td>可行，要防积分饱和</td>
+<td>同一模型下 CTA 需要的功率是 0.133 / 0.250 / 0.400 W，对应 12 V/100 Ω 占空比 9.3 / 17.4 / 27.8 %，在 40% 上限以内。风速阶跃后功率 90% 响应 <strong>23.5 s</strong>，CMA 是 63 s。过渡中温差最低 7.93 K（Python 第 5 部分，Kp = 0.06 W/K，Ki = 0.004 W/(K·s)，0.5 s 采样）。积分项碰到 0 或上限时要停止累加（抗积分饱和），否则开机升温阶段会大幅超调。</td>
+</tr>
+<tr>
+<td>12</td>
+<td>风扇</td>
+<td>可行</td>
+<td>USB 风扇用自己的 USB 电源（充电宝），<strong>不要从 Arduino 5 V 脚取电</strong>。没有调速档的风扇，可以靠改距离（10/20/40 cm）来变风速。</td>
+</tr>
+<tr>
+<td>13</td>
+<td>「功率就是流量信号」</td>
+<td>补一句非线性</td>
+<td>Sierra：输出非线性、灵敏度在低流量最高，必须标定。page4 只要求单调关系：风越大，CTA 功率越高，CMA 温差越小。</td>
+</tr>
+<tr>
+<td>14</td>
+<td>万用表验证</td>
+<td>可行</td>
+<td>① 加热关闭时，用电阻档量两只 NTC，按 β 公式换算，和串口读数对比；② <strong>万用表直流档量加热电阻两端平均电压 V̄ = D·12 V</strong>，P = V̄·12 V / R（D = 0.40 → 4.8 V → 0.576 W），和草图打印的 P 对比；③ 量 A0/A1 节点电压 = 5 V·R_f/(R_NTC + R_f)。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="需要作者改正的要点">需要作者改正的要点</h3>
+<ol>
+<li>47 Ω「5 V、0.53 W」与 brief 的单 12 V 冲突，47 Ω 直接接 12 V 是 3.06 W，超过 2 W 额定和 220 °C 热点上限。改用 <strong>100 Ω/2 W（PR02 级）接 12 V + 软件占空比上限 40%</strong>（≈0.58 W），或者在正文写明加热器单独用 5 V。</li>
+<li>加热器会到约 65–70 °C：写明 2 W 金属膜、架空安装、不碰面包板，草图里要有<strong>超温（&gt;90 °C）和传感器开路/短路关断</strong>。</li>
+<li>两只 NTC 必须先做<strong>零点校准</strong>（±2 % R25 → 最多差 0.9 K），否则 CMA 的温差和 CTA 的 10 K 设定都会偏。</li>
+<li>「恒功率 CMA」：Sierra 的工业第二种方式是<strong>恒电流（输出 ΔT）</strong>。面包板用电阻 + 固定 PWM 近似恒功率，要说明这一点。</li>
+<li>CTA 的 PI 要<strong>抗积分饱和</strong>并限幅（0 到 40%）。CTA 比 CMA 快（模型中 23.5 s 对 63 s），但这些数字来自假设的热参数，正文要标「示意值」，或者让学生自己用阶跃实测 τ。</li>
+<li>加热电流单独回地；NTC 分压用 Arduino 5 V 供电（比率测量）；风扇用自己的 USB 电源。</li>
+<li>King 定律公式仍为 [待核实]（Sierra 资料只给出名称、年份和原理），正文继续只写「随流速增大，但不是线性」。</li>
+</ol>
+<h3 id="最小必要知识框--完整草图unonano">最小必要知识框 + 完整草图（Uno/Nano）</h3>
+<blockquote>
+<p><strong>最小必要知识</strong>：analogWrite(3, x) 让 D3 输出 490 Hz PWM，x = 0–255 对应占空比 0–100%，平均功率 = 占空比 × V²/R。analogRead(A0) 返回 0–1023，对应 0–5 V。串口监视器 115200 baud：发 <code>c</code> 进入恒功率，<code>t</code> 进入恒温差，<code>o</code> 关闭加热。</p>
+</blockquote>
+<pre><code class="language-cpp">// 40 热式流量：D3 PWM -&gt; IRLZ44N -&gt; 100 Ω/2 W 加热器(12 V)；A0 = 加热 NTC(上) + 3.3k(下)，A1 = 参考 NTC(上) + 10k(下)
+const float VSUP = 12.0, RH = 100.0;       // 用万用表量实际电源电压后改这里
+const int   PWM_MAX = 102;                  // 40 % 上限 ≈ 0.58 W
+const float RF0 = 3300.0, RF1 = 10000.0, B = 3977.0, R25 = 10000.0;
+const float T_CUT = 90.0;                   // 超温关断
+float dT0 = 0;                              // 零点偏差
+char mode = 'o';
+float P_cma = 0.13, setDT = 10.0, Kp = 0.06, Ki = 0.004, I = 0;
+
+float readT(int pin, float Rf) {
+  long s = 0; for (int i = 0; i &lt; 16; i++) s += analogRead(pin);
+  float a = s / 16.0;
+  if (a &lt; 10 || a &gt; 1013) return NAN;       // 开路/短路
+  float Rntc = Rf * (1023.0 / a - 1.0);     // NTC 在上端
+  return 1.0 / (1.0 / 298.15 + log(Rntc / R25) / B) - 273.15;
+}
+void setHeater(float P) {
+  int x = constrain((int)(P * RH / (VSUP * VSUP) * 255.0 + 0.5), 0, PWM_MAX);
+  analogWrite(3, x);
+}
+void setup() {
+  Serial.begin(115200); pinMode(3, OUTPUT); analogWrite(3, 0);
+  Serial.println(F(&quot;zero calibration, heater off, 20 s...&quot;));
+  float acc = 0; for (int i = 0; i &lt; 40; i++) { acc += readT(A0, RF0) - readT(A1, RF1); delay(500); }
+  dT0 = acc / 40; Serial.print(F(&quot;dT0 = &quot;)); Serial.println(dT0, 2);
+  Serial.println(F(&quot;c = CMA 0.13 W, t = CTA dT 10 K, o = off&quot;));
+}
+void loop() {
+  if (Serial.available()) { char c = Serial.read(); if (c == 'c' || c == 't' || c == 'o') { mode = c; I = P_cma; } }
+  float Th = readT(A0, RF0), Ta = readT(A1, RF1);
+  if (isnan(Th) || isnan(Ta) || Th &gt; T_CUT) { analogWrite(3, 0); mode = 'o'; Serial.println(F(&quot;FAULT: heater off&quot;)); delay(500); return; }
+  float dT = Th - Ta - dT0, P = 0;
+  if (mode == 'c') P = P_cma;
+  if (mode == 't') {
+    float e = setDT - dT, Iu = I + Ki * e * 0.5, Pu = Kp * e + Iu;
+    float Pmax = PWM_MAX / 255.0 * VSUP * VSUP / RH;
+    if (Pu &gt;= 0 &amp;&amp; Pu &lt;= Pmax) I = Iu;      // 抗积分饱和
+    P = constrain(Kp * e + I, 0, Pmax);
+  }
+  setHeater(P);
+  Serial.print(millis() / 1000); Serial.print(F(&quot; s, Ta=&quot;)); Serial.print(Ta, 2);
+  Serial.print(F(&quot; Th=&quot;)); Serial.print(Th, 2); Serial.print(F(&quot; dT=&quot;)); Serial.print(dT, 2);
+  Serial.print(F(&quot; P(W)=&quot;)); Serial.println(P, 3);
+  delay(500);                               // 约 0.5 s 一次（读 32 次 ADC 另需约 4 ms）
+}
+</code></pre>
+<p>（草图里的参数和 Python 第 5 部分一致；PI 参数基于假设的热模型，实物上可能要调。没有在实物上烧录验证。）</p>
+<h2 id="3-python-计算已运行">3. Python 计算（已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng/s40.py</code></p>
+<pre><code class="language-python">import numpy as np
+# Vishay NTCLE100E3 B25/85=3977 那一行的系数 (ntcle100.pdf &quot;PARAMETER FOR DETERMINING NOMINAL RESISTANCE VALUES&quot;)
+A,B,C,D=-14.6337,4791.842,-115334,-3.730535e6
+A1,B1,C1,D1=3.354016e-3,2.569850e-4,2.620131e-6,6.383091e-8
+R25=10e3
+def R_of_T(Tc):
+    T=Tc+273.15; return R25*np.exp(A+B/T+C/T**2+D/T**3)
+def T_of_R(R):
+    x=np.log(R/R25); return 1/(A1+B1*x+C1*x**2+D1*x**3)-273.15
+print(&quot;== 1) NTC 10k (B=3977) 阻值与公式自洽 ==&quot;)
+for Tc in [25,35,50,65,80]:
+    R=R_of_T(Tc); print(f&quot;{Tc:3d} °C: R = {R:8.0f} Ω, 反算 {T_of_R(R):6.2f} °C&quot;)
+print(&quot;\n== 2) 分压 (5 V, NTC 接上端, 固定电阻接下端) -&gt; A0 灵敏度 ==&quot;)
+for Rf in [10e3,3.3e3]:
+    for Tc in [25,35,65]:
+        v=lambda t:5*Rf/(R_of_T(t)+Rf)
+        s=(v(Tc+0.5)-v(Tc-0.5)); lsb=5/1024
+        P=(5/(R_of_T(Tc)+Rf))**2*R_of_T(Tc)
+        print(f&quot;Rf={Rf/1e3:4.1f}k, {Tc} °C: V={v(Tc):.3f} V, {s*1e3:5.1f} mV/K = {s/lsb:5.1f} LSB/K -&gt; {lsb/s:.3f} K/LSB; NTC 功耗 {P*1e3:.3f} mW -&gt; 自热 {P/7e-3:.3f} K (δ=7 mW/K)&quot;)
+print(&quot;\n== 3) 两只 NTC 的 R25 公差 -&gt; 温差零点误差 ==&quot;)
+for tol in [0.02,0.05]:
+    dT=T_of_R(R25*(1-tol))-T_of_R(R25*(1+tol))
+    print(f&quot;R25 ±{tol*100:.0f}%: 两只最坏相差 {dT:.2f} K (必须在加热关闭时做零点校准)&quot;)
+print(&quot;\n== 4) 加热电阻功率与热点温升 (Vishay PR02 Cu 引线: P70=2 W, Rth=75 K/W, 热点最高 220 °C) ==&quot;)
+Rth=75; Ta=25
+for V,R,Dmax in [(5,47,1.0),(12,47,1.0),(12,47,0.17),(12,100,1.0),(12,100,0.40)]:
+    P=V*V/R*Dmax
+    print(f&quot;{V:2d} V, {R:3d} Ω, 占空比上限 {Dmax:4.2f}: P = {P:5.2f} W ({P/2*100:4.0f}% 额定), 热点约 {Ta+P*Rth:5.0f} °C, 电流峰值 {V/R*1e3:4.0f} mA&quot;)
+print(&quot;IRLZ44N R_DS(on) 0.025 Ω @VGS=5 V: 120 mA 时功耗 %.2f mW&quot; % (0.12**2*0.025*1e3))
+print(&quot;万用表直流档量加热器两端平均电压 V̄ = D·12 V -&gt; P = V̄·12/R; 例 D=0.40: V̄=%.1f V, P=%.3f W&quot; % (0.4*12, 0.4*12*12/100))
+
+print(&quot;\n== 5) 一阶热模型: CMA(恒功率) vs CTA(PI 恒温差), 风速阶跃 ==&quot;)
+# 假设值(示意, 需实测): 热容 C=1.0 J/K; 静风热阻 75 K/W(取 PR02 数据手册 Rth), 风扇档热阻 40/25 K/W; NTC 贴片滞后 τs=5 s
+Cth=1.0; Rs={'静风':75,'风扇低':40,'风扇高':25}; taus=5.0
+dt=0.05; tt=np.arange(0,600,dt)
+def sim(mode, P0=0.13, setp=10.0, Kp=0.06, Ki=0.004, Pmax=0.576):
+    G=np.where(tt&lt;300,1/Rs['静风'],1/Rs['风扇高'])
+    x=setp if mode=='CTA' else P0*Rs['静风']; xs=x; I=P0; out=[]
+    for k,g in enumerate(G):
+        if mode=='CMA': P=P0
+        else:
+            if k%10==0:     # 0.5 s 采样一次
+                e=setp-xs; Iu=I+Ki*e*0.5; Pu=Kp*e+Iu
+                if 0&lt;=Pu&lt;=Pmax: I=Iu          # 抗积分饱和
+                P=min(max(Kp*e+I,0),Pmax)
+        x+=dt*(P-g*x)/Cth; xs+=dt*(x-xs)/taus
+        out.append((x,xs,P))
+    return np.array(out)
+def t90(y,y0,y1):
+    i0=int(300/dt); s=(y[i0:]-y0)/(y1-y0); idx=np.argmax(s&gt;=0.9); return idx*dt
+cma=sim('CMA'); y0=0.13*75; y1=0.13*25
+print(f&quot;CMA (P=0.13 W): 温差 {cma[int(299/dt),1]:.2f} K -&gt; {cma[-1,1]:.2f} K, 90% 用时 {t90(cma[:,1],y0,y1):.1f} s (理论 τ=C·Rth = {Cth*75:.0f} s -&gt; {Cth*25:.0f} s)&quot;)
+cta=sim('CTA'); p0,p1=10/75,10/25
+print(f&quot;CTA (ΔT=10 K): 功率 {cta[int(299/dt),2]:.3f} W -&gt; {cta[-1,2]:.3f} W (理论 {p0:.3f} -&gt; {p1:.3f}), 90% 用时 {t90(cta[:,2],p0,p1):.1f} s, 温差最低 {cta[int(300/dt):,1].min():.2f} K&quot;)
+for name,R in Rs.items():
+    print(f&quot;  {name}: CMA 0.13 W 温差 {0.13*R:5.2f} K ; CTA 10 K 需 {10/R:.3f} W = 12 V/100 Ω 占空比 {10/R/1.44*100:4.1f}%&quot;)
+
+print(&quot;\n== 6) 草图里用简化 β 公式 (B=3977) 与完整公式的差 ==&quot;)
+for Tc in [25,35,50,65,80]:
+    R=R_of_T(Tc); Tb=1/(1/298.15+np.log(R/R25)/3977)-273.15
+    print(f&quot;{Tc} °C: β 公式 {Tb:6.2f} °C (误差 {Tb-Tc:+.2f} K)&quot;)
+</code></pre>
+<p><strong>已运行，实际输出：</strong></p>
+<pre><code>== 1) NTC 10k (B=3977) 阻值与公式自洽 ==
+ 25 °C: R =    10000 Ω, 反算  25.00 °C
+ 35 °C: R =     6535 Ω, 反算  35.00 °C
+ 50 °C: R =     3605 Ω, 反算  50.00 °C
+ 65 °C: R =     2084 Ω, 反算  65.00 °C
+ 80 °C: R =     1256 Ω, 反算  80.00 °C
+
+== 2) 分压 (5 V, NTC 接上端, 固定电阻接下端) -&gt; A0 灵敏度 ==
+Rf=10.0k, 25 °C: V=2.500 V,  54.7 mV/K =  11.2 LSB/K -&gt; 0.089 K/LSB; NTC 功耗 0.625 mW -&gt; 自热 0.089 K (δ=7 mW/K)
+Rf=10.0k, 35 °C: V=3.024 V,  49.4 mV/K =  10.1 LSB/K -&gt; 0.099 K/LSB; NTC 功耗 0.598 mW -&gt; 自热 0.085 K (δ=7 mW/K)
+Rf=10.0k, 65 °C: V=4.138 V,  25.0 mV/K =   5.1 LSB/K -&gt; 0.195 K/LSB; NTC 功耗 0.357 mW -&gt; 自热 0.051 K (δ=7 mW/K)
+Rf= 3.3k, 25 °C: V=1.241 V,  40.8 mV/K =   8.4 LSB/K -&gt; 0.120 K/LSB; NTC 功耗 1.413 mW -&gt; 自热 0.202 K (δ=7 mW/K)
+Rf= 3.3k, 35 °C: V=1.678 V,  46.1 mV/K =   9.4 LSB/K -&gt; 0.106 K/LSB; NTC 功耗 1.689 mW -&gt; 自热 0.241 K (δ=7 mW/K)
+Rf= 3.3k, 65 °C: V=3.064 V,  41.6 mV/K =   8.5 LSB/K -&gt; 0.117 K/LSB; NTC 功耗 1.797 mW -&gt; 自热 0.257 K (δ=7 mW/K)
+
+== 3) 两只 NTC 的 R25 公差 -&gt; 温差零点误差 ==
+R25 ±2%: 两只最坏相差 0.91 K (必须在加热关闭时做零点校准)
+R25 ±5%: 两只最坏相差 2.29 K (必须在加热关闭时做零点校准)
+
+== 4) 加热电阻功率与热点温升 (Vishay PR02 Cu 引线: P70=2 W, Rth=75 K/W, 热点最高 220 °C) ==
+ 5 V,  47 Ω, 占空比上限 1.00: P =  0.53 W (  27% 额定), 热点约    65 °C, 电流峰值  106 mA
+12 V,  47 Ω, 占空比上限 1.00: P =  3.06 W ( 153% 额定), 热点约   255 °C, 电流峰值  255 mA
+12 V,  47 Ω, 占空比上限 0.17: P =  0.52 W (  26% 额定), 热点约    64 °C, 电流峰值  255 mA
+12 V, 100 Ω, 占空比上限 1.00: P =  1.44 W (  72% 额定), 热点约   133 °C, 电流峰值  120 mA
+12 V, 100 Ω, 占空比上限 0.40: P =  0.58 W (  29% 额定), 热点约    68 °C, 电流峰值  120 mA
+IRLZ44N R_DS(on) 0.025 Ω @VGS=5 V: 120 mA 时功耗 0.36 mW
+万用表直流档量加热器两端平均电压 V̄ = D·12 V -&gt; P = V̄·12/R; 例 D=0.40: V̄=4.8 V, P=0.576 W
+
+== 5) 一阶热模型: CMA(恒功率) vs CTA(PI 恒温差), 风速阶跃 ==
+CMA (P=0.13 W): 温差 9.75 K -&gt; 3.25 K, 90% 用时 63.0 s (理论 τ=C·Rth = 75 s -&gt; 25 s)
+CTA (ΔT=10 K): 功率 0.133 W -&gt; 0.400 W (理论 0.133 -&gt; 0.400), 90% 用时 23.5 s, 温差最低 7.93 K
+  静风: CMA 0.13 W 温差  9.75 K ; CTA 10 K 需 0.133 W = 12 V/100 Ω 占空比  9.3%
+  风扇低: CMA 0.13 W 温差  5.20 K ; CTA 10 K 需 0.250 W = 12 V/100 Ω 占空比 17.4%
+  风扇高: CMA 0.13 W 温差  3.25 K ; CTA 10 K 需 0.400 W = 12 V/100 Ω 占空比 27.8%
+
+== 6) 草图里用简化 β 公式 (B=3977) 与完整公式的差 ==
+25 °C: β 公式  25.00 °C (误差 -0.00 K)
+35 °C: β 公式  34.82 °C (误差 -0.18 K)
+50 °C: β 公式  49.69 °C (误差 -0.31 K)
+65 °C: β 公式  64.72 °C (误差 -0.28 K)
+80 °C: β 公式  79.90 °C (误差 -0.10 K)
+</code></pre>
+<h2 id="4-参考链接均已实际打开">4. 参考链接（均已实际打开）</h2>
+<ul>
+<li>Vishay PR01/PR02/PR03 功率金属膜电阻数据手册：<a href="https://www.vishay.com/docs/28729/pr010203.pdf">https://www.vishay.com/docs/28729/pr010203.pdf</a> （curl；TECHNICAL SPECIFICATIONS 表：P70、R_th；热点 220 °C 一句）</li>
+<li>Vishay NTCLE100E3 NTC 数据手册：<a href="https://www.vishay.com/docs/29049/ntcle100.pdf">https://www.vishay.com/docs/29049/ntcle100.pdf</a> （curl；参数表 δ、τ、温度范围；&quot;PARAMETER FOR DETERMINING NOMINAL RESISTANCE VALUES&quot; 表 B = 3977 行）</li>
+<li>Infineon IRLZ44N 数据手册：<a href="https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725">https://www.infineon.com/dgdl/irlz44npbf.pdf?fileId=5546d462533600a40153567217c32725</a> （curl；Electrical Characteristics 表 R_DS(on)、V_GS(th)）</li>
+<li>Sierra Instruments《Thermal Mass Flow Measurement of Fluid》：<a href="https://www.sierrainstruments.com/prnews/Thermal%20Mass%20Flow%20Measurement%20of%20Fluid%2010.15.08.pdf">https://www.sierrainstruments.com/prnews/Thermal Mass Flow Measurement of Fluid 10.15.08.pdf</a> （curl；§3.5.1、§3.5.2、§4.1）</li>
+<li>TI SBAA275A RTD 测量基础：<a href="https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf">https://www.ti.com/lit/an/sbaa275a/sbaa275a.pdf</a> （curl 200）</li>
+<li>Arduino UNO R3 数据手册 A000066：<a href="https://docs.arduino.cc/resources/datasheets/A000066-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/A000066-datasheet.pdf</a> （curl；VIN 6–20 V，U1 SPX1117M3-L-5）</li>
+<li>Arduino analogWrite() 参考：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogWrite.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogWrite.adoc</a> （curl；UNO/Nano PWM 频率表）</li>
+<li>Microchip ATmega328P DS40002061B：<a href="https://ww1.microchip.com/downloads/aemDocuments/documents/MCU08/ProductDocuments/DataSheets/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf">https://ww1.microchip.com/downloads/aemDocuments/documents/MCU08/ProductDocuments/DataSheets/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf</a> （I/O 绝对最大值，见 <a href="http://30.md">30.md</a>）</li>
+</ul>
+<p><strong>[待核实]</strong>：</p>
+<ul>
+<li>King 定律的具体公式形式（Sierra 资料只有名称、年份和原理，本节没有给出式子）。</li>
+<li>热模型参数（C_th = 1 J/K，风扇档热阻 40/25 K/W，NTC 贴片滞后 5 s）是<strong>假设值</strong>，没有来源，仅用于对比 CMA 和 CTA 的相对快慢；静风 75 K/W 取自 PR02 数据手册的 R_th（数据手册的安装条件不等于面包板上架空安装）。</li>
+<li>research 原有的 E+H 学习中心页面（未打开），本节没有引用。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

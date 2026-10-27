@@ -1,0 +1,1069 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>35 程控增益与 AGC：资深教师审阅</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/35.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="35-程控增益与-agc资深教师审阅">35 程控增益与 AGC：资深教师审阅</h1>
+<p>审阅范围：<code>35-pga-agc/page1.md</code>～<code>page4.md</code>，以及 <code>img/35_*.png</code> 全部 13 张图（逐张打开看过）。核对依据：<code>review/part2/teacher/00-plan-review.md</code>（本节教学手法与必需图清单）、<code>review/teacher/best-practices.md</code>（原则 [1]～[6]）、<code>notes/00-design-part2.md</code>、<code>notes/PART2_BRIEF.md</code>、<code>notes/AUTHOR_GUIDE.md</code>、<code>review/spice/35.md</code>，以及前置页 08、09、10、13、14、16、34。</p>
+<p>数值核对方式：page2、page4 的 Python 代码块和 <code>code/35_sim.py</code> 都复制到 <code>/tmp/r35/</code> 运行过，输出和正文逐条对照；其余数字用手算复核。仓库里的文件没有改动。</p>
+<h2 id="一评分">一、评分</h2>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>主线很清楚：先讲「固定增益两难」（图 35-p1-1），再讲万用表自动量程和相机自动曝光，然后是框图，接着推公式、用 SPICE 定量，最后上面板包板。 <span class="math math-inline">\(R_{on}\)</span> 串进 <span class="math math-inline">\(R_g\)</span> 的道理从现象一路讲到抽头接法，层层推进，数值也都和 SPICE、代码一致。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>信息密度很高，段落偏长。四处讲电路连接的文字缺原理图（峰值检波、模拟 AGC 环、CD4051 引脚、抽头图里看不见开关）。有几处说法前后矛盾：「读数一直待在 30 %～90 %」「69 倍 / 101 倍」。面包板图上最关键的那根输入线画在两列之间，在手机上看不清。「相位余量」「偏置电流」「量化误差」第一次出现都没有解释。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td><span class="math math-inline">\(R_{on}\)</span> 例题做了「完整→留空→变体」，page3 练习 4 也迁移到了 40 kHz 超声，这些做得好。但计划里的「换档规则先手算一档、再让读者填表」没有落实；例 2、page3 练习 1、page4 思考题 1 和 3 的答案都已经在前面的表、图或正文里给出，提取练习等于没做；参数改变之前也没有让读者先预测。</td>
+</tr>
+</tbody>
+</table>
+<p>三项都不是「差」。下面的必改条目修完以后，②③ 两项可以升到「好」。</p>
+<h2 id="二本节计划落实情况对照-00-plan-review">二、本节计划落实情况（对照 00-plan-review）</h2>
+<table>
+<thead>
+<tr>
+<th>计划项</th>
+<th>落实情况</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>渐隐样例 [2]：换档规则先手算一档，再让读者填表</td>
+<td>❌ 没有落实。page2「七、例题」三道题都是 <span class="math math-inline">\(R_{on}\)</span> 误差题，换档规则没有任何手算示范和填表，见必改-01</td>
+</tr>
+<tr>
+<td>先暴露误区 [5]：先按理想开关算增益，再实测偏差，引出 Kelvin 接法</td>
+<td>⚠️ 只落实了一半。正文直接说出了「问题」，没有让读者先按理想开关做预测；page4 开头就把「约 69、小 32 %」告诉了读者，见必改-02</td>
+</tr>
+<tr>
+<td>提取练习 [3]：峰值检测开头回顾 13</td>
+<td>✅ page2「四」回指 13「三、加一只大电容」和 09，原文属实（13 page1 确实有「三、加一只大电容」这一节）</td>
+</tr>
+<tr>
+<td>计划必改-08（峰值检测回指 13 + 09）</td>
+<td>✅</td>
+</tr>
+<tr>
+<td>计划建议-20（dB 改为回顾 16 page2，再配新例子）</td>
+<td>✅ 16 page2 第 55 行确有「分贝 = 20 lg 倍数」；新例子 202 倍 = 46.11 dB，计算正确</td>
+</tr>
+<tr>
+<td>必需图：CD4051 + 同相（35_p2_1）</td>
+<td>⚠️ 有图，但开关画成了分立开关，不是 BRIEF §2 要求的 <code>schem.module</code> 带引脚名方框，A/B/C/INH 也都没画，见建议-10</td>
+</tr>
+<tr>
+<td>必需图：Kelvin（35_p2_3）</td>
+<td>⚠️ 有图，但图上看不见开关在哪，见建议-11</td>
+</tr>
+<tr>
+<td>必需图：峰值检测（35_p2_4）</td>
+<td>❌ 计划把 35_p2_4 当成峰值检测的「原理图」，可它实际只是<strong>波形图</strong>；单二极管检波和精密峰值检波两种电路都没有原理图，见必改-05</td>
+</tr>
+</tbody>
+</table>
+<h2 id="三缺原理图位置逐处清单">三、缺原理图位置逐处清单</h2>
+<p>规则：每段讲电路连接的文字、每张面包板图旁边，都必须有对应的原理图。</p>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>位置</th>
+<th>讲了什么连接</th>
+<th>现状</th>
+<th>处理</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>page1「程控增益的三种做法」第 1 项</td>
+<td>「用一个 8 选 1 的模拟开关（CD4051）从六只 <span class="math math-inline">\(R_g\)</span> 里挑一只」</td>
+<td>只有框图 35-p1-2</td>
+<td>建议-16</td>
+</tr>
+<tr>
+<td>2</td>
+<td>page1 模拟 AGC 段（「用 VGA 时……积分器的输出就是控制电压」）</td>
+<td>峰值检测 → 比较 → 积分 → 控制电压</td>
+<td>无图</td>
+<td>必改-06</td>
+</tr>
+<tr>
+<td>3</td>
+<td>page2「一」同相放大</td>
+<td>「信号接运放的同相端，输出经 <span class="math math-inline">\(R_f\)</span> 回到反相端，反相端再经 <span class="math math-inline">\(R_g\)</span> 接地」</td>
+<td>图在后面「二」里（35-p2-1）</td>
+<td>建议-17</td>
+</tr>
+<tr>
+<td>4</td>
+<td>page2「一」CD4051 引脚</td>
+<td>VDD 16、VSS 8、VEE 7、A/B/C、INH、X0～X7</td>
+<td>无引脚图</td>
+<td>建议-12</td>
+</tr>
+<tr>
+<td>5</td>
+<td>page2「三」抽头接法</td>
+<td>开关接在反相端引线里</td>
+<td>图 35-p2-3 上看不见开关</td>
+<td>建议-11</td>
+</tr>
+<tr>
+<td>6</td>
+<td>page2「四」峰值检测</td>
+<td>「一只二极管加一只电容和一只放电电阻」「把二极管放进运放的反馈环里」</td>
+<td><strong>只有波形图</strong></td>
+<td>必改-05</td>
+</tr>
+<tr>
+<td>7</td>
+<td>page2「六」模拟 AGC</td>
+<td>「VGA → 精密峰值检波 → 和目标比较 → 积分器 → 控制电压回到 VGA」</td>
+<td>无图</td>
+<td>必改-06</td>
+</tr>
+<tr>
+<td>8</td>
+<td>page3「四」</td>
+<td>AD8331 式的环（增益 = 40 dB − 50 dB/V × 控制电压，检波 <span class="math math-inline">\(\tau_d\)</span> ，积分 <span class="math math-inline">\(\tau_i\)</span> ）</td>
+<td>无图</td>
+<td>必改-06（指回新图）</td>
+</tr>
+<tr>
+<td>9</td>
+<td>page4 图 35-p4-1 ↔ 35-p4-2</td>
+<td>整块面包板</td>
+<td>配了 schem_lab 和「对照看」✅，但 LM358 的 B 半边、两只 100 nF、Arduino 的 5V/GND 没有进原理图</td>
+<td>建议-13</td>
+</tr>
+<tr>
+<td>10</td>
+<td>page4 测量表第 6～9 步</td>
+<td>输入线改插 d17、改插 0 V 轨</td>
+<td>只有文字和图注</td>
+<td>建议-13</td>
+</tr>
+<tr>
+<td>11</td>
+<td>page4「没有 Arduino 也能做完整个实验」</td>
+<td>A、B、C 三根线手动插 +5 V 轨或 0 V 轨</td>
+<td>无图、无表</td>
+<td>建议-14</td>
+</tr>
+</tbody>
+</table>
+<h2 id="四必改">四、必改</h2>
+<h3 id="必改-01换档规则缺渐隐样例计划教学法①没有落实">必改-01　换档规则缺渐隐样例（计划教学法①没有落实）</h3>
+<ul>
+<li><strong>页面/段落</strong>：page2「五、数字 AGC」和「七、例题」。现在的三道例题是：「例 1（完整示例）：X3 档……470 Ω」「例 2（关键步骤留空）：X4 档……125 Ω」「例 3（变体迁移）……」，全都在算 <span class="math math-inline">\(R_{on}\)</span> 误差。</li>
+<li><strong>问题</strong>：计划写的是「换档规则先手算一档，再让读者填表」。正文只给了规则和 Python 代码，读者从来没有亲手按 90 %/30 % 走过一遍「读数→判定→换档→再读」。换档逻辑是 page4 Arduino 程序的核心，读者不手算一遍，看到代码只能照抄。</li>
+<li><strong>改法</strong>：在「七、例题」里，例 3 后面加一组「换档」渐隐样例（下面的数都按 <code>code/35_sim.py</code> 的实际倍数 1.995、5.087、9.718、18.95、41.49、69.03 算过）：
+<blockquote>
+<p><strong>例 4（完整示例）：输入 0.15 V，程序从 X0 起步。</strong> X0：0.15 × 1.995 = 0.299 V，是 3.0 V 的 10.0 %，低于 30 %，升一档；X1：0.15 × 5.087 = 0.763 V，25.4 %，仍低于 30 %，再升一档；X2：0.15 × 9.718 = 1.458 V，48.6 %，落在 30 %～90 % 之间，停下。换算：1.458 ÷ 9.718 = 0.150 V。前两次读数都在换档，要丢掉。</p>
+<p><strong>例 5（填表）：输入 50 mV，从 X0 起步。</strong> 请填下表，直到停下为止。</p>
+<table>
+<thead>
+<tr>
+<th>档</th>
+<th>放大后（V）</th>
+<th>占满量程</th>
+<th>判定</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>X0</td>
+<td>____</td>
+<td>____</td>
+<td>____</td>
+</tr>
+<tr>
+<td>X1</td>
+<td>____</td>
+<td>____</td>
+<td>____</td>
+</tr>
+<tr>
+<td>X2</td>
+<td>____</td>
+<td>____</td>
+<td>____</td>
+</tr>
+<tr>
+<td>X3</td>
+<td>____</td>
+<td>____</td>
+<td>____</td>
+</tr>
+</tbody>
+</table>
+<p>（答案放进 <code>&lt;details&gt;</code>：0.100 V / 3.3 % / 升；0.254 V / 8.5 % / 升；0.486 V / 16.2 % / 升；0.948 V / 31.6 % / 停）</p>
+<p><strong>例 6（变体）：输入 0.5 V，但程序刚从 X5 起步（上一次信号很小）。</strong> 提示：X5 下放大后理论上是 34.5 V，实际输出顶在约 3.83 V，读数超过 90 %。每次只降一档，几次以后停在哪一档？（答案：X4、X3、X2 也都会削顶；到 X1 是 0.5 × 5.087 = 2.54 V，占 84.8 %，停下。削顶的读数只用来判定降档，不能拿来换算输入。）</p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：[2] 渐隐样例（完整→部分→独立），见 Pashler 等 IES 2007 建议 2，<a href="https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf">https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf</a> 。例 6 还顺带复习了 page1 的「顶到上限」。</li>
+</ul>
+<h3 id="必改-02-r_on-误区没有先暴露page4-开头就剧透了实验结果">必改-02　 <span class="math math-inline">\(R_{on}\)</span> 误区没有「先暴露」，page4 开头就剧透了实验结果</h3>
+<ul>
+<li><strong>页面/段落</strong>：page2「二、最直接的接法」，开头是「请看图 35-p2-1 下面那一排开关……」，图后就直接给出 <span class="math math-inline">\(G = 1 + R_f/(R_g + R_{on})\)</span> 。page4「这次实验要验证什么」第 1、2 条：「倍数在约 2、5、10、19、41、69 之间跳」「高增益档比理想值……小得多（X5 小约 32 %）」。</li>
+<li><strong>问题</strong>：计划的教学法②是「先按理想开关算增益，再实测偏差」。现在读者没有机会按 08 节的 <span class="math math-inline">\(1 + R_f/R_g\)</span> 先算出 101，再被「只有 69」吓一跳，误区就没有暴露出来。page4 一开头又把要测的结果全部说了，测量变成了核对答案。</li>
+<li><strong>改法</strong>：
+<ol>
+<li>在 page2「二」第一句之前加一个预测问题：
+<blockquote>
+<p><strong>先猜一猜</strong>：按 08 节的公式，X5 档 <span class="math math-inline">\(R_f\)</span> = 100 kΩ、 <span class="math math-inline">\(R_g\)</span> = 1 kΩ，倍数应该是多少？如果实测只有 69 倍，你觉得少掉的那部分去了哪里？先写下你的答案，再往下看。</p>
+</blockquote>
+</li>
+<li>page4 第 1、2 条改成：
+<blockquote>
+<ol>
+<li>拨动三根选择线，每一档都能用万用表量出倍数。<strong>开始前先按 <span class="math math-inline">\(1 + R_f/R_g\)</span> 把六档的理想倍数填进实验记录表的「理想值」一列。</strong></li>
+<li>比较实测和理想值：哪几档差得最多？用两个测量点把差出来的原因（ <span class="math math-inline">\(R_{on}\)</span> ）量出来（原理与实现篇「二」）。</li>
+</ol>
+</blockquote>
+</li>
+<li>实验记录表加一列「理想值（测前填）」。</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：[5] 先处理误区，要先让错误的预期说出来，再用证据推翻它。见 PRPER 2024，<a href="https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128">https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128</a> ；Pashler 建议 7。</li>
+</ul>
+<h3 id="必改-03图-35-p1-1-的文字和图对不上30-90-184614-字">必改-03　图 35-p1-1 的文字和图对不上（30 %～90 %、184～614 字）</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page1 图 35-p1-1 后面一段：「读数一直待在 30 % 到 90 % 满量程之间，也就是 184 到 614 个字之间」。alt 文字：「橙色锯齿线是自动换档，始终在 30 % 线（184 字）和满量程线（614 字）之间来回」。</p>
+</li>
+<li>
+<p><strong>问题</strong>：</p>
+<ol>
+<li>90 % 满量程是 0.9 × 614 = 553 个字，不是 614。</li>
+<li>图上橙线在输入约 13 mV 以下时低于 184 字线（3 mV 处只有约 42 字）。page2 代码的输出也写着「5.0 mV → 70 字」「8.2 mV → 116 字」。所以「一直待在」不对。</li>
+<li>输入接近 1.5 V 时，X0 已经没有更低的档可降，读数也会超过 553。</li>
+</ol>
+</li>
+<li>
+<p><strong>改法</strong>：正文改为：</p>
+<blockquote>
+<p>橙色线是本节要做的自动换档：输入变大就降一档，变小就升一档。只要输入在约 13 mV 到 1.3 V 之间，读数就一直待在 30 % 到 90 % 满量程之间，也就是 184 到 553 个字；比 13 mV 还小时，最高档也拉不到 30 %，读数就会掉到 184 字以下（图左端）。</p>
+</blockquote>
+<p>alt 文字同步改为：「……橙色锯齿线是自动换档，输入约 13 mV 以上时在 30 % 线（184 字）和 90 % 线（553 字）之间来回，更小的输入低于 30 % 线」。如果图上画的是 614 字的满量程线，再补一条 553 字的 90 % 线。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：[4] 双编码要求图和文字互相印证。读者对着图验证，发现「一直待在」不成立，就会开始怀疑整页。</p>
+</li>
+</ul>
+<h3 id="必改-04page1-说的69-倍和101-倍前后打架又不给解释">必改-04　page1 说的「69 倍」和「101 倍」前后打架，又不给解释</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page1 图 35-p1-1 后面：「固定在约 69 倍时，小信号很好看……」；图 35-p1-3 的 alt：「×101 40.1 dB」；小结：「倍数从约 2 倍到约 101 倍」。</p>
+</li>
+<li>
+<p><strong>问题</strong>：同一页里，最高档一会儿是 69，一会儿是 101，读者没法知道哪个对。差别其实就是本节的核心误区（ <span class="math math-inline">\(R_{on}\)</span> ），现在却被当成两个互不相关的数随手写了出来。</p>
+</li>
+<li>
+<p><strong>改法</strong>：图 35-p1-1 后第一次出现 69 的地方改成：</p>
+<blockquote>
+<p>固定在最高档时（按公式应是 101 倍，实际只有约 69 倍，原因留到原理与实现篇揭晓，先记住这个「少了三成」），小信号很好看……</p>
+</blockquote>
+<p>小结改成：「倍数按公式从 2 倍到 101 倍，实测最高档只有约 69 倍，差出来的部分是下一页的主角。」这一句同时就是必改-02 的钩子。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：[5] 先把冲突摆到明面上，再去解决；[1] 不让读者自己去消化互相矛盾的信息（认知负荷，NSW CESE 2017，<a href="https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory">https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory</a> ）。</p>
+</li>
+</ul>
+<h3 id="必改-05峰值检测两种电路都没有原理图">必改-05　峰值检测两种电路都没有原理图</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page2「四、峰值检测」：「最简单的是一只二极管加一只电容和一只放电电阻……把二极管放进运放的反馈环里，运放会把这点压降补回来。」下面只有波形图 35-p2-4。</p>
+</li>
+<li>
+<p><strong>问题</strong>：这一段讲的是电路连接，但全页没有一张图告诉读者二极管朝哪个方向、电容和 100 kΩ 接在哪、运放反馈从哪里取。计划清单把 35_p2_4 当成了原理图，实际它是波形图。读者光看 09 的精密整流，也拼不出「二极管在环内 + 保持电容」的接法。</p>
+</li>
+<li>
+<p><strong>改法</strong>：在「请看图 35-p2-4」之前加一张 <code>schem.py</code> 原理图「图 35-p2-4a　两种峰值检波」，左右两半（<code>spice/35/t_peak.cir</code> 里就是这两套电路，照着画就行）：左边是 <span class="math math-inline">\(V_{in}\)</span> → 1N4148（正向朝右）→ <span class="math math-inline">\(V_{pk}\)</span> ， <span class="math math-inline">\(V_{pk}\)</span> 对地并 1 µF 和 100 kΩ；右边是 LM358 同相端接 <span class="math math-inline">\(V_{in}\)</span> ，输出经 1N4148 到 <span class="math math-inline">\(V_{pk}\)</span> ， <span class="math math-inline">\(V_{pk}\)</span> 回接反相端，再对地并 1 µF 和 100 kΩ。前面加引导句：</p>
+<blockquote>
+<p>先看两种接法的区别：右图把同一只二极管放进了运放的反馈环里，反馈从二极管<strong>后面</strong>取。</p>
+</blockquote>
+<p>图后写两句：</p>
+<blockquote>
+<p>左图里二极管的 0.5～0.7 V 压降直接扣在输出上；右图里运放比较的是 <span class="math math-inline">\(V_{pk}\)</span> 和 <span class="math math-inline">\(V_{in}\)</span> ，差一点就把输出抬高，二极管的压降被补了回来。下面图 35-p2-4 是这两种接法的波形。</p>
+</blockquote>
+<p>原来的图 35-p2-4 的引导句和编号相应顺延。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：BRIEF §2「每一处讲电路结构的文字旁边，都要有用 <a href="http://schem.py">schem.py</a> 画的原理图」；[4] 双编码。</p>
+</li>
+</ul>
+<h3 id="必改-06模拟-agc-环没有框图或原理图page1page2page3-三处都靠文字">必改-06　模拟 AGC 环没有框图或原理图（page1、page2、page3 三处都靠文字）</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page2「六」：「一个模拟 AGC 环就是：VGA → 精密峰值检波（第四节）→ 和目标比较 → 积分器 → 控制电压回到 VGA。」page1「用 VGA 时，控制电压可以由一个模拟电路自动产生……」。page3「四」：「<code>code/35_sim.py</code> 模拟了一个 AD8331 式的环……」。</p>
+</li>
+<li>
+<p><strong>问题</strong>：这是一个闭环。只看一串箭头，读者看不出哪里是「回到」，也看不出比较器的正负号和积分器的位置；page3 讲 <span class="math math-inline">\(\tau_d\)</span> 、 <span class="math math-inline">\(\tau_i\)</span> 时，读者没有一张图可以指着说「这个时间常数在这里」。</p>
+</li>
+<li>
+<p><strong>改法</strong>：在 page2「六」加「图 35-p2-6　模拟 AGC 环」框图（<code>schem.module</code> 方框加箭头）：VGA（标 <span class="math math-inline">\(G_{dB}\)</span> = 50· <span class="math math-inline">\(V_{GAIN}\)</span> − 6.5）→ <span class="math math-inline">\(V_{out}\)</span> （橙色）；从 <span class="math math-inline">\(V_{out}\)</span> 分出一路 → 精密峰值检波（标 <span class="math math-inline">\(\tau_d\)</span> ）→ 减法圆圈（− 端接检波输出，+ 端接「目标 1 V」）→ 积分器（标 <span class="math math-inline">\(\tau_i\)</span> ，回指 14）→ <span class="math math-inline">\(V_{GAIN}\)</span> ，再用红紫色点划线回到 VGA。图前写：</p>
+<blockquote>
+<p>请顺着箭头走一圈，找出信号从哪里回到 VGA。</p>
+</blockquote>
+<p>图后写：</p>
+<blockquote>
+<p>输出越大，检波值越高，减法的结果越负，积分器把 <span class="math math-inline">\(V_{GAIN}\)</span> 往下拧，增益就降了，这是负反馈。积分器只有在误差为零时才停，所以稳态下峰值正好等于目标。</p>
+</blockquote>
+<p>page1 模拟 AGC 段末尾加「（框图见原理与实现篇图 35-p2-6）」；page3「四」开头加「环路结构见图 35-p2-6， <span class="math math-inline">\(\tau_d\)</span> 在检波框里， <span class="math math-inline">\(\tau_i\)</span> 在积分框里」。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：同上（BRIEF §2、[4]）；[6] 先把具体的结构看清，再讲 page3 抽象的「快慢」取舍。</p>
+</li>
+</ul>
+<h3 id="必改-07page3-练习-1-被正文和图-35-p3-2-完整剧透">必改-07　page3 练习 1 被正文和图 35-p3-2 完整剧透</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page3「二」：「左图：0.6 V 在 X0 档放大到 1.197 V，是满量程的 39.9 %……」。练习 1：「输入 0.6 V，X0 档实际倍数 1.995，满量程 3.0 V。读数占满量程的百分之多少？会不会换档？」，答案：「……这正是图 35-p3-2 右图的情况。」</p>
+</li>
+<li>
+<p><strong>问题</strong>：数字、过程、结论都和 40 行前的正文一字不差，读者是在回忆一句话，不是提取知识。</p>
+</li>
+<li>
+<p><strong>改法</strong>：练习 1 换一个输入，并加一步：</p>
+<blockquote>
+<p><strong>1.</strong> 输入 0.35 V，程序当前在 X0 档（实际倍数 1.995，X1 为 5.087），满量程 3.0 V，UP = 30 %、DOWN = 90 %。这一次读数占满量程的百分之多少？会不会换档？换完以后会不会再换？</p>
+</blockquote>
+<p>答案：0.35 × 1.995 = 0.698 V，23.3 %，低于 30 %，升到 X1；X1 是 0.35 × 5.087 = 1.780 V，59.3 %，停下，不会来回跳。即使把 UP 改成 45 %，59.3 % 也高于它，照样停下。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：[3] 提取练习要求「不看答案、自己想出来」，Learning Scientists，<a href="https://www.learningscientists.org/blog/2016/6/23-1">https://www.learningscientists.org/blog/2016/6/23-1</a> 。</p>
+</li>
+</ul>
+<h3 id="必改-08page2-例-2-的空格答案就印在上面的表和图里">必改-08　page2 例 2 的空格答案就印在上面的表和图里</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page2「七」例 2：「X4 档 <span class="math math-inline">\(R_g\)</span> = 2 kΩ…… <span class="math math-inline">\(R_{on}\)</span> = 125 Ω。接地臂 = ____ kΩ， <span class="math math-inline">\(G\)</span> = ____ ，名义 51，误差 = ____ %。」答案：「……和表里 125 Ω 那一列、图 35-p2-2 蓝色柱一致。」</p>
+</li>
+<li>
+<p><strong>问题</strong>：第二节的档位表里就有「X4 / 125 Ω / 48.06」，图 35-p2-2 蓝色柱上还标着 −5.8 %，留空题一眼就能抄到答案。</p>
+</li>
+<li>
+<p><strong>改法</strong>：换成表里没有的一档，并借机用上空着的 X6 通道：</p>
+<blockquote>
+<p><strong>例 2（关键步骤留空）</strong>：想给 X6 加一档， <span class="math math-inline">\(R_g\)</span> = 3.3 kΩ，VDD = 5 V， <span class="math math-inline">\(R_{on}\)</span> = 470 Ω。接地臂 = ____ kΩ， <span class="math math-inline">\(G\)</span> = ____ ，名义 <span class="math math-inline">\(1 + 100/3.3\)</span> = 31.3，误差 = ____ %。</p>
+</blockquote>
+<p>答案：3.77 kΩ； <span class="math math-inline">\(G = 1 + 100/3.77 = 27.5\)</span> ；误差 27.5/31.3 − 1 = −12.1 %。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：[2] 渐隐样例的「留空」必须真的要求读者动手；[3]。</p>
+</li>
+</ul>
+<h3 id="必改-09page4-思考题-13-的答案就在上面几处值得算一算里">必改-09　page4 思考题 1、3 的答案就在上面「几处值得算一算」里</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4 思考题 1：「第 8 步为什么②比③大了约 10 mV？这 10 mV 去哪儿了？」思考题 3：「……30 mV 输入在 X5 档会被读成多少？」紧挨在前面的要点已经写了：「②和③之差 31.9 − 21.7 = 10.2 mV 就是这个电流在开关上的压降……」「第 8 步如果用④当分母，2.202 ÷ 0.030 = 73.4……多出来的就是 1.9 mV 失调」。</li>
+<li><strong>问题</strong>：两道思考题都是在重复上一屏的内容，没有迁移。</li>
+<li><strong>改法</strong>：
+<blockquote>
+<p><strong>1.</strong> 如果你的 CD4051 恰好是手册最大值 <span class="math math-inline">\(R_{on}\)</span> = 1050 Ω，第 8 步（②仍约 31.9 mV）的③和①各应读多少？</p>
+<p>（答案：电流 31.9 mV ÷ 2.05 kΩ = 15.6 µA，③ ≈ 15.6 mV，②−③ ≈ 16.3 mV；① = 31.9 mV × (1 + 100/2.05) ≈ 1.59 V，倍数约 49.8，和测量表第 8 步「排查」栏里的 49.8 一致。）</p>
+<p><strong>3.</strong> 第 9 步 Arduino 在 X5 读到零点 27 个字；接上 30 mV 后读到 451 个字。请做零点校准，换算出输入。</p>
+<p>（答案：(451 − 27) × 4.883 mV = 2.070 V，÷ 69.03 = 29.99 mV。不扣零点时是 451 × 4.883 ÷ 69.03 = 31.9 mV，多了 6 %。）</p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：[3] 提取练习；[2] 最后一步应该是变体，不是复述。</li>
+</ul>
+<h3 id="必改-10page3五把用②算倍数说成了失调的对策概念不对">必改-10　page3「五」把「用②算倍数」说成了失调的对策，概念不对</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page3「五、运放失调」对策：「或者在实验里用反相端②的电压而不是输入④来算倍数，失调就被包含进去了（动手实验篇就是这么做的）。」练习 3 的答案：「动手实验篇用反相端②的电压来算倍数，就是为了把失调包含进去。」</p>
+</li>
+<li>
+<p><strong>问题</strong>：用①÷②只是让<strong>量出来的倍数</strong>不受失调影响。正常使用时，读数换算回输入，结果仍然是 ④ + 失调（page4 思考题 3 也证实了这一点：多出 6 %）。把它和「零点校准」并列当作对策，会让读者以为测倍数时用对分母，失调就没了。</p>
+</li>
+<li>
+<p><strong>改法</strong>：对策一段改成：</p>
+<blockquote>
+<p>对策：在每一档都做一次<strong>零点校准</strong>（输入短接到地，记下读数，以后减掉）；或者高增益档换失调更小的运放。注意：动手实验篇用①÷②算倍数，只是为了让<strong>校准出来的倍数</strong>不被失调带偏；真正读数时，失调仍然在，还是要靠零点校准扣掉。</p>
+</blockquote>
+<p>练习 3 答案的末句改为：「所以高增益档必须做零点校准；动手实验篇用②当分母，只是让测出的倍数本身准确。」</p>
+</li>
+<li>
+<p><strong>为什么</strong>：[5] 不要制造新的误区。</p>
+</li>
+</ul>
+<h3 id="必改-11面包板图里最关键的输入线终点画在两列之间还被-r_f-盖住">必改-11　面包板图里最关键的输入线终点画在两列之间，还被 <span class="math math-inline">\(R_f\)</span> 盖住</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4 搭建第 4 步：「最后一根绿线从 d13 跨到第 6 列下半（LM358 的 3 脚）」；图 35-p4-1；图 35-p4-2 写的是「绿线 d13→g6」。</li>
+<li><strong>问题</strong>：放大图 35-p4-1 可以看到，这根绿线从芯片下方竖下来时落在第 6 列和第 7 列<strong>之间</strong>（<code>code/figs/35_figs.py</code> 第 581 行 <code>via=[(6.5, 2.0), ...]</code>），终点 g6 被 <span class="math math-inline">\(R_f\)</span> 100k 的电阻本体盖住了。第 7 列是 4 脚 GND，在手机上很容易插错。文字说「第 6 列下半」，原理图说「g6」，两处说法也不统一。</li>
+<li><strong>改法</strong>：把 via 改到整数列（例如 <code>(6, 2.0)</code>），终点改到不被元件盖住的 h6 旁边，或者把 <span class="math math-inline">\(R_f\)</span> 挪到 f 行以外，保证终点那个孔可见。第 4 步文字统一成：
+<blockquote>
+<p>最后一根绿线从 d13 接到 <strong>g6</strong>（第 6 列下半，正对 LM358 的 3 脚；别插到第 7 列，那是 4 脚 GND）。</p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：AUTHOR_GUIDE 的面包板要求（孔位可读）；[1] 在手机上看，模糊的终点会额外增加认知负荷。读者按图插错以后，测量表第 3 步会全线失败。</li>
+</ul>
+<h3 id="必改-12前向引用用还没学过的-36-节解释回差">必改-12　前向引用：用还没学过的 36 节解释「回差」</h3>
+<ul>
+<li><strong>页面/段落</strong>：page2「五」：「两条门槛之间的这段空隙叫<strong>回差</strong>，它和 36 节施密特触发器的回差是同一个思想。」</li>
+<li><strong>问题</strong>：36 节在 35 节之后，读者按顺序学，这时还没见过 36。第一部分的 10 节已经讲过回差（10 page1「解决办法：上、下用两条线」：「比较器里这段缓冲带叫<strong>回差</strong>（也叫迟滞）」）。</li>
+<li><strong>改法</strong>：
+<blockquote>
+<p>两条门槛之间的这段空隙叫<strong>回差</strong>，和 <a href="../../../10-voltage-comparator/page1.html">10 电压比较器 · 直觉篇</a> 「解决办法：上、下用两条线」里比较器的回差是同一个思想：只差一点点时不动作，免得来回抖。下一节（36）还会再用到它。</p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：[3] 间隔复习要回指已经学过的内容；[1] 不引用读者还没学过的东西。</li>
+</ul>
+<h2 id="五建议">五、建议</h2>
+<h3 id="建议-01参数改变之前先让读者预测page3-图-35-p3-235-p3-3">建议-01　参数改变之前先让读者预测（page3 图 35-p3-2、35-p3-3）</h3>
+<ul>
+<li><strong>页面/段落</strong>：page3「二」：「图 35-p3-2 把 UP 改成 45 %，输入固定 0.6 V，请看左边那条方波。」page3「四」：「请看图 35-p3-3 上图里 100 ms 处那三个尖峰……」。</li>
+<li><strong>问题</strong>：都是先看图、再讲道理，读者没有机会先猜。</li>
+<li><strong>改法</strong>：35-p3-2 前加：「<strong>先猜</strong>：UP 从 30 % 提到 45 %，0.6 V 输入会停在哪一档？（提示：X0 是 39.9 %，X1 是 101.7 %。）」35-p3-3 前加：「<strong>先猜</strong>：积分越慢（ <span class="math math-inline">\(\tau_i\)</span> 越大），输入突然 ×10 时，第一个周期的输出会冲得更高还是更低？」</li>
+<li><strong>为什么</strong>：[3] 先预测再看证据；[5]。</li>
+</ul>
+<h3 id="建议-02图-35-p3-3-t--0-的启动瞬态没有解释图例用了-τ-而不是-τ_i">建议-02　图 35-p3-3 t = 0 的启动瞬态没有解释，图例用了 τ 而不是 τ_i</h3>
+<ul>
+<li><strong>页面/段落</strong>：page3「四」图 35-p3-3 和后面三条解读。</li>
+<li><strong>问题</strong>：上图 0 ms 处有一个很大的启动冲高（增益从 40 dB 起步，输出冲到约 5 V，然后跌到约 0.016 V）。正文和 alt 都没提，读者会以为那是 100 ms 处要看的「尖峰」。图例写的是「τ = 1 ms」，正文写的是 <span class="math math-inline">\(\tau_i\)</span> 。</li>
+<li><strong>改法</strong>：图后加一句：「0 ms 处的冲高是仿真起步时增益从 40 dB 开始造成的，和本节讨论无关，只看 100 ms 和 300 ms 两处。」图例改成「τ_i = 1 ms / 5 ms / 50 ms」；或者把横轴从 50 ms 开始画。</li>
+<li><strong>为什么</strong>：[4] 图上的每个显眼特征都要有对应的文字解读。</li>
+</ul>
+<h3 id="建议-03图-35-p2-4-的输入线用了灰色">建议-03　图 35-p2-4 的输入线用了灰色</h3>
+<ul>
+<li><strong>页面/段落</strong>：图 35-p2-4，alt：「灰色细线是 1 kHz 输入正弦」。</li>
+<li><strong>问题</strong>：figstyle 约定蓝色是输入，灰点线是参考。这张图里蓝色给了单二极管检波，读者会误以为蓝线是输入。</li>
+<li><strong>改法</strong>：输入改成蓝色细线；单二极管检波改用蓝绿色虚线，精密检波保持橙色；alt 和正文的颜色词同步改。</li>
+<li><strong>为什么</strong>：AUTHOR_GUIDE 颜色约定；[4]。</li>
+</ul>
+<h3 id="建议-04db-档差的说法偏粗">建议-04　dB 档差的说法偏粗</h3>
+<ul>
+<li><strong>页面/段落</strong>：page1「回顾：分贝」：「相邻两档差 6～8 dB，也就是每档差 2～2.5 倍。」</li>
+<li><strong>问题</strong>：按名义倍数，五个档差分别是 8.24、5.81、6.20、7.87、5.94 dB，倍数比最大是 5.17/2 = 2.58，超出了「2～2.5 倍」。</li>
+<li><strong>改法</strong>：「相邻两档差约 6～8 dB，也就是每档约 2～2.6 倍。」</li>
+<li><strong>为什么</strong>：读者会自己按计算器验证，数字要经得起验算。</li>
+</ul>
+<h3 id="建议-05首次出现的术语补一句白话">建议-05　首次出现的术语补一句白话</h3>
+<ul>
+<li><strong>页面/段落</strong>：page3「一」：「说明 LM358 接成低倍数时相位余量变小」；page2「三」：「LM358 的偏置电流只有几十纳安」；page2「五」：「量化误差就不超过 1/184」；page2 代码里的 <code>LSB</code>。</li>
+<li><strong>问题</strong>：高中读者没见过这几个词。</li>
+<li><strong>改法</strong>：分别改成：「……相位余量变小（相位余量可以理解为负反馈离『变成振荡』还有多远，余量小了频响就会冒出一个峰）」；「偏置电流（运放输入脚本身要吸进或流出的一点点电流）只有几十纳安」；「量化误差（ADC 只能给整数个字，最多差 1 个字带来的误差）」；代码注释写「LSB：1 个字代表的电压」。</li>
+<li><strong>为什么</strong>：[1] 新词不解释会占用工作记忆。</li>
+</ul>
+<h3 id="建议-06page4-测量表里-②④-用-20-v-挡分辨不出来">建议-06　page4 测量表里 ②、④ 用 20 V 挡分辨不出来</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4 测量表第 3～7 步，「挡位」一栏写「直流 20 V」，预期值写「② 1.002 V」「② 0.402 V」等。</li>
+<li><strong>问题</strong>：20 V 挡最小只显示 0.01 V，读者读不出 1.002 和 1.000 的差别，预期值的第三位小数也就无从核对。</li>
+<li><strong>改法</strong>：挡位改为「②、④用直流 2 V，①用 20 V」（第 4～7 步的②在 0.4 V 以下，可以用 2 V 挡或 200 mV 挡），并在表前加一句：「同一个数要读到小数点后第三位，必须换到 2 V 挡。」</li>
+<li><strong>为什么</strong>：动手验证必须能真的读出预期值。</li>
+</ul>
+<h3 id="建议-07测量表a-接-5-v和-arduino-的连线冲突fixed-的用法没说">建议-07　测量表「A 接 +5 V」和 Arduino 的连线冲突，<code>FIXED</code> 的用法没说</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4 测量表第 4 步「X1（A 接 +5 V）」；sketch 里的「<code>FIXED</code> 0～5：固定在这一档（做测量表时用）」。</li>
+<li><strong>问题</strong>：如果读者已经把 A 线接到了 D2，再按表去「接 +5 V」，等于把 D2 输出和 +5 V 轨短接（D2 输出低电平时会烧脚）。表里也没有提 <code>FIXED</code>。</li>
+<li><strong>改法</strong>：测量表前加：
+<blockquote>
+<p>有 Arduino 时，不要拔插 A、B、C 线，把程序里的 <code>FIXED</code> 改成要测的档号（0～5）再上传；没有 Arduino 时，才把三根线从 Arduino 上拔下来，按下面的档位表插到 +5 V 轨或 0 V 轨。</p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：安全，也减少读者的困惑。</li>
+</ul>
+<h3 id="建议-083-节-aa-电池约-45-v供电时预期值会变">建议-08　3 节 AA 电池（约 4.5 V）供电时，预期值会变</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4 搭建第 1 步：「没有 Arduino 就用 USB 电源模块或 3 节 AA 电池」。</li>
+<li><strong>问题</strong>：4.5 V 时 CD4051 的 <span class="math math-inline">\(R_{on}\)</span> 会更大，LM358 的输出上限会降到约 3.3 V，测量表里的「应该读到」都会偏离，读者会误以为自己接错了。</li>
+<li><strong>改法</strong>：括号补一句：「（用 4.5 V 时， <span class="math math-inline">\(R_{on}\)</span> 会比 470 Ω 大一些，X4、X5 的倍数会比表里再小几 %，这是正常现象；按第 8 步反算出你自己的 <span class="math math-inline">\(R_{on}\)</span> 就行。）」</li>
+<li><strong>为什么</strong>：动手实验要把可预见的偏差事先说清楚。</li>
+</ul>
+<h3 id="建议-09page4-python-代码开头两行用不上">建议-09　page4 Python 代码开头两行用不上</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4 核对代码：<code>import sys, pathlib</code> / <code>sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))</code>。</li>
+<li><strong>问题</strong>：后面的代码没有 import 任何模块，这两行只会让读者以为必须在仓库根目录运行。在 /tmp 副本中删掉这两行，输出不变。</li>
+<li><strong>改法</strong>：删掉这两行，注释改为「# 任意目录都能运行」。</li>
+<li><strong>为什么</strong>：[1] 无关信息会增加认知负荷。</li>
+</ul>
+<h3 id="建议-10图-35-p2-1-的-cd4051-没有按-brief-画成带引脚名的方框">建议-10　图 35-p2-1 的 CD4051 没有按 BRIEF 画成带引脚名的方框</h3>
+<ul>
+<li><strong>页面/段落</strong>：图 35-p2-1。</li>
+<li><strong>问题</strong>：BRIEF §2 要求 CD4051 用 <code>schem.module</code> 画成带引脚名的方框。现在画成了六个分立开关，A/B/C、INH、VEE 都看不到，和 page4 的图 35-p4-2（方框）风格不一致。</li>
+<li><strong>改法</strong>：用 <code>schem.module</code> 画 CD4051 方框，标 COM(3)、X0(13)～X5(5)、A(11)、B(10)、C(9)、INH(6)；方框里用一个示意开关表示当前接通的是 X5，旁边注「每路导通约 470 Ω」。</li>
+<li><strong>为什么</strong>：图形的前后一致可以降低认知负荷 [1]，也能为 page4 做铺垫。</li>
+</ul>
+<h3 id="建议-11图-35-p2-3-抽头接法里看不见开关">建议-11　图 35-p2-3 抽头接法里看不见开关</h3>
+<ul>
+<li><strong>页面/段落</strong>：图 35-p2-3，「R_on 在这里」标在 COM 点上。</li>
+<li><strong>问题</strong>：各抽头只画了空心圆，没有画开关符号，读者看不出「开关串在反相端引线里」这句话对应图上的哪里。</li>
+<li><strong>改法</strong>：在每个抽头和 COM 之间画开关符号（当前接通的那个用橙色），把「R_on 470 Ω（几乎不流电流）」标在开关旁边，再用天蓝色箭头标出链电流 20 µA 走的是电阻链，不经过开关。</li>
+<li><strong>为什么</strong>：[4] 关键论点必须能在图上指出来。</li>
+</ul>
+<h3 id="建议-12page2一cd4051-引脚只有文字">建议-12　page2「一」CD4051 引脚只有文字</h3>
+<ul>
+<li><strong>页面/段落</strong>：page2「一」：「它的电源脚是 VDD（16 脚）、VSS（8 脚）和 VEE（7 脚）……」。</li>
+<li><strong>问题</strong>：X0～X7 的引脚号不按顺序排（X0 = 13、X4 = 1、X5 = 5），page4 接线全要靠它，正文里却从来没给过。</li>
+<li><strong>改法</strong>：加一张 CD4051 引脚图（16 脚 DIP 俯视，标出每脚名称），图后写一句：「通道脚的编号不按顺序排，接线时一定要对照这张图。」</li>
+<li><strong>为什么</strong>：[4]；也是 page4 少插错线的前提。</li>
+</ul>
+<h3 id="建议-13图-35-p4-2-漏掉面包板上的几处连接改线也没有画出来">建议-13　图 35-p4-2 漏掉面包板上的几处连接，改线也没有画出来</h3>
+<ul>
+<li><strong>页面/段落</strong>：图 35-p4-2 和测量表第 6～9 步。</li>
+<li><strong>问题</strong>：面包板上有 LM358 的 B 半边（c5–c6、a7 接地）、两只 100 nF、Arduino 的 5V/GND，原理图里都没有。第 6～8 步把输入线改插 d17、第 9 步改插 0 V 轨，原理图里只在一个节点旁标了「第 17 列（÷11）」。</li>
+<li><strong>改法</strong>：原理图补上 B 半边跟随器接地、两只去耦电容和电源来源；从 d13、d17、0 V 三处各画一段灰点线到 ④，标「第 3～5 步」「第 6～8 步」「第 9 步」。</li>
+<li><strong>为什么</strong>：规则要求面包板图旁有对应的<strong>完整</strong>原理图；[4]。</li>
+</ul>
+<h3 id="建议-14没有-arduino-时缺一张-abc-档位对照表">建议-14　没有 Arduino 时，缺一张 A/B/C 档位对照表</h3>
+<ul>
+<li>
+<p><strong>页面/段落</strong>：page4「没有 Arduino 也能做完整个实验：……把 A、B、C 三根线手动插到 +5 V 轨或 0 V 轨来选档」。</p>
+</li>
+<li>
+<p><strong>问题</strong>：读者要自己把 0～5 换成二进制，还要换算成「插哪条轨」，测量表里也只是零散地写着「A 接 +5 V」「C、A 接 +5 V」。</p>
+</li>
+<li>
+<p><strong>改法</strong>：加一张小表：</p>
+<table>
+<thead>
+<tr>
+<th>档</th>
+<th>C（第 27 列）</th>
+<th>B（第 26 列）</th>
+<th>A（第 25 列）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>X0</td>
+<td>0 V</td>
+<td>0 V</td>
+<td>0 V</td>
+</tr>
+<tr>
+<td>X1</td>
+<td>0 V</td>
+<td>0 V</td>
+<td>+5 V</td>
+</tr>
+<tr>
+<td>X2</td>
+<td>0 V</td>
+<td>+5 V</td>
+<td>0 V</td>
+</tr>
+<tr>
+<td>X3</td>
+<td>0 V</td>
+<td>+5 V</td>
+<td>+5 V</td>
+</tr>
+<tr>
+<td>X4</td>
+<td>+5 V</td>
+<td>0 V</td>
+<td>0 V</td>
+</tr>
+<tr>
+<td>X5</td>
+<td>+5 V</td>
+<td>0 V</td>
+<td>+5 V</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p><strong>为什么</strong>：[1] 把这一步外化成表格，读者就不用在脑子里做二进制换算。</p>
+</li>
+</ul>
+<h3 id="建议-15图-35-p3-2-的45-标签压在-x0-字样上">建议-15　图 35-p3-2 的「45 %」标签压在 X0 字样上</h3>
+<ul>
+<li><strong>页面/段落</strong>：图 35-p3-2 左图。</li>
+<li><strong>问题</strong>：在手机上看不清。</li>
+<li><strong>改法</strong>：把标签往右挪，或者放到线的上方。</li>
+<li><strong>为什么</strong>：手机可读性。</li>
+</ul>
+<h3 id="建议-16page1-三种做法第-1-项应指向原理图">建议-16　page1 三种做法第 1 项应指向原理图</h3>
+<ul>
+<li><strong>页面/段落</strong>：page1：「用一个 8 选 1 的模拟开关（CD4051）从六只 <span class="math math-inline">\(R_g\)</span> 里挑一只，倍数就跟着变。」</li>
+<li><strong>改法</strong>：句末加「（电路见原理与实现篇图 35-p2-1）」。</li>
+<li><strong>为什么</strong>：规则要求讲连接处要有原理图；直觉篇不必再画一张，指过去就行。</li>
+</ul>
+<h3 id="建议-17page2一的同相放大接法先指图">建议-17　page2「一」的同相放大接法先指图</h3>
+<ul>
+<li><strong>页面/段落</strong>：page2「一」：「信号接运放的同相端，输出经 <span class="math math-inline">\(R_f\)</span> 回到反相端，反相端再经 <span class="math math-inline">\(R_g\)</span> 接地。」</li>
+<li><strong>改法</strong>：句末加「（就是下面图 35-p2-1 的上半部分，先把 CD4051 那一排看成一只 <span class="math math-inline">\(R_g\)</span> ）」。</li>
+<li><strong>为什么</strong>：[4] 讲连接的文字和图要放在一起。</li>
+</ul>
+<h3 id="建议-18page4-交代一句为什么实验不做峰值检波">建议-18　page4 交代一句为什么实验不做峰值检波</h3>
+<ul>
+<li><strong>页面/段落</strong>：page4「这次实验要验证什么」。设计稿 §35 的 page4 写的是「ADC 读峰值并自动换档」，实际实验全部是直流。</li>
+<li><strong>问题</strong>：读者学完 page2「四」，会期待在实验里看到峰值检波。page2 只在括号里说了一句「实验里……输入也是直流，不需要检波」。</li>
+<li><strong>改法</strong>：第 4 条后面加：「本页全部用直流，免去示波器和信号源；换成交流信号时，只要在 A0 前面加原理与实现篇图 35-p2-4a 的精密峰值检波，程序不用改。」</li>
+<li><strong>为什么</strong>：[6] 把具体实验和更一般的情况连起来。</li>
+</ul>
+<h2 id="六已核对无误的数值节选">六、已核对无误的数值（节选）</h2>
+<ul>
+<li>page2 代码在 /tmp 副本中运行，输出逐行和正文一致：70 字、116 字、−0.97 %、−0.29 %，量程内读数 191～535 字，最大误差 −0.32 %。</li>
+<li><code>code/35_sim.py</code> 运行结果和正文一致：15 次换档、削顶 0 次、100 ms 回到 X5、0.46 %、5.7 %、35.3 %；page3 表格 3.00/5.25/8.47 V、28/42/85 ms、0.96/0.01/0.00 dB。</li>
+<li>page4 核对代码运行后，输出和正文一致：R_on ≈ 468 Ω，「全部在范围内」。</li>
+<li>手算核对：69.03、18.95 / −8.03 %、48.06 / −5.77 %、46.1 kΩ、65 ms、0.115 ms、0.133 V、0.48 V / 16 %、R_on = 10.2 mV ÷ 21.7 µA ≈ 470 Ω、73.4 / 6 %、395～451 字、电位器滑动端上限 1.29 V、÷11 节点、AD8331 的 18.5 dB / 8.4 倍与 −4.5～43.5 dB、20 lg 202 = 46.11 dB。</li>
+<li>面包板孔位和 CD4051 引脚逐一对过：X0 = 13 → 第 23 列、X1 = 14 → 第 22 列、X2 = 15 → 第 21 列、X3 = 12 → 第 24 列、X4 = 1 → j20、X5 = 5 → j24、COM = 3 → i22、A/B/C = 11/10/9 → 第 25/26/27 列，都和文字一致。唯一的问题是必改-11 那根输入线。</li>
+</ul>
+<h2 id="参考均引自-reviewteacherbest-practicesmd">参考（均引自 review/teacher/best-practices.md）</h2>
+<ul>
+<li>[1] 认知负荷：NSW CESE 2017，<a href="https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory">https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory</a> ；Rosenshine 2012，<a href="https://www.aft.org/ae/spring2012/rosenshine">https://www.aft.org/ae/spring2012/rosenshine</a></li>
+<li>[2] 样例与渐隐样例：Pashler 等，IES 2007，<a href="https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf">https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf</a></li>
+<li>[3] 提取练习与间隔复习：<a href="https://www.learningscientists.org/blog/2016/6/23-1">https://www.learningscientists.org/blog/2016/6/23-1</a> ；<a href="https://www.retrievalpractice.org/">https://www.retrievalpractice.org/</a></li>
+<li>[4] 双编码：<a href="https://www.learningscientists.org/blog/2016/9/1-1">https://www.learningscientists.org/blog/2016/9/1-1</a></li>
+<li>[5] 先处理误区：PRPER 2024，<a href="https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128">https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128</a> ；Pashler 建议 7</li>
+<li>[6] 由具体到抽象：Pashler 建议 4（同 [2] 链接）</li>
+</ul>
+<h2 id="计数">计数</h2>
+<p>必改 12、建议 18（用 <code>grep -c &quot;^### 必改-&quot;</code> 和 <code>grep -c &quot;^### 建议-&quot;</code> 统计）。</p>
+<h2 id="复核2026-10-27">复核（2026-10-27）</h2>
+<p>复核依据：重读 35-pga-agc/page1～4.md（修改时间 17:57～18:40）；用 Read 打开全部新增/改动的图（35_p2_0_pins、35_p2_1_series、35_p2_3_kelvin、35_p2_peak_schem、35_agc_loop、35_p3_2_hunting、35_p3_3_agc_speed、35_p4_1_bb_pga、35_p4_2_schem_lab），面包板图放大后逐孔核对；把 page2、page4 的 Python 拷到 /tmp 运行，另把 code/35_sim.py 拷到 /tmp 运行，核对正文数字。<code>notes/part2-status.log</code> 的「fix done」只作参考，以下结论全部以页面实际内容为准。</p>
+<h3 id="1-原必改逐条核对">1. 原必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据（页 + 行，引新句）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-01 换档规则渐隐样例</td>
+<td>✅</td>
+<td>page2 L179–215：新增例 4（完整示例，0.15 V：「X0 … 10.0 %」「X1 … 25.4 %」「X2 … 48.6 %，停下」）、例 5 填表（50 mV，答案 0.100/3.3 %、0.254/8.5 %、0.486/16.2 %、0.948/31.6 % 停）、例 6 变体（0.5 V 从 X5 起：「到 X1 是 0.5 × 5.087 = 2.54 V，占 84.8 %，停下」）。数字逐个复算无误</td>
+</tr>
+<tr>
+<td>必改-02 先暴露 R_on 误区</td>
+<td>✅</td>
+<td>page2 L27「<strong>先猜一猜</strong>：……倍数应该是多少？如果实测只有 69 倍，你觉得少掉的那部分去了哪里？」；page4 L9「先预测，再测量……填进文末记录表的『理想值（测前填）』一列」，记录表 L240 已加该列</td>
+</tr>
+<tr>
+<td>必改-03 图 p1-1 文字与图对不上</td>
+<td>✅</td>
+<td>page1 L21「它的 90 % 是 553 个字，30 % 是 184 个字」；L25「只要输入在约 13 mV 到 1.35 V 之间……也就是 184 到 553 个字；比 13 mV 还小时……读数就会掉到 184 字以下」；alt 文本 L17 同步为 184/553/614</td>
+</tr>
+<tr>
+<td>必改-04 69 与 101 打架</td>
+<td>✅</td>
+<td>page1 L23「按公式应是 101 倍，实际只有约 69 倍，原因留到原理与实现篇揭晓，先记住这个『少了三成』」；小结 L84「倍数按公式从 2 倍到 101 倍，实测最高档只有约 69 倍，差出来的部分是下一页的主角」</td>
+</tr>
+<tr>
+<td>必改-05 峰值检测缺原理图</td>
+<td>✅</td>
+<td>page2 L82–86 新图 35-p2-5（35_p2_peak_schem）：左单二极管、右精密峰值检波，橙色标「反馈从二极管后面取」；L88 对两图逐一解释</td>
+</tr>
+<tr>
+<td>必改-06 模拟 AGC 缺框图</td>
+<td>✅</td>
+<td>新图 35_agc_loop 用在 page1 L53–57（图 35-p1-3）、page2 L149–153（图 35-p2-8）、page3 L47–51（图 35-p3-3，「τ_d 在检波框里，τ_i 在积分框里」）；三处正文都有读图引导</td>
+</tr>
+<tr>
+<td>必改-07 page3 练习 1 被剧透</td>
+<td>✅</td>
+<td>page3 L115 改为 0.35 V：答案 L119「0.698 V……23.3 %……X1 是 0.35 × 5.087 = 1.780 V，59.3 %」，正文和图 35-p3-2 用的是 0.6 V，不再能翻页抄答案</td>
+</tr>
+<tr>
+<td>必改-08 例 2 答案印在表里</td>
+<td>✅</td>
+<td>page2 L163 改为空着的 X6 + 3.3 kΩ：答案 L167「3.77 kΩ；G = 27.5；误差 −12.1 %」，表里没有这一档</td>
+</tr>
+<tr>
+<td>必改-09 思考题 1、3 答案在上文</td>
+<td>✅</td>
+<td>page4 L257 思考 1 改为 R_on = 1050 Ω（答案 15.6 µA、③ ≈ 15.6 mV、②−③ ≈ 16.3 mV、49.8 倍、① ≈ 1.59 V）；L273 思考 3 改为 27 / 451 字（29.99 mV vs 31.9 mV，6 %）。复算均对</td>
+</tr>
+<tr>
+<td>必改-10 ①÷② 不是失调对策</td>
+<td>✅</td>
+<td>page3 L83「动手实验篇用①÷②算倍数，只是为了让<strong>校准出来的倍数</strong>不被失调带偏；真正读数时，失调仍然在，还是要靠零点校准扣掉」；page3 L135、page4 L154、page4 小结 L293 口径一致</td>
+</tr>
+<tr>
+<td>必改-11 输入线终点不清</td>
+<td>✅</td>
+<td>page4 L62「最后一根绿线把 d13 接到 h6（第 6 列下半，正对 LM358 的 3 脚；别插到第 7 列，那是 4 脚 GND）」。放大图核对：绿线从 d13 下行、在 g/h 两行之间左行，终点实心点落在 h6，④圈也在 h6；R_f 在 g4–g9，不再盖住终点。文字、alt、图三者一致</td>
+</tr>
+<tr>
+<td>必改-12 回差前向引用 36</td>
+<td>✅</td>
+<td>page2 L102「和 [10 电压比较器 · 直觉篇] 『解决办法：上、下用两条线』里比较器的回差是同一个思想……下一节（36）还会再用到它」</td>
+</tr>
+</tbody>
+</table>
+<p>原必改 12 条全部改好（12 ✅）。</p>
+<h3 id="2-原建议采纳情况">2. 原建议采纳情况</h3>
+<ul>
+<li>已采纳：01（page3 L29、L55 两处「先猜」）、02（page3 L63 解释 0 ms 冲高；图 p3-4 图例已写 τ_i，图内也注明「0 ms 的冲高……不看它」）、03（图 p2-6 输入为蓝色）、04（page1 L77「每档约 2～2.6 倍」）、05（相位余量 page3 L17、偏置电流 page2 L74、量化误差 page2 L100、LSB page2 L114 都配了白话）、06（page4 L154「②和④在 2 V 以下时用 2 V 挡」，表中 ②④ 改 2 V/200 mV 挡）、07（page4 L141 说清 <code>FIXED</code> 用法和「不要再把 A/B/C 线拔下来插到电源轨上」）、08（page4 L18、L158、L167 写了 4.5 V 电池的影响）、09（page4 代码已无 sys/pathlib）、10（图 p2-2 画成带引脚名的 CD4051 方框）、11（图 p2-4 每个抽头都画出开关，X5 橙色接通）、12（新图 p2-1 引脚图）、13（图 p4-2 补了 B 组跟随器、C1/C2 去耦、5 V/GND 注释、d17 改插和第 9 步接地两条灰色点线）、14（page4 L145–152 A/B/C 档位对照表，标明第 25/26/27 列）、16（page1 L47「电路图见那一页『二、最直接的接法』」）、17（page2 L7 指向图 35-p2-2）、18（page4 L14 说明为什么不需要峰值检波）。</li>
+<li>部分采纳：15（图 p3-2 左图「45 %」标签仍压在第 8 个循环的「X0」标签上，见新建议-02）。</li>
+</ul>
+<h3 id="3-新必改--新建议">3. 新必改 / 新建议</h3>
+<h4 id="新必改-01page2-小结里裸露的-lt">新必改-01　page2 小结里裸露的 <code>\lt</code></h4>
+<ul>
+<li>位置：page2 L223（小结第 5 条）「最大档比 2.549 × 30 % = 76.5 % \lt 90 %」。</li>
+<li>问题：<code>\lt</code> 不在 <code>$…$</code> 里，页面上会原样显示成「\lt」。其余页的 <code>\lt</code> 都在公式里，只有这一处漏了（已用 rg 全节排查）。</li>
+<li>改法：改成「76.5 % &lt; 90 %」，或写成 <code>$76.5\% \lt 90\%$</code>。</li>
+<li>原因：这是全节最后一条要背的小结，出现乱码会让读者以为公式丢了。</li>
+</ul>
+<h4 id="新必改-02page4没有示波器怎么办第-2-条讲交流耦合接法但没有对应原理图">新必改-02　page4「没有示波器怎么办」第 2 条讲交流耦合接法，但没有对应原理图</h4>
+<ul>
+<li>位置：page4 L180，「输入线插 d17，把滑动端调到约 0.22 V……信号源经一只 10 µF 电容接到 d17……」。</li>
+<li>问题：这一段讲的是一个新连接（信号源 → 10 µF → d17，与 ÷11 分压的直流偏置叠加 → ④），现有的图 35-p4-1 和 35-p4-2 里都没有这只 10 µF 和信号源。这违反了「每段讲电路连接的文字都有对应原理图」这条规则。读者也不容易想明白 10 µF 的哪一端接哪里、极性怎么放。</li>
+<li>改法（二选一）：
+<ul>
+<li>在图 35-p4-2 的 d17 节点旁，用灰色点线加一支「选做：信号源 ~ → 10 µF（+ 端朝 d17）→ d17」，并在 L180 写「见图 35-p4-2 的灰色点线支路」；</li>
+<li>或者在 L180 后面加一张小原理图：5 V → 15k → 电位器 → 10k/1k ÷11 → d17；信号源经 10 µF 接到 d17；d17 接 LM358 的 3 脚。</li>
+</ul>
+</li>
+<li>原因：这是本页唯一一个只有文字、没有原理图的接法；补上以后，本节就完全满足这条规则。</li>
+</ul>
+<h4 id="新建议-01page3-练习-4-的答案区间要说清楚">新建议-01　page3 练习 4 的答案区间要说清楚</h4>
+<ul>
+<li>位置：page3 L143，答案「约 0.1～0.5 ms 起步；同时它必须比回波串短」。</li>
+<li>问题：回波串本身只有约 0.5 ms，区间上限正好等于它，前后自相矛盾。</li>
+<li>改法：改成「约 0.1～0.2 ms（信号周期 25 µs 的 4～8 倍，又明显短于 0.5 ms 的回波串）」。</li>
+</ul>
+<h4 id="新建议-02图-35-p3-2-左图的标签重叠">新建议-02　图 35-p3-2 左图的标签重叠</h4>
+<ul>
+<li>位置：图 35-p3-2（35_p3_2_hunting.png）左图。</li>
+<li>问题：灰色点线上的「45 %」标签压在第 8 个循环的「X0」标签上。</li>
+<li>改法：把「45 %」挪到最右端（比如 x ≈ 13.3），与「90 %」标签对齐。</li>
+</ul>
+<h4 id="新建议-03图-35-p4-1-输入线的走线离-h9-太近">新建议-03　图 35-p4-1 输入线的走线离 h9 太近</h4>
+<ul>
+<li>位置：图 35-p4-1。</li>
+<li>问题：输入绿线在 g、h 两行之间横穿第 7～9 列，正好从 h5–h9 弧线的 h9 端点上方擦过。没有画结点，所以不算错，但初学者可能误以为输入线也接到了第 9 列（反相端）。</li>
+<li>改法：把这段横线挪到 h 行和 i 行之间（i 行第 6～9 列是空的），或者干脆从 d13 直接斜拉到 h6。</li>
+</ul>
+<h3 id="4-三项重新评分">4. 三项重新评分</h3>
+<ul>
+<li>① 深入浅出：<strong>好</strong>（原为好）。顺序是现象（p1-1）→ 公式 → 先猜 → 误差表 → 抽头接法 → 峰值检波 → AGC 环。新加的引脚图、峰值检波原理图和 AGC 框图把原来只靠文字的三处补齐了。每个数都能用 35_sim.py 和页内代码复现。</li>
+<li>② 浅显易懂、好学：<strong>好</strong>（原为一般）。页面上有「先猜」三处（page2「二」、page3「二」「四」）；首次出现的术语都配了白话；page1 的 69 / 101 有了交代；测量表的挡位、FIXED 的用法和电池供电的情况都写清楚了；面包板图和原理图孔位标注一致。</li>
+<li>③ 举一反三：<strong>好</strong>（原为一般）。换档规则现在有完整的「完整示例 → 填表 → 变体」三步（例 4/5/6）；例 2 和例 3 是迁移题（X6 新档、反求 R_g）；page3 练习 1/2/4 和 page4 思考 1/3 都换成了不能翻页抄的新数字；练习 4 迁移到 40 kHz 超声。</li>
+</ul>
+<h3 id="5-每段连接文字每张面包板图旁都有原理图复查">5. 「每段连接文字、每张面包板图旁都有原理图」复查</h3>
+<ul>
+<li>page2：每种接法都有原理图。「二」串联接法对应图 p2-2，「三」抽头接法对应图 p2-4，「四」两种峰值检波对应图 p2-5，「六」AGC 环对应图 p2-8（框图）。page1 只讲方框级，有图 p1-2 和 p1-3。page3 不讲新接法。</li>
+<li>page4：面包板图 p4-1 紧跟原理图 p4-2，后者标了孔位和测量点①～④，也画了 d17 改插和第 9 步接地两条点线。逐孔核对结果：LM358 第 4～7 列，1 脚在 f4；R_f 在 g4–g9；弧线 h5–h9；输入线 d13→h6；1k 在 i4–i1，j1 接 A0；j7 接地；B 组 c5–c6 和 a7 接地；15k 在 b10–b12；电位器在 c12–c14；10k 在 b13–b17；1k 从 a17 接地。CD4051 第 20～27 列：X2/X1/X0 在第 21/22/23 列上排接地，X3 从 b24 接到第 25 列地轨，X4 在 j20，X5 在 j24；COM 线 i22→i9；j25～j27 接地；A/B/C 在 b25/b26/b27；第 30 列连通上下两条 0 V 轨；两只 100 nF 分别在 b4 和 b20 到地。以上全部与文字、alt、原理图一致。</li>
+<li>唯一缺口：page4 L180 的交流耦合接法，见新必改-02。</li>
+</ul>
+<h3 id="6-安全复查">6. 安全复查</h3>
+<ul>
+<li>手摸测温：已删除。page4 L22 现在是「不要用手去试芯片热不热；如果闻到焦味……立刻断电」，并给出整机电流约 2 mA。✅</li>
+<li>带电改线：page4 L23 规定「接线、改线之前先断电」，唯一例外是 A/B/C 选择线和输入线，因为它们都是 5 V 以内的小信号；有 Arduino 时，L141 又明确禁止把 A/B/C 线插到电源轨上（以免短路输出脚）。L19 规定 CD4051 先上电再接信号。在 5 V、约 2 mA 的电路里，这样的例外是合理的。✅</li>
+<li>电源：只用 12 V 及以下的直流；9～12 V 只进 Arduino 的 DC 插座，芯片只接 5V 脚（L18）；不涉及市电。✅</li>
+</ul>
+<h3 id="7-结论">7. 结论</h3>
+<p><strong>改完新必改-01、02 即可发布</strong>；两条都是小改动，一处文字，一处补原理图支路。</p>
+<ul>
+<li>未改好的旧必改：0</li>
+<li>新必改：2</li>
+<li>新建议：3</li>
+</ul>
+<h2 id="复核2026-10-27第-2-轮">复核（2026-10-27，第 2 轮）</h2>
+<p>复核依据：重读 35-pga-agc/page1～4.md（修改时间 18:54～18:57），逐行通读；用 Read 打开改动过的图 35_p4_3_ac_inject（新增）、35_p3_2_hunting、35_p4_1_bb_pga，并读了 <code>code/figs/35_figs.py</code> 中 <code>p4_3_ac_inject()</code>（L850–894）。新图里的数值都手算复核过：滑动端 0.22 V ÷ 11 = 20 mV；10k∥1k = 909 Ω；1/(2π × 50 Hz × 10 µF) = 318 Ω；909/√(909² + 318²) = 0.944，所以信号源读数比④大约 6 %；X5 档直流 20 mV × 69 + 0.13 V ≈ 1.51 V；交流峰值 10 mV × 69 = 0.69 V；输出摆动范围 0.82～2.20 V。如果把滑动端的源电阻（约 1.16 kΩ）也算进去，d17 的交流等效电阻是 918 Ω，和图上的「≈ 909 Ω」只差 1 %，不影响结论。<code>notes/part2-status.log</code> 第 92 行的修改说明只作参考，下面的结论都以页面实际内容为准。</p>
+<h3 id="1-旧必改核对">1. 旧必改核对</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据（页面 + 行号）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>初审必改-01～12</td>
+<td>✅（仍然保持）</td>
+<td>抽查都还在：page2 L27「先猜一猜」；L181–215 例 4/5/6；L163 例 2（X6 + 3.3 kΩ）；page1 L23、L84 交代了 69 与 101；page1 L25 写「13 mV 到 1.35 V……184 到 553 个字」；page2 L82–88 图 35-p2-5，L149–153 图 35-p2-8；page3 L115 练习 1 用 0.35 V；page3 L83 失调对策口径正确；page4 L62「d13 接到 h6」；page2 L102 回差回指 10 节；page4 L265、L281 思考 1/3 用的是新数字</td>
+</tr>
+<tr>
+<td>第 1 轮新必改-01：page2 小结裸露的 <code>\lt</code></td>
+<td>✅</td>
+<td>page2 L223 已改为「2.549 × 30 % = 76.5 %，小于 90 %，不来回跳」。用 rg 全节排查过，剩下的 <code>\lt</code> 都在 <code>$…$</code> 里（page3 L25、L27、L98、L150）</td>
+</tr>
+<tr>
+<td>第 1 轮新必改-02：交流耦合接法缺原理图</td>
+<td>✅</td>
+<td>page4 L182 有引导句「这条交流支路的接法见图 35-p4-3」；L184 图片和 alt；L186 图题；L188 有读图说明，讲了左半边是直流偏置、右半边是交流支路、电容为什么 + 端朝 d17、909 Ω 和 318 Ω 怎样分压。电路拓扑和图 35-p4-2 一致：RA 15k（b10→b12）→ RP → 地，滑动端 d13 → R10 10k → d17 → R1 1k → 地，d17 接 LM358 3 脚（④）。数值都对。剩下两处和面包板、安全规则对不上，另列为本轮新必改-01、-02</td>
+</tr>
+</tbody>
+</table>
+<p>旧必改合计：14 条全部改好（初审 12 条 + 第 1 轮 2 条），未改好 0 条。</p>
+<p>第 1 轮建议核对：</p>
+<ul>
+<li>新建议-01 ✅：page3 L143 改为「约 0.1～0.2 ms 起步（信号周期 25 µs 的 4～8 倍）；同时它必须明显短于约 0.5 ms 的回波串」，不再自相矛盾。</li>
+<li>新建议-02 ✅：图 35-p3-2 左图的「45 %」已移到坐标框右外侧，与「90 %」对齐，不再压住「X0」（初审建议-15 至此也完全采纳）。</li>
+<li>新建议-03 ❌ 未采纳：图 35-p4-1 的输入绿线仍在 g、h 两行之间，从 h9 弧线端点上方擦过（修改说明里也没提这一条）。仍不算必改，本轮转为新建议-04。</li>
+<li>student1 的小建议：page1 L17 的 alt 已写 553 字的 90 % 线；page1 的 32 节预告保持「预告」口吻。✅</li>
+</ul>
+<h3 id="2-新必改">2. 新必改</h3>
+<h4 id="新必改-01交流支路要求通电时插拔-10-µf和本页先断电再改线的规定矛盾">新必改-01　交流支路要求通电时插拔 10 µF，和本页「先断电再改线」的规定矛盾</h4>
+<ul>
+<li>
+<p><strong>位置</strong>：page4 L188 末句「信号源的地接面包板的 0 V 轨；接的时候先把信号源幅度调到最小，再插 10 µF，量完先拔 10 µF」；图 35-p4-3 底部注「先接好、调到最小再接 10 µF，量完先拔 10 µF」。对照 page4 L23（安全须知）：「<strong>接线、改线之前先断电</strong>……唯一例外：……选择线 A/B/C 和输入线（d13 / d17）」。</p>
+</li>
+<li>
+<p><strong>问题</strong>：10 µF 和信号源都不在 L23 列出的例外里，L188 却要读者通电时插拔。同一页的两条安全规定互相打架，读者会以为「先断电」可以随意破例。另外，如果读者用的是台式函数信号发生器（输出可达 10 V 以上），即使调到「最小」，有的机型最小档也有几百 mV，经 10 µF 直接灌到④，会把 LM358 的 3 脚拉到 0 V 以下。</p>
+</li>
+<li>
+<p><strong>改法</strong>：L188 末句改为：</p>
+<blockquote>
+<p>接法顺序：<strong>先断电</strong>，把信号源幅度旋到最小，再把 10 µF 和信号源的两根线插好（信号源的地接 0 V 轨）；检查无误后再通电，然后把幅度从最小慢慢往上调，直到④的交流读数约 7 mV。④的交流不要超过约 10 mV（有效值），否则波谷会低于 0 V。量完先把幅度调回最小，断电后再拆。</p>
+</blockquote>
+<p>图 35-p4-3 底注同步改为「先断电接好，通电后再从最小调幅度；拆之前先断电」。（另一种改法是把「10 µF 和信号源线」加进 L23 的例外清单，但按本节的安全基调，建议用断电的做法。）</p>
+</li>
+<li>
+<p><strong>原因</strong>：审读要求「不带电改线」；同一页的安全规则必须前后一致。</p>
+</li>
+</ul>
+<h4 id="新必改-0210-µf-被要求插进已经被占用的-d17-孔面包板上没有落脚孔位">新必改-02　10 µF 被要求插进已经被占用的 d17 孔，面包板上没有落脚孔位</h4>
+<ul>
+<li><strong>位置</strong>：page4 L180「信号源经一只 10 µF 电容接到 d17」；L188「电容的 + 端接 d17」；图 35-p4-3 标注「10 µF / + 端朝 d17」。</li>
+<li><strong>问题</strong>：按测量表第 6 步和 L57 的说明，d17 这个孔已经插着输入线的上端（第 17 列上半另外还有 b17 的 10k、a17 的 1k）。一个孔只能插一根引脚，初学者照字面去插会卡住，或者把输入线拔掉。电容 − 端和信号源信号线插在哪里，页面上也没写。图 35-p4-2 和图 35-p4-1 用「d17」既指孔位又指节点，读者到这里还分不清。</li>
+<li><strong>改法</strong>：L180 改为「信号源经一只 10 µF 电容接到第 17 列上半（+ 端插 <strong>c17</strong> 或 e17 这两个空孔，和 d17 的输入线同一列、自然相连；− 端插一个空着的第 18 列上半孔，例如 c18，信号源的信号夹子夹在第 18 列那根跳线上）」。L188「电容的 + 端接 d17」改为「电容的 + 端接第 17 列（c17）」。图 35-p4-3 的电容标注改为「10 µF（+ 端 c17，− 端 c18）」，其余图注里的「d17」保留为节点名。（第 18、19 列上半在图 35-p4-1 里都是空的，已经放大核对过。）</li>
+<li><strong>原因</strong>：新原理图必须和面包板接法一一对应，这是本轮复核要求；孔位不明确的接线，是初学者最常见的卡点。</li>
+</ul>
+<h3 id="3-新建议">3. 新建议</h3>
+<h4 id="新建议-01交流验证缺器材和万用表挡位">新建议-01　交流验证缺器材和万用表挡位</h4>
+<ul>
+<li><strong>位置</strong>：page4 L38 器材清单（只写了「直流电压挡 2 V / 20 V」）；L180「用交流挡分别读④和①」。</li>
+<li><strong>问题</strong>：10 µF 电解电容和信号源都不在器材清单里。④只有 7 mV（有效值），万用表需要有交流 200 mV 挡才能读出来；不少入门表的交流挡最低只有 2 V，有的只有 200 V，用 2 V 挡读 7 mV 只能显示 0.007，误差约 ±14 %。</li>
+<li><strong>改法</strong>：器材清单加一行「选做（交流验证）：10 µF 电解电容 1 只；信号源（手机信号发生器 App + 3.5 mm 转接线，或函数信号发生器）」。L180 补一句「④用交流 200 mV 挡，①用交流 2 V 挡；如果你的表交流挡最低只有 2 V，④读不准，这一项只看个大概」。</li>
+</ul>
+<h4 id="新建议-02page4没有示波器怎么办第-2-条段落太长不适合手机阅读">新建议-02　page4「没有示波器怎么办」第 2 条段落太长，不适合手机阅读</h4>
+<ul>
+<li><strong>位置</strong>：page4 L180（约 410 字，一个列表项里塞了 <span class="math math-inline">\(V_{MID}\)</span> 的定义、反例和完整操作步骤）；L188（约 310 字）。</li>
+<li><strong>改法</strong>：L180 拆成三小段：① 为什么要垫直流（一句话）；② 为什么不能垫 <span class="math math-inline">\(V_{MID}\)</span> （把括号里约 60 字的定义缩成「 <span class="math math-inline">\(V_{MID}\)</span> ：电源一半、约 2.5 V 的参考点」）；③ 操作步骤，写成 1、2、3 编号。L188 把「电容的 + 端……」和「909 Ω、318 Ω 分压」各拆成一段。</li>
+</ul>
+<h4 id="新建议-03交流验证前加一个先猜把它和带宽前一节联系起来">新建议-03　交流验证前加一个「先猜」，把它和带宽、前一节联系起来</h4>
+<ul>
+<li>
+<p><strong>位置</strong>：page4 L180「比值应接近你在第 8 步测出的直流倍数」；L179 已经用陈述句讲了「带宽随档位变窄」。</p>
+</li>
+<li>
+<p><strong>改法</strong>：在操作前加：</p>
+<blockquote>
+<p><strong>先猜</strong>：50 Hz 的交流倍数会比直流倍数小吗？换成 20 kHz 呢？（提示：L179 / 参数与调试篇「一」：X5 带宽约 10～17 kHz。）把 L179 的陈述改为这个先猜的答案。</p>
+</blockquote>
+<p>答案：50～200 Hz 远低于带宽，倍数几乎和直流一样；20 kHz 已超过 X5 的带宽，倍数会明显变小，不过万用表的交流挡在这个频率也读不准，要用示波器看。</p>
+</li>
+<li>
+<p><strong>原因</strong>：[3] 先预测再看证据；③ 参数变化推理。把 page3 的带宽结论迁移到实验里。</p>
+</li>
+</ul>
+<h4 id="新建议-04图-35-p4-1-输入线从-h9-端点上方擦过第-1-轮新建议-03-延续">新建议-04　图 35-p4-1 输入线从 h9 端点上方擦过（第 1 轮新建议-03 延续）</h4>
+<ul>
+<li><strong>位置</strong>：图 35-p4-1。</li>
+<li><strong>改法</strong>：同第 1 轮，把这段横线挪到 h、i 两行之间，或者从 d13 斜拉到 h6。</li>
+</ul>
+<h3 id="4-三项重新评分-1">4. 三项重新评分</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>主线没有变：先讲现象和两难，再先猜、推公式、看误差表，然后是抽头接法、峰值检波、AGC 环，最后上面包板。新加的图 35-p4-3 把「直流偏置 + 交流叠加」讲到了电容极性和分压，数值都能复算</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>好</td>
+<td>术语首次出现都有白话；每处讲接法的地方都有原理图；面包板和原理图孔位一致（只差 10 µF 的落脚孔，见新必改-02）。扣分点：page4 L180、L188 两段太长（新建议-02），但还不到「一般」</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>好</td>
+<td>换档规则按完整示例 → 填表 → 变体走了三步（例 4/5/6）；例 2 用新档 X6，例 3 反求 <span class="math math-inline">\(R_g\)</span> ；page3 练习 4 迁移到 40 kHz 超声；page4 思考 1/3 换了新数字；数字 AGC 和模拟 AGC 对比，并回指 10（回差）、13（峰值）、14（积分）。交流验证如果再加一个「先猜」（新建议-03），会更完整</td>
+</tr>
+</tbody>
+</table>
+<p>三项都不是「差」。</p>
+<h3 id="5-规则检查">5. 规则检查</h3>
+<ul>
+<li><strong>每段连接文字、每张面包板图旁都有原理图</strong>：page1 只讲方框级（图 35-p1-2、35-p1-3），三种做法第 1 项指向原理与实现篇「二」；page2 的同相放大、串联接法、抽头接法、两种峰值检波、AGC 环，分别对应图 35-p2-2、35-p2-4、35-p2-5、35-p2-8，CD4051 引脚对应图 35-p2-1；page3 不引入新接法，AGC 环复用图 35-p3-3；page4 面包板图 35-p4-1 紧跟原理图 35-p4-2，交流支路有图 35-p4-3。✅ 全部满足（孔位细节见新必改-02）。</li>
+<li><strong>安全</strong>：不用手试温度 ✅（page4 L22「不要用手去试芯片热不热」）；只用 12 V 及以下的直流，不涉及市电 ✅（L18）；CD4051 先上电再接信号 ✅（L19）；带电改线 ❌，交流支路要求通电时插拔，见新必改-01。</li>
+<li><strong>00-plan-review 本节手法</strong>：① 渐隐样例 ✅（page2 例 4/5/6）；② 先暴露误区 ✅（page2 L27、page4 L9 和记录表「理想值（测前填）」）；③ 提取练习 ✅（page2 L80 回指 13「三、加一只大电容」和 09）。必需图（CD4051 + 同相、Kelvin、峰值检测）✅，而且峰值检测现在既有原理图 35-p2-5，也有波形图 35-p2-6。</li>
+<li><strong>best-practices [1]～[6]</strong>：颜色词与图一致（图 35-p4-3 里信号源标注用蓝色，代表输入，符合约定）；公式后面都有「意思是」和代数；没有新制造的误区。✅</li>
+</ul>
+<h3 id="6-结论">6. 结论</h3>
+<p><strong>改完新必改-01、02 即可发布。</strong> 两条都是改一两句话外加一处图注：一条把交流支路改成断电插线，一条给 10 µF 写明孔位 c17/c18。</p>
+<ul>
+<li>旧必改：14 条，改好 14，未改好 0</li>
+<li>新必改：2</li>
+<li>新建议：4</li>
+</ul>
+<h2 id="复核第-3-轮">复核（第 3 轮）</h2>
+<p>复核依据：重读 35-pga-agc/page4.md（修改时间 19:26），逐行读了第 16～70 行（安全须知、器材、搭建步骤、对照看）和第 176～217 行（没有示波器怎么办）；用 Read 打开图 35_p4_1_bb_pga.png、35_p4_3_ac_inject.png（修改时间 19:27），把面包板图第 10～18 列上半和第 4～22 列下半裁出来放大，逐孔核对；读了 <code>code/figs/35_figs.py</code> 中 <code>bb35()</code>（L568–641）和 <code>p4_3_ac_inject()</code>。在 /tmp 副本里用 <code>/workspace/circuits-venv/bin/python</code> 跑了 <code>code/figs/35_figs.py</code>，输出「35 p4 面包板：连接检查通过，占用 90 个孔」「[图 35-p4-3] d17 直流 20.0 mV，等效电阻 909 Ω，10 µF@50 Hz 容抗 318 Ω」「35_figs OK」。重画的 35_p4_1、35_p4_2、35_p4_3 三张图和仓库里的逐像素比较，完全相同。另外跑了 count_cjk（page4 5405 字，OK）、run_blocks（page4 PASS 1/1，输出「全部在范围内」）、check_figs、fix_inline_math_spacing --check、check_github_math，四页全部 OK。<code>notes/part2-status.log</code> 第 105 行的修改说明只作参考，下面的结论都以页面和图的实际内容为准。</p>
+<h3 id="1-三项评分">1. 三项评分</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>交流验证分成几段：「为什么要垫直流 → 为什么不能垫 <span class="math math-inline">\(V_{MID}\)</span> → 操作步骤 → 读图（直流偏置 + 交流支路 + 分压）」（L191–213）。顺序是先讲道理，再动手，最后算数，每个数都能复算</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>好</td>
+<td>原来两段 300～400 字的长段（旧 L180/L188）拆成短段和 1～5 编号步骤；孔位精确到 c17/c18/a18；器材表和万用表挡位都补齐了（L38–39、L200）。安全规则前后一致</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>好</td>
+<td>新加的「先猜」（L183–189）把参数与调试篇「一、运放带宽」的 GBW ÷ 倍数迁移到实验里，答案里给了经典 LM358、LM358B 和仿真模型三种数，和 page3 L9、L17 一致（X5 约 10 / 17 / 14 kHz）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="2-旧必改逐条核对">2. 旧必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据（行号 + 原句）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>第 2 轮新必改-01：通电插拔 10 µF</td>
+<td>✅</td>
+<td>page4 L197「1. <strong>先断电</strong>。……插之前先把信号源幅度旋到最小」；L198「检查无误后<strong>通电</strong>」；L199「把信号源幅度从最小慢慢往上调」；L201「量完先把幅度调回最小，<strong>断电后</strong>再拆 10 µF、a18 跳线和信号源」。图 35-p4-3 底注：「先断电接好（幅度旋到最小），通电后再从最小调幅度；拆之前先调回最小、断电。」L23 的例外清单仍然只有 A/B/C 和输入线，交流验证比这条规定更严，不再冲突；alt（L205）也同步写了「先断电接好、通电后从最小调幅度、拆之前先断电」</td>
+</tr>
+<tr>
+<td>第 2 轮新必改-02：10 µF 插进被占用的 d17</td>
+<td>✅</td>
+<td>L197「10 µF 的 + 脚插 c17（和 d17 同一列上半，天然相通），− 脚插 c18；a18 插一根跳线，信号源的信号夹夹在这根线上」；L211「电容的 + 端接第 17 列（c17）」；对照看 L58「选做的 10 µF 不插 d17：它的 + 脚插同一列上半的空孔 c17……− 脚插 c18，a18 再插一根跳线」；第 7 步 L66「选做的 10 µF 和 a18 跳线这时都不插」；L70 写了画图脚本的检查项。面包板图放大核对：第 17 列上半 a17 = 1k（到上方 0 V 轨）、b17 = 10k 右端、c17 = 电容 + 脚（图上「+」号在 c17 一侧）、d17 留给输入线（图中为空，脚本断言 <code>&quot;d17&quot; not in bb.used</code>）、e17 空，<strong>5 孔用 4 个，不超</strong>；第 18 列上半只有 a18 跳线和 c18 电容 − 脚，b18/d18/e18 都空，与第 19、20 列的 100 nF（b20→tn19）不冲突。a18 跳线向上越过两条轨，两处都画了跨线弧，不会被看成接到轨上。极性：c17 一侧约 20 mV 直流，c18 一侧 0 V，+ 端朝高电位，正确；电容两端的交流约是信号源的 318/960 ≈ 0.33 倍，有效值约 2.5 mV，峰值约 3.5 mV，远小于 20 mV 的直流偏置，电容不会被反偏。原理图 35-p4-3 的拓扑和面包板一致：RA 15k（b10→b12）→ RP → 地，滑动端 d13 → R10 → d17 节点 → R1 → 地；节点接输入线到 3 脚（④）、接电容 +（c17）；电容 −（c18）接信号源（a18），信号源地接 0 V</td>
+</tr>
+</tbody>
+</table>
+<p>旧必改合计：16 条全部改好（初审 12 + 第 1 轮 2 + 第 2 轮 2），未改好 0 条。</p>
+<p>第 2 轮建议核对：</p>
+<ul>
+<li>新建议-01 ✅：器材表 L38「选做的交流验证要交流 200 mV 挡」，L39 新增「选做（交流验证）」一行；L200「④用交流 200 mV 挡，①用交流 2 V 挡；如果你的表交流挡最低只有 2 V，④读不准，这一项只看个大概」。</li>
+<li>新建议-02 ✅：旧 L180 拆成 L191（垫直流）、L193（ <span class="math math-inline">\(V_{MID}\)</span> ，定义缩成一句）、L195–201（1～5 编号步骤）；旧 L188 拆成 L209、L211、L213 三段。</li>
+<li>新建议-03 ✅：L183「<strong>先猜</strong>：50 Hz 的交流倍数会比你在第 8 步测出的直流倍数小吗？换成 20 kHz 呢？」，答案折叠在 L185–189。数值复算：0.7 MHz ÷ 69 ≈ 10.1 kHz，1.2 MHz ÷ 69 ≈ 17.4 kHz，0.7 MHz ÷ 2 = 350 kHz，1.2 MHz ÷ 2 = 600 kHz；仿真 X5 约 14 kHz，与 page3 L17 的 14.1 kHz 一致。</li>
+<li>新建议-04 ✅：放大图核对，输入绿线从 d13 下行，在 h、i 两行之间左行，终点在 h6；h5–h9 弧线向上拱，不再从 h9 端点上方擦过。脚本 L585「走 h、i 两行之间，不压 h9」。（横线仍从 h9 和 i9 两个点之间穿过，但没有结点，两个点又同属②节点，不会误导，不再提。）</li>
+</ul>
+<h3 id="3-改动带来的新数值和表述核对">3. 改动带来的新数值和表述核对</h3>
+<ul>
+<li>14 mV 上限：L199「20 mV ÷ √2 ≈ 14 mV，这时峰值正好 20 mV，波谷碰到 0 V；按约 7 mV 做，留了一倍余量」。数值自洽（14.1 mV 有效值 × √2 = 20 mV）。全节只有这一处交流上限，图 35-p4-3 只写目标「约 7 mV（有效值）」，没有别的数和它打架（第 2 轮复核正文里写过「约 10 mV」，那只是审读意见里的改法，不在页面上）。</li>
+<li>7 mV 有效值 → 峰值 9.9 mV ≈ 10 mV；①直流 20 mV × 69 + 0.13 V ≈ 1.51 V；交流峰值 10 mV × 69 = 0.69 V；摆动范围 0.82～2.20 V（L199 写「约 0.8～2.2 V」），都对。即使到了 14 mV 的边缘，①的范围也只是 0.13～2.89 V，仍低于 L168 的输出上限（≥ 3.5 V）。</li>
+<li>安全：交流验证全程断电接线、断电拆线；信号源只接 LM358 的 3 脚这一侧，不碰 CD4051，所以和 L19「CD4051 先上电再接信号」不冲突。✅</li>
+<li>剧透：先猜答案折叠在 <code>&lt;details&gt;</code> 里；不过 L180 有半句提前说了结论，见新建议-02。</li>
+</ul>
+<h3 id="4-新必改">4. 新必改</h3>
+<p>无。本轮没有发现会误导读者或不安全的问题。</p>
+<h3 id="5-新建议">5. 新建议</h3>
+<h4 id="新建议-0114-mv-是刚好碰-0-v的边缘建议先实测④的直流">新建议-01　14 mV 是「刚好碰 0 V」的边缘，建议先实测④的直流</h4>
+<ul>
+<li>位置：page4 L198「把滑动端调到约 0.22 V，④就有约 20 mV 直流」；L199「④的交流不要超过约 14 mV（有效值）」。</li>
+<li>问题：14 mV 是按直流正好 20 mV 算出来的。滑动端只是「约」0.22 V，如果④实际只有 15 mV，上限就降到约 11 mV。读者照「不要超过 14 mV」去调，有可能已经削底。这不涉及安全（LM358 输入允许略低于 0 V），只是读数会偏。</li>
+<li>改法：L198 末尾加「用直流 200 mV 挡量一下④，记下实际值 <span class="math math-inline">\(V_{DC}\)</span> 」；L199 改成「④的交流不要超过 <span class="math math-inline">\(V_{DC}\)</span> ÷ √2（按 20 mV 算约 14 mV）」。</li>
+</ul>
+<h4 id="新建议-02l180-半句话提前给出了先猜的答案">新建议-02　L180 半句话提前给出了「先猜」的答案</h4>
+<ul>
+<li>位置：page4 L180「20 kHz 时读数变小，分不清是放大器还是表的原因」。</li>
+<li>问题：下面 L183 正要读者先猜「换成 20 kHz 呢？」，上面一句已经说了「读数变小」。</li>
+<li>改法：L180 改为「大多数万用表的交流挡在几百 Hz 以上本身就会读小，分不清是放大器还是表的原因」，删去「20 kHz 时读数变小」。</li>
+</ul>
+<h4 id="新建议-03图-35-p4-3-放在操作步骤之后l203-和-l195-重复">新建议-03　图 35-p4-3 放在操作步骤之后，L203 和 L195 重复</h4>
+<ul>
+<li>位置：L195「<strong>操作步骤</strong>（接法见图 35-p4-3）」，图却在 L205，排在 1～5 步之后；L203「这条交流支路的接法见图 35-p4-3」又说了一遍。</li>
+<li>改法：把 L203–207（引导句 + 图 + 图题）移到 L195 之前，L195 的括号改成「（对照上图）」。这样就是先看图、再动手，手机上也不用来回翻。</li>
+</ul>
+<h4 id="新建议-04函数信号发生器最小档仍偏大时给一个衰减办法">新建议-04　函数信号发生器最小档仍偏大时，给一个衰减办法</h4>
+<ul>
+<li>位置：L199。</li>
+<li>问题：第 2 轮提过，有些台式信号发生器的最小输出也有几十到几百 mV，④可能超过 14 mV，读者「从最小慢慢往上调」时没有办法往下调。</li>
+<li>改法：L199 后补一句「如果幅度旋到最小，④的交流就已经超过上限，在 a18 跳线和信号夹之间串一只 10 kΩ 电阻：它和 d17 的约 909 Ω 组成约 ÷12 的衰减」。（电容只有 318 Ω 容抗，这样串联后衰减约 1/11.5。）</li>
+</ul>
+<h4 id="新建议-05面包板图里选做的-c3-和-a18-跳线可画成半透明或虚线">新建议-05　面包板图里选做的 C3 和 a18 跳线可画成半透明或虚线</h4>
+<ul>
+<li>位置：图 35-p4-1（<code>bb35()</code> L599–600）。</li>
+<li>问题：第 7 步 L66 说「这时都不插」，图里却画成和其他元件一样的实线。照图插线的读者容易一开始就插上（插上不会坏，但和文字不一致）。</li>
+<li>改法：C3 和 a18 跳线用浅色或虚线画，旁边的「选做」注释保留。</li>
+</ul>
+<h3 id="6-结论-1">6. 结论</h3>
+<p><strong>可发布。</strong> 第 2 轮的 2 条必改都改好了，4 条建议全部采纳；孔位、极性、原理图和面包板一致，新加的数值自洽，安全表述前后统一。上面 5 条新建议都不影响发布，作者可以顺手改。</p>
+<ul>
+<li>旧必改：16 条，改好 16，未改好 0</li>
+<li>新必改：0</li>
+<li>新建议：5</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

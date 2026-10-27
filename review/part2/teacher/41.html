@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>41 4–20 mA 电流环：资深教师审读</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/41.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="41-420-ma-电流环资深教师审读">41 4–20 mA 电流环：资深教师审读</h1>
+<p>审读对象：<code>41-current-loop-4-20ma/page1.md</code>～<code>page4.md</code>，以及 <code>img/</code> 下全部 11 张图（41_p1_1～41_p4_2，每张都用图片方式打开看过）。
+对照文件：<code>review/part2/teacher/00-plan-review.md</code>（L53 本节数值核对、L101 本节教学方法、L126 本节必备图，建议-10/12/13/18）、<code>review/teacher/best-practices.md</code>（原则编号 [1]～[6]）、<code>notes/00-design-part2.md</code> §41（L332–350）、<code>notes/PART2_BRIEF.md</code>、<code>notes/AUTHOR_GUIDE.md</code>（§1 页面结构、§2 图的规则），以及 01、06、07、20、26、39 节的页面。
+核算方式：把 page2 的代码块和 page4 的核对代码块复制到 <code>/tmp/rv41/</code> 运行，打印值与正文基本一致（码 38/45/135/224/255 → 3.387/4.011/12.032/19.964/22.727 mA，回路 3.353/3.971/11.913/19.767/22.502 mA，250 Ω 下端 11.16～6.37 V，4.83 V 时 20 mA 要码 232、码 224 只给 19.29 mA）。另外手算了 172 Ω 偏低 1.69 %/14.68 %、575 Ω 与 3.34 km、顺从极限 235/207/165 Ω、功耗 102.9 mW @17.1 mA、纹波 108/124/212/91 µApp（按 <span class="math math-inline">\(V_{hi} D(1-D) T/\tau\)</span> ）、断线 A1 1.60/3.29/3.75 V、470 Ω 时集电极 2.04 V、24 V 时 835 Ω，均与正文吻合；与 <code>review/spice/41.md</code> 对过 3.988/11.92/19.82 mA、6.971 V。几处小出入列在建议里。仓库文件和 git 都没有动。</p>
+<p>原则编号沿用 <a href="http://best-practices.md">best-practices.md</a>：
+[1] 控制认知负荷（NSW CESE 2017：<a href="https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory">https://education.nsw.gov.au/about-us/education-data-and-research/cese/publications/literature-reviews/cognitive-load-theory</a> ；Rosenshine 2012：<a href="https://www.aft.org/ae/spring2012/rosenshine">https://www.aft.org/ae/spring2012/rosenshine</a> ）
+[2] 样例与渐隐样例（Pashler 等 2007，IES 建议 2：<a href="https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf">https://ies.ed.gov/ncee/wwc/Docs/PracticeGuide/20072004.pdf</a> ）
+[3] 提取练习与间隔复习（Pashler 2007 建议 1、5；<a href="https://www.learningscientists.org/blog/2016/6/23-1">https://www.learningscientists.org/blog/2016/6/23-1</a> ；<a href="https://www.retrievalpractice.org/">https://www.retrievalpractice.org/</a> ）
+[4] 图文双编码（Pashler 2007 建议 3；<a href="https://www.learningscientists.org/blog/2016/9/1-1">https://www.learningscientists.org/blog/2016/9/1-1</a> ）
+[5] 先处理误区（PRPER 20, 020128（2024）：<a href="https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128">https://journals.aps.org/prper/pdf/10.1103/PhysRevPhysEducRes.20.020128</a> ）
+[6] 由具体到抽象（Pashler 2007 建议 4；Rosenshine 2012）；有安全风险的体验改成仪表测量</p>
+<h2 id="一总体评分">一、总体评分</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>从「一公里电缆偏低 1.69 %/14.68 %」这个具体痛点出发，引出「串联电流处处相等」，再一路算到电压预算、顺从极限、β 误差、断线、比例式陷阱，每一步都有数字和 SPICE 对照；「A0 显示 20 mA、回路只有 13.84 mA」这个反直觉结论讲得很透，深度明显超过一般入门教程。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>主线清楚，但有几处会卡住手机上的高中读者：前置回顾把 39 的 MOS 管说成了三极管；计划要求的「唯一电流路径」原理图和「错误接地」坏例都没有，电路图上的接地符号恰好把「回路」藏起来了；多处讲连接的文字没有原理图；page4 面包板图缺「对照看」段，还有两处带电改线。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>差</td>
+<td>page2 没有任何渐隐例题（完整例题 → 留空 → 变体迁移），page3 没有练习题，两者都是 AUTHOR_GUIDE 的硬性要求；page4 的 6 道思考题都在同一个电路里，只有一道「24 V」算是参数变化，没有换场景应用，也没有和 39 恒流沉的对比题。</td>
+</tr>
+</tbody>
+</table>
+<p>③ 为「差」，对应的必改是 <strong>必改-04（page2 渐隐例题）</strong> 和 <strong>必改-05（page3 练习题）</strong>。</p>
+<h2 id="二逐条意见">二、逐条意见</h2>
+<h3 id="必改">必改</h3>
+<h3 id="必改-01前置回顾把-39-的-mos-管恒流沉说成三极管发射极">必改-01　前置回顾把 39 的 MOS 管恒流沉说成「三极管发射极」</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>page1 L6，原句：「[39 恒流源]：运放把三极管发射极电压钉在设定电压上，发射极电阻上的电流就固定了」；</li>
+<li>page2 L45，原句：「<strong>2. 运放 + 三极管把 <span class="math math-inline">\(V_E\)</span> 钉在 <span class="math math-inline">\(V_{SET}\)</span> 。</strong> 和 39 节一模一样」；</li>
+<li>page3 L5，原句：「<code>[39 恒流源 · 参数与调试篇](../39-constant-current-excitation/page3.md)</code> 讲过“顺从电压”……负载一大，三极管饱和，电流就掉下来」。</li>
+</ul>
+</li>
+<li><strong>问题</strong>：39 用的是 IRLZ44N MOS 管，采样电阻接在<strong>源极</strong>，符号是 <span class="math math-inline">\(V_S\)</span> 、 <span class="math math-inline">\(V_{REF}\)</span> 、 <span class="math math-inline">\(R_S\)</span> =10 Ω（39 page1 图 39-p1-2、page2 L19–L43）；「顺从电压」是在 39 <strong>原理与实现篇</strong>第四步（page2 L69）定义的，39 page3 里没有这个词；39 讲的是 MOS 管「掉出恒流区」，不是三极管饱和。读者回头翻 39，会发现找不到「三极管发射极」，前后对不上。</li>
+<li><strong>改法</strong>：
+<ul>
+<li>page1 L6 改为：「<code>[39 恒流源 · 直觉篇](../39-constant-current-excitation/page1.md)</code>：运放盯着采样电阻 <span class="math math-inline">\(R_S\)</span> 上的电压，拧 MOS 管这只『阀门』，把它按在基准电压上，于是电流 = 基准 ÷ <span class="math math-inline">\(R_S\)</span> ，负载变一点，电流不变。本节把 MOS 管换成三极管，思路完全相同。」</li>
+<li>page2 L45 改为：「<strong>2. 运放 + 三极管把 <span class="math math-inline">\(V_E\)</span> 钉在 <span class="math math-inline">\(V_{SET}\)</span> 。</strong> 思路和 39 节相同，只是 39 的 MOS 管源极换成了这里的三极管发射极：运放比较……」</li>
+<li>page3 L5 改为：「<code>[39 恒流源 · 原理与实现篇](../39-constant-current-excitation/page2.md)</code> 第四步讲过“顺从电压”：恒流源只在负载电阻不太大时才恒流，负载一大，管子（39 是 MOS 管，本节是三极管）就没有压降可调了，电流随之下降。」</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：前置回顾是间隔提取的入口 [3]，回指错了会让读者在两节之间来回找，增加认知负荷 [1]。</li>
+</ul>
+<h3 id="必改-02教学法-①一张原理图描出唯一电流路径没有落实">必改-02　教学法 ①「一张原理图描出唯一电流路径」没有落实</h3>
+<ul>
+<li><strong>位置</strong>：page1 图 41-p1-3（L38–42）；page2 L61，原句：「<strong>3. 回路电流从哪儿走。</strong> 12 V → <span class="math math-inline">\(R_x\)</span> → 250 Ω → 集电极 → 发射极 → <span class="math math-inline">\(R_S\)</span> → 地，再回到 12 V 电源负端。」；图 41-p2-1、图 41-p4-2。</li>
+<li><strong>问题</strong>：
+<ol>
+<li>计划（00-plan-review L101 ①、L126）要求「一张原理图上用一条彩色线描出唯一的电流路径，标『这里电流处处 = I』」，并把「完整回路（12 V → 变送器 → 线阻 → 250 Ω → ADC）」列为必需图。现在图 41-p1-3 只是三个方框加箭头的示意图，没有元件符号、没有电源正负极、没有把导线电阻画成电阻，不能算原理图；</li>
+<li>图 41-p2-1 和图 41-p4-2 里电流从 <span class="math math-inline">\(R_S\)</span> 下端「进地」、从 +12 V 符号「出来」，回路的后半段被两个符号藏起来了。高中读者在这里最容易误以为「电流流进地就没了」，而这正是本节要破除的误区（见必改-03）；</li>
+<li>page2 L61 只用文字描路径，读者得在文字和图之间来回对照。</li>
+</ol>
+</li>
+<li><strong>改法</strong>：新增「图 41-p2-1b（或重编号）完整回路原理图」，要求：
+<ul>
+<li>12 V 画成电池/电源符号，<strong>负端用一根真实导线</strong>回到 <span class="math math-inline">\(R_S\)</span> 下端，不用接地符号；</li>
+<li>导线电阻画成两只 <span class="math math-inline">\(R_{线}/2\)</span> （去线、回线各一只），250 Ω 用蓝色；</li>
+<li>整条路径用天蓝色粗线描一圈，每个元件旁标同一个「 <span class="math math-inline">\(I\)</span> 」，图中央写「这一圈里电流处处 = <span class="math math-inline">\(I\)</span> 」；</li>
+<li>再画一只虚线框把三极管、 <span class="math math-inline">\(R_S\)</span> 、运放框起来，标「本节的变送器」。</li>
+<li>page2 L61 改为：「<strong>3. 回路电流从哪儿走。</strong> 请看图 41-p2-1b 里天蓝色的那一圈：电流从 12 V 正端出发，经 <span class="math math-inline">\(R_x\)</span> 、250 Ω、集电极、发射极、 <span class="math math-inline">\(R_S\)</span> ，再沿底下那根线回到 12 V 负端。图 41-p2-1 里的两个接地符号，其实就是这根回线的两端。整圈只有这一条路，所以每个元件上的电流都是同一个 <span class="math math-inline">\(I\)</span> 。」</li>
+<li>图 41-p1-3 保留为直觉图也可以，但要在 page1 加一句「它的原理图版本见 <a href="../../../41-current-loop-4-20ma/page2.html">原理与实现篇</a> 图 41-p2-1b」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：「处处相等」是本节第一核心思想（design §41），必须让同一个概念同时有图和文字两种编码 [4]；接地符号会掩盖回路，正好需要用图来暴露误区 [5]。</li>
+</ul>
+<h3 id="必改-03教学法-②电流环要接地才有回路误区和错误接地坏例完全缺失">必改-03　教学法 ②「电流环要接地才有回路」误区和「错误接地」坏例完全缺失</h3>
+<ul>
+<li><strong>位置</strong>：page3「常见误区」L131–139（没有这一条）；page4 测量表（没有对应步骤）；design §41「典型错误：接收电阻和电源地接错，电流不流过 250 Ω」。</li>
+<li><strong>问题</strong>：计划 L101 ② 要求「误区 → 错误接地原理图 + 测量」，L126 把「错误接地（坏例）」列为必需图，plan 建议-13 也点名了 page4；四页里都没有。design 列的第一条典型错误也没有讲。</li>
+<li><strong>改法</strong>：
+<ol>
+<li>page3 新增一节「七、多接一根地线会怎样」，先放预测题，答案图放进 <code>&lt;details&gt;</code>：
+<blockquote>
+<p><strong>先预测</strong>：有人觉得“电流环要接地才有回路”，于是把 250 Ω 下端（集电极那一端）也用导线接到 0 V。设定 20 mA、 <span class="math math-inline">\(R_x\)</span> = 470 Ω，250 Ω 两端会读到多少？改设定到 4 mA，读数会变吗？</p>
+<p><code>&lt;details&gt;&lt;summary&gt;答案&lt;/summary&gt;</code> 回路被这根地线“抄了近路”：12 V → <span class="math math-inline">\(R_x\)</span> → 250 Ω → 地，变送器被短路在外面。电流 = 12 V ÷ (470 + 250) Ω ≈ 16.7 mA，250 Ω 两端约 4.17 V，<strong>和设定无关</strong>：设定 4 mA 读数也不变。250 Ω 约 69 mW、 <span class="math math-inline">\(R_x\)</span> 约 131 mW，都在 1/4 W 内。（以上为手算，作者须用 SPICE 核实三极管 B–C 结导通时运放输出和 R_B 电流 [待核实]。）<code>&lt;/details&gt;</code></p>
+</blockquote>
+</li>
+<li>配一张「错误接地」原理图（坏例），多出来的那根地线用朱红色带 × 标出。</li>
+<li>page4 测量表加一步（必须断电改线，并且只在 <span class="math math-inline">\(R_x\)</span> = 470 Ω 时做，避免 250 Ω 超额定）：「表 5（可选）：断电，用一根短线把第 24 列接到下方 0 V 轨，插回 12 V，分别输入 <code>20</code>、<code>4</code>，量 250 Ω 两端。应该都约 4.17 V，不随设定变 [待 SPICE 核实]。测完断电拆掉短线。」</li>
+<li>「常见误区」加一条：「<strong>“电流环要接地才有回路。”</strong> 错。回路靠的是从电源正端出发、绕一圈回到电源负端的那根导线；接地符号只是这根回线的简写。多接一根地线反而会给电流开一条近路，绕开变送器（「七」）。」</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：误区要先被暴露、再用测量推翻，才会真正改变 [5]；本节恰好能在 ≤12 V、≤1/4 W 内安全地做这个坏例 [6]。</li>
+</ul>
+<h3 id="必改-04page2-没有渐隐例题教学法-③author_guide-硬性要求">必改-04　page2 没有渐隐例题（教学法 ③，AUTHOR_GUIDE 硬性要求）</h3>
+<ul>
+<li><strong>位置</strong>：page2 L49–59 码表之后、「六」之前；全页没有「例 1/例 2/例 3」。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE §1 规定 page2 要有「渐隐式例题（完整示例 → 关键步骤留空 → 变体迁移）」；计划 L101 ③ 要求「0.4–2.0 V → 4–20 mA 先全代数字，再只给 mA 求 V」。现在只有一张结果表和一段代码，读者没有机会自己算一遍。</li>
+<li><strong>改法</strong>：在「二」末尾插入下面三道例题（数值已在 /tmp 算过）：
+<blockquote>
+<p><strong>例 1（完整示范）</strong>：要输出 12 mA，码是多少？250 Ω 上读多少？
+① <span class="math math-inline">\(V_{SET} = 12\ \text{mA} \times 100\ \Omega = 1.2\ \text{V}\)</span> ；② 码 <span class="math math-inline">\(= 1.2 \div (5 \times 0.4545) \times 255 = 134.6\)</span> ，取 135；③ 实际 <span class="math math-inline">\(V_{SET} = 5 \times 135/255 \times 0.4545 = 1.203\ \text{V}\)</span> ， <span class="math math-inline">\(I_E\)</span> = 12.03 mA；④ 回路电流 ≈ 12.03 × 100/101 = 11.91 mA，250 Ω 上 ≈ 2.98 V。</p>
+<p><strong>例 2（留空）</strong>：要输出 16 mA（量程的 75 %）。 <span class="math math-inline">\(V_{SET}\)</span> = ____ V；码 = ____；250 Ω 上约 ____ V。
+<code>&lt;details&gt;&lt;summary&gt;答案&lt;/summary&gt;</code> 1.6 V；1.6 ÷ 2.2727 × 255 = 179.5，取 180（实际 16.04 mA）；16.04 × 100/101 × 0.25 ≈ 3.97 V。<code>&lt;/details&gt;</code></p>
+<p><strong>例 3（迁移）</strong>：你的 5 V 引脚实测 4.83 V。要输出 8 mA，码应写多少？如果万用表在 250 Ω 上读到 3.00 V，变送器在报量程的百分之几？
+<code>&lt;details&gt;&lt;summary&gt;答案&lt;/summary&gt;</code> <span class="math math-inline">\(V_{SET}\)</span> = 0.8 V，码 = 0.8 ÷ (4.83 × 0.4545) × 255 = 92.9，取 93（实际 8.01 mA）。3.00 V ÷ 250 Ω = 12 mA，(12 − 4) ÷ 16 = 50 %。<code>&lt;/details&gt;</code></p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：完整例题 → 留空 → 迁移是减负、促迁移最可靠的顺序 [2]；只看表格不算，读者无法提取 [3]。</li>
+</ul>
+<h3 id="必改-05page3-没有练习题也没有换场景对比前节的题">必改-05　page3 没有练习题，也没有换场景、对比前节的题</h3>
+<ul>
+<li><strong>位置</strong>：page3「排错表」「常见误区」「小结」之间（L116–147），没有「练习题」一节。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE §1 规定 page3 结构为「参数 → 排错表 → 练习题」，练习至少 3 道、由易到难、最后一道是变体迁移；本节一道都没有。全节也缺「参数变化推理」「换场景应用」「与前面节点对比」三类题。</li>
+<li><strong>改法</strong>：在排错表后加「## 练习题」，四道题答案都放 <code>&lt;details&gt;&lt;summary&gt;答案&lt;/summary&gt;</code>（<code>&lt;summary&gt;</code> 后空一行）：
+<blockquote>
+<ol>
+<li><strong>（直接用公式）</strong> 设定 12 mA 时， <span class="math math-inline">\(R_x\)</span> 最大能到多少？对照图 41-p3-1 的蓝线验证。
+答案：(12 − 0.012 × 350 − 0.3) / 0.012 = 625 Ω，和图上蓝线在 600 多 Ω 才下降一致。</li>
+<li><strong>（参数变化推理）</strong> 把 <span class="math math-inline">\(R_S\)</span> 从 100 Ω 换成 50 Ω，R1/R2 不变。20 mA 要多少码？顺从极限变大还是变小？有什么代价？
+答案：要 <span class="math math-inline">\(V_{SET}\)</span> = 1.0 V，码 = 1.0 ÷ 2.2727 × 255 ≈ 112；顺从极限 (12 − 0.02 × 300 − 0.3)/0.02 = 285 Ω，变大了；代价是每码 178 µA，分辨率粗了一倍，而且满码要 45.5 mA，管子饱和后回路约 (12 − 0.3)/300 ≈ 39 mA，250 Ω 上约 0.38 W，超过 1/4 W。只算不做。</li>
+<li><strong>（与 39 对比）</strong> 39 用 10 Ω 采样 100 mA，本节用 100 Ω 采样 20 mA。如果本节也用 10 Ω，A0 在 20 mA 时有多少格？顺从极限是多少？为什么本节不这样选？
+答案：0.2 V ÷ 4.883 mV ≈ 41 格（100 Ω 时约 409 格）；顺从极限 (12 − 5 − 0.2 − 0.3)/0.02 = 325 Ω。顺从极限只多 90 Ω，A0 分辨率却差了 10 倍，所以选 100 Ω。</li>
+<li><strong>（换场景迁移）</strong> 工厂里用 24 V 电源、XTR115 两线制变送器（至少 7.5 V）、PLC 里的 250 Ω 接收电阻，电缆是 0.5 mm² 铜线（每米约 34.4 mΩ）。电缆最长能拉多远？
+答案：留给导线 (24 − 5 − 7.5)/0.02 = 575 Ω；两根芯每米共 68.8 mΩ，575 ÷ 0.0688 ≈ 8.36 km。</li>
+</ol>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：没有练习就没有提取 [3]；参数变化、跨节对比和换场景是「举一反三」的核心 [2][6]。</li>
+</ul>
+<h3 id="必改-06讲连接的文字没有原理图逐处列出">必改-06　讲连接的文字没有原理图（逐处列出）</h3>
+<ul>
+<li><strong>位置与改法</strong>（每处都按 AUTHOR_GUIDE §2「文字讲到电路连接就要配原理图」）：
+<ol>
+<li><strong>page1 L42 两线制</strong>，原句：「变送器只有两根线，既从这两根线上取电，又用流过这两根线的电流表示读数。」→ 加「图 41-p1-4　两线制与四线制对比」原理图（计划 L126、plan 建议-12）：左边两线制，变送器只有 +/− 两端串在回路里；右边四线制，变送器另有两根电源线、两根信号线。图后补：「两线制省两根线，但变送器只能用回路里剩下的那点电压和不到 4 mA 的电流过日子；四线制自己有电源，可以带更耗电的传感器。」</li>
+<li><strong>page1 L72–77「本节要搭什么」</strong>，原句：「12 V 电源、模拟导线的电阻 <span class="math math-inline">\(R_x\)</span> 、250 Ω 接收电阻串成一圈」→ 此处放必改-02 的完整回路原理图的缩略版，或至少加一句「电路图见 <a href="../../../41-current-loop-4-20ma/page2.html">原理与实现篇</a> 图 41-p2-1」。</li>
+<li><strong>page2 L61 电流路径</strong>：见必改-02。</li>
+<li><strong>page2 L112「五」不分压的对比电路</strong>，原句：「最省事的做法是 D9 直接经 10 kΩ + 10 µF 滤波。」→ 加一张两栏小原理图：左「D9 → 10 kΩ → <span class="math math-inline">\(V_{SET}\)</span> ，10 µF 到地」，右「D9 → 12 kΩ → <span class="math math-inline">\(V_{SET}\)</span> ，10 kΩ ∥ 10 µF 到地」，各标满码电压 5 V / 2.273 V。</li>
+<li><strong>page3 L31 A1 的 22k/10k 分压</strong>，原句：「A1 通过 22k/10k 分压读运放输出」→ 这个分压在 page3 第一次出现，但图 41-p2-1 没画（只有图 41-p4-2 画了）。改法：在图 41-p2-1 运放输出处补上 22 kΩ/10 kΩ → A1，或在 page3 L31 前放一张局部原理图，并加引导句「请看图 41-p3-x：运放输出经 22 kΩ、10 kΩ 分压后送 A1，A1 读到的是 <span class="math math-inline">\(V_O \times 10/32\)</span> 」。</li>
+<li><strong>page3 L35 换 2N7000</strong>，原句：「换成 2N7000 MOS 管会怎样？」→ 加一张局部原理图，标出栅极接 R_B、源极接 <span class="math math-inline">\(R_S\)</span> 、漏极接 250 Ω，说明「G、S、D 分别对应 B、E、C」。</li>
+<li><strong>page3 L51 A0 加 100 kΩ 下拉</strong>：原句「再加 100 kΩ 下拉，会和 10 kΩ 组成分压」→ 加一张小图：发射极 → 10 kΩ → A0，A0 → 100 kΩ → 地，标「A0 = 0.908 × <span class="math math-inline">\(V_E\)</span> 」，坏例连线用朱红色带 ×。</li>
+<li><strong>page3 L97 接收端并 100 nF</strong>，原句：「接收端 250 Ω 两端并一只 100 nF」→ 在完整回路图上用灰色点线画出这只可选电容，或给局部图。</li>
+<li><strong>page4 L48 250 Ω 用 100 Ω + 150 Ω 串联</strong>，原句：「100 Ω 插 i24–i26，150 Ω 插 j26–j29」→ 图 41-p4-1 只画了一只 250 Ω（i24–i29）。要么在面包板图上加一个小插图画出这种接法，要么在原理图 250 Ω 旁标「= 100 Ω + 150 Ω 串联（i24–i26、j26–j29）」。</li>
+<li><strong>page4 L66 步骤 3 的 LM358 B 半和 100 nF 去耦</strong>，原句：「100 nF 从 b12 接上方 0 V 轨；c13 → c14 短线（7 脚接 6 脚）；a15 → 上方 0 V 轨（5 脚接地，B 半闲置成跟随器）」→ 图 41-p4-2 只画了 A 半，标注「8 脚 +12 V，4 脚地」，没有 B 半和去耦电容。改法：在图 41-p4-2 右上角加一个小框，画出「B 半：5 脚接地，6、7 脚相连」和「8 脚—100 nF—地」，并标孔位 b12、c13–c14、a15。</li>
+</ol>
+</li>
+<li><strong>为什么</strong>：读者在手机上按顺序学，只有文字的连接描述无法在脑中形成电路，双编码要求每次讲连接都有图 [4]；漏画的部分恰好是插面包板时最容易出错的地方 [1]。</li>
+</ul>
+<h3 id="必改-07page4-面包板图后缺对照看段图的顺序和编号也颠倒">必改-07　page4 面包板图后缺「对照看」段，图的顺序和编号也颠倒</h3>
+<ul>
+<li><strong>位置</strong>：page4 L52–60。先放「图 41-p4-2 面包板版原理图」，再放「图 41-p4-1 面包板接线图」，之后只有一句「对照图 41-p4-2 看信号流向，对照图 41-p4-1 插元件。注意下方两条轨……」。</li>
+<li><strong>问题</strong>：
+<ol>
+<li>AUTHOR_GUIDE §2 要求面包板接线图「后面紧跟一张 schem_lab 原理图，再写一段以『对照看』开头的文字」，把孔位和节点一一对上；现在只有一句提醒，没有逐点对照；</li>
+<li>图号与出现顺序相反（41-p4-2 在 41-p4-1 之前）；</li>
+<li>计划 L126 要求面包板图分 PWM-RC 和回路两组；即使合成一张，也应在文字中分段指认。</li>
+</ol>
+</li>
+<li><strong>改法</strong>：调换两张图的位置（先面包板图 41-p4-1，后原理图 41-p4-2），然后把 L60 换成：
+<blockquote>
+<p><strong>对照看</strong>：① 左边 h1–h5 的 R1、第 5 列往下的 R2 和 C1，就是原理图左边的 PWM 滤波，第 5 列整列就是 <span class="math math-inline">\(V_{SET}\)</span> 节点，绿线 g5 → g14 把它送到运放 3 脚（同相端，圆圈④在 j14）。② 第 12 列是运放 1 脚输出（圆圈①），向右经 R_B（h12–h17）和绿线 g17 → g23 到三极管基极，向左经 22 kΩ（i12–i9）到 A1 分压点 h9。③ 第 22 列是发射极（圆圈②）：绿线 i13 → i22 把它接回运放 2 脚（反相端），j22 的 <span class="math math-inline">\(R_S\)</span> 下到 0 V 轨，h22–h27 的 10 kΩ 通到 A0。④ 第 24 列是集电极（圆圈③），往右依次是 250 Ω（i24–i29）、 <span class="math math-inline">\(R_x\)</span> （h29–h33）、橙线到 +12 V 轨，这就是原理图右边那条竖线。⑤ 面包板上每一列 a–e 五个孔相通、f–j 五个孔相通，中槽两边不通；所以运放跨在中槽上，每只脚独占一列。</p>
+</blockquote>
+</li>
+<li><strong>为什么</strong>：面包板和原理图之间缺少映射，读者只能逐孔照抄，出错时无法自己排查 [1][4]。</li>
+</ul>
+<h3 id="必改-08两处带电改线其中一处的悬空脚可能碰到-a0-那一列">必改-08　两处带电改线，其中一处的悬空脚可能碰到 A0 那一列</h3>
+<ul>
+<li><strong>位置</strong>：page4 L188，原句：「拔掉短线，依次把 <span class="math math-inline">\(R_x\)</span> 插在 h29–h33。」；L209，原句：「<strong>表 4：断线（ <span class="math math-inline">\(R_x\)</span> = 100 Ω，然后拔掉它的一只脚）</strong>」。安全须知 L27 写的是「改线前先拔 12 V，再拔 USB」。</li>
+<li><strong>问题</strong>：两处都没说断电，和本页自己的安全规则矛盾。表 4 更危险：如果拔的是 h33（+12 V 一侧）以外的那只脚，悬空的脚直接带 +12 V，面包板上往左两列就是 j27（A0 引线所在列，<strong>A0 前面没有电阻</strong>），一碰就是 12 V 直接进 A0，绕过了 page2 L95 专门加的 10 kΩ 保护（步骤 11 之后 A0 线已经插在 j27）。</li>
+<li><strong>改法</strong>：
+<ul>
+<li>L188 改为：「<strong>先拔 12 V</strong>，拔掉短线，把 <span class="math math-inline">\(R_x\)</span> 插在 h29–h33，再插回 12 V 测量；换下一只电阻时重复这三步。」</li>
+<li>L209 改为：「<strong>表 4：断线</strong>（先拔 12 V，把 <span class="math math-inline">\(R_x\)</span> 整只拔下，h29–h33 之间什么也不接，再插回 12 V。不要只拔一只脚让另一只悬着：悬空的脚可能带 12 V，碰到旁边第 27 列就会直接打进 A0。）」</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：安全规则必须在每一个改线动作处重复出现，不能靠读者记住开头的总规则 [6]；12 V 直接进 Arduino 引脚会损坏开发板。</li>
+</ul>
+<h3 id="必改-09测量表的列不符合规范">必改-09　测量表的列不符合规范</h3>
+<ul>
+<li>
+<p><strong>位置</strong>：page4 表 1～表 4（L176–214），列为「输入 | 码 | ④ <span class="math math-inline">\(V_{SET}\)</span> | ② <span class="math math-inline">\(V_E\)</span> | 250 Ω 两端 | ……」。</p>
+</li>
+<li>
+<p><strong>问题</strong>：AUTHOR_GUIDE §1 第 6 部分规定测量表列为「步骤 | 测什么 | 红表笔 | 黑表笔 | 挡位 | 应该读到 | 读不到时先查」。现在表里没有表笔位置、挡位和「读不到时先查」，红黑表笔只在 L174 一大段里一句带过；250 Ω 两端的极性也没说（红表笔接哪一列）。</p>
+</li>
+<li>
+<p><strong>改法</strong>：按规范拆成逐行测量，示例（表 1 前三行）：</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1-1</td>
+<td>串口输入 <code>20</code> 后的设定电压④</td>
+<td>j14</td>
+<td>0 V 轨</td>
+<td>DC 20 V</td>
+<td>约 2.00 V</td>
+<td>0 V：查 D9 线、R1；5 V 左右：C1 没接到地</td>
+</tr>
+<tr>
+<td>1-2</td>
+<td>发射极②</td>
+<td>j22</td>
+<td>0 V 轨</td>
+<td>DC 20 V</td>
+<td>约 2.00 V</td>
+<td>远小于④：查 i13 → i22 反馈线、三极管 E/B/C 方向</td>
+</tr>
+<tr>
+<td>1-3</td>
+<td>250 Ω 两端</td>
+<td>第 29 列（i29 旁空孔）</td>
+<td>第 24 列（j24）</td>
+<td>DC 20 V</td>
+<td>4.94–4.96 V</td>
+<td>读负值：表笔接反；0 V：查 <span class="math math-inline">\(R_x\)</span> 短线、+12 V 橙线</td>
+</tr>
+</tbody>
+</table>
+<p>其余各表照此改写。</p>
+</li>
+<li>
+<p><strong>为什么</strong>：表笔位置和挡位写清楚，读者才能一步一测、不跳读；「读不到时先查」是动手实验里最重要的排错支架 [1]。</p>
+</li>
+</ul>
+<h3 id="必改-10python-核对块和实验记录表不符合规范">必改-10　Python 核对块和实验记录表不符合规范</h3>
+<ul>
+<li><strong>位置</strong>：page4 L222–258 的代码块；L260–277 实验记录表。</li>
+<li><strong>问题</strong>：
+<ol>
+<li>AUTHOR_GUIDE §1 第 8 部分要求「读者填入自己量到的电阻实际值和电源电压，代码算出应读到的数并与实测值比较，偏差超过 10% 时打印提示；开头照旧写 <code>sys.path</code> 两行」。现在的代码：没有 <code>sys.path</code> 两行；只让读者填读数，不让填 <span class="math math-inline">\(R_S\)</span> 、250 Ω 的实测阻值和 12 V 实测值；没有任何「偏差 &gt; 10 %」提示，只靠读者自己看「差 0.3–1.6 %」；</li>
+<li>第 9 部分要求记录表列为「实测值 / 计算值 / 偏差」，现在是「预期 | 实测 | 是否符合」。</li>
+</ol>
+</li>
+<li><strong>改法</strong>：
+<ul>
+<li>代码开头加上全书统一的 <code>sys.path</code> 两行；增加输入
+<code>R_L_measured = 249.0  # 你量到的接收电阻（Ω）</code>、<code>R_S_measured = 100.0</code>、<code>V12_measured = 12.0</code>；</li>
+<li>用实测阻值和 <code>V5_measured</code> 算出每一行应读到的 250 Ω 电压和 <span class="math math-inline">\(V_E\)</span> ，再与读数比较：
+<code>dev = (v_meas - v_calc) / v_calc</code>；<code>if abs(dev) &gt; 0.10: print(f&quot;{name}: 偏差 {dev:+.0%}，超过 10 %，先检查接线和表笔位置&quot;)</code>；</li>
+<li>记录表改为「项目 | 实测值 | 计算值 | 偏差」，计算值一栏注明「由上面代码打印」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：让读者用自己的元件参数算出预期，再比较偏差，才是「预测—验证」闭环 [3]；统一格式也保证 <code>run_blocks.py</code> 能跑通。</li>
+</ul>
+<h3 id="必改-11page15-等分说错了">必改-11　page1「5 等分」说错了</h3>
+<ul>
+<li><strong>位置</strong>：page1 L53，原句：「上限 20 mA 是行业惯例：4 到 20，一共 16 mA 的量程，正好是 4 的 4 倍，5 等分刻度好算。」</li>
+<li><strong>问题</strong>：16 mA 量程分成 0 %、25 %、50 %、75 %、100 % 五个<strong>刻度点</strong>，是 <strong>4 等分</strong>，每份 4 mA；「5 等分」会让读者算出每份 3.2 mA。</li>
+<li><strong>改法</strong>：改为「上限 20 mA 是行业惯例：4 到 20 一共 16 mA 的量程，正好分成 4 份，每份 4 mA = 量程的 25 %：4、8、12、16、20 mA 分别对应 0 %、25 %、50 %、75 %、100 %，刻度很好算。」</li>
+<li><strong>为什么</strong>：数字错误会直接带进后面的换算（必改-04 例 3 就要用这个比例）[1]。</li>
+</ul>
+<h3 id="建议">建议</h3>
+<h3 id="建议-01图号与出现顺序不一致4-处">建议-01　图号与出现顺序不一致（4 处）</h3>
+<ul>
+<li><strong>位置</strong>：page1 图 41-p1-3（L38）出现在图 41-p1-2（L59）之前；page2 图 41-p2-2（L15）在图 41-p2-1（L33）之前；page3 图 41-p3-4（L68）在图 41-p3-3（L80）之前；page4 图 41-p4-2 在 41-p4-1 之前（见必改-07）。</li>
+<li><strong>问题</strong>：AUTHOR_GUIDE §2「k 是本页第几张图，从 1 开始连续」。</li>
+<li><strong>改法</strong>：按出现顺序重编号（同步改文件名和正文所有引用）。</li>
+<li><strong>为什么</strong>：图号乱序时，读者在手机上搜「图 41-p2-1」会先跳到后面 [1]。</li>
+</ul>
+<h3 id="建议-02颜色词不在约定内">建议-02　颜色词不在约定内</h3>
+<ul>
+<li><strong>位置</strong>：
+<ul>
+<li>page2 L33（图 41-p2-1 alt）「绿色反馈线把发射极接回运放反相输入」、page4 L52（图 41-p4-2 alt）「绿色负反馈线」、page3 L127 排错表「绿色反馈线」：图上反馈线是蓝绿色；</li>
+<li>page3 L17、L25（图 41-p3-1、41-p3-2 alt）「粉色点划线」「粉色点线」「灰色虚线是报警门限」；</li>
+<li>page1 L18、L59 的「绿色虚线」「绿色“测量值”」也请对照图 41-p1-1、41-p1-2 的实际配色再核一遍。</li>
+</ul>
+</li>
+<li><strong>改法</strong>：原理图和曲线图里分别改为「蓝绿色」「红紫色点划线」「灰色点线」（与 figstyle 约定一致）。page4 L56 面包板图的「粉色圆圈」「橙」「黑」可以保留简单色名，符合规范。</li>
+<li><strong>为什么</strong>：颜色词与图一致，读者才能按颜色找线 [4]。</li>
+</ul>
+<h3 id="建议-03575-ω334-km-没有算式">建议-03　575 Ω、3.34 km 没有算式</h3>
+<ul>
+<li><strong>位置</strong>：page1 L44，原句：「导线最多还能有 575 Ω（具体怎么算放在 <a href="../../../41-current-loop-4-20ma/page2.html">原理与实现篇</a>「一」）。0.2 mm² 电缆的话，大约能拉 3.34 km。」</li>
+<li><strong>改法</strong>：补一句：「(24 V − 250 Ω × 20 mA − 7.5 V) ÷ 20 mA = (24 − 5 − 7.5) V ÷ 0.02 A = 575 Ω；前面算过一公里电缆来回约 172 Ω，575 ÷ 172 ≈ 3.34 km。」</li>
+<li><strong>为什么</strong>：先给具体算式，抽象公式放到 page2，符合由具体到抽象 [6]。</li>
+</ul>
+<h3 id="建议-04page1-缺开头三问">建议-04　page1 缺「开头三问」</h3>
+<ul>
+<li><strong>位置</strong>：page1 标题下（39 page1 L5「## 开头三问（先回忆，再往下读）」已有这种格式）。</li>
+<li><strong>改法</strong>：加三问并折叠答案，例如：「1. 串联电路里各处电流是什么关系？（<a href="../../../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>）2. 39 节的恒流沉里，电流由哪两个量决定？3. 三极管的发射极电流和集电极电流谁大？」</li>
+<li><strong>为什么</strong>：开头提取前置知识，是计划 建议-10 的统一要求 [3]。</li>
+</ul>
+<h3 id="建议-05图-41-p1-3-的-alt-文字和引导句">建议-05　图 41-p1-3 的 alt 文字和引导句</h3>
+<ul>
+<li><strong>位置</strong>：page1 L38 alt「一个圆圈形的回路」；图前 L36 没有指向该图的引导句。</li>
+<li><strong>问题</strong>：图上实际是三个方框连成的三角形回路；图前没有「请看……」。</li>
+<li><strong>改法</strong>：alt 改为「三个方框（回路电源、两线制变送器、250 Ω 接收电阻）用导线首尾连成一圈」；L36 后加「请看图 41-p1-3，顺着天蓝色箭头走一圈，数一数电流有几条路可走。」</li>
+<li><strong>为什么</strong>：引导句告诉读者看什么，alt 要与图一致 [4]。</li>
+</ul>
+<h3 id="建议-06图-41-p1-2-的-338-ma-与其他三个标注口径不一">建议-06　图 41-p1-2 的 3.38 mA 与其他三个标注口径不一</h3>
+<ul>
+<li><strong>位置</strong>：图 41-p1-2 三角标注 3.38 / 3.97 / 19.77 / 22.50 mA。</li>
+<li><strong>问题</strong>：后三个是 β = 100 模型的回路电流（3.971、19.767、22.502），但码 38 的模型值是 3.353 mA（/tmp 运行 page2 代码得到），3.38 是 SPICE 值。</li>
+<li><strong>改法</strong>：统一为模型值 3.35 mA，或图注写明「38 号码取 SPICE 值」。</li>
+<li><strong>为什么</strong>：图上数字必须来自同一脚本口径，避免读者对不上（AUTHOR_GUIDE §2）。</li>
+</ul>
+<h3 id="建议-073961188不是按码算的模型值">建议-07　「3.96/11.88」不是按码算的模型值</h3>
+<ul>
+<li><strong>位置</strong>：page2 L79「简化模型（β = 100）算出回路电流 3.96/11.88/19.80 mA」；page4 L174 说区间下端是「按码算的模型值（β = 100）」，但表 1 写 3.96–3.99 mA、11.88–11.92 mA。</li>
+<li><strong>问题</strong>：按码 45/135/224 算的模型值是 3.971/11.913/19.767 mA（page2 代码和 page4 核对代码都打印 3.97/11.91/19.77）；3.96/11.88/19.80 是「整 4/12/20 mA × 100/101」。</li>
+<li><strong>改法</strong>：page2 L79 写明「按整 0.4/1.2/2.0 V 设定」；page4 表 1 和记录表改为 3.97–3.99、11.91–11.92、19.77–19.82 mA。</li>
+<li><strong>为什么</strong>：同一页的表和代码输出要一致，读者核对时才不会怀疑自己 [1]。</li>
+</ul>
+<h3 id="建议-08a0-读数-409-与-408-两个数">建议-08　A0 读数 409 与 408 两个数</h3>
+<ul>
+<li><strong>位置</strong>：page2 L97「20 mA 对应 409 格左右」及代码输出「A0 ≈ 409」；page3 L107 表中码 224 的 A0 读数为 408。</li>
+<li><strong>改法</strong>：page3 表下加一句：「ADC 是向下取整的，408.9 读成 408；<a href="../../../41-current-loop-4-20ma/page2.html">原理与实现篇</a> 的代码用四舍五入，所以打印 409。」</li>
+<li><strong>为什么</strong>：消除前后数字不一致 [1]。</li>
+</ul>
+<h3 id="建议-09余量-697698-v-和572-格">建议-09　余量 6.97/6.98 V 和「572 格」</h3>
+<ul>
+<li><strong>位置</strong>：page3 L30「470 Ω/20 mA 时 SPICE 是 6.97 V」，图 41-p3-2 标 6.98 V；L31「470 Ω 时 A1 读到约 572 格」。</li>
+<li><strong>问题</strong>：6.97 是逐点 SPICE、6.98 是慢扫曲线（review/spice/41.md L55：6.986 V），正文没说明；按 <span class="math math-inline">\(V_O = 2.002 + 6.97 = 8.97\)</span> V 算，A1 = 8.97 × 10/32 ÷ 4.883 mV ≈ 574 格，不是 572。</li>
+<li><strong>改法</strong>：L30 改为「SPICE 逐点算 6.97 V（图上慢扫曲线是 6.98 V）」；L31 改为「约 574 格」，或给出 572 的出处。</li>
+<li><strong>为什么</strong>：图文数字一致 [4]。</li>
+</ul>
+<h3 id="建议-10228-ma-是二手资料没有出处">建议-10　22.8 mA 是「二手资料」，没有出处</h3>
+<ul>
+<li><strong>位置</strong>：page2 L99、page3 L136「高故障电流可到约 22.8 mA（二手资料）」。</li>
+<li><strong>改法</strong>：补一个可核实的厂商手册链接；找不到就改成「约 22.8 mA [待核实]」，并说明本节按满码 22.73 mA 算。</li>
+<li><strong>为什么</strong>：best-practices 要求无法核实的写明 [待核实]，不留模糊来源。</li>
+</ul>
+<h3 id="建议-11pwm--rc-没有回指-062620纹波也没给算法">建议-11　PWM + RC 没有回指 06、26、20，纹波也没给算法</h3>
+<ul>
+<li><strong>位置</strong>：page2 L39「D9 输出约 490 Hz 的方波，高电平时间占 <code>code/255</code>」；page3 L55–64 纹波表。</li>
+<li><strong>改法</strong>：
+<ul>
+<li>page2 L39 后加：「方波的平均值 = 5 V × 占空比，这就是 <a href="../../../26-h-bridge/page1.html">26 H 桥电机驱动 · 直觉篇</a> 里电机『只感受平均电压』的道理（占空比的定义见 <a href="../../../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a>）；RC 就是 <a href="../../../20-active-filter/page1.html">20 有源滤波 · 直觉篇</a> 的一阶低通，截止频率 <span class="math math-inline">\(f_c = 1/(2\pi\tau) \approx 2.9\)</span> Hz，远低于 490 Hz。」</li>
+<li>page3 纹波表前给出估算式并代一例：「纹波 ≈ <span class="math math-inline">\(V_{hi} \cdot D(1-D) \cdot T/\tau\)</span> ，码 135 时 2.273 V × 0.529 × 0.471 × 2.04/54.5 ≈ 21.2 mV，除以 100 Ω 就是 212 µA。」</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：计划 建议-18；把新知识挂到旧节点上，形成间隔复习 [3]，并且具体代一例 [6]。</li>
+</ul>
+<h3 id="建议-12下一节指代不清">建议-12　「（下一节）」指代不清</h3>
+<ul>
+<li><strong>位置</strong>：page2 L29，原句：「本节实验的发送器不是 XTR115，而是自己用三极管搭的（下一节）。」</li>
+<li><strong>改法</strong>：改为「……自己用三极管搭的（见本页第二节）。」</li>
+<li><strong>为什么</strong>：「下一节」容易被理解成 42 节（AUTHOR_GUIDE 要求交叉引用明确）[1]。</li>
+</ul>
+<h3 id="建议-13步骤-10-引用了后面的步骤-12">建议-13　步骤 10 引用了后面的步骤 12</h3>
+<ul>
+<li><strong>位置</strong>：page4 L73「上传下面的程序（先把 <code>V5</code> 改成实测值，见步骤 12）」；L75 步骤 12 又要求「重新上传」。</li>
+<li><strong>改法</strong>：把「量 5 V 引脚」挪到步骤 10 之前（插 USB 后、上传前），步骤 10 只写「把量到的值写进 <code>V5</code> 再上传」，删掉步骤 12 的重新上传。</li>
+<li><strong>为什么</strong>：按顺序做的读者不应该先上传一次再返工 [1]。</li>
+</ul>
+<h3 id="建议-14220-ω-只比顺从极限少-15-ω要提醒电源电压">建议-14　220 Ω 只比顺从极限少 15 Ω，要提醒电源电压</h3>
+<ul>
+<li><strong>位置</strong>：page4 表 2 与记录表 L271「 <span class="math math-inline">\(R_x\)</span> = 220 Ω……约 4.95 V（不变）」。</li>
+<li><strong>问题</strong>：顺从极限 235 Ω 是按 12.0 V 算的；如果适配器带载只有 11.5 V，极限就降到 (11.5 − 7 − 0.3)/0.02 = 210 Ω，220 Ω 时电流已经开始掉，读者会以为自己接错。</li>
+<li><strong>改法</strong>：表 2 下加一句：「先看记录表里你量到的 12 V 实际值：低于 11.7 V 时，220 Ω 这一行可能已经开始掉电流，属于正常，用 (V12 − 7.3)/0.02 算你的极限。」</li>
+<li><strong>为什么</strong>：把真实元件的偏差提前讲清，减少无谓的排错 [1]。</li>
+</ul>
+<h3 id="建议-15pwm-滤波先单独测一次">建议-15　PWM 滤波先单独测一次</h3>
+<ul>
+<li><strong>位置</strong>：page4 搭建步骤 1–12 一次搭完才测。</li>
+<li><strong>改法</strong>：在步骤 3 后插入「中途检查」：插 USB、上传程序，串口输入 <code>20</code>，量 j14 对 0 V 轨约 2.0 V，再继续搭三极管和回路（此时 12 V 不接）。</li>
+<li><strong>为什么</strong>：分块搭、分块测，出问题时只需排查一小块 [1]；对应计划里「p4_1 PWM-RC + p4_2 回路」两段。</li>
+</ul>
+<h3 id="建议-16核心反直觉结论前加先预测">建议-16　核心反直觉结论前加「先预测」</h3>
+<ul>
+<li><strong>位置</strong>：page3 L15–21：先给出图 41-p3-1，紧接着粗体揭晓「回路电流只剩 13.84 mA，但 A0 读到的发射极电流还是 20.02 mA」；page4 表 2 也直接列出 470 Ω 的预期值。</li>
+<li><strong>改法</strong>：page3 在图前加：「<strong>先预测</strong>：设定 20 mA、 <span class="math math-inline">\(R_x\)</span> 换成 470 Ω。250 Ω 上的电流和 A0 读到的电流，哪个会变？」并把图 41-p3-1 移到预测题之后或放进 <code>&lt;details&gt;</code>；page4 表 2 前加同样一句，并把 470 Ω 那一行的「应该读到」折叠起来。</li>
+<li><strong>为什么</strong>：先预测再看结果，才能让「A0 正常 = 回路正常」的误区暴露出来 [5][3]。</li>
+</ul>
+<h3 id="建议-17原理图里-c1-的标注贴着反相端引线">建议-17　原理图里 C1 的标注贴着反相端引线</h3>
+<ul>
+<li><strong>位置</strong>：图 41-p2-1、图 41-p4-2，运放反相端向左引出的短线正好停在「C1 10 µF」文字旁边，蓝绿色反馈线也从这段文字下方经过。</li>
+<li><strong>问题</strong>：手机小屏上看，像是 C1 接到了运放反相端。</li>
+<li><strong>改法</strong>：把 C1 的标注挪到电容左侧，或让反相端引线先向下再向右，拉开距离。</li>
+<li><strong>为什么</strong>：图上不能有让人误读的连线 [4]。</li>
+</ul>
+<h3 id="建议-18公式里的中文下标">建议-18　公式里的中文下标</h3>
+<ul>
+<li><strong>位置</strong>：page2 预算公式 <span class="math math-inline">\(V_{电源} \ge V_{接收} + V_{变送器,最低} + I R_{导线}\)</span> 及小结 L148。</li>
+<li><strong>改法</strong>：写成 <code>V_{\text{电源}}</code>、<code>R_{\text{导线}}</code> 等。</li>
+<li><strong>为什么</strong>：GitHub/KaTeX 在数学模式下直接写中文会出现告警或字体不一致，<code>\text{}</code> 更稳。</li>
+</ul>
+<h2 id="三计数">三、计数</h2>
+<p>用脚本统计本文件中以「### 必改-」和「### 建议-」开头的标题：</p>
+<pre><code class="language-bash">rg -c '^### 必改-' review/part2/teacher/41.md   # 必改条数
+rg -c '^### 建议-' review/part2/teacher/41.md   # 建议条数
+</code></pre>
+<p><strong>必改 11、建议 18</strong>。</p>
+<h2 id="复核2026-10-27第-1-轮">复核（2026-10-27，第 1 轮）</h2>
+<p>核对方式：重新通读 page1–4；用 Read 打开了 41_p1_3、p1_4、p2_2、p2_3、p2_4、p3_3、p3_4、p3_7、p4_1（面包板分四块放大，逐孔对过）和 p4_2；把 page2「六」和 page4 的 Python 块复制到 /tmp/rv41r1/，在仓库根目录下运行；例 1–3 和练习 1–4 都自己重新算了一遍。作者在行内写的修改说明只当参考，下面以页面实际内容为准。</p>
+<h3 id="一初审必改的状态">一、初审必改的状态</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>必改-01 39 用 MOS 管</td>
+<td>⚠️ 部分</td>
+<td>p1 L6、p2 L5、p3 L5 都已经改成 IRLZ44N MOS 管。<strong>page4 L5 仍然写着</strong>「39 恒流源 · 动手实验篇 搭过运放 + 三极管恒流源」，而 39 page4 实际用的是 IRLZ44N。改法和初审相同：写成「39 节用运放 + MOS 管（IRLZ44N）搭过恒流源；本节换成 2N3904 三极管，思路相同，差别见原理与实现篇「三」」。</td>
+</tr>
+<tr>
+<td>必改-02 完整回路图</td>
+<td>✅</td>
+<td>p2 L86–92 新增了图 41-p2-3：12 V 负端用导线接回，用天蓝色粗线画出唯一的电流路径，并有灰色点线 100 nF 和「两段 R线/2 合成 R_x」的注释。图和 alt 一致。（这一节的文字有一处新的错误，见新必改-R1-01。）</td>
+</tr>
+<tr>
+<td>必改-03 错误接地</td>
+<td>✅</td>
+<td>p3「七」L142–158：先预测，再用 details 给出 16.7 mA / 4.17 V，配图 41-p3-7（看图核对过：R_x 470 和 250 Ω 用天蓝色，多接的地线用朱红色并打叉）。p4 表 5 L232–240 和误区条都有对应内容。</td>
+</tr>
+<tr>
+<td>必改-04 渐隐例题</td>
+<td>✅（位置有问题，见新建议-R1-01）</td>
+<td>p2 L61–84 有例 1（完整示范）、例 2（留空）、例 3（迁移）。答案自己算过：例 2 码 180、16.04 mA → 15.88 mA → 3.97 V；例 3 码 93（8.01 mA），5.00 V 时码 90，3.00 V 对应 50 %，全部正确。</td>
+</tr>
+<tr>
+<td>必改-05 练习题</td>
+<td>✅</td>
+<td>p3 L176–208 共 4 题。答案自己算过：练 1 625 Ω；练 2 码 112、285 Ω、178 µA、38.7 mA、0.37 W；练 3 读 40 格、325 Ω；练 4 8.36 km，全部正确。练 4 迁移太弱，见新建议-R1-02。</td>
+</tr>
+<tr>
+<td>必改-06 连接文字配原理图（10 处）</td>
+<td>⚠️ 9/10</td>
+<td>第 1、3–10 处已改：p1 图 41-p1-3；p2 图 41-p2-3；图 41-p2-4；p2-2 已画出 22k/10k → A1；图 41-p3-3；图 41-p3-4；100 nF 在 p2-3 用灰色点线画出；p4-2 有「100 Ω i24–i26 + 150 Ω j26–j29」注释，右上角还有 LM358 B 半（6 脚接 7 脚，5 脚接地）和 100 nF 去耦小框，都看图确认过。<strong>第 2 处未改</strong>：p1「本节要搭什么」L100–107 用四条文字描述了整个电路的连接，但没有图，也没有链接。改法：在列表末尾加一句「整体接法见 <a href="../../../41-current-loop-4-20ma/page2.html">原理与实现篇</a> 图 41-p2-2（发送器）和图 41-p2-3（完整回路）」，或直接放一张缩小的图 41-p2-3。</td>
+</tr>
+<tr>
+<td>必改-07 p4 先面包板后原理图</td>
+<td>✅</td>
+<td>p4 L52–62：图 41-p4-1 面包板在前，图 41-p4-2 原理图在后，后面有「对照看」。四块放大图逐孔核对：R1 h1–h5、D9→j1、R2 j5→地、C1 正极 i5、绿线 g5→g14、22k i9–i12、10k j9→地、A1 从 h9 引出、R_B h12–h17、绿线 i13→i22、g17→g23、E/B/C 在 f22/f23/f24、R_S j22→地、10k h22–h27、A0 从 j27 引出、250 Ω i24–i29、R_x h29–h33、j33→下方 +12 轨、Arduino GND 在第 25 列；圈①–④分别在 j12、g22、j24、j14；LM358 在第 12–15 列，a12 接 +12，a15 接地，c13–c14 短接，b12 经 100 nF 接地。全部和 p4-2 的孔位文字一致。A0 线经过的第 27 列离 +12 轨跨线（第 33、35 列）有 6 列以上。</td>
+</tr>
+<tr>
+<td>必改-08 表 2/表 4 带电改线</td>
+<td>✅</td>
+<td>p4 L194：「<strong>先拔 12 V</strong>，拔掉短线……再插回 12 V 测量；换下一只电阻时重复这三步」。L213 表 3 也要求「先拔 12 V」。L222 表 4 要求「先拔 12 V，把 R_x 整只拔下……不要只拔一只脚让另一只悬着：悬空的脚可能带 12 V，碰到旁边第 27 列就会直接打进 A0」。L230、L232、L240 也都有。要求的「悬空脚带 +12 V」提醒已经写到。（步骤 12 的带电接线是另一处问题，见新必改-R1-03。）</td>
+</tr>
+<tr>
+<td>必改-09 7 列测量表</td>
+<td>✅</td>
+<td>表 1–5 都是 7 列：步骤 / 测什么 / 红表笔 / 黑表笔 / 挡位 / 应该读到 / 读不到时先查。</td>
+</tr>
+<tr>
+<td>必改-10 Python 与记录表</td>
+<td>✅</td>
+<td>p4 L252–296 有 sys.path 两行，实测值输入，check() 在偏差 &gt; 10 % 时提示。副本运行：默认 rows 偏差都是 0.0 %；12.00 V、20 mA 时 R_x 最多 235 Ω；V5 = 4.83 V 时码 232，用码 224 实际是 19.29 mA，和正文一致。p2「六」副本运行输出的码 38/45/135/224/255 对应 3.353/3.971/11.913/19.767/22.502 mA，和 p1-4 图、p4 表格一致。记录表 L307–323 是「实测 / 计算 / 偏差」。</td>
+</tr>
+<tr>
+<td>必改-11 「5 等分」</td>
+<td>✅</td>
+<td>p1 L83 已改成「4 份」。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>旧必改未改好：2 条</strong>（01、06），都只差一处，改起来很快。</p>
+<h3 id="二建议采纳情况">二、建议采纳情况</h3>
+<p>建议-01 至建议-18 <strong>全部采纳</strong>，抽查都和页面一致：</p>
+<ul>
+<li>图号顺序已按出现顺序排好。</li>
+<li>颜色词已统一为蓝绿色 / 天蓝色 / 红紫色点划线 / 灰色点线 / 朱红色。</li>
+<li>575 Ω 有完整算式；开头有三问；alt 已改；p1-4 图上标 3.35 mA。</li>
+<li>3.96/3.97 两种口径在 p2 L110 有说明；409.6/408.9；6.97/6.98、574 格。</li>
+<li>22.8 mA 的出处已删，改为「按满码 22.73 mA 算」。</li>
+<li>PWM 回指 06/26/20，并补了纹波算式。</li>
+<li>步骤 4 中途检查；V5 在上传前填写；L211 有电源电压提示。</li>
+<li>表 2 和 p3 都有「先预测」；C1 标注已和反馈线分开；中文下标改用 <code>\text{}</code>。</li>
+</ul>
+<h3 id="三本轮修改带来的新问题">三、本轮修改带来的新问题</h3>
+<h4 id="新必改">新必改</h4>
+<h3 id="新必改-r1-01-page23-回路电流从哪儿走说-r_s-上也是同一个-i和三矛盾">新必改-R1-01 page2「3. 回路电流从哪儿走」说 R_S 上也是同一个 I，和「三」矛盾</h3>
+<ul>
+<li><strong>位置</strong>：page2 L86 末句「整圈只有这一条路，所以每个元件上的电流都是同一个 <span class="math math-inline">\(I\)</span> 。」以及图 41-p2-3：R_S 那一段也标了 I，图中间写「这一圈里电流处处 = I」。</li>
+<li><strong>问题</strong>：基极电流在发射极汇入，R_S 上流的是 <span class="math math-inline">\(I_E = I + I_B\)</span> 。两节之后的「三」专门讲 A0 看到的电流比回路电流多约 1 %；p3 的断线 / 饱和例子里两者差 6 mA，这正是本节要教的核心误区「A0 正常 ≠ 回路正常」。现在第 3 步先说「处处相等」，读者到「三」会觉得前后矛盾。</li>
+<li><strong>改法</strong>：
+<ul>
+<li>文字改为「从 12 V 正端到集电极、再从 <span class="math math-inline">\(R_S\)</span> 下端回到负端，电流处处是同一个 <span class="math math-inline">\(I\)</span> ；只有在发射极这一点，基极还会并进来一小股 <span class="math math-inline">\(I_B\)</span> ，所以 <span class="math math-inline">\(R_S\)</span> 上是 <span class="math math-inline">\(I_E = I + I_B\)</span> ，大约多 1 %（「三」细讲）。」</li>
+<li>图 41-p2-3 的发射极 / R_S 段把 I 改成 <span class="math math-inline">\(I_E\)</span> ，在 R_B 到基极处加一个小箭头标 <span class="math math-inline">\(I_B\)</span> 。中间文字改为「集电极以上处处 = I」，或加注「R_S 上多一点 I_B，见「三」」。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：这是正确性问题。前面这样讲，会让后面的核心概念显得像是推翻了前面的说法。</li>
+</ul>
+<h3 id="新必改-r1-02-page3二100-kω-下拉的分压讲错了电路关系">新必改-R1-02 page3「二」100 kΩ 下拉的分压讲错了电路关系</h3>
+<ul>
+<li><strong>位置</strong>：page3 L65（0.908 倍、9.2 %、18.17 mA），L67 图 41-p3-4 的 alt 和图底公式「A0 = 100 / (100 + 10 + 0.1) × V_E」，L71「100 kΩ 下拉、10 kΩ 和 <span class="math math-inline">\(R_S\)</span> （0.1 kΩ）串成一串」，L217 误区条「9.2 %」。数字的来源是 code/41_sim.py L203 <code>k_pd = r_pd / (r_pd + 10e3 + R_S)</code>。</li>
+<li><strong>问题</strong>：图上画得很清楚，R_S 是从 <span class="math math-inline">\(V_E\)</span> 这一点接地，和「10 kΩ + 100 kΩ」这一串是<strong>并联</strong>关系，不在串里。而且运放会把 <span class="math math-inline">\(V_E\)</span> 钉在 <span class="math math-inline">\(V_{SET}\)</span> ，所以 A0 = <span class="math math-inline">\(V_E\)</span> × 100 ÷ (10 + 100) = 0.909 <span class="math math-inline">\(V_E\)</span> 。L71 这句是本轮新加的解释，等于教给学生一个错误的串联关系。数值差得不多，但道理是错的。</li>
+<li><strong>改法</strong>：
+<ul>
+<li>L71 改为「 <span class="math math-inline">\(V_E\)</span> 被运放钉住，10 kΩ 和 100 kΩ 从 <span class="math math-inline">\(V_E\)</span> 到地串成一串（ <span class="math math-inline">\(R_S\)</span> 并在旁边，不影响这一串的分压），A0 只分到 100 ÷ 110 = 0.909」。</li>
+<li>L65 改为「0.909 倍，读数偏低 9.1 %（20 mA 显示 18.18 mA）」，L217 同步改成 9.1 %。</li>
+<li>重画图 41-p3-4 的底部公式：A0 = 100/(10+100) × V_E = 0.909 × V_E。</li>
+<li>建议作者同步修正 code/41_sim.py L203，把 <code>+ R_S</code> 去掉。</li>
+</ul>
+</li>
+<li><strong>为什么</strong>：讲连接的文字必须和电路一致。学生照「串成一串」去理解，会把并联元件也算进分压里。</li>
+</ul>
+<h3 id="新必改-r1-03-page4-步骤-12-在-usb-和-12-v-都通电时接-a0a1">新必改-R1-03 page4 步骤 12 在 USB 和 12 V 都通电时接 A0、A1</h3>
+<ul>
+<li><strong>位置</strong>：page4 L76 步骤 11 的末尾「插 USB……最后插 12 V」，以及 L77 步骤 12「都 ≤ 5 V 才把 j27 → A0、h9 → A1 接上」。</li>
+<li><strong>问题</strong>：照这两步做，就是在 12 V 通电时往 Arduino 上插线。这和本页安全须知 L27「改线前先拔 12 V，再拔 USB」矛盾，也违反「不带电改线」原则。如果插线时手滑碰到第 33/35 列的 +12 跨线，或误插进 +12 轨，12 V 会直接打进 A0 或 A1。10 kΩ 和 22k/10k 都在面包板这一侧，杜邦线的线头一旦误插到 +12 轨，中间就没有任何限流。</li>
+<li><strong>改法</strong>：步骤 12 改为「串口输入 <code>20</code>，量 j27（约 2.0 V）和 h9（约 0.9 V）。都 ≤ 5 V 后，<strong>先拔 12 V，再拔 USB</strong>，把 j27 → A0、h9 → A1 接上；检查无误后先插 USB，最后插 12 V。」安全须知 L24 相应补一句「接这两根线时也要先断电」。</li>
+<li><strong>为什么</strong>：用户要求的安全底线是不带电改线；这一步是全页唯一一处明确让读者带电接线的地方。</li>
+</ul>
+<h4 id="新建议">新建议</h4>
+<h3 id="新建议-r1-01-例-13-放得太早用到了还没讲的-β-误差">新建议-R1-01 例 1–3 放得太早，用到了还没讲的 β 误差</h3>
+<ul>
+<li><strong>位置</strong>：page2 L61–84。例题插在第 2 步和第 3 步之间，打断了编号。例 1 第 4 步用了「× 100/101（β = 100，见「三」）」，例 2 也用了；而且三道例题都要求「250 Ω 上读多少」，可第 3 步「回路电流从哪儿走」还没讲。</li>
+<li><strong>改法</strong>：把三道例题整体移到「三」β 误差之后，单独成一小节（例如「三之后：练一练」）；或者在例 1、例 2 中先按 β 无穷大算（12.03 mA → 3.01 V），在答案后加一句「「三」会告诉你实际再少约 1 %」。</li>
+<li><strong>为什么</strong>：渐隐样例的前提是每一步都已经讲过，跳步会增加认知负荷 [1][2]。</li>
+</ul>
+<h3 id="新建议-r1-02-练习-4-的换场景其实是把-p1p2-的算式再算一遍">新建议-R1-02 练习 4 的「换场景」其实是把 p1、p2 的算式再算一遍</h3>
+<ul>
+<li><strong>位置</strong>：page3 练习 4。前半「24 V / XTR115 / 250 Ω → 575 Ω」在 p1 L68–74、p2 预算表、p2 小结里已经算过三次，学生只要换一个线径。</li>
+<li><strong>改法</strong>：换成一个新的结构，例如：「控制室 PLC 的 250 Ω 和现场数显表的 250 Ω <strong>串在同一个回路</strong>里，24 V 电源，变送器最低 7.5 V，0.5 mm² 双芯线（往返 0.0688 Ω/m）。两块表读数一样吗？最远能拉多远？」答案：读数一样（串联电流处处相等）；(24 − 7.5 − 2 × 5) ÷ 0.02 = 325 Ω，325 ÷ 0.0688 ≈ 4.72 km。</li>
+<li><strong>为什么</strong>：举一反三要求结构上有变化（多一个负载），而不只是换一个数。这一题还能复习「串联电流处处相等」。</li>
+</ul>
+<h3 id="新建议-r1-03-表-5-开始时-h29h33-上其实是短线应写明换成-470-ω">新建议-R1-03 表 5 开始时 h29–h33 上其实是短线，应写明「换成 470 Ω」</h3>
+<ul>
+<li><strong>位置</strong>：page4 表 3 L213 改成了短线；表 4 L222「把 <span class="math math-inline">\(R_x\)</span> 整只拔下」，此时拔的其实是短线；L230「再把 <span class="math math-inline">\(R_x\)</span> 插回去」，插回的也是短线；表 5 L232 写的是「确认 <span class="math math-inline">\(R_x\)</span> 是 470 Ω」。</li>
+<li><strong>问题</strong>：如果读者只「确认」，没意识到那里是短线，就接地做表 5，250 Ω 上是 12 V ÷ 250 Ω = 48 mA、0.58 W，超过 1/4 W，会烫手、冒烟。</li>
+<li><strong>改法</strong>：
+<ul>
+<li>L222 改为「把 h29–h33 的短线整根拔下」。</li>
+<li>L230 改为「再把短线插回去」。</li>
+<li>L232 改为「先拔 12 V，<strong>把 h29–h33 的短线换成 470 Ω</strong>，再……」。</li>
+<li>表 5「读不到时先查」一栏加「约 5 V 且 250 Ω 发烫：h29–h33 还是短线，立刻拔 12 V」。</li>
+</ul>
+</li>
+</ul>
+<h3 id="新建议-r1-04-page4-开头的目标句剧透了表-2-的预测">新建议-R1-04 page4 开头的目标句剧透了表 2 的预测</h3>
+<ul>
+<li><strong>位置</strong>：page4 L13「3. 顺从极限： <span class="math math-inline">\(R_x\)</span> = 470 Ω 时回路电流掉到约 13.8 mA，而 Arduino A0 仍报 20 mA」。</li>
+<li><strong>改法</strong>：改为回忆式提问，例如「3. 顺从极限：导线电阻大到一定程度时，回路电流和 A0 读数还一致吗？（先回想参数与调试篇「一」，表 2 里验证）」。</li>
+<li><strong>为什么</strong>：表 2 要求先预测，答案已经写在页首，「先预测」就失效了 [3]。</li>
+</ul>
+<h3 id="新建议-r1-05-100--150-ω-方案的表笔孔位">新建议-R1-05 100 + 150 Ω 方案的表笔孔位</h3>
+<ul>
+<li><strong>位置</strong>：page4 L48 用 100 Ω（i24–i26）+ 150 Ω（j26–j29）代替 250 Ω，这时 j29 被 150 Ω 的脚占用，而表 1–5 的红表笔都写 j29。</li>
+<li><strong>改法</strong>：在 L48 后补一句「用这个方案时，红表笔改点 f29 或 g29（同一列相通）」。</li>
+</ul>
+<h3 id="新建议-r1-06-三处跨页引用要写出图号">新建议-R1-06 三处跨页引用要写出图号</h3>
+<ul>
+<li>page3 L41「原理与实现篇「二」里运放和 A1 的那张原理图」改为「图 41-p2-2」。</li>
+<li>page3 L121「接收端 250 Ω 两端并一只 100 nF」后面补「（图 41-p2-3 灰色点线）」。</li>
+<li>page4 L232 表 5 补「原理图见参数与调试篇图 41-p3-7」。</li>
+<li><strong>为什么</strong>：这样讲连接的每段文字都能直接找到原理图，符合双编码原则 [4]。</li>
+</ul>
+<h3 id="新建议-r1-07-小数值">新建议-R1-07 小数值</h3>
+<ul>
+<li>page4 L363「回路电流约 19.09 mA」：19.29 × 100/101 = 19.10，250 Ω 上 4.77–4.78 V，应改为 19.10。</li>
+<li>page4 Python rows 的注释里补一句「码填串口打印的 code=」。如果 V5 填了 4.83，码还留着 224，计算值会和实测差 3.5 %，又低于 10 % 的门限，不会提示。</li>
+<li>面包板图 41-p4-1 里「250 Ω」蓝字的上半截被电阻本体压住了，标签可以下移几个像素。</li>
+</ul>
+<h3 id="四三项评分">四、三项评分</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>初审</th>
+<th>本轮</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td><strong>好</strong></td>
+<td>讲解顺序是「开头三问 → 两线制 / 四线制对比 → 电压预算 → 完整回路 → β 误差 → 顺从极限 / 断线 / 错接地」，由具体到抽象。新加的完整回路图和错接地坏例让每个结论都有图、有数、有 SPICE 对照。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td><strong>一般</strong>（改完新必改-R1-01、R1-02 和新建议-R1-01 即可到「好」）</td>
+<td>优点：先预测、details、对照看、中途检查、7 列表格都已齐备，大幅降低了操作难度。扣分点：例题在讲 β 之前就用了 100/101（跳步）；p2 第 3 步「处处同一个 I」和「三」矛盾；p3 下拉一段把并联元件讲成串联。这三处会让认真的读者卡住。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>差</td>
+<td><strong>一般</strong></td>
+<td>已经有：完整示范 → 留空 → 迁移的渐隐例题；参数变化（练 2 改分压、p4 思考题 24 V）；与 39 节 MOS 管的对比（练 3）；换场景（练 4）；例 3 换成 4.83 V 的迁移。不到「好」的原因：唯一的换场景题（练 4）其实是把 p1、p2 算过三次的 575 Ω 再算一遍，只换了线径，没有结构变化；p4 思考题大多是回忆型。按新建议-R1-02 改写练 4 后可评「好」。</td>
+</tr>
+</tbody>
+</table>
+<p>三项都没有「差」，所以没有因评分而新增的必改。</p>
+<h3 id="五规则复查">五、规则复查</h3>
+<ul>
+<li><strong>讲连接的文字 / 面包板图旁都有原理图</strong>：p4 面包板图后面紧跟着 p4-2 原理图和「对照看」✅。p2、p3 新增的连接段落都有配图 ✅。<strong>唯一缺的是 p1「本节要搭什么」</strong>（旧必改-06 第 2 处）。另有三处只写了「那张图」或什么都没写，没有给图号，见新建议-R1-06。</li>
+<li><strong>安全（不带电改线）</strong>：
+<ul>
+<li>表 2 ✅（L194 先拔 12 V，每换一只重复）。</li>
+<li>表 3 ✅。</li>
+<li>表 4 ✅：要求整只拔下，并明确提醒悬空脚带 12 V、第 27 列就是 A0。</li>
+<li>表 5 ✅：先拔、后插、拆线时再拔；但 R_x 当时的状态写得不清楚，见新建议-R1-03。</li>
+<li><strong>步骤 12 ❌</strong>：带电接 A0、A1，见新必改-R1-03。</li>
+<li>安全须知写「先拔 12 V，再拔 USB」，各表格只写拔 12 V。只拔 12 V 时 Arduino 一侧只有 5 V，可以接受，但建议在 L27 说明「表格里换 R_x 只需拔 12 V；动 Arduino 的线时 12 V 和 USB 都要拔」，把两种情况分清。</li>
+</ul>
+</li>
+</ul>
+<h3 id="六结论">六、结论</h3>
+<p><strong>暂不能发布。</strong> 需要先改完：</p>
+<ul>
+<li>旧必改未改好 2 条：01 的 page4 L5；06 第 2 处 page1「本节要搭什么」。</li>
+<li>新必改 3 条：R1-01 R_S 上的电流不是 I；R1-02 下拉分压的电路关系讲错；R1-03 步骤 12 带电接线。</li>
+</ul>
+<p>这 5 处都是一两句话或一张图的局部修改，改完即可发布，不需要再做大改。</p>
+<p><strong>计数：未改好的旧必改 2；新必改 3；新建议 7。</strong></p>
+<h2 id="复核2026-10-27第-2-轮">复核（2026-10-27，第 2 轮）</h2>
+<p>本轮只做定点复核：核对第 1 轮复审列出的旧必改 01、06，新必改 R1-01～R1-03，以及新建议 R1-02～R1-07；并检查修改处有没有带来新问题。证据以页面和 PNG 为准，状态日志 L110 只作参考。运行用的是去掉 .git 的副本 /tmp/rv3：run_blocks（page2、page4）PASS，check_figs、check_github_math、count_cjk 均通过；code/41_sim.py 副本运行，输出「A0 只看到 0.909 倍，读数偏低 9.1 %（20 mA 显示 18.18 mA）」。</p>
+<h3 id="一三项评分第-2-轮复核">一、三项评分（第 2 轮复核）</h3>
+<table>
+<thead>
+<tr>
+<th>标准</th>
+<th>上轮</th>
+<th>本轮</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td><strong>好</strong></td>
+<td>顺序仍是由具体到抽象。page2 第 3 步改成「集电极以上处处是 I，到发射极并入 I_B，R_S 上是 I_E = I + I_B」（L86），自然引出「三」的 β 误差。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td><strong>好</strong></td>
+<td>上轮三个卡点都解决了：L86 的 I 和 I_E 不再矛盾；page3 L65–71 把下拉讲成「10 kΩ 和 100 kΩ 分压，R_S 并在旁边」，配图 41-p3-4 的公式和正文一致；例题里的 100/101 注明了「见『三』」（page2 L68）。剩下的只是图面小问题，见新建议。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td><strong>好</strong></td>
+<td>练习 4（page3）改成「两只 250 Ω 串在同一回路，24 V、XTR115」，电路结构变了，要学生自己推出读数相同、预算多吃 5 V、距离 8.36 km → 4.72 km。我核算过：(24 − 7.5 − 10) ÷ 0.02 = 325 Ω，325 ÷ 0.0688 ≈ 4.72 km。渐隐例题、参数变化、换场景三层都有了。</td>
+</tr>
+</tbody>
+</table>
+<p>三项都没有「差」。</p>
+<h3 id="二必改逐条核对">二、必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>条目</th>
+<th>状态</th>
+<th>证据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>旧必改-01 page4 L5 39 节用的器件</td>
+<td>✅ 改好</td>
+<td>page4 L5 已改为运放 + MOS 管（IRLZ44N），并说明本节换成 2N3904，和 39 page4 一致。</td>
+</tr>
+<tr>
+<td>旧必改-06 第 2 处 page1「本节要搭什么」没有图</td>
+<td>✅ 改好</td>
+<td>page1 L107 在列表末尾加了链接，指向原理与实现篇「二」的发送器图和第 3 步的完整回路图。作者规范不允许写其他页的图号，所以用小节名描述，读者能找到。</td>
+</tr>
+<tr>
+<td>新必改-R1-01 L86 说 R_S 上也是 I</td>
+<td>✅ 改好</td>
+<td>page2 L86「从 12 V 正端经 R_x、250 Ω 到集电极，电流处处是同一个 I；只有在发射极这一点……I_B 也并了进来，所以 R_S 上流的是 I_E = I + I_B」。图 41-p2-3 放大核对：集电极以上标 I，发射极、R_S 和回线标 I_E，R_B 旁有 I_B 箭头，图下注文也一致。</td>
+</tr>
+<tr>
+<td>新必改-R1-02 page3 下拉讲成串联</td>
+<td>✅ 改好</td>
+<td>page3 L65、L67、L71 改为「10 kΩ 和 100 kΩ 分压，R_S 并在 V_E 与地之间，不在这一串里」，系数 100/(10+100) = 0.909，20 mA 显示 18.18 mA，偏低 9.1 %。L217 误区、page4 L358 思考题 4、code/41_sim.py L203（<code>k_pd = r_pd / (r_pd + 10e3)</code>）都已同步。图 41-p3-4 的电路和底部公式「A0 = 100/(10+100) × V_E = 0.909 × V_E，读数偏低 9.1 %（R_S 并在旁边，不在这一串里）」与正文一致。</td>
+</tr>
+<tr>
+<td>新必改-R1-03 page4 步骤 12 带电接 A0、A1（安全）</td>
+<td>✅ 改好</td>
+<td>page4 L77：先量 j27（约 2.0 V）和 h9（约 0.9 V），确认都 ≤ 5 V 后「<strong>先拔 12 V，再拔 USB</strong>，断电后把 j27 → A0、h9 → A1 接上」，检查无误后再先插 USB、最后插 12 V。L24 安全须知也同步了。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>旧必改 2 条加新必改 3 条，全部改好。</strong></p>
+<h3 id="三建议采纳情况">三、建议采纳情况</h3>
+<ul>
+<li>建议-R1-01（例题用到还没讲的 β）：部分采纳。page2 L68 加了「（β = 100，见『三』）」，可以接受。</li>
+<li>建议-R1-02（练习 4 换结构）：✅ 已采纳。见评分 ③。</li>
+<li>建议-R1-03（表 5 要写明换成 470 Ω）：✅ 已采纳。page4 L222 表 4 写明整根拔下；L230 写明插回短线；L232 表 5 写明「把 h29–h33 的短线换成 470 Ω……不换就接地，250 Ω 上会有 12 V ÷ 250 Ω = 48 mA、0.58 W」；L240 有异常时立刻拔 12 V 的提示。我核算过：12 ÷ 720 = 16.7 mA，250 Ω 上 69 mW、470 Ω 上 131 mW。</li>
+<li>建议-R1-04（开头目标句剧透表 2）：✅ 已采纳。page4 L13 改成问句「导线电阻大到一定程度时，回路电流和 A0 读数还一致吗？谁能报警？」。</li>
+<li>建议-R1-05（100 + 150 Ω 方案的表笔孔位）：✅ 已采纳。page4 L48「下面各表红表笔写 j29 的地方改点 f29 或 g29」，查图这两个孔都空着。</li>
+<li>建议-R1-06（跨页引用要写出图号）：✅ 按作者规范接受。作者规范禁止写其他页的图号。page3 L41 写成「『二』第 1 步之后、画着运放输出经 22k/10k 接 A1 的那张原理图」；L121 写成「『二』第 3 步完整回路图里的灰色点线」；page4 L232 写成「参数与调试篇『七』的坏例」。都能直接找到。</li>
+<li>建议-R1-07（小数值）：大部分采纳。page4 L366 改为 19.10 mA；L267 注释「码填串口打印的 code=，不要照抄默认值」。<strong>图 41-p4-1 的「250 Ω」标签仍有一半被电阻本体压住</strong>（放大看 i24–i29 那只电阻下方，只露出下半截字），未改，转入新建议-02。</li>
+</ul>
+<h3 id="四本轮修改带来的新问题">四、本轮修改带来的新问题</h3>
+<h4 id="新必改-1">新必改</h4>
+<p>无。数值、孔位、安全三方面都没有发现会误导或不安全的新问题。</p>
+<h4 id="新建议-1">新建议</h4>
+<ul>
+<li><strong>新建议-01　图 41-p2-3 电池两侧的电流标注</strong>：电池上端标 I，下端标 I_E，但图上没有画出 I_B 从电源到运放的路径（运放的供电也来自这只 12 V），初学者会问「多出来的 I_B 从哪来」。建议在电池正端旁加一行灰色小字「另有 I_B 经运放电源流出，图中省略」；或者把上端也标成「I + I_B（经运放）」。理由：让 KCL 在电池两端也对得上。</li>
+<li><strong>新建议-02　图 41-p4-1「250 Ω」标签被电阻本体压住</strong>：接上轮建议-R1-07 的第三项。建议把标签下移到 i 行和 j 行之间的空白处，或改成和「10k」「R_x」一样放在电阻上方。</li>
+<li><strong>新建议-03　100 Ω + 150 Ω 方案里，150 Ω 插 j26–j29 会横跨 j27 的 A0 线</strong>（page4 L48、图 41-p4-2 的注释）：150 Ω 的本体会压在 j27、j28 上方，而 j27 插着直通 Arduino A0 的杜邦线（这一端没有 10 kΩ 保护），150 Ω 的 j29 脚又接在 R_x 一侧，电压最高可接近 12 V。正常插好不会接通，但插拔时金属腿有可能碰到 A0 线。page4 L222 自己也警告过「碰到旁边第 27 列就会直接打进 A0」。建议把 150 Ω 改插 <strong>g26–g29</strong>：g26～g29 都是空孔，第 26、29 列的电气连接不变；j29 又空了出来，L48 后半句「红表笔改点 f29 或 g29」也可以删掉。L48 和图 41-p4-2 的注释要同步改。</li>
+<li><strong>新建议-04　page4 L240「读到约 5 V 以上、250 Ω 发烫」</strong>：如果 h29–h33 还是短线，250 Ω 两端实际接近 12 V，写「约 5 V 以上」太含糊。「发烫」又像是在暗示用手去摸，和 L26「不要用手摸元件试温度」冲突。建议改成「5-1、5-2 读到接近 12 V：h29–h33 还是短线，<strong>立刻拔 12 V</strong>，换成 470 Ω 再做」。</li>
+<li><strong>新建议-05　page3 练习 4 的「两只 250 Ω 串在同一回路」没有图</strong>：按「连接描述旁要有原理图」的规则，建议在题干后放一张小图：24 V → 电缆（去）→ PLC 250 Ω → 数显表 250 Ω → XTR115 → 电缆（回）。也可以写成「把原理与实现篇『二』第 3 步完整回路图里的 250 Ω 换成两只串联」。这是练习题，文字本身不会误导，所以列为建议。</li>
+</ul>
+<h3 id="五规则复查-1">五、规则复查</h3>
+<ul>
+<li><strong>剧透</strong>：page4 L13 已改成问句，L192 表 2 的「先预测」答案在 L203–207 的 details 里。✅</li>
+<li><strong>原理图规则</strong>：page1 L107 已链到原理图；page4 面包板图后紧跟原理图 41-p4-2 和「对照看」；表 5 的错接地在参数与调试篇「七」有图 41-p3-7。唯一缺图的是练习 4，见新建议-05。✅</li>
+<li><strong>面包板孔位</strong>：放大图 41-p4-1 逐孔核对第 20–35 列：E/B/C 在 f22/f23/f24，10k 在 h22–h27，R_x 在 h29–h33，250 Ω 在 i24–i29，R_S 在 j22，A0 在 j27，③ 在 j24，j33 → +12 V，GND 在第 25 列，第 34/35 列是跨轨线。表 5 用的 g24、L48 用的 f29/g29 都是空孔。只有 150 Ω 横跨 j27 一处，见新建议-03。✅</li>
+<li><strong>安全</strong>：步骤 12 断电接线；表 2～5 改线前都先拔 12 V；表 5 限定 470 Ω，并有功耗核算；R_B 在错接地时约 93 mW（page3「七」），也在 1/4 W 内。✅</li>
+</ul>
+<h3 id="六结论-1">六、结论</h3>
+<p><strong>可发布。</strong> 旧必改 01、06 和新必改 R1-01～R1-03 全部改好；建议 R1-02～R1-06 已采纳，R1-07 只剩一个图面标签。新建议 5 条都是图面、措辞和孔位上的优化，不影响发布。其中新建议-03（150 Ω 改插 g26–g29）牵涉 A0 安全余量，建议作者优先处理。</p>
+<p><strong>计数：未改好的必改 0 条；新必改 0 条；新建议 5 条。</strong></p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

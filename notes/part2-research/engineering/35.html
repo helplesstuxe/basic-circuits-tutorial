@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>35 程控增益与 AGC · 工程实战调研（工程实战派）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/35.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="35-程控增益与-agc--工程实战调研工程实战派">35 程控增益与 AGC · 工程实战调研（工程实战派）</h1>
+<blockquote>
+<p>对应页面：35-pga-agc/page4.md（已有草稿，本文逐项核对）。另依据 notes/35-research.md 和 PART2_BRIEF §10。
+数据都来自实际打开过的 PDF；打不开或找不到出处的标「[待核实]」。</p>
+</blockquote>
+<h2 id="1-真实产品--参考设计怎么做">1. 真实产品 / 参考设计怎么做</h2>
+<h3 id="11-集成-pgati-pga113scope-档增益--2-选-1-输入">1.1 集成 PGA：TI PGA113（scope 档增益 + 2 选 1 输入）</h3>
+<p>来源：<a href="https://www.ti.com/lit/ds/symlink/pga113.pdf%EF%BC%88SBOS424C%EF%BC%89">https://www.ti.com/lit/ds/symlink/pga113.pdf（SBOS424C）</a></p>
+<ul>
+<li>增益（Features）：<strong>1、2、5、10、20、50、100、200</strong>，按示波器 1-2-5 步进。PGA112/116 是二进制 1–128 档。</li>
+<li>增益误差最大 <strong>0.1 %（G ≤ 32）</strong>、<strong>0.3 %（G &gt; 32）</strong>。</li>
+<li>换档时间 <strong>200 ns</strong>。</li>
+<li>零漂移，失调 25 µV 典型 / 100 µV 最大。</li>
+<li>输出可到离电源轨 50 mV。</li>
+<li>应用列表第二项就是 <em>Automatic Gain Control</em>。</li>
+<li>供电：AVDD、DVDD 各 <strong>2.2–5.5 V</strong>（引脚表）。</li>
+<li>控制：三线 SPI。</li>
+<li>内置 4 个校准通道：GND、0.9 VCAL、0.1 VCAL、VREF。这就是产品里的<strong>零点和满度校准</strong>，正好对应 page4 思考题 3 的做法。</li>
+<li><strong>Layout（§11.1）要点：</strong>
+<ol>
+<li>电源用 0.1 µF 瓷片旁路。</li>
+<li>VOUT 等低阻走线要远离高阻的 MUX 输入；噪声大时 MUX 输入两侧走接地保护线。</li>
+<li>数字信号走线尽量远离模拟输入。</li>
+<li>信号源阻抗 &lt; 10 kΩ；MUX 输入脚可就近并 &gt; 100 pF 的瓷片。</li>
+</ol>
+</li>
+<li>与本节的关系：增益电阻网络和开关在芯片内部，开关不串在增益电流路径上。这就是 page2 所讲“开关串在 R_g 里误差大”的产品级解法。</li>
+</ul>
+<h3 id="12-连续可变增益adi-ad8331超声-vga">1.2 连续可变增益：ADI AD8331（超声 VGA）</h3>
+<ul>
+<li>来源：notes/35-research.md 已记录（<a href="http://analog.com">analog.com</a>，WebFetch 可开、curl 超时）。</li>
+<li>本人这次没有重新打开，数值不重复引用。PART2_BRIEF §9 将其列为 curl 打不开的 ADI 资料，引用时沿用调研笔记的“已打开”记录。</li>
+</ul>
+<h3 id="13-分立方案用的开关ti-cd4051b">1.3 分立方案用的开关：TI CD4051B</h3>
+<p>来源：<a href="https://www.ti.com/lit/ds/symlink/cd4051b.pdf%EF%BC%88SCHS047O%EF%BC%8C2026-05">https://www.ti.com/lit/ds/symlink/cd4051b.pdf（SCHS047O，2026-05</a> 修订）</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>条件</th>
+<th>值</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>引脚</td>
+<td>—</td>
+<td>1 CH4，2 CH6，3 COM，4 CH7，5 CH5，6 INH，7 VEE，8 VSS，9 C，10 B，11 A，12 CH3，13 CH0，14 CH1，15 CH2，16 VDD</td>
+<td>Table 4-1</td>
+</tr>
+<tr>
+<td>r_ON（0 ≤ VIS ≤ VDD）</td>
+<td>VDD = 5 V，VEE = VSS = 0，25 °C</td>
+<td><strong>470 Ω 典型 / 1050 Ω 最大</strong>；85 °C 最大 1200 Ω</td>
+<td>§5.5 电气特性</td>
+</tr>
+<tr>
+<td>r_ON</td>
+<td>VDD = 10 V，25 °C</td>
+<td>180 Ω 典型 / 400 Ω 最大</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>r_ON</td>
+<td>VDD = 15 V，25 °C</td>
+<td>125 Ω 典型 / 240 Ω 最大</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>通道间 Δr_ON</td>
+<td>VDD = 5 V</td>
+<td>15 Ω</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>静态电流 I_DD</td>
+<td>VDD = 5 V，25 °C</td>
+<td>17 µA 典型 / 60 µA 最大</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>控制脚 V_IH 最小 / V_IL 最大</td>
+<td>VDD = 5 V</td>
+<td>3.5 V / 0.8 V</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>信号范围</td>
+<td>—</td>
+<td>地址和 INH 逻辑电平：0 = VSS，1 = VDD；模拟信号可以在 VEE 到 VDD 之间摆动</td>
+<td>Fig 6-1 下方 Note</td>
+</tr>
+</tbody>
+</table>
+<p>注意：</p>
+<ul>
+<li>调研笔记里的“导通电阻 125 Ω（典型）”出自首页描述“typically 125 Ω over 15 V_p-p signal input range for VDD − VEE = 18 V”。<strong>5 V 单电源时典型值是 470 Ω</strong>，不是 125 Ω。page4 草稿已改用 470 Ω，这一点正确。</li>
+<li>调研笔记“算例”里的“89.9（误差约 11 %）”是按 125 Ω 算的，不适用于 5 V 实验。</li>
+</ul>
+<h3 id="14-运放ti-lm358--lm358b同一份手册-slos068ab">1.4 运放：TI LM358 / LM358B（同一份手册 SLOS068AB）</h3>
+<p>来源：<a href="https://www.ti.com/lit/ds/symlink/lm358.pdf%EF%BC%8C%E4%B8%8E">https://www.ti.com/lit/ds/symlink/lm358.pdf，与</a> <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> 下载到的是同一份文件。</p>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>LM358 / LM358A（§5.7，VS = 5 V，25 °C）</th>
+<th>LM358B / BA</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V_OS</td>
+<td>LM358 典型 3 mV、最大 7 mV（0–70 °C 时 9 mV）；LM358A 典型 2 mV、最大 3 mV</td>
+<td>最大 3 mV（B）/ 2 mV（BA）</td>
+</tr>
+<tr>
+<td>GBW</td>
+<td><strong>0.7 MHz</strong></td>
+<td>1.2 MHz</td>
+</tr>
+<tr>
+<td>SR</td>
+<td>0.3 V/µs</td>
+<td>0.5 V/µs</td>
+</tr>
+<tr>
+<td>正向摆幅</td>
+<td>离 V+ 最多 1.5 V（VS = 5 V，R_L ≥ 2 kΩ）</td>
+<td>离 V+ 1.4 V 典型 / 1.48 V 最大（I_OUT = 1 mA）</td>
+</tr>
+<tr>
+<td>负向摆幅</td>
+<td>5 mV 典型 / 20 mV 最大（VS = 5 V，R_L ≤ 10 kΩ）</td>
+<td>—</td>
+</tr>
+<tr>
+<td>输入共模</td>
+<td>含负轨</td>
+<td>(V−) 到 (V+) − 1.5 V</td>
+</tr>
+</tbody>
+</table>
+<p>工程含义：</p>
+<ul>
+<li>市售“LM358”多数是经典版（不同厂家的版本）。<strong>页面里涉及带宽的数字应按 0.7 MHz 估算</strong>，并注明 LM358B 是 1.2 MHz。</li>
+<li>输出上限保证 ≥ 3.5 V（5 V 供电）。page4 说“约 3.8 V”是 SPICE 模型的结果，可写成“3.5 V 以上，常见约 3.6–3.8 V”。后者只来自仿真，没有手册来源。</li>
+</ul>
+<h2 id="2-page4-实验可行性逐项核对">2. page4 实验可行性逐项核对</h2>
+<p>page4 草稿：</p>
+<ul>
+<li>全程 5 V（Arduino 5V 脚 / USB 电源模块 / 3 节 AA）。</li>
+<li>LM358 同相放大，R_f = 100 kΩ。CD4051 选 6 只 R_g（100k/24k/11k/5.1k/2k/1k）。</li>
+<li>输入为电位器分压，后接 ÷11。</li>
+<li>万用表逐档量 ①÷② 得倍数，用 ②③ 反算 R_on，量 X5 零输入失调。</li>
+<li>选做：Arduino 自动换档。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>结论</th>
+<th>依据</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>CD4051 引脚</td>
+<td>草稿的接法正确：X0 = 13，X1 = 14，X2 = 15，X3 = 12，X4 = 1，X5 = 5，COM = 3，INH/VEE/VSS = 6/7/8 接地，A/B/C = 11/10/9，VDD = 16</td>
+<td>手册 Table 4-1</td>
+</tr>
+<tr>
+<td>信号范围</td>
+<td>COM 接运放反相端，电压 30 mV–1 V，在 VEE(0)–VDD(5 V) 之内，可行</td>
+<td>Fig 6-1 Note</td>
+</tr>
+<tr>
+<td>控制电平</td>
+<td>Arduino 5 V 输出 ≥ V_IH 3.5 V，可直接驱动</td>
+<td>§5.5</td>
+</tr>
+<tr>
+<td>上电顺序 / 倒灌</td>
+<td>草稿“先给 16 脚上电”的提示合理</td>
+<td>同上（信号须在 VEE–VDD 之间）</td>
+</tr>
+<tr>
+<td>LM358 输入共模</td>
+<td>输入 30 mV–1.29 V，在 0 到 V+ − 1.5 V = 3.5 V 之内，可行</td>
+<td>LM358 表</td>
+</tr>
+<tr>
+<td>输出摆幅</td>
+<td>各档目标输出约 2 V，低于 3.5 V 上限，可行。第 10 步的饱和值应写“≥ 3.5 V，约 3.6–3.8 V”</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>R_on 对倍数的影响</td>
+<td>典型 470 Ω 时 X5 = 69.0；<strong>最大 1050 Ω 时 X5 = 49.8</strong>。草稿说“多半在 100～500 Ω 之间”没有出处，应改成手册值</td>
+<td>§3 第 1 项</td>
+</tr>
+<tr>
+<td>带宽说法</td>
+<td>草稿：“X5 约 14 kHz，X0 约 940 kHz”。按 GBW/噪声增益估算：经典 LM358 下 X0 ≈ 351 kHz、X5 ≈ 10 kHz；LM358B 下 X0 ≈ 601 kHz、X5 ≈ 17 kHz。<strong>940 kHz 超过了任何版本的 GBW/2，不可信</strong>，应以 SPICE 模型的具体型号重新核对，或改用 GBW/G 估算</td>
+<td>§3 第 2 项</td>
+</tr>
+<tr>
+<td>失调</td>
+<td>0.133 V = 1.9 mV（仿真）× 69；手册最坏 7 mV × 69 = 0.48 V，草稿写法正确</td>
+<td>§3 第 5 项</td>
+</tr>
+<tr>
+<td>换档规则不振荡</td>
+<td>相邻档倍数比最大 2.55，小于 DOWN/UP = 3，回差够用。慢扫和固定输入下都不来回跳</td>
+<td>§3 第 3 项</td>
+</tr>
+<tr>
+<td>ADC 分辨率</td>
+<td>各档输出约 400 字。X5 档 1 LSB 相当于输入 0.071 mV，可行</td>
+<td>§3 第 4 项</td>
+</tr>
+<tr>
+<td>分压</td>
+<td>滑动端最大 1.294 V（10k 电位器 ∥ 11k 负载），与草稿的 1.29 V 一致</td>
+<td>§3 第 6 项</td>
+</tr>
+<tr>
+<td>发热</td>
+<td>CD4051 最大 60 µA、LM358 约 0.35–0.7 mA，几乎不发热</td>
+<td>手册</td>
+</tr>
+<tr>
+<td>Arduino 脚电流</td>
+<td>A/B/C 驱动 CMOS 输入，电流可忽略；A0 串 1 kΩ 保护，合理</td>
+<td>ATmega328P 手册每脚绝对最大 40 mA</td>
+</tr>
+<tr>
+<td>电源规定</td>
+<td><strong>草稿全程用 USB 5 V / 3 节 AA，与 §10 第 3 条“统一单电源 9–12 V 直流”不一致</strong></td>
+<td>PART2_BRIEF §10</td>
+</tr>
+</tbody>
+</table>
+<h3 id="需要作者改正的要点">需要作者改正的要点</h3>
+<ol>
+<li><strong>电源要与 §10 对齐。</strong> 改为“9–12 V 电池组或适配器 → Arduino 的 DC 插座 / VIN → 板载 5 V”，或者“9–12 V → 78L05 → 5 V”。LM358 和 CD4051 仍接 5 V。
+<ul>
+<li>不能让 LM358 直接用 9–12 V：输出可到 7.5–10.5 V，会超过 A0 的 5 V。</li>
+<li>CD4051 在 VDD = 10 V 时 r_ON 会变成 180 Ω 典型，测量表也要跟着变。</li>
+<li>如果坚持用 USB 5 V，需要向协调者申请例外。</li>
+</ul>
+</li>
+<li><strong>R_on 的范围写手册值</strong>：5 V、25 °C 下典型 470 Ω、最大 1050 Ω（85 °C 时 1200 Ω）。删掉“多半在 100～500 Ω”。第 8 步“读不到时”应补一条：“倍数低到约 50：R_on 接近手册最大值 1050 Ω，属正常”。</li>
+<li><strong>调研笔记“R_on 125 Ω → X5 = 89.9（误差 11 %）”是 VDD − VEE = 18 V 的数据</strong>，不适用于 5 V。page2、page3 若引用了 89.9 / 11 %，需改为 470 Ω → 69.0（−31.7 %）。</li>
+<li><strong>“没有示波器”一节的带宽数字（X5 约 14 kHz、X0 约 940 kHz）要重新核对。</strong>
+<ul>
+<li>经典 LM358（GBW 0.7 MHz）：X5 约 10 kHz，X0 约 350 kHz。</li>
+<li>LM358B（1.2 MHz）：X5 约 17 kHz，X0 约 600 kHz。</li>
+<li>建议写成“GBW ÷ 倍数”的估算，并注明所用型号。调研笔记“G = 100 时 12 kHz”的 1.2 MHz 是 LM358B 的值。</li>
+</ul>
+</li>
+<li><strong>第 10 步输出上限</strong>改成“≥ 3.5 V（手册：5 V 供电时离 V+ 最多 1.5 V），仿真约 3.8 V”。</li>
+<li><strong>AGC 换档阈值</strong>：草稿的 2.7 V / 0.9 V 可用。但要在正文里提醒：若改档位电阻，使相邻倍数比 ≥ 3，换档会来回跳。§3 第 3 项给出了判据。</li>
+<li>参考资料里的 lm358.pdf 与 lm358b.pdf 是同一份 SLOS068AB，引用时写明看的是 §5.7 LM358 那张表。</li>
+</ol>
+<h2 id="3-计算--仿真已运行">3. 计算 / 仿真（已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng35/pga.py</code></p>
+<p><strong>已运行</strong> 代码：</p>
+<pre><code class="language-python">import numpy as np
+RF = 100e3
+RG = np.array([100e3, 24e3, 11e3, 5.1e3, 2e3, 1e3])
+print(&quot;== 1. 六档倍数随 CD4051 R_on 的变化（VDD=5V：典型 470 Ω，25°C 最大 1050 Ω；VDD=15V 典型 125 Ω）==&quot;)
+for ron in (0, 125, 470, 1050):
+    g = 1 + RF/(RG + ron)
+    print(f&quot;R_on={ron:5d}Ω: &quot; + &quot;  &quot;.join(f&quot;X{k}={v:6.2f}&quot; for k, v in enumerate(g)))
+g470 = 1 + RF/(RG+470)
+gi = 1 + RF/RG
+print(&quot;R_on=470Ω 时 X5 比理想小&quot;, round((1-g470[5]/gi[5])*100, 1), &quot;%；R_on=1050 时 X5 =&quot;, round(1+RF/(1e3+1050), 1))
+
+print(&quot;\n== 2. 各档 −3 dB 带宽 ≈ GBW / 噪声增益（R_on=470Ω）==&quot;)
+for name, gbw in ((&quot;LM358/LM358A 0.7 MHz&quot;, 0.7e6), (&quot;LM358B 1.2 MHz&quot;, 1.2e6)):
+    print(name + &quot;: &quot; + &quot;  &quot;.join(f&quot;X{k}={gbw/g/1e3:6.1f}kHz&quot; for k, g in enumerate(g470)))
+
+print(&quot;\n== 3. 数字 AGC 换档规则（DOWN=0.9·3.0=2.7 V，UP=0.3·3.0=0.9 V）是否会来回跳 ==&quot;)
+print(&quot;相邻档倍数比:&quot;, np.round(g470[1:]/g470[:-1], 3), &quot;  需 &lt; DOWN/UP =&quot;, 2.7/0.9)
+VSAT = 3.5   # LM358 VS=5V、RL≥2k 正向摆幅离 V+ 最多 1.5 V（经典 LM358 表）
+def run(vin_seq, k=0):
+    hist = []; skip = True
+    for vin in vin_seq:
+        vout = min(vin*g470[k], VSAT)
+        n = int(vout/5.0*1024); vq = n*5.0/1024
+        if skip: skip = False
+        elif vq &gt; 2.7 and k &gt; 0: k -= 1; skip = True
+        elif vq &lt; 0.9 and k &lt; 5: k += 1; skip = True
+        hist.append(k)
+    return hist
+vin = np.concatenate([np.logspace(np.log10(1.29), np.log10(0.012), 400), np.logspace(np.log10(0.012), np.log10(1.29), 400)])
+h = run(vin)
+changes = int(np.sum(np.diff(h) != 0))
+print(f&quot;输入 1.29 V → 12 mV → 1.29 V 慢扫 800 步：换档 {changes} 次（单调扫描理想为 10 次）&quot;)
+# 固定输入不动时，是否会稳定在某档
+for v in (1.0, 0.3, 0.05, 0.02):
+    hh = run([v]*60)
+    print(f&quot;固定 Vin={v*1e3:6.1f} mV: 最终档 X{hh[-1]}, 后 30 步换档 {int(np.sum(np.diff(hh[-30:])!=0))} 次, Vout={v*g470[hh[-1]]:.3f} V&quot;)
+
+print(&quot;\n== 4. ADC 分辨率：各档测量点在 ADC 里的字数与输入等效分辨率 ==&quot;)
+lsb = 5.0/1024
+for k, vi in enumerate((1.0, 0.4, 0.2, 0.1, 0.05, 0.03)):
+    vo = vi*g470[k]
+    print(f&quot;X{k}: Vin={vi*1e3:6.1f} mV → Vout={vo:.3f} V = {vo/lsb:5.0f} 字；1 LSB 相当于输入 {lsb/g470[k]*1e3:6.3f} mV&quot;)
+
+print(&quot;\n== 5. 失调放大（LM358 25°C：典型 3 mV、最大 7 mV；LM358B 最大 3 mV）==&quot;)
+for vos in (1.9e-3, 3e-3, 7e-3):
+    print(f&quot;Vos={vos*1e3:.1f} mV × X5 增益 {g470[5]:.1f} = {vos*g470[5]:.3f} V&quot;)
+
+print(&quot;\n== 6. 输入分压：5V-15k-[10k 电位器 ∥ (10k+1k)] ==&quot;)
+rpar = 1/(1/10e3 + 1/11e3)
+vmax = 5*rpar/(15e3+rpar)
+print(f&quot;滑动端最大 {vmax:.3f} V；÷11 后最大 {vmax/11*1e3:.1f} mV；X1 档满偏输入 {vmax*g470[1]:.2f} V → 饱和于 ≥{VSAT} V&quot;)
+</code></pre>
+<p><strong>实际输出：</strong></p>
+<pre><code class="language-text">== 1. 六档倍数随 CD4051 R_on 的变化（VDD=5V：典型 470 Ω，25°C 最大 1050 Ω；VDD=15V 典型 125 Ω）==
+R_on=    0Ω: X0=  2.00  X1=  5.17  X2= 10.09  X3= 20.61  X4= 51.00  X5=101.00
+R_on=  125Ω: X0=  2.00  X1=  5.15  X2=  9.99  X3= 20.14  X4= 48.06  X5= 89.89
+R_on=  470Ω: X0=  2.00  X1=  5.09  X2=  9.72  X3= 18.95  X4= 41.49  X5= 69.03
+R_on= 1050Ω: X0=  1.99  X1=  4.99  X2=  9.30  X3= 17.26  X4= 33.79  X5= 49.78
+R_on=470Ω 时 X5 比理想小 31.7 %；R_on=1050 时 X5 = 49.8
+
+== 2. 各档 −3 dB 带宽 ≈ GBW / 噪声增益（R_on=470Ω）==
+LM358/LM358A 0.7 MHz: X0= 350.8kHz  X1= 137.6kHz  X2=  72.0kHz  X3=  36.9kHz  X4=  16.9kHz  X5=  10.1kHz
+LM358B 1.2 MHz: X0= 601.4kHz  X1= 235.9kHz  X2= 123.5kHz  X3=  63.3kHz  X4=  28.9kHz  X5=  17.4kHz
+
+== 3. 数字 AGC 换档规则（DOWN=0.9·3.0=2.7 V，UP=0.3·3.0=0.9 V）是否会来回跳 ==
+相邻档倍数比: [2.549 1.911 1.95  2.189 1.664]   需 &lt; DOWN/UP = 3.0
+输入 1.29 V → 12 mV → 1.29 V 慢扫 800 步：换档 10 次（单调扫描理想为 10 次）
+固定 Vin=1000.0 mV: 最终档 X0, 后 30 步换档 0 次, Vout=1.995 V
+固定 Vin= 300.0 mV: 最终档 X1, 后 30 步换档 0 次, Vout=1.526 V
+固定 Vin=  50.0 mV: 最终档 X3, 后 30 步换档 0 次, Vout=0.948 V
+固定 Vin=  20.0 mV: 最终档 X5, 后 30 步换档 0 次, Vout=1.381 V
+
+== 4. ADC 分辨率：各档测量点在 ADC 里的字数与输入等效分辨率 ==
+X0: Vin=1000.0 mV → Vout=1.995 V =   409 字；1 LSB 相当于输入  2.447 mV
+X1: Vin= 400.0 mV → Vout=2.035 V =   417 字；1 LSB 相当于输入  0.960 mV
+X2: Vin= 200.0 mV → Vout=1.944 V =   398 字；1 LSB 相当于输入  0.502 mV
+X3: Vin= 100.0 mV → Vout=1.895 V =   388 字；1 LSB 相当于输入  0.258 mV
+X4: Vin=  50.0 mV → Vout=2.074 V =   425 字；1 LSB 相当于输入  0.118 mV
+X5: Vin=  30.0 mV → Vout=2.071 V =   424 字；1 LSB 相当于输入  0.071 mV
+
+== 5. 失调放大（LM358 25°C：典型 3 mV、最大 7 mV；LM358B 最大 3 mV）==
+Vos=1.9 mV × X5 增益 69.0 = 0.131 V
+Vos=3.0 mV × X5 增益 69.0 = 0.207 V
+Vos=7.0 mV × X5 增益 69.0 = 0.483 V
+
+== 6. 输入分压：5V-15k-[10k 电位器 ∥ (10k+1k)] ==
+滑动端最大 1.294 V；÷11 后最大 117.6 mV；X1 档满偏输入 6.58 V → 饱和于 ≥3.5 V
+</code></pre>
+<h2 id="4-参考链接均已用-curl-下载--打开">4. 参考链接（均已用 curl 下载 / 打开）</h2>
+<ul>
+<li>TI CD4051B 数据手册（SCHS047O）：<a href="https://www.ti.com/lit/ds/symlink/cd4051b.pdf">https://www.ti.com/lit/ds/symlink/cd4051b.pdf</a></li>
+<li>TI PGA112/113/116/117 数据手册（SBOS424C）：<a href="https://www.ti.com/lit/ds/symlink/pga113.pdf">https://www.ti.com/lit/ds/symlink/pga113.pdf</a></li>
+<li>TI LM358/LM358B 数据手册（SLOS068AB）：<a href="https://www.ti.com/lit/ds/symlink/lm358.pdf%EF%BC%88%E5%8D%B3">https://www.ti.com/lit/ds/symlink/lm358.pdf（即</a> <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf%EF%BC%89">https://www.ti.com/lit/ds/symlink/lm358b.pdf）</a></li>
+<li>Microchip ATmega328P 数据手册：<a href="https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf">https://ww1.microchip.com/downloads/en/DeviceDoc/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061A.pdf</a></li>
+<li>Arduino analogRead 参考源文件：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogRead.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogRead.adoc</a></li>
+</ul>
+<h3 id="待核实">[待核实]</h3>
+<ul>
+<li>CD4051B 在 VIS 接近 0 V 时的 r_ON（手册有 r_ON–VIS 曲线，但 pdftotext 读不出数值）。本实验 COM 在 30 mV–1 V，实际 r_ON 可能低于 470 Ω。</li>
+<li>AD8331 的数据：本人这次未重新打开，沿用调研笔记。</li>
+<li>“LM358 输出上限约 3.8 V”只来自 SPICE，没有手册来源。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>
