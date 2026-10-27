@@ -1,0 +1,22 @@
+* 32 电荷放大器 page4 第 8 步：电压模式对照（U1A 接成跟随器，传感器节点经 R_I 接 3 脚）
+.include ../models/LMC648x_TI.lib
+.param cs=1n cc=1f
+VCC vcc 0 DC 9
+RM1 vcc vd 10k
+RM2 vd 0 10k
+CM vd 0 10u
+.ic v(vd)=4.5 v(vmid)=4.5 v(x)=4.5 v(si)=4.5 v(out)=4.5
+XU1B vd vmid vcc 0 vmid LMC648x
+XU1A x out vcc 0 out LMC648x
+* 复位：20 ms 之前按住复位按钮 SB，把第 10 列（x）接到 V_MID；之后松开
+SRST x vmid rst 0 SWR
+VRST rst 0 PWL(0 1 20m 1 20.1m 0)
+.model SWR SW(vt=0.5 vh=0.01 ron=1k roff=1e15)
+VK k 0 PWL(0 0 30m 0 31m 1)
+BS s 0 V = V(vmid)*(1-V(k))
+CS s si {cs}
+CC si 0 {cc}
+RI si x 10k
+* 输入被拉到 0 V 轨附近时，默认梯形积分会卡住，改用 gear
+.option method=gear
+.end

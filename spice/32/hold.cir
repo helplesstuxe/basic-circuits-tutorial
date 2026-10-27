@@ -1,0 +1,28 @@
+* 32 电荷放大器 page4 阶段一：保持模式（不插 R_F 时 rf=1e15）/ 插上 R_F / 慢速演示
+* U1A、U1B：TI LMC648x 宏模型（run.py 可把 U1A 换成 LM358 / TL072 模型）
+* 9 V 电池当理想源；各节点从 4.5 V 起算（uic），省去 C_M 50 ms 时间常数的上电过程
+* 输入：S 线 — C_S — 输入点 si — R_I 10 kΩ — N；「假电缆」C_C 接在 si 与 0 V 之间（电缆屏蔽层接地）
+.include ../models/LMC648x_TI.lib
+.include ../models/LMx58_LM2904.lib
+.include ../models/TL072.lib
+.param cs=1n cf=10n rf=1e15 cc=1f ri=10k tgt=0 tstep=30m tback=10
+VCC vcc 0 DC 9
+RM1 vcc vd 10k
+RM2 vd 0 10k
+CM vd 0 10u
+.ic v(vd)=4.5 v(vmid)=4.5 v(n)=4.5 v(out)=4.5 v(si)=4.5
+XU1B vd vmid vcc 0 vmid LMC648x
+XU1A vmid n vcc 0 out LMC648x
+CF out n {cf}
+RF out n {rf}
+* 复位按钮 SB（并在 C_F 上）：20 ms 之前按住（短接 C_F），之后松开
+SRST out n rst 0 SWR
+VRST rst 0 PWL(0 1 20m 1 20.1m 0)
+.model SWR SW(vt=0.5 vh=0.01 ron=1k roff=1e15)
+* 拨动开关 S1：tstep 之前在①（V_MID），之后拨到②：0 V（tgt=0）或 +9 V（tgt=1，第 6 步断电改接），tback 时拨回①
+VK k 0 PWL(0 0 {tstep} 0 {tstep+10u} 1 {tback} 1 {tback+10u} 0)
+BS s 0 V = V(vmid)*(1-V(k)) + {tgt}*V(vcc)*V(k)
+CS s si {cs}
+RI si n {ri}
+CC si 0 {cc}
+.end

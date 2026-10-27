@@ -1,0 +1,33 @@
+* 32 page4 第 8 步排错行：C_F 10 nF 忘了拔、短线也没插（2 脚只经 C_F 接 1 脚），其余三处已改；C_C 100 nF
+* 运行：在本目录 ngspice -b vmode_cf_left.cir
+.include ../models/LMC648x_TI.lib
+.param cs=1n cc=100n
+VCC vcc 0 DC 9
+RM1 vcc vd 10k
+RM2 vd 0 10k
+CM vd 0 10u
+.ic v(vd)=4.5 v(vmid)=4.5 v(x)=4.5 v(si)=4.5 v(out)=4.5 v(n)=4.5
+XU1B vd vmid vcc 0 vmid LMC648x
+XU1A x n vcc 0 out LMC648x
+CF n out 10n
+* 复位：20 ms 之前按住复位按钮 SB，把第 10 列（x）接到 V_MID；之后松开
+SRST x vmid rst 0 SWR
+VRST rst 0 PWL(0 1 20m 1 20.1m 0)
+.model SWR SW(vt=0.5 vh=0.01 ron=1k roff=1e15)
+VK k 0 PWL(0 0 30m 0 31m 1)
+BS s 0 V = V(vmid)*(1-V(k))
+CS s si {cs}
+CC si 0 {cc}
+RI si x 10k
+* 输入被拉到 0 V 轨附近时，默认梯形积分会卡住，改用 gear
+.option method=gear
+.control
+tran 10u 60m 0 10u uic
+meas tran vb0 avg v(out) from=25m to=29m
+meas tran vb1 avg v(out) from=55m to=59m
+meas tran va1 avg v(vmid) from=55m to=59m
+let dba = vb1 - va1
+let dstep = vb1 - vb0
+print dba dstep
+.endc
+.end

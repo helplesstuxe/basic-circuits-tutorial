@@ -1,0 +1,24 @@
+* 32 电荷放大器 page4 阶段二：压电片（电荷源 + C_p）—10 kΩ—N，反并 1N4148 钳在 N 与 V_MID 之间
+* 压电片冷端接 V_MID；C_F 100 nF，R_F 10 MΩ（第 12 步不插：rf=1e15）；各节点从 4.5 V 起算（uic）
+.include ../models/LMC648x_TI.lib
+.include ../models/1N4148_nexperia.lib
+.param cp=20n cf=100n rf=10Meg q=100n tr=5m
+VCC vcc 0 DC 9
+RM1 vcc vd 10k
+RM2 vd 0 10k
+CM vd 0 10u
+.ic v(vd)=4.5 v(vmid)=4.5 v(n)=4.5 v(out)=4.5 v(p)=4.5
+XU1B vd vmid vcc 0 vmid LMC648x
+XU1A vmid n vcc 0 out LMC648x
+CF out n {cf}
+RF out n {rf}
+SRST out n rst 0 SWR
+VRST rst 0 PWL(0 1 20m 1 20.1m 0)
+.model SWR SW(vt=0.5 vh=0.01 ron=1k roff=1e15)
+* 按下：30 ms 起，在 tr 时间里把电荷 q 推进压电片（电流 q/tr 从 V_MID 流向 p），之后一直按着
+IQ vmid p PULSE(0 {q/tr} 30m 1u 1u {tr} 1000)
+CP p vmid {cp}
+RI p n 10k
+XD1 n vmid 1N4148
+XD2 vmid n 1N4148
+.end

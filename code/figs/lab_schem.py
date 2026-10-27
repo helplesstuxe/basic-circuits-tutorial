@@ -3549,6 +3549,7 @@ def _part2_script(nn):
 
 
 node_31 = _part2_node("31", ("p4_2", "p4_4", "p4_6", "p4_7"))
+node_32 = _part2_node("32", ("p4_2", "p4_4", "p4_6"))
 node_33 = _part2_node("33", ("p4_2", "p4_4"))
 node_34 = _part2_node("34", ("p4_2", "p4_4", "p4_5"))
 node_36 = _part2_node("36", ("p4_1", "p4_2"))
@@ -3597,6 +3598,7 @@ NODES = {
     "29": node_29,
     "30": node_30,   # 第二部分：转调 code/figs/30_figs.py
     "31": node_31,   # 转调 code/figs/31_figs.py
+    "32": node_32,   # 转调 code/figs/32_figs.py
     "33": node_33,   # 转调 code/figs/33_figs.py
     "34": node_34,   # 转调 code/figs/34_figs.py
     "35": node_35,   # 转调 code/figs/35_figs.py

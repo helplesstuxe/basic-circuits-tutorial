@@ -1,0 +1,17 @@
+* 32 电荷放大器：幅频（压电片 → 输出），以及 120 V 60 Hz 经 0.1 pF 耦合到 N 点
+.include ../models/LMC648x_TI.lib
+.param cp=20n cf=100n rf=10Meg cst=0.1p
+VCC vcc 0 DC 9
+RM1 vcc vd 10k
+RM2 vd 0 10k
+CM vd 0 10u
+XU1B vd vmid vcc 0 vmid LMC648x
+XU1A vmid n vcc 0 out LMC648x
+CF out n {cf}
+RF out n {rf}
+IQ vmid p DC 0 AC 1
+CP p vmid {cp}
+RI p n 10k
+VM m 0 DC 0 AC 0
+CST m n {cst}
+.end

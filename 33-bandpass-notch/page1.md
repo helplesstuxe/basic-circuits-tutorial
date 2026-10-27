@@ -1,6 +1,6 @@
 # 33 带通与 50 Hz 陷波 · 直觉篇
 
-上一页：32 节电荷放大器（即将上线） · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[01 元件速成 · 直觉篇](../01-components-basics/page1.md)、[12 电压跟随器 · 直觉篇](../12-voltage-follower/page1.md)、[20 有源滤波 · 直觉篇](../20-active-filter/page1.md)
+[上一页：32 电荷放大器 · 动手实验篇](../32-charge-amp/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[01 元件速成 · 直觉篇](../01-components-basics/page1.md)、[12 电压跟随器 · 直觉篇](../12-voltage-follower/page1.md)、[20 有源滤波 · 直觉篇](../20-active-filter/page1.md)
 
 ## 痛点：有用的信号只占一条窄窄的频率带
 
