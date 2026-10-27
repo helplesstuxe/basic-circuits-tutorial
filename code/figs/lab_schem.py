@@ -3516,6 +3516,16 @@ def node_29():
     save_schem(d, "29", "29_p4_4_schem_lab.png")
 
 
+def node_30():
+    """30 的 page4 原理图（30_p4_2_schem_vground、30_p4_4_schem_lab、30_p4_6_ref_divider）画在 code/figs/30_figs.py 里
+    （它只借用本文件的 lab / probe / colnote 等小工具），这里登记一个转调入口，保持「lab_schem.py NN」可重画。"""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("figs30", os.path.join(os.path.dirname(os.path.abspath(__file__)), "30_figs.py"))
+    m = importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+    for f in ("p4_2", "p4_4", "p4_6"):
+        getattr(m, f)()
+
+
 # ---------------- 登记表：键 = 节点编号（与 save_schem 的 prefix 相同） ----------------
 NODES = {
     "01": node_01,
@@ -3547,6 +3557,7 @@ NODES = {
     "28": node_28,
     "26": node_26,
     "29": node_29,
+    "30": node_30,   # 第二部分：转调 code/figs/30_figs.py
 }
 
 

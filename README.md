@@ -16,9 +16,11 @@
 
 阅读顺序就是编号顺序，按它读不会遇到「没学过的概念」：
 
-01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29
+01 → 02 → 03 → 04 → 05 → 06 → 07 → 08 → 09 → 10 → 11 → 12 → 13 → 14 → 15 → 16 → 17 → 18 → 19 → 20 → 21 → 22 → 23 → 24 → 25 → 26 → 27 → 28 → 29 → 30
 
-每个节点内部按 page1 → page2 → page3 → page4 读完，再进入下一个节点。例如开头是：01 page1 → 01 page2 → 01 page3 → 01 page4 → 02 page1 → … → 02 page4 → 03 page1 → …，最后一页是 29 page4。每页第 3 行的导航条就按这个顺序排好了「上一页」「下一页」：page3 的下一页是本节点的 page4，page4 的下一页是下一个节点的 page1，29 page4 的下一页回到本 README。
+第二部分「流量计信号链与功放」（30–45，设计见 [notes/00-design-part2.md](notes/00-design-part2.md)）正在陆续上线，目前已上线 30，后面的节点审完一批发布一批。
+
+每个节点内部按 page1 → page2 → page3 → page4 读完，再进入下一个节点。例如开头是：01 page1 → 01 page2 → 01 page3 → 01 page4 → 02 page1 → … → 02 page4 → 03 page1 → …，目前最后一页是 30 page4。每页第 3 行的导航条就按这个顺序排好了「上一页」「下一页」：page3 的下一页是本节点的 page4，page4 的下一页是下一个节点的 page1，29 page4 的下一页回到本 README。
 
 ## 目录
 
@@ -55,6 +57,7 @@
 | 27 | 双控开关 | [27-two-way-switch](27-two-way-switch/) | ⚠ | 作者 D | 已完成 |
 | 28 | 隔离电源与数字隔离器 | [28-isolated-power](28-isolated-power/) | ⚠ | 作者 B | 已完成 |
 | 29 | 上拉/下拉电阻与电平转换 | [29-pullup-level-shift](29-pullup-level-shift/) |  | 作者 C | 已完成 |
+| 30 | 仪表放大器与电桥 | [30-instrumentation-amp](30-instrumentation-amp/) |  | 作者 A | 已完成（第二部分） |
 
 ## 怎么运行代码
 
@@ -89,14 +92,14 @@
 - `code/`：各节点的仿真和画图脚本；`code/figs/` 是共用的配色字体模块 `figstyle.py` 和电路图模块 `schem.py`。
 - `spice/`：ngspice 复核电路，`spice/NN/` 是各节点的 `.cir` 网表和 `run.py`，`spice/models/` 是厂商 SPICE 模型。
 - `review/`：审阅报告；`review/spice/` 是 SPICE 复核报告。
-- `tools/`：检查工具（汉字数、代码块运行、配图、GitHub 公式渲染）。
+- `tools/`：检查工具（汉字数、代码块运行、配图、GitHub 公式渲染）和网页发布脚本（`tools/publish_clean.sh` 在干净的 git worktree 里从已推送的提交发布）。
 - `notes/`：教学设计与作者指南；`specs/`：任务说明与原始附图。
 
 ## 需要的软件
 
 - **Python 3.10 以上**和上一节列出的 5 个包，加上中文字体。页面代码块和 `code/` 里的大多数脚本只需要这些。
 - **ngspice**（本仓库在 ngspice-44.2 下测试）。下面这些要调用它，没装就会报错：
-  - `spice/` 下全部 29 个 `run.py`；
+  - `spice/` 下全部 30 个 `run.py`；
   - `code/18_sim.py`（其中的 `lm358()` 调用 ngspice）和 `code/figs/18_figs.py`（通过 `18_sim.lm358` 间接调用）；
   - `code/figs/02_figs.py`、`03_figs.py`、`05_figs.py`、`08_figs.py`、`12_figs.py`、`16_figs.py`。
 

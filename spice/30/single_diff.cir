@@ -1,0 +1,43 @@
+* 30 典型错误：16 节单运放差分（Ra=Rc=10k，Rb=Rd=100k，参考接 M）直接接电桥——page1 §三、图 30-p1-3
+* 第一次：真实电桥，RX=100 Ω（R4+ΔR = 10.1k）。之后：电桥平衡，四只 1% 最坏，两中点用戴维南等效（4.5 V + 5k）并一起抬高 1.5625 V
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VB vp 0 9
+VX vx 0 PWL(0 0 1m 9)
+RM1 vx md 10k
+RM2 md 0 10k
+XU2B md m vp 0 m LMX58B_LM2904B
+VSH sh 0 0
+BA tha 0 V=v(vx)/2+v(sh)
+VKB kb 0 0.50248756
+BB thb 0 V=v(vx)*v(kb)+v(sh)
+RTA tha sa 5k
+RTB thb sb 5024.88
+Ra sa nm 10k
+Rb nm so 100k
+Rc sb np 10k
+Rd np m 100k
+XD np nm vp 0 so LMX58B_LM2904B
+.control
+tran 1u 2m 0 1u
+let dso = v(so)-v(m)
+meas tran s100 find dso at=1.9m
+echo "RES s100 $&s100"
+alter VKB dc=0.5
+alter RTB resistance=5k
+alter Ra resistance=10.1k
+alter Rb resistance=99k
+alter Rc resistance=9.9k
+alter Rd resistance=101k
+tran 1u 2m 0 1u
+let dso = v(so)-v(m)
+let vbb = v(sb)
+meas tran s0 find dso at=1.9m
+echo "RES s0 $&s0"
+alter VSH dc=1.5625
+tran 1u 2m 0 1u
+let dso = v(so)-v(m)
+meas tran s1 find dso at=1.9m
+echo "RES s1 $&s1"
+.endc
+.end

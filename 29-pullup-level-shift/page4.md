@@ -1,6 +1,6 @@
 # 29 上拉/下拉电阻与电平转换 · 动手实验篇
 
-[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [回到 README](../README.md) · 前置节点：[01 元件速成 · 原理与实现篇](../01-components-basics/page2.md) · [10 电压比较器 · 原理与实现篇](../10-voltage-comparator/page2.md) · [06 MOS 管开关 · 原理与实现篇](../06-mosfet-switch/page2.md)
+[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [下一页：30 仪表放大器与电桥 · 直觉篇](../30-instrumentation-amp/page1.md) · 前置节点：[01 元件速成 · 原理与实现篇](../01-components-basics/page2.md) · [10 电压比较器 · 原理与实现篇](../10-voltage-comparator/page2.md) · [06 MOS 管开关 · 原理与实现篇](../06-mosfet-switch/page2.md)
 
 ## 这次实验要验证什么
 

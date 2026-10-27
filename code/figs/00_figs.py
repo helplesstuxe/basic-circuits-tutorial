@@ -19,6 +19,8 @@ NODES = {
     # 扩展篇（2026-10-22 22:21 追加要求）
     "06": ("MOS 管开关", "ext"), "07": ("三极管继电器驱动", "ext"), "23": ("光耦隔离", "ext"),
     "28": ("隔离电源与数字隔离", "ext"), "26": ("H 桥电机驱动", "ext"), "29": ("上下拉与电平转换", "ext"),
+    # 第二部分（流量计信号链与功放，30–45，见 notes/00-design-part2.md）：每批上线时把已发布的节点和边追加到这里
+    "30": ("仪表放大器与电桥", "p2"),
 }
 # 边：前置 → 后继。理由写在 notes/00-design.md 的边表里（同样的顺序）
 EDGES = [
@@ -31,10 +33,12 @@ EDGES = [
     # 扩展篇
     ("01", "06"), ("03", "06"), ("01", "07"), ("03", "07"), ("03", "23"), ("07", "23"), ("13", "28"),
     ("25", "28"), ("23", "28"), ("06", "26"), ("07", "26"), ("01", "29"), ("10", "29"), ("06", "29"),
+    # 第二部分（边的理由见 notes/00-design-part2.md 的边表）
+    ("16", "30"), ("12", "30"), ("08", "30"),
 ]
 # 4 名作者各自串行的写作队列（按拓扑序；每人写完一个节点回报一次）
 QUEUES = {
-    "作者 A": ["02", "05", "08", "12", "16", "20", "24"],
+    "作者 A": ["02", "05", "08", "12", "16", "20", "24", "30"],   # 30 起为第二部分
     "作者 B": ["03", "09", "13", "17", "21", "25", "28"],
     "作者 C": ["06", "10", "14", "18", "22", "26", "29"],
     "作者 D": ["01", "04", "07", "11", "15", "19", "23", "27"],
@@ -93,9 +97,9 @@ def checks():
     return d, slot, order
 
 
-FILL = {"pre": "#F0E442", "op": "#cfe3f2", "pw": "#fbe3b3", "ctl": "#c9eadf", "ext": "#f3dbe8"}   # 黄 前置、浅蓝 运放线、浅橙 电源线、浅绿 控制线、浅红紫 扩展篇
-EDGEC = {"pre": "0.45", "op": C["vin"], "pw": C["vout"], "ctl": C["fb"], "ext": C["third"]}
-TRACK = {"pre": "前置知识（增补）", "op": "运放与信号处理", "pw": "半导体与电源", "ctl": "继电-接触器控制与照明", "ext": "扩展篇（开关、驱动与隔离）"}
+FILL = {"pre": "#F0E442", "op": "#cfe3f2", "pw": "#fbe3b3", "ctl": "#c9eadf", "ext": "#f3dbe8", "p2": "#dcd6f0"}   # 黄 前置、浅蓝 运放线、浅橙 电源线、浅绿 控制线、浅红紫 扩展篇、浅紫 第二部分
+EDGEC = {"pre": "0.45", "op": C["vin"], "pw": C["vout"], "ctl": C["fb"], "ext": C["third"], "p2": "#6a51a3"}
+TRACK = {"pre": "前置知识（增补）", "op": "运放与信号处理", "pw": "半导体与电源", "ctl": "继电-接触器控制与照明", "ext": "扩展篇（开关、驱动与隔离）", "p2": "第二部分：流量计信号链与功放（陆续上线）"}
 
 
 def draw(d):
@@ -103,7 +107,7 @@ def draw(d):
     cols = {}
     for n in NODES:
         cols.setdefault(d[n], []).append(n)
-    order_track = ["pre", "op", "pw", "ctl", "ext"]
+    order_track = ["pre", "op", "pw", "ctl", "ext", "p2"]
     pos = {}
     for c, ns in cols.items():
         ns.sort(key=lambda n: (order_track.index(NODES[n][1]), n))
@@ -130,7 +134,7 @@ def draw(d):
     for c in sorted(cols):
         ax.text(c * 2.3, max(ys) + 0.45, f"第 {c} 层", ha="center", va="bottom", fontsize=8, color="0.4")
     handles = [FancyBboxPatch((0, 0), 1, 1, fc=FILL[k], ec=C["edge"]) for k in order_track]
-    ax.legend(handles, [TRACK[k] for k in order_track], loc="lower center", ncol=5, fontsize=9,
+    ax.legend(handles, [TRACK[k] for k in order_track], loc="lower center", ncol=len(order_track), fontsize=9,
               bbox_to_anchor=(0.5, -0.04), frameon=False)
     ax.set_title("知识点依赖图（箭头：前置 → 后继，颜色随后继节点的线索；灰色点线 = 跨 3 层以上的远程依赖；列 = 最长前置链深度）", fontsize=10)
     return save(fig, "00", "00_dag.png")

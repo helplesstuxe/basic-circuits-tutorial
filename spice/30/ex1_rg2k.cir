@@ -1,0 +1,36 @@
+* 30 page2 例1：与 lab_dc.cir 相同的电路，但 RG = 2k（倍数 11）、RX = 220 Ω
+* 用瞬态：电池 1 ms 内从 0 升到 9 V，1.9 ms 时读稳态（避开 TI 模型的 op 不收敛）
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VB vp 0 9
+* 电桥与中点参考 V_MID分压的激励在实物里就是电池 vp；仿真里用同值的 VX 从 0 慢慢升到 9 V（1 ms），稳态与接 vp 完全相同，只为避开初始工作点不收敛
+VX vx 0 PWL(0 0 1m 9)
+RM1 vx md 10k
+RM2 md 0 10k
+XU2B md m vp 0 m LMX58B_LM2904B
+R1 vx va 10k
+R2 va 0 10k
+R3 vx vb 10k
+R4 vb x 10k
+RX x 0 220
+XA1 va n1 vp 0 o1 LMX58B_LM2904B
+XA2 vb n2 vp 0 o2 LMX58B_LM2904B
+R5 o1 n1 10k
+R6 o2 n2 10k
+RG n1 n2 2k
+R7 o1 n3 10k
+R8 n3 out 10k
+R9 o2 n4 10k
+R10 n4 m 10k
+XA3 n4 n3 vp 0 out LMX58B_LM2904B
+.control
+tran 1u 2m 0 1u
+let voo = v(out)-v(m)
+meas tran vo find voo at=1.9m
+meas tran a1 find v(o1) at=1.9m
+meas tran a2 find v(o2) at=1.9m
+echo "RES a1 $&a1"
+echo "RES a2 $&a2"
+echo "RES vo $&vo"
+.endc
+.end

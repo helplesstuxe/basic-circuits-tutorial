@@ -1,0 +1,21 @@
+* 30 中点参考 V_MID（电池和分压一起在 1 ms 内从 0 升到 9 V，1.9 ms 读稳态）：只用 10k/10k 分压挂 1 kΩ（da），对比 分压 + LM358 跟随器挂 1 kΩ（m）。不挂负载的 M 就是分压点 4.5 V（跟随器无负载电流），不另仿——page2 §五、page4 第 3 步
+.include ../models/LMx58B_LM2904B.lib
+.options method=gear reltol=1e-4
+VB vp 0 PWL(0 0 1m 9)
+RVX vp vx 1m
+RA1 vx da 10k
+RA2 da 0 10k
+RLA da 0 1k
+RM1 vx md 10k
+RM2 md 0 10k
+XU2B md m vp 0 m LMX58B_LM2904B
+RLM m 0 1k
+.control
+tran 1u 2m 0 1u
+meas tran vda find v(da) at=1.9m
+meas tran vm find v(m) at=1.9m
+meas tran ilm find i(VB) at=1.9m
+echo "RES vda $&vda"
+echo "RES vm $&vm"
+.endc
+.end

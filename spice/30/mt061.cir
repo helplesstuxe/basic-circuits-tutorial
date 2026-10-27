@@ -1,0 +1,46 @@
+* 30 page2/page3：差分级（倍数 1，四只 10k）电阻失配 → 共模抑制比（对照 ADI MT-061 公式 CMR = 20lg((1+R2/R1)/(4Kr))）
+* 理想运放：VCVS 增益 1e6（只看电阻失配本身，不掺运放自己的 CMRR）
+* 输入两端同接 1 V 共模（DC），读输出 = 共模漏过来的量；差模增益另跑一次（V− 端 −0.5 V、V+ 端 +0.5 V，共模为 0）；CMR = 20lg(|Adm/Acm|) 由 run.py 计算
+* 情形：a 一只电阻 +0.1%；b 一只电阻 +1%；c 四只 1% 最坏（R1、R4 +1%，R2、R3 −1%）；d 四只 5% 最坏
+VA a 0 1
+VB b 0 1
+R1 a n 10k
+R2 n out 10k
+R3 b p 10k
+R4 p 0 10k
+E1 out 0 p n 1e6
+.control
+let k = 0
+foreach x 1 2 3 4
+  if k = 0
+    alter R4 resistance=10.01k
+  end
+  if k = 1
+    alter R4 resistance=10.1k
+  end
+  if k = 2
+    alter R1 resistance=10.1k
+    alter R4 resistance=10.1k
+    alter R2 resistance=9.9k
+    alter R3 resistance=9.9k
+  end
+  if k = 3
+    alter R1 resistance=10.5k
+    alter R4 resistance=10.5k
+    alter R2 resistance=9.5k
+    alter R3 resistance=9.5k
+  end
+  alter VA dc=1
+  alter VB dc=1
+  op
+  let acm = v(out)/1
+  echo "RES acm_$&k $&acm"
+  alter VA dc=-0.5
+  alter VB dc=0.5
+  op
+  let adm = v(out)/1
+  echo "RES adm_$&k $&adm"
+  let k = k + 1
+end
+.endc
+.end
