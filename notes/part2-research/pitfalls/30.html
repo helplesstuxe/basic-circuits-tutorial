@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>30 仪表放大器与电桥：新手误区与面包板排错（反方研究）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/30.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="30-仪表放大器与电桥新手误区与面包板排错反方研究">30 仪表放大器与电桥：新手误区与面包板排错（反方研究）</h1>
+<blockquote>
+<p>作者：反方研究员（魔鬼代言人）。这里只列「会出错的地方」，供 page3、page4 的作者和审稿人用。
+约定：每条按「现象 → 原因 → 排查 → 修复 → 来源」写。来源都是本人打开过、或在搜索结果中确认存在的页面；查不到的标 [待核实]。
+与协调者拍板对齐：统一用单电源 9–12 V，加分压 + 跟随器做虚地（PART2_BRIEF §10）。<a href="http://30-research.md">30-research.md</a> 的 page4 还写着「±6 V（或 12 V + 虚地）」，要改成单电源方案（见 §C）。</p>
+</blockquote>
+<h2 id="a-电路层面的误区与边界失效">A. 电路层面的误区与边界失效</h2>
+<h3 id="a1-电桥用-5-v-激励运放用-12-v-单电源tl072-输入共模超出范围">A1. 电桥用 5 V 激励、运放用 12 V 单电源：TL072 输入共模超出范围</h3>
+<ul>
+<li>现象：电桥已平衡，INA 输出却不在虚地，而是贴到某条电源轨，或者读数乱跳；手指一碰就变；有时输出极性反过来。</li>
+<li>原因：4×10 kΩ 电桥用 5 V 激励时，两个输出端对 0 V 都在 ≈2.5 V。经典 TL072 在 ±15 V 下，共模下限只到 V– 以上约 3 V（数据手册：VCM = –12 V 到 15 V）。TI 旧版数据手册在 12 V 单电源的例子里写明：输入低于约 4 V 不保证性能，低于约 1 V 可能相位反转。2.5 V 正好落在这个禁区里。</li>
+<li>排查：万用表打直流档，黑表笔接 0 V，分别测 TL072 第 3、5 脚（同相端）。12 V 单电源下若低于 4 V，就是越界。再看第 1、7 脚是否贴轨。</li>
+<li>修复（任选其一）：
+<ol>
+<li>电桥直接用 12 V 激励。这时两个输出 ≈6 V，正好在虚地附近；每臂电流 12 V / 20 kΩ = 0.6 mA，功耗可以忽略。</li>
+<li>如果一定要用 5 V 激励，就换输入共模范围含地的 LM358（VCM 从 V– 到 V+ – 2 V），或换轨到轨输入运放。</li>
+</ol>
+</li>
+<li>来源：
+<ul>
+<li>TI TL072 数据手册（SLOS080W，本人下载并检索过）：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> 。±15 V 下 VCM 为「–12 to 15 V」；TL07xH 为 (VCC–)+1.5 V 到 VCC+。</li>
+<li>TL072 旧版（Rev Q）关于 12 V 单电源 4 V / 1 V 的说明，见 alldatasheet 转载页：<a href="https://www.alldatasheet.net/html-pdf/1311294/TI/TL072BCP/1393/40/TL072BCP.html">https://www.alldatasheet.net/html-pdf/1311294/TI/TL072BCP/1393/40/TL072BCP.html</a> 。新版 Rev W 已删掉这句话，改成一张「No Phase Reversal」曲线（图 5-26，应是针对 TL07xH 的）。</li>
+<li>ESE：TL072 同相端拉低后输出反而变高（相位反转）：<a href="https://electronics.stackexchange.com/questions/234575/why-does-bringing-tl072-tl074-non-inverting-input-low-cause-output-to-go-high">https://electronics.stackexchange.com/questions/234575/why-does-bringing-tl072-tl074-non-inverting-input-low-cause-output-to-go-high</a></li>
+<li>ADI MT-036：相位反转常见于跟随器接法和 JFET 输入运放：<a href="https://www.analog.com/media/en/training-seminars/tutorials/mt-036.pdf">https://www.analog.com/media/en/training-seminars/tutorials/mt-036.pdf</a></li>
+<li>LM358B 数据手册（VCM 从 V– 到 V+ – 2 V，本人下载检索过）：<a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="a2-只看最终输出忽略第一级内部节点饱和钻石图">A2. 只看最终输出，忽略第一级内部节点饱和（「钻石图」）</h3>
+<ul>
+<li>现象：差模信号小时增益正确；共模或差模加大后，输出卡住或削顶，但最终输出离电源轨还很远。</li>
+<li>原因：三运放 INA 第一级的两个输出分别是 V_CM ± G1·V_D/2。G1 = 1 + 2R/R_G = 21 时，12.44 mV 的差模在每个第一级输出上产生 ±0.13 V 的偏移，再叠加 6 V 共模。
+<ul>
+<li>共模接近 TL072 的输出摆幅极限时（12 V 单电源下约 1.5–10.5 V，见 A1 的旧版资料），第一级会先饱和，第二级却还「看起来正常」。</li>
+<li>ADI 把输入、输出、内部节点三者的约束画在 V_CM–V_OUT 平面上，叫「钻石图」。</li>
+</ul>
+</li>
+<li>排查：用示波器或万用表分别测第一级两个输出（TL072#1 的 1、7 脚）。正常值应是 V_CM ± G1·V_D/2；任何一个离电源轨不到约 1.5 V，就是内部饱和。</li>
+<li>修复：降低 G1（例如 R_G 改成 2.2 kΩ，G1 ≈ 10），把增益挪到第二级或后级；或者让共模落在虚地附近（电桥用 12 V 激励）。</li>
+<li>来源：
+<ul>
+<li>ADI AN-1401（钻石图）：<a href="https://www.analog.com/en/resources/app-notes/an-1401.html">https://www.analog.com/en/resources/app-notes/an-1401.html</a></li>
+<li>ADI RAQ 107《The Diamond Plot》：<a href="https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-107.html">https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-107.html</a></li>
+<li>ADI EngineerZone StudentZone 文章：<a href="https://ez.analog.com/adiacademy/university-program/a/studentzone-articles/SA978/understanding-instrumentation-amplifiers-the-secret-of-the-diamond-plot-tool">https://ez.analog.com/adiacademy/university-program/a/studentzone-articles/SA978/understanding-instrumentation-amplifiers-the-secret-of-the-diamond-plot-tool</a></li>
+<li>TI SLYT647（两运放 INA 的内部节点限制）：<a href="https://www.ti.com/lit/pdf/slyt647">https://www.ti.com/lit/pdf/slyt647</a></li>
+<li>ADI 电磁流量计文章（第一级增益一般 ≤ 10，防止极化电压造成饱和）：<a href="https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html">https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="a3-以为四只-1-电阻也能有高-cmr">A3. 以为「四只 1% 电阻也能有高 CMR」</h3>
+<ul>
+<li>现象：两输入短接、加 1 V 共模，输出变化几十 mV；换一批电阻，结果完全不同。</li>
+<li>原因：CMR 由第二级差分级的电阻比值匹配决定。
+<ul>
+<li>MT-061 给出的数：差分级四只 1% 电阻，最坏 CMR 只有 34 dB（共模增益 ≈0.02）；只有一只偏 1% 时为 46 dB；比值失配 0.1% 时为 66 dB。</li>
+<li>第一级增益 G1 能把总 CMR 提高 20·lg(G1)（G1 = 21 时约 +26 dB），但输出端看到的共模增益本身不变。</li>
+</ul>
+</li>
+<li>排查：用 C3 的「两次测量相减」法。粗算一下：1% 电阻、1 V 共模，输出最坏变化约 20 mV，3½ 位万用表的 200 mV 档完全看得到。</li>
+<li>修复：用万用表把 8 只 10 kΩ 逐只测一遍，挑出 4 只两两配对，使 R3/R4 与 R5/R6 的比值相同到 0.1%。或者在一只接地电阻上串一个 200 Ω 多圈电位器，把 CMR 调到最好。ADI 与 ESE 都提到了配对或修调。</li>
+<li>来源：
+<ul>
+<li>ADI MT-061：<a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf</a></li>
+<li>ADI《A Practical Review of Common Mode and Instrumentation Amplifiers》：<a href="https://www.analog.com/en/resources/technical-articles/common-mode-instrumentation-amplifiers.html">https://www.analog.com/en/resources/technical-articles/common-mode-instrumentation-amplifiers.html</a></li>
+<li>ESE：分立 INA 的输入缓冲运放要匹配到什么程度（建议用同一封装的双运放）：<a href="https://electronics.stackexchange.com/questions/531057/how-closely-do-the-input-buffer-op-amps-need-to-be-matched-on-discrete-instrumen">https://electronics.stackexchange.com/questions/531057/how-closely-do-the-input-buffer-op-amps-need-to-be-matched-on-discrete-instrumen</a></li>
+<li>ESE：in-amp 与差分放大器的 CMRR：<a href="https://electronics.stackexchange.com/questions/298728/a-question-on-cmrr-of-in-amp-and-difference-amplifier">https://electronics.stackexchange.com/questions/298728/a-question-on-cmrr-of-in-amp-and-difference-amplifier</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="a4-r_g-接错位置或把一只-r-当成两只-r">A4. R_G 接错位置，或把一只 R 当成「两只 R」</h3>
+<ul>
+<li>现象：增益不是 21，而是 11、1，或者接近开环增益。</li>
+<li>原因：G1 = 1 + 2R/R_G 有两个前提：
+<ul>
+<li>R_G 跨接在两只第一级运放的反相输入端之间；</li>
+<li>两只反馈电阻 R 各自从输出接到本运放的反相端。</li>
+<li>如果 R_G 有一端接到地或虚地，两半就变成两个独立的同相放大器，共模也被放大，CMR 消失。（30-research 的常见错误已列出这一条，这里补上排查方法。）</li>
+</ul>
+</li>
+<li>排查：断电，万用表打电阻档：
+<ul>
+<li>TL072#1 第 2 脚到第 6 脚应为 R_G（≈1 kΩ）；</li>
+<li>第 1 脚到第 2 脚、第 7 脚到第 6 脚各为 10 kΩ；</li>
+<li>第 2 脚、第 6 脚对地或虚地都不应有直流通路。</li>
+</ul>
+</li>
+<li>修复：按上面的阻值重新插线；R_G 两端不能再接任何到地的元件。</li>
+<li>来源：MT-061 的三运放 INA 结构图：<a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf</a> ；INA333 数据手册，G = 1 + 100 kΩ/R_G：<a href="https://www.ti.com/lit/ds/symlink/ina333.pdf">https://www.ti.com/lit/ds/symlink/ina333.pdf</a></li>
+</ul>
+<h3 id="a5-第二级的-ref-端直接用电阻分压驱动">A5. 第二级的 REF 端直接用电阻分压驱动</h3>
+<ul>
+<li>现象：增益和 CMR 都比计算值差；换分压电阻的阻值，结果跟着变。</li>
+<li>原因：第二级差分放大器的 REF 端就是 R6 的下端。
+<ul>
+<li>如果接到 2×10 kΩ 的分压点，等于在 R6 上串了 5 kΩ（分压点的戴维南电阻），R5/R6 = R3/R4 的比值被破坏。</li>
+<li>TI E2E FAQ 和 ADI 技术文章都指出：REF 要用低阻源驱动（运放缓冲）。</li>
+</ul>
+</li>
+<li>排查：
+<ul>
+<li>用万用表看 REF 节点电压是否随输出晃动；</li>
+<li>算一下分压点的戴维南电阻与 10 kΩ 之比：5 kΩ / 10 kΩ，就是 50% 的比值误差。</li>
+</ul>
+</li>
+<li>修复：REF 接到虚地跟随器的输出（就是全实验共用的那只 TL072 跟随器），不要接分压点本身。如果跟随器输出串了 47–100 Ω 再接大电容，REF 要接在这只隔离电阻之前、直接接跟随器输出；否则这只电阻又串进了 R6。</li>
+<li>来源：
+<ul>
+<li>TI E2E FAQ（INA210 REF 外接电阻对 CMRR 和增益误差的影响）：<a href="https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/699230/faq-ina210-what-effect-do-external-resistors-on-vref-have-on-cmrr-gain-error">https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/699230/faq-ina210-what-effect-do-external-resistors-on-vref-have-on-cmrr-gain-error</a></li>
+<li>TI SBOA551《Driving Voltage Reference Pins of Current-Sensing Amplifiers》：<a href="https://www.ti.com/lit/an/sboa551/sboa551.pdf">https://www.ti.com/lit/an/sboa551/sboa551.pdf</a></li>
+<li>ADI 技术文章（REF 引脚驱动）：<a href="https://www.analog.com/en/resources/technical-articles/drive-the-ref-pin-of-new-generation-instrumentation-and-currentsense-amplifiers-without-an-op-amp.html">https://www.analog.com/en/resources/technical-articles/drive-the-ref-pin-of-new-generation-instrumentation-and-currentsense-amplifiers-without-an-op-amp.html</a></li>
+</ul>
+</li>
+</ul>
+<h3 id="a6-浮地或交流耦合输入没有偏置电流回路">A6. 浮地或交流耦合输入没有偏置电流回路</h3>
+<ul>
+<li>现象：输入接了隔直电容，或接一个浮空的信号源（两根电极、热电偶、变压器次级），INA 输出慢慢漂到电源轨。</li>
+<li>原因：运放输入偏置电流需要直流回路。没有回路时，偏置电流会给隔直电容充电，或者让输入浮到任意电位。电桥本身有直流回路；这一条主要会在 38 节（电极）和 32 节（压电片）遇到，这里先提个醒。</li>
+<li>排查：断开信号源，测两输入对虚地的直流电压是否在慢慢变化。</li>
+<li>修复：两输入各接 1 MΩ 到虚地，两只电阻要匹配。交流耦合时，两边的 C 和 R 都要匹配。</li>
+<li>来源：ADI AN-937：<a href="https://www.analog.com/en/resources/app-notes/an-937.html">https://www.analog.com/en/resources/app-notes/an-937.html</a> ；ADI《A Designer's Guide to Instrumentation Amplifiers》：<a href="https://www.analog.com/media/en/training-seminars/design-handbooks/designers-guide-instrument-amps-complete.pdf">https://www.analog.com/media/en/training-seminars/design-handbooks/designers-guide-instrument-amps-complete.pdf</a> ；TI SBOA503：<a href="https://www.ti.com/lit/an/sboa503/sboa503.pdf">https://www.ti.com/lit/an/sboa503/sboa503.pdf</a></li>
+</ul>
+<h3 id="a7-电桥激励和-adc-参考来自不同电源丢掉了比例测量">A7. 电桥激励和 ADC 参考来自不同电源，丢掉了比例测量</h3>
+<ul>
+<li>现象：读数随电池电压下降慢慢漂；USB 供电和电池供电读数不同。</li>
+<li>原因：电桥输出正比于激励电压 V_B。ADI Section 2 原话的意思是：测量精度不会好于激励电压的精度。如果 ADC（Arduino）参考用 USB 5 V，电桥激励用 9 V 电池，两者各漂各的。</li>
+<li>排查：把激励电压调高、调低 0.5 V，看 Arduino 读数是否按比例变化。</li>
+<li>修复：电桥激励和 Arduino 的 AREF/AVCC 用同一电源；或者让 Arduino 同时读激励电压（经分压），用软件求比值。</li>
+<li>来源：TI SBAA532A《A Basic Guide to Bridge Measurements》：<a href="https://www.ti.com/lit/an/sbaa532a/sbaa532a.pdf">https://www.ti.com/lit/an/sbaa532a/sbaa532a.pdf</a> ；ADI《Practical Design Techniques for Sensor Signal Conditioning》Section 2 Bridge Circuits（本人已打开）：<a href="https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Design-Techniques-Sensor-Signal/Section2.PDF">https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Design-Techniques-Sensor-Signal/Section2.PDF</a></li>
+</ul>
+<h3 id="a8-把运放失调当成电桥信号">A8. 把运放失调当成电桥信号</h3>
+<ul>
+<li>现象：电桥已经调平，INA 输出仍偏差几十到 200 mV；换一片 TL072，偏差也跟着变。</li>
+<li>原因：TL072C 失调电压典型 3 mV、最大 10 mV（数据手册，±15 V、25 °C）。经 G = 21 放大后可达 0.21 V，按 12.44 mV / 1% 折算，相当于 ΔR ≈ 1.7% 的「假信号」。</li>
+<li>排查：把两输入短接到电桥的同一个节点，这时测到的输出就是失调 × G。</li>
+<li>修复：
+<ul>
+<li>软件扣零；</li>
+<li>用电位器调电桥平衡时，以「INA 输出 = 虚地」为准，不要以「电桥两端电压相等」为准；</li>
+<li>精度要求高时换低失调的档次，如 TL07xBC（最大 3 mV）。</li>
+</ul>
+</li>
+<li>来源：TL072 数据手册：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+</ul>
+<h3 id="a9-把电桥输出的非线性当成电路故障">A9. 把电桥输出的非线性当成电路故障</h3>
+<ul>
+<li>现象：ΔR 从 1% 加到 10%，输出不到原来的 10 倍。</li>
+<li>原因：单臂电桥的端点线性误差 ≈ ΔR% / 2。ADI Section 2 给出：ΔR = 1% 时约 0.5%，由此推算 10% 时约 5%。12.44 mV 与近似值 12.5 mV 的差，就是这个非线性。</li>
+<li>排查与修复：用精确公式算期望值，或者在软件里做线性化。</li>
+<li>来源：ADI Section 2（同上）。</li>
+</ul>
+<h3 id="a10-寄生热电偶与引线电阻">A10. 寄生热电偶与引线电阻</h3>
+<ul>
+<li>现象：手靠近或对着吹气，电桥输出漂几 µV 到几十 µV，经 G = 21 后约 0.1–1 mV。</li>
+<li>原因：不同金属的结点有温差时会产生热电势。ADI 给出：寄生热电偶每 1 °C 温差产生几 µV 到几十 µV；Kovar 引脚与铜之间约 35 µV/°C。对本节 12 mV 的信号影响很小；到了 38 节 µV 级的电极信号，它就是主要误差之一。</li>
+<li>修复：本节可以忽略，写作时提一句即可。电桥离电路较远时用三线制（ADI Section 2 图 2.14）。</li>
+<li>来源：ADI Section 2（同上）。</li>
+</ul>
+<h2 id="b-面包板实操问题与本节相关的部分">B. 面包板实操问题（与本节相关的部分）</h2>
+<h3 id="b1-相邻排寄生电容">B1. 相邻排寄生电容</h3>
+<ul>
+<li>现象：本节是直流和低频，基本不受影响。第一级 R = 10 kΩ 与 2–3 pF 并联，极点约在 5–8 MHz，远高于 TL072 的带宽，可以忽略。写作者不必为此加内容，但不要写「面包板没有寄生参数」。</li>
+<li>数据：
+<ul>
+<li>相邻排之间 2–3 pF，电源轨之间约 20 pF（ESE）；</li>
+<li>EEVblog #568 实测约 2.4–2.7 pF；</li>
+<li>ibex.tech：约 2 pF，中间隔一排空排时约减半。</li>
+</ul>
+</li>
+<li>来源：<a href="https://electronics.stackexchange.com/questions/302850/what-order-of-magnitude-should-i-expect-the-parasitic-capacitance-to-be-for-a-so">https://electronics.stackexchange.com/questions/302850/what-order-of-magnitude-should-i-expect-the-parasitic-capacitance-to-be-for-a-so</a> ；<a href="https://www.youtube.com/watch?v=6GIscUsnlM0">https://www.youtube.com/watch?v=6GIscUsnlM0</a> ；<a href="https://ibex.tech/resources/geek-area/electronics/prototyping/breadboard">https://ibex.tech/resources/geek-area/electronics/prototyping/breadboard</a></li>
+</ul>
+<h3 id="b2-接触不良电阻变了值">B2. 接触不良，电阻「变了值」</h3>
+<ul>
+<li>现象：每次插拔，CMR 的测量结果都不一样；轻敲面包板，输出会跳。</li>
+<li>原因：面包板的接触电阻正常时很小；触点老化、氧化或孔被撑松后，可以大到几 Ω 甚至更大（见下面三个帖子）。10 kΩ 电阻的比值匹配对此很敏感：触点电阻到 10 Ω，就是 0.1% 的失配（本人按 10 Ω / 10 kΩ 推算），足以吃掉配对换来的 CMR。</li>
+<li>排查：断电测电阻时，表笔先压在元件引脚上测一次，再压在面包板孔上测一次，两者之差就是接触电阻。</li>
+<li>修复：配对电阻把腿剪短后直接插，不要再用跳线串接；老化的面包板换新的一排。</li>
+<li>来源：<a href="https://electronics.stackexchange.com/questions/650690/breadboard-contact-resistance">https://electronics.stackexchange.com/questions/650690/breadboard-contact-resistance</a> ；<a href="https://electronics.stackexchange.com/questions/273589/how-can-i-diagnose-possible-problems-with-my-breadboards">https://electronics.stackexchange.com/questions/273589/how-can-i-diagnose-possible-problems-with-my-breadboards</a> ；EEVblog 论坛：<a href="https://www.eevblog.com/forum/other-blog-specific/a-weird-breadboard-contact-resistance-problem/">https://www.eevblog.com/forum/other-blog-specific/a-weird-breadboard-contact-resistance-problem/</a></li>
+</ul>
+<h3 id="b3-50-hz-拾取">B3. 50 Hz 拾取</h3>
+<ul>
+<li>现象：示波器上看到输出叠着 50 Hz 纹波，手靠近时更大。</li>
+<li>原因：电桥输出阻抗 ≈5 kΩ，长引线就成了天线。两根线拾到的相同部分是共模，会被 CMR 抑制；不对称的那部分是差模，会被直接放大。</li>
+<li>排查：示波器 AC 耦合看 INA 输出；把两根电桥引线绞在一起，看纹波是否变小。</li>
+<li>修复：
+<ul>
+<li>电桥紧挨着 INA 插；</li>
+<li>两根输出线等长并绞合；</li>
+<li>需要万用表读数时，INA 输出加 RC 低通（10 kΩ + 1 µF，f_c ≈ 16 Hz）。</li>
+</ul>
+</li>
+<li>来源：ESE 高阻节点拾取：<a href="https://electronics.stackexchange.com/questions/562997/noise-pick-up-in-high-impedance-nodes">https://electronics.stackexchange.com/questions/562997/noise-pick-up-in-high-impedance-nodes</a> ；ESE 50 Hz 干扰：<a href="https://electronics.stackexchange.com/questions/43468/op-amp-inverter-amplifier-low-current-with-ac-noise-at-50hz">https://electronics.stackexchange.com/questions/43468/op-amp-inverter-amplifier-low-current-with-ac-noise-at-50hz</a></li>
+</ul>
+<h3 id="b4-去耦">B4. 去耦</h3>
+<ul>
+<li>现象：输出带 MHz 级振荡，万用表读数偏，示波器上看到线条发「毛」。</li>
+<li>原因：运放电源脚旁边没有去耦电容。TI 博客实测：不加去耦的跟随器振荡在 3.8 MHz。</li>
+<li>修复：
+<ul>
+<li>每片 TL072 的 8 脚到 4 脚（单电源时 4 脚就是 0 V），就近放一只 0.1 µF 陶瓷电容（TI 建议离电源脚 0.1 英寸以内）；</li>
+<li>电源入口再并一只 10–100 µF 电解电容；</li>
+<li>虚地跟随器的输出如果要接大电容，必须先串 47–100 Ω 做隔离（见 31、41 节的容性负载条目）。</li>
+</ul>
+</li>
+<li>来源：<a href="https://e2e.ti.com/blogs_/archives/b/precisionhub/posts/the-decoupling-capacitor-is-it-really-necessary">https://e2e.ti.com/blogs_/archives/b/precisionhub/posts/the-decoupling-capacitor-is-it-really-necessary</a> ；TI SLOA163：<a href="https://www.ti.com/lit/an/sloa163/sloa163.pdf">https://www.ti.com/lit/an/sloa163/sloa163.pdf</a></li>
+</ul>
+<h2 id="c-对-30-researchmd-page4-的具体意见">C. 对 <a href="http://30-research.md">30-research.md</a> page4 的具体意见</h2>
+<h3 id="c1-供电方案与拍板冲突">C1. 供电方案与拍板冲突</h3>
+<ul>
+<li>30-research 的 page4 写「±6 V（或 12 V + 虚地）」。按 PART2_BRIEF §10，应统一为单电源 12 V + 虚地；并且要按 A1 改成用 12 V 激励电桥（或换 LM358），否则 TL072 共模越界。</li>
+</ul>
+<h3 id="c2-共模-cmr-实验的输入电压要以虚地为参考">C2. 共模 CMR 实验的输入电压要以虚地为参考</h3>
+<ul>
+<li>「两输入并联接 1 V 测共模」，在单电源下应理解为「比虚地高 1 V」，也就是两输入接 ≈7 V（6 V 虚地 + 1 V），这仍在 TL072 的范围内。</li>
+<li>如果误接成「对 0 V 的 1 V」，共模就越界了（见 A1），测出的 CMR 没有意义。</li>
+</ul>
+<h3 id="c3-失调会淹没-cmr-测量要两次测量相减">C3. 失调会淹没 CMR 测量，要两次测量相减</h3>
+<ul>
+<li>由 A8，失调在输出端可达 0.2 V；而共模误差在 1% 电阻下只有 ≈20 mV，配对后只有 ≈2 mV。</li>
+<li>正确做法：
+<ol>
+<li>两输入短接，先接虚地，测 V_out1；</li>
+<li>再接到虚地 +1 V，测 V_out2；</li>
+<li>G_cm = (V_out2 – V_out1) / 1 V，CMR = 20·lg(21 / G_cm)。</li>
+</ol>
+</li>
+<li>万用表 200 mV 档分辨率 0.1 mV，能分辨配对后 ≈2 mV 的变化；但要等读数稳定，因为 50 Hz 拾取会让末位跳。</li>
+</ul>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] 12 V 单电源下，TL072 同相输入（3、5 脚）对 0 V 是否 ≥ 4 V？</li>
+<li>[ ] 第一级两个输出（1、7 脚）离电源轨是否都大于 1.5 V？</li>
+<li>[ ] R_G 是否只跨在 2、6 脚之间，两端没有其他到地的通路？</li>
+<li>[ ] 第二级 REF 接的是跟随器输出，而不是分压点？</li>
+<li>[ ] 差分级的四只电阻是否已用万用表配对？</li>
+<li>[ ] 每片运放是否都有一只 0.1 µF 去耦电容紧贴电源脚？</li>
+<li>[ ] CMR 是否用「两次测量相减」消掉了失调？</li>
+<li>[ ] 电桥激励和 Arduino 参考是否同源？</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<ul>
+<li><a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+<li><a href="https://www.alldatasheet.net/html-pdf/1311294/TI/TL072BCP/1393/40/TL072BCP.html">https://www.alldatasheet.net/html-pdf/1311294/TI/TL072BCP/1393/40/TL072BCP.html</a></li>
+<li><a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a></li>
+<li><a href="https://www.ti.com/lit/ds/symlink/ina333.pdf">https://www.ti.com/lit/ds/symlink/ina333.pdf</a></li>
+<li><a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf</a></li>
+<li><a href="https://www.analog.com/media/en/training-seminars/tutorials/mt-036.pdf">https://www.analog.com/media/en/training-seminars/tutorials/mt-036.pdf</a></li>
+<li><a href="https://www.analog.com/en/resources/app-notes/an-1401.html">https://www.analog.com/en/resources/app-notes/an-1401.html</a></li>
+<li><a href="https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-107.html">https://www.analog.com/en/resources/analog-dialogue/raqs/raq-issue-107.html</a></li>
+<li><a href="https://ez.analog.com/adiacademy/university-program/a/studentzone-articles/SA978/understanding-instrumentation-amplifiers-the-secret-of-the-diamond-plot-tool">https://ez.analog.com/adiacademy/university-program/a/studentzone-articles/SA978/understanding-instrumentation-amplifiers-the-secret-of-the-diamond-plot-tool</a></li>
+<li><a href="https://www.ti.com/lit/pdf/slyt647">https://www.ti.com/lit/pdf/slyt647</a></li>
+<li><a href="https://www.analog.com/en/resources/technical-articles/common-mode-instrumentation-amplifiers.html">https://www.analog.com/en/resources/technical-articles/common-mode-instrumentation-amplifiers.html</a></li>
+<li><a href="https://www.analog.com/en/resources/app-notes/an-937.html">https://www.analog.com/en/resources/app-notes/an-937.html</a></li>
+<li><a href="https://www.analog.com/media/en/training-seminars/design-handbooks/designers-guide-instrument-amps-complete.pdf">https://www.analog.com/media/en/training-seminars/design-handbooks/designers-guide-instrument-amps-complete.pdf</a></li>
+<li><a href="https://www.ti.com/lit/an/sboa503/sboa503.pdf">https://www.ti.com/lit/an/sboa503/sboa503.pdf</a></li>
+<li><a href="https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/699230/faq-ina210-what-effect-do-external-resistors-on-vref-have-on-cmrr-gain-error">https://e2e.ti.com/support/amplifiers-group/amplifiers/f/amplifiers-forum/699230/faq-ina210-what-effect-do-external-resistors-on-vref-have-on-cmrr-gain-error</a></li>
+<li><a href="https://www.ti.com/lit/an/sboa551/sboa551.pdf">https://www.ti.com/lit/an/sboa551/sboa551.pdf</a></li>
+<li><a href="https://www.analog.com/en/resources/technical-articles/drive-the-ref-pin-of-new-generation-instrumentation-and-currentsense-amplifiers-without-an-op-amp.html">https://www.analog.com/en/resources/technical-articles/drive-the-ref-pin-of-new-generation-instrumentation-and-currentsense-amplifiers-without-an-op-amp.html</a></li>
+<li><a href="https://www.ti.com/lit/an/sbaa532a/sbaa532a.pdf">https://www.ti.com/lit/an/sbaa532a/sbaa532a.pdf</a></li>
+<li><a href="https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Design-Techniques-Sensor-Signal/Section2.PDF">https://www.analog.com/media/en/training-seminars/design-handbooks/Practical-Design-Techniques-Sensor-Signal/Section2.PDF</a></li>
+<li><a href="https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html">https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/234575/why-does-bringing-tl072-tl074-non-inverting-input-low-cause-output-to-go-high">https://electronics.stackexchange.com/questions/234575/why-does-bringing-tl072-tl074-non-inverting-input-low-cause-output-to-go-high</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/531057/how-closely-do-the-input-buffer-op-amps-need-to-be-matched-on-discrete-instrumen">https://electronics.stackexchange.com/questions/531057/how-closely-do-the-input-buffer-op-amps-need-to-be-matched-on-discrete-instrumen</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/298728/a-question-on-cmrr-of-in-amp-and-difference-amplifier">https://electronics.stackexchange.com/questions/298728/a-question-on-cmrr-of-in-amp-and-difference-amplifier</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/302850/what-order-of-magnitude-should-i-expect-the-parasitic-capacitance-to-be-for-a-so">https://electronics.stackexchange.com/questions/302850/what-order-of-magnitude-should-i-expect-the-parasitic-capacitance-to-be-for-a-so</a></li>
+<li><a href="https://www.youtube.com/watch?v=6GIscUsnlM0">https://www.youtube.com/watch?v=6GIscUsnlM0</a></li>
+<li><a href="https://ibex.tech/resources/geek-area/electronics/prototyping/breadboard">https://ibex.tech/resources/geek-area/electronics/prototyping/breadboard</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/650690/breadboard-contact-resistance">https://electronics.stackexchange.com/questions/650690/breadboard-contact-resistance</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/273589/how-can-i-diagnose-possible-problems-with-my-breadboards">https://electronics.stackexchange.com/questions/273589/how-can-i-diagnose-possible-problems-with-my-breadboards</a></li>
+<li><a href="https://www.eevblog.com/forum/other-blog-specific/a-weird-breadboard-contact-resistance-problem/">https://www.eevblog.com/forum/other-blog-specific/a-weird-breadboard-contact-resistance-problem/</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/562997/noise-pick-up-in-high-impedance-nodes">https://electronics.stackexchange.com/questions/562997/noise-pick-up-in-high-impedance-nodes</a></li>
+<li><a href="https://electronics.stackexchange.com/questions/43468/op-amp-inverter-amplifier-low-current-with-ac-noise-at-50hz">https://electronics.stackexchange.com/questions/43468/op-amp-inverter-amplifier-low-current-with-ac-noise-at-50hz</a></li>
+<li><a href="https://e2e.ti.com/blogs_/archives/b/precisionhub/posts/the-decoupling-capacitor-is-it-really-necessary">https://e2e.ti.com/blogs_/archives/b/precisionhub/posts/the-decoupling-capacitor-is-it-really-necessary</a></li>
+<li><a href="https://www.ti.com/lit/an/sloa163/sloa163.pdf">https://www.ti.com/lit/an/sloa163/sloa163.pdf</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>条目：A1–A10、B1–B4、C1–C3，共 17 条。全部带真实 URL（C 类是对研究笔记的意见，依据 A 类的来源）。[待核实] 0 条。</li>
+<li>注：B2 里「10 Ω 触点电阻 → 0.1% 失配」是本人按 10 Ω / 10 kΩ 推算的示例，不是引用值。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

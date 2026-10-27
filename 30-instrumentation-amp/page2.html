@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>30 仪表放大器与电桥 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/30-instrumentation-amp/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="30-仪表放大器与电桥--原理与实现篇">30 仪表放大器与电桥 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../16-differential-amp/page2.html">16 差分放大 · 原理与实现篇</a>、<a href="../08-noninverting-amp/page2.html">08 同相放大 · 原理与实现篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a></p>
+<h2 id="这一页要解决的问题">这一页要解决的问题</h2>
+<ol>
+<li>电桥两个中点之间的差压到底多大？常见的&quot;近似公式&quot;差多少？</li>
+<li>三运放仪表放大器的倍数为什么是 <span class="math math-inline">\(G = 1 + 2R/R_G\)</span> ？A1、A2 的输出各是多少？</li>
+<li>电阻不准时，共模会漏进多少？为什么仪表放大器比单个差分放大强 26 dB？</li>
+<li>激励电压不稳怎么办——什么叫&quot;比例测量&quot;？</li>
+<li>单电源 9 V 里，输出围绕的 4.5 V 中点参考 V_MID 怎么做出来，为什么它不是地？</li>
+</ol>
+<p>本页用到的都是已经学过的事：分压公式（ <a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> ）、运放负反馈时的&quot;虚短&quot;&quot;虚断&quot;（ <a href="../02-opamp-basics/page1.html">02 运放入门 · 直觉篇</a> ），同相放大的倍数 1 + Rf/Rg（ <a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a> ）、电压跟随器（ <a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> ），以及四电阻差分放大的结论（ <a href="../16-differential-amp/page2.html">16 差分放大 · 原理与实现篇</a> ）。</p>
+<h2 id="一电桥差压精确式与近似式">一、电桥差压：精确式与近似式</h2>
+<p><strong>中文意思</strong>：两个中点各是一个分压器；左边 Va 是激励的一半，右边 Vb 因为下臂多了 ΔR 而稍高。两者相减就是差压。</p>
+<p><strong>公式</strong>：四臂都是 R、右下臂为 R + ΔR、激励为 <span class="math math-inline">\(V_{ex}\)</span> 时，</p>
+<div class="math math-display">\[V_b - V_a = V_{ex}\frac{R+\Delta R}{2R+\Delta R} - \frac{V_{ex}}{2} = \frac{V_{ex}\Delta R}{2(2R+\Delta R)}\]</div>
+<p>ΔR 远小于 R 时，分母里的 ΔR 可以忽略，得到常见的近似式：</p>
+<div class="math math-display">\[V_b - V_a \approx \frac{V_{ex}}{4}\cdot\frac{\Delta R}{R}\]</div>
+<p><strong>代一个数</strong>：9 V 激励、R = 10 kΩ、ΔR = 100 Ω。精确式给 9 × 100 / (2 × 20100) = 22.388 mV；近似式给 9 / 4 × 0.01 = 22.500 mV，偏大 0.50%。</p>
+<p><a class="img-link" href="img/30_p2_1_bridge_exact.png"><img alt="左图：电桥差压随电阻变化率从 0 到 10 百分比，精确值与近似值两条线逐渐分开；右图：近似式偏大的百分比，1、2.2、4.7 百分比处分别为 0.50、1.10、2.35" src="img/30_p2_1_bridge_exact.png" loading="lazy" /></a></p>
+<p><em>图 30-p2-1　电桥差压：精确式与近似式，以及近似偏大多少</em></p>
+<p>图 30-p2-1 左边两条线在小变化时几乎重合；右边告诉你近似式偏大的比例约等于 ΔR/(2R)：ΔR/R = 1% 时偏 0.50%，2.2% 时偏 1.10%，4.7% 时偏 2.35%。实验里的 RX = 100、220、470 Ω 就落在 图 30-p2-1 的这三个点上。这也说明电桥本身有一点<strong>非线性</strong>——变化越大，输出越&quot;跟不上&quot;，精密仪表要么让变化保持很小，要么在软件里用精确式反算。</p>
+<h2 id="二三运放仪表放大器的倍数">二、三运放仪表放大器的倍数</h2>
+<p>看 图 30-p2-2，一步一步来（ R5 = R6 = R、 R7 = R8 = R9 = R10 ）：</p>
+<p><a class="img-link" href="img/30_p2_2_ina_derive.png"><img alt="三运放仪表放大器推导图：A1、A2 反相端分别等于 V1、V2，RG 上电流 I 等于两者之差除以 RG，同一电流流过 R5、R6，A1 输出 V1 减 I 乘 R5，A2 输出 V2 加 I 乘 R6，A3 相减后输出" src="img/30_p2_2_ina_derive.png" loading="lazy" /></a></p>
+<p><em>图 30-p2-2　三运放仪表放大器：从虚短一步步推出倍数</em></p>
+<p><strong>第 1 步，虚短</strong>：A1、A2 都有负反馈，所以反相端电压等于同相端，RG 上端是 <span class="math math-inline">\(V_1\)</span> ，下端是 <span class="math math-inline">\(V_2\)</span> 。</p>
+<p><strong>第 2 步，RG 上的电流</strong>： <span class="math math-inline">\(I = \frac{V_2 - V_1}{R_G}\)</span> 。运放输入端几乎不取电流（虚断），这股电流只能从 R6 流进、从 R5 流出，图 30-p2-2 中箭头标出了方向。</p>
+<p><strong>第 3 步，两个输出</strong>：A2 输出比 <span class="math math-inline">\(V_2\)</span> 高 <span class="math math-inline">\(I R_6\)</span> ，A1 输出比 <span class="math math-inline">\(V_1\)</span> 低 <span class="math math-inline">\(I R_5\)</span> ：</p>
+<div class="math math-display">\[V_{A2} = V_2 + I R,\qquad V_{A1} = V_1 - I R\]</div>
+<div class="math math-display">\[V_{A2} - V_{A1} = (V_2 - V_1) + 2IR = (V_2 - V_1)\left(1 + \frac{2R}{R_G}\right)\]</div>
+<p><strong>第 4 步，差分级</strong>：A3 是 <a href="../16-differential-amp/page2.html">16 差分放大 · 原理与实现篇</a> 的四电阻差分放大，四只电阻相等时倍数为 1，参考端接 REF：</p>
+<div class="math math-display">\[V_o - V_{REF} = \left(1 + \frac{2R}{R_G}\right)(V_2 - V_1)\]</div>
+<p><strong>共模呢？</strong> 如果 <span class="math math-inline">\(V_1 = V_2\)</span> （只有共模），RG 两端一样高， <span class="math math-inline">\(I = 0\)</span> ，A1、A2 输出都等于输入——共模被原样传过去，<strong>倍数是 1</strong>。差模却被乘了 <span class="math math-inline">\(1 + 2R/R_G\)</span> 。这就是仪表放大器的关键。</p>
+<p><strong>代一个数</strong>：R = 10 kΩ、 <span class="math math-inline">\(R_G\)</span> = 1 kΩ，倍数 1 + 20 = 21。实验电桥 RX = 100 Ω 时 <span class="math math-inline">\(V_1\)</span> = 4.5000 V、 <span class="math math-inline">\(V_2\)</span> = 4.5224 V，差 22.388 mV；电流 22.39 μA；A1 输出 4.5000 − 0.2239 = 4.2761 V，A2 输出 4.5224 + 0.2239 = 4.7463 V；输出对 V_MID 为 21 × 22.388 mV = 0.4701 V。</p>
+<p>注意 图 30-p2-2 中 A1、A2 的输出对称地往两边&quot;撑开&quot;，中心是输入共模（这里约等于 V_MID，4.51 V 左右）：第一级倍数越大，撑得越开，越容易碰到运放输出的上下限，<a href="page3.html">30 仪表放大器与电桥 · 参数与调试篇</a> 第二节专门讨论。</p>
+<h2 id="三共模抑制比电阻不准时会漏多少">三、共模抑制比：电阻不准时会漏多少</h2>
+<p><strong>中文意思</strong>：共模抑制比（CMRR）= 差模倍数 ÷ 共模倍数，常用分贝表示，越大越好。共模倍数来自差分级四只电阻不匹配。</p>
+<p><strong>公式</strong>：差分级 R7（A1 输出→反相端）、R8（反馈）、R9（A2 输出→同相端）、R10（同相端→REF），分别对应 16 节四电阻差分放大里的 R1、R2、R3、R4。按 <a href="../16-differential-amp/page2.html">16 差分放大 · 原理与实现篇</a> 的叠加法，两个输入都等于 <span class="math math-inline">\(V_{cm}\)</span> 时，</p>
+<div class="math math-display">\[A_{cm} = \frac{R_{10}}{R_9+R_{10}}\left(1+\frac{R_8}{R_7}\right) - \frac{R_8}{R_7}\]</div>
+<div class="math math-display">\[\mathrm{CMRR} = 20\lg\left|\frac{A_{dm}}{A_{cm}}\right|\]</div>
+<p>这里 <span class="math math-inline">\(A_{dm}\)</span> 取差分级的设计倍数 1（电阻偏 1% 时实际差模倍数只变约 1%，对分贝数影响不到 0.1 dB）。四只电阻相等时 <span class="math math-inline">\(A_{cm} = 0\)</span> ；只要 R10 偏大 1%（10.1 kΩ）， <span class="math math-inline">\(A_{cm}\)</span> = 10.1/20.1 × 2 − 1 = 0.00498，CMRR = 20 lg(1/0.00498) = 46.1 dB。</p>
+<p><strong>加上第一级</strong>：第一级把差模放大 21 倍、共模不放大，所以整个仪表放大器的 CMRR 比差分级单独时多出 20 lg 21 = 26.4 dB。</p>
+<p><a class="img-link" href="img/30_p2_3_cmr_compare.png"><img alt="柱状图：一只 0.1 百分比、一只 1 百分比、四只 1 百分比最坏、四只 5 百分比最坏四种情况下，差分级单独和仪表放大器的共模抑制比，分别为 66.0 对 92.5、46.1 对 72.5、34.1 对 60.5、20.4 对 46.9 分贝" src="img/30_p2_3_cmr_compare.png" loading="lazy" /></a></p>
+<p><em>图 30-p2-3　同样的电阻误差：单个差分级与仪表放大器的共模抑制比</em></p>
+<p>图 30-p2-3 是用上面的精确式算出的四种情况。&quot;四只 1% 最坏&quot;就是 R7、R10 偏大 1%、R8、R9 偏小 1%，差分级只剩 34.1 dB，和 MT-061（ <a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf</a> ）给出的约 34 dB 一致。从 图 30-p2-3 还能看出：靠第一级放大能多赚 26 dB，但真正高的 CMRR 还得靠电阻匹配（ADI 电磁流量计文章的例子：100 dB 才能把 0.3 V 的共模压到 3 μV）——单片仪表放大器里的电阻由厂家在芯片内做好并匹配，这正是买现成芯片的理由。</p>
+<h2 id="四比例测量激励变了也不怕">四、比例测量：激励变了也不怕</h2>
+<p>电桥差压和 <span class="math math-inline">\(V_{ex}\)</span> 成正比：同样 ΔR = 100 Ω，9 V 激励给 22.388 mV，激励掉到 8 V 只剩 19.900 mV（比值 0.8889）。办法是让&quot;尺子&quot;跟着一起变，见 图 30-p2-4。</p>
+<blockquote>
+<p><strong>最小补充：模数转换器（ADC）</strong>　它把输入电压变成一个数字，这个数字等于&quot;输入电压 ÷ 参考电压 VREF&quot;再乘一个固定的满量程数。所以 VREF 是它的&quot;尺子&quot;：尺子变长 10%，同一个输入读出来就小 10%。本节只用这一条性质。</p>
+</blockquote>
+<p><a class="img-link" href="img/30_p2_4_ratiometric.png"><img alt="电桥和模数转换器共用同一个激励 Vex：电桥两中点进仪表放大器，输出进模数转换器 IN；Vex 另经 Rr1、Rr2 两只 10 千欧分压后接到模数转换器的 VREF" src="img/30_p2_4_ratiometric.png" loading="lazy" /></a></p>
+<p><em>图 30-p2-4　比例测量：电桥激励和模数转换参考取自同一个 Vex</em></p>
+<p>图 30-p2-4 里，Vex 一路给电桥，另一路经 Rr1、Rr2 分成一半送到模数转换器的 VREF。读数 = 输出 ÷ VREF，而输出和 VREF 都与 Vex 成正比，Vex 在分子分母里约掉了：</p>
+<div class="math math-display">\[\frac{V_o - V_{MID}}{V_{REF}} = \frac{G \cdot V_{ex}\Delta R/(2(2R+\Delta R))}{V_{ex}/2} = \frac{G\Delta R}{2R+\Delta R}\]</div>
+<p>代数：G = 21、ΔR = 100 Ω，9 V 激励时输出比 V_MID 高 0.4701 V、VREF = 4.50 V；8 V 激励时 0.4179 V、4.00 V，两次之比都是 0.10448（code/30_sim.py 第 8 节）。这就叫<strong>比例测量</strong>（ratiometric），压力变送器普遍这样做，激励不必极稳。</p>
+<p>要注意分子是 <strong>Vo − V_MID</strong>，不是 Vo 对 0 V 的电压：模数转换器必须量&quot;输出比 V_MID 高多少&quot;。常见的两种做法：用差分输入的模数转换器，正输入接 Vo、负输入接 V_MID；或者让模数转换器的&quot;地&quot;就是 V_MID。如果模数转换器只能量对 0 V 的电压（例如 Arduino 的模拟输入），就要再量一次 V_MID，在程序里相减——而 V_MID 本身也等于 Vex/2，同样跟着激励走，相减之后比例关系仍然成立。图 30-p2-4 下方的小字提醒：真实芯片的 VREF 输入要低阻驱动，分压后通常还要加一个跟随器——和下一节的中点参考是同一个道理。</p>
+<h2 id="五中点参考-v_mid单电源里的参考电压">五、中点参考 V_MID：单电源里的参考电压</h2>
+<p>LM358 用一节 9 V 电池供电，输出只能在 0 V 到 7.5 V 左右之间摆（ <a href="page3.html">30 仪表放大器与电桥 · 参数与调试篇</a> 第二节）。仪表放大器的输出要能&quot;比参考高&quot;也能&quot;比参考低&quot;，参考就得放在中间。做法见 图 30-p2-5。</p>
+<p><a class="img-link" href="img/30_p2_5_vground.png"><img alt="9 伏电池经 RM1、RM2 两只 10 千欧分压得到 4.5 伏，接到运放 U2B 的同相端，U2B 接成跟随器，输出就是 V_MID，约 4.5 伏；V_MID 上挂一只负载到 0 伏" src="img/30_p2_5_vground.png" loading="lazy" /></a></p>
+<p><em>图 30-p2-5　中点参考 V_MID：分压定电压，跟随器给电流</em></p>
+<ul>
+<li><strong>分压定电压</strong>：RM1、RM2 相等，中点是 9 V 的一半 4.5 V（ <a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> 的分压）。</li>
+<li><strong>跟随器给电流</strong>：分压中点自带 5 kΩ 内阻，一挂负载就被拉低。 图 30-p2-5 下方第一行算了：只用分压、挂 1 kΩ，中点掉到 0.75 V；加 <a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> 的跟随器之后，运放输出替负载供电流（4.5 mA），V_MID 仍是 4.5 V。仪表放大器的 REF 和 R10 就要从 V_MID 取电流，所以跟随器不能省。</li>
+</ul>
+<blockquote>
+<p><strong>⚠️ 误区：V_MID 不是 GND</strong>　V_MID 是电源的中点，信号都以它为参考，但它对电池负极（0 V）始终有 4.5 V。所以：（1）量输出时黑表笔接 V_MID，读到的是&quot;Vo − V_MID&quot;；黑表笔接 0 V，读到的是 4.5 V 加上信号。（2）千万别用导线把 V_MID 和 0 V 连起来，那等于把跟随器输出短路到 0 V。（3）原理图里 V_MID 画成一个标了&quot;V_MID&quot;的点，不画成接地符号；本节所有图都这样画。</p>
+</blockquote>
+<blockquote>
+<p><strong>📌 名字别混：中点参考 ≠ 虚地</strong>　<a href="../05-inverting-amp/page1.html">05 反相放大 · 直觉篇</a> 的「虚地」说的是另一件事：运放的同相端接地、有负反馈时，反相端被反馈拉到和地几乎一样的电位，但它并没有真的接地。那是运放<strong>输入端</strong>的一种状态，一旦反馈断开或输出饱和就不存在了。本节的中点参考 V_MID 是一个<strong>实实在在的电压源</strong>：分压定出 4.5 V，跟随器负责供电流，不管后面接什么电路它都在。本教程从这里开始，电源中点一律叫中点参考、记作 V_MID；「虚地」只保留 05 节的意思。</p>
+</blockquote>
+<h2 id="用-python-算一遍">用 Python 算一遍</h2>
+<pre><code class="language-python">import math
+
+def bridge(vex, r, dr):
+    &quot;&quot;&quot;电桥差压：精确式和近似式（单位 V）&quot;&quot;&quot;
+    exact = vex * dr / (2 * (2 * r + dr))   # 精确：Vex·ΔR / (2(2R+ΔR))
+    approx = vex / 4 * dr / r               # 近似：Vex/4 · ΔR/R
+    return exact, approx
+
+def ina(va, vb, r=10e3, rg=1e3, vref=4.5):
+    &quot;&quot;&quot;三运放仪表放大器（差分级四电阻相等）&quot;&quot;&quot;
+    i = (vb - va) / rg                      # RG 上的电流
+    a1 = va - i * r                         # A1 输出
+    a2 = vb + i * r                         # A2 输出
+    vo = vref + (a2 - a1)                   # 差分级倍数 1
+    return i, a1, a2, vo
+
+def acm(r7, r8, r9, r10):
+    &quot;&quot;&quot;差分级共模倍数&quot;&quot;&quot;
+    return r10 / (r9 + r10) * (1 + r8 / r7) - r8 / r7
+
+vex, r = 9.0, 10e3
+for rx in (100, 220, 470):
+    ex, ap = bridge(vex, r, rx)
+    va, vb = vex / 2, vex / 2 + ex          # 左中点 4.5 V，右中点高 ex
+    i, a1, a2, vo = ina(va, vb)
+    print(f&quot;RX={rx:3d}Ω  差压 {ex*1e3:7.3f} mV（近似 {ap*1e3:7.3f}，偏大 {(ap/ex-1)*100:.2f}%）&quot;
+          f&quot;  I={i*1e6:6.2f} μA  A1={a1:.4f} V  A2={a2:.4f} V  Vo−V_MID={vo-4.5:.4f} V&quot;)
+
+g1 = 1 + 2 * 10e3 / 1e3                     # 第一级倍数 21
+cases = {&quot;一只 +0.1%&quot;: (10e3, 10e3, 10e3, 10.01e3),
+         &quot;一只 +1%&quot;:   (10e3, 10e3, 10e3, 10.1e3),
+         &quot;四只 1% 最坏&quot;: (10.1e3, 9.9e3, 9.9e3, 10.1e3),
+         &quot;四只 5% 最坏&quot;: (10.5e3, 9.5e3, 9.5e3, 10.5e3)}
+for name, rs in cases.items():
+    c = 20 * math.log10(1 / abs(acm(*rs)))   # 差模倍数按设计值 1
+    print(f&quot;{name:8s}  差分级 CMRR {c:5.1f} dB   仪表放大器 {c + 20*math.log10(g1):5.1f} dB&quot;)
+
+e9, _ = bridge(9.0, r, 100)
+e8, _ = bridge(8.0, r, 100)
+print(f&quot;比例测量：9 V 时 {e9*1e3:.3f} mV，8 V 时 {e8*1e3:.3f} mV，&quot;
+      f&quot;输出÷VREF 都是 {21*e9/4.5:.5f} / {21*e8/4.0:.5f}&quot;)
+
+par = 1e3 * 10e3 / (1e3 + 10e3)             # 1 kΩ 负载与 RM2 并联
+print(f&quot;中点参考：只用分压挂 1 kΩ → {9*par/(10e3+par):.2f} V；加跟随器 → 4.50 V，供出 {4.5/1e3*1e3:.1f} mA&quot;)
+</code></pre>
+<p>运行结果（在仓库根目录 <code>python</code> 执行上面代码）：RX = 100 / 220 / 470 Ω 时 Vo − V_MID 为 0.4701 / 1.0282 / 2.1698 V；四种电阻情况的仪表放大器 CMRR 为 92.5 / 72.5 / 60.5 / 46.9 dB；比例测量两次比值都是 0.10448；只分压挂 1 kΩ 掉到 0.75 V。</p>
+<h2 id="例题">例题</h2>
+<p><strong>例 1（完整）</strong>：实验电桥 RX = 220 Ω，把 RG 换成 2 kΩ，求倍数、差压、RG 电流、A1、A2 输出和 Vo − V_MID。</p>
+<ul>
+<li>倍数：G = 1 + 2 × 10 kΩ / 2 kΩ = 11。</li>
+<li>差压：9 × 220 / (2 × 20220) = 48.961 mV（近似式 49.500 mV，偏大 1.10%）。</li>
+<li>电流：48.961 mV ÷ 2 kΩ = 24.48 μA。</li>
+<li>A1 输出：4.5000 − 24.48 μA × 10 kΩ = 4.2552 V；A2 输出：4.5490 + 0.2448 = 4.7938 V。</li>
+<li>Vo − V_MID = 11 × 48.961 mV = 0.5386 V。两个输出都在 LM358 单电源 9 V 的可用范围（0～7.5 V）之内。</li>
+</ul>
+<p><strong>例 2（自己填：给定 RG，先求倍数）</strong>：RX = 470 Ω，RG = 1 kΩ，其他不变。</p>
+<pre><code class="language-python"># 不运行：先把每个 ____ 换成算式，填完再运行（原样运行会报 NameError）
+vex, r, rx, rg = 9.0, 10e3, 470, 1e3
+g = ____             # 倍数 1 + 2R/RG
+vd = ____            # 精确差压，单位 V
+i = ____             # RG 上的电流
+a1 = 4.5 - ____      # A1 输出
+a2 = 4.5 + vd + ____ # A2 输出
+vo_m = ____          # Vo − V_MID
+</code></pre>
+<details><summary>答案</summary>
+<p>倍数 1 + 20 = 21；差压 9 × 470 / (2 × 20470) = 103.32 mV；电流 103.3 μA；A1 = 4.5 − 1.0332 = 3.4668 V；A2 = 4.6033 + 1.0332 = 5.6365 V；Vo − V_MID = 21 × 103.32 mV = 2.1698 V。反过来&quot;给定倍数求 RG&quot;留到 <a href="page3.html">30 仪表放大器与电桥 · 参数与调试篇</a> 练习 1。</p>
+</details>
+<p><strong>例 3（变式：换单片芯片和 5 V）</strong>：用 INA333（倍数 G = 1 + 100 kΩ/RG，见 TI 数据手册 <a href="https://www.ti.com/lit/ds/symlink/ina333.pdf">https://www.ti.com/lit/ds/symlink/ina333.pdf</a> ），5 V 激励电桥，ΔR/R = 1%，REF 接 2.5 V。要 21 倍，RG = 100 kΩ / 20 = 5 kΩ；差压精确值 5 × 100 / (2 × 20100) = 12.438 mV（近似 12.50 mV）；输出 2.5 + 21 × 0.012438 = 2.761 V。若改用 INA126（G = 5 + 80 kΩ/RG，<a href="https://www.ti.com/lit/ds/symlink/ina126.pdf">https://www.ti.com/lit/ds/symlink/ina126.pdf</a> ），RG 同样取 5 kΩ 得 21 倍；注意 INA126 不接 RG 时最小也有 5 倍。</p>
+<h2 id="本页小结">本页小结</h2>
+<ul>
+<li>电桥差压精确式 <span class="math math-inline">\(V_{ex}\Delta R/(2(2R+\Delta R))\)</span> ，近似式 <span class="math math-inline">\(V_{ex}\Delta R/(4R)\)</span> 偏大约 ΔR/(2R)。</li>
+<li>仪表放大器：虚短让 RG 上流过 <span class="math math-inline">\((V_2-V_1)/R_G\)</span> ，A1、A2 对称撑开，倍数 <span class="math math-inline">\(1 + 2R/R_G\)</span> ；共模在第一级倍数为 1。</li>
+<li>差分级电阻不匹配决定共模倍数；第一级倍数 21 让总 CMRR 多 26.4 dB，四只 1% 最坏从 34.1 dB 变成 60.5 dB。</li>
+<li>比例测量：让模数转换参考跟着激励走，激励漂移就被约掉。</li>
+<li>中点参考 V_MID = 分压 + 跟随器；它是参考点，不是 GND，和 0 V 之间永远差 4.5 V。</li>
+<li>下一步看 <a href="page3.html">30 仪表放大器与电桥 · 参数与调试篇</a>：倍数能放多大、共模电压范围、差压流量计为什么要开平方。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

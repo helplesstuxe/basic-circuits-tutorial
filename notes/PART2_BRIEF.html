@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二部分作者简报（节点 30–45）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/PART2_BRIEF.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="第二部分作者简报节点-3045">第二部分作者简报（节点 30–45）</h1>
+<p>写任何一页之前，依次读完下面三份文件：</p>
+<ol>
+<li><a href="AUTHOR_GUIDE.html">AUTHOR_GUIDE.md</a>：硬性规则，第二部分全部沿用。</li>
+<li><a href="00-design-part2.html">00-design-part2.md</a>：DAG、每节摘要、安全总则。</li>
+<li>你负责节点的 <code>notes/NN-research.md</code>：来源、算例、SPICE 与实验计划。</li>
+</ol>
+<p>本简报只写第二部分新增或需要特别强调的内容。节点名称照抄 00-design-part2 §5.1，例如写「30 仪表放大器与电桥」。</p>
+<h2 id="1-四页结构与字数">1. 四页结构与字数</h2>
+<table>
+<thead>
+<tr>
+<th>页</th>
+<th>篇名</th>
+<th>最少汉字</th>
+<th>要点</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>page1</td>
+<td>直觉篇</td>
+<td>500</td>
+<td>从流量计或音响的真实痛点引入，配生活类比和示意图</td>
+</tr>
+<tr>
+<td>page2</td>
+<td>原理与实现篇</td>
+<td>500</td>
+<td>推导链见 research 笔记的「推导链」；每个公式都要先说中文意思，再代数算一遍；带逐行注释的最小 Python 仿真；渐隐式例题</td>
+</tr>
+<tr>
+<td>page3</td>
+<td>参数与调试篇</td>
+<td>500</td>
+<td>参数扫描图；故障排查表（现象 / 原因 / 怎么查 / 怎么改）；至少 3 道练习，答案折叠</td>
+</tr>
+<tr>
+<td>page4</td>
+<td>动手实验篇</td>
+<td>1500</td>
+<td>AUTHOR_GUIDE §1 规定的固定十部分</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>字数检查：<code>tools/count_cjk.py</code>。代码、公式和图注不计入字数。</li>
+<li>第二部分的读者已经学完 01–29。凡是第一部分没讲过的东西，都要先补最小必要知识。目前已知的有：
+<ul>
+<li>NE555；</li>
+<li>Arduino 定时器 / 输入捕获；</li>
+<li>分贝；</li>
+<li>品质因数 Q；</li>
+<li>锁相 / 同步检波；</li>
+<li>电流环。</li>
+</ul>
+</li>
+<li>回指第一部分时，写全名并加链接。各节对应的前置节点，请对照 00-design-part2 §5.2 的边表（已按第一部分的实际内容核对过）。</li>
+</ul>
+<h2 id="2-图">2. 图</h2>
+<ul>
+<li>命名规则：
+<ul>
+<li>文件名 <code>NN_pX_k_含义.png</code>，图号「图 NN-pX-k」；</li>
+<li>由 <code>code/figs/NN_figs.py</code> 生成，每张 ≤ 200 KB；</li>
+<li>图上每个数字都要由脚本打印，关键结论加 <code>assert</code>。</li>
+</ul>
+</li>
+<li><strong>讲到电路连接就要配原理图</strong>：每一处讲电路结构的文字旁边，都要有用 <code>code/figs/schem.py</code> 画的原理图。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>每张面包板图「图 NN-p4-k」后面紧跟一张用 <code>code/figs/lab_schem.py</code> 画的原理图 <code>NN_p4_k_schem_lab.png</code>，节点旁标出面包板孔位；</li>
+<li>再写一段以「对照看」开头的文字，把孔位、导线和原理图里的元件、节点一一对上；</li>
+<li><code>lab_schem.py</code> 的 NODES 条目由协调人追加（见第 7 节）。</li>
+</ul>
+</li>
+<li>原理图里会用到第一部分没用过的元件：
+<ul>
+<li>CD4053 / CD4051 用 <code>schem.module</code> 画成带引脚名的方框；</li>
+<li>DRV8871、PAM8403、XTR115 模块同样处理；</li>
+<li>超声换能器、压电片用 <code>schem.module</code> 或带标签的电容符号表示，并在图后讲解里说明。</li>
+</ul>
+</li>
+<li>颜色词照抄 AUTHOR_GUIDE §2 的表格。图注里不写公式。</li>
+</ul>
+<h2 id="3-github-公式规则摘要完整版见-author_guide-5">3. GitHub 公式规则（摘要，完整版见 AUTHOR_GUIDE §5）</h2>
+<ul>
+<li>开头的 <code>$</code> 前面紧跟中文或全角标点时，要补一个空格。</li>
+<li>公式里不写 <code>&lt;</code> <code>&gt;</code>，改用 <code>\lt</code> <code>\gt</code>。</li>
+<li><code>%</code> 放到公式外面，写成 <code>$…$%</code>。</li>
+<li>不写 <code>\,</code>（改用 <code>\thinspace</code>）。</li>
+<li><code>&lt;details&gt;</code> 里不写 <code>$$</code> 块公式。</li>
+<li>第二部分常用的写法：
+<ul>
+<li>开方写 <code>$\sqrt{\Delta P}$</code>；</li>
+<li>分贝写 <code>$20\log_{10}(\ldots)$</code>；</li>
+<li>平均值写 <code>$\overline{v}$</code>，不要用尖括号 ⟨⟩，因为 GitHub 上会被当成 HTML 标签吞掉。</li>
+</ul>
+</li>
+<li>research 笔记里的公式是纯文本，写正文时要改成 <code>$…$</code>，然后运行：
+<ol>
+<li><code>tools/fix_inline_math_spacing.py</code>；</li>
+<li><code>tools/fix_inline_math_spacing.py --check</code>；</li>
+<li><code>tools/check_github_math.py</code>。</li>
+</ol>
+</li>
+</ul>
+<h2 id="4-spice">4. SPICE</h2>
+<ul>
+<li>网表放 <code>spice/NN/</code>：<code>*.cir</code> 加 <code>run.py</code>，格式照抄 <code>spice/05/</code>。</li>
+<li>核对表放 <code>review/spice/NN.md</code>，内容包括万用表应读范围、仿真值和页面值的对照。</li>
+<li>page4 测量表里的「应该读到」只取 <code>review/spice/NN.md</code>，或 <code>code/NN_sim.py</code> / <code>spice/NN/run.py</code> 实际算出来的数，不准编造。</li>
+<li>第二部分可能缺的模型由协调人统一补充：LMC6482、CD4053 / CD4051、BD139 / BD140。补齐之前，开关先用理想开关加 R_on = 125 Ω（CD4051B / CD4053B 典型值）代替。</li>
+<li>需要用行为模型代替真实芯片时（例如 LM386、TDC），要在 <code>review/spice/NN.md</code> 中写明是行为模型。</li>
+</ul>
+<h2 id="5-实验安全第二部分">5. 实验安全（第二部分）</h2>
+<ul>
+<li>所有实验 ≤ 12 V 直流，不接市电。第二部分没有市电节点，不需要放市电警示框，但 page4 的安全须知照常写。</li>
+<li>50 Hz 干扰源只用电线感应，或用成品插头式小变压器的低压次级。</li>
+<li>发热元件可能超过 60 °C，只用温度计或 NTC 测温，不要用手摸：
+<ul>
+<li>39 节的 MOSFET；</li>
+<li>40 节的加热电阻；</li>
+<li>43 节的 BD139 / BD140；</li>
+<li>44 节的 DRV8871 与电感；</li>
+<li>45 节的功放芯片。</li>
+</ul>
+</li>
+<li>喇叭先串 10 Ω 限流，不要让直流长期流过喇叭。BTL 输出（44 节的 DRV8871、45 节的 PAM8403）两端都不能接地，示波器地夹也不能夹在输出上。</li>
+<li>压电片敲击会产生尖峰，进运放前要串 10 kΩ 并加两只 1N4148 钳位（数值在 SPICE 中确认）。</li>
+<li>用两组电池得到 ±6 V（或 ±9 V）时，要提醒两轨之间的实际电压差。</li>
+</ul>
+<h2 id="6-写作队列与轮次">6. 写作队列与轮次</h2>
+<table>
+<thead>
+<tr>
+<th>队列</th>
+<th>节点（按阅读顺序）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>作者 A</td>
+<td>30, 31, 32, 38</td>
+</tr>
+<tr>
+<td>作者 B</td>
+<td>33, 34, 36, 37</td>
+</tr>
+<tr>
+<td>作者 C</td>
+<td>35, 40, 41, 42</td>
+</tr>
+<tr>
+<td>作者 D</td>
+<td>39, 43, 44, 45</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>轮次</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>30</td>
+<td>33</td>
+<td>35</td>
+<td>39</td>
+</tr>
+<tr>
+<td>2</td>
+<td>31</td>
+<td>34</td>
+<td>40</td>
+<td>43</td>
+</tr>
+<tr>
+<td>3</td>
+<td>32</td>
+<td>36</td>
+<td>41</td>
+<td>44</td>
+</tr>
+<tr>
+<td>4</td>
+<td>38</td>
+<td>37</td>
+<td>（准备 42 的资料，起草协调改动）</td>
+<td>45</td>
+</tr>
+<tr>
+<td>5</td>
+<td>—</td>
+<td>—</td>
+<td>42</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>每一轮的前置节点都已在更早的轮次完成（p2refs/sched.py 模拟结果）。42 依赖 30–41 的全部节点，所以最少需要 5 轮。</p>
+<h2 id="7-协调人改动清单作者不要自己改">7. 协调人改动清单（作者不要自己改）</h2>
+<ol>
+<li><code>notes/AUTHOR_GUIDE.md</code>：
+<ul>
+<li>§1 导航规则：全书最后一页从「29 page4」改为「45 page4」；</li>
+<li>§8：「NN 一律是两位数字 01–29」改为「01–45」；</li>
+<li>名称来源：加上「30–45 见 00-design-part2 §5.1」。</li>
+</ul>
+</li>
+<li><code>29-pullup-level-shift/page4.md</code>：导航的下一页从 README 改为 <code>[下一页：30 仪表放大器与电桥 · 直觉篇](../30-instrumentation-amp/page1.md)</code>。</li>
+<li><code>code/figs/00_figs.py</code>：NODES / EDGES / QUEUES 追加 30–45；新线索的颜色待定。</li>
+<li><code>README.md</code>：目录表追加 30–45；质量表的行等节点完成后再加。</li>
+<li><code>code/figs/lab_schem.py</code>：NODES 追加 30–45 的 page4 原理图条目。</li>
+<li><code>spice/models</code>：补充 LMC6482、CD4053 / CD4051、BD139 / BD140（IRLZ44N 已有）。</li>
+</ol>
+<h2 id="8-自查命令">8. 自查命令</h2>
+<pre><code class="language-bash">PY=/workspace/circuits-venv/bin/python
+$PY code/figs/NN_figs.py
+$PY tools/count_cjk.py NN-slug/page*.md --min 500
+$PY tools/count_cjk.py NN-slug/page4.md --min 1500
+$PY tools/run_blocks.py NN-slug/page*.md
+$PY tools/run_blocks.py --scripts code/NN_sim.py code/figs/NN_figs.py
+$PY tools/check_figs.py NN-slug/page*.md
+$PY tools/fix_inline_math_spacing.py NN-slug/page*.md
+$PY tools/fix_inline_math_spacing.py --check NN-slug/page*.md
+$PY tools/check_github_math.py NN-slug/page*.md notes/NN-research.md
+</code></pre>
+<p>作者不运行任何 git 命令，由总纲提交。</p>
+<h2 id="9-待核实清单正文不得引用这些来源里的具体数值">9. 「[待核实]」清单（正文不得引用这些来源里的具体数值）</h2>
+<p><strong>ADI 资料（从盒子用 curl 访问超时，也没有用 WebFetch 打开）</strong></p>
+<ul>
+<li>AD630 数据手册；</li>
+<li>AD623 数据手册；</li>
+<li>Analog Dialogue 的 D 类放大器文章；</li>
+<li>MT-065。</li>
+</ul>
+<p><strong>其他来源</strong></p>
+<ul>
+<li>ST L298、BD135 / 137 / 139 数据手册：<a href="http://st.com">st.com</a> 用 curl 访问超时。</li>
+<li>TI SLOA088、SLOA023：均返回 404。</li>
+<li>tomarok VY 涡街 PDF：需要验证码。</li>
+<li>横河励磁频率页面：只返回 JS 验证页。6.25 Hz 改引 ADI 文章。</li>
+<li>E+H 学习中心各页面：只返回验证页。</li>
+<li><a href="http://electronics-tutorials.ws">electronics-tutorials.ws</a> 功放页面（amp_5 / amp_6 / class-AB）：访问超时。</li>
+<li>NAMUR NE43 原文：需要会员下载。数值改引 Beckhoff、WAGO 页面。</li>
+</ul>
+<p><strong>没有找到来源的内容</strong></p>
+<ul>
+<li>King 定律的具体公式形式：已打开的 Sierra 资料只给出名称和年份。</li>
+<li>MFB 带通「开环增益远大于 2Q²」的经验条件：作者要用 SPICE 验证，不要写成引用。</li>
+<li>压电蜂鸣片的 pC/N 灵敏度：page4 以实测为准。</li>
+</ul>
+<p><strong>说明</strong>：以下 <a href="http://analog.com">analog.com</a> 页面从盒子用 curl 访问超时，但用 WebFetch 能打开，已按「WebFetch 可打开」引用：</p>
+<ul>
+<li>MT-061、MT-062；</li>
+<li>AD8331 数据手册；</li>
+<li>MAX7400 产品页；</li>
+<li>Analog Dialogue 的电磁流量计文章。</li>
+</ul>
+<h2 id="10-协调者拍板2026-10-27取代-00-design-part2md-9-的待定项">10. 协调者拍板（2026-10-27，取代 <a href="http://00-design-part2.md">00-design-part2.md</a> §9 的待定项）</h2>
+<ol>
+<li>31 跨阻放大和 32 电荷放大<strong>不合并</strong>，32 建立在 31 之上。36 施密特整形和 37 过零/时差<strong>不合并</strong>。</li>
+<li>Arduino（Uno/Nano）<strong>可以用</strong>，但第一次出现的节点（按阅读顺序最早用到它的那节）要放一个「最小必要知识」框：怎么装 Arduino IDE、怎么上传、引脚编号怎么看，并给出可直接复制的完整 sketch。每个实验的核心结论必须还能用万用表（或文中给出的无 Arduino 替代做法）验证。</li>
+<li>电源统一用<strong>单电源 9–12 V 直流</strong>（电池组或适配器），需要双极性信号时用「分压 + 电压跟随器（12 节）」做虚地，正文第一次用到时配原理图讲清。不用 ±6 V 双电池。全部 ≤12 V。</li>
+<li>预算：只用常见便宜元件，不写价格（没有可靠来源就不写数字）。</li>
+<li>DAG 图颜色和 00_figs.py、README、AUTHOR_GUIDE、29 page4 的下一页链接、lab_schem.py 的 NODES 由协调者统一改，<strong>作者不要改这些共享文件</strong>。</li>
+<li>「[待核实]」信源：不得作为任何数字的出处。King 定律写成「经验公式」的一般形式并说明系数要靠标定；MFB 带通「开环增益要远大于 2Q²」用 SPICE 仿真演示，不当作引用结论。NE43 数值用 Beckhoff/WAGO 页面作出处。</li>
+<li>555：34、36 可以用 555，第一次出现时给引脚图、原理图和一句话工作原理（明确说明这是新器件，24 节讲的是 LM358 张弛振荡器）；能用 24 节的 LM358 振荡器替代的地方优先用它。</li>
+<li>文件边界：每个作者只写自己节点的 NN-slug/、code/NN_*.py、code/figs/NN_figs.py（节点专用原理图辅助函数写在自己的脚本里，不改 <a href="http://schem.py">schem.py</a> / lab_schem.py / <a href="http://figstyle.py">figstyle.py</a>）、spice/NN/、review/spice/NN.md。新器件 SPICE 模型放 spice/models/ 下新文件，文件名不得覆盖已有模型。不运行 git。</li>
+</ol>
+<h2 id="11-给-42-capstone-的待办理论专家-e1协调者确认">11. 给 42 capstone 的待办（理论专家 E1，协调者确认）</h2>
+<ul>
+<li>风扇实验的带通：1 kHz、Q=5 对风扇转速频率衰减 22–32 dB，不可用。改宽带，或 f₀≈250 Hz、Q≤1（按实测风扇频率定）。</li>
+<li>风扇转速信号上拉到 Arduino 5 V，不得上拉到 9–12 V。</li>
+<li>4–20 mA 输出继承 41 的接法：A0 读低边 100 Ω 采样电阻，250 Ω 只用万用表测。</li>
+</ul>
+<h2 id="12-统一规则补充协调者2026-10-27-0555来源工程实战派汇总">12. 统一规则补充（协调者，2026-10-27 05:55，来源：工程实战派汇总）</h2>
+<ul>
+<li>电平安全：比较器和测速线的上拉电阻一律接 Arduino 5 V，不能接 9–12 V。凡是可能超过 5 V 的节点，都不能直接接 Arduino 引脚，必须先分压或经比较器做电平转换。5 V 器件（PAM8403 绝对最大 6 V；35 节的 LM358 和 CD4051 用 5 V 供电）不能接 9–12 V 主电源。</li>
+<li>定时器：Timer1 输入捕获与 D9/D10 的 analogWrite 不能同时用；改动 Timer2 会让 D3/D11 的 tone() 和 PWM 失效。37 节放一个「定时器捕获」知识框；31 节提前放「Arduino 最小必要知识」框（第一次上传仍在 35 节 page4）。</li>
+<li>正文里的代码块不得在仓库根目录写文件。图片保存到本节 figs 目录或临时目录，SPICE 脚本不得覆盖仓库里已有的 txt 和 csv（输出到临时目录或加参数）。</li>
+<li>状态日志里作者的 done 行统一写成「NN-xxx done (author X)」，审阅修改完成写成「NN-xxx fix done (author X)」。</li>
+<li>动手实验里不得用手去试温度，一律用测温探头、NTC 或万用表测温档。</li>
+<li>术语（取代 §10 的「虚地」叫法）：单电源的电源中点（分压电阻加跟随器）统一叫「中点参考」，记作 V_MID（不用 V_M，44 节的 V_M 指电源电压），第一次出现在 30 节，讲清它和 05 节「虚地」（运放反相端被反馈拉到地电位）不是一回事。30–45 正文不再用「虚地」指电源中点，图上标签也统一成 V_MID。</li>
+<li>回指规则：引用后面才学到的节点时，只能写成「预告」，不能把它当前置知识；要用到的前置知识回指前面的节，并用一句话回顾。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

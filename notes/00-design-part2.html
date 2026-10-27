@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>00 第二部分总体设计：流量计信号链 + 功率放大（节点 30–45）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/00-design-part2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="00-第二部分总体设计流量计信号链--功率放大节点-3045">00 第二部分总体设计：流量计信号链 + 功率放大（节点 30–45）</h1>
+<blockquote>
+<p>本文件是第二部分的结构依据，与 notes/00-design.md（第一部分 01–29）配套。写作细则见 notes/PART2_BRIEF.md；每节资料与数值见 notes/NN-research.md。
+所有数值都来自 notes/NN-research.md 里已打开的资料或其中写明的推导；打不开的来源一律标 「[待核实]」。</p>
+</blockquote>
+<h2 id="1-学习者画像沿用第一部分">1. 学习者画像（沿用第一部分）</h2>
+<ul>
+<li>高中电子水平；已按顺序学完 01–29，会用面包板、万用表，懂 RC、运放、比较器、MOSFET、H 桥、PWM、Arduino 基础。</li>
+<li>主要在手机上阅读；每段电路描述都要配原理图，每张面包板图旁边都放原理图，并写「对照看」。</li>
+<li>坚持动手：每节 page4 都是 ≤12 V 直流、便宜元件能做的实验；真实仪表里的高压/大电流/MHz 级部分用缩小版代替，并说明缩小了什么。</li>
+</ul>
+<h2 id="2-第二部分目标">2. 第二部分目标</h2>
+<ul>
+<li><strong>A 部分（30–42）</strong>：看懂工业流量计的信号链。
+<ul>
+<li>传感器 → 阻抗匹配/差分放大/跨阻/电荷放大</li>
+<li>→ 带通/低通 + 50 Hz 陷波</li>
+<li>→ 程控增益/AGC</li>
+<li>→ （施密特整形或过零 → MCU 定时器）或（ADC → DSP/MCU）</li>
+<li>→ 4–20 mA / Modbus。</li>
+<li>最后用 42 节 capstone 把电磁、超声时差、涡街、热式、差压、涡轮六种流量计串起来。</li>
+</ul>
+</li>
+<li><strong>B 部分（43–45）</strong>：功率放大。甲/乙/甲乙类与交越失真 → D 类（三角波 + 比较器 PWM、半桥/全桥 BTL、死区、LC 滤波、EMI）→ 集成功放芯片（LM386、TPA3116D2、PAM8403），以及散热、效率、保护。</li>
+</ul>
+<h2 id="3-标准与第一部分相同">3. 标准（与第一部分相同）</h2>
+<ul>
+<li>每节 4 页：page1 直觉篇、page2 原理与实现篇、page3 参数与调试篇、page4 动手实验篇（AUTHOR_GUIDE §1）；每页 ≥500 个汉字，page4 ≥1500。</li>
+<li>图：code/figs/NN_figs.py（数据图），code/figs/schem.py 风格（原理图），code/figs/lab_schem.py（page4 面包板对应原理图）。</li>
+<li>SPICE：spice/NN/ 下的网表 + review/spice/NN.md 核对表，凡是给出数值的电路都要仿真对数。</li>
+<li>数学写法、颜色词、<code>&lt;details&gt;</code> 答案等全部沿用 AUTHOR_GUIDE.md。</li>
+</ul>
+<h2 id="4-新增符号在第一部分符号表基础上追加">4. 新增符号（在第一部分符号表基础上追加）</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>首次出现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>G</td>
+<td>放大倍数（无量纲，V/V）</td>
+<td>30</td>
+</tr>
+<tr>
+<td>CMRR / CMR</td>
+<td>共模抑制比（dB）</td>
+<td>30</td>
+</tr>
+<tr>
+<td>R_f, C_f</td>
+<td>反馈电阻、反馈电容</td>
+<td>31</td>
+</tr>
+<tr>
+<td>C_D</td>
+<td>光电二极管结电容</td>
+<td>31</td>
+</tr>
+<tr>
+<td>Q（电荷）</td>
+<td>电荷，单位 pC；与品质因数 Q 区分，品质因数在 33 节写作 Q 值</td>
+<td>32</td>
+</tr>
+<tr>
+<td>f_0, Q 值, BW</td>
+<td>中心频率、品质因数、带宽 BW = f_0 / Q</td>
+<td>33</td>
+</tr>
+<tr>
+<td>f_CLK</td>
+<td>开关电容时钟频率</td>
+<td>34</td>
+</tr>
+<tr>
+<td>K（K 系数）</td>
+<td>每单位体积的脉冲数</td>
+<td>36</td>
+</tr>
+<tr>
+<td>Δt, c, L, θ</td>
+<td>超声时差、声速、声程、声束与管轴夹角</td>
+<td>37</td>
+</tr>
+<tr>
+<td>I_SET, V_C</td>
+<td>恒流设定值、恒流源的顺从电压（compliance）</td>
+<td>39</td>
+</tr>
+<tr>
+<td>R_T, A, B</td>
+<td>RTD 电阻与 Callendar–Van Dusen 系数</td>
+<td>40</td>
+</tr>
+<tr>
+<td>I_LOOP</td>
+<td>回路电流</td>
+<td>41</td>
+</tr>
+<tr>
+<td>η</td>
+<td>效率</td>
+<td>43</td>
+</tr>
+</tbody>
+</table>
+<h2 id="5-dag">5. DAG</h2>
+<h3 id="51-节点表">5.1 节点表</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>名称</th>
+<th>文件夹</th>
+<th>线索</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>30</td>
+<td>仪表放大器与电桥</td>
+<td>30-instrumentation-amp</td>
+<td>前端放大</td>
+</tr>
+<tr>
+<td>31</td>
+<td>跨阻放大器（TIA）</td>
+<td>31-transimpedance-amp</td>
+<td>前端放大</td>
+</tr>
+<tr>
+<td>32</td>
+<td>电荷放大器</td>
+<td>32-charge-amp</td>
+<td>前端放大</td>
+</tr>
+<tr>
+<td>33</td>
+<td>带通与 50 Hz 陷波</td>
+<td>33-bandpass-notch</td>
+<td>滤波</td>
+</tr>
+<tr>
+<td>34</td>
+<td>开关电容滤波与跟踪滤波</td>
+<td>34-switched-cap-filter</td>
+<td>滤波</td>
+</tr>
+<tr>
+<td>35</td>
+<td>程控增益与 AGC</td>
+<td>35-pga-agc</td>
+<td>增益与数字化</td>
+</tr>
+<tr>
+<td>36</td>
+<td>施密特整形与频率/脉冲计数</td>
+<td>36-schmitt-pulse-shaping</td>
+<td>定时与计数</td>
+</tr>
+<tr>
+<td>37</td>
+<td>过零检测与超声波时差</td>
+<td>37-zero-crossing-tof</td>
+<td>定时与计数</td>
+</tr>
+<tr>
+<td>38</td>
+<td>同步检波（电磁流量计）</td>
+<td>38-synchronous-demod</td>
+<td>激励与解调</td>
+</tr>
+<tr>
+<td>39</td>
+<td>恒流源与线圈励磁驱动</td>
+<td>39-constant-current-excitation</td>
+<td>激励与解调</td>
+</tr>
+<tr>
+<td>40</td>
+<td>热式流量与 RTD 恒温差</td>
+<td>40-thermal-flow</td>
+<td>激励与解调</td>
+</tr>
+<tr>
+<td>41</td>
+<td>4–20 mA 电流环</td>
+<td>41-current-loop-4-20ma</td>
+<td>输出接口</td>
+</tr>
+<tr>
+<td>42</td>
+<td>流量计信号链总览（A 部分 capstone）</td>
+<td>42-flowmeter-signal-chains</td>
+<td>综合</td>
+</tr>
+<tr>
+<td>43</td>
+<td>推挽功放：甲、乙、甲乙类</td>
+<td>43-push-pull-power-amp</td>
+<td>功率放大</td>
+</tr>
+<tr>
+<td>44</td>
+<td>D 类功放</td>
+<td>44-class-d-amp</td>
+<td>功率放大</td>
+</tr>
+<tr>
+<td>45</td>
+<td>集成功放芯片与散热保护</td>
+<td>45-audio-amp-ics</td>
+<td>功率放大</td>
+</tr>
+</tbody>
+</table>
+<p>线索颜色：沿用 00_figs.py 现有 Okabe-Ito 配色，再为新线索各选一个未用色（<strong>待协调人定</strong>，见第 9 节）。</p>
+<h3 id="52-边表新节点之间的边加上回指第一部分的前置">5.2 边表（新节点之间的边，加上回指第一部分的前置）</h3>
+<table>
+<thead>
+<tr>
+<th>边</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>16 → 30, 12 → 30, 08 → 30</td>
+<td>30 把 16 的 INA 例题（16 page1 已出现电桥）展开成三运放结构；输入级是 08 的同相放大，缓冲概念来自 12 电压跟随器</td>
+</tr>
+<tr>
+<td>05 → 31, 03 → 31, 02 → 31, 01 → 31</td>
+<td>TIA 是 05 反相放大去掉输入电阻的电流输入版；光电二极管来自 03 半导体入门；补偿电容需要 01 的 RC 时间常数</td>
+</tr>
+<tr>
+<td>31 → 32</td>
+<td>电荷放大器 = 把 TIA 的 R_f 换成 C_f（积分），先懂 TIA 再懂电荷放大</td>
+</tr>
+<tr>
+<td>14 → 32</td>
+<td>14 的积分器（电容充电）是电荷放大器的核心</td>
+</tr>
+<tr>
+<td>20 → 33, 01 → 33</td>
+<td>带通/陷波在 20 的低通、高通基础上展开</td>
+</tr>
+<tr>
+<td>33 → 34</td>
+<td>先有连续时间带通的 f_0、Q 值概念，再讲用时钟调 f_0</td>
+</tr>
+<tr>
+<td>24 → 34, 14 → 34</td>
+<td>时钟由 24 的弛张振荡器（LM358 施密特 + RC）产生；page4 若改用 NE555，第一部分没有讲过 555，要在本节加一个引脚说明框；开关电容积分器用到 14</td>
+</tr>
+<tr>
+<td>08 → 35, 09 → 35, 14 → 35</td>
+<td>PGA 就是可切换的同相放大；AGC 需要峰值检测（09 精密整流的延伸）</td>
+</tr>
+<tr>
+<td>10 → 36, 29 → 36, 33 → 36</td>
+<td>10 的施密特比较器；29 的上拉（LM393 开集电极输出）；信号先经 33 的带通。Arduino 计数/输入捕获在第一部分没有讲过（06、26 只用过数字口和 PWM），本节要从头讲</td>
+</tr>
+<tr>
+<td>33 → 37, 35 → 37, 36 → 37</td>
+<td>超声接收链 = 带通 + 可变增益 + 先“门限武装”再过零，是 36 的升级</td>
+</tr>
+<tr>
+<td>30 → 38；16, 09, 20, 24 → 38</td>
+<td>电极信号先经 INA（30）；解调后低通（20）；参考方波来自振荡器（24）</td>
+</tr>
+<tr>
+<td>19 → 39, 21 → 39, 26 → 39, 06 → 39, 01 → 39</td>
+<td>21 线性稳压的“运放 + 调整管 + 反馈”结构就是恒流源的模板；06 的 MOS 管；19 的射极跟随；26 的 H 桥；01 的电感 L/R 时间常数</td>
+</tr>
+<tr>
+<td>39 → 40, 30 → 40, 10 → 40</td>
+<td>热式流量要给加热元件恒流/恒功率（39），用电桥 + 放大读温差（30）</td>
+</tr>
+<tr>
+<td>39 → 41, 07 → 41</td>
+<td>4–20 mA 发送器本质是电压控制恒流源；V→I 用 07 的三极管</td>
+</tr>
+<tr>
+<td>30–41 → 42</td>
+<td>总览把前面每一块对号入座</td>
+</tr>
+<tr>
+<td>19 → 43, 08 → 43, 17 → 43</td>
+<td>19 page3 练习 4 的推挽交越失真在 43 展开；用运放闭环消除交越；17 已给出 V_BE 约 −2 mV/°C，用于讲热失控</td>
+</tr>
+<tr>
+<td>43 → 44；24, 14, 10, 26, 25 → 44</td>
+<td>D 类要和甲乙类比效率；三角波（14/24）+ 比较器（10）+ H 桥与死区（26）+ 电感储能与滤波（25 开关电源）</td>
+</tr>
+<tr>
+<td>43 → 45, 44 → 45</td>
+<td>集成芯片分别是 AB 类（LM386）和 D 类（TPA3116D2、PAM8403）</td>
+</tr>
+</tbody>
+</table>
+<h3 id="53-拓扑顺序即阅读顺序">5.3 拓扑顺序（即阅读顺序）</h3>
+<p>30 → 31 → 32 → 33 → 34 → 35 → 36 → 37 → 38 → 39 → 40 → 41 → 42 → 43 → 44 → 45</p>
+<p>检查过：编号顺序本身就是一个合法的拓扑序，每条边都是小号指向大号。</p>
+<h3 id="54-四个写作队列与排期">5.4 四个写作队列与排期</h3>
+<p>队列内按阅读顺序（编号递增）。p2refs/sched.py 的思路与 00_figs.py 的 schedule() 一致：每一轮每位作者写一节，前置节点必须在更早的轮次完成。模拟结果如下：</p>
+<table>
+<thead>
+<tr>
+<th>队列</th>
+<th>作者</th>
+<th>节点（按顺序）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>前端放大 + 同步检波</td>
+<td>30, 31, 32, 38</td>
+</tr>
+<tr>
+<td>B</td>
+<td>滤波 + 定时</td>
+<td>33, 34, 36, 37</td>
+</tr>
+<tr>
+<td>C</td>
+<td>增益 + 热式 + 电流环 + 总览</td>
+<td>35, 40, 41, 42</td>
+</tr>
+<tr>
+<td>D</td>
+<td>恒流 + 功放</td>
+<td>39, 43, 44, 45</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>轮次</th>
+<th>A</th>
+<th>B</th>
+<th>C</th>
+<th>D</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>30</td>
+<td>33</td>
+<td>35</td>
+<td>39</td>
+</tr>
+<tr>
+<td>2</td>
+<td>31</td>
+<td>34</td>
+<td>40（需 39、30，均在第 1 轮完成）</td>
+<td>43</td>
+</tr>
+<tr>
+<td>3</td>
+<td>32</td>
+<td>36</td>
+<td>41</td>
+<td>44</td>
+</tr>
+<tr>
+<td>4</td>
+<td>38</td>
+<td>37（需 33、35、36）</td>
+<td>— 等待</td>
+<td>45</td>
+</tr>
+<tr>
+<td>5</td>
+<td>—</td>
+<td>—</td>
+<td>42（需 30–41 全部完成）</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>说明：16 节分成 4×4 时，42 依赖其余所有 A 部分节点，所以最少需要 5 轮。C 作者在第 4 轮空出来，建议用这一轮做 42 的资料准备和第 8 节的协调改动草稿。</p>
+<h2 id="6-每节摘要">6. 每节摘要</h2>
+<p>格式：痛点 / 核心思想 / 前置与回指 / 仿真 / page4 实验（≤12 V）/ 典型错误 / 变体。</p>
+<h3 id="30-仪表放大器与电桥30-instrumentation-amp">30 仪表放大器与电桥（30-instrumentation-amp）</h3>
+<ul>
+<li><strong>痛点</strong>：电磁流量计电极信号只有几十 µV 到几 mV，却叠在几百 mV 的共模直流上（ADI 文章）。差压/压力电桥输出也只有几 mV。</li>
+<li><strong>核心思想</strong>：三运放 INA = 两个同相缓冲（高输入阻抗，G = 1 + 2R/R_G）+ 一个差分放大（抑制共模）。电桥的激励电压同时当 ADC 参考，做比例测量。</li>
+<li><strong>回指</strong>：16 page2 例题 3（G = 21），16 page1 的电桥；08 同相放大；12 电压跟随器。</li>
+<li><strong>仿真</strong>：spice/30/ 用 TL072 搭三运放 INA；扫电阻失配，看 CMRR 落到 46 dB / 34 dB（MT-061 数据）。</li>
+<li><strong>page4</strong>：TL072×2（或 LM358×2）在 ±6 V（两节 6 V 电池或 12 V 加虚地）上搭 INA。用 4×10 kΩ + 电位器做电桥，测 G 与 CMRR。</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>只用一个差分放大器，四个电阻用 1% 的，CMR 只有约 34 dB；</li>
+<li>R_G 放错位置；</li>
+<li>输出摆幅被共模电压“吃掉”（ADI：一级增益通常 ≤10）。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：INA126（G = 5 + 80k/R_G）、INA333（G = 1 + 100k/R_G）单芯片 INA；差压流量计 Q = k√ΔP。</li>
+</ul>
+<h3 id="31-跨阻放大器-tia31-transimpedance-amp">31 跨阻放大器 TIA（31-transimpedance-amp）</h3>
+<ul>
+<li><strong>痛点</strong>：光电二极管、热膜电流等是 nA–µA 级的电流信号，用电阻直接转电压会被负载和噪声毁掉。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>运放反相端是虚地，V_out = −I·R_f。</li>
+<li>光电二极管结电容 C_D 会让电路自激，需要并联 C_f 补偿（SBOA055A 公式）。</li>
+<li>带宽约随 1/√R_f 变化。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：05 反相放大；01 欧姆定律与 RC；03 光电二极管；02 运放虚短虚断。</li>
+<li><strong>仿真</strong>：SBOA268 例子（100 kΩ，150 pF）复现；去掉 C_f 看振铃。</li>
+<li><strong>page4</strong>：LMC6482（CMOS，5 V）+ BPW34（或用 LED 反接当光电二极管），R_f 47 kΩ/1 MΩ 可换。
+<ul>
+<li>用 1 V 经 10 MΩ 注入已知 100 nA 电流来校准。</li>
+<li>用 LED 闪光看阶跃响应。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>用 LM358（双极输入，偏置电流大）测 nA；</li>
+<li>不加 C_f 振荡；</li>
+<li>二极管极性接反变成光伏模式却以为是光导模式。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：光导模式（反偏，C_D 变小）与光伏模式；OPA380 一类专用 TIA。</li>
+</ul>
+<h3 id="32-电荷放大器32-charge-amp">32 电荷放大器（32-charge-amp）</h3>
+<ul>
+<li><strong>痛点</strong>：涡街流量计用压电元件检测旋涡升力，它输出的是电荷（pC），而且经过长电缆，电缆电容会改变电压模式下的读数。</li>
+<li><strong>核心思想</strong>：V_out = −Q/C_f，与电缆电容无关（SLOA033A）。R_f 给 C_f 放电并提供直流通路，形成高通 f_L = 1/(2π R_f C_f)。</li>
+<li><strong>回指</strong>：14 积分器；31 TIA（把 R_f 换成 C_f）。</li>
+<li><strong>仿真</strong>：压电模型（电荷源 + C_p + 电缆 C_c），比较电压模式与电荷模式随 C_c 的变化。</li>
+<li><strong>page4</strong>：TL072 或 LMC6482，C_f = 1 nF，R_f = 100 MΩ（或 10 MΩ）。
+<ul>
+<li>用一个 100 pF 电容串入，输入端给 1 V 阶跃 → 注入 100 pC → 输出 −0.1 V。</li>
+<li>再接压电蜂鸣片，用手指敲。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>不加 R_f，输出慢慢漂到电源轨；</li>
+<li>用 LM358；</li>
+<li>以为电荷放大器能测静力（f_L 限制）。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：涡街的双压电片差分抵消管道振动（横河技术报告）；电压模式缓冲。</li>
+</ul>
+<h3 id="33-带通与-50-hz-陷波33-bandpass-notch">33 带通与 50 Hz 陷波（33-bandpass-notch）</h3>
+<ul>
+<li><strong>痛点</strong>：
+<ul>
+<li>超声换能器的回波在 1–2 MHz，涡街信号从几十 Hz 到几 kHz；</li>
+<li>信号周围有宽带噪声和 50 Hz 工频干扰；</li>
+<li>低通/高通单独用都不够。</li>
+</ul>
+</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>MFB 二阶带通的 f_0、Q 值、中心增益三个式子（等电容设计）；</li>
+<li>级联低通 + 高通的宽带通（SBOA228）；</li>
+<li>双 T 陷波 f_0 = 1/(2πRC)；</li>
+<li>运放增益带宽要求。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：20 的 Sallen-Key/MFB 低通；01 RC。</li>
+<li><strong>仿真</strong>：1 kHz、Q 值 = 5 的 MFB（R1 ≈ 79.6 kΩ，R2 ≈ 159 kΩ，R3 ≈ 1.62 kΩ，C = 10 nF）；双 T（33 kΩ/100 nF ≈ 48.2 Hz）陷波深度随失配的变化。</li>
+<li><strong>page4</strong>：TL072 搭 1 kHz MFB 带通 + 50 Hz 双 T；用 Arduino tone 或 555 + RC 做信号；用 Arduino ADC/万用表 AC 档测幅频。</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>Q 值设得太高，元件误差让 f_0 偏移；</li>
+<li>双 T 元件不配对，陷波只有 −20 dB；</li>
+<li>运放 GBW 不够（需在 f_0 处开环增益远大于 2·Q 值²，SPICE 验证）。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：超声 1–2 MHz 带通需要高速运放（只讲不做）；数字陷波。</li>
+</ul>
+<h3 id="34-开关电容滤波与跟踪滤波34-switched-cap-filter">34 开关电容滤波与跟踪滤波（34-switched-cap-filter）</h3>
+<ul>
+<li><strong>痛点</strong>：涡街频率随流量变化 10 倍以上，固定带通跟不上；需要一个中心频率能“跟着信号走”的滤波器。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>一个电容在时钟控制下来回切换 = 电阻 R_eq = 1/(f_CLK·C)。</li>
+<li>滤波器的 f_0 正比于 f_CLK（MF10 为 50:1 或 100:1，MAX7400 为 100:1）。</li>
+<li>MCU 先测出频率，再设时钟 → 跟踪滤波。</li>
+<li>代价：时钟馈通、混叠，需要 RC 前后滤波。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：33 f_0；24 弛张振荡器（时钟）；14 积分器。</li>
+<li><strong>仿真</strong>：Python 离散时间模型，电容每拍转移电荷；SPICE 中用开关 + 电容验证 R_eq。</li>
+<li><strong>page4</strong>：CD4053 一路单刀双掷把 10 nF 在输入与输出节点之间来回切换，输出接 1 µF 到地 → 开关电容 RC 低通，τ = C2/(f_CLK·C1)。
+<ul>
+<li>时钟用 555 约 1–10 kHz。</li>
+<li>改时钟测 τ 的变化（Arduino ADC 记录阶跃）。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>以为 SC 滤波器是“连续”的，忘了混叠；</li>
+<li>CD4053 电源/VEE 接错；</li>
+<li>时钟比例记反。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：MF10 通用二阶 SC 滤波器；MAX7400 八阶椭圆低通（仅介绍）。</li>
+</ul>
+<h3 id="35-程控增益与-agc35-pga-agc">35 程控增益与 AGC（35-pga-agc）</h3>
+<ul>
+<li><strong>痛点</strong>：
+<ul>
+<li>涡街压电电荷 ∝ ρv²（横河），流速变 10 倍信号变 100 倍；</li>
+<li>超声回波随水质、管道变化很大；</li>
+<li>固定增益不是饱和就是只用到 ADC 的一小段。</li>
+</ul>
+</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>PGA：用模拟开关切换反馈电阻，或用 SPI 设增益（PGA113：1/2/5/10/20/50/100/200）。</li>
+<li>VGA：AD8331 线性 dB 50 dB/V。</li>
+<li>AGC：检测峰值 → 调增益，让信号保持在 ADC 满量程的一定比例。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：08 同相放大；09 精密整流（峰值检测是它的延伸）；14。</li>
+<li><strong>仿真</strong>：CD4051 R_on = 125 Ω 对增益误差的影响（G = 100 设计值实际约 90）；数字 AGC 迭代的 Python 模拟。</li>
+<li><strong>page4</strong>：LM358 同相放大 + CD4051 选 6 个 R_G，Arduino 数字口选档，ADC 读峰值并自动换档（数字 AGC）。</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>开关串在 R_G 里，R_on 误差随增益增大；</li>
+<li>增益切换时不等稳定就采样；</li>
+<li>AGC 环路太快，把信号本身的幅度变化“抹掉”。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：开关放在不承载电流的位置（开关在采样点/开尔文接法）；数字 AGC vs 模拟 AGC。</li>
+</ul>
+<h3 id="36-施密特整形与频率脉冲计数36-schmitt-pulse-shaping">36 施密特整形与频率/脉冲计数（36-schmitt-pulse-shaping）</h3>
+<ul>
+<li><strong>痛点</strong>：涡轮、涡街、风扇的信号是带噪声的正弦。直接进 MCU，一个周期会被数成多个脉冲。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>施密特（回差）阈值以信号中点为中心；</li>
+<li>脉冲数 ∝ 体积，频率 ∝ 流量；</li>
+<li>K 系数：Q = f·60/K（GPM，Omega 资料）；</li>
+<li>门控计数的 ±1 误差与倒数（测周期）计数。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：10 LM393 施密特（2.75/2.26 V）；29 上拉电阻；33 带通。Arduino 定时器是新内容。</li>
+<li><strong>仿真</strong>：带噪声正弦 + 无回差/有回差比较器的 Python 计数对比；SPICE 比较器波形。</li>
+<li><strong>page4</strong>：555 方波经 RC 变成近似正弦 + 第二个 555 的高频噪声耦合进来 → LM393 有/无回差 → Arduino 计数。
+<ul>
+<li>比较 1 s 门控计数与 Timer1 输入捕获测周期（16 MHz → 62.5 ns 分辨率）。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>回差小于噪声峰峰值；</li>
+<li>LM393 开集电极不接上拉；</li>
+<li>低频用门控计数导致 ±1 误差很大（100 Hz、1 s → 1%）。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：霍尔传感器的涡轮流量计；MCU 内部比较器。</li>
+</ul>
+<h3 id="37-过零检测与超声波时差37-zero-crossing-tof">37 过零检测与超声波时差（37-zero-crossing-tof）</h3>
+<ul>
+<li><strong>痛点</strong>：
+<ul>
+<li>超声流量计顺流与逆流的时间差在水中只有几十 ns 到亚 ns（L = 0.1 m、v = 1 m/s → 约 91 ns；v = 1 cm/s → 约 0.9 ns）；</li>
+<li>用幅度阈值触发会随回波幅度漂移。</li>
+</ul>
+</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>先用幅度门限“武装”（排除噪声），再在下一个过零点触发；过零时刻与幅度无关。</li>
+<li>Δt ≈ 2Lv/c²（SNIA020）；TDC7200 分辨率 55 ps；TDC1000 集成了激励、PGA、门限与过零比较器。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：36 施密特；33 带通；35 可变增益。</li>
+<li><strong>仿真</strong>：猝发回波包络 × 40 kHz 载波，比较幅度阈值触发与过零触发的时刻随幅度的漂移；周期跳错（cycle slip）。</li>
+<li><strong>page4</strong>：两个 40 kHz 换能器（MA40S4S 类）相对放在管子两头，间距约 0.2 m。
+<ul>
+<li>发射用 Arduino 产生 40 kHz 猝发经驱动，接收侧用 TL072 带通/放大 + LM393 门限 + 过零，Timer1 捕获。</li>
+<li>改间距验证 2.92 µs/mm；用风扇吹气测顺逆流时差（3 m/s 约 10 µs）。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>误把第 2 个周期当第 1 个（跳 25 µs）；</li>
+<li>发射串扰被当成回波；</li>
+<li>忘了温度改变声速。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：TDC1000 + TDC7200 方案；夹装式。</li>
+</ul>
+<h3 id="38-同步检波38-synchronous-demod">38 同步检波（38-synchronous-demod）</h3>
+<ul>
+<li><strong>痛点</strong>：电磁流量计电极上有几百 mV 到 ±2 V 的极化直流和 50 Hz 干扰，而有用信号只有 75 µV 到几 mV（ADI 文章）。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>励磁方波正负交替，信号也随之翻转；</li>
+<li>用同一参考把信号乘以 ±1 再平均 → 有用信号相加，直流相消；</li>
+<li>取励磁频率为工频的 1/8 或 1/16（50 Hz 下为 6.25/3.125 Hz），对整数个工频周期积分，50 Hz 相消。</li>
+<li>正弦同相时平均值 = (2/π)·A·cos φ。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：30 INA；09 整流（同步检波 = “有参考的整流”）；20 低通；24 方波。</li>
+<li><strong>仿真</strong>：Python：信号 + 直流 + 50 Hz 噪声 × ±1 → 平均；SPICE：CD4053 + 运放 ±1 增益。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>Arduino 产生 6.25 Hz 方波“励磁”并做参考；</li>
+<li>用分压电阻做一个 1 mV 级、可翻转的“电极信号”，叠加 1 V 直流偏移，再用变压器或电线绕感应 50 Hz；</li>
+<li>经 INA → CD4053 ±1 → RC 低通，与 Arduino 数字分组平均（ADI 文章的方法）对比。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>参考相位错 90°，读数接近 0；</li>
+<li>在励磁切换的瞬间采样（线圈电流还没稳定）；</li>
+<li>积分时间不是工频周期的整数倍。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：锁相放大器；数字同步检波（ADI：两组样本分别 FIR 低通后相减）。</li>
+</ul>
+<h3 id="39-恒流源与线圈励磁驱动39-constant-current-excitation">39 恒流源与线圈励磁驱动（39-constant-current-excitation）</h3>
+<ul>
+<li><strong>痛点</strong>：
+<ul>
+<li>电磁流量计的磁场 B ∝ 线圈电流，电流必须恒定；线圈是几十到几百 mH + 50–100 Ω（ADI），电流方向还要定时翻转。</li>
+<li>热式、RTD 也要恒流激励。</li>
+</ul>
+</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>运放 + MOSFET + 采样电阻：I = V_ref/R_s；</li>
+<li>顺从电压（电源 − 负载压降 − 采样压降 − 管压降）；</li>
+<li>管耗 = V_DS·I；</li>
+<li>恒流源 + H 桥 = 可换向恒流励磁；</li>
+<li>Howland 电流泵（AN-1515，电阻比必须匹配）；</li>
+<li>L/R 时间常数决定换向后多久电流稳定。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：21 线性稳压（运放 + 调整管）；06 MOS 管；19 射极跟随器；26 H 桥与死区、DRV8871 ILIM；01 电感。</li>
+<li><strong>仿真</strong>：SPICE：LM358 + IRLZ44N + 10 Ω，负载 0–100 Ω 扫描，看电流在顺从范围内不变；线圈换向电流波形。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>12 V，LM358 + IRLZ44N + 10 Ω 采样，V_ref 1 V → 100 mA，换负载测电流；</li>
+<li>再接 H 桥（DRV8871 模块），由 Arduino 以 6.25 Hz 换向，驱动一个线圈（继电器线圈或自绕线圈），用 1 Ω 采样看电流波形。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>采样电阻放在负载高端，运放共模超限；</li>
+<li>不算管耗，MOSFET 发烫；</li>
+<li>感性负载换向不加续流通路（DRV8871 内部有体二极管通路，分立 H 桥要加）。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：开关型恒流（只提概念）；Howland 双向电流源。</li>
+</ul>
+<h3 id="40-热式流量与-rtd-恒温差40-thermal-flow">40 热式流量与 RTD 恒温差（40-thermal-flow）</h3>
+<ul>
+<li><strong>痛点</strong>：气体质量流量要求测“带走了多少热”；RTD 电阻变化很小，激励电流大了又会自热。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>PT100：R = R0(1 + A·T + B·T²)，100 °C 时为 138.5 Ω；</li>
+<li>激励一般 &lt; 1 mA（自热 ΔT = P/E）；</li>
+<li>两支 RTD：一支加热、一支测流体温度；</li>
+<li>CTA（恒温差，控制加热功率，功率即流量信号）与 CMA（恒功率，测温差）；</li>
+<li>King 定律（1914）描述热损失随流速的变化，具体公式形式 「[待核实]」。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：39 恒流；30 电桥 + INA；10 比较器（简单开关控温）；01 RC 时间常数（热时间常数类比）。</li>
+<li><strong>仿真</strong>：Python 热模型（热容 + 随风速变化的热导），比较 CTA 与 CMA 的响应速度。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>47 Ω 电阻在 5 V 下约 0.53 W 当加热器，贴一个 10 kΩ NTC 或 PT1000，另一个 NTC 测环境温度；</li>
+<li>Arduino PWM + MOSFET 控加热，做 CMA（恒 PWM，读温差）与 CTA（PI 控温差，读 PWM）；</li>
+<li>用 USB 风扇改变风速。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>激励电流过大产生自热误差；</li>
+<li>不做环境温度补偿；</li>
+<li>加热电阻功率等级不够、手摸烫伤。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：恒流桥式热线风速仪；MEMS 热式传感器。</li>
+</ul>
+<h3 id="41-420-ma-电流环41-current-loop-4-20ma">41 4–20 mA 电流环（41-current-loop-4-20ma）</h3>
+<ul>
+<li><strong>痛点</strong>：工厂里信号要传几百米，电压信号会被导线压降和干扰改变；还要一根线既供电又传信号，还能看出断线。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>电流在串联回路中处处相等；</li>
+<li>4 mA “活零点”既给变送器供电，又能区分“0%”与“断线”；</li>
+<li>接收端 250 Ω → 1–5 V；</li>
+<li>最大回路电阻 =（电源 − 变送器最低工作电压）/ 20 mA（24 V、7.5 V 时为 825 Ω）；</li>
+<li>XTR115：I_O = 100·I_IN；</li>
+<li>NE43 报警电平：≤ 3.6 mA / ≥ 21 mA（Beckhoff/WAGO 引用）。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：39 恒流；07 三极管。</li>
+<li><strong>仿真</strong>：SPICE：LM358 + 2N3904 + 100 Ω 采样的 V→I（0.4–2.0 V → 4–20 mA），扫回路电阻找顺从极限。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>12 V 电源，LM358 + 2N3904（或 BD139）+ 100 Ω 采样电阻，Arduino PWM + RC 给 0.4–2.0 V；</li>
+<li>250 Ω 接收电阻 → 1–5 V 给 Arduino ADC；</li>
+<li>加串联电阻找顺从极限，拔线看 0 mA 报警。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>接收电阻和电源地接错，电流不流过 250 Ω；</li>
+<li>以为 0 mA 是 0%；</li>
+<li>回路电阻超过顺从极限仍以为读数正确。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：两线制环路供电 XTR115/116；三线/四线制；HART 叠加数字信号（只提名字）；Modbus RS-485 对比（只讲概念）。</li>
+</ul>
+<h3 id="42-流量计信号链总览42-flowmeter-signal-chainsa-部分-capstone">42 流量计信号链总览（42-flowmeter-signal-chains，A 部分 capstone）</h3>
+<ul>
+<li><strong>内容</strong>：一张表 + 六张信号链框图，每块都回链到对应节点。
+<ol>
+<li><strong>电磁</strong>：恒流 H 桥励磁（39）→ INA（30）→ 带通/同步检波（33/38）→ ADC → 4–20 mA（41）。</li>
+<li><strong>超声时差</strong>：激励猝发 → 带通（33）→ PGA（35）→ 门限 + 过零（37）→ TDC → MCU。</li>
+<li><strong>涡街</strong>：压电 → 电荷放大（32）→ 跟踪带通（34）→ AGC（35）→ 施密特（36）→ 计数。</li>
+<li><strong>热式</strong>：RTD 恒流（39）→ 电桥 INA（30）→ 恒温差控制（40）→ 功率即流量。</li>
+<li><strong>差压</strong>：电桥（30）→ ADC → 开方 Q = k√ΔP（流量 10:1 对应差压 100:1；10% 流量时差压只有 1%）。</li>
+<li><strong>涡轮（简述）</strong>：霍尔/磁电 → 施密特 → K 系数。</li>
+</ol>
+</li>
+<li><strong>page4（综合实验）</strong>：
+<ul>
+<li>风扇扇叶 + 红外 LED/光电二极管 → TIA（31）→ 带通（33）→ 施密特（36）→ Arduino 测频，用 K 系数换算成“流量”；</li>
+<li>再经 PWM + RC → V→I（41）输出 4–20 mA，接收端 250 Ω 读回。</li>
+<li>全部 ≤ 12 V。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>把差压信号线性地当流量；</li>
+<li>开方做了两次（变送器已设 Square Root 输出，DCS 里又开一次；3051S 手册原文警告：变送器的 Square Root 模式和 Transfer Function 不能同时设开方，否则 “square root function to be performed twice”）；</li>
+<li>低流量切除不设，零点附近乱跳。</li>
+</ul>
+</li>
+</ul>
+<h3 id="43-推挽功放甲乙甲乙类43-push-pull-power-amp">43 推挽功放：甲、乙、甲乙类（43-push-pull-power-amp）</h3>
+<ul>
+<li><strong>痛点</strong>：
+<ul>
+<li>运放输出几十 mA，带不动 8 Ω 喇叭；</li>
+<li>单管甲类效率低、发热大；</li>
+<li>乙类推挽有交越失真（19 page3 练习 4）。</li>
+</ul>
+</li>
+<li><strong>核心思想</strong>（推导链）：
+<ul>
+<li>乙类 P_L = V_p²/(2R_L)，P_S = 2V_CC·V_p/(πR_L)，η = πV_p/(4V_CC)，最大 π/4 ≈ 78.5%；</li>
+<li>甲类（电阻负载）最大 25%；</li>
+<li>乙类总管耗在 V_p = 2V_CC/π 时最大，等于 (4/π²)·P_Lmax ≈ 0.405·P_Lmax；</li>
+<li>甲乙类：两个二极管或 V_BE 倍增器给静态偏置（SNOA600 用二极管补偿 V_BE）；</li>
+<li>把推挽级放进运放反馈环内，交越被环路增益压低。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：19 射极跟随器与推挽；08 同相放大；17 的 V_BE 温度系数；01 功率 P = VI。</li>
+<li><strong>仿真</strong>：SPICE：2N3904/2N3906 推挽，乙类/甲乙类/环内三种接法的 THD 与波形；效率随 V_p 的曲线（Python）。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>12 V 单电源 + 6 V 虚地（或 ±6 V），TL072 + 2N3904/2N3906（小功率）或 BD139/BD140；</li>
+<li>负载 8 Ω 喇叭串 10 Ω 限流；</li>
+<li>依次搭乙类 → 加两个 1N4148 偏置 → 放进反馈环，用 Arduino 采样或耳听交越失真，用万用表测静态电流和电源电流算效率。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>甲乙类偏置太大引起热失控（没有发射极电阻）；</li>
+<li>直接把 8 Ω 喇叭接在直流上；</li>
+<li>效率公式用峰值和有效值混算。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：互补达林顿；V_BE 倍增器；甲类耳放。</li>
+</ul>
+<h3 id="44-d-类功放44-class-d-amp">44 D 类功放（44-class-d-amp）</h3>
+<ul>
+<li><strong>痛点</strong>：甲乙类最多 78.5%，实际更低，需要大散热片；手机/蓝牙音箱要求效率 90% 左右（SLOA290A）。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>三角波 + 比较器 → PWM，占空比跟随音频；</li>
+<li>半桥/全桥（BTL）开关，管子只工作在全开/全关；</li>
+<li>死区防直通；</li>
+<li>LC 低通恢复音频：二阶巴特沃斯 L = R/(Q值·ω0)、C = Q值/(R·ω0)，8 Ω、30 kHz 时约 60 µH、0.47 µF；TI LC Filter Design（SLAA701B；旧号 sloa119b 链接重定向到它）例子 10 µH/0.68 µF，按单节 LC 算约 61 kHz；</li>
+<li>免滤波（filter-free）方案与 EMI（SLOA145）。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：43 效率对比；24/14 三角波；10 比较器；26 H 桥与死区；25 开关电源的电感滤波。</li>
+<li><strong>仿真</strong>：SPICE：TL072 三角波（约 25 kHz）+ LM393 + 理想开关 H 桥 + LC + 8 Ω，看 PWM、输出与频谱；Python 算效率。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>TL072 三角波约 20–30 kHz + LM393 比较 → DRV8871 模块（VM 6.5–12 V，PWM ≤ 200 kHz）BTL 驱动 8 Ω 喇叭（串 LC 或直接接）；</li>
+<li>测电源电流，对比 43 的推挽效率。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>三角波频率低于 20 kHz 能听到“啸叫”；</li>
+<li>示波器探头地夹在 BTL 输出的一端短路；</li>
+<li>直接把 LC 截止设得太高。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：AD/BD 调制；数字输入 D 类；扩频降低 EMI。</li>
+</ul>
+<h3 id="45-集成功放芯片与散热保护45-audio-amp-ics">45 集成功放芯片与散热保护（45-audio-amp-ics）</h3>
+<ul>
+<li><strong>痛点</strong>：自己搭分立功放既费事又没有保护；实际产品都用集成芯片。</li>
+<li><strong>核心思想</strong>：
+<ul>
+<li>LM386：增益 20（1–8 脚开路）到 200（1–8 脚接 10 µF），4–12 V；</li>
+<li>PAM8403：5 V、4 Ω、3 W（10% THD），免滤波 D 类；</li>
+<li>TPA3116D2：4.5–26 V、2×50 W/4 Ω/21 V，带短路、过温、过压/欠压与直流保护；</li>
+<li>读数据手册：THD 条件、电源、散热、保护。</li>
+</ul>
+</li>
+<li><strong>回指</strong>：43 AB 类；44 D 类；21 线性稳压与 25 开关电源（供电）。</li>
+<li><strong>仿真</strong>：LM386 用宏模型或只做增益/带宽计算；效率对比表用 Python 画。</li>
+<li><strong>page4</strong>：
+<ul>
+<li>LM386 在 9 V 下：增益 20 与 200 对比，测静态电流（约 4 mA），接 8 Ω 喇叭听；</li>
+<li>可选 PAM8403 模块在 5 V 下比较效率与发热（手摸外壳 → 改用测温）。</li>
+</ul>
+</li>
+<li><strong>典型错误</strong>：
+<ul>
+<li>LM386 不接 7 脚旁路电容，电源噪声进来；</li>
+<li>增益 200 时布线长引起自激；</li>
+<li>PAM8403 输出端任一脚接地（BTL 输出不能接地）。</li>
+</ul>
+</li>
+<li><strong>变体</strong>：TPA3116D2 PBTL；保护电路（过流、过温、直流保护）。</li>
+</ul>
+<h2 id="7-实验安全总则第二部分">7. 实验安全总则（第二部分）</h2>
+<ul>
+<li>所有实验 ≤ 12 V 直流；不接市电，不做真实电磁流量计的高压励磁。50 Hz 干扰只用电线感应或小变压器的低压次级，变压器初级必须是成品插头、全封闭外壳。</li>
+<li>发热元件：39、40、43、44、45 节的功率管和加热电阻可能超过 60 °C，不要用手摸，改用万用表测温探头或 NTC。</li>
+<li>喇叭：先串 10 Ω 限流电阻；不要让直流长期流过喇叭。</li>
+<li>高阻电路（31、32 节 10–100 MΩ）：手指触碰会改变读数，不是危险，但要解释原因。</li>
+<li>压电片：敲击会产生较高的电压尖峰，进运放前加 10 kΩ 串联电阻 + 两个 1N4148 钳位（作者需在 SPICE 中确认）。</li>
+</ul>
+<h2 id="8-需要协调人改动的共享文件作者不要各自改">8. 需要协调人改动的共享文件（作者不要各自改）</h2>
+<ul>
+<li>AUTHOR_GUIDE.md：节号范围从 01–29 扩展到 01–45；29 page4 的“下一节”导航从 README 改为 30。</li>
+<li>code/figs/00_figs.py：NODES/EDGES/QUEUES 追加第二部分（或新建 00_figs_part2.py）。</li>
+<li><a href="http://README.md">README.md</a> 目录表追加 30–45。</li>
+<li>code/figs/lab_schem.py 的 NODES 字典追加 30–45 的 page4 原理图条目。</li>
+<li>spice/models：可能需要补 LMC6482、CD4053/CD4051（开关可用理想开关 + R_on 代替）、IRLZ44N（已有）、BD139/BD140 的模型。</li>
+</ul>
+<h2 id="9-待定事项">9. 待定事项</h2>
+<ol>
+<li>31 与 32 是否合并为“电流/电荷输入放大器”一节？（当前分开：32 是 31 的直接延伸，各自有独立实验。）</li>
+<li>36 与 37 是否合并？（当前分开：37 的超声实验零件和难度明显更高。）</li>
+<li>Arduino 是否作为第二部分的必备件（几乎每节 page4 都用到）。</li>
+<li>±6 V 是否允许用两组电池；或者统一 12 V 单电源 + 虚地。</li>
+<li>零件预算：40 kHz 超声换能器一对、压电蜂鸣片、DRV8871 模块、PAM8403 模块、PT1000/NTC、CD4051/CD4053。</li>
+<li>第二部分 DAG 新线索的颜色。</li>
+<li>NE555 和 Arduino 定时器/输入捕获在第一部分都没有讲过（24 用的是 LM358 弛张振荡器）。34、36、39 的 page4 是改用 24 的弛张振荡器，还是在第一次用到的节（34）加一个 555 引脚说明框？</li>
+<li>King 定律的具体公式形式、NE43 原文（NAMUR 需会员下载）暂未核实，见各 research 笔记的「[待核实]」。</li>
+</ol>
+<h2 id="10-检查命令每节写完后">10. 检查命令（每节写完后）</h2>
+<pre><code>PY=/workspace/circuits-venv/bin/python
+$PY code/figs/NN_figs.py
+$PY tools/count_cjk.py NN-slug/page*.md --min 500
+$PY tools/run_blocks.py NN-slug/page*.md
+$PY tools/run_blocks.py --scripts code/NN_sim.py code/figs/NN_figs.py
+$PY tools/check_figs.py NN-slug/page*.md
+$PY tools/fix_inline_math_spacing.py NN-slug/page*.md
+$PY tools/fix_inline_math_spacing.py --check NN-slug/page*.md
+$PY tools/check_github_math.py NN-slug/page*.md notes/NN-research.md --repo helplesstuxe/basic-circuits-tutorial
+</code></pre>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

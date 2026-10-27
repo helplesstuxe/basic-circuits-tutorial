@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>30 仪表放大器与电桥 · 理论笔记（理论研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/30.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="30-仪表放大器与电桥--理论笔记理论研究员">30 仪表放大器与电桥 · 理论笔记（理论研究员）</h1>
+<blockquote>
+<p>依据：notes/00-design-part2.md、notes/PART2_BRIEF.md（§10 最终决定优先）、notes/30-research.md。
+数值全部用 Python 复算（脚本：盒子 /workspace/scratch/theory2/c30.py）。</p>
+</blockquote>
+<h2 id="1-推导链从高中知识出发">1. 推导链（从高中知识出发）</h2>
+<h3 id="11-电桥--两个分压器相减">1.1 电桥 = 两个分压器相减</h3>
+<ol>
+<li>串联分压（高中）：两电阻 R_a、R_b 串在 V_ex 上，R_b 上的电压 = V_ex·R_b/(R_a+R_b)。（理由：串联电流相同 I = V_ex/(R_a+R_b)，再 U = IR_b。）</li>
+<li>电桥左臂 R1 上、R2 下，中点电压 V_A = V_ex·R2/(R1+R2)；右臂 R3 上、R4 下，V_B = V_ex·R4/(R3+R4)。</li>
+<li>输出取两中点之差：V_d = V_A − V_B = V_ex·[R2/(R1+R2) − R4/(R3+R4)]。</li>
+<li>四只都等于 R：V_A = V_B = V_ex/2，V_d = 0（平衡）。注意两点<strong>各自</strong>都在 V_ex/2，这就是&quot;共模电压&quot;。</li>
+<li>令 R2 = R + ΔR，其余为 R：
+V_d = V_ex·[(R+ΔR)/(2R+ΔR) − 1/2] = V_ex·[2(R+ΔR) − (2R+ΔR)]/[2(2R+ΔR)] = V_ex·ΔR/[2(2R+ΔR)]（精确式）。</li>
+<li>ΔR ≪ 2R 时分母 ≈ 4R：V_d ≈ V_ex·ΔR/(4R)（近似式）。近似的相对误差 = ΔR/(2R)（ΔR = 1% R 时为 0.5%）。</li>
+<li>比例测量：V_d 正比于 V_ex。若 ADC 读数 N = 满量程·V_d/V_ref，且 V_ref 也取自 V_ex，则 N ∝ (V_ex·k)/V_ex = k，与 V_ex 无关。</li>
+</ol>
+<h3 id="12-三运放-ina-第一级只用虚短--虚断--欧姆定律">1.2 三运放 INA 第一级（只用虚短 + 虚断 + 欧姆定律）</h3>
+<ol>
+<li>运放 A1 同相端接 V1，A2 同相端接 V2；负反馈下虚短：A1 反相端 = V1，A2 反相端 = V2。</li>
+<li>R_g 跨接在两个反相端之间：流过 R_g 的电流 I = (V2 − V1)/R_g。</li>
+<li>虚断：运放输入端不取电流，所以这个 I 只能经两只 R 流出/流入两个运放输出端：电流串联经过 R—R_g—R。</li>
+<li>两输出之差 V_o2 − V_o1 = I·(R + R_g + R) = (V2 − V1)·(R_g + 2R)/R_g，故 <strong>G1 = 1 + 2R/R_g</strong>。</li>
+<li>共模：若 V1 = V2 = V_CM，则 I = 0，两只 R 上无压降，V_o1 = V_o2 = V_CM —— 共模增益为 1，与 G1 无关（MT-063 原文：&quot;common mode signals are only amplified by a factor of 1 regardless of gain&quot;）。</li>
+<li>每个运放输出 = V_CM ± G1·V_d/2，必须留在运放输出摆幅以内（这是&quot;第一级增益不能太大&quot;的真正限制）。</li>
+</ol>
+<h3 id="13-第二级差分放大器第一部分-16-节已推这里只补失配">1.3 第二级差分放大器（第一部分 16 节已推，这里只补失配）</h3>
+<ol>
+<li>同相端：V+ = V_o2·R2'/(R1'+R2')；反相端用叠加/KCL：V_o = V+·(1+R2/R1) − V_o1·R2/R1。</li>
+<li>R2/R1 = R2'/R1' 时 V_o = (R2/R1)(V_o2 − V_o1)，共模完全消掉。</li>
+<li>不相等时 V_o2 = V_o1 = V_CM 代入得 G_cm = (R2'/(R1'+R2'))(1+R2/R1) − R2/R1 ≠ 0。</li>
+<li>CMR(dB) = 20·lg(G_dm/|G_cm|)。</li>
+<li><strong>整台三运放 INA</strong>：第一级把差模放大 G1 倍而共模仍是 1 倍，所以 CMR_总 ≈ CMR_差分级 + 20·lg G1（MT-063：&quot;CMR of this in-amp theoretically increases in proportion to gain&quot;）。G1 = 21 时多出 26.4 dB。</li>
+</ol>
+<h3 id="14-超纲工具及最小必要知识">1.4 超纲工具及最小必要知识</h3>
+<ul>
+<li><strong>对数 / dB</strong>（高中后期才学对数）：最小讲法&quot;dB = 20·lg(比值)；比值每 ×10 加 20 dB，×2 加约 6 dB&quot;，给一张对照表（10→20 dB，100→40 dB，1000→60 dB，10⁵→100 dB）。本节只需要查表，不需要会算对数。</li>
+<li><strong>开方 Q = k√ΔP</strong>（差压流量）：伯努利方程超纲；绕开办法：只给结论&quot;差压与流速平方成正比&quot;（像动能 ½mv²），再用平方关系算 10% 流量 → 1% 差压。</li>
+</ul>
+<h2 id="2-符号表与-00-design-part2--第一部分一致">2. 符号表（与 00-design-part2 / 第一部分一致）</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>V_ex</td>
+<td>电桥激励电压</td>
+<td>V</td>
+</tr>
+<tr>
+<td>R、ΔR</td>
+<td>电桥臂电阻、其变化量</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td>V_d（或 V1−V2）</td>
+<td>差模电压</td>
+<td>V</td>
+</tr>
+<tr>
+<td>V_CM</td>
+<td>共模电压</td>
+<td>V</td>
+</tr>
+<tr>
+<td>R_g</td>
+<td>INA 增益电阻（<strong>第一部分 16 节用小写 R_g</strong>；research 写 R_G，正文请统一为 R_g，引数据手册公式时注明&quot;手册记作 R_G&quot;）</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td>R</td>
+<td>第一级反馈电阻</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td>R1、R2（R1'、R2'）</td>
+<td>差分级电阻</td>
+<td>Ω</td>
+</tr>
+<tr>
+<td>G、G1</td>
+<td>总增益、第一级增益</td>
+<td>无</td>
+</tr>
+<tr>
+<td>G_dm、G_cm</td>
+<td>差模、共模增益</td>
+<td>无</td>
+</tr>
+<tr>
+<td>CMRR / CMR</td>
+<td>共模抑制比 / 其 dB 值</td>
+<td>无 / dB</td>
+</tr>
+<tr>
+<td>Kr</td>
+<td>电阻容差或净比值失配</td>
+<td>无（%）</td>
+</tr>
+<tr>
+<td>V_REF</td>
+<td>INA 参考端电压（单电源时为虚地）</td>
+<td>V</td>
+</tr>
+<tr>
+<td>ΔP、Q</td>
+<td>差压、流量（<strong>此处 Q 是流量</strong>，与 31/32 的电荷 Q、33 的 Q 值区分，建议正文写&quot;流量 q&quot;或直接写汉字）</td>
+<td>Pa、L/min</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误位置--改正">3. 勘误（位置 → 改正）</h2>
+<ol>
+<li><strong>30-research 第 9 行</strong>：&quot;单电源 5 V、G = 2 时 V1 只能在 1.3–2.4 V 之间&quot;——错。按 MT-062 Fig.2 的公式：V1,min = [(G−1)V_OL + V_REF]/G = 1.3 V，V1,max = [(G−1)V_OH + V_REF]/G = <strong>3.7 V</strong>；2.4 V 是<strong>最大差模输入</strong> |V2−V1| ≤ (V_OH−V_OL)/G。（MT-062 正文自己写了&quot;1.3 V and 2.4 V&quot;，与图中公式矛盾，以图中公式为准，Python 复算 1.3/3.7/2.4 V。）G = 100 时 0.124–4.876 V、差模 ≤ 48 mV，原文无误。</li>
+<li><strong>第 47 行 page4 &quot;±6 V&quot;</strong>：按 BRIEF §10 改为 <strong>12 V 单电源 + 分压/跟随器虚地（12 节）</strong>，INA 的 V_REF 接虚地 6 V（MT-061/MT-062 均写明单电源时参考端接中点）。</li>
+<li><strong>第 47 行器件 + 电桥激励（新增前提）</strong>：TL072（非 H 版）推荐输入共模范围为 (V_CC−)+4 V 到 V_CC+（TI SLOS080W）。若单电源 12 V 而电桥用 5 V 激励，电桥中点 2.5 V &lt; 4 V，超出范围。改正：电桥直接用 12 V 激励（中点 6 V，ΔR = 1% 时 V_d = 29.85 mV，×21 = 0.627 V，A1/A2 输出 6.31 V / 5.69 V，都在范围内）；或保留 5 V 激励但换 LM358（输入范围含负轨，上限 V+−1.5 V）。若坚持 5 V 算例，正文要说明这是&quot;理论算例&quot;，实验用 12 V 激励。</li>
+<li><strong>第 48 行 CMR 实验</strong>：&quot;两输入并联接 1 V&quot;在单电源下应写为&quot;相对虚地 ±1 V&quot;（即接 7 V 或 5 V 的直流），否则 1 V 低于 TL072 的 4 V 下限。</li>
+<li><strong>第 43 行 SPICE 30_cmr.cir</strong>：若测的是<strong>整台</strong>三运放 INA（G = 21），一只电阻偏 0.1% / 1% 时 CMR 约 <strong>92.5 / 72.5 dB</strong>，不是 MT-061 的 66 / 46 dB（那两个数是<strong>单个差分级</strong>）。要对比 MT-061，应单独仿真差分级（G=1），或者在结论里写&quot;再加 20·lg21 = 26.4 dB&quot;。Python：差分级一只偏 0.1% → 66.03 dB，偏 1% → 46.09 dB，四只 1% 最坏 → 33.98 dB；整台 INA 对应 92.5 / 72.5 / 60.4 dB。</li>
+<li><strong>page4 预期读数（新增）</strong>：四只未挑 1% 电阻、1 V 共模时，INA 输出最多约 <strong>20 mV</strong>（G_cm = 0.0202），对应总 CMR ≈ 60 dB；配对到 0.1% 时约 0.5 mV。给学生的判据用这两个数。</li>
+<li><strong>第 12 行 &quot;100 dB CMRR 把 0.3 V 压到 3 µV&quot;</strong>：数值正确（0.3 V/10⁵），但要补前提：这是**折算到输入（RTI）**的误差（MT-061 Fig.1：&quot;COMMON MODE ERROR (RTI) = V_CM/CMRR&quot;），乘上增益才是输出上的量。ADI EM 文章原句是&quot;presented as a dc offset on the amplifier output that can subsequently be calibrated out&quot;。</li>
+<li><strong>第 12/31 行&quot;第一级增益 ≤ 10&quot;</strong>：EM 文章原话是&quot;This usually limits the gain of the first stage instrumentation amplifier to no more than ×10&quot;，理由是避免&quot;unwanted dc common-mode voltage&quot;使输出饱和。按 1.2 节第 5–6 步，三运放第一级共模增益只有 1，真正被放大 G1 倍而饱和的是两电极极化电压<strong>之差</strong>（直流差模失调）。建议正文表述为&quot;极化电压在两电极上不完全相等，其差值被当成差模放大，所以第一级增益要留余量&quot;，把&quot;≤10&quot;标为工程经验并引 EM 文章。</li>
+<li><strong>第 6 行</strong>：公式与 MT-061 一致；补充 Eq.1 里的 Kr 是单只电阻容差，Eq.2 里是电阻网络的净比值失配，正文举 66 dB 时要注明&quot;净比值失配 0.1%&quot;（research 第 43 行已注，正文别漏）。</li>
+<li><strong>第 17 行</strong>：精确式正确（Python 12.4378 mV）。建议补&quot;近似误差 = ΔR/(2R)&quot;，并写明哪只电阻变（R2，在下臂）决定输出的极性。</li>
+<li><strong>第 13–14 行 Emerson 来源</strong>：本次未重新打开，标 [待核实]；&quot;差压 ∝ v²&quot;可用 1.4 节的绕开讲法，不依赖该来源。</li>
+</ol>
+<h2 id="4-关键数值python">4. 关键数值（Python）</h2>
+<ul>
+<li>电桥 5 V、ΔR = 100 Ω：精确 12.438 mV，近似 12.500 mV；×21 = 0.2612 V。</li>
+<li>电桥 12 V：29.85 mV；×21 = 0.627 V。</li>
+<li>INA126：G = 21 需 R_G = 80k/16 = 5.0 kΩ；INA333：R_G = 100k/20 = 5.0 kΩ。</li>
+<li>差压：流量 100/50/10/5% → 差压 100/25/1/0.25%。</li>
+</ul>
+<h2 id="5-参考来源本次实际打开确认">5. 参考来源（本次实际打开确认）</h2>
+<ul>
+<li>ADI MT-061 <a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-061.pdf</a> （WebFetch）：Eq.1/Eq.2、66/46/34 dB、典型 INA CMR 70–100 dB 以上、单电源 REF 接中点、RTI 共模误差。</li>
+<li>ADI MT-062 <a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-062.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-062.pdf</a> （WebFetch）：G = 1 + R2/R1 + 2R2/R_G；CMR ≤ 20lg(G×100/%失配)；Fig.2 的 V1 范围公式（1.3/3.7 V，差模 2.4 V）；Fig.3 G=100 数值。</li>
+<li>ADI MT-063 <a href="https://www.analog.com/media/en/training-seminars/tutorials/MT-063.pdf">https://www.analog.com/media/en/training-seminars/tutorials/MT-063.pdf</a> （WebFetch）：三运放 G = 1 + 2R1/R_G；共模增益为 1；CMR 随增益成比例提高；单电源下 A1/A2 输出 = V_CM ± G·V_SIG/2。</li>
+<li>ADI Analog Dialogue《Electromagnetic Flow Meters》<a href="https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html">https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html</a> （WebFetch）：150–200 µV/(m/s)、75 µV 到 4–6 mV、极化电压几百 mV 到 ±2 V、第一级 ≤ ×10、100 dB → 0.3 V 压到 3 µV。</li>
+<li>TI TL072 数据手册 <a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （curl 下载，SLOS080W）：非 H 版输入范围 (VCC−)+4 V 到 VCC+。</li>
+<li>TI INA126 <a href="https://www.ti.com/lit/ds/symlink/ina126.pdf">https://www.ti.com/lit/ds/symlink/ina126.pdf</a> 、INA333 <a href="https://www.ti.com/lit/ds/symlink/ina333.pdf">https://www.ti.com/lit/ds/symlink/ina333.pdf</a> （curl 下载）：增益公式。</li>
+<li>TI LM358B <a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">https://www.ti.com/lit/ds/symlink/lm358b.pdf</a> （curl 下载）：输入范围 V− 到 V+−1.5 V。</li>
+</ul>
+<h2 id="6-待核实">6. [待核实]</h2>
+<ul>
+<li>Emerson Rosemount 405 / 3051S 两个 PDF（research 第 13–14 行）：本次未重新打开。</li>
+<li>MT-062 正文&quot;1.3 V and 2.4 V&quot;与图中公式矛盾，属原文笔误（推断，依据为图中公式的复算）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>
