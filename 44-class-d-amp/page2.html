@@ -155,7 +155,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </tr>
 <tr>
 <td>8.78 kHz</td>
-<td>−3 dB</td>
+<td>−3 dB（比 0 dB 低 3 dB，比低频再低约 2.3 dB）</td>
 <td>高音从这里开始变小</td>
 </tr>
 <tr>
@@ -181,7 +181,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>没有信号时，喇叭上平均 0 V，但并不是「什么都没有」。图 44-p2-8 中间那层：OUT1 − OUT2 在 +12 V 和 −12 V 之间来回跳，每半个周期都有约 12 V 加在 2L 上，电流就匀速升、匀速降：</p>
 <div class="math math-display">\[I_{ripple,p} = \frac{1}{2}\cdot\frac{V_S \cdot T/2}{2L} = \frac{V_S}{8\thinspace L\thinspace f_{sw}} = \frac{12}{8 \times 220\ \mu\text{H} \times 38.56\ \text{kHz}} \approx 0.1768\ \text{A}\]</div>
 <p>SPICE 是 0.1837 A，公式没算负载上还有一点纹波电压，误差约 4%。<strong>这个电流不出声，但实打实地流过电感和管子</strong>，静音时也在发热。它到了电感后面，大部分经 Cf 绕回去（电容给高频电流抄了近路），只有很少一部分漏进负载：负载上的载波有效值电流只有 <span class="math math-inline">\(0.6148 / 18 \approx 0.034\ \text{A}\)</span> （约 34 mA，见下一段），而纹波电流有效值约 <span class="math math-inline">\(0.1837 / \sqrt{3} \approx 0.106\ \text{A}\)</span> 。</p>
-<p>负载上残留的载波电压也能估算：±12 V 方波的基波峰值是 <span class="math math-inline">\(\frac{4}{\pi} \times 12 \approx 15.3\ \text{V}\)</span> ，乘以 LC 在 38.6 kHz 的 0.05685，约 0.869 V 峰值，有效值约 0.614 V。SPICE 算出负载上的载波有效值 0.6148 V，在 18 Ω 上约 21 mW。</p>
+<p>负载上残留的载波电压也能估算：±12 V 方波的基波峰值是 <span class="math math-inline">\(\frac{4}{\pi} \times 12 \approx 15.3\ \text{V}\)</span> （方波拆成一串正弦时，和它同频的那一份幅度是方波幅度的 4/π ≈ 1.27 倍，见 <a href="../33-bandpass-notch/page1.html">33 带通与陷波 · 直觉篇</a>「直觉三」），乘以 LC 在 38.6 kHz 的 0.05685，约 0.869 V 峰值，有效值约 0.614 V。SPICE 算出负载上的载波有效值 0.6148 V，在 18 Ω 上约 21 mW。</p>
 <h2 id="六自己动手一段短代码走一遍比较--pwm--lc-平均">六、自己动手：一段短代码走一遍「比较 → PWM → LC 平均」</h2>
 <p>前面的数字都来自 SPICE。下面这段 Python 把同一条链用最简单的方式重算一遍：三角波和信号直接比大小得到 PWM，H 桥当成理想的 ±12 V 开关，再一步步解 2L、Cf 和 18 Ω 组成的 LC。在仓库根目录运行，图片存到系统临时目录（Linux/macOS 通常是 /tmp），不会写进仓库。</p>
 <pre><code class="language-python">import sys, pathlib
@@ -221,7 +221,10 @@ ax[0].plot(t[m] * 1e6, tri[m], **fs.LS[&quot;fb&quot;], label=&quot;三角波 t&
 ax[0].plot(t[m] * 1e6, s[m], **fs.LS[&quot;vin&quot;], label=&quot;信号 s&quot;)      # 蓝色实线
 ax[0].plot(t[m] * 1e6, VMID + vd[m] / 6, **fs.LS[&quot;third&quot;], label=&quot;OUT1−OUT2（÷6 再加 6 V）&quot;)  # 红紫色点划线
 ax[1].plot(t * 1e3, vo, **fs.LS[&quot;vout&quot;], label=&quot;负载电压&quot;)         # 橙色：PWM 被 LC 平均成正弦
-ax[0].set_xlabel(&quot;时间 / µs&quot;); ax[1].set_xlabel(&quot;时间 / ms&quot;); ax[0].legend(fontsize=8); ax[1].legend(fontsize=8)
+ax[0].set_xlabel(&quot;时间 / µs&quot;); ax[1].set_xlabel(&quot;时间 / ms&quot;)
+ax[0].set_ylabel(&quot;电压 / V&quot;); ax[1].set_ylabel(&quot;负载电压 / V&quot;)
+ax[0].set_ylim(2.5, 11.5)                  # 上面留出空白放图例，不压住三角波
+ax[0].legend(fontsize=8, ncol=3, loc=&quot;upper center&quot;); ax[1].legend(fontsize=8, loc=&quot;upper right&quot;)
 out = os.path.join(tempfile.gettempdir(), &quot;44_pwm_lc.png&quot;)       # 存到临时目录，不弄脏仓库
 fig.tight_layout(); fig.savefig(out, dpi=100); print(&quot;图已保存到&quot;, out)
 </code></pre>
@@ -241,7 +244,7 @@ fig.tight_layout(); fig.savefig(out, dpi=100); print(&quot;图已保存到&quot;
 <li><code>CF</code> 改成 0.1e-6：转折频率升高，载波压不住，下层的毛刺明显变粗（去掉 400 Hz 成分后剩下的有效值从约 0.59 V 涨到约 1.71 V）。</li>
 </ul>
 <h2 id="七效率钱花在哪里">七、效率：钱花在哪里</h2>
-<p>本节的效率只算 VM 这一路（DRV8871 + LC + 负载）的电源功率，TL072、LM393 前级吃的几毫安没有算进去。SPICE 结果（负载功率只算 400 Hz 成分；「负载」是 10 Ω 电阻串 8 Ω 喇叭共 18 Ω，喇叭只分到其中的 8/18）：</p>
+<p>本节的效率只算 VM 这一路（DRV8871 + LC + 负载）的电源功率，TL072、LM393 前级吃的几毫安没有算进去。SPICE 结果（负载功率只算 400 Hz 成分：SPICE 把负载电压拆成 400 Hz、800 Hz……和 38.6 kHz 载波各一份，只取 400 Hz 那一份，上面 Python 块里算 <code>pk</code> 的那一行做的就是这件事；万用表交流档读到的数里还含载波，见 <a href="page4.html">动手实验篇</a>「没有示波器怎么办」；「负载」是 10 Ω 电阻串 8 Ω 喇叭共 18 Ω，喇叭只分到其中的 8/18）：</p>
 <table>
 <thead>
 <tr>

@@ -351,7 +351,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li><strong>TIA 改两只元件</strong>：RF 换成 47 kΩ（仍插 h10–h14），CF 换成 27 pF（仍插 i14–i15）。第 1 步的电源、芯片、偏置、跟随器都不动。</li>
 <li><strong>BPW34</strong>：阳极插 i8、阴极插 i10（阴极经第 10 列、蓝线 j15→j10 连到 2 脚）；黑线 j8 → B1 第 8 列，阳极接 0 V。这样 BPW34 两端被反偏约 0.90 V（阴极在 V_B，阳极在 0 V）。</li>
 <li><strong>LED 支路</strong>：RLED（1 kΩ）插 h2–h5；LED 长脚（阳极）插 g5、短脚（阴极）插 g7；<strong>单独一根黑线</strong> j7 → B1 第 7 列，让 LED 的 3 mA 电流不走 BPW34 的那根地线。把 LED 头弯过来，对着 BPW34 的受光面，相距约 1 cm。遮光盒要能把第 2～11 列下半（LED 和 BPW34）一起罩住。</li>
-<li><strong>U2（LM358）</strong>：缺口朝左，1 脚插 f34（1～4 脚在 f34～f37，8～5 脚在 e34～e37：8 脚 e34、7 脚 e35、6 脚 e36、5 脚 e37）。红线 a34 → T1 第 34 列（8 脚）；黑线 j37 → B1 第 37 列（4 脚）；C2（0.1 µF）一脚 b34、一脚 T2 第 32 列。</li>
+<li><strong>U2（LM358）</strong>：缺口朝左，1 脚插 f34（1～4 脚在 f34～f37，8～5 脚在 e34～e37：8 脚 e34、7 脚 e35、6 脚 e36、5 脚 e37）。红线 a34 → T1 第 34 列（8 脚）；黑线 j37 → B1 第 37 列（4 脚）；C2（0.1 µF）一脚 b34、一脚 T2 第 32 列。U2 和下一条的振荡器都从第 29～47 列的电源轨取电，而电源是从第 5、11 列接进来的：有些 830 孔面包板的红、蓝线在中间（约第 30 列附近）断开，左右两段轨并不相通，这时 U2 不上电、LED 不闪，看起来像接错了。拿不准就在断电时用通断挡量一下 T1、T2、B1 这三条轨各自的第 1 列和第 41 列之间通不通（右半边只用到这三条）；哪条不通，就用一根短线（红轨用红线、蓝轨用黑线）跨过它的断口，把左右两段接起来（两端插在断口两侧最近的有孔列上）。轨断开只会让电路不工作，不会烧东西。</li>
 <li><strong>方波振荡器（U2 的 B 半边，快速版）</strong>：橙线 d35 → d31，把 7 脚输出引到第 31 列上半；R（10 kΩ）插 c31–c36（输出 → 6 脚）；C（100 nF）一脚 a36、一脚 T2 第 35 列（6 脚 → 0 V；第 36 列是轨的组间空档）；Rc（10 kΩ）插 b31–b37（输出 → 5 脚）；Ra（10 kΩ）插 c37–c41，红线 a41 → T1 第 41 列；绿线 d37 → d43；Rb（10 kΩ）插 c43–c47，黑线 a47 → T2 第 47 列。电路和 <a href="../24-oscillator/page4.html">24 振荡器 · 动手实验篇</a> 完全一样，只是 24 节用的是 A 半边（1、2、3 脚），这里换到 B 半边（7、6、5 脚），道理一样。</li>
 <li><strong>跟随器（U2 的 A 半边）</strong>：橙线 e31 → f31，把振荡器输出带过凹槽；橙线 i31 → i36，送到 3 脚；绿线 g34–g35，1 脚连 2 脚。24 节提醒过：LED 不要直接挂在振荡器输出上，否则会把高电平拉低、改变门限；这里用 U2 的另一半接成跟随器去推它。</li>
 <li><strong>按钮 S2</strong>：四只脚插 e28、e30、f28、f30（跨在凹槽上），只用对角的 e30 和 f28；红线 a30 → T1 第 29 列（第 30 列是轨的组间空档）。</li>
@@ -402,8 +402,11 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </details>
 <ol>
 <li><strong>拔 USB</strong>，拔掉 CF（i14–i15 空着）。插 USB，同样看上升沿。</li>
-<li>多半会<strong>几乎看不出振铃</strong>：SPICE 算得只过冲约 1.9 %。原因是&quot;踢得太慢&quot;：18 节里振铃是被三角波的拐角&quot;踢一脚&quot;踢出来的；这里 LED 的光要 10 µs 才升满，比振铃的一个周期（约 3.4 µs）还长，等于慢慢推弹簧，弹簧就不怎么弹。电路其实还是&quot;没阻尼&quot;的，只是没被踢到。</li>
+<li>看上升沿：有没有你预测的二百多 kHz 振铃？先把看到的样子记下来，再展开下面的解释。</li>
 </ol>
+<details><summary>看完再展开</summary>
+<p>多半会<strong>几乎看不出振铃</strong>：SPICE 算得只过冲约 1.9 %。原因是&quot;踢得太慢&quot;：18 节里振铃是被三角波的拐角&quot;踢一脚&quot;踢出来的；这里 LED 的光要 10 µs 才升满，比振铃的一个周期（约 3.4 µs）还长，等于慢慢推弹簧，弹簧就不怎么弹。电路其实还是&quot;没阻尼&quot;的，只是没被踢到。</p>
+</details>
 <p>③ <strong>换按钮，踢快一点</strong></p>
 <ol>
 <li><strong>拔 USB</strong>，蓝线右端从 j34 改插 j28（按钮模式）。CF 仍然空着。</li>
@@ -604,7 +607,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </ul>
 <h2 id="用-python-检查你的读数">用 Python 检查你的读数</h2>
 <p>把下面代码复制到本机的 Python 里，只改两条 <code># =====</code> 中间的数，以及 <code>mine</code> 那几行。它按你量到的 VCC 和电阻值重新算出每一步&quot;应该读到&quot;的数，和你的读数比较；偏差超过 10 % 会打出提示。</p>
-<pre><code class="language-python">import math
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+import math
 
 # ===== 把这里改成你量到的数（电阻断电后用欧姆挡量，VCC 在第 2 步量测点 D 对 0 V 轨）=====
 VCC = 5.00           # ← 测点 D 对 0 V 轨，单位 V

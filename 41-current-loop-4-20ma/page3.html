@@ -51,7 +51,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h1 id="41-420-ma-电流环--参数与调试篇">41 4–20 mA 电流环 · 参数与调试篇</h1>
 <p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../39-constant-current-excitation/page2.html">39 恒流源与线圈励磁驱动 · 原理与实现篇</a>、<a href="../07-bjt-relay-driver/page3.html">07 三极管开关与继电器驱动 · 参数与调试篇</a></p>
 <blockquote>
-<p><strong>前置回顾</strong>：<a href="../39-constant-current-excitation/page2.html">39 恒流源 · 原理与实现篇</a> 第四步讲过“顺从电压”：恒流源只在负载电阻不太大时才恒流，负载一大，管子（39 是 MOS 管，本节是三极管）就没有压降可调了，电流随之下降。本页把这件事放到电流环里，再加上断线、PWM 纹波、功耗、稳定性和 5 V 引脚不准这几笔账。</p>
+<p><strong>前置回顾</strong>：<a href="../39-constant-current-excitation/page2.html">39 恒流源 · 原理与实现篇</a>「二、推导」的第四步讲过“顺从电压”（恒流时负载两端允许的最高电压，39 里约 10.5 V）：恒流源只在负载电阻不太大时才恒流，负载一大，管子（39 是 MOS 管，本节是三极管）就没有压降可调了，电流随之下降。本页把这件事放到电流环里，再加上断线、PWM 纹波、功耗、稳定性和 5 V 引脚不准这几笔账。</p>
 </blockquote>
 <p>本页所有数字来自 <code>code/41_sim.py</code>（简化模型）和 <code>spice/41/</code>（LTspice 兼容网表 + ngspice），两者对照见 <code>review/spice/41.md</code>。</p>
 <h2 id="一顺从极限导线电阻多大时电流就掉了">一、顺从极限：导线电阻多大时电流就掉了</h2>

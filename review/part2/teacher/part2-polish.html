@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>第二部分「遗留建议」修订轮抽查（2026-10-27 17:28–17:37 EDT）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/part2-polish.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="第二部分遗留建议修订轮抽查2026-10-27-17281737-edt">第二部分「遗留建议」修订轮抽查（2026-10-27 17:28–17:37 EDT）</h1>
+<p>结论：31/32/36/37/38/40/41/44/45 全部 <strong>可发布，必改 0</strong>。数值均独立重算并与 SPICE 对照，接线按孔位规则复查，五项检查脚本全过，重生成 png 与仓库逐字节一致。以下各节建议均不阻塞发布。</p>
+<h1 id="3132-节遗留建议修订轮抽查资深教师助理">31、32 节&quot;遗留建议&quot;修订轮抽查（资深教师助理）</h1>
+<p>方法：只读。改动范围按 <code>git diff HEAD -- 31-transimpedance-amp code/figs/31_figs.py</code> 和 32 节对应的 diff（含 <code>spice/32/run.py</code>）确定。仓库复制到 /tmp/pol3132/repo（不含 .git、_site），所有脚本都在副本里用 /workspace/circuits-venv/bin/python 跑。</p>
+<ul>
+<li><strong>SPICE</strong>：spice/31/run.py 跑完 41 项；spice/32/run.py 全部通过，新加的 assert 也过了；另外把 vmode_cf_left.cir 单独跑了一遍。</li>
+<li><strong>图</strong>：31_figs.py、32_figs.py 在副本里重新生成，36 张 PNG 的 md5 和仓库里的完全一致。改过的图逐张看过：31 p4-5 和 32 p1-1、p4-2、p4-4，其中 S1 部分放大看了。</li>
+<li><strong>孔位</strong>：用孔位登记脚本（在 31_figs 的画线、元件函数上挂钩）复查了 31 节三张面包板图。</li>
+<li><strong>工具</strong>：8 页都跑了 count_cjk、check_figs、check_github_math --repo placeholder/placeholder、fix_inline_math_spacing --check 和 run_blocks。</li>
+</ul>
+<h2 id="节点-31-修订轮抽查">节点 31 修订轮抽查</h2>
+<h3 id="逐项结果">逐项结果</h3>
+<ol>
+<li><strong>page3 L74/L146–156 振荡周期：已落实，数字正确。</strong>
+<ul>
+<li>SPICE（1 MΩ，C_F = 0）振铃频率是 63.4 kHz，1/63.4 kHz = 15.77 µs。</li>
+<li>单极点估算 √(1 MHz/(2π·1 MΩ·73 pF)) = 46.7 kHz，1/46.7 kHz = 21.41 µs。</li>
+<li>100 µs 的读数间隔对应 100 µs × 46.7 kHz = 4.67 个周期，100 µs × 63.4 kHz = 6.34 个周期。</li>
+<li>页面写的&quot;16～21 µs&quot;&quot;15.8～21.4 µs&quot;&quot;4.7～6.3 个周期&quot;和代码里的 f_est/f_spice 三处一致。</li>
+<li>图 p3-4 标题仍写 4.7 个周期，但图注明是&quot;单极点模型&quot;，所以不矛盾。</li>
+</ul>
+</li>
+<li><strong>page3 L182 &quot;研究笔记&quot;改为&quot;网上有的电路&quot;：已落实。</strong></li>
+<li><strong>page4 L161 电源轨断开说明：已落实，接线说法属实。</strong>
+<ul>
+<li>孔位脚本列出 p4-5 右半边（第 29～47 列）用到的电源轨孔：
+<ul>
+<li>T1：29、34、41</li>
+<li>T2：32、35、47</li>
+<li>B1：37</li>
+<li>B2：一个都没有</li>
+</ul>
+</li>
+<li>所以&quot;右半边只用到 T1、T2、B1 这三条&quot;是对的。</li>
+<li>电源从 B1-5（Arduino GND）、B2-11（5V）接入，&quot;从第 5、11 列接进来&quot;也对。</li>
+<li>页面要求在断电时用通断挡量，并说明轨断开只会让电路不工作，安全措辞合适。</li>
+</ul>
+</li>
+<li><strong>page4 第 10 步②&quot;先观察再展开&quot;：已落实。</strong>
+<ul>
+<li>details 块里的 1.9 % 过冲、&quot;约 3.4 µs&quot;（1/290.5 kHz = 3.44 µs）都和 SPICE 一致。</li>
+<li>上方预测答案 215 kHz、周期 4.6 µs（1/215 kHz = 4.65 µs）也一致。</li>
+<li>diff 里看到的乱码是终端显示问题，文件里是&quot;再&quot;字，没有 U+FFFD。</li>
+</ul>
+</li>
+<li><strong>page4 代码：已落实。</strong> L274–275 加了 sys.path 两行；L308 偏差 &gt;10 % 时打印提示，这一功能还在。run_blocks 通过。</li>
+<li><strong>31_figs.py 的 F 探针位置：已落实。</strong> 改为 dx=-0.5、dy=1.4 后，F 不再盖住列号&quot;30&quot;。</li>
+<li><strong>接线回归：没有问题。</strong> 本轮除了探针位置，图的接线没有改动。复查结果：
+<ul>
+<li>p4-1、p4-3、p4-5 都没有两脚同孔，没有半列超过 5 孔，没有孔落在轨空档（6/12/18/24/30/36 列）上。</li>
+<li>上下轨由 T1-1→B2-1 红线、T2-2→B1-2 黑线连通。</li>
+<li>三张图的连通检查都通过。</li>
+<li>&quot;改线先拔 USB、Arduino 只当 5 V 电源&quot;这些安全条款都还在。</li>
+</ul>
+</li>
+<li><strong>工具：都通过。</strong> count_cjk OK；check_figs OK；check_github_math 4/4 OK；fix_inline_math_spacing --check 改动 0 处；run_blocks PASS。</li>
+<li><strong>新增文字之间有没有互相矛盾：没有发现。</strong></li>
+</ol>
+<h3 id="必改">必改</h3>
+<p>无。</p>
+<h3 id="建议">建议</h3>
+<ul>
+<li><strong>建议-31-a｜page4 L215–216</strong>：第 1 条结尾已经有&quot;同样看上升沿&quot;，第 2 条又以&quot;看上升沿：&quot;开头，重复了。可把第 2 条改成&quot;有没有你预测的二百多 kHz 振铃？……&quot;。</li>
+<li><strong>建议-31-b｜p4-5 图（旧新建议-10 的另一种改法）</strong>：C 100n 的标签框还压住列号&quot;35&quot;的一半，可把标签往上挪一点。</li>
+<li><strong>建议-31-c｜page4 L274–275 sys.path 两行</strong>：这段代码只用 math，这两行并不需要。如果只是为了统一格式，可以留着；但注释&quot;在仓库根目录运行&quot;可能让读者以为必须在仓库里运行。可以改成&quot;# 统一格式，单独运行也可以&quot;，或直接删掉。</li>
+</ul>
+<h3 id="结论">结论</h3>
+<p>可发布</p>
+<h2 id="节点-32-修订轮抽查">节点 32 修订轮抽查</h2>
+<h3 id="逐项结果-1">逐项结果</h3>
+<ol>
+<li><strong>page2 L158 小结里的 f_H 加入 C_c：已落实。</strong> 和正文 L71 的公式、L73 的&quot;阶段二 C_c = 0&quot;一致。</li>
+<li><strong>page4 L59 C_p 改为 7～13 nF：已落实，数字正确。</strong>
+<ul>
+<li>7BB-20-6L0 标称 10 nF ±30 %，正好是 7～13 nF，和器材清单 L52 一致。</li>
+<li>我重算了 C_p = 7 nF 的情况：f_H = 1/(2π·10 kΩ·7 nF) = 2273.6 Hz，比 1591.5 Hz 高；噪声增益 1 + 7/100 = 1.07，更接近 1。所以&quot;不影响读数&quot;成立。</li>
+<li>10/20/30 nF 时 SPICE 给出 f_H = 1592 / 796.1 / 530.9 Hz，页面写 1591.5 / 795.8 / 530.5 Hz，在 0.1 % 以内。</li>
+</ul>
+</li>
+<li><strong>page3 L50、page2 L68、page4 L230 引用&quot;第 7.2.1.2.2 节&quot;：已落实。</strong> 三页节号一致。</li>
+<li><strong>p4-2、p4-4 的 S1 拨柄画在 ①：已落实。</strong> 两张图放大看过：
+<ul>
+<li>拨柄从公共脚 h4 斜向左下，搭在 ① V_MID 触点（h3，第 3 列）上。</li>
+<li>② 0 V（j5 → B1）空着。</li>
+<li>这和阶段一&quot;S1 先在 ①&quot;、第 8 步&quot;S1 在 ① 时按 SB 复位&quot;的步骤一致。</li>
+<li><code>_s1</code> 加了 <code>.flip()</code>，但 lo/hi 按 x 排序，所以标签没有对调。</li>
+</ul>
+</li>
+<li><strong>page3 自查清单把&quot;断电&quot;合并进同一条：已落实，没有造成安全倒退。</strong>
+<ul>
+<li>L107 还保留了&quot;改接线一律先拔电池扣&quot;。</li>
+<li>L112 的合并项是&quot;先断电、再全部改回&quot;。</li>
+<li>顺序&quot;先拔 i14–i15 短线，再把 C_F 插回……&quot;和 page4 第 9 步第 1 条一致。</li>
+</ul>
+</li>
+<li><strong>page4 各改线步骤都&quot;先取下电池扣&quot;：已落实。</strong> 第 1～11 步逐条看过，每一步改线都先取下电池扣。</li>
+<li><strong>page4 L249 排错行（C_F 忘拔）的残留电荷说明：已落实，大方向正确。</strong>
+<ul>
+<li>这种接法下，g13→g14 已拔、d16→g13 已插，SB 接在 x 和 V_MID 之间，确实不再并在 C_F 两端。</li>
+<li><a href="http://run.py">run.py</a> 和单独跑 cf_left 的结果一致：读数 −0.04366 V，正确接法（C_C = 100 nF）是 −0.04409 V，相差 0.42 mV，&quot;零点几 mV&quot;成立。</li>
+<li>修好的办法&quot;先取下电池扣，再补做第 8 步第 1 条&quot;也正确。</li>
+</ul>
+</li>
+<li><strong><a href="http://run.py">run.py</a> 新增 vmode_cf_left：已落实。</strong> 去掉 .control 后在 55～59 ms 取平均，assert 0.0437 ± 0.5 mV 通过。</li>
+<li><strong>p1-1(a) 去掉线交叉：已落实。</strong>
+<ul>
+<li>运放左移后，输出到 − 端的反馈线从运放下方绕回，和输入线不再交叉。</li>
+<li>极性检查过：(a) 同相跟随器 + 端接信号；(b) − 端接 N、+ 端接参考电压。都正确。</li>
+</ul>
+</li>
+<li><strong>工具：都通过。</strong> count_cjk OK；check_figs OK；check_github_math 4/4 OK；fix_inline_math_spacing --check 改动 0 处；run_blocks PASS（page4 代码有 &gt;10 % 警告，没有 sys.path 两行，只 import math，单独运行也能跑）。</li>
+<li><strong>新增文字之间有没有互相矛盾：没有发现。</strong></li>
+</ol>
+<h3 id="必改-1">必改</h3>
+<p>无。</p>
+<h3 id="建议-1">建议</h3>
+<ul>
+<li><strong>建议-32-a｜page4 L249 &quot;C_F 上原有的一点电荷会留在读数的零点里，所以和正确接法差零点几 mV&quot;</strong>
+<ul>
+<li>SPICE 用 uic 起算时 C_F 初始电压是 0。这 0.42 mV 的差来自两部分：零点多了约 0.8 mV（上电过程中 C_F 上积到的电荷），台阶本身少了约 0.37 mV（−44.90 vs −44.53 mV）。</li>
+<li>在实物上，C_F 断电后留着多少电荷不确定，差值不一定只有零点几 mV。</li>
+<li>建议改为&quot;……会留在读数的零点里（SPICE 里只差约 0.4 mV；实物上差多少看 C_F 上留了多少电荷）&quot;。</li>
+</ul>
+</li>
+<li><strong>建议-32-b｜page4 L230 &quot;推着约 9～23 nF 的电容&quot;</strong>
+<ul>
+<li>这个范围是按 10～30 nF 的假设算的。L59 现在写实物是 7～13 nF，7 nF 串 100 nF 只有 6.5 nF，不在这个范围里。</li>
+<li>结论（远超 100 pF）不受影响。可改为&quot;约 6.5～23 nF&quot;，或注明&quot;按 10～30 nF 的假设&quot;。</li>
+</ul>
+</li>
+<li><strong>建议-32-c｜page2 L158–159（旧建议-06）</strong>：L158 写 C_c，下一条写 C_C，大小写不统一。可统一成 C_c（电缆电容）。实验里的电容器件仍写 C_C，两者可以分开用，但要在第一次出现时说明。</li>
+</ul>
+<h3 id="结论-1">结论</h3>
+<p>可发布</p>
+<h1 id="遗留建议修订轮抽查节点-36--37--40--41--45资深教师助理">遗留建议修订轮抽查：节点 36 / 37 / 40 / 41 / 45（资深教师助理）</h1>
+<p>抽查范围：<code>git diff HEAD -- &lt;节点目录&gt; code/figs/NN_figs.py code/40_sim.py</code> 里的全部改动，对照 review/part2/teacher/NN.md 最后一轮的新建议。
+脚本全部在 /tmp/pol3645 副本里，用 /workspace/circuits-venv/bin/python 运行。仓库内只写了本文件，git 只用了 <code>git diff</code> / <code>git status</code>。</p>
+<p><strong>公共检查（5 个节点、20 页，在副本里运行）</strong></p>
+<table>
+<thead>
+<tr>
+<th>工具</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count_cjk</td>
+<td>20/20 页达标（最少 1826 字）</td>
+</tr>
+<tr>
+<td>check_figs</td>
+<td>全部 OK</td>
+</tr>
+<tr>
+<td>check_github_math --repo placeholder/placeholder</td>
+<td>20/20 files OK，src 和 github 公式数逐页相等</td>
+</tr>
+<tr>
+<td>fix_inline_math_spacing --check</td>
+<td>total 0</td>
+</tr>
+<tr>
+<td>run_blocks</td>
+<td>PASS 11、SKIP 0、FAIL 0</td>
+</tr>
+<tr>
+<td>code/40_sim.py</td>
+<td>rc=0</td>
+</tr>
+<tr>
+<td>code/figs/37_figs.py、45_figs.py</td>
+<td>rc=0，断言全部通过；重新生成的 14 + 15 张 PNG 与仓库里的逐字节相同（md5 一致）</td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="节点-36-修订轮抽查">节点 36 修订轮抽查</h2>
+<p><strong>改动</strong>：page4 测量表（约 L200–212）改成 AUTHOR_GUIDE 的列（项｜步骤｜测什么｜红表笔｜黑表笔｜挡位｜应该读到｜读不到时先查），对应 <a href="http://36.md">36.md</a> 新建议-01；L280/L282 的「揭晓」改写了相位和 175 / 200 的解释，对应新建议-03。</p>
+<p><strong>逐项结果</strong></p>
+<ol>
+<li><strong>数值</strong>：表里的值和 page4 代码块的输出一致：上门限 2.614 V、下门限 2.386 V、回差 227 mV、100.16 Hz、多数 1.75 倍。实验 4 和 5 的「仿真约 175 / SPICE 200」与 page3 一致。✅</li>
+<li><strong>接线</strong>：表中孔位与搭建步骤逐个核对，全部一致：Ra j20→+5 V，Rb i20–i25，Cref h20–h25，j25 接 GND，R1 g16–g21，R3 j19→+5 V，D8 i19，Rn i11–i14，D5 j14，R2 h19–h21，第 31 列跨轨 GND 线。没有一孔两脚，半列都不超过 5 孔，没用到轨道空档列。✅</li>
+<li><strong>揭晓的物理解释</strong>：Timer2 和 Timer0 都从 16 MHz 分频，同一块板、同一程序每次上电的相对相位基本固定，所以实验之间的差异来自元件公差和门限位置。175 对 200 归因于 Python 用的简化理想比较器加 0.2 s×5 的计数窗口，SPICE 用的是 LM393A.lib。说法正确，不再暗示每次上电随机。✅</li>
+<li><strong>交叉引用</strong>：page3「四、典型错误与故障排查」在 L89，表头第一行是 R3，3.8× 行和「时有时无」行都在。✅</li>
+<li><strong>新矛盾</strong>：无。</li>
+</ol>
+<p><strong>必改</strong>：无。</p>
+<p><strong>建议</strong>：无。</p>
+<p><strong>结论：可发布。</strong></p>
+<hr />
+<h2 id="节点-37-修订轮抽查">节点 37 修订轮抽查</h2>
+<p><strong>改动</strong>：</p>
+<ul>
+<li>page4 第 5 步拆成两段（L172–176）：先只插 USB 查两只 2.2k 上拉，再接 12 V、调 ② 到 0.169 V。</li>
+<li>L192 增加故障排查：「第 4 小步 ④ 就变成约 0 V / PRE1 一直是 0 或悬空」。</li>
+<li>L216 写明风扇距离的量法，即 <a href="http://37.md">37.md</a> 第 4 轮新建议-01。</li>
+<li>图 37-p4-2 加了孔位标注：「+12 V→f36」「V_MID（h20→i31）」「中间脚 i32→i26」「b25→b29 / e29–f29」。</li>
+</ul>
+<p><strong>逐项结果</strong></p>
+<ol>
+<li><strong>数值</strong>：门限调节范围 0–0.545 V、起点 0.169 V、1.053 V 与 page3 和图一致。✅</li>
+<li><strong>接线</strong>：
+<ul>
+<li>LM393 引脚 1/2/3/4 在 f24–f27，8/7/6/5 在 e24–e27。R_HY 在 a25–a27，b25→b29，e29–f29。两只 2.2k 上拉在 j24、j29，另一端接下方 +5 V 轨。i24→i43、c29→c43 到第 6 步才插。所以第 5 步只插 USB 时，h24、c29 都是空孔，能插表笔。</li>
+<li>只插 USB、不接 12 V 时，LM393 是集电极开路输出，两端都只靠上拉，所以读约 5 V 的说法成立。</li>
+<li>三种诊断（h24≈0、j29≈0、j29≈5 V 但 c29≈0）都和电路对得上。c29 悬空时被表的 10 MΩ 内阻拉到 0 V 附近，这个解释也对。</li>
+<li>先断电再插件，查完上拉再接 12 V，顺序正确。Arduino 输入只经 5 V 上拉，不超过 5 V。✅</li>
+</ul>
+</li>
+<li><strong>图 37-p4-2</strong>：新标注与正文第 5 步的 6 根跳线逐一对应。f36 是端子孔，不是电源轨，不涉及空档列。✅</li>
+<li><strong>L192 故障项</strong>：/PRE1 由 j24 的上拉加 i24→i43 送到 74HC74，「查 j24 的 2.2k 上拉和 i24→i43」指向正确。✅</li>
+<li><strong>L216</strong>：风扇出风面到发射探头背面 10～15 cm，与图 37-p4-3 和 L194「正面到正面」的说法区分开了。✅</li>
+<li><strong>新矛盾</strong>：无。</li>
+</ol>
+<p><strong>必改</strong>：无。</p>
+<p><strong>建议</strong>（不阻塞）：</p>
+<ul>
+<li><strong>建议-01（page4 L174）</strong>：「红表笔依次碰 h24、j29、c29」里的 j29 插着 2.2k 的一只脚，表笔插不进去，只能碰电阻脚。建议改成「h24、h29（或 g29/i29）、c29」，后面的诊断句「j29 也约 0 V」「j29 约 5 V 而 c29 约 0 V」同步改成 h29。</li>
+<li><strong>建议-02（图 37-p4-2，原有问题）</strong>：「2.2 kΩ j29→+5 V」的文字压在电阻锯齿上，可以加白底或挪开。</li>
+</ul>
+<p><strong>结论：可发布。</strong></p>
+<hr />
+<h2 id="节点-40-修订轮抽查">节点 40 修订轮抽查</h2>
+<p><strong>改动</strong>：</p>
+<ul>
+<li>page4 第 6 步把「量两处」改成「量三处」（L113），并新增第三项（L116）：红笔 e21、黑笔 0 V 轨。正常时读几 kΩ 到 10 kΩ；约 530 Ω 表示 R_H 误插到上半。</li>
+<li>L115 末尾补一句：R_H 误插到上半时，前两项都查不出来。</li>
+<li>code/40_sim.py L395–396 只改了打印格式，「v ≈ … m/s」和「v &gt; 5 m/s（扫描上限）」分开打印。</li>
+</ul>
+<p><strong>逐项结果</strong></p>
+<ol>
+<li><strong>530 Ω 独立复算</strong>：
+<ul>
+<li><strong>R_H 插错（d21–d25 或 e21–e25）</strong>：第 21 列上半是 A0 节点（a21 绿线到 A0、b21 R_S1、c21 N1），第 25 列上半经 a25 黑线接 0 V。所以 R_H 直接并在 N1 上：560 ‖ 10k = <strong>530.3 Ω</strong>。再并上 R_S1（10 kΩ）经 +5 V 轨和断电 Arduino 的那一路（≥ 10 kΩ + Z），读数在约 500–530 Ω 之间。页面写的「530 Ω 左右」正确。</li>
+<li><strong>R_H 插对（i21–i25）</strong>：A0 节点到 0 V 只有 N1 10 kΩ（25 °C；20–30 °C 时约 12.5–8 kΩ），并上 R_S1 那一路。即使断电 Arduino 的 5 V 网络对地接近 0，这一路也至少有 10 kΩ，所以并联下限约 5 kΩ。A0 引脚 ESD 二极管到 VCC 的那一路要看表的开路电压，可能再低一些，但不会接近 530 Ω。页面写的「几 kΩ 到 10 kΩ 左右，数字慢慢变（板上电容充电）」与此相符。</li>
+<li>两种情况相差至少约 5～10 倍，用 20 kΩ 挡能明确分开。正常情况的读数页面已经写了。✅</li>
+<li>前两项在 R_H 插错时确实还是超量程。+9 V 轨只经 j21 接到第 21 列下半，下半此时只有那根橙线；漏极 g28 经 g25 接到第 25 列下半，那里也没有元件。所以 L115 的说法正确。✅</li>
+</ul>
+</li>
+<li><strong>接线</strong>：R_H 正确位置 i21–i25，j21 橙线接 +9 V，g25→g28 接漏极，IRLZ44N 在 f27/f28/f29，R_G g19–g23，R_PD j27。上半的 d21、e21、b25、d25、e25 确实空着，L104 举的误插位置可能出现。全程 USB 和 9 V 都不接。没有一孔两脚、没有超过 5 孔的半列。✅</li>
+<li><strong>40_sim.py</strong>：副本运行 rc=0。第 7 节输出：1 K 和 1.5 K 为「v &gt; 5 m/s（扫描上限）」；2 K 为 3.36 m/s，2.5 K 为 1.81 m/s，3 K 为 1.02 m/s，4 K 为 0.32 m/s。与 <a href="http://40.md">40.md</a> 第 4 轮核过的数值（1.81、0.32、&gt;5）一致，和页面不矛盾。✅</li>
+<li><strong>新矛盾</strong>：无。L113「三处」与下面三个圆点一致。</li>
+</ol>
+<p><strong>必改</strong>：无。</p>
+<p><strong>建议</strong>（不阻塞）：</p>
+<ul>
+<li><strong>建议-01（page4 L116）</strong>：如果 R_H 误插在 e21–e25，e21 就被 R_H 的脚占了，表笔插不进去。建议把「红笔 e21」改成「红笔 e21（若 e21 已插了东西，改碰 d21 或第 21 列上半任一金属脚）」。</li>
+<li><strong>建议-02（可选，page4 L116）</strong>：可以补半句说明为什么下限不会太低：「R_S1 那一路本身就有 10 kΩ，所以正常读数不会低于约 5 kΩ」。这样读者对「几 kΩ」有个明确下限，和 530 Ω 分得更清楚。</li>
+<li><strong>未采纳的旧建议（记录用，不阻塞）</strong>：<a href="http://40.md">40.md</a> 第 4 轮新建议-01、-02（page1 L82、L122 的措辞），以及新建议-03（40_sim.py L430 的「练习 2：…3 K」标签，现在仍是旧文字）。本轮都没有处理。</li>
+</ul>
+<p><strong>结论：可发布。</strong></p>
+<hr />
+<h2 id="节点-41-修订轮抽查">节点 41 修订轮抽查</h2>
+<p><strong>改动</strong>：page3 L5 前置回顾改为引用「<code>[39 恒流源 · 原理与实现篇](../39-constant-current-excitation/page2.md)</code>「二、推导」的第四步讲过&quot;顺从电压&quot;（恒流时负载两端允许的最高电压，39 里约 10.5 V）」，并注明 39 用的是 MOS 管、本节用三极管。</p>
+<p><strong>逐项结果</strong></p>
+<ol>
+<li><strong>引用指向</strong>：39-constant-current-excitation/page2.md 有「## 二、推导：电流为什么只由基准和采样电阻决定」（L37）。其中「<strong>第四步：负载最大能多大。</strong>」在 L64–69，L69 定义了<strong>顺从电压</strong>（compliance voltage）：「这里约 12 − 1.0 − 0.5 = 10.5 V」。节名、步号、定义和 10.5 V 全部对得上；链接文件存在，39 用 MOS 管的说法也正确。✅</li>
+<li><strong>数值和接线</strong>：本次没有改动。page3 L11 的本节余量（12 V − 5 V − 2 V − 0.3 V）与 39 的 10.5 V 是不同电路的数，正文用「39 里约」区分开了，不会混淆。✅</li>
+<li><strong>新矛盾</strong>：无。L171「运放输出一直顶在 10.5 V」是 LM358 输出上限，和 39 的顺从电压只是数值巧合，含义不同。两处在不同段落，不构成矛盾。</li>
+</ol>
+<p><strong>必改</strong>：无。</p>
+<p><strong>建议</strong>（不阻塞）：</p>
+<ul>
+<li><a href="http://41.md">41.md</a> 第 3 轮新建议-01（page4 L48 提醒 150 Ω 左脚别插错到 g27）和 -02（表 5 插回 12 V 前先量 h29–h33 约 470 Ω）本轮没有处理，原条目继续保留。</li>
+<li>可选：L171 那行可以补「（LM358 输出上限）」，免得读者联想到 39 的 10.5 V 顺从电压。</li>
+</ul>
+<p><strong>结论：可发布。</strong></p>
+<hr />
+<h2 id="节点-45-修订轮抽查">节点 45 修订轮抽查</h2>
+<p><strong>改动</strong>：code/figs/45_figs.py 只移动了两处标注：「i12 / f12」挪到 3 脚输入线左下方；「2 脚接地：f11 / j11 → B−11」拆成两行，放在接地符号左边。图 45-p4-2 已重新生成。这一处对应 <a href="http://45.md">45.md</a> 第 4 轮新建议-01。</p>
+<p><strong>逐项结果</strong></p>
+<ol>
+<li><strong>图面</strong>：用 Read 看了整图，又放大看了中部。「2 脚接地：」和「f11 / j11 → B−11」不再压 RP 竖线和 2 脚导线；「i12 / f12」也不再被 ③ 的引线穿过，和脚号「3」分开了。✅</li>
+<li><strong>孔位与正文对照</strong>：与 page4 L55–65 的文字和图 45-p4-1 逐一对照，全部一致：2 脚接反相端（−），3 脚接同相端（+）；3 脚 i12/f12，2 脚 f11/j11→B−11，RP 滑动端 f7/i7、两端 h6/f6 和 f8/j8→B−8，4 脚 f13/j13→B−13；C5 的 1 脚侧 f10/h10→h9/g9（+），8 脚侧 e10/c10→c9/d9；5 脚 e13/a13/b13/d13，Rz d15/a15，Cz→T−15，C3 e11/a11→T−11，回线 T−23，+9 V e12/a12→T+13。第 13 列上半只用 4 孔（a/b/d/e），电源轨孔位 7/8/11/13/14/15/22/23 都避开了空档列。✅</li>
+<li><strong>数值</strong>：没有改动。run_blocks 里 45 页的 4 个代码块全部 PASS。✅</li>
+<li><strong>新矛盾</strong>：无。</li>
+</ol>
+<p><strong>必改</strong>：无。</p>
+<p><strong>建议</strong>：无。</p>
+<p><strong>结论：可发布。</strong></p>
+<hr />
+<h2 id="汇总">汇总</h2>
+<table>
+<thead>
+<tr>
+<th>节点</th>
+<th>结论</th>
+<th>必改</th>
+<th>建议</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>36</td>
+<td>可发布</td>
+<td>0</td>
+<td>0</td>
+</tr>
+<tr>
+<td>37</td>
+<td>可发布</td>
+<td>0</td>
+<td>2（j29 改 h29 当探测孔；2.2 kΩ 标注压线）</td>
+</tr>
+<tr>
+<td>40</td>
+<td>可发布</td>
+<td>0</td>
+<td>2（e21 被占时改碰 d21；可选补下限说明），另有 3 条旧建议未采纳</td>
+</tr>
+<tr>
+<td>41</td>
+<td>可发布</td>
+<td>0</td>
+<td>2 条旧建议未采纳，1 条可选</td>
+</tr>
+<tr>
+<td>45</td>
+<td>可发布</td>
+<td>0</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+<h1 id="38--44遗留建议修订轮抽查资深教师助手">38 / 44「遗留建议」修订轮抽查（资深教师助手）</h1>
+<p>范围：<code>git diff HEAD -- 38-synchronous-demod code/figs/38_figs.py</code>、<code>git diff HEAD -- 44-class-d-amp spice/44/run.py</code>，对照 review/part2/teacher/38.md（R1-01～R1-04）、<a href="http://44.md">44.md</a>（第 3 轮建议-01～04）。
+做法：只读仓库；tools、code、38/44/33 页面、spice/44、spice/models 复制到 /tmp/pl3844，用 /workspace/circuits-venv/bin/python 运行。只用了 <code>git diff</code>。DRV8871 数据手册用 curl 下载（<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf%EF%BC%8C1,582,709">https://www.ti.com/lit/ds/symlink/drv8871.pdf，1,582,709</a> 字节，%PDF 头），再用 pdftotext 读。</p>
+<h2 id="节点-38-修订轮抽查">节点 38 修订轮抽查</h2>
+<h3 id="逐项核对">逐项核对</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结果</th>
+<th>核对</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1-01（图 38-p3-2 口径与剧透）</td>
+<td>✅</td>
+<td>page3 L39 改为「按三角形定律……少掉约 25.45 mV」；图和 <code>38_figs.py</code> L354–361 的柱值也改用三角形定律值，模拟值 24.69 只出现在 print 里，不上图。50 Hz 柱的标签改为「CF 上瞬时纹波峰峰（表上只跳 1～3 mV，平均不变）」，和 L38 口径一致。用 Read 打开 png 核对：六根柱依次是 9.69 / 0.00 / 19.53 / 14.00 / 10.36 / 25.45 mV，横轴写「有用读数 50.89 mV」，和副本重跑打印的 <code>[图 38-p3-2] … 45° 损失（三角形定律）25.45（模拟 24.69，不上图）</code> 一致。</td>
+</tr>
+<tr>
+<td>25.45 mV 独立重算</td>
+<td>✅</td>
+<td>page2 L34： <span class="math math-inline">\(\overline{s\cdot r}=1-2\varphi/\pi\)</span> ，也就是 <span class="math math-inline">\(1-\varphi/90^\circ\)</span> 。φ = 45° 时等于 0.5。输入 V0 = 50.89 mV（page2 L97、page3 L27）。损失 = 50.89 × (1 − 0.5) = 25.445 ≈ 25.45 mV ✓。这里用的是方波 × 方波的「三角形定律」，没有用余弦定理，也不是 (2/π)cosφ：信号是方波，所以用三角形定律是对的。25.45 比其他各项（最大的是 19.53）都大，「比其他误差都大」成立。</td>
+</tr>
+<tr>
+<td>与其他处一致</td>
+<td>✅</td>
+<td>page4 L256「45° 约 +26.21 mV……比三角形定律的 25.45 mV 略大」：26.21 &gt; 25.45，和 page3 L39「实测和定律略有出入」呼应。page3 练习 1：50.89 × (1 − 30/90) = 33.93 ✓。模拟损失 50.89 − 26.21 = 24.68，四舍五入后就是图中不上图的 24.69 ✓。</td>
+</tr>
+<tr>
+<td>R1-03（记录表措辞）</td>
+<td>✅</td>
+<td>page4 L389、L391 改为「见第 6 步后的答案框（做完再展开）」；L393 改为「平均约 50.9 mV（与 V0 几乎相同）」。</td>
+</tr>
+<tr>
+<td>R1-04（方波 = 一串正弦）</td>
+<td>✅ 基本落实</td>
+<td>page2 L49–53： <span class="math math-inline">\(r(t)=\frac4\pi(\sin\omega t+\frac13\sin3\omega t+\frac15\sin5\omega t+\dots)\)</span> 正确（±1 方波，奇次谐波，第 n 项幅度 4/(nπ)）。漏进量的推导：A × 4/(nπ) × ½ = 2A/(nπ)，n = 3 时 0.2122，n = 7 时 0.0909，和 L56 的 21.2%、9.09% 一致；run_blocks 输出 21.22% / 9.09% ✓。n = 1 时是 2/π = 0.637，和第二节的 (2/π)cosφ 自洽 ✓。33 节「直觉三」的链接存在，内容是方波过带通变正弦，用的也是 4/π（0.382 V）✓。小图和图 38-p2-1 第四层没有补，原建议本来就是非阻断。</td>
+</tr>
+<tr>
+<td>接线</td>
+<td>✅ 无改动</td>
+<td>本轮 38 节没有改任何接线文字，也没有改面包板图或原理图。页面 diff 只涉及 page2 文字、page3 L39、page4 记录表三格。副本里重跑 <code>38_figs.py</code>，重新生成的 png 和仓库 md5 全部一致（含 p4_1～p4_4 的接线图），所以孔位、轨道、空档列、断电改线、Arduino 输入电平都和上一轮复核通过的状态相同。</td>
+</tr>
+<tr>
+<td>tools</td>
+<td>✅</td>
+<td>count_cjk 四页 2078 / 2601 / 3064 / 4783，page4 ≥ 1500；check_figs 3 / 4 / 3 / 6 张，全部 OK；check_github_math --repo placeholder/placeholder 4/4 OK（page2 公式 15/15）；fix_inline_math_spacing --check 0 处；run_blocks 页面块 PASS，page2 block2 照旧 SKIP；<code>--scripts code/38_sim.py code/figs/38_figs.py</code> PASS。</td>
+</tr>
+<tr>
+<td>新矛盾</td>
+<td>无</td>
+<td>见下面的建议。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="必改-2">必改</h3>
+<p>无。</p>
+<h3 id="建议不阻塞">建议（不阻塞）</h3>
+<ol>
+<li><strong>page2 L53，「所以：」放错了地方</strong>：这一行的末句「乘法 + 平均只会留下……所以：」引出的是框外 L55 起的两条列表，现在却写在引用框里。框标题又写着「本节只用这一个结论」，引出句放在框内，读起来像框里的内容在接着往下讲。建议把「乘法 + 平均只会留下……所以：」这一句移到框后，单独成段。</li>
+<li><strong>page2 L53 有一步没讲</strong>：对大一新生来说，「两个同频正弦相乘，平均值是两个幅度乘积的一半」是直接给出的。建议补半句： <span class="math math-inline">\(\sin^2\omega t=\frac{1-\cos2\omega t}{2}\)</span> ，平均是 ½（也可以回指「有效值 = 峰值/√2」）。</li>
+<li><strong>图 38-p3-2 第一根柱的符号</strong>（以前就有，本轮改标签时没顺手改）：标签写「直流 976 mV」，按 page3 L35 的符号约定，+976 mV 是到不了的（9 V 端只有 +893 mV），而模拟泄漏是 −9.69 mV。柱子画的是绝对值，所以不算错。建议改成「直流 −976 mV（电位器拧到 0 V 端）+ 失配 2%……」，模拟值写 +9.69（但 <code>sim.dcmax</code> 的符号要一起改，否则 print 对不上）。</li>
+<li><strong>page3 L38 的「约 9～10 mV 峰峰」和图中 10.36 mV</strong>：图用的是 tone(50) = 50.08 Hz、末 6 s 的峰峰值，比「9～10」略高。建议正文改成「约 9～10.4 mV」，或者在图注里注明「tone(50)，50.08 Hz」。</li>
+</ol>
+<h3 id="结论-2">结论</h3>
+<p><strong>可发布</strong>（必改 0 条，建议 4 条）。</p>
+<h2 id="节点-44-修订轮抽查">节点 44 修订轮抽查</h2>
+<h3 id="逐项核对-1">逐项核对</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结果</th>
+<th>核对</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>练习 5(a) 6.8 kHz</td>
+<td>✅（按页面口径「按公式」）</td>
+<td>L = 2 × 220 µH = 440 µH，C = 0.68 µF，R = 10 + 4 = 14 Ω。f0 = 1/(2π√(LC)) = 9.201 kHz；Q = 14√(C/L) = 14 × 0.039312 = 0.5504。理想二阶低通（不计 RS）的 −3 dB 点：x² = (1 − 1/(2Q²)) + √((1 − 1/(2Q²))² + 1)，1/(2Q²) = 1.6506，x² = −0.6506 + 1.1930 = 0.5424，x = 0.7365，f = 6.78 kHz ≈ 6.8 kHz ✓。用 ngspice 对照：把 ac_lc.cir 副本的 Rds、RL1、RL2 改成 1 µΩ，Rld 改成 14 Ω，得 f3 = 6776 Hz ✓。(b) Q = 0.157，理想公式 1.48 kHz ✓。</td>
+</tr>
+<tr>
+<td>RS 1.471 Ω</td>
+<td>✅</td>
+<td>2 × 0.453 Ω（RLB0913-221K DCR）+ 0.565 Ω（DRV8871 高边 + 低边 RDS(on) 合计，手册 L397「typical Rds(on) of 565 mΩ (including one high-side and one low-side FET)」）= 1.471 Ω。和 page2 L144、L149、L191 一致 ✓。</td>
+</tr>
+<tr>
+<td>0.35 A p-p</td>
+<td>✅</td>
+<td>50% 占空比时，BTL 两端 ±12 V，负载电压约 0，2L 上半个周期加 +12 V：ΔI_pp = 12 × (T/2) / 2L = 12 / (2 × 440 µH × 38.56 kHz) = 0.3536 A，和页面写的 24 × 0.25 / (440 µH × 38.56 kHz) 相同 ✓。正好是 page2 L168 公式值 0.1768 A 的 2 倍 ✓；「峰值再加约 0.18 A」= 0.3536/2 ✓。纹波大小基本与负载无关，所以 4 Ω 时仍然适用。</td>
+</tr>
+<tr>
+<td>「相对 0 dB」与 SPICE</td>
+<td>✅</td>
+<td>spice/44/ac_lc.cir：<code>h = mag(v(x1)-v(x2))</code>（源 1 V），<code>meas ac f3 when hdb=-3.0103</code>，量的是绝对 0.7071，也就是「比 0 dB 低 3 dB」。副本跑 <a href="http://run.py">run.py</a>：rc = 0，共 86 项，−3 dB 一项为页面 8.78 / SPICE 8.78 kHz（+0.00%）。我自己用 numpy 算（RS 1.471 Ω、18 Ω）：绝对口径得 8781 Hz ✓；如果按「比低频再低 3 dB」算，会是 9.57 kHz。page2 L145「比低频再低约 2.3 dB」：3.01 − 0.68 = 2.33 ✓。</td>
+</tr>
+<tr>
+<td>频谱分析定义</td>
+<td>✅</td>
+<td>page3 L31 的定义正确，链接到 33 节「直觉三」（存在）。page2 L245 说 SPICE「只取 400 Hz 那一份」，和 sig.cir 的做法一致：sig.cir 用 vd·sin、vd·cos 在 400 Hz 上投影，和 page2 Python 块里 <code>pk</code> 那一行同法 ✓。page2 L173 的 4/π ≈ 1.27 ✓。</td>
+</tr>
+<tr>
+<td>体二极管双向通断测试</td>
+<td>✅ 结论正确，现象描述可以更准（见建议 1）</td>
+<td>DRV8871 手册：输出级是四只 N 沟道 MOSFET（L15–16、L397、L462）；「Body diode forward voltage 0.8 V typ @ IOUT = 1 A」（L273）；7.3.4 节写明这是高边或低边 FET 的体二极管（L541–544）。低边 NMOS 的体二极管阳极在 GND（源极）、阴极在 OUT（漏极），所以<strong>红笔接 GND、黑笔接 OUT</strong> 时正偏，表上约 0.5 V（万用表电流约 1 mA，比 1 A 时的 0.8 V 低，合理）。反过来量时，经高边体二极管到 VM，再经 100 µF 到 GND，读数从约 0.5 V 往上爬，直到 OL（是电容在充电）。「两个方向都响、都接近 0 才是真短路」这个判据正确。测试时机：在第 3 步「断电接功率部分」里做，此时还没上过电，VM 上的 100 µF 是刚插上的，没有电，满足「断电、电容放电」。安全须知 L17 只说「上电前」，没有提放电（见建议 2）。</td>
+</tr>
+<tr>
+<td>IN2 接地 0.116 W</td>
+<td>✅</td>
+<td>2.094/18 = 0.1163 A；直流 0.1163² × 8 = 0.108 W ✓；SPICE 含载波 0.1157 W（<a href="http://run.py">run.py</a> 标签同步改为「含载波」，副本跑出偏差 −0.25%）✓。</td>
+</tr>
+<tr>
+<td>其他文字改动</td>
+<td>✅</td>
+<td>page4 L11 实验 C「仍接 8 Ω / 5 W 假负载（串 10 Ω）」和第 3、6 步一致（落实建议-04 的一部分）。page2 代码块加了 ylabel 和图例位置，run_blocks PASS，输出 2.759 和页面一致。page3 L78 指向「一个常见算错的例子」，这一小节存在。</td>
+</tr>
+<tr>
+<td>接线</td>
+<td>✅ 无改动</td>
+<td>本轮没有改接线文字（第 3 步只加了量法），图也都没改。副本跑 <code>44_figs.py</code> 重新生成的 png 和仓库 md5 全部一致。IN 脚 0～5 V、断电改线、GND 星形接地这些条目都没动。</td>
+</tr>
+<tr>
+<td>tools</td>
+<td>✅</td>
+<td>count_cjk 1748 / 3936 / 4328 / 4400，page4 ≥ 1500；check_figs 3 / 8 / 6 / 5 张 OK；check_github_math 4/4 OK（42 / 7 / 6）；spacing --check 0 处；run_blocks 页面 PASS，<code>--scripts code/figs/44_figs.py</code> PASS；spice/44/run.py rc = 0，共 86 项。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="必改-3">必改</h3>
+<p>无。</p>
+<h3 id="建议不阻塞-1">建议（不阻塞）</h3>
+<ol>
+<li><strong>page4 L64，体二极管的现象写得更准一些</strong>：
+<ul>
+<li>原句：「每处红黑表笔对调各量一次：DRV8871 的下管自带体二极管，有一个方向显示约 0.5 V（或短促一响）是正常的；<strong>两个方向都响、都接近 0</strong>才是真短路。」</li>
+<li>建议改成：「用二极管档（很多表和通断档是同一档）每处红黑表笔对调各量一次：DRV8871 的输出管自带体二极管，红笔接 GND、黑笔接 OUT 时显示约 0.5 V；反过来量，读数会从 0.5 V 左右慢慢爬到 OL（经上管体二极管给 VM 的 100 µF 充电），都是正常的；<strong>两个方向都响、都接近 0</strong> 才是真短路。」</li>
+<li>理由：① 纯「通断档」（按电阻判断、约 30～50 Ω 以下才响）一般不会显示 0.5 V；② 二极管正偏约 0.5 V，达不到蜂鸣门限（约 0.05 V），所以「短促一响」实际上很少出现。读者如果真看到反向读数在爬升，现在的文字没法解释。判据本身没错，所以只列为建议。</li>
+</ul>
+</li>
+<li><strong>安全须知 L17 补一句放电</strong>：「若之前上过电，先断电并等 VM 的 100 µF 放完电（或用 1 kΩ 电阻跨接几秒）再量。」第 3 步是第一次上电前，不受影响；但后面复查或排错时，可能是在上过电之后再量。</li>
+<li><strong>page3 L169 练习 5(a) 的口径</strong>：
+<ul>
+<li>「按（b）同样的公式」引用的是后面才出现的 (b)，建议改成「按练习 2 用过的二阶低通公式（不计 RS）」。</li>
+<li>L16 刚强调过 −3 dB 按「相对 0 dB」取（8.78 kHz 是计入 RS 的 SPICE 值），而 6.8 kHz 和 1.5 kHz 都是不计 RS 的理想值。如果按同一口径计入 RS，ngspice 副本算出来是 6.14 kHz（14 Ω）和 0.53 kHz（4 Ω，此时低频增益只有 0.73）。建议在括号里注一句「不计 RS 的理想公式；计入 RS、按相对 0 dB 算约 6.1 kHz / 0.5 kHz」，免得读者拿 6.8 和 8.78 直接比。</li>
+<li>另外，L16 的「不是比低频的 −0.68 dB 再低 3 dB」读起来像在说另一种口径是错的，其实很多教材按通带增益取 −3 dB。建议改成「本页按增益 0.707（比 0 dB 低 3 dB）取；按比低频再低 3 dB 算约 9.57 kHz」。</li>
+</ul>
+</li>
+</ol>
+<h3 id="结论-3">结论</h3>
+<p><strong>可发布</strong>（必改 0 条，建议 3 条）。</p>
+<h2 id="约束遵守">约束遵守</h2>
+<p>只写了本文件；没有改页面、代码、图；git 只用了 <code>git diff</code>；所有脚本都在 /tmp/pl3844 副本里运行（解释器 /workspace/circuits-venv/bin/python，ngspice 跑副本 spice/44/run.py 和 ac_lc.cir 的 14 Ω、4 Ω、理想 14 Ω 变体）。副本重新生成的 38、44 两节全部 png 和仓库 md5 一致。</p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

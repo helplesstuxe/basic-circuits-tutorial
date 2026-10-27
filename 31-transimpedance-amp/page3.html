@@ -92,7 +92,7 @@ mjx-container{max-width:100%}
 <p><a href="../35-pga-agc/page1.html">35 程控增益与 AGC</a> 才会教怎样让 Arduino 读电压，本节动手实验里 Arduino 只当 5 V 电源用。这里先算一笔账，免得以后想用它看振铃。Arduino Uno 的 analogRead 一次大约 100 µs（ADC 时钟 125 kHz，一次转换 13 个时钟，见 <a href="https://makeabilitylab.github.io/physcomp/arduino/inside-arduino.html">https://makeabilitylab.github.io/physcomp/arduino/inside-arduino.html</a> 和 ATmega328P 数据手册 <a href="https://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/ATmega328_datasheet.pdf">https://cdn.sparkfun.com/datasheets/Dev/Arduino/Boards/ATmega328_datasheet.pdf</a> ）。图 31-p3-4 把 C_F = 0 时的输出和 Arduino 每 100 µs 读到的点画在一起。</p>
 <p><a class="img-link" href="img/31_p3_4_arduino_slow.png"><img alt="一条快速衰减振荡的曲线，围绕最终值上下摆动；上面叠加了一串每隔 100 微秒的蓝点，蓝点之间的曲线已经摆动了好几个来回" src="img/31_p3_4_arduino_slow.png" loading="lazy" /></a></p>
 <p><em>图 31-p3-4　Arduino 每 100 µs 读一个点，中间振荡已经走了好几个周期</em></p>
-<p>振荡周期约 21.4 µs，一次读数之间已经走了 4.7 个周期，Arduino 读到的只是一串&quot;随机采样&quot;，看起来像噪声，看不出振铃（误区 A9）。所以：**上升沿和振铃只能用示波器看，单片机采样只适合读稳态光强。**另外 ATmega328P 的 ADC 按源阻抗 10 kΩ 以下优化（ <a href="https://electronics.stackexchange.com/questions/107741/required-output-impedance-for-adc-input">https://electronics.stackexchange.com/questions/107741/required-output-impedance-for-adc-input</a> ），TIA 输出是运放的低阻输出，正合适；不要让 A0 直接去读 N 点那种高阻节点。</p>
+<p>振荡周期约 16～21 µs（单极点估算 21.4 µs；用厂家模型的 SPICE 算得振铃 63.4 kHz，周期约 15.8 µs），一次读数之间已经走了 4.7～6.3 个周期，Arduino 读到的只是一串&quot;随机采样&quot;，看起来像噪声，看不出振铃（误区 A9）。所以：**上升沿和振铃只能用示波器看，单片机采样只适合读稳态光强。**另外 ATmega328P 的 ADC 按源阻抗 10 kΩ 以下优化（ <a href="https://electronics.stackexchange.com/questions/107741/required-output-impedance-for-adc-input">https://electronics.stackexchange.com/questions/107741/required-output-impedance-for-adc-input</a> ），TIA 输出是运放的低阻输出，正合适；不要让 A0 直接去读 N 点那种高阻节点。</p>
 <p>分辨率也要心里有数：一个字是 4.883 mV，校准①的 90 mV 只有 18.5 个字，所以校准用万用表；即使学完 35 节，单片机也只适合读几百毫伏到几伏的稳态光强。</p>
 <h2 id="五工程里怎么做">五、工程里怎么做</h2>
 <ul>
@@ -211,11 +211,13 @@ print(f&quot;表并在 R_CAL 上：等效 {R_par/1e6:.0f} MΩ，C − A 变成 {
 
 # 3) 单片机（Arduino Uno）读数：一个字多大、一次读多久（35 节预告）
 LSB = 5.0 / 1024
-f_ring = 46.7e3                                # f_P（与 C_F = 0 时的振铃频率接近）
+f_est = 46.7e3                                 # 单极点估算的 f_P（与 C_F = 0 时的振铃频率接近）
+f_spice = 63.4e3                               # spice/31/run.py 用厂家模型算出的振铃频率
 print(f&quot;一个字 {LSB*1e3:.3f} mV；校准① 只有 {I_cal*RF/LSB:.1f} 个字&quot;)
-print(f&quot;振荡周期 {1/f_ring*1e6:.1f} µs，一次 analogRead 约 100 µs，跨过 {100e-6*f_ring:.1f} 个周期&quot;)
+print(f&quot;振荡周期 {1/f_spice*1e6:.1f}～{1/f_est*1e6:.1f} µs，一次 analogRead 约 100 µs，&quot;
+      f&quot;跨过 {100e-6*f_est:.1f}～{100e-6*f_spice:.1f} 个周期&quot;)
 </code></pre>
-<p>运行结果：校准①注入 90.16 nA，C − A = 90.16 mV；I_B 误差 LMC6482 最大 0.004 mV，LM358B 最大 35 mV，LM358 最大 250 mV；LM358 做校准①典型 70.2 mV、最坏 −159.8 mV；万用表并在 R_CAL 上，C − A 变成 180.3 mV；一个字 4.883 mV，校准①只有 18.5 个字；一次 analogRead 跨过 4.7 个振荡周期。</p>
+<p>运行结果：校准①注入 90.16 nA，C − A = 90.16 mV；I_B 误差 LMC6482 最大 0.004 mV，LM358B 最大 35 mV，LM358 最大 250 mV；LM358 做校准①典型 70.2 mV、最坏 −159.8 mV；万用表并在 R_CAL 上，C − A 变成 180.3 mV；一个字 4.883 mV，校准①只有 18.5 个字；振荡周期 15.8～21.4 µs，一次 analogRead 跨过 4.7～6.3 个振荡周期。</p>
 <h2 id="练习">练习</h2>
 <p><strong>练习 1</strong>：R_F = 100 kΩ，二极管反偏到 3 V（C_D 按 28 pF），GBW = 1 MHz。最小 C_F 是多少？选一个标准值后，1/(2πR_F C_F) 是多少？</p>
 <details><summary>答案</summary>
@@ -229,7 +231,7 @@ print(f&quot;振荡周期 {1/f_ring*1e6:.1f} µs，一次 analogRead 约 100 µs
 <details><summary>答案</summary>
 <p>I = 1.41 V / 47 kΩ = 30.0 µA。1 MΩ 只能装下 4.00 µA，30 µA 远超量程，输出顶在约 4.9 V。</p>
 </details>
-<p><strong>举一反三</strong>：研究笔记里有人建议偏置只取约 0.22 V（100 kΩ / 4.7 kΩ 分压）。照这个偏置做本节的校准①和校准②，C − A 和输出各是多少？哪一个做不成，为什么本节偏置取 0.90 V？</p>
+<p><strong>举一反三</strong>：网上有的电路把偏置只取约 0.22 V（100 kΩ / 4.7 kΩ 分压）。照这个偏置做本节的校准①和校准②，C − A 和输出各是多少？哪一个做不成，为什么本节偏置取 0.90 V？</p>
 <details><summary>答案</summary>
 <pre><code class="language-python">VCC, RF, RCAL = 5.0, 1e6, 10e6
 vb = VCC * 4.7e3 / (100e3 + 4.7e3)
