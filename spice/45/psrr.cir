@@ -1,0 +1,26 @@
+* 45 脚7 旁路电容的作用：电源上叠加 100 mV 峰值、100 Hz 纹波（模拟劣质适配器），输入接地，增益 20
+* A：脚7 接 10 µF；B：脚7 悬空。看喇叭（8 Ω）上的嗡声幅度
+* 注意：行为模型里电源纹波只能经过脚7 分压进入输出，真实芯片还有别的路径，所以这里只比较「有/无 10 µF」的相对差别
+.include lm386.inc
+V1 vs 0 DC 9 SIN(9 0.1 100)
+Xa g1 0 0 0 outa vs bypa g8 LM386
+Cbyp bypa 0 10u
+Coa outa spka 220u
+Rla spka sa2 10
+Rsa sa2 0 8
+Xb g1b 0 0 0 outb vs bypb g8b LM386
+Cob outb spkb 220u
+Rlb spkb sb2 10
+Rsb sb2 0 8
+.control
+tran 20u 1.2 0 20u
+meas tran a_max max v(sa2) from=1.0 to=1.2
+meas tran a_min min v(sa2) from=1.0 to=1.2
+meas tran b_max max v(sb2) from=1.0 to=1.2
+meas tran b_min min v(sb2) from=1.0 to=1.2
+let ra = (a_max-a_min)/2*1000
+let rb = (b_max-b_min)/2*1000
+echo RES rip_cap_mV $&ra
+echo RES rip_open_mV $&rb
+.endc
+.end

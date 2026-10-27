@@ -1,6 +1,6 @@
 # 35 程控增益与 AGC · 动手实验篇
 
-[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · 下一页：36 节施密特整形与频率/脉冲计数（即将上线） · 前置节点：[08 同相放大 · 动手实验篇](../08-noninverting-amp/page4.md)、[01 元件速成 · 动手实验篇](../01-components-basics/page4.md)
+[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [下一页：36 施密特整形与频率/脉冲计数 · 直觉篇](../36-schmitt-pulse-shaping/page1.md) · 前置节点：[08 同相放大 · 动手实验篇](../08-noninverting-amp/page4.md)、[01 元件速成 · 动手实验篇](../01-components-basics/page4.md)
 
 ## 这次实验要验证什么
 

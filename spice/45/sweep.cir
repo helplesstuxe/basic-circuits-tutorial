@@ -1,0 +1,31 @@
+* 45 功率扫描：增益 20，正弦 1 kHz 直接加在脚3，峰值 10~250 mV；9 V 电源，负载 10 Ω + 8 Ω
+* 记录：送进 18 Ω 的功率、电源功率、芯片自己发的热（电源功率 - 18 Ω 功率 - 吸收网络功率）
+.include lm386.inc
+.include amp.inc
+V1 vs 0 9
+Vin in 0 SIN(0 0.01 1k)
+XA in vs out spk sp2 g1 g8 AMP
+.control
+let amps = vector(25)
+let k = 0
+while k < 25
+  let a = 0.01*(k+1)
+  alter @vin[sin] = [ 0 $&a 1k ]
+  tran 2u 50m 0 2u
+  let ps = -i(V1)*v(vs)
+  let pl = (v(spk)*v(spk))/18
+  let pz = (v(out)-v(xa.z))*(v(out)-v(xa.z))/10
+  meas tran pin avg ps from=30m to=50m
+  meas tran pl avg pl from=30m to=50m
+  meas tran pz avg pz from=30m to=50m
+  meas tran vmax max v(out) from=30m to=50m
+  let pc = pin - pl - pz
+  echo RES a$&k $&a
+  echo RES pin$&k $&pin
+  echo RES pl$&k $&pl
+  echo RES pc$&k $&pc
+  echo RES vmax$&k $&vmax
+  let k = k + 1
+end
+.endc
+.end

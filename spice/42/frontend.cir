@@ -1,0 +1,51 @@
+* 42 page4 第 2 级：风扇测速线 → 宽带通 → LM393 反相施密特 → D2（page2 §五、page4 第 2 级、图 42-p4 波形）
+* 测速线的开集电极用电压控制开关 S1 代替（行为模型：导通 10 Ω、关断 1 GΩ），每转 2 个脉冲、占空 50 %。
+* 宽带通：R_IN 100k → C_HP 1µ → NB；NB 经 R_HP 100k 接 V_MID（5 V 经 10k/10k）；NB 经 C_LP 1 nF 接 0 V。
+* LM393（TI LM393A 官方宏模型）12 V 供电；IN− = NB；IN+ = 5 V 经 10k/10k 再经 R_H 100k 接输出；输出 4.7k 上拉到 5 V。
+* 门限直接读 IN+（ref 节点）的最高、最低值：输出高时 IN+ = 上门限，输出低时 IN+ = 下门限。
+* 0.8 s 时“风扇停转”：测速线停在高电平，看输出是否还会翻转。
+.include ../models/LM393A.lib
+.param F=60 DUTY=0.5 TSTOP=0.8
+V12 v12 0 12
+V5 v5 0 5
+VP p 0 PULSE(0 1 0 1u 1u {DUTY/F} {1/F})
+Bctl ctl 0 V = v(p) * u({TSTOP} - time)
+S1 tach 0 ctl 0 SWT
+.model SWT SW(Ron=10 Roff=1e9 Vt=0.5 Vh=0.1)
+RPU v5 tach 10k
+RIN tach na 100k
+CHP na nb 1u
+RHP nb mid 100k
+RM1 v5 mid 10k
+RM2 mid 0 10k
+CLP nb 0 1n
+RR1 v5 ref 10k
+RR2 ref 0 10k
+RH out ref 100k
+ROUT v5 out 4.7k
+XU ref nb v12 0 out LM393A
+.control
+foreach f 10 60 100
+  alterparam F = $f
+  reset
+  tran 20u 1.2 0 20u uic
+  meas tran t1 when v(out)=2.5 rise=2 from=0.4
+  meas tran t2 when v(out)=2.5 rise=3 from=0.4
+  meas tran nbmax max v(nb) from=0.4 to=0.8
+  meas tran nbmin min v(nb) from=0.4 to=0.8
+  meas tran avt avg v(tach) from=0.4 to=0.8
+  meas tran avnb avg v(nb) from=0.4 to=0.8
+  meas tran avout avg v(out) from=0.4 to=0.8
+  meas tran vup max v(ref) from=0.4 to=0.8
+  meas tran vdn min v(ref) from=0.4 to=0.8
+  meas tran omax max v(out) from=0.4 to=0.8
+  meas tran omin min v(out) from=0.4 to=0.8
+  meas tran sx max v(out) from=0.85 to=1.2
+  meas tran sn min v(out) from=0.85 to=1.2
+  meas tran nbend find v(nb) at=1.2
+  let fm = 1/(t2-t1)
+  let swing = sx-sn
+  echo "RES cfg=fe f=$f fm=$&fm nbmax=$&nbmax nbmin=$&nbmin avt=$&avt avnb=$&avnb avout=$&avout vup=$&vup vdn=$&vdn omax=$&omax omin=$&omin stopswing=$&swing nbend=$&nbend"
+end
+.endc
+.end

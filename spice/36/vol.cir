@@ -1,0 +1,20 @@
+* 36 输出低电平：page2 §二 用的 VOL。IN+ 2.0 V < IN− 2.5 V，输出吸收上拉电流（5 V − VOL）/4.7k ≈ 1 mA 加 R2 的电流。
+.include ../models/LM393A.lib
+.param VB=9
+VBAT vb 0 {VB}
+VA va 0 5
+RA va ref 10k
+RB ref 0 10k
+VI in 0 2.0
+RR1 in p 10k
+RR2 p out 220k
+RR3 va out 4.7k
+XU p ref vb 0 out LM393A
+.control
+op
+let vo = v(out)
+let isink = (5-v(out))/4.7k
+echo "RESULT vo $&vo"
+echo "RESULT isink $&isink"
+.endc
+.end

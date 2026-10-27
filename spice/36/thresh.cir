@@ -1,0 +1,32 @@
+* 36 门限扫描：page2 §二 门限计算、图36-p2-2。LM393A（TI 官方模型）由 9 V 供电；IN− = Arduino 5 V 经 10k/10k 分压 = 2.5 V；
+* R1 输入电阻，R2 正反馈（回差），R3 上拉到 Arduino 5 V。理想信号源 2.0 V -> 3.0 V -> 2.0 V 慢三角波（各 20 ms）。
+.include ../models/LM393A.lib
+.param R1=10k R2=220k R3=4.7k VPU=5 VB=9
+VBAT vb 0 {VB}
+VA va 0 5
+VP vpu 0 {VPU}
+RA va ref 10k
+RB ref 0 10k
+CREF ref 0 100n
+VIN in 0 PWL(0 2.0 20m 3.0 40m 2.0)
+RR1 in p {R1}
+RR2 p out {R2}
+RR3 vpu out {R3}
+XU p ref vb 0 out LM393A
+.control
+tran 2u 40m 0 2u
+*@def VHALF=2.5
+meas tran vh FIND v(in) WHEN v(out)=@VHALF@ RISE=1
+meas tran vl FIND v(in) WHEN v(out)=@VHALF@ FALL=1
+meas tran vol AVG v(out) FROM=2m TO=8m
+meas tran voh AVG v(out) FROM=22m TO=28m
+meas tran vref AVG v(ref) FROM=1m TO=2m
+meas tran vpmax MAX v(p) FROM=1m TO=40m
+echo "RESULT vh $&vh"
+echo "RESULT vl $&vl"
+echo "RESULT vol $&vol"
+echo "RESULT voh $&voh"
+echo "RESULT vref $&vref"
+echo "RESULT vpmax $&vpmax"
+.endc
+.end

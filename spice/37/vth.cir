@@ -1,0 +1,22 @@
+* 37 门限电位器（page2 §二 / page4 步骤）：12 V —— 100k —— 10k 电位器 —— V_MID（TL072 A 跟随输出）。
+* 电位器用两只电阻 10k·(1−a)、10k·a 表示，a = @A@；读 V_MID、滑动端 V_TH 与 V_TH − V_MID。
+.include ../models/TL072.lib
+*@def A=1
+VSUP vs 0 12
+R1 vs mref 10k
+R2 mref 0 10k
+CM mref 0 10u
+XA mref mid vs 0 mid TL072
+RT vs top 100k
+RP1 top w {10k*(1-@A@)+1m}
+RP2 w mid {10k*@A@+1m}
+.control
+op
+let vm = v(mid)
+let vt = v(w)
+let dv = v(w) - v(mid)
+echo "RESULT vmid $&vm"
+echo "RESULT vth $&vt"
+echo "RESULT dvth $&dv"
+.endc
+.end

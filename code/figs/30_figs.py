@@ -417,7 +417,8 @@ def p4_3():
     bb._bb_label(ax, 14.5, -1.0, "RP1 2k", fs_=7)
     bb.bb_res(ax, "i17", "i20", "RX", dy=-0.5)
     ax.add_patch(bb._BbRect((16.55, -0.5), 3.9, 1.0, fc="none", ec="0.35", lw=0.9, ls=(0, (3, 2)), zorder=6))
-    bb._bb_label(ax, 18.5, -1.0, "第 9 步才插", fs_=6.5)
+    bb._bb_label(ax, 14.95, 0.0, "第 9 步才插 →", fs_=6.5)   # 放在 i14–i16 空孔上，不挡 RP1 的 j16–j18
+    rx_note = ax.texts[-1]
     bb.bb_wire(ax, "h17", "h20", "out")
     bb._bb_label(ax, 18.5, 1.55, "J1")
     bb.bb_wire(ax, "j20", "B1-20", "gnd")
@@ -484,6 +485,19 @@ def p4_3():
     print("[图 30-p4-3] 左臂 R1 b2–b5、R2 c5–c8（Va 第 5 列）；右臂 R3 i10–i13、R4 h13–h16、RP1 j16/j17/j18、RX i17–i20、J1 h17–h20（Vb 第 13 列）；"
           "U1 第 22 列：Va→d25（5 脚），Vb→g24（3 脚），R5 b23–b24，R6 i22–i23，RG e28–f28；"
           "U2 第 36 列：R7 e32–f32，R8 h36–h37，R9 i33–i38，R10 h38–h46，V_MID = d37→g46")
+    # 孔位断言：「第 9 步才插」标签压着的 i14–i16 必须是空孔；标签不能盖住 RP1（j16–j18）和 RX 虚线框
+    ends = {(round(x, 2), round(y, 2)) for ln in ax.lines if ln.get_marker() == "o"
+            for x, y in zip(ln.get_xdata(), ln.get_ydata())}
+    for h in ("i14", "i15", "i16"):
+        assert bb.bb_xy(h) not in ends, f"{h} 已被占用，标签不能压在上面"
+    fig.canvas.draw()
+    rend = fig.canvas.get_renderer()
+    tb = rx_note.get_bbox_patch().get_window_extent(rend)
+    for pt in ax.patches:
+        ext = pt.get_window_extent(rend)
+        if ext.width < fig.bbox.width * 0.5 and tb.overlaps(ext) and pt.get_facecolor()[:3] != (1.0, 1.0, 1.0):
+            raise AssertionError(f"「第 9 步才插」标签与图形 {pt} 重叠")
+    print("[图 30-p4-3] 孔位断言通过：i14–i16 空，「第 9 步才插」标签不压 RP1、RX 框")
     fs.save(fig, N, "30_p4_3_breadboard.png")
 
 

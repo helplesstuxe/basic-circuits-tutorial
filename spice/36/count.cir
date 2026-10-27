@@ -1,0 +1,39 @@
+* 36 整个计数电路（page4 图36-p4-1 / page2 图36-p2-1）：D7 的 tone() 方波（100.16 Hz）经两节 RC（1k/4.7µ ×2）到 n2，
+* D5 的 analogWrite 方波（976.5625 Hz）经 Rn 注入 n2 作干扰；n2 -> R1 -> IN+，R2 回差，IN− = 2.5 V，R3 上拉到 Arduino 5 V。
+* R2=1e12 近似「不接 R2」。输出 v(out) 写入 out.txt，由 run.py 数 0.1 s 之后的上升沿（门限 2.5 V）。
+.include ../models/LM393A.lib
+.param R2=220k RN=2.2k RS=1k CC=4.7u
+*@def TSTOP=0.3
+*@def FS=100.16
+*@def FN=976.5625
+VBAT vb 0 9
+VA va 0 5
+RA va ref 10k
+RB ref 0 10k
+CREF ref 0 100n
+VS d7 0 PULSE(0 5 0 1u 1u {0.5/@FS@} {1/@FS@})
+VN d5 0 PULSE(0 5 0 1u 1u {0.5/@FN@} {1/@FN@})
+RS1 d7 n1 {RS}
+C1 n1 0 {CC} IC=2.5
+RS2 n1 n2 {RS}
+C2 n2 0 {CC} IC=2.5
+RRN d5 n2 {RN}
+RR1 n2 p 10k
+RR2 p out {R2}
+RR3 va out 4.7k
+XU p ref vb 0 out LM393A
+.control
+tran 2u @TSTOP@ 0 2u uic
+meas tran n2max MAX v(n2) FROM=0.1 TO=@TSTOP@
+meas tran n2min MIN v(n2) FROM=0.1 TO=@TSTOP@
+meas tran omax MAX v(out) FROM=0.1 TO=@TSTOP@
+meas tran omin MIN v(out) FROM=0.1 TO=@TSTOP@
+meas tran oavg AVG v(out) FROM=0.1 TO=@TSTOP@
+let n2pp = n2max - n2min
+echo "RESULT n2pp $&n2pp"
+echo "RESULT omax $&omax"
+echo "RESULT omin $&omin"
+echo "RESULT oavg $&oavg"
+wrdata out.txt v(out)
+.endc
+.end

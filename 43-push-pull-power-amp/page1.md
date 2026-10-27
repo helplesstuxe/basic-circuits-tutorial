@@ -1,6 +1,6 @@
 # 43 推挽功放：甲、乙、甲乙类 · 直觉篇
 
-上一页：42 节流量计信号链总览（即将上线） · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[19 射极跟随器 · 直觉篇](../19-emitter-follower/page1.md)、[08 同相放大 · 直觉篇](../08-noninverting-amp/page1.md)、[17 稳压管稳压 · 直觉篇](../17-zener-regulator/page1.md)、[01 元件速成 · 直觉篇](../01-components-basics/page1.md)
+[上一页：42 流量计信号链总览 · 动手实验篇](../42-flowmeter-signal-chains/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[19 射极跟随器 · 直觉篇](../19-emitter-follower/page1.md)、[08 同相放大 · 直觉篇](../08-noninverting-amp/page1.md)、[17 稳压管稳压 · 直觉篇](../17-zener-regulator/page1.md)、[01 元件速成 · 直觉篇](../01-components-basics/page1.md)
 
 ## 开头三问（先回忆，再往下读）
 

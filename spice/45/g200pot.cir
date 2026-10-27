@@ -1,0 +1,21 @@
+* 45 增益 200 时把音量电位器调到 10 %（滑动端上方 9 kΩ、下方 1 kΩ），手机仍为 1.48 V 峰值、1 kHz
+.include lm386.inc
+.include amp.inc
+V1 vs 0 9
+Vph ph 0 SIN(0 1.48 1k)
+Ra ph nd 10k
+Rb nd 0 1k
+Rtop nd w 9k
+Rbot w 0 1k
+XA w vs out spk sp2 g1 g8 AMP
+Cg g1 g8 10u
+.control
+tran 2u 60m 0 2u
+meas tran vw max v(w) from=40m to=60m
+meas tran omax max v(out) from=40m to=60m
+meas tran omin min v(out) from=40m to=60m
+echo RES vw_pk $&vw
+echo RES omax $&omax
+echo RES omin $&omin
+.endc
+.end

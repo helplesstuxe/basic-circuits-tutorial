@@ -1,0 +1,36 @@
+* 45 幅频：增益 20（1-8 开路）与增益 200（1-8 接 10 µF），输入为 1 V 交流加在脚3
+.include lm386.inc
+.include amp.inc
+V1 vs 0 9
+V2 vs2 0 9
+Vin in 0 DC 0 AC 1
+XA in vs out spk sp2 g1 g8 AMP
+XB in vs2 outb spkb sp2b g1b g8b AMP
+Cg g1b g8b 10u
+.control
+ac dec 40 1 10meg
+let g20 = vm(out)
+let g200 = vm(outb)
+let hp = vm(spk)/vm(out)
+meas ac g20_1k find g20 at=1k
+meas ac g200_1k find g200 at=1k
+meas ac g200_100 find g200 at=100
+meas ac g200_20 find g200 at=20
+meas ac g200_200 find g200 at=200
+meas ac bw20 when g20=14.142 fall=1
+let lim200 = 198.6/sqrt(2)
+meas ac bw200 when g200=140.4 fall=last
+meas ac fhp when hp=0.70711 rise=1
+meas ac hp1k find hp at=1k
+echo RES g20_1k $&g20_1k
+echo RES g200_1k $&g200_1k
+echo RES g200_100 $&g200_100
+echo RES g200_20 $&g200_20
+echo RES g200_200 $&g200_200
+echo RES bw20 $&bw20
+echo RES bw200 $&bw200
+echo RES fhp $&fhp
+echo RES hp1k $&hp1k
+wrdata ac_vg.txt g20 g200 hp
+.endc
+.end

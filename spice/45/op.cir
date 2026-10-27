@@ -1,0 +1,14 @@
+* 45 静态工作点：9 V 电源，输入接地
+.include lm386.inc
+.include amp.inc
+V1 vs 0 9
+Vin in 0 0
+XA in vs out spk sp2 g1 g8 AMP
+.control
+op
+echo RES vout $&v(out)
+echo RES vbyp $&v(xa.byp)
+let iq = -i(V1)*1000
+echo RES iq_mA $&iq
+.endc
+.end

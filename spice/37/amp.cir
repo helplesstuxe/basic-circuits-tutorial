@@ -1,0 +1,39 @@
+* 37 接收放大（page2 图37-p2-2 / page3 §五 / page4 图37-p4-2）：12 V 单电源，10k/10k + 10 µF 分压，TL072 A 跟随得 V_MID；
+* MA40S4R 简化成「电压源 + 2550 pF」接 TL072 B 的 IN+，100k 偏置到 V_MID；Rf 100k，Rg 10k + Cg 100 nF 到 V_MID。
+* AC 分析读 40 kHz、50 Hz 的增益和 40 kHz 相位；瞬态用 40 kHz、峰值 @AIN@ V 的正弦看输出峰值与直流点。
+.include ../models/TL072.lib
+.param VS=12
+*@def AIN=0.0455
+VSUP vs 0 {VS}
+R1 vs mref 10k
+R2 mref 0 10k
+CM mref 0 10u
+XA mref mid vs 0 mid TL072
+VRX src mid DC 0 AC 1 SIN(0 @AIN@ 40k)
+CT src inp 2550p
+RB inp mid 100k
+XB inp fb vs 0 out TL072
+RF out fb 100k
+RG fb g 10k
+CG g mid 100n
+.control
+op
+let vmid0 = v(mid)
+let vout0 = v(out)
+echo "RESULT vmid $&vmid0"
+echo "RESULT vout_dc $&vout0"
+ac lin 1 40k 40k
+let g40 = abs(v(out)-v(mid))
+let ph40 = 180/pi*cph(v(out)-v(mid))
+echo "RESULT g40 $&g40"
+echo "RESULT ph40 $&ph40"
+ac lin 1 50 50
+let g50 = abs(v(out)-v(mid))
+echo "RESULT g50 $&g50"
+tran 0.1u 1m 0.5m
+meas tran omax MAX v(out) FROM=0.6m TO=1m
+meas tran omin MIN v(out) FROM=0.6m TO=1m
+echo "RESULT omax $&omax"
+echo "RESULT omin $&omin"
+.endc
+.end

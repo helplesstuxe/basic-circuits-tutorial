@@ -1,0 +1,19 @@
+* 42 page3：差压 → 流量的开方（行为模型 B 源，不是器件）。对照：正确开方一次、错误地开两次、3051S 低流量线性段。
+* x = 差压占满量程的比例（0.001–1），用时间当扫描变量。
+VX x 0 PWL(0 0 1 1)
+B1 q1 0 V = sqrt(v(x))
+B2 q2 0 V = sqrt(sqrt(v(x)))
+B3 q3 0 V = v(x) < 0.006 ? v(x) : (v(x) < 0.008 ? 0.006 + (sqrt(0.008)-0.006)/0.002*(v(x)-0.006) : sqrt(v(x)))
+R1 q1 0 1k
+R2 q2 0 1k
+R3 q3 0 1k
+.control
+tran 0.1m 1
+foreach p 0.007 0.01 0.1 0.25 0.5
+  meas tran a find v(q1) at=$p
+  meas tran b find v(q2) at=$p
+  meas tran c find v(q3) at=$p
+  echo "RES cfg=dp p=$p q1=$&a q2=$&b q3=$&c"
+end
+.endc
+.end

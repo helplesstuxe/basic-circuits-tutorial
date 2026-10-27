@@ -1,6 +1,6 @@
 # 41 4–20 mA 电流环 · 动手实验篇
 
-[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · 下一页：42 节流量计信号链总览（即将上线） · 前置节点：[39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md)、[07 三极管开关与继电器驱动 · 动手实验篇](../07-bjt-relay-driver/page4.md)、[01 元件速成 · 动手实验篇](../01-components-basics/page4.md)
+[上一页：参数与调试篇](page3.md) · [直觉篇](page1.md) · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · 本页：动手实验篇 · [下一页：42 流量计信号链总览 · 直觉篇](../42-flowmeter-signal-chains/page1.md) · 前置节点：[39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md)、[07 三极管开关与继电器驱动 · 动手实验篇](../07-bjt-relay-driver/page4.md)、[01 元件速成 · 动手实验篇](../01-components-basics/page4.md)
 
 > **前置回顾**：[39 恒流源 · 动手实验篇](../39-constant-current-excitation/page4.md) 用运放 + MOS 管（IRLZ44N）搭过恒流源；本页换成 2N3904 三极管，思路相同（差别见[原理与实现篇](page2.md)「三」），把它变成一个由 Arduino 控制的 4–20 mA 发送器；[07 三极管 · 动手实验篇](../07-bjt-relay-driver/page4.md) 里认过 TO-92 三极管的 E、B、C 三只脚。
 
@@ -395,7 +395,7 @@ A0 经 10 kΩ + 100 Ω 接地，本来不会悬空。加 100 kΩ 下拉会和 10
 
 ## 下一步（预告）
 
-「预告」42 节流量计信号链总览（即将上线） 会把前面几节（放大、滤波、整形、恒流、热式测量）串成完整的流量计信号链，其中 4–20 mA 输出部分沿用本节的接法。
+「预告」[42 流量计信号链总览](../42-flowmeter-signal-chains/page1.md) 会把前面几节（放大、滤波、整形、恒流、热式测量）串成完整的流量计信号链，其中 4–20 mA 输出部分沿用本节的接法。
 
 ## 参考资料
 

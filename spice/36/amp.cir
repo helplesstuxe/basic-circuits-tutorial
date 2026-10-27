@@ -1,0 +1,22 @@
+* 36 n2 上信号、干扰各自的峰峰值（不接比较器负载：IN+ 输入电流 nA 级，R1 后面视为开路）。page3 §一。
+*@def TSTOP=0.3
+VS d7 0 PULSE(0 5 0 1u 1u {0.5/100.16} {1/100.16})
+VN d5 0 PULSE(0 5 0 1u 1u {0.5/976.5625} {1/976.5625})
+VSD d7d 0 2.5
+VND d5d 0 2.5
+RS1 @SRC@ n1 {RS}
+C1 n1 0 {CC} IC=2.5
+RS2 n1 n2 {RS}
+C2 n2 0 {CC} IC=2.5
+RRN @NSRC@ n2 {RN}
+.param RN=2.2k RS=1k CC=4.7u
+*@def SRC=d7
+*@def NSRC=d5
+.control
+tran 2u @TSTOP@ 0 2u uic
+meas tran mx MAX v(n2) FROM=0.1 TO=@TSTOP@
+meas tran mn MIN v(n2) FROM=0.1 TO=@TSTOP@
+let pp = mx - mn
+echo "RESULT pp $&pp"
+.endc
+.end

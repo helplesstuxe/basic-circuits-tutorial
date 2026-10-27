@@ -1,0 +1,48 @@
+* 45 手机满音量（1.48 V 峰值，1 kHz）→ 10 kΩ/1 kΩ 分压 → 10 kΩ 音量电位器（开到最大）→ 脚3；增益 20
+* 同时放一份「增益 200、电位器同样开满」的电路，看削顶
+.include lm386.inc
+.include amp.inc
+V1 vs 0 9
+V2 vs2 0 9
+Vph ph 0 SIN(0 1.48 1k)
+Ra ph nd 10k
+Rb nd 0 1k
+Rpot nd 0 10k
+XA nd vs out spk sp2 g1 g8 AMP
+Ra2 ph nd2 10k
+Rb2 nd2 0 1k
+Rpot2 nd2 0 10k
+XB nd2 vs2 outb spkb sp2b g1b g8b AMP
+Cg g1b g8b 10u
+.options reltol=1e-4
+.control
+tran 2u 60m 0 2u
+let ps = -i(V1)*v(vs)
+meas tran vin_pk max v(nd) from=40m to=60m
+meas tran vout_max max v(out) from=40m to=60m
+meas tran vout_min min v(out) from=40m to=60m
+meas tran vsp_max max v(sp2) from=40m to=60m
+meas tran vsp_min min v(sp2) from=40m to=60m
+meas tran pin avg ps from=40m to=60m
+let pspk = v(sp2)*v(sp2)/8
+let plim = (v(spk)-v(sp2))*(v(spk)-v(sp2))/10
+meas tran pspk avg pspk from=40m to=60m
+meas tran plim avg plim from=40m to=60m
+let isup = -i(V1)*1000
+meas tran isup avg isup from=40m to=60m
+meas tran outb_max max v(outb) from=40m to=60m
+meas tran outb_min min v(outb) from=40m to=60m
+echo RES vin_pk $&vin_pk
+echo RES vout_max $&vout_max
+echo RES vout_min $&vout_min
+echo RES vsp_max $&vsp_max
+echo RES vsp_min $&vsp_min
+echo RES pin $&pin
+echo RES pspk $&pspk
+echo RES plim $&plim
+echo RES isup_mA $&isup
+echo RES outb_max $&outb_max
+echo RES outb_min $&outb_min
+wrdata phone_vg.txt v(nd) v(out) v(sp2) v(outb)
+.endc
+.end

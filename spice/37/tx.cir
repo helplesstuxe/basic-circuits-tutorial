@@ -1,0 +1,24 @@
+* 37 发射驱动（page3 §四 / page4 BOM）：D3、D11 两只引脚（理想 0/5 V 方波，反相）各串 @RS@ Ω 接 MA40S4S（简化为 2550 pF）。
+* 读引脚峰值电流、电容两端峰峰值、猝发期间的平均电流（|i| 的平均）。
+.param RS=150
+*@def RS=150
+VD3 d3 0 PULSE(0 5 0 10n 10n 12.49u 25u)
+VD11 d11 0 PULSE(5 0 0 10n 10n 12.49u 25u)
+R3 d3 a {RS}
+R11 d11 b {RS}
+CT a b 2550p
+.control
+tran 5n 200u 100u
+meas tran ipk MAX i(VD3) FROM=100u TO=200u
+meas tran imn MIN i(VD3) FROM=100u TO=200u
+let iabs = abs(i(VD3))
+meas tran iavg AVG iabs FROM=100u TO=200u
+meas tran vmax MAX v(a,b) FROM=100u TO=200u
+meas tran vmin MIN v(a,b) FROM=100u TO=200u
+let vpp = vmax - vmin
+let ipeak = max(abs(ipk), abs(imn))
+echo "RESULT ipk $&ipeak"
+echo "RESULT iavg $&iavg"
+echo "RESULT vpp $&vpp"
+.endc
+.end

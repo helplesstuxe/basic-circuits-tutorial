@@ -1,0 +1,28 @@
+* 42 page4：同一前端在 60 Hz 下 1.0 s 内数上升沿（检验不多数、不漏数）。逐个找第 n 个上升沿的时刻。
+.include ../models/LM393A.lib
+.param F=60
+V12 v12 0 12
+V5 v5 0 5
+VP ctl 0 PULSE(0 1 0 1u 1u {0.5/F} {1/F})
+S1 tach 0 ctl 0 SWT
+.model SWT SW(Ron=10 Roff=1e9 Vt=0.5 Vh=0.1)
+RPU v5 tach 10k
+RIN tach na 100k
+CHP na nb 1u
+RHP nb mid 100k
+RM1 v5 mid 10k
+RM2 mid 0 10k
+CLP nb 0 1n
+RR1 v5 ref 10k
+RR2 ref 0 10k
+RH out ref 100k
+ROUT v5 out 4.7k
+XU ref nb v12 0 out LM393A
+.control
+tran 20u 1.6 0 20u uic
+meas tran ta when v(out)=2.5 rise=1 from=0.5
+meas tran tb when v(out)=2.5 rise=61 from=0.5
+let dt = tb-ta
+echo "RES cfg=cnt ta=$&ta tb=$&tb dt=$&dt"
+.endc
+.end

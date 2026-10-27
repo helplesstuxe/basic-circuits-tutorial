@@ -1,0 +1,20 @@
+* 36 共模范围（ℹ️ 仅看模型行为）：LM393 改用 5 V 供电，IN− 直接给 VR；IN+ 在 VR±0.3 V 之间慢三角波。
+* 数据手册：共模上限 25 °C 为 VCC−1.5 V，全温度 VCC−2 V；超出后数据手册不保证比较结果。
+.include ../models/LM393A.lib
+.param VB=5 VR=2.5
+VBAT vb 0 {VB}
+VP vpu 0 5
+VREF ref 0 {VR}
+VIN p 0 PWL(0 {VR-0.3} 20m {VR+0.3} 40m {VR-0.3})
+RR3 vpu out 4.7k
+XU p ref vb 0 out LM393A
+.control
+tran 5u 40m 0 5u
+meas tran omax MAX v(out) FROM=1m TO=40m
+meas tran omin MIN v(out) FROM=1m TO=40m
+meas tran vsw FIND v(p) WHEN v(out)=2.5 RISE=1
+echo "RESULT omax $&omax"
+echo "RESULT omin $&omin"
+echo "RESULT vsw $&vsw"
+.endc
+.end

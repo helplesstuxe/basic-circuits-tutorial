@@ -1,0 +1,40 @@
+* 42 page4 第 4 级：41 节发送器原样（TI LM358 + onsemi 2N3904），R_x = 0。设定电压 = V5·(10/22)·code/255。
+* 码由 code/42_sim.py 按频率换算：0/3 Hz → 45，30 Hz → 99，50 Hz → 135，80 Hz → 188，100/120 Hz → 224；
+* 另算 V5 实为 4.83 V 而程序按 5.00 V 出码（135、224）与改写 V5 = 4.83 后的码（139、232）。
+.include ../models/LMx58_LM2904.lib
+.include ../models/2N3904_onsemi.lib
+.param VS=1.2
+VCC vcc 0 PWL(0 0 1m 12)
+VSET set 0 {VS}
+XU set e vcc 0 out LMX58_LM2904
+RB out b 1k
+Q1 c b e Q2n3904
+RS e 0 100
+RRX vcc c 250
+RA0 e a0 10k
+RAD a0 0 1e9
+.control
+foreach code 45 99 135 188 224
+  let vs = 5*10/22*$code/255
+  alterparam VS = $&vs
+  reset
+  tran 5u 5m 0 5u
+  meas tran m_vc find v(c) at=4.5m
+  meas tran m_ve find v(e) at=4.5m
+  let irx = (12-m_vc)/250
+  let v250 = 12-m_vc
+  echo "RES cfg=s5 code=$code irx=$&irx v250=$&v250 ve=$&m_ve"
+end
+foreach code 135 224 139 232
+  let vs = 4.83*10/22*$code/255
+  alterparam VS = $&vs
+  reset
+  tran 5u 5m 0 5u
+  meas tran m_vc find v(c) at=4.5m
+  meas tran m_ve find v(e) at=4.5m
+  let irx = (12-m_vc)/250
+  let v250 = 12-m_vc
+  echo "RES cfg=s483 code=$code irx=$&irx v250=$&v250 ve=$&m_ve"
+end
+.endc
+.end

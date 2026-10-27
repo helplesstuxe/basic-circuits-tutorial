@@ -1,0 +1,21 @@
+* 42 page4 第 1 级：LM317 直流调压给风扇供电（TI LM317 瞬态行为模型；模型压差固定 0.5 V，比真片乐观）。
+* R_A 240 Ω（OUT–ADJ），R_ADJ（2 kΩ 电位器接成可变电阻，ADJ–地）。风扇用 80 Ω 电阻代替（行为近似：12 V 时约 0.15 A）。
+.include ../models/LM317_TRANS.lib
+.param RADJ=1104
+VIN in 0 PWL(0 0 1m 12)
+XU in adj out out LM317_TRANS
+RA out adj 240
+RADJ adj 0 {RADJ}
+CO out 0 100u
+RFAN out 0 80
+.control
+foreach r 0.001 528 1104 1680 2000
+  alterparam RADJ = $r
+  reset
+  tran 10u 20m 0 10u
+  meas tran vo find v(out) at=19m
+  let pz = (12-vo)*vo/80
+  echo "RES cfg=lm317 r=$r vo=$&vo pz=$&pz"
+end
+.endc
+.end

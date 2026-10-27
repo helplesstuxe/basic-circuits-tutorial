@@ -1,0 +1,39 @@
+* 37 武装 + 过零整条链（page2 图37-p2-3 / page3 图37-p3-1、37-p3-2）：接收放大（同 amp.cir）+ 两只 LM393A（12 V），
+* 输出各 2.2k 上拉到 5 V。回波波形由 run.py 用 code/37_sim.py 的模型算出，除以 40 kHz 增益后写成 PWL 放进下面 VRX 一行。
+* 门限：12 V—100k—10k 电位器—V_MID，滑动端比例 @A@。74HC74 两级逻辑不在 SPICE 里，由 run.py 读 arm、zc 两路波形后判（行为级）。
+.include ../models/TL072.lib
+.include ../models/LM393A.lib
+*@def A=0.31
+*@def RHY=4.7Meg
+VSUP vs 0 12
+V5 v5 0 5
+R1 vs mref 10k
+R2 mref 0 10k
+CM mref 0 10u
+XA mref mid vs 0 mid TL072
+VRX src mid PWL(@PWL@)
+CT src inp 2550p
+RB inp mid 100k
+XB inp fb vs 0 out TL072
+RF out fb 100k
+RG fb g 10k
+CG g mid 100n
+RT vs top 100k
+RP1 top w {10k*(1-@A@)+1m}
+RP2 w mid {10k*@A@+1m}
+XC1 w out vs 0 arm LM393A
+RPU1 v5 arm 2.2k
+RZ1 out zp 10k
+RZH zp zc @RHY@
+RZ2 mid zn 10k
+XC2 zp zn vs 0 zc LM393A
+RPU2 v5 zc 2.2k
+.control
+tran 25n 1m 0.3m 25n
+wrdata out.txt v(arm) v(zc) v(out) v(mid) v(w)
+meas tran vmid AVG v(mid) FROM=0.3m TO=0.4m
+meas tran vw AVG v(w) FROM=0.3m TO=0.4m
+echo "RESULT vmid $&vmid"
+echo "RESULT vw $&vw"
+.endc
+.end

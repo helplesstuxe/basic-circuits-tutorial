@@ -1,0 +1,23 @@
+* 36 上拉接到哪里：page4 安全框。比较器输出为高（IN+ 3 V > IN− 2.5 V）时，D8 引脚上的电压 = 上拉电压（经 R2 少量分压）。
+* VPU=5（正确，Arduino 5 V）或 VPU=9（错误，接到 LM393 的 9 V 电源）。Arduino 引脚用 10 MΩ 输入近似。
+.include ../models/LM393A.lib
+.param VPU=5 VIN=3.0
+VBAT vb 0 9
+VP vpu 0 {VPU}
+VA va 0 5
+RA va ref 10k
+RB ref 0 10k
+VI in 0 {VIN}
+RR1 in p 10k
+RR2 p out 220k
+RR3 vpu out 4.7k
+RD2 out 0 10Meg
+XU p ref vb 0 out LM393A
+.control
+op
+let vo = v(out)
+let ipu = (v(vpu)-v(out))/4.7k
+echo "RESULT vo $&vo"
+echo "RESULT ipu $&ipu"
+.endc
+.end
