@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 D 类功放 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/44-class-d-amp/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="44-d-类功放--直觉篇">44 D 类功放 · 直觉篇</h1>
+<p><a href="../43-push-pull-power-amp/page4.html">上一页：43 推挽功放：甲、乙、甲乙类 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../43-push-pull-power-amp/page1.html">43 推挽功放 · 直觉篇</a>、<a href="../10-voltage-comparator/page1.html">10 电压比较器 · 直觉篇</a>、<a href="../24-oscillator/page1.html">24 振荡器 · 直觉篇</a>、<a href="../26-h-bridge/page1.html">26 H 桥电机驱动 · 直觉篇</a>、<a href="../25-switching-power-supply/page1.html">25 开关电源 · 直觉篇</a></p>
+<h2 id="开头三问先回忆再往下读">开头三问（先回忆，再往下读）</h2>
+<ol>
+<li><a href="../43-push-pull-power-amp/page1.html">43 推挽功放</a> 里，理想乙类推挽的效率最高是多少？它为什么做不到 100%？</li>
+<li><a href="../10-voltage-comparator/page1.html">10 电压比较器</a> 里，同相端电压高于反相端时，输出是高还是低？</li>
+<li><a href="../25-switching-power-supply/page1.html">25 开关电源</a> 里的开关管一直在通、断之间切换，为什么它反而不怎么发热？</li>
+</ol>
+<details><summary>答案</summary>
+<ol>
+<li>约 78.5%（输出峰值顶到电源边上时）。管子工作在「半开」状态：管子两端有几伏电压，同时又流着电流，功率 P = V × I 就变成了热。音量越小，这部分浪费占的比例越大。</li>
+<li>输出高。比较器只回答一个问题：「哪边大？」，输出只有高、低两种。</li>
+<li>开关管只在两种状态之间跳：全开时电流大，但管子两端电压几乎为 0；全关时有电压，但电流为 0。两种情况下 V × I 都很小，所以发热少。</li>
+</ol>
+</details>
+<h2 id="痛点推挽功放一半的电都变成了热">痛点：推挽功放一半的电都变成了热</h2>
+<p>43 节的甲乙类推挽已经比甲类省电很多，可它的输出管仍是「半开」的：要输出 3 V，管子就得替电源「扛着」剩下的几伏电压，同时流着喇叭电流。43 节的电路在峰值约 3 V 时效率只有 39% 左右（SPICE），也就是说电源给的电有六成变成了管子的热，所以要装散热片，还要盯着温度。</p>
+<p>手机、蓝牙音箱、电脑里的小喇叭可没有地方装大散热片，电池也经不起这么浪费。TI 的白皮书写得很直接：D 类放大器的效率一般可以到 90% 左右，大约 10% 的能量变成热。算一笔账：同样输出 5 W，效率 78.5% 时管子要烧掉约 1.37 W，效率 90% 时只烧掉约 0.56 W，热量少了一大半。</p>
+<p>D 类的办法听起来有点「反常」：<strong>干脆不让管子半开</strong>。管子只做两件事：全开或全关，像一个电灯开关；音频信息不再藏在「开多大」里，而是藏在「开多久」里。</p>
+<h2 id="类比用开关调一盏灯的亮度">类比：用开关调一盏灯的亮度</h2>
+<p>想让台灯暗一半，可以串一个大电阻，让灯两端只剩一半电压，但电阻会发烫，这是推挽的思路。另一种办法是飞快地开灯、关灯，一秒钟开关几万次，每次只开一半时间。眼睛跟不上这么快的闪烁，看到的是「一半亮」。开关本身不发热，因为它要么通（没有压降）、要么断（没有电流）。</p>
+<p>喇叭和耳朵也跟不上每秒几万次的开关，它们只「感觉」得到平均值。只要让「开」的时间比例跟着音乐慢慢变，平均值就是放大了的音乐。</p>
+<p><a class="img-link" href="img/44_p1_1_pwm_idea.png"><img alt="D 类原理三步图：上图蓝绿色虚线是峰值约 2.73 V 的三角波（载波），蓝色实线是峰值 1.8 V 的音频正弦；中图是 H 桥输出，只有 +12 V 和 −12 V 两种值，信号高时 +12 V 的脉冲宽、信号低时窄；下图黑色虚线是理想输出，信号乘 12 V 再除以 2.73 V，峰值约 7.9 V，红紫色台阶线是每个载波周期取平均的结果，紧贴着虚线" src="img/44_p1_1_pwm_idea.png" loading="lazy" /></a></p>
+<p><em>图 44-p1-1　三角波比较 → 开关输出 → 取平均</em></p>
+<p>图 44-p1-1 分三步看。第一步，把音频信号和一个很快的三角波（叫<strong>载波</strong>）放在一起比：信号高于三角波，就让输出接 +12 V；低于三角波，就接 −12 V。第二步，输出只有两种值，但脉冲的宽窄跟着信号变：信号在高处时，它高于三角波的时间长，正脉冲就宽。这种「用脉冲宽度表示大小」的波形叫 <strong>PWM</strong>（脉冲宽度调制）。第三步，每个载波周期取一次平均，得到的台阶几乎贴着理想正弦：峰值 1.8 V 的信号变成了峰值约 7.9 V 的输出，放大了 12 ÷ 2.73 ≈ 4.4 倍。</p>
+<p>图 44-p1-1 里画的是很慢的载波，好让你看清楚每个脉冲。真实电路里三角波每秒约 3.86 万次（38.6 kHz），一个 400 Hz 的音频周期里有将近一百个脉冲，平均出来的台阶细得看不出来。取平均靠的是一个<strong>LC 低通滤波器</strong>（电感 + 电容），它让低频的音频通过、把高频的载波挡住。</p>
+<h2 id="效率省在哪里">效率：省在哪里</h2>
+<p><a class="img-link" href="img/44_p1_2_efficiency.png"><img alt="效率对比：横轴输出功率 0 到约 1.26 W，橙色圆点是本节 D 类电路的 SPICE 结果，从 0.013 W 时的 14% 很快升到 0.2 W 时的 70%，1.257 W 时 89%；黑色方块虚线是同电源 12 V、同负载 18 Ω 的理想乙类推挽，0.2 W 时只有 17.6%，1.257 W 时约 44%" src="img/44_p1_2_efficiency.png" loading="lazy" /></a></p>
+<p><em>图 44-p1-2　同样的输出功率，D 类的效率比理想乙类高得多</em></p>
+<p>图 44-p1-2 是本节电路的 SPICE 结果，和「理想乙类推挽」（同样 12 V、同样 18 Ω 负载、没有任何多余损耗的公式值）放在一起比。输出 0.2 W 时，D 类约 70%，理想乙类才 17.6%；输出 1.257 W 时，D 类约 89%，乙类约 44%。注意这里拿来比的乙类是「理想」的，真实的 43 节电路还要更低。图里的「输出功率」指 10 Ω 电阻串 8 Ω 喇叭这整个 18 Ω 负载拿到的功率，喇叭本身只分到其中 8/18。43 节的实验用的是 8 Ω 负载，图里的理想乙类已按同样的 18 Ω 重新算过，这样比才公平。</p>
+<p>图 44-p1-2 也说明 D 类不是处处 90%。最左边那一点（0.013 W），D 类只有 14%。原因是 D 类电路自己也要「开销」：三角波发生器、比较器、驱动芯片都要吃电，开关一次也要损失一点能量，这些开销不随音量变小。所以小音量时比例就难看了，大音量时才显出优势。参数与调试篇会把这些开销拆开来看。</p>
+<h2 id="本节的电路长什么样">本节的电路长什么样</h2>
+<p><a class="img-link" href="img/44_p1_3_blocks.png"><img alt="D 类功放四个方块：左上是音频信号（手机），左下是三角波发生器（TL072，38.6 kHz），两路都送进比较器 ×2（LM393），比较器给出 IN1、IN2 两路 0/5 V 开关信号，进入 H 桥（DRV8871 模块），H 桥输出 OUT1、OUT2 两路 0/12 V 方波，管子只开或关，再经过 LC 滤波（2 × 220 µH + 0.68 µF）滤掉 38.6 kHz、留下音频，最后到 10 Ω + 喇叭" src="img/44_p1_3_blocks.png" loading="lazy" /></a></p>
+<p><em>图 44-p1-3　D 类功放的四个方块：载波、比较、开关、滤波</em></p>
+<p>图 44-p1-3 把整机拆成四块，每一块都是前面学过的东西：</p>
+<ul>
+<li><strong>载波</strong>：TL072 搭的三角波发生器，就是 <a href="../24-oscillator/page1.html">24 振荡器</a> 里的「施密特触发器 + 积分器」，积分器见 <a href="../14-integrator/page1.html">14 积分电路</a>。</li>
+<li><strong>比较</strong>：LM393 双比较器（<a href="../10-voltage-comparator/page1.html">10 电压比较器</a>），把音频和三角波一比，得到 PWM。</li>
+<li><strong>开关</strong>：DRV8871 模块，就是 <a href="../26-h-bridge/page1.html">26 H 桥电机驱动</a> 里的 H 桥，喇叭接在两个输出端 OUT1、OUT2 之间。</li>
+<li><strong>滤波</strong>：两只电感加一只电容，原理和 <a href="../25-switching-power-supply/page1.html">25 开关电源</a> 的输出滤波一样。</li>
+</ul>
+<p>喇叭接在 OUT1 和 OUT2 之间、两端都不接地，这种接法叫<strong>桥接</strong>（BTL）。它的好处是 12 V 电源就能在喇叭上得到 ±12 V 的摆动；代价是<strong>喇叭的任何一端都不能接地</strong>，连示波器的地夹也不能夹上去。动手实验篇会反复提醒这一点。</p>
+<blockquote>
+<p><strong>先想一想（参数与调试篇「常见误区」里有答案）</strong>：有人觉得「喇叭一端接地也能听，顶多声音小一点」。BTL 的 OUT1 和 OUT2 都在 0 V 和 12 V 之间来回跳，任何一端接地会怎样？</p>
+</blockquote>
+<h2 id="一句话">一句话</h2>
+<p><strong>D 类 = 用三角波把音频「翻译」成脉冲宽度，让管子只全开或全关，再用 LC 把脉冲平均回声音；管子几乎不发热，效率在大音量时可以到九成左右。</strong></p>
+<p>下一页把完整电路拆开：三角波的频率和幅度怎么算、占空比和输出电压是什么关系、LC 滤波器怎么挑。</p>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li>TI 白皮书 SLOA290A（D 类效率约 90%、约 10% 变成热）：<a href="https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf">https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf</a></li>
+<li>ADI《Class D Amplifiers Guide》（BTL 输出两路互为镜像、无信号时占空比 50%、输出加 LC 低通）：<a href="https://www.analog.com/en/resources/technical-articles/class-d-amplifiers-guide.html">https://www.analog.com/en/resources/technical-articles/class-d-amplifiers-guide.html</a></li>
+<li>TI SLAU508《Analog Pulse Width Modulation》（比较器 + 三角波生成 PWM）：<a href="https://www.ti.com/lit/pdf/slau508">https://www.ti.com/lit/pdf/slau508</a></li>
+<li>DRV8871 数据手册（H 桥、导通电阻、真值表）：<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

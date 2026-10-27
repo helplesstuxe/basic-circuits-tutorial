@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>student2 审阅：38 同步解调（电磁流量计的电极信号）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/student2/38.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="student2-审阅38-同步解调电磁流量计的电极信号">student2 审阅：38 同步解调（电磁流量计的电极信号）</h1>
+<p>审阅人：student2（模拟学生）。我会欧姆定律、串并联、功率、电容充放电和基础 Python。运放、晶体管工作区、反馈、频率响应、复阻抗这些我都没学过。前面各节默认已经学完。
+审阅时间：2026-10-27 07:34–07:48 EDT（box 时间 19:34–19:48 CST）。
+status.log 中本节的作者行：第 106 行「38-synchronous-demod done (author A)」，已确认存在。
+链接规则：指向未写节（42、44）的链接按协调者规定不算必改，本报告不列。</p>
+<p>运行方式：仓库复制到 <code>/tmp/bct-run/38/repocopy</code>（不含 .git、_site、notes），所有代码和 SPICE 都在副本里跑，设了 <code>TMPDIR</code>、<code>MPLCONFIGDIR</code>，都指向 <code>/tmp/bct-run/38/</code>。我自己写的验算脚本放在 <code>/tmp/bct-run/38/var/</code>：<code>sign*.cir</code>、<code>.spiceinit</code>、<code>variant.py</code>、<code>meter.py</code>。写报告前核对过，副本里 4 个页面的 md5 和仓库一致。</p>
+<h2 id="1-总体感受">1. 总体感受</h2>
+<p>这一节的故事线我能跟上。先讲电极信号为什么被埋住：几十 µV 的流速信号，上面压着极化直流和 50 Hz 干扰。再讲为什么要换向励磁，以及「乘 ±1 再平均」怎么把信号挖出来。page2 的例题和 page3 的数字我全部复算，都对得上。page4 B 板（±1 级、CD4053、LM393、RC 平均）我逐脚核对过，也全部对。</p>
+<p>卡住的主要有三处：</p>
+<ul>
+<li><strong>A 板仪放的正负输入接反了。</strong> 按页面接线，所有读数都会变号。这是最严重的一条。</li>
+<li><strong>page2 相位公式的推导</strong>里，「异号时间」写成了 2φ/π，应该是 φ/π。照文字推，得不出页面上的公式。</li>
+<li><strong>page3 变体题的答案</strong>和 page4 程序的实际行为不一致。</li>
+</ul>
+<h2 id="2-必改3-条">2. 必改（3 条）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>问题</th>
+<th>位置</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td><strong>仪放正负输入接反。</strong> 30 节约定 U1 <strong>3 脚</strong>是 + 输入（A2 → R9 → A3 同相端），5 脚是 − 输入；<code>spice/38/chain.cir</code> 也把 p 接在「A2 的 3 脚」。但 page4 把 P（电极信号）接到了 5 脚，V_MID 接到了 3 脚。</td>
+<td>page4 第 21–22 行测试点表（A =「仪放 + 输入，U1 的 5 脚」，B =「− 输入，U1 的 3 脚」）；第 179 行第 1.7 步「紫线 i46→i24（V_MID 送到 U1 的 3 脚，仪放的 − 输入）」；第 188 行第 2.5 步「蓝线 d11→d25」；图 38-p4-1、38-p4-2（P 进 A1 的 5 脚，7 脚 → R7 → A3 的 2 脚）</td>
+<td>把 P 改接 U1 的 3 脚（第 24 列下半），V_MID 改接 5 脚（第 25 列上半），和 30 节一致；重画图 38-p4-1/p4-2，测试点表 A/B 对调，同时核对 chain.cir</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>相位公式推导：「一个周期里有 2φ/π 的时间两者异号」不对。一个周期 2π 里有两段异号区间，每段长 φ，合计 2φ，<strong>占比是 φ/π</strong>。平均值 = (1 − f) − f = 1 − 2f，f = φ/π 时才得到页面的 1 − 2φ/π；照文字的 2φ/π 代进去，得的是 1 − 4φ/π</td>
+<td>page2 第 32 行</td>
+<td>改成「有 φ/π 的时间两者异号」，最好补一句「两段，每段 φ」</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>变体题的题干和答案都和程序不符。①题干说「程序再把最近 8 个平均」，但代码第 138–139 行是 <code>nAvg</code> 封顶 8 的递推 <code>avg8 += (eP − avg8)/nAvg</code>。前 8 个读数是累计平均，之后变成 α = 1/8 的<strong>指数平均</strong>，旧值不会在 8 个周期后清零：8 个周期后还剩 (7/8)^8 ≈ 34%，降到 1% 以下要约 35 个周期 ≈ 5.5 s，和模拟法的 5.3 s 差不多。②发 <code>f</code> 时，<code>startTimer1()</code> 第 103 行会把 avg8、nAvg 清零，所以<strong>第一个</strong>输出的读数（约 160 ms 后）就全是新数据，根本不用等 1.28 s。③噪声：α = 1/8 的指数平均，噪声缩小 √((2−α)/α) = √15 ≈ 3.9 倍，不是 √8 ≈ 2.8 倍</td>
+<td>page3 第 136–140 行（变体题）；page4 第 139 行注释「最近约 8 个周期的滑动平均」</td>
+<td>二选一：改代码，用真正的 8 点环形缓冲；或者改题干和答案，按「<code>f</code> 会清零，约 0.16 s 出第一个新读数；不清零时是指数平均，约 35 个周期」来写。注释改成「指数平均（α = 1/8）」</td>
+</tr>
+</tbody>
+</table>
+<h3 id="m1-的验证我自己的-spice">M1 的验证（我自己的 SPICE）</h3>
+<p><code>/tmp/bct-run/38/var/sign_ideal.cir</code> 按 page4 的接法搭了三运放仪放（运放用理想 E 源，因为 TI 模型的 <code>.op</code> 不收敛；只查拓扑和符号，这样足够），静态电流方向和页面一样：</p>
+<table>
+<thead>
+<tr>
+<th>状态</th>
+<th>A−B（页面）</th>
+<th>C−B 页面写</th>
+<th>C−B 按页面接线仿真</th>
+<th>输入对调后仿真（sign_fixed_ideal.cir）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>h</td>
+<td>+0.4947 mV</td>
+<td>+10.39 mV</td>
+<td><strong>−10.40 mV</strong></td>
+<td>+10.38 mV</td>
+</tr>
+<tr>
+<td>l</td>
+<td>−4.452 mV</td>
+<td>−93.49 mV</td>
+<td><strong>+93.48 mV</strong></td>
+<td>−93.50 mV</td>
+</tr>
+</tbody>
+</table>
+<p>按页面接线，表 3-4、5-4（V0 会读到 −50.89 mV）、6-2、7-1、9-3（−9.25 mV）全部变号，串口的 E_mV/avg8 变负，自检清单也随之出错。学生照页面搭出来会读到负数，又找不到哪里接错，这对初学者打击很大。</p>
+<h2 id="3-建议14-条">3. 建议（14 条）</h2>
+<p><strong>page1</strong></p>
+<ol>
+<li>图片文件名和图号对调：<code>38_p1_3_reversal.png</code> 显示为图 38-p1-2，<code>38_p1_2_buried.png</code> 显示为图 38-p1-3。内容没错，但以后维护容易弄混。</li>
+<li>第 13 行说极化「几百 mV～±2 V」（电极对地），第 21 行说「几十到几百 mV」（电极之间）。两个数差很多，最好加半句解释：两只电极的极化大部分相同，相减后只剩差值。</li>
+<li>第 66 行说 CD4053 需要「7 V 左右」，page3 第 68 行估算约 6.3 V。两处应统一，或说明 7 V 是留了余量。</li>
+<li>第 74 行「21 倍的余量」我看不懂：是增益 21 倍，还是余量有 21 倍？</li>
+</ol>
+<p><strong>page2</strong>
+5. 第 11 行写「7 Hz」，其他地方都是 7.14 Hz（50/7）。</p>
+<p><strong>page3</strong>
+6. 第 21、23 行把纹波那句话（0.04 → 0.010）重复说了两遍。
+7. 7-1、测量表第 289 行，以及排查表里「±5 mV 慢慢晃」的说法：10 mV 峰峰值是 CF 上 50 Hz 的<strong>瞬时</strong>纹波，万用表看不到。我用 <code>var/meter.py</code> 模拟万用表 100 ms 积分：50.08 Hz 时读数在 49.32–52.46 mV（峰峰 3.14 mV），51.06 Hz 时峰峰 3.86 mV，拍频周期约 12.5 s。建议写成万用表实际会显示的样子。
+8. 51 Hz 纹波：38_sim 给 10.54 mV，SPICE 给 6.85 mV，差 35%，页面没说用的是哪个数。另外 ph45/t50/t51 几项 SPICE 要用理想运放才收敛，页面或 review/spice/38.md 应注明。</p>
+<p><strong>page4</strong>
+9. 第 38 行「第 7、8 步要拔插元件」应为第 8、9 步（第 7 步只是发串口命令）。
+10. 第 4.3 步（第 219 行）只列出 1–5 脚不用，图 38-p4-4 还标了 15 脚。文字应和图一致。
+11. <code>.ino</code> 文件和页面代码差一行注释（页面多了「// 注意：Timer1 被占用…」），建议同步。</p>
+<p><strong>38↔39 衔接</strong>
+12. L1：38 page3 第 92 行说「本节的程序和 39 恒流励磁都只采后半段」。可是 39 没有采样程序，它的 <code>HALF_MS</code> 草图只驱动线圈；39 page2 第 197 行只提到工业仪表用后段采样。建议改成「工业流量计（见 39 原理与实现篇）也只采后半段」。
+13. L2：38 page1 第 70 行和 page4 思考题 3（第 411 行）说 39 <strong>直觉篇</strong>详细讲了只采后半段。实际上那段在 39 <strong>page2 §四</strong>（第 197 行），而且只有一句话。链接应改指 39 page2，「详细」两字也应去掉。
+14. L3：39 page1 第 23 行（回顾②「长时间接着直流会极化」）和第 56 行（「如果磁场一直朝一个方向，电极表面会慢慢积起电荷」）读起来像是单向磁场<strong>造成</strong>了极化。38 page1 第 21、25 行说的是：极化是电极自己的漂移，和磁场方向无关，换向只是让信号和它分得开。两节的说法应统一，建议改 39 的措辞。</p>
+<p>38 和 39 一致的地方：6.25 Hz 和 80 ms 半周期，50 Hz 抵消的逻辑（39 page1 第 64 行），「正半周减负半周」，「励磁」「换向」两个术语，以及 38 page4 ↔ 39 page1 的上一节/下一节链接。</p>
+<h2 id="4-练习作答记录">4. 练习作答记录</h2>
+<ul>
+<li>page2 例题全部复算正确，第一个代码块的输出和页面一致。第二个代码块是故意留空的填空题（直接运行会 NameError，这是设计如此）。</li>
+<li>page3 练习 1–4 都按自己的方法做了一遍，和答案一致：τ·ln200 = 5.3 s；−εV/2 = −9.76；2δV = 19.53；失调 ×2 = 14 mV；音调 50.08 / 51.06 Hz；45° 损失；量化 +4.4%；±0.6 mV 对照范围 1.825–3.063。</li>
+<li>page3 变体题：我照题干先答了 1.28 s，再去看代码才发现不对（见 M3）。</li>
+<li>page1 的 0.623–0.980 和 figs 输出一致。</li>
+<li>page4 静态值：+0.4947 / −4.4521 mV，差 4.9468 mV，×21 = 103.88 mV（绝对值）。思考题 1 我算出 9.1 s；思考题 2：RH‖R11 = 9.09 kΩ，τ = 90.9 ms；思考题 3 的答案合理。</li>
+<li>page4 的检查器代码块（page4_block2）用默认值运行，偏差全是 0%。</li>
+</ul>
+<h2 id="5-代码运行记录">5. 代码运行记录</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>code/38_sim.py</code></td>
+<td>exit 0，5.8 s，数字和页面一致</td>
+</tr>
+<tr>
+<td><code>code/figs/38_figs.py</code></td>
+<td>exit 0，重新生成的 16 张 PNG 和仓库逐字节相同</td>
+</tr>
+<tr>
+<td><code>spice/38/run.py</code></td>
+<td>exit 0，3 min 47 s，25 项；<code>review/spice/38.md</code> 存在</td>
+</tr>
+<tr>
+<td>page2 代码块 1 / 2</td>
+<td>1 正常；2 是填空题（NameError 是设计如此）</td>
+</tr>
+<tr>
+<td>page4 代码块 2（检查器）</td>
+<td>exit 0，全部 0%</td>
+</tr>
+<tr>
+<td>page4 代码块 1（Arduino）</td>
+<td>box 上没有 arduino-cli 或 avr-gcc，没法编译，只能读代码。Timer1 /256、TOP 4999、OCR1B、FOC 的逻辑都对；avg8 的问题见 M3</td>
+</tr>
+</tbody>
+</table>
+<p>所有代码都只在副本里跑，副本里除了出图目录没有生成别的文件。我没有在仓库里运行任何东西，也没有改任何页面、代码或图。</p>
+<h2 id="6-面包板与原理图核对">6. 面包板与原理图核对</h2>
+<ul>
+<li><strong>A 板</strong>：除 M1 的极性问题外，元件位置和连线都和图一致：D9 → RS1 1 MΩ → P，RS2 1 kΩ 接 V_MID，CN/RN 注入 50 Hz，RP/RD 注入极化直流，三运放仪放增益 21。</li>
+<li><strong>B 板</strong>：逐脚核对，和文字、图 38-p4-3/p4-4 全部一致。
+<ul>
+<li>U3 第 10–13 列：8 脚 a10，4 脚 j13，C3；跟随器 g10–g11；g2→g12；R11 c9–c12；R12 b11–b12；fo 经 h10→h9、f9–e9 引出。</li>
+<li>CD4053 第 20–27 列：13 脚 AY = d23 ← fo；14 脚经 d22→d13 接 U3 的 5 脚；12 脚 AX = V_MID（j29 / f29–e29 / d29→d24）；11 脚 = d25；9、10 脚接 0 V；6/7/8 脚接 B1；16 脚接 9 V。</li>
+<li>LM393 第 32–35 列：RU c32–c33；d33→d25；RT1/RT2 分压阈值 d36→d34（6 脚）；D10 → a35（5 脚）；2、3 脚接地。</li>
+<li>RA1/RA2/A0、RF/CF、测试点 J/K 都对。</li>
+</ul>
+</li>
+<li>page4 的上一节/下一节链接正确。</li>
+</ul>
+<h2 id="7-举一反三改成-5-hz-励磁同时适配-50-hz-和-60-hz-电网">7. 举一反三：改成 5 Hz 励磁，同时适配 50 Hz 和 60 Hz 电网</h2>
+<p>脚本：<code>/tmp/bct-run/38/var/variant.py</code>。</p>
+<ul>
+<li>我的思路：要让工频干扰在一个励磁周期内平均为 0，工频必须是励磁频率的<strong>偶数倍</strong>。6.25 Hz 时，50 Hz 是 8 倍，可 60 Hz 是 9.6 倍，不行。5 Hz 时，50 Hz 是第 10 倍、60 Hz 是第 12 倍，都是偶数。</li>
+<li>Timer1：/256 分频，TOP = 6249，每计数 0.0288°。45° = 1562.5 个计数，不是整数，只能取 1562 或 1563。</li>
+<li>仿真读数（无干扰 / 加 50 Hz / 加 60 Hz）：
+<ul>
+<li>6.25 Hz：50.90 / 50.82 / 50.82 mV</li>
+<li>5 Hz：50.88 / 50.90 / 50.87 mV</li>
+</ul>
+</li>
+<li>代价：AC 耦合造成的跌落从 7.7% 升到 9.5%；CF 上的纹波约 10 / 8.7 mV 峰峰值。BLANK 要改成 50 ms（半周期变成 100 ms）。</li>
+<li>结论：5 Hz 一套参数能同时服务 50 Hz 和 60 Hz 电网，代价是多一点跌落。这说明我真的理解了「偶数倍才能抵消」这条规律。</li>
+</ul>
+<h2 id="8-结论必改-3-条建议-14-条含-3839-衔接-3-条">8. 结论：必改 3 条、建议 14 条（含 38↔39 衔接 3 条）</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>必改</th>
+<th>位置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1</td>
+<td>仪放正负输入接反，全部读数变号</td>
+<td>page4 第 21–22、179、188 行；图 38-p4-1、38-p4-2；chain.cir 核对</td>
+</tr>
+<tr>
+<td>M2</td>
+<td>异号时间应为 φ/π，不是 2φ/π</td>
+<td>page2 第 32 行</td>
+</tr>
+<tr>
+<td>M3</td>
+<td>变体题题干和答案与程序不符（avg8 是指数平均，且发 <code>f</code> 会清零）</td>
+<td>page3 第 136–140 行；page4 第 139 行注释</td>
+</tr>
+</tbody>
+</table>
+<h2 id="复核">复核</h2>
+<ul>
+<li>时间：2026-10-27 20:12–20:24 CST（box 时钟）＝ 08:12–08:24 EDT。</li>
+<li>依据：<code>notes/part2-status.log</code> 中「student2 38 done」之后的「38-synchronous-demod teacher-fix done (author A)」；拿我初审时的副本 <code>/tmp/bct-run/38/repocopy</code> 和现在的页面逐行 diff，只看作者 A 改了什么。</li>
+<li>方法：
+<ul>
+<li>仓库复制到 <code>/tmp/bct-run/38r</code>（不含 notes/.git/_site），所有东西只在副本里跑。</li>
+<li><code>code/38_sim.py</code> exit 0（6 s），<code>code/figs/38_figs.py</code> exit 0（13 s），重出的 16 张 PNG 和仓库 md5 全部相同；<code>spice/38/run.py</code> 25 项，数值和 <code>review/spice/38.md</code> 一致。</li>
+<li><code>run_blocks</code> PASS 2 / SKIP 1 / FAIL 0；check_figs、count_cjk（2079/2273/2747/4648）、行内公式空格 0、github math 4/4 全部 OK。</li>
+<li>页面里的 Arduino 程序和 <code>code/38_lockin.ino</code> 逐字相同。</li>
+<li>板 A 按 page4 第 1、2 步重新逐孔走了一遍，并和图 38-p4-1 的放大截图、原理图 38-p4-2 对过。我自己的理想运放 SPICE（<code>/tmp/bct-run/38r_notes/var/sign_fixed_ideal.cir</code>）在 h / l 时 C 对 B 是 +10.38 / −93.50 mV，页面写 +10.39 / −93.49 mV。</li>
+<li>页面的读数核对脚本（page4）抽出来单独跑，把 A_h、A_l、V0 改成偏 4–5 % 的值，偏差列正常显示。</li>
+<li>改过的例题、练习、变体题都重新算了一遍。</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结论</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>M1 仪放 +/− 输入接反</td>
+<td>✅ 关闭</td>
+<td>page4 第 21–22 行测点改为 A＝U1 3 脚（+）、B＝U1 5 脚（−）。第 1 步第 7 小步改成紫线 i46→d25、g9→b25，第 2 步第 5 小步改成蓝线 d11→g24，并写明与紫线交叉不相连。图 38-p4-1、38-p4-2、<code>38_figs.py</code> 的连线断言、表 1-8 / 3-4、「对照看」都同步改了。逐孔核对：P 点→g24→U1 3 脚（f24）；V_MID→d25 / b25→U1 5 脚（e25），拓扑正确，输出＝21×(3 脚 − 5 脚)，符号对</td>
+</tr>
+<tr>
+<td>M2 异号时间 φ/π</td>
+<td>✅ 关闭</td>
+<td>page2 第 32 行改为「两段每段 φ，合起来 φ/π」，并补了 45° 例子：3/4 − 1/4 = 1/2，对</td>
+</tr>
+<tr>
+<td>M3 变体题与程序不符</td>
+<td>✅ 关闭</td>
+<td>page3 变体题拆成 (a)(b)(c)。(a) 35 个读数、5.6 s；(b) startTimer1 清零，0.16–0.24 s，我对照程序验证过（发 f 时 0.16 s，相位 0 最多 0.24 s）；(c) √15 ≈ 3.9，模拟 3.89。page4 第 139 行注释和 .ino 同步</td>
+</tr>
+<tr>
+<td>建议 1–14</td>
+<td>全部采纳</td>
+<td>1 PNG 改名为 <code>38_p1_2_reversal</code> / <code>38_p1_3_buried</code>，旧名已不存在；2 补了极化电压是共模的解释；3 6.3 V 加了指向 page3「五」的链接；4「21 倍余量」改写；5 改为 7.14 Hz；6 page3 第 23 行重复句已删；7 万用表跳动的说法在 page3 第 4 条、排查表、page4 第 7 步和表 7-1 统一；8 在 <code>review/spice/38.md</code> 里说明；9 第 8、9 步已改；10 15 脚写明在 a21；11 .ino 已同步；12–13 page1 第 70 行、page2 第 43 行、page3 第 92 行、page4 第 426 行改为「预告」措辞（39 page2 确实算了换向时间，1.169 ms 时间常数）；14 39 page1 第 23、56 行措辞已改</td>
+</tr>
+</tbody>
+</table>
+<p>另外，作者还做了这些改动，我都检查过，没有问题：</p>
+<ul>
+<li>page4 第 6 步后加了答案折叠，加了 SPICE 说明折叠。</li>
+<li>核对脚本里 A_ 两项改为以 h − l 之差为基准。</li>
+<li>page3 新增练习 5（60 Hz 电网）。</li>
+<li><code>38_sim.py</code> 新增第 8 节，输出如下，页面引用的数字都对得上：
+<ul>
+<li>第 9 步 P 点 −44.51 mV、仪放 −935 mV，泄漏 +9.35 → +9.25 mV（模拟 +9.27 mV）。</li>
+<li>50.00 / 50.08 / 51.06 Hz 三种干扰：快纹波 9.11 / 10.42 / 10.63 mV 峰峰；万用表 0.1 s 窗口 2.33 / 3.09 / 3.87 mV，0.2 s 窗口 0.79 / 1.11 / 1.79 mV；慢漂 0 / 0.41 / 1.99 mV。</li>
+<li>RC 对 6.25 Hz 衰减 38.9 倍；7.5 Hz 时 TOP 4166，实际 7.4994 Hz。</li>
+</ul>
+</li>
+</ul>
+<h3 id="改动带进来的新问题">改动带进来的新问题</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>位置</th>
+<th>问题</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1</td>
+<td>必改</td>
+<td>page4 第 208 行（第 3 步第 4 小步，本轮新加的判断句）；表 3-4（第 288 行）「符号反了」</td>
+<td>新句子说「<code>h</code> 时 C 对 B 应该是正的、约 +10 mV（再加仪放自己的几毫伏失调）；如果是负的，说明 P 和 V_MID 接反了」。可本节的仪放<strong>不调零</strong>（没有 30 节的 RP1），30 节 page3 第 90 行、page4 第 106/129 行自己写着：经典 LM358 失调最大 7 mV，A1、A2 相差最多 14 mV，输出偏 0.294 V，「真实芯片不调零时可以偏到几十甚至两三百毫伏」。所以失调是「几十到几百毫伏」，不是「几毫伏」，比 +10 mV 大得多。接线正确的学生完全可能读到负值，然后照这句话去对调两根线，<strong>反而把对的接成错的</strong>。这是会误导动手的错误判据</td>
+<td>改用两次读数之差判符号：「<code>h</code> 的读数减 <code>l</code> 的读数应为正、约 +104 mV（失调在两次里一样，相减消掉）；如果约 −104 mV，说明 P 和 V_MID 接反了」。表 3-4 的「符号反了」也改成「差值为负」。单次读数只写「+10.39 / −93.49 mV 再各加同一个失调（可能几十到几百 mV）」</td>
+</tr>
+<tr>
+<td>R2</td>
+<td>必改</td>
+<td>page3 第 148–152 行练习 5（本轮新加）；page2 例 3（第 150–154 行，原有内容，同一个毛病）</td>
+<td>题干说「只改 Timer1 的 TOP 来适配 60 Hz」，答案只给 TOP ≈ 4166。可 page4 的程序里，<code>OCR1B = 4999 - leadCounts</code> 是写死的，大于新的 TOP 4166。CTC 模式下计数到 TOP 就清零，OCR1B 永远比较不到，<strong>D10 不翻转，没有参考，整个检波没有输出</strong>。BLANK_US = 40000 也要跟着改成约 33333：不改的话，采样窗只有 66.67 − 40 = 26.67 ms，等于 1.6 个 60 Hz 周期，抵消不了。45° / 90° 的 1250 / 2500 也要改成 1042 / 2083。例 3 的 5 Hz（TOP 6249）不会停摆，但 OCR1B = 4999 时 D10 比 D9 早 1250 个计数，等于平白多了 72° 相位，读数只剩约 20 %；BLANK_US 也要改成 50 ms（我初审第 7 节就算过）。学生「举一反三」真去改程序，就会掉进这个坑</td>
+<td>题干改成「频率只靠 TOP 调（分频仍是 256）」，答案里补一句「程序里跟 TOP 挂钩的常数都要一起改：OCR1A = TOP、OCR1B = TOP − leadCounts、BLANK_US = 半周期的一半、45° / 90° 的计数」。最好把 4999 抽成一个常量 <code>TOP</code>。另外，「60/8 = 7.5 Hz 正好」不是唯一答案（60 的偶数分之一，比如 6 Hz、5 Hz 也行），实际 7.4994 Hz 也不是「正好」。可以写「最接近 6.25 Hz 的是 7.5 Hz（或 6 Hz）」</td>
+</tr>
+<tr>
+<td>R3</td>
+<td>建议</td>
+<td>page1 第 74 行</td>
+<td>说 page2「算过……差模直流超过约 143 mV 就会顶到头」，可 page2 第 87 行只写了 1.542 V 和 3.0 V 余量，没有出现 143 mV。读者回去找找不到</td>
+<td>page2 补一句「3.0 V ÷ 21 ≈ 143 mV」，或者 page1 直接写出这个除法</td>
+</tr>
+<tr>
+<td>R4</td>
+<td>建议</td>
+<td>page3 第 38 行「模拟 0.8～3.1 mV」</td>
+<td>第 8 节的输出里，51.06 Hz、0.1 s 窗口是 3.87 mV，这个范围没盖住</td>
+<td>改成「0.8～3.9 mV」，或者注明只算 50.00 / 50.08 Hz</td>
+</tr>
+<tr>
+<td>R5</td>
+<td>建议</td>
+<td>page3 第 35 行「仪放输出直流 ±976 mV，泄漏 ∓9.76 mV」</td>
+<td>电位器两端不对称：P 点直流 −46.49 / +42.53 mV（SPICE 也是这两个数），乘 21 是 −976 / +893 mV，不是 ±976</td>
+<td>写成「−976 / +893 mV，泄漏 +9.76 / −8.93 mV」</td>
+</tr>
+<tr>
+<td>R6</td>
+<td>建议</td>
+<td>page4 第 304 行 SPICE 说明折叠</td>
+<td>写的是「SPICE 里的 LM358 用的是 TI 的器件模型」，可 <a href="http://run.py">run.py</a> 输出写明 ph45、t50、t51 三种情况下 U3B 和 INA 都换成了理想运放才收敛。45° 的 26.06 mV 不是 TI 模型算出来的</td>
+<td>补半句「45° 和两个 tone 用理想运放（TI 模型不收敛）」</td>
+</tr>
+<tr>
+<td>R7</td>
+<td>建议</td>
+<td><code>code/38_sim.py</code> 第 7 节 vs 第 8 节；<code>review/spice/38.md</code> 第 50、52 行</td>
+<td>同一个量，tone(50) / tone(51) 的快纹波：第 7 节是 10.36 / 10.54 mV，第 8 节是 10.42 / 10.63 mV（两节的窗口或步长不同）。SPICE 表引用的是前者，page3 引用的是后者。页面都写「约 10 mV」，不影响读者</td>
+<td>统一成一套，或在第 7 节注一句「窗口不同」</td>
+</tr>
+</tbody>
+</table>
+<p>链接规则照旧：指向未写节的链接不算必改。</p>
+<p><strong>剩余必改：2。</strong></p>
+<h2 id="复核-2">复核 2</h2>
+<ul>
+<li>时间：2026-10-27 08:39–08:44 EDT。依据：log 中「student2 38 recheck done」之后的第二条「38-synchronous-demod teacher-fix done (author A)」（log 第 129 行）。</li>
+<li>方法：仓库复制到 <code>/tmp/bct-run/38r2/repocopy</code>，和上一轮副本 <code>/tmp/bct-run/38r</code> 逐文件 diff。page1–4、<code>code/38_sim.py</code>、<code>code/38_lockin/38_lockin.ino</code>、<code>review/spice/38.md</code> 有改动；img/、<code>38_figs.py</code>、spice/38 没有改动。</li>
+<li>重跑：<code>38_sim.py</code> exit 0（6 s）、<code>38_figs.py</code> exit 0（15 s，16 张 PNG 和仓库逐字节相同）、<code>spice/38/run.py</code> exit 0（174 s，25 项，ε 测试 9.195 mV，与页面 9.25 mV 差 −0.59%）；页面代码块 page2_block1、page4_block2 exit 0，page2_block2 是标了「不运行」的填空块（NameError 是预期的）。page4 程序和 <code>code/38_lockin/38_lockin.ino</code> 逐字相同。粗体扫描 p1 16/16、p2 20/20、p3 22/22、p4 36/36，没有残留 <code>*</code>；check_github_math 4/4、check_figs 3/4/3/6 OK。写报告前页面再次和仓库 cmp 一致。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结论</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R1 page4 第 3 步第 4 小步用单次符号判接反</td>
+<td>✅ 关闭</td>
+<td>L209 改为看 h − l 的差值（约 +104 mV；约 −104 mV 说明接反），并写明失调可能有几十到两三百毫伏，引用 30 节最坏 0.294 V；表 3-4（L289）同步</td>
+</tr>
+<tr>
+<td>R2 练习 5 / 例 3 漏改 TOP 相关常数</td>
+<td>✅ 关闭</td>
+<td>程序改成 <code>const unsigned int TOP</code>，OCR1A = TOP、OCR1B = TOP − leadCounts、BLANK_US = (TOP+1)×8、45°/90° = (TOP+1)/4、/2。我逐行看了 .ino：TOP = 4999 时 40000 µs、1250、2500，和原来完全一样；7.5 Hz 时 33336 µs、1041、2083，与页面和 38_sim 第 8 节 (e) 的输出一致。例 3 写的「D10 早 1250 计数 = 36°，读数剩 60%」是对的。<strong>我上一轮写的「72°、约 20 %」算错了</strong>（把半周期当成了整周期），作者的数正确</td>
+</tr>
+<tr>
+<td>R3 page1 143 mV</td>
+<td>✅ 关闭</td>
+<td>page1 L74、page2 L87 都写了 3.0 V ÷ 21 ≈ 143 mV</td>
+</tr>
+<tr>
+<td>R4 0.8～3.1 mV</td>
+<td>✅ 关闭</td>
+<td>改成 0.8～3.9 mV，并注明 3.9 来自 51.06 Hz、0.1 s 窗口</td>
+</tr>
+<tr>
+<td>R5 ±976 mV</td>
+<td>✅ 关闭</td>
+<td>改成 −46.49 / +42.53 mV → −976 / +893 mV，泄漏 +9.76 / −8.93 mV</td>
+</tr>
+<tr>
+<td>R6 SPICE 说明</td>
+<td>✅ 关闭</td>
+<td>补了「45° 和两个干扰工况换成理想运放」</td>
+</tr>
+<tr>
+<td>R7 第 7/8 节纹波数不同</td>
+<td>✅ 关闭</td>
+<td>38_sim 第 7 节打印和 review/spice/38.md 都注明了窗口不同</td>
+</tr>
+</tbody>
+</table>
+<h3 id="改动带进来的新问题-1">改动带进来的新问题</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>位置</th>
+<th>问题</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>N1</td>
+<td>必改</td>
+<td>page3 L154 括号「（不改的话还是 40 ms，采样窗只剩 26.67 ms，约 1.6 个 60 Hz 周期，抵消不了）」</td>
+<td>这句是照我上一轮 R2 的说法写的，<strong>是我说错了</strong>。数字法的抵消靠的是「P 窗和 N 窗相隔一个半周期 = 4 个 60 Hz 周期」，两个窗里的干扰完全一样，相减就消掉了，和每个窗本身装不装得下整数个周期无关（page2 L50 自己也写的是「一个半周期里装下整数个 50 Hz 周期」）。我按程序逻辑写了仿真（<code>/tmp/bct-run/38r2/blank.py</code>，1 ms 采样，60 Hz 幅度 1 的干扰）：7.5 Hz、BLANK 40 ms 时每周期残留平均 0.0068，BLANK 33.3 ms 时 0.0057；60.05 Hz 时分别是 0.0071 和 0.0065。两者几乎一样，BLANK 不改照样能抵消。所以「抵消不了」是错的，学生会把它当成原理记住</td>
+<td>括号改成「（不改的话还是 40 ms，采样窗只剩 26.67 ms，少采几个点，但 P、N 两窗仍相隔 4 个 60 Hz 周期，干扰照样抵消；改成半周期的一半只是保持『只用后一半』的设计）」</td>
+</tr>
+<tr>
+<td>N2</td>
+<td>建议</td>
+<td>page2 L58「后一半 40 ms 恰好是 2 个 50 Hz 周期」、page3 L54「每个 40 ms 采样窗里几乎还是整数个干扰周期」（原有内容）</td>
+<td>和 N1 一样，把抵消归因到「窗口装整数个周期」。窗口是整数个周期确实有好处（单个窗口的平均值本身就接近 0，对电网频率漂移更不敏感），但不是抵消的必要条件</td>
+<td>两处各补半句「主要靠两窗相隔整数个周期，窗口是整数个周期只是锦上添花」</td>
+</tr>
+</tbody>
+</table>
+<p>链接规则照旧：指向未写节的链接不算必改。</p>
+<p><strong>剩余必改：1（N1，page3 L154 括号）。</strong></p>
+<h2 id="复核-3">复核 3</h2>
+<p>（2026-10-27 09:01 EDT；对应 log「38 teacher-fix done (r2)」；副本 /tmp/bct-run/38r3/repocopy，与 38r2 diff：只有 page2 L58、page3 L54、page3 L154 改动，code/38_sim.py、38_figs.py、.ino、spice/38 都没有改。）</p>
+<ul>
+<li><strong>N1 page3 L154</strong>：已改为「采样窗只剩 26.67 ms，只是少采几个点；P、N 两个窗仍然相隔一个半周期 = 4 个 60 Hz 周期，两窗里的干扰一样，相减照样抵消」。
+<ul>
+<li>数字核对：TOP = 4166，半周期 = 4167 × 16 µs ≈ 66.67 ms = 4 × 16.67 ms ✅；40 ms 消隐后窗长 66.67 − 40 = 26.67 ms ✅。</li>
+<li>用 /tmp/bct-run/38r2/blank.py 重跑：7.5 Hz/60 Hz 时消隐 33.3 ms 残留 0.0057，不改的 40 ms 残留 0.0068（复核 2 已测）。两者同一量级，都已经抵消，与新文字一致。</li>
+<li>✅ 关闭。</li>
+</ul>
+</li>
+<li><strong>N2 page2 L58 / page3 L54</strong>：都改为「P、N 两窗相隔整数个干扰周期是主要原因；单窗装下整数个周期只是锦上添花」。
+<ul>
+<li>80 ms = 4 × 20 ms，40 ms = 2 × 20 ms，表述正确。</li>
+<li>50.08 Hz 时两窗相隔 4.006 个周期，「仍然几乎相隔整数个」也对。</li>
+<li>✅ 关闭。</li>
+</ul>
+</li>
+<li><strong>新问题检查</strong>：
+<ul>
+<li>38_sim.py、38_figs.py、spice/38/run.py 全部 exit 0。SPICE 共 25 项，与上轮一致。重新生成的图与仓库里的逐字节相同，副本里没有生成多余文件。</li>
+<li><code>**</code> 扫描：p1 16/16、p2 20/20、p3 22/22、p4 36/36，没有残留，没有 <code>\lt</code>。</li>
+<li>check_github_math 4/4 OK；check_figs 3/4/3/6 OK。</li>
+</ul>
+</li>
+</ul>
+<p><strong>剩余必改：0。</strong> 建议：无新增。</p>
+<h2 id="复核-42026-10-27-0940-edt副本-tmpbct-run38r4">复核 4（2026-10-27 09:40 EDT，副本 /tmp/bct-run/38r4/）</h2>
+<p>对应 log「38 teacher-fix done (r3: L435 + R2-01 + R2-02, author A)」。与 /tmp/bct-run/38r3/ 对比，38 相关的改动只有三处：page4 L209、page4 L435、<code>code/38_sim.py</code> 的两段 print。<code>lab_schem.py</code> 只给 DAG 加了 36/37/42/45 节点，跟 38 无关。</p>
+<p><strong>改动处核对（数值真算）</strong></p>
+<ul>
+<li>page4 L209：「约 −104 mV 说明 P 和 V_MID 接反，<strong>先拔电池、再拔 USB</strong>」。和 page4 L37/L38（上电先 USB 后电池、断电先拔电池）一致，也和 L214、L270、L276、L279 一致。单次读数 h = +10.39 mV、l = −93.49 mV，h − l = +103.88 mV，约 +104 ✓。</li>
+<li>page4 L435 清单：A 对 B 两次之差约 4.95 mV；C 对 B 的 h − l 约 +104 mV（正号），倍数 103.88/4.95 = 20.99，约 21 ✓。符号和 L209 一致，复核 3 已关闭的符号问题没有被改回。</li>
+<li><code>38_sim.py</code> 新输出：P 点直流在 0 V 端是 −46.49 mV，在 9 V 端是 +42.53 mV。
+<ul>
+<li>0 V 端：×21 = −976.3 mV，泄漏 = −(−976)×0.02/2 = +9.76 mV ✓。</li>
+<li>9 V 端：×21 = +893.1 mV，泄漏 = −8.93 mV ✓。</li>
+<li>这两组数和 page3 L36 第 1 条（−976/+893 mV、+9.76/−8.93 mV、两头不对称）逐字一致。第 9 步「从中间到 0 V 端」的变化量 −44.51 mV / −935 mV / +9.35 mV / ×0.9901 = +9.25 mV / 模拟 +9.27 mV 也和 page3 一致。</li>
+<li>第 65 行「取 +976 mV，只看大小」已注明实际符号，不再矛盾。</li>
+</ul>
+</li>
+<li>重跑结果：
+<ul>
+<li><code>38_sim.py</code> exit 0（7 s）。和 38r3 相比只有上面两段 print 不同。</li>
+<li><code>38_figs.py</code> exit 0（15 s）。16 张 PNG 和仓库逐字节相同，输出和 38r3 完全相同。</li>
+<li><code>spice/38/run.py</code> exit 0（188 s），25 项，输出和 38r3 完全相同。ε 测试 9.195 mV，页面 9.25 mV（−0.59%）。tone(51) 纹波峰峰的 −35% 是旧有项，复核 3 已说明，不是新问题。</li>
+<li>没有往仓库写文件（只有 <code>__pycache__</code> 和 img 重生成在副本里，内容相同）。</li>
+</ul>
+</li>
+<li>页面代码块：page2_block1、page4_block2 exit 0。page2_block2 是标了「不运行」的填空块，NameError 是预期的。运行时没有生成新文件。</li>
+<li>page4 程序块和 <code>code/38_lockin/38_lockin.ino</code> 逐字相同。</li>
+<li>其他检查：
+<ul>
+<li>粗体扫描：p2 20/20、p3 22/22、p4 38/38，没有残留 <code>*</code>（L209 新增的 <code>**先拔电池、再拔 USB**</code> 正常渲染）。</li>
+<li>check_github_math、check_figs（p3 3 图、p4 6 图）OK。</li>
+<li>表格列数一致，相对链接都存在。</li>
+<li>写报告前页面和 <code>38_sim.py</code> 再次与仓库 cmp，结果一致。</li>
+</ul>
+</li>
+</ul>
+<p><strong>必改</strong>：无。
+<strong>建议</strong>：无新增。</p>
+<p><strong>剩余必改 0。</strong></p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

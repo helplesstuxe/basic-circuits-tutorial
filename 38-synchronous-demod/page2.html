@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38 同步检波 · 原理与实现篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/38-synchronous-demod/page2.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="38-同步检波--原理与实现篇">38 同步检波 · 原理与实现篇</h1>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥</a>、<a href="../09-precision-rectifier/page2.html">09 精密整流</a>、<a href="../20-active-filter/page1.html">20 有源滤波</a></p>
+<h2 id="这一页要解决的问题">这一页要解决的问题</h2>
+<p><a href="page1.html">直觉篇</a> 说了同步检波的想法：按参考的正负把读数乘 +1 或 −1，再求平均。这一页把四件事算清楚：</p>
+<ol>
+<li>为什么&quot;乘 ±1 再平均&quot;能把直流消掉、把信号留下；</li>
+<li>参考和信号的相位差了一点，读数会少多少（相位定律）；</li>
+<li>为什么励磁频率选 6.25 Hz，而不是 7.14 Hz 或 16.7 Hz；</li>
+<li>电路里的&quot;乘 ±1&quot;怎么用一只运放、一只模拟开关和一只比较器做出来，整条信号链每一级的数是多少。</li>
+</ol>
+<h2 id="一乘-1-再平均">一、乘 ±1 再平均</h2>
+<p>设输入 x 是一个直流 2 加上一个幅度 0.5、和参考同步翻号的方波（单位任意），参考 r 在 +1 和 −1 之间翻。见图 38-p2-1：</p>
+<p><a class="img-link" href="img/38_p2_1_times_pm1.png"><img alt="三行波形：输入是直流加小方波，参考是正负一方波，乘积是两者相乘的结果，各自画出平均线" src="img/38_p2_1_times_pm1.png" loading="lazy" /></a></p>
+<p><em>图 38-p2-1　输入 x、参考 r 和乘积 y = x·r</em></p>
+<p>图 38-p2-1 第一行，x 的平均是 2.00，里面只有直流，方波的正负两半互相抵消了。第三行，y = x·r：参考为 +1 时 y = 2 + 0.5 = 2.5，参考为 −1 时 y = −(2 − 0.5) = −1.5，两者平均 (2.5 − 1.5)/2 = 0.50，正好是方波的幅度，直流 2 不见了。</p>
+<p>写成式子：信号 <span class="math math-inline">\(x = D + A \cdot r\)</span> ，其中 D 是直流， A 是幅度，参考 r 只取 ±1，所以 <span class="math math-inline">\(r^2 = 1\)</span> ：</p>
+<div class="math math-display">\[\overline{x \cdot r} = D \cdot \overline{r} + A \cdot \overline{r^2} = D \cdot 0 + A = A\]</div>
+<p>只要参考在一段时间里 +1 和 −1 各占一半（ <span class="math math-inline">\(\overline{r} = 0\)</span> ），直流 D 有多大都没关系。这就是同步检波不怕极化电压的原因。注意前提是&quot;各占一半&quot;：占空比偏一点点，直流就会漏进来， <a href="page3.html">参数与调试篇</a> 会算漏多少。</p>
+<h2 id="二相位定律参考错开了会怎样">二、相位定律：参考错开了会怎样</h2>
+<p>实际电路里，参考不一定和信号完全对齐。设参考比信号超前 φ。两个都是方波时，一个周期（2π）里有两段、每段长 φ 的时间两者异号，合起来占周期的 φ/π（乘积为 −1）；其余 1 − φ/π 的时间同号（乘积为 +1），平均值是 (1 − φ/π) − φ/π，即</p>
+<div class="math math-display">\[\overline{s \cdot r} = 1 - \frac{2\varphi}{\pi} \qquad (0 \le \varphi \le \pi)\]</div>
+<p>例：φ = 45° 时异号占周期的 1/4，平均 3/4 − 1/4 = 1/2。用角度说就是 <span class="math math-inline">\(1 - \varphi/90^\circ\)</span> ：45° 剩一半，90° 剩 0，180° 变成 −1。图 38-p2-2 把这条&quot;三角形定律&quot;和正弦信号的情况画在一起：</p>
+<p><a class="img-link" href="img/38_p2_2_phase_law.png"><img alt="横轴是参考比信号超前的相位，从零到一百八十度；纵轴是平均值除以信号幅度；画了两条曲线和五个点" src="img/38_p2_2_phase_law.png" loading="lazy" /></a></p>
+<p><em>图 38-p2-2　相位定律：方波 × 方波是三角形，正弦 × 方波是余弦</em></p>
+<ul>
+<li>正弦信号 × 方波参考，平均是 <span class="math math-inline">\((2/\pi) \cdot \cos\varphi\)</span> 。 <span class="math math-inline">\(\varphi = 0\)</span> 时是 0.637，和 <a href="../09-precision-rectifier/page2.html">09 精密整流 · 原理与实现篇</a> 里全波整流的平均值是同一个数：参考完全对齐时，同步检波和精密整流做的是同一件事。</li>
+<li>图 38-p2-2 里的五个圆点是 Arduino 的<strong>数字法</strong>（ <code>code/38_sim.py</code> 第 6 节）：它每个半周期只采后一半。0°～90° 之间圆点一直贴在 1 附近，到 135° 才掉到 0。原因是参考错开不到 90° 时，参考的&quot;后一半&quot;仍然整段落在信号的同一个半周期里——这正是 <a href="page1.html">直觉篇</a> 说的&quot;只用后半段&quot;的另一个好处。真的线圈换向要花几毫秒（预告： <a href="../39-constant-current-excitation/page1.html">39 恒流励磁</a> 会算这段时间），只采后半段正好躲开它。模拟电路做不到&quot;只用后一半&quot;，它老老实实走三角形。</li>
+</ul>
+<h2 id="三为什么选-625-hz">三、为什么选 6.25 Hz</h2>
+<p>参考方波可以拆成一串正弦：基波 f，再加 3f、5f、7f…（只有奇次谐波，幅度是基波的 1/3、1/5、1/7…）。乘法 + 平均只会留下&quot;频率和参考里某个成分相同&quot;的东西。所以：</p>
+<ul>
+<li>50 Hz 如果正好是励磁频率的<strong>奇数倍</strong>，就撞上了参考的某个谐波，会漏进读数。算一下：50 Hz 是第 n 次谐波时，最多漏进 <span class="math math-inline">\(2/(n\pi)\)</span> 倍的干扰幅度。n = 3 时是 21.2%，n = 7 时是 9.09%。</li>
+<li>50 Hz 是<strong>偶数倍</strong>时，参考里根本没有这个成分，长时间平均后完全抵消。从时间上看也一样：一个半周期里装下整数个 50 Hz 周期。</li>
+</ul>
+<p>图 38-p2-3 是 <code>code/38_sim.py</code> 第 5 节对五个候选频率的数值结果：</p>
+<p><a class="img-link" href="img/38_p2_3_harmonics.png"><img alt="五根柱子，分别是五个候选励磁频率下五十赫兹干扰的残留百分比" src="img/38_p2_3_harmonics.png" loading="lazy" /></a></p>
+<p><em>图 38-p2-3　五个候选励磁频率下，50 Hz 干扰残留多少</em></p>
+<p>图 38-p2-3 里 16.7 Hz（50 Hz 是第 3 次）剩 21.20%，7.14 Hz（第 7 次）剩 9.10%（数值积分结果，和公式的 9.09% 相差在积分误差内）；8.33 Hz、6.25 Hz、5 Hz 都是偶数倍，剩 0.00%。本节选 6.25 Hz，有三个原因：50 Hz 是它的第 8 次谐波；半周期 80 ms 恰好是 4 个 50 Hz 周期，所以 P、N 两个采样窗相隔整数个干扰周期、干扰相减抵消（这是主要原因），后一半 40 ms 又恰好是 2 个 50 Hz 周期，单窗平均本身也接近 0，算是锦上添花；Arduino 的 Timer1 用整数分频就能精确做出来（下面第五节）。</p>
+<h2 id="四电路怎么乘-1">四、电路怎么&quot;乘 ±1&quot;</h2>
+<p>图 38-p2-4 是本节的核心一级：</p>
+<p><a class="img-link" href="img/38_p2_4_pm1_stage.png"><img alt="运放 U3B 接成可切换的放大器，同相端经模拟开关接信号或中点参考，开关的选择脚由比较器 LM393 驱动，比较器输入接 Arduino 的参考方波" src="img/38_p2_4_pm1_stage.png" loading="lazy" /></a></p>
+<p><em>图 38-p2-4　±1 级：U3B + CD4053 + LM393 电平转换</em></p>
+<p>U3B 的反相端经 R11 接输入 fo，R12 接在输出和反相端之间，R11 = R12 = 10 kΩ。同相端经 CD4053 的一个 2 选 1 开关，接 fo 或 V_MID：</p>
+<ul>
+<li><strong>选 AY（同相端 = fo）</strong>：同相端和反相端都是 fo，R11 上没有电流，R12 上也没有电流，输出 = fo，倍数 +1。</li>
+<li><strong>选 AX（同相端 = V_MID）</strong>：同相端是 V_MID，就是 <a href="../05-inverting-amp/page2.html">05 反相放大 · 原理与实现篇</a> 的反相放大器，只不过&quot;地&quot;换成了 V_MID。输出对 V_MID 是 <span class="math math-inline">\(-(R_{12}/R_{11}) \cdot (f_o - V_{MID})\)</span> ，倍数 −1。</li>
+</ul>
+<p>两种状态下输入 fo 都直接接 R11，不经过开关；开关只串在同相端，同相端几乎不取电流，CD4053 几百欧的导通电阻（ <a href="../34-switched-cap-filter/page2.html">34 开关电容滤波与跟踪滤波 · 原理与实现篇</a> 讲过）上没有压降，不影响倍数。</p>
+<p><strong>为什么要电平转换</strong>：CD4053 接 9 V 电源时，选择脚要接近 9 V 的七成才认作 1（TI 数据手册 <a href="https://www.ti.com/lit/ds/symlink/cd4053b.pdf">https://www.ti.com/lit/ds/symlink/cd4053b.pdf</a> 给的是：VDD = 5 V 时 3.5 V，VDD = 10 V 时 7 V），Arduino 的高电平只有 5 V，够不着。图 38-p2-4 里用 LM393 比较器（ <a href="../10-voltage-comparator/page1.html">10 电压比较器</a> ）来转：同相端接 Arduino 的 D10，反相端接 2.5 V 门限；LM393 的输出是&quot;开集电极&quot;，只会往下拉，往上靠一只上拉电阻 RU 拉到 9 V（ <a href="../29-pullup-level-shift/page2.html">29 上拉/下拉电阻与电平转换</a> 讲的就是这种接法）。D10 高时输出管断开，选择脚被拉到 9 V；D10 低时输出管导通，选择脚接近 0 V。LM393 的数据手册见 <a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> 。</p>
+<p>另外两种做法：</p>
+<ul>
+<li><strong>CD40109B</strong>：专门的&quot;低压到高压&quot;电平转换芯片，一边接 5 V、一边接 9 V，四路（数据手册 <a href="https://www.ti.com/lit/ds/symlink/cd40109b.pdf">https://www.ti.com/lit/ds/symlink/cd40109b.pdf</a> ）。效果一样，只是多一种芯片。</li>
+<li><strong>74HCT 系列</strong>：它的输入能认 5 V 单片机的电平，但它自己只能接 5 V 电源，输出最高 5 V，<strong>仍然推不动 9 V 的 CD4053</strong>，不能用。</li>
+</ul>
+<h2 id="五整条信号链和每一级的数">五、整条信号链和每一级的数</h2>
+<p>把直觉篇的流量计换成实验用的&quot;模拟电极&quot;，整条链如下（数字都来自 <code>code/38_sim.py</code>）：</p>
+<ol>
+<li><strong>模拟电极</strong>：Arduino D9 输出 0/5 V、6.25 Hz 方波，经 RS1 = 1 MΩ 接 P 点；P 点经 RS2 = 1 kΩ 接 V_MID。P 点对 V_MID 的方波幅度 E = 2.4492 mV（第 1 节）。D5 经 CN、RN = 100 kΩ 加 50 Hz 干扰，±24.49 mV；电位器 RP 经 RD = 100 kΩ 加一个可调的直流，相当于&quot;极化电压&quot;，范围 −46.49～+42.53 mV。</li>
+<li><strong>仪表放大器</strong>：沿用 <a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥 · 原理与实现篇</a> 的三运放电路，RG = 1 kΩ，倍数 21，REF 接 V_MID。最坏情况下输出离 V_MID 1.542 V，离 9 V 单电源 LM358 的 3.0 V 余量还有一半（第 2 节）。反过来说，仪放输入的差模直流超过 3.0 V ÷ 21 ≈ 143 mV 就会顶到头。</li>
+<li><strong>交流耦合</strong>：CH = 10 µF、RH = 100 kΩ，转折频率 0.159 Hz，把仪放输出里的直流（包括极化电压 × 21 和仪放自己的失调 × 21）隔掉；80 ms 半周期内方波下垂 7.7%（第 7 节）。</li>
+<li><strong>跟随器 U3A</strong>：给 ±1 级一个低内阻的输入，后面的 R11 不会拖累 RH。</li>
+<li><strong>±1 级 U3B</strong>：上一节。</li>
+<li><strong>RC 低通求平均</strong>：RF = 100 kΩ、CF = 10 µF，τ = 1 s。读数接在 J、K 之间（J 是 RC 的输出，K 是 V_MID），稳定后理论上是 G·E = 21 × 2.4492 = 51.43 mV；算上 RF 和万用表 10 MΩ 内阻的分压（0.9901 倍）和交流耦合的下垂，模拟结果是 50.89 mV（第 7 节）。RC 低通的原理见 <a href="../20-active-filter/page1.html">20 有源滤波 · 直觉篇</a> 。</li>
+<li><strong>数字法</strong>：仪放输出另经 10 kΩ/10 kΩ 分压接 A0（0～9 V 变成 0～4.5 V，不超过 Arduino 的 5 V），Arduino 每 1 ms 读一次，按 D10 的状态加或减，只用每个半周期的后 40 ms。A0 上的信号只有 25.72 mV，合 5.27 个最小刻度（1 LSB = 4.88 mV，第 6 节）。</li>
+</ol>
+<p><strong>Timer1 怎么做出 6.25 Hz</strong>：16 MHz 时钟 256 分频，每计 5000 个数（TOP = 4999）D9 翻一次，半周期 = 5000 × 256 ÷ 16 MHz = 80.0 ms。D10 用同一个定时器的另一个比较通道，所以和 D9 严格同步；把它提前 k 个计数，就是超前 k × 0.036°，45° 对应 1250 个计数（第 3 节）。代价是 D9、D10 不能再用 analogWrite（这两个脚的 PWM 本来就靠 Timer1）；D5 的 tone() 占用 Timer2（Arduino 核心源码 <a href="https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/Tone.cpp">https://github.com/arduino/ArduinoCore-avr/blob/master/cores/arduino/Tone.cpp</a> ），官方参考写明它会干扰 D3、D11 的 PWM 输出（ <a href="https://github.com/arduino/reference-en/blob/master/Language/Functions/Advanced%20IO/tone.adoc">https://github.com/arduino/reference-en/blob/master/Language/Functions/Advanced IO/tone.adoc</a> ）。 <a href="page4.html">动手实验篇</a> 的程序注释里也写了这两条。</p>
+<h2 id="用-python-算一遍">用 Python 算一遍</h2>
+<pre><code class="language-python">import math
+
+# 1. 模拟电极：P 点对 V_MID 的方波幅度
+VIO, RS1, RS2, RN, RD, RW = 5.0, 1e6, 1e3, 100e3, 100e3, 2.5e3   # RW：电位器居中时的内阻
+rp = 1 / (1 / RS2 + 1 / RN + 1 / (RD + RW))          # P 点到&quot;交流地&quot;的并联电阻
+E = VIO / 2 * rp / (RS1 + rp)
+print(f&quot;并联电阻 {rp:.2f} Ω，E = {E*1e3:.4f} mV；只算 RS1、RS2：{VIO/2*RS2/(RS1+RS2)*1e3:.4f} mV&quot;)
+print(f&quot;仪放 ×21 后：{21*E*1e3:.2f} mV&quot;)
+
+# 2. 相位定律（方波 × 方波）
+for phi in (0, 45, 90, 135, 180):
+    print(f&quot;φ = {phi:3d}°：平均 = {1 - phi/90:+.3f}&quot;)
+print(f&quot;正弦 × 方波，φ = 0：{2/math.pi:.3f}&quot;)
+
+# 3. 50 Hz 是第 n 次谐波时最多漏多少
+for fe in (50/3, 50/7, 50/6, 6.25, 5.0):
+    n = 50 / fe
+    left = 2 / (round(n) * math.pi) if round(n) % 2 == 1 else 0.0
+    print(f&quot;励磁 {fe:6.3f} Hz：n = {n:.0f}，最多漏 {left*100:.2f}%&quot;)
+
+# 4. Timer1：256 分频、TOP = 4999
+half = (4999 + 1) * 256 / 16e6
+print(f&quot;半周期 {half*1e3:.1f} ms，励磁 {1/(2*half):.2f} Hz，1 个计数 = {180/5000:.3f}°，45° = {45/(180/5000):.0f} 个计数&quot;)
+</code></pre>
+<p>运行结果：E = 2.4492 mV（只算 RS1、RS2 是 2.4975 mV），仪放后 51.43 mV；相位定律 +1、+0.5、0、−0.5、−1；16.67 Hz 漏 21.22%，7.14 Hz 漏 9.09%，其余 0；半周期 80.0 ms，45° = 1250 个计数。和 <code>code/38_sim.py</code> 一致（第 5 节的 21.199% 和 9.104% 是数值积分，与公式差在小数点后两位）。</p>
+<h2 id="例题">例题</h2>
+<p><strong>例1（完整）</strong>：求本节夹具 P 点上的信号幅度 E。</p>
+<ol>
+<li>D9 在 0 V 和 5 V 之间翻，平均 2.5 V，交流部分是 ±2.5 V。</li>
+<li>对交流来说，V_MID、电位器滑动端、D5（经 CN）都相当于&quot;不动的点&quot;，所以 RS2、RN、RD + 电位器内阻三者并联：1 kΩ ∥ 100 kΩ ∥ 102.5 kΩ = 980.63 Ω。电位器居中时滑动端的内阻是 10 kΩ × 0.5 × 0.5 = 2.5 kΩ。</li>
+<li>分压：E = 2.5 V × 980.63 ÷ (1 000 000 + 980.63) = 2.4492 mV。</li>
+<li>如果用 SPICE 的直流工作点（.op）分别算 D9 = 5 V 和 0 V 两种情况再相减，CN 对直流是断开的，RN 不并进来，并联电阻是 990.34 Ω，E = 2.4734 mV，比瞬态大约 1%。<a href="page4.html">动手实验篇</a> 第 3 步用串口命令让 D9 停住时，量到的就是这个&quot;静态&quot;值。</li>
+</ol>
+<p><strong>例2（留空）</strong>：RS1 换成 2.2 MΩ，其他不变，E 和仪放输出各是多少？</p>
+<pre><code class="language-python"># 不运行：先把每个 ____ 换成算式，再删掉这一行
+rp = 980.63
+E = 2.5 * ____ / (____ + rp)
+print(E * 1e3, 21 * E * 1e3)
+</code></pre>
+<details><summary>答案</summary>
+<p>E = 2.5 × 980.63 ÷ (2 200 000 + 980.63) = 1.1139 mV，仪放输出 23.39 mV。静态（CN 断开）时是 1.1249 mV。</p>
+</details>
+<p><strong>例3（变体迁移）</strong>：想把励磁改成 5 Hz，Timer1 仍用 256 分频，TOP 取多少？1 个计数对应多少度？程序里还有哪些数要跟着改？50 Hz 干扰会漏进来吗？</p>
+<details><summary>答案</summary>
+<p>半周期 100 ms = 0.1 s × 16 MHz ÷ 256 = 6250 个计数，TOP = 6249；1 个计数 = 180° ÷ 6250 = 0.0288°。跟着改的数：OCR1B = TOP − leadCounts（不能还是 4999 − leadCounts，否则 D10 比 D9 早 1250 个计数 = 36°，模拟检波那一路读数只剩 1 − 2 × 36°/180° = 60%）；BLANK_US 改成半周期的一半 50 ms；45°、90° 的计数改成 1562、3125。 <a href="page4.html">动手实验篇</a> 的程序已经把这些都写成由 <code>TOP</code> 算出，只改 <code>TOP</code> 一行即可（数字见 <code>code/38_sim.py</code> 第 8 节末尾）。50 Hz 是 5 Hz 的第 10 次谐波，偶数，不漏；一个半周期装下 5 个 50 Hz 周期。代价是读数更新变慢一些。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<ul>
+<li>参考 r 只取 ±1 且两半各占一半时， <span class="math math-inline">\(\overline{x \cdot r}\)</span> 只留下和参考同步翻号的幅度，直流被消掉。</li>
+<li>方波 × 方波的相位定律是三角形 <span class="math math-inline">\(1 - \varphi/90^\circ\)</span> ；正弦 × 方波是 <span class="math math-inline">\((2/\pi) \cdot \cos\varphi\)</span> ，φ = 0 时 0.637，和全波整流相同。</li>
+<li>50 Hz 要落在励磁的偶数倍上；6.25 Hz 半周期 80 ms 装 4 个 50 Hz 周期。</li>
+<li>±1 级：同相端经 CD4053 切 fo 或 V_MID，倍数 +1 或 −1；Arduino 的 5 V 要经 LM393 + 9 V 上拉转成 9 V 才推得动 CD4053。</li>
+<li>夹具 E = 2.4492 mV，仪放后 51.43 mV，RC 平均后万用表读 50.89 mV。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

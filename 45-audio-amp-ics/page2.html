@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/45-audio-amp-ics/page2.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="45-集成功放芯片与散热保护--原理与实现篇">45 集成功放芯片与散热保护 · 原理与实现篇</h1>
-<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../43-push-pull-power-amp/page2.html">43 推挽功放 · 原理与实现篇</a>、44 节 D 类功放（即将上线）、<a href="../21-linear-regulator/page2.html">21 线性稳压 · 原理与实现篇</a></p>
+<p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../43-push-pull-power-amp/page2.html">43 推挽功放 · 原理与实现篇</a>、<a href="../44-class-d-amp/page2.html">44 D 类功放 · 原理与实现篇</a>、<a href="../21-linear-regulator/page2.html">21 线性稳压 · 原理与实现篇</a></p>
 <h2 id="最小知识">最小知识</h2>
 <p>本页要用到三件事：</p>
 <ul>
@@ -177,7 +177,7 @@ for f in (20, 100, 200, 1000):                    # 几个频率 / Hz
 <li><strong>负载越小，发热越大</strong>：同样 9 V，直接接 8 Ω 时 <span class="math math-inline">\(P_{D,max}\)</span> 约 0.552 W，是 18 Ω 时的两倍多。10 Ω 串联电阻也在保护芯片。</li>
 </ol>
 <h2 id="五pam8403btl-的两个输出为什么都停在-25-v">五、PAM8403：BTL 的两个输出为什么都停在 2.5 V</h2>
-<p>PAM8403 每个声道里有两个「半桥」：每个半桥是一个上管加一个下管，输出只在 0 V 和 5 V 之间切换。两个半桥的输出接喇叭两端，就是 44 节 D 类功放（即将上线） 讲过的 BTL，只是它不用 LC 滤波器，靠喇叭线圈本身来平均。</p>
+<p>PAM8403 每个声道里有两个「半桥」：每个半桥是一个上管加一个下管，输出只在 0 V 和 5 V 之间切换。两个半桥的输出接喇叭两端，就是 <a href="../44-class-d-amp/page2.html">44 D 类功放</a> 讲过的 BTL，只是它不用 LC 滤波器，靠喇叭线圈本身来平均。</p>
 <p><a class="img-link" href="img/45_p2_4_pam_btl.png"><img alt="PAM8403 一个声道的 BTL 输出示意：左边 +5 V 同时供给半桥 A 和半桥 B，半桥 A 输出 OUT+，半桥 B 输出 OUT−，喇叭和 10 Ω 电阻接在两者之间，两端都不接地；橙色虚线和叉号标出任何一端接 GND 就是短路；右边两列波形：左列「没有输入」时 OUT+、OUT− 都是 0 到 5 V、占空比 50% 的方波，两路几乎同相，平均都是 2.50 V，喇叭两端 OUT+ − OUT− 只剩很窄的正负尖峰，平均 0 V；右列「有输入（示例）」时 OUT+ 占空比 65%、平均 3.25 V，OUT− 占空比 35%、平均 1.75 V，喇叭两端是一串正脉冲，平均 1.50 V" src="img/45_p2_4_pam_btl.png" loading="lazy" /></a></p>
 <p><em>图 45-p2-5　无滤波 BTL 输出示意：没有输入时两端各自平均 2.5 V、喇叭两端平均 0 V；有输入时一高一低</em></p>
 <p>看图 45-p2-5：</p>

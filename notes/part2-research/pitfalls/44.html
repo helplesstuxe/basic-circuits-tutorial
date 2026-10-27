@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 D 类放大与 PWM · 误区与排查（反方研究员）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/pitfalls/44.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="44-d-类放大与-pwm--误区与排查反方研究员">44 D 类放大与 PWM · 误区与排查（反方研究员）</h1>
+<blockquote>
+<p>依据：</p>
+<ul>
+<li>notes/44-research.md；</li>
+<li>本地 DRV8871 数据手册（/workspace/pdfs/drv8871.txt，TI SLVSCY9 系列）；</li>
+<li>TI SLAA701B（本人已用 curl 下载并核对相关段落）；</li>
+<li>本地 TL072 数据手册。</li>
+</ul>
+<p>「本人计算」只作演示。</p>
+</blockquote>
+<h2 id="a-新手误区与边界失效">A. 新手误区与边界失效</h2>
+<h3 id="a1硬伤载波-2030-khzlc-截止频率也是-30-khz载波几乎原样加到喇叭上">A1（硬伤）载波 20–30 kHz，LC 截止频率也是 30 kHz：载波几乎原样加到喇叭上</h3>
+<ul>
+<li><strong>现象</strong>：
+<ul>
+<li>喇叭和电感发热；示波器上喇叭两端是很大的三角波或方波残余。</li>
+<li>效率远低于「90 %」，DRV8871 也发烫。</li>
+</ul>
+</li>
+<li><strong>原因</strong>：
+<ul>
+<li>研究笔记中 LC 的 f0 取 30 kHz（Q = 0.707），page4 的载波是 20–30 kHz。二阶滤波器在 f0 处只衰减 3 dB，载波基本没有被滤掉。</li>
+<li>SLAA701B §1.4.2 指出：没有 LC 滤波时，负载上是完整的 PWM，会造成「high power dissipation, poor efficiency, and potential speaker damage」；f0 相对开关频率越低，纹波越小。</li>
+<li>搜索得到的 DIY 资料（Class-D for DIY）建议的组合是开关频率 300–600 kHz、f0 约 30 kHz。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器两个通道分别测喇叭两端，用 A−B 运算（不要用地夹，见 A6），看载波残余的峰峰值。</li>
+<li><strong>修复</strong>（面包板上二选一）：
+<ul>
+<li>载波提高到约 100 kHz。注意 DRV8871 在 200 kHz 以下可用，概述中写的是 0–100 kHz，见 A5。</li>
+<li>或者 f0 降到 5–8 kHz，作为演示，接受高音被削弱。</li>
+<li>二阶滤波在 f0 以上每十倍频衰减 40 dB：f0 = 10 kHz、载波 100 kHz 时约衰减 40 dB（本人计算）。</li>
+<li>正文的推导第 4 步已经写了「远低于载波」，但算例和 page4 与这一条矛盾，需要统一。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI SLAA701B <a href="https://www.ti.com/lit/an/slaa701b/slaa701b.pdf">https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</a> （已下载核对 §1.4.2）；Class-D for DIY <a href="https://schematicsforfree.com/files/Audio/Circuits/Power%20Amplifiers/Class%20D/Design%20Info/Class%20D%20for%20DIY.pdf">https://schematicsforfree.com/files/Audio/Circuits/Power Amplifiers/Class D/Design Info/Class D for DIY.pdf</a> （仅搜索确认）。</li>
+</ul>
+<h3 id="a2-纹波电流与电感饱和用色环电感或小工字电感一放音就失真发烫">A2 纹波电流与电感饱和：用色环电感或小工字电感，一放音就失真、发烫</h3>
+<ul>
+<li><strong>现象</strong>：电感很烫；波形在大信号时变尖、失真；DRV8871 触发限流（见 A4）。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>SLAA701B 给出 AD 调制空载（50 %）时，每只电感的峰值纹波 I = PVDD / (2L) × 1/(4·f_PWM) = PVDD / (8 L f_PWM)。</li>
+<li>本人代入 12 V、60 µH、30 kHz：0.83 A。如果只在一个支路放一只 60 µH，电感两端承受 ±12 V，约为 1.67 A（本人计算）。</li>
+<li>SLAA701B §1.4.1 指出，电感量随电流下降，到 Isat 后「falls off severely」。小信号色环电感的 Isat 往往只有几百 mA（[待核实]：依型号而定）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：
+<ul>
+<li>看电感规格书上的 Isat 和 DCR。</li>
+<li>在电感支路串一只 0.1 Ω 电阻，用示波器看电流波形：三角形变尖就是饱和。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：选 Isat ≥ 峰值音频电流 + 峰值纹波（本例 ≥ 2 A）的功率电感；提高 f_PWM 或增大 L 来减小纹波。</li>
+<li><strong>来源</strong>：TI SLAA701B §1.4.1、§1.4.2（已核对，同 A1）。</li>
+</ul>
+<h3 id="a3硬伤drv8871-的-in2-接地in1-接-pwm喇叭上有-6-v-直流">A3（硬伤）DRV8871 的 IN2 接地、IN1 接 PWM：喇叭上有 6 V 直流</h3>
+<ul>
+<li><strong>现象</strong>：没有信号时喇叭也发热；纸盆被推到一边；音质很差，有明显失真。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>DRV8871 的真值表（Table 1）：IN1 = 1、IN2 = 0 为正转（OUT1 = H、OUT2 = L）；IN1 = 0、IN2 = 0 为 Coast（High-Z），持续 1 ms 后进入睡眠。</li>
+<li>只对 IN1 做 PWM，OUT 是单向的。空载占空比 50 % 时，平均约为 6 V 直流，加在 18 Ω 上约 0.33 A，即 2 W（本人计算）。而且 High-Z 期间输出不受控，非线性。</li>
+<li>SLAA701B 也强调：空载时电感电流必须以 0 为中心，否则「DC offset across the speaker」。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：断开交流信号，万用表 DC 档测喇叭两端，应 &lt; 50 mV（本人建议值）。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>IN1 与 IN2 互补驱动：IN2 = NOT IN1，可用第二个 LM393 比较器交换输入端得到。这样就成为全桥 BTL，50 % 时差分平均为 0。</li>
+<li>或者 IN1 = PWM、IN2 = 1（在正转与刹车之间切换），但这样仍然是单向的，只适合演示，不能接喇叭。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：DRV8871 数据手册 Table 1、§7.3.1、§7.3.2（本地已核对）<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a> ；TI SLAA701B（同 A1）。</li>
+</ul>
+<h3 id="a4-drv8871-的电流调节和过流保护会削音频">A4 DRV8871 的电流调节和过流保护会「削」音频</h3>
+<ul>
+<li><strong>现象</strong>：大音量时出现周期性断续、「咔咔」声；或者输出时有时无，节奏约 3 ms。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>DRV8871 的 I_TRIP 由 ILIM 引脚的电阻设定（V_ILIM 典型 64 kV，即 I = 64 kV / R_ILIM，例如 32 kΩ → 2 A；R_ILIM 最小 15 kΩ）。超过后会斩波，关断 t_OFF 典型 25 µs。</li>
+<li>OCP 最小 3.7 A，触发后重试 t_RETRY 3 ms。</li>
+<li>纹波（A2）加上音频峰值，或 LC 谐振，都可能触发。</li>
+<li>模块上的 R_ILIM 是多少要看具体板子（[待核实]）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器看 OUT 上是否有 25 µs 的空缺；或者是否有 3 ms 周期的通断。</li>
+<li><strong>修复</strong>：计算峰值电流（12 V / 18 Ω ≈ 0.67 A，加上纹波），使 I_TRIP 留有余量；减小纹波（A2）。</li>
+<li><strong>来源</strong>：DRV8871 数据手册 §6.5 / §7.3.3（本地已核对，同 A3）。</li>
+</ul>
+<h3 id="a5-最小脉宽与载波上限数据手册里有-100-khz-和-200-khz-两种说法">A5 最小脉宽与载波上限：数据手册里有 100 kHz 和 200 kHz 两种说法</h3>
+<ul>
+<li><strong>现象</strong>：调制度大时（接近波峰），输出脉冲丢失，波形削顶。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>DRV8871 推荐的 f_PWM 上限是 200 kHz，附注说输入脉宽「at least 800 ns」（典型 400 ns）；200 kHz 时可用占空比只有 16–84 %。</li>
+<li>概述 §7.1 写的是「frequencies between 0 to 100 kHz」。</li>
+<li>此外还有 220 ns 的死区，LM393 的响应时间也有 0.3–1.3 µs（见 37 节）。</li>
+<li>30 kHz 时周期为 33 µs，800 ns 对应约 2.4 %–97.6 % 的可用范围（本人计算）。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器同时看比较器输出和 OUT1，在最窄的脉冲处比较。</li>
+<li><strong>修复</strong>：载波 ≤ 100 kHz；三角波幅度略大于信号峰值，使调制度 ≤ 90 %。</li>
+<li><strong>来源</strong>：DRV8871 数据手册 §6.3 附注、§7.1（本地已核对，同 A3）。</li>
+</ul>
+<h3 id="a6-示波器地夹夹在-btl-输出上短路">A6 示波器地夹夹在 BTL 输出上：短路</h3>
+<ul>
+<li>研究笔记已列出。补充：
+<ul>
+<li>DRV8871 的 OUT1、OUT2 都不是地，任何一端接地夹都会把那半桥对地短路，触发 OCP。</li>
+<li>正确做法：两个通道做 A−B；或者只测「OUT 对 GND」的单端波形，不夹在输出上。</li>
+<li>示波器接地见 ESE 462446（30 节已打开）<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a> 。</li>
+</ul>
+</li>
+</ul>
+<h3 id="a7-lm393-上拉接-12-vdrv8871-的输入会损坏">A7 LM393 上拉接 12 V：DRV8871 的输入会损坏</h3>
+<ul>
+<li><strong>现象</strong>：DRV8871 不工作，或者发烫后损坏。</li>
+<li><strong>原因</strong>：DRV8871 的 IN1 / IN2 推荐工作范围为 0–5.5 V，绝对最大为 7 V；VIH 只需 1.5 V。LM393 是开集电极输出，上拉电压由用户决定。</li>
+<li><strong>排查</strong>：万用表测 IN1 的高电平。</li>
+<li><strong>修复</strong>：上拉到 5 V（1–2.2 kΩ）。Arduino 的 5 V 可以当上拉电源。</li>
+<li><strong>来源</strong>：DRV8871 数据手册 §6.1 / §6.3 / §6.5（本地已核对，同 A3）。</li>
+</ul>
+<h3 id="a8-三角波与信号的偏置中心不一致又一种直流偏移">A8 三角波与信号的偏置中心不一致：又一种直流偏移</h3>
+<ul>
+<li><strong>现象</strong>：没有信号时占空比 ≠ 50 %，喇叭上有直流（见 A3 的排查）。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>三角波的中心由积分器和 TL072 的工作点决定，信号的中心由另一个分压网络决定，两者差 0.1 V 就会带来可观的直流（本人推导）。</li>
+<li>另外，TL07xH 的共模输入范围是 (V−) + 1.5 V 到 V+，三角波的下沿不能接近 0 V。</li>
+</ul>
+</li>
+<li><strong>排查</strong>：示波器 DC 档分别测三角波的中心和信号的中心。</li>
+<li><strong>修复</strong>：两路都接到同一个分压跟随虚地（BRIEF §10）。信号经电容耦合进来；三角波的积分器以虚地为参考。</li>
+<li><strong>来源</strong>：TL072 数据手册（本地，VCM 一行）<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> ；本人推导。</li>
+</ul>
+<h3 id="a9-比较器在过零附近抖动一个周期内翻转多次">A9 比较器在过零附近抖动：一个周期内翻转多次</h3>
+<ul>
+<li><strong>现象</strong>：PWM 边沿有毛刺，DRV8871 来回切换，发热增加，并出现嘶嘶声。</li>
+<li><strong>原因</strong>：信号和三角波都是慢变化的，面包板噪声和地弹会让 LM393 在交点附近多次翻转。</li>
+<li><strong>排查</strong>：示波器 50 ns/div，看 PWM 边沿。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>加很小的回差（例如 1 MΩ 正反馈，配合 10 kΩ 输入电阻，约 1 %，本人建议值）。回差会造成小的定时误差，所以要尽量小。</li>
+<li>LM393 就近接 100 nF 去耦；功率地与比较器地分开（B1）。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：本人推导；施密特回差见 36 节。</li>
+</ul>
+<h3 id="a10-arduino-的31-khz-pwm--rc演示不等于-d-类功放">A10 Arduino 的「31 kHz PWM + RC」演示不等于 D 类功放</h3>
+<ul>
+<li><strong>现象</strong>：学生以为 Arduino 能直接驱动喇叭。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>引脚电流有限：ATmega328P 每个 I/O 引脚绝对最大 40 mA（仅搜索确认的数据手册）。</li>
+<li>8 位分辨率；RC 低通不是 LC 低通，有电阻损耗，效率谈不上。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：对照实验只把输出接示波器或高阻负载，不接喇叭。</li>
+<li><strong>来源</strong>：ATmega328P 数据手册 <a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a> （仅搜索确认，40 mA [待核实]）。</li>
+</ul>
+<h3 id="a11-用万用表测效率读数不可信">A11 用万用表测效率：读数不可信</h3>
+<ul>
+<li><strong>现象</strong>：算出来的效率超过 100 %，或者很低。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>普通万用表 AC 档只对正弦有效（[待核实]：依表而定）。PWM 和三角波残余会让读数失真。</li>
+<li>电源电流里有大量载波成分。</li>
+</ul>
+</li>
+<li><strong>修复</strong>：输入功率测直流电源侧，并在 VM 上加大容量 bulk 电容（数据手册 §9.1 要求），让电源电流平滑后再读平均值；输出功率测 LC 之后的正弦，用 RMS，或者用示波器测量。</li>
+<li><strong>来源</strong>：DRV8871 数据手册 §9.1 Bulk Capacitance（本地已核对）。</li>
+</ul>
+<h2 id="b-面包板实操问题">B. 面包板实操问题</h2>
+<h3 id="b1-大-didt-回路走面包板地弹比较器误翻转emi">B1 大 di/dt 回路走面包板：地弹、比较器误翻转、EMI</h3>
+<ul>
+<li><strong>现象</strong>：附近的收音机或电脑音箱有嗡嗡、嘶嘶声；比较器输出混乱。</li>
+<li><strong>原因</strong>：开关电流的回路面积大，面包板的长导线就像天线。SLOA145 讨论过 D 类 EMC 需要 LC 或磁珠。</li>
+<li><strong>修复</strong>：
+<ul>
+<li>DRV8871、LC 和喇叭放在模块或洞洞板上，用短粗线连接。</li>
+<li>数据手册要求 VM 就近接 0.1 µF 加 bulk 电容（§9.1）。</li>
+<li>比较器单独接到地星形点。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI SLOA145 <a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a> （研究笔记作者已打开）；DRV8871 数据手册 §9.1。</li>
+</ul>
+<h3 id="b2-开机进入睡眠或晚启动">B2 开机进入睡眠或晚启动</h3>
+<ul>
+<li><strong>现象</strong>：开机后没有输出，要动一下信号才会出声。</li>
+<li><strong>原因</strong>：数据手册：「If the device is powered up while both inputs are low, sleep mode is immediately entered」。IN1 / IN2 有一端为高并持续 5 µs 后，还要再等 50 µs（t_ON）才开始工作。</li>
+<li><strong>修复</strong>：互补驱动（A3）可以保证总有一端为高。</li>
+<li><strong>来源</strong>：DRV8871 数据手册 §7.3.2（本地已核对）。</li>
+</ul>
+<h3 id="b3-电感drv887110-ω-电阻都会发热">B3 电感、DRV8871、10 Ω 电阻都会发热</h3>
+<ul>
+<li>研究笔记已提到。补充：
+<ul>
+<li>DRV8871 有 TSD（最小 150 °C），会自动恢复，表现为周期性断声。</li>
+<li>10 Ω / 5 W 电阻（研究笔记）在 6 V 直流故障（A3）下要承受约 1.1 W（本人计算），会发烫。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：DRV8871 数据手册 §6.5 TSD（本地已核对）。</li>
+</ul>
+<h2 id="c-对-44-researchmd-的意见">C. 对 <a href="http://44-research.md">44-research.md</a> 的意见</h2>
+<ol>
+<li><strong>f0 = 30 kHz 的 LC 配 20–30 kHz 的载波，相互矛盾（A1，硬伤）</strong>：要么把载波提高到约 100 kHz，要么把 f0 降低，并在正文统一。</li>
+<li><strong>DRV8871 的接法没有写（A3，硬伤）</strong>：必须用 IN1 / IN2 互补驱动；不能 IN2 接地，否则喇叭上有直流。</li>
+<li><strong>没有计算纹波电流和电感 Isat（A2）</strong>：SLAA701B §1.4.2 有现成公式，可以直接引用。</li>
+<li><strong>DRV8871 的输入电平限制（≤ 5.5 V）、限流和 OCP、睡眠都没提（A4、A7、B2）。</strong></li>
+<li><strong>f_PWM 上限的两种说法</strong>：研究笔记没写，数据手册内部有 100 kHz 和 200 kHz 两种说法，正文应取保守值（A5）。</li>
+<li><strong>「10 µH / 0.68 µF → 61 kHz」</strong>：作者已注明 BTL 等效以原文为准，本人没有核对 Type-1 原例的 BTL 换算，保留。</li>
+<li><strong>60 µH / 0.47 µF → 30.0 kHz</strong>：本人复核：1/(2π√(60e-6 × 0.47e-6)) ≈ 30.0 kHz，正确。但这个 f0 选得不合理（见第 1 条）。</li>
+<li><strong>「Arduino 采样观察 PWM」不可行</strong>：Arduino 采样率约 10 kS/s（[待核实]），远低于 20–30 kHz 的载波，看不到 PWM。建议改用示波器或 LED 亮度。</li>
+</ol>
+<h2 id="d-新手自查清单">D. 新手自查清单</h2>
+<ul>
+<li>[ ] 载波 ≥ 5 × f0（建议约 10 ×），而且 ≤ 100 kHz</li>
+<li>[ ] 电感是功率电感，Isat ≥ 2 A</li>
+<li>[ ] IN1 / IN2 互补驱动；没有信号时喇叭两端直流 &lt; 50 mV</li>
+<li>[ ] LM393 上拉到 5 V，不是 12 V</li>
+<li>[ ] 三角波和信号共用同一个虚地；调制度 ≤ 90 %</li>
+<li>[ ] 示波器不在 OUT1 / OUT2 上夹地；用 A−B 测量</li>
+<li>[ ] VM 上有 0.1 µF + bulk 电容，功率回路短而粗</li>
+<li>[ ] 已知道 R_ILIM 的值和 I_TRIP</li>
+</ul>
+<h2 id="e-参考链接汇总">E. 参考链接汇总</h2>
+<p>本地或下载核对：</p>
+<ul>
+<li>DRV8871 数据手册：<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a></li>
+<li>TI SLAA701B：<a href="https://www.ti.com/lit/an/slaa701b/slaa701b.pdf">https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</a></li>
+<li>TL072 数据手册：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a></li>
+</ul>
+<p>研究笔记作者已打开：</p>
+<ul>
+<li>TI SLOA145：<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a></li>
+</ul>
+<p>30 节已打开：</p>
+<ul>
+<li>ESE 462446：<a href="https://electronics.stackexchange.com/questions/462446">https://electronics.stackexchange.com/questions/462446</a></li>
+</ul>
+<p>仅搜索确认：</p>
+<ul>
+<li>Class-D for DIY：<a href="https://schematicsforfree.com/files/Audio/Circuits/Power%20Amplifiers/Class%20D/Design%20Info/Class%20D%20for%20DIY.pdf">https://schematicsforfree.com/files/Audio/Circuits/Power Amplifiers/Class D/Design Info/Class D for DIY.pdf</a></li>
+<li>Leach《The Class-D Amplifier》：<a href="https://leachlegacy.ece.gatech.edu/ece4435/f01/ClassD2.pdf">https://leachlegacy.ece.gatech.edu/ece4435/f01/ClassD2.pdf</a></li>
+<li>ATmega328P 数据手册：<a href="https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf">https://docs.arduino.cc/resources/datasheets/ATmega328P-datasheet.pdf</a></li>
+</ul>
+<h2 id="f-统计">F. 统计</h2>
+<ul>
+<li>误区条数：14 条（A1–A11、B1–B3）。</li>
+<li>带外部 URL 的条数：12 条。A9 是本人推导；B3 只引用了本地数据手册（URL 见 A3）。</li>
+<li>[待核实]：5 处（A2 色环电感 Isat、A4 模块 R_ILIM、A10 40 mA、A11 万用表、C8 采样率）。</li>
+<li>搜索：本节 1 次搜索 + 1 份 PDF 下载核对 + 2 份本地数据手册。数量远低于目标。</li>
+</ul>
+<h2 id="d-补查实际搜索-10-次另打开-adafruit-产品页-1-个">D. 补查（实际搜索 10 次；另打开 Adafruit 产品页 1 个）</h2>
+<h3 id="d1-待核实-逐条处理">D1. [待核实] 逐条处理</h3>
+<ul>
+<li><strong>A2（色环电感 Isat 往往只有几百 mA）</strong>：部分核实为不准确，建议改写。
+<ul>
+<li>色环（轴向）电感的规格书通常只给「额定直流电流」，而且这个值往往只有约 100 mA 级，比原文的「几百 mA」更小。例子（均仅搜索确认）：
+<ul>
+<li>Bourns 78F101J（100 µH）：DC 165 mA，DCR 最大 4.1 Ω。<a href="https://www.bourns.com/pdfs/78f_series.pdf">https://www.bourns.com/pdfs/78f_series.pdf</a></li>
+<li>Vishay IM-2（100 µH）：84 mA，DCR 最大 8 Ω。<a href="https://pdf.findic.com/im02eb470k-bxXy4VUn-poEeybVbo.pdf">https://pdf.findic.com/im02eb470k-bxXy4VUn-poEeybVbo.pdf</a></li>
+</ul>
+</li>
+<li>额定电流是按温升定义的，不是饱和电流。Vishay 术语表把 Isat 定义为「电感量下降指定百分比时的直流偏置」，铁氧体常取 10 %、铁粉芯取 20 %（仅搜索确认）。<a href="https://www.vishay.com/docs/34053/definit.pdf">https://www.vishay.com/docs/34053/definit.pdf</a></li>
+<li>建议改写为：「色环电感的额定电流常只有约 0.1 A（按温升定义），规格书往往不给 Isat，DCR 可达数 Ω。不能用于 D 类输出滤波。」</li>
+<li>DCR 4–8 Ω 与 8 Ω 喇叭串联，本身就会吃掉一大半功率（本人推算）。</li>
+</ul>
+</li>
+<li><strong>A4（模块上的 R_ILIM）</strong>：已核实（以 Adafruit 板为例）。
+<ul>
+<li>Adafruit 产品页（已打开）原文：&quot;We solder in a 30K resistor by default for a ~2A current limit&quot;。<a href="https://www.adafruit.com/product/3190">https://www.adafruit.com/product/3190</a></li>
+<li>本人计算：64 kV / 30 kΩ ≈ 2.1 A，大于 A4 算出的峰值约 0.67 A 加纹波，一般不会触发限流。但如果电感饱和（A2），仍然可能触发。</li>
+<li>其他厂家的模块仍需逐板确认。</li>
+</ul>
+</li>
+<li><strong>A10（40 mA）</strong>：已核实。本地 ATmega328P 数据手册（DS40002061B）的绝对最大额定值写明 &quot;DC Current per I/O Pin 40.0mA&quot;。
+<ul>
+<li>来源：<a href="https://ww1.microchip.com/downloads/aemDocuments/documents/MCU08/ProductDocuments/DataSheets/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf">https://ww1.microchip.com/downloads/aemDocuments/documents/MCU08/ProductDocuments/DataSheets/ATmega48A-PA-88A-PA-168A-PA-328-P-DS-DS40002061B.pdf</a></li>
+<li>建议 A10 的来源换成这个 Microchip URL。</li>
+</ul>
+</li>
+<li><strong>A11（普通万用表 AC 档只对正弦有效）</strong>：已核实（仅搜索确认）。
+<ul>
+<li>平均值响应表是把整流后的平均值乘以约 1.11，只有正弦波才准；对称方波约高读 10 %。</li>
+<li>对于 PWM，即使是真有效值表，也可能因为带宽内包含开关成分而读数偏高。Fluke 87V 为此提供了低通滤波功能。</li>
+<li>来源：Fluke 应用笔记 &quot;Why True-RMS&quot; <a href="https://media.fluke.com/f241628a-8be3-4312-8bae-b106006681fa_original%20file.pdf">https://media.fluke.com/f241628a-8be3-4312-8bae-b106006681fa_original file.pdf</a> ；Fluke 87V 变频器测量博客 <a href="https://www.fluke.com/en/learn/blog/motors-drives-pumps-compressors/multimeter-measurements-on-adjustable-speed-drives-utilizing-the-new-fluke-87v-dmm">https://www.fluke.com/en/learn/blog/motors-drives-pumps-compressors/multimeter-measurements-on-adjustable-speed-drives-utilizing-the-new-fluke-87v-dmm</a></li>
+</ul>
+</li>
+<li><strong>C8（采样率约 10 kS/s）</strong>：已核实，见 <a href="http://43.md">43.md</a> D1-A6。来源：analogRead.adoc 原文 &quot;about 10,000 times a second&quot;，以及预分频 128 / 13 周期 → 约 9.6 kS/s。</li>
+<li>统计：已核实 4（A4、A10、A11、C8），部分核实为不准确并改写 1（A2），删除 0，保留 0。</li>
+</ul>
+<h3 id="d2-新增坑">D2. 新增坑</h3>
+<h4 id="d2-1硬伤级示波器地夹接到-btl-输出的任一端会把半桥对地短路">D2-1（硬伤级）示波器地夹接到 BTL 输出的任一端，会把半桥对地短路</h4>
+<ul>
+<li><strong>现象</strong>：探头地夹一碰 OUT2，DRV8871 就进入 OCP，反复重启；或者分立电路直接烧毁。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>A3 改为互补（BTL）驱动之后，OUT1 和 OUT2 都不是地。</li>
+<li>示波器地夹经电源插头接大地；如果 Arduino 或电源也接了地，就会把一个半桥输出直接短路到地。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：先确认示波器地夹接在哪里。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>两个通道分别接 OUT1 和 OUT2，地夹只接电路的 GND，用 CH1 − CH2 运算显示差分波形。</li>
+<li>或者使用差分探头。</li>
+<li>正文的测量步骤要明确写出这一点。</li>
+</ul>
+</li>
+<li><strong>来源</strong>（均仅搜索确认）：
+<ul>
+<li>ESE 306337 <a href="https://electronics.stackexchange.com/questions/306337">https://electronics.stackexchange.com/questions/306337</a></li>
+<li>Pico 差分输入应用笔记 <a href="https://www.picotech.com/library/articles/application-note/how-true-differential-scope-inputs-boost-probing-safety-and-precision">https://www.picotech.com/library/articles/application-note/how-true-differential-scope-inputs-boost-probing-safety-and-precision</a></li>
+<li>TI SLOA116 <a href="https://www.ti.com/lit/an/sloa116/sloa116.pdf">https://www.ti.com/lit/an/sloa116/sloa116.pdf</a></li>
+</ul>
+</li>
+</ul>
+<h4 id="d2-2-拔掉喇叭空载上电lc-滤波器失去阻尼产生谐振">D2-2 拔掉喇叭空载上电：LC 滤波器失去阻尼，产生谐振</h4>
+<ul>
+<li><strong>现象</strong>：没接喇叭时芯片发烫，或者触发过流保护；接上喇叭后又正常了。</li>
+<li><strong>原因</strong>：负载电阻给 LC 提供阻尼。空载时 Q 值很高，谐振峰会放大开关频率附近的能量。
+<ul>
+<li>PAM8403 手册也要求带 LC 滤波器时先接喇叭再上电（见 <a href="http://45.md">45.md</a>）。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：空载和带载分别测电源电流。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>先接喇叭再上电。</li>
+<li>LC 截止频率远低于 f_PWM。</li>
+<li>需要时加 RC（Zobel）阻尼网络。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI E2E 帖 &quot;My class-D amplifier gets very hot with no load&quot;（仅搜索确认）<a href="https://e2e.ti.com/support/audio-group/audio/f/audio-forum/50646/my-class-d-amplifier-gets-very-hot-with-no-load-or-no-input-signal">https://e2e.ti.com/support/audio-group/audio/f/audio-forum/50646/my-class-d-amplifier-gets-very-hot-with-no-load-or-no-input-signal</a> ；ADI Class D 指南（仅搜索确认）<a href="https://www.analog.com/en/resources/technical-articles/class-d-amplifiers-guide.html">https://www.analog.com/en/resources/technical-articles/class-d-amplifiers-guide.html</a></li>
+</ul>
+<h4 id="d2-3-a10-的31-khz-pwm要写清楚是哪个定时器哪些引脚">D2-3 A10 的「31 kHz PWM」要写清楚是哪个定时器、哪些引脚</h4>
+<ul>
+<li><strong>现象</strong>：照抄网上代码改 TCCR0B，结果 millis() 和 delay() 都变了。</li>
+<li><strong>原因</strong>：
+<ul>
+<li>Timer2 对应 D3 和 D11。预分频设为 1、相位修正模式时，频率为 16 MHz / 510 ≈ 31 372 Hz，不影响 millis()。</li>
+<li>改 Timer0 则会影响 millis() 和 delay()。</li>
+<li>与 <a href="http://42.md">42.md</a> A1 的 Timer1 冲突合在一起看，31 kHz 演示应使用 D3 或 D11。</li>
+</ul>
+</li>
+<li><strong>怎么排查</strong>：示波器测频率；检查 millis() 是否正常。</li>
+<li><strong>怎么修复</strong>：<code>TCCR2B = (TCCR2B &amp; 0b11111000) | 0x01;</code> 然后 <code>analogWrite(3, x)</code>。</li>
+<li><strong>来源</strong>：Arduino 官方《Secrets of Arduino PWM》（仅搜索确认）<a href="https://docs.arduino.cc/tutorials/generic/secrets-of-arduino-pwm/">https://docs.arduino.cc/tutorials/generic/secrets-of-arduino-pwm/</a> ；ESE 46857（仅搜索确认）<a href="https://arduino.stackexchange.com/questions/46857">https://arduino.stackexchange.com/questions/46857</a></li>
+</ul>
+<h4 id="d2-4-lm393-做调制比较器边沿慢需要回差">D2-4 LM393 做调制比较器：边沿慢，需要回差</h4>
+<ul>
+<li><strong>现象</strong>：输出边沿出现多次翻转（chatter），DRV8871 输入抖动。</li>
+<li><strong>原因</strong>：三角波与音频信号交叉的地方斜率小、噪声大；LM393 是开集电极输出，边沿较慢。</li>
+<li><strong>怎么排查</strong>：示波器放大比较器的输出边沿。</li>
+<li><strong>怎么修复</strong>：
+<ul>
+<li>加正反馈回差（十几到几十 mV）。</li>
+<li>上拉电阻取约 1 kΩ。</li>
+<li>VCC 就近去耦。</li>
+</ul>
+</li>
+<li><strong>来源</strong>：TI《Solving top comparator challenges: Chatter》（仅搜索确认）<a href="https://www.ti.com/lit/ta/sszt122/sszt122.pdf">https://www.ti.com/lit/ta/sszt122/sszt122.pdf</a> ；AAC 帖（仅搜索确认）<a href="https://forum.allaboutcircuits.com/threads/lm393-comparator-issue-2.170959/">https://forum.allaboutcircuits.com/threads/lm393-comparator-issue-2.170959/</a></li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

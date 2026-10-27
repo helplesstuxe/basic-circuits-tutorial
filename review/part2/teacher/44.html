@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 D 类功放：资深教师审读（初审）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/review/part2/teacher/44.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="44-d-类功放资深教师审读初审">44 D 类功放：资深教师审读（初审）</h1>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>评分</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>从「台灯快速开关调光」讲到三角波比较、占空比公式、LC 滤波、纹波电流和效率拆账，每一步都有数字，SPICE 核对 83 项（66 项有页面值，✅66 / ⚠️0 / ❌0）。但两个 D 类最核心的工程话题没讲：死区/直通（必改-02）、开关噪声/EMI（必改-03）。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>文字和数字清楚，例题链完整。但全节只有 page4 一张原理图，page2 第一节用五段文字讲整机连线却没有图（必改-01，硬规则）。几处数字口径会误导读者：效率表的「音频功率」含 10 Ω 电阻（必改-07），page4 L214 的 10 Ω 功率算错（必改-06）。器材清单也不全（必改-09）。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td>page2 例 1（完整）→ 例 2（留空）→ 例 3（换 100 µH）、page3 练习三题（Vtri 2 V、470 µH + 0.33 µF、拆掉 10 Ω）是合格的渐隐和变体推理。缺的是：总纲要求的「照搬 26 驱动—刹车 PWM」典型错误（必改-04），以及和 43 推挽在发热/散热上的对比题（建议-04）。</td>
+</tr>
+</tbody>
+</table>
+<p>审读对象：<code>44-class-d-amp/page1.md</code>～<code>page4.md</code>；<code>img/</code> 下全部 16 张图（都用图片方式打开看过，p4_1 面包板图和 p4_2 原理图裁切放大后逐孔、逐脚核对）；<code>review/spice/44.md</code>；<code>notes/44-research.md</code>；<code>spice/44/</code> 的网表（只读；把整个 <code>spice/</code> 复制到 <code>/tmp/r44/spice_copy</code> 后重跑了 <code>fault_in2gnd.cir</code>）。</p>
+<p>对照文件：</p>
+<ul>
+<li><code>review/part2/teacher/00-plan-review.md</code> 中 44 节的条目：L56（必改-18/19/20）、L104（教学手法：1 Hz 慢三角波 + LED、三层对齐、误区「照搬 26」）、L129（必需图：三角波发生器、互补驱动 + 上拉、DRV8871 引脚、电流表位置、死区时序、LC 幅频）、L159 必改-18、L160 必改-19、L165 必改-24、L182 建议-09、L184 建议-11、L189 建议-16。</li>
+<li><code>review/teacher/best-practices.md</code>：原则编号 [1]～[6]（[1] 认知负荷、[2] 样例/渐隐、[3] 提取练习、[4] 图文双编码、[5] 误区先行、[6] 由具体到抽象）。</li>
+<li>43 节 page2 L112 / L151（甲乙类在约 3 V 峰值时效率 39.3% / 38.9%，负载 8 Ω）。</li>
+</ul>
+<p>核算方式：</p>
+<ul>
+<li>DRV8871 数据手册（<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a> ，SLVSCY9B）实际下载并用 pdftotext 提取，核对了：R_DS(on) HS+LS 565 mΩ、R_θJA 41.1 °C/W、I_OCP 3.7/4.5/6.4 A、t_DEAD 220 ns、t_PD 0.7 µs、最短脉宽 800 ns、IN 推荐 0～5.5 V / 绝对最大 7 V、R_PD 100 kΩ、I_VM 3 mA 典型、真值表（11 = 刹车，两路输出都为 L；00 = 滑行，且持续 1 ms 进入睡眠）。正文引用全部正确。</li>
+<li><code>https://www.ti.com/lit/an/sloa119b/sloa119b.pdf</code> 实测：301 → <code>https://www.ti.com/lit/slaa701</code> → <code>https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</code>（与 notes/44-research.md L10 一致）。</li>
+<li>重跑 <code>fault_in2gnd.cir</code>：IN2 接 GND 时负载直流 2.094 V、VM 平均电流 34.5 mA；IN2 接 5 V 时负载直流 −5.503 V、8 Ω 上 0.750 W、10 Ω 上 0.938 W、<strong>VM 平均电流只有 155 mA</strong>（用于必改-05）。</li>
+<li>用 Python 复算：载波 38.56 kHz、f0 9.201 kHz、Q 0.7076、纹波峰值公式 0.1768 A、载波残余 0.869 V 峰 / 0.614 V 有效值、静态拆账 36 + 16.5 + 21 mW、page1 L23 的 1.37 W / 0.56 W、理想乙类在 18 Ω 上 17.6% / 44%、page2 例 1～3、page3 练习 1～3（Q 0.337、−3 dB 约 3.43 kHz）——全部吻合。不吻合的只有 page4 L214（必改-06）。</li>
+<li>面包板图 p4_1 逐孔核对：U1 第 2–5 列、U2 第 13–16 列、U3（LM393）第 26–29 列，V_MID、三角波、t、s、IN1（g32）、IN2（i34）、上拉 Rp（j32/j34 → +5 V）、两条 GND 轨在第 35 列连通，与原理图 p4_2 一致；U3A 同相端 = s、反相端 = t，U3B 反过来，互补关系正确。问题只有退耦电容没画（必改-09）。</li>
+</ul>
+<p>仓库里只写了本文件和 <code>_internal/state.md</code>，其他文件一律没改，也没有运行任何 git 命令。</p>
+<h2 id="一必改">一、必改</h2>
+<p><strong>必改-01｜page2 §一 L19–27、page3 L110、page4 L113：讲连线的文字没有原理图（硬规则；总纲必改-18、必改-24）</strong></p>
+<ul>
+<li>问题：page2 L21–27 用五段文字讲中点参考、三角波发生器（施密特 + 积分器闭环）、输入分压、互补比较器 + 上拉、H 桥 + LC 的接法，旁边没有任何原理图。全节唯一的原理图在 page4（p4_2），读者读 page2 时只能凭文字脑补。page3 L110 的「从 IN1 接 1 MΩ 到 s」迟滞改法、page4 L113 选做 D 的「D11 → IN1、D3 → IN2、拔掉第 32、34 列的线」也是纯文字。</li>
+<li>改法：
+<ol>
+<li>page2 L19 后放整机原理图（可直接复用 p4_2 并按五块加分区框和编号 1～5，对应 L23–27）；</li>
+<li>在 L24 后单独放一张「三角波发生器闭环」小图：U1B 施密特（Rs1/Rs2）→ U1A 积分器（Rint/Cint）→ 回到施密特，旁边一句「积分到门槛 → 施密特翻转 → 反向积分」（总纲必改-18 原话），可与 p2_1 波形并排；</li>
+<li>page3 L110 加一张 LM393 A 路 + 1 MΩ 正反馈的局部原理图；</li>
+<li>page4 L113 加选做 D 的局部原理图（Arduino D11/D3/GND → IN1/IN2/GND，比较器输出断开处画「×」），并紧跟「对照看」一句。</li>
+</ol>
+</li>
+<li>理由：「每段讲电路连接的文字旁边都必须有对应原理图」[4]；三角波闭环是本节唯一的新电路。</li>
+</ul>
+<p><strong>必改-02｜page3 L31（及 page2 L78）：死区/直通只一笔带过，且和 43 节的「死区」撞词</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>D 类功放第一个工程坑就是上下管直通（notes/44-research.md L35 也列为常见错误），正文只在 page3 L31 说「没有……芯片内部 220 ns 的死区」，没解释什么是直通、为什么要死区、读者为什么不用操心。</li>
+<li>总纲 L129 要求的「死区时序」图没有画。</li>
+<li>43 节里「死区」指乙类交越失真那段 ±0.6 V（43 page1 L47、L63「没有死区的波形」），本节同一个词指「上下管都关的 220 ns」，读者会混。</li>
+<li>page2 L78 「这段时间两只管子都关着」其实就是 IN=00（滑行）状态，但读者不知道 00 是什么。</li>
+</ul>
+</li>
+<li>改法：在 page2 第三节（L80 互补框之后）加「最小补充：直通和死区」框，内容四句：
+① 同一侧上管、下管同时导通 = 12 V 直接短到 GND（直通），瞬间电流可达几安；
+② 所以驱动器在「上管关 → 下管开」之间故意留一段两管都关的时间，叫死区（dead time），DRV8871 内部自动插入约 220 ns（数据手册 7.3.4）；
+③ 本节 IN1/IN2 由两只比较器给出，边沿快慢不一（上拉 1 kΩ 上升慢、开集下拉快），切换瞬间会短暂出现 00（滑行）或 11（刹车），这只会让增益略小（L78 的 2.7%）和失真略大，<strong>不会</strong>直通，因为直通保护在芯片内部；
+④ 因此<strong>不要</strong>用分立 MOSFET 自己搭 H 桥来做本实验。
+另加：「注意：这里的死区和 43 节交越失真的『死区』是两回事」。配一张时序图：IN1、IN2、OUT1 上管/下管栅极、t_DEAD 灰色阴影（可仿数据手册 Figure 6）。</li>
+<li>理由：任务点名的 D 类专项；总纲必需图；误区先行 [5]。</li>
+</ul>
+<p><strong>必改-03｜全节：没有开关噪声 / 电磁干扰（EMI）内容</strong></p>
+<ul>
+<li>问题：grep 全节 4 页，「干扰」「EMI」「辐射」「接地」相关内容为零。本电路在面包板上跑 38.6 kHz、12 V 摆幅、几百 mA 的方波，电感前的导线就是天线；DRV8871 的 GND 经面包板 GND 轨和三角波/比较器前级共用（p4_1 中第 35 列连通），开关电流会在 GND 轨上产生压降，串进 t、s 这两个高阻节点，表现为 page3 L110 的边沿毛刺、「沙沙」声。research 笔记 L13、L23 已经引用 SLOA145 讲 EMC 和 LC 的作用，但没进正文。</li>
+<li>改法：
+<ol>
+<li>page3 新增一小节「开关噪声：线怎么走」（或放进排错表前），四条：
+<ul>
+<li>OUT1/OUT2 → L1/L2 → Cf 这段线尽量短；电感后到负载的两根线绞在一起；</li>
+<li>开关线（橙色）远离 t、s 节点和 TL072；</li>
+<li>DRV8871 模块 GND 用一根粗线直接回电源负极，前级 GND 另一根线回同一点（星形接地），不要让开关电流走面包板 GND 轨；</li>
+<li>LC 除了保护喇叭，也挡住了负载线上的 38.6 kHz，减少辐射（引 SLOA145：<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a> ，notes 中已有）。</li>
+</ul>
+</li>
+<li>排错表 L110 的「怎么查」加一句「先检查 GND 是否星形连接、开关线是否贴着 t/s」。</li>
+<li>page4 示波器部分（L87 附近）加：看电感前的 OUT1/OUT2 用 10× 档，地线尽量短（用探头的接地弹簧），长地线夹会把开关振铃「看」得很大。</li>
+<li>p4_1 面包板图把 DRV GND 改成单独一根线回电源负极（或至少在图注里写明）。</li>
+</ol>
+</li>
+<li>理由：任务点名专项；直接关系到读者实测时会不会被毛刺劝退。</li>
+</ul>
+<p><strong>必改-04｜page2 第三节 / page3 常见误区 L118–126：缺「照搬 26 节驱动—刹车 PWM」这个典型错误（总纲必改-19、L104 教学手法③）</strong></p>
+<ul>
+<li>问题：本节前置是 26 节 H 桥，26 page2 推导的是「IN1 = 1、IN2 = PWM」的驱动—刹车单极性 PWM，平均电压 D·V_M。读者最自然的做法就是照搬，结果 D = 50% 时喇叭上有 6 V 直流。正文只讲了正确的互补驱动，没有把错误摆出来；page3 L61 的「IN2 接 5 V」故障表其实就是这个错误的近亲，但没点明。</li>
+<li>改法：在 page2 L64–70 互补公式之前加一个「先试试 26 节的办法」小段：照搬 26 → 平均电压 D × 12 V，静音时 D = 50% → 6 V 直流 → 6 ÷ 18 ≈ 0.33 A 推着喇叭（8 Ω 上约 0.89 W），再引出「所以要 IN2 = IN1 反相，平均 = (2D−1)V_S」。page3 误区列表加一条「『26 节的 H 桥 PWM 直接拿来就行』」，答案指回这里。</li>
+<li>理由：误区先行 [5]；安全（直流烧喇叭）。</li>
+</ul>
+<p><strong>必改-05｜page3 L54、page4 L16：「电源限流 0.2 A，任何短路、接错都被卡住」说过头了；page3 L61「刹车」措辞含糊</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>重跑 <code>fault_in2gnd.cir</code>：IN2 误接 5 V 时，负载直流 −5.503 V，8 Ω 喇叭上 <strong>0.75 W 直流</strong>（器材清单只要求 ≥ 0.5 W），但电源平均电流只有 <strong>155 mA</strong>，0.2 A 限流根本不动作。page3 L54 的说法会让读者以为有限流就放心了。真正能抓住它的是 L53 的「负载直流 &gt; 50 mV 断电」。</li>
+<li>page3 L61 「IN1 高时两路同为高，进入『刹车』」：读者会理解成两路输出同为 12 V。实际是 IN1、IN2 两个<strong>输入</strong>同为 1，刹车时两路<strong>输出</strong>都接地（两只下管导通，数据手册表 1：1 1 → L L）。</li>
+</ul>
+</li>
+<li>改法：
+<ol>
+<li>page3 L54 改为：「电源限流 0.2 A：能卡住输出短路这类大电流故障；但 IN2 接错这类『直流推喇叭』故障电流只有一百多毫安，限流不动作，要靠第 2 条的 50 mV 检查。」page4 L16 同步改。</li>
+<li>page4 安全须知和实验 A 加一个电流判据：静音时 VM 电流正常约 6 mA；<strong>超过 20 mA 立刻断电</strong>（IN2 接 GND 时 34.5 mA、接 5 V 时 155 mA，都能被这条抓住）。</li>
+<li>page4 步骤 3–4 建议：第一次上电用 8 Ω / 5 W 功率电阻代替喇叭，量完直流电压和电流都正常后，断电再换上喇叭（和建议-11 的假负载可合并）。</li>
+<li>page3 L61 改为「IN1 = 1 时 IN1、IN2 都是 1，H 桥『刹车』：两只下管导通，OUT1、OUT2 都接 GND；IN1 = 0 时 OUT2 = 12 V、OUT1 = GND……」。</li>
+</ol>
+</li>
+<li>理由：安全；数字须与 SPICE 一致。</li>
+</ul>
+<p><strong>必改-06｜page4 L214、page2 L137：把电感纹波电流当成流过负载的电流</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>page4 L214 写「10 Ω 电阻上约 0.365 W（有效值电流 0.191 A，含载波）」。0.191 A 是 page3 L37 算的<strong>电感/DRV8871</strong>电流（音频 0.158 A + 纹波 0.106 A 的方和根）。纹波电流大部分经 Cf 回流，不进负载。负载电流 = √(0.158² + (0.6148/18)²) ≈ 0.162 A，10 Ω 上约 0.261 W——这正是 page3 L42 自己写的数。两页互相矛盾。</li>
+<li>根源在 page2 L137：「这个电流……实打实地流过电感、管子和负载」。负载上的载波有效值电流只有 0.6148 ÷ 18 ≈ 34 mA，而纹波有效值 106 mA，大部分走 Cf。</li>
+</ul>
+</li>
+<li>改法：page4 L214 改为「10 Ω 电阻上约 0.261 W、喇叭上约 0.209 W（见参数与调试篇）」；page2 L137 改为「流过电感和管子，大部分经 Cf 绕回来，只有约 34 mA（有效值）漏进负载」。可在 p2_5 下层加一条 Cf 电流或负载电流曲线做对照 [4]。</li>
+<li>理由：数字自洽；「电容给高频电流抄近路」正是 LC 滤波要讲透的概念。</li>
+</ul>
+<p><strong>必改-07｜page2 §六 L143–152、page1 L43–47（图 p1-2）、page3 L121：效率里的「音频功率」把 10 Ω 电阻算进去了，读者会误以为喇叭拿到这么多</strong></p>
+<ul>
+<li>问题：表头「音频功率 / W」是 18 Ω 整个负载的功率；喇叭只拿 8/18 ≈ 44%，另外 56% 在 10 Ω 电阻上发热。图 p1-2 横轴写了「喇叭 + 10 Ω」，正文和表都没说。同时，page1 L21 拿 43 节（8 Ω 负载、约 39%）对比，负载不同，读者会直接拿 70%/89% 去比 39%。</li>
+<li>改法：
+<ol>
+<li>page2 L145 表头改为「负载（10 Ω + 喇叭）功率 / W」，加一列「其中喇叭 / W」（× 8/18：0.0056、0.0223、0.0891、0.2005、0.357、0.559）；</li>
+<li>L143 后加一句：「对喇叭来说，10 Ω 电阻也是『浪费』；真正的 D 类功放不串这只电阻，喇叭拿到的就是图里的效率。」</li>
+<li>page1 L47 加一句：「43 节用的是 8 Ω 负载，图里的理想乙类已按同样 18 Ω 重新算过，这样比才公平。」</li>
+</ol>
+</li>
+<li>理由：任务点名的「扬声器负载与功率」；与 43 对比要同口径（总纲建议-11）。</li>
+</ul>
+<p><strong>必改-08｜page4 L153（选做 D）：鼓励「改大 AMP」，但没给上限</strong></p>
+<ul>
+<li>问题：L153 说限幅 7～248 「是给你改大 AMP 时留的保险」。按 L154 的公式，AMP 改到 120 时负载基波峰值约 120 ÷ 127.5 × 12 × 0.9244 ≈ 10.4 V，喇叭上约 1.35 W（超过 0.5 W 额定），电感峰值约 0.58 + 0.18 ≈ 0.76 A，超过 RLB0913-221K 饱和电流 0.64 A。比较器版有「信号源 ≤ 1.5 V」的上限，选做 D 却没有对应上限。</li>
+<li>改法：代码里 <code>AMP</code> 定义处加注释和 <code>static_assert</code>（或 <code>#if AMP &gt; 45 #error</code>）；L153 改为「AMP 最大 45：对应负载峰值约 3.9 V，和比较器版信号源 1.5 V 相当；再大喇叭会超功率、电感接近饱和」。</li>
+<li>理由：安全；与正文已有的 1.5 V 上限一致。</li>
+</ul>
+<p><strong>必改-09｜page4 器材清单 L32、L38 与面包板图 p4-1：退耦电容数量不对、100 µF 没列、图上没画</strong></p>
+<ul>
+<li>问题：
+<ul>
+<li>L38 「100 nF ×3，其中两只做 TL072、LM393 电源退耦」，但步骤 1（L58）要求 U1、U2（两片 TL072）和 U3（LM393）<strong>各</strong>接 100 nF，加上 Ct 共需 4 只；</li>
+<li>L32 / p4_2 图上写「VM 端子并 100 µF + 100 nF」，排错表 page3 L116 也让读者自己并，但清单里没有 100 µF 电解（应 ≥ 25 V）和第 5 只 100 nF；</li>
+<li>p4_1 面包板图上一只退耦电容都没画，读者照图插就会漏；</li>
+<li>L38 的 Cin 1 µF 没写类型：s 点有 6 V 直流，若用电解，正极要朝 s（page3 L112 已出现「Cin 接反」），建议直接写「1 µF 薄膜（无极性）」。</li>
+</ul>
+</li>
+<li>改法：清单改为「100 nF ×5（Ct 1、TL072 ×2、LM393 ×1、VM 1）」「100 µF / 25 V 电解 ×1（VM，正极接 VM）」「1 µF 薄膜 ×1（Cin）」；p4_1 在三片 IC 的电源脚旁画出退耦电容（或图注明确「退耦电容未画，见步骤 1」，但按硬规则最好画出）；p4_2 原理图的「VM 端子并 100 µF + 100 nF」文字与「电流表 直流 mA 档」文字重叠，顺手把两只电容画成元件符号。</li>
+<li>理由：照单买、照图插就能做成。</li>
+</ul>
+<p><strong>必改-10｜page4 L21、L41、L61：「信号源峰值不超过 1.5 V」没有不用示波器的确认方法</strong></p>
+<ul>
+<li>问题：读者多半用手机播放测试音（L41），手机耳机口最大输出常在 1 V 有效值左右甚至更高 [待核实]，读者没有示波器时无从判断是否超过 1.5 V 峰值。超过后会削顶、喇叭功率和电感电流上升（p3_4）。</li>
+<li>改法：L61 前加一步：「信号源不接电路，万用表交流档直接量它的输出（400 Hz 正弦，交流档读数准），把音量调到读数 ≤ 1.0 V（≈ 1.5 V 峰值 ÷ √2 = 1.06 V），记住音量位置；手机音量从最小开始。」</li>
+<li>理由：安全上限必须能被验证；没有示波器的读者占多数（建议-09 的精神）。</li>
+</ul>
+<h2 id="二建议">二、建议</h2>
+<p><strong>建议-01｜page1 L27–39：加「1 Hz 慢三角波 + LED」的具体演示（总纲 L104 手法①、建议-09）。</strong> 本节从「台灯开关」直接跳到 38.6 kHz 波形图。可在 page1 或 page4 加一段可选小实验：不接 DRV8871 模块，把积分器换成 Rint 47 kΩ、Cint 22 µF（无极性），频率按 page2 公式缩小约 10⁵ 倍，约 0.4 Hz；IN1 与 +5 V 之间接 LED 串 1 kΩ，用电位器改 s 的直流电平，眼睛就能看到亮、灭的时间比例在变。由具体到抽象 [6]，也是没有示波器时最直观的验证。</p>
+<p><strong>建议-02｜page2 L96–98「最小补充：Q 值」：回指 20 节的 Q 和巴特沃斯 0.707、25 节 page2 的 47 µH + 47 µF 输出 LC（总纲建议-16）。</strong> 一句「20 节里你见过 Q = 0.707 的巴特沃斯；25 节开关电源的输出 LC 也是同一个滤波器，只是转折频率低得多」，提取练习 [3]。</p>
+<p><strong>建议-03｜page2 L200、page3 L147：把 SLOA119B 链接换成 SLAA701B。</strong> 实测 <code>https://www.ti.com/lit/an/sloa119b/sloa119b.pdf</code> 301 跳到 <code>https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</code>，标题应同步。</p>
+<p><strong>建议-04｜page3 §一 L33–46：加一张与 43 节的发热对比表，并配一道迁移题。</strong> 例：43 节在 V_p = 3 V（8 Ω 上约 0.56 W）时每只管子约 0.44 W，不加散热片比室温高约 44 °C（43 page2 例 1 L158–162），所以要散热片；本节信号源 1.5 V（18 Ω 负载上 0.45 W）时 DRV8871 合计约 0.057 W、温升约 2.3 °C，不用散热片。再出题：「如果把 43 节的输出级换成本节 H 桥，散热片还要吗？为什么静音时 D 类反而有 73.8 mW 固定开销而 43 节的甲乙类也有静态电流？」——「与前面节点对比」是 ③ 的评分要点。</p>
+<p><strong>建议-05｜page3 练习 L128–140：加一道「换 4 Ω 喇叭」的变体题。</strong> 例：负载变成 10 Ω + 4 Ω = 14 Ω，Q 值变成多少（约 0.55），曲线还平不平；如果去掉 10 Ω 直接接 4 Ω，Q ≈ 0.16，高音会怎样、电流会怎样。和练习 3 形成对照。</p>
+<p><strong>建议-06｜page4 L42、L60：电流表档位提示。</strong> 万用表 mA 档有几欧的分流电阻和保险丝，建议写明用 200 mA（或 400 mA）档、不要用 µA 档；电流表放在 100 µF 退耦电容的上游（p4_2 已经这么画了），开关电流由电容提供，表上读的是平均值。</p>
+<p><strong>建议-07｜page2 L24：TL072 输入共模范围 [待核实]。</strong> 施密特的同相端在翻转瞬间会跳到约 3.2 V（12 V 单电源下距负电源约 3.2 V），接近老款 TL072 共模下限（负电源 + 约 3 V），老款 TL07x 超出共模范围会出现相位反转。建议作者对照 TL072 数据手册确认余量；若不足，可把 Rs1/Rs2 比例略调，或注明用 TL072H。</p>
+<p><strong>建议-08｜page1 L33 图注、page3 L84 图 p3-3：颜色。</strong> p1_1 的三角波实际是蓝绿色虚线，图注写「绿色虚线」，按 best-practices 的颜色约定写「蓝绿色虚线」；p3-3 两条曲线是橙色和深橙色，在手机上很难分，建议空载曲线改成红紫色（叉号保留）。</p>
+<p><strong>建议-09｜page4 实验 B（效率记录表 L195–205）：测效率时用 8 Ω / 5 W 功率电阻当假负载（总纲建议-11）。</strong> 喇叭阻抗随频率变，用电阻测出的效率才能和 SPICE、和 43 节对比；喇叭只用来听。</p>
+<p><strong>建议-10｜page3 排错表 L109：补 DRV8871 睡眠模式。</strong> IN1、IN2 都为 0 超过约 1 ms 芯片进入睡眠（数据手册 7.3.2），输出高阻。三角波没起振、比较器全输出低、或选做 D 程序没跑起来时，模块看起来「完全没反应」，可在排错表加一行。</p>
+<p><strong>建议-11｜page3 L118–126：误区位置。</strong> 「喇叭一端接地也能听」「先上电再接喇叭」是安全误区，现在放在 page3 末尾；按误区先行 [5]，建议在 page1 BTL 警告（L53–64）处先抛出「喇叭一端接地行不行？」让读者猜，再在 page3 给答案。</p>
+<h2 id="三专项检查">三、专项检查</h2>
+<ul>
+<li><strong>开关噪声 / EMI：</strong> ❌ 缺失（必改-03）。</li>
+<li><strong>扬声器负载与功率：</strong> 10 Ω 串联保护思路正确；正常范围内喇叭最大约 0.209 W，对 ≥ 0.5 W 喇叭安全 ✅；效率口径含 10 Ω（必改-07）；IN2 接 5 V 故障 0.75 W 直流（必改-05）；选做 D 无上限（必改-08）。</li>
+<li><strong>MOSFET / 散热片发热：</strong> DRV8871 温升约 2.3 °C 的估算正确，热阻 41.1 °C/W 引用正确并提醒小模块更差 ✅；温度一律用测温探头，60 °C 断电，明确「不要用手摸」（page3 L46、page4 L20、L250）✅；与 43 散热片的对比可加强（建议-04）。</li>
+<li><strong>死区 / 直通：</strong> ❌ 只有一句（必改-02），必需的死区时序图缺失。</li>
+<li><strong>LC 输出滤波参数：</strong> f0、Q、−3 dB、20 kHz、载波衰减、纹波电流、饱和电流、空载谐振 16.68 倍全部核对无误 ✅；功率电感 vs 色环电感的提醒到位 ✅；纹波电流去向表述有误（必改-06）。</li>
+<li><strong>带电改线 / 插拔：</strong> page4 L24「改线、换元件之前先断电」、L19「负载先接好再上电，拆负载之前先断电」、L113 选做 D「断电」✅；示波器地夹短路 OUT2 讲得很好（p4_3、思考题 2）✅；限流的作用说过头（必改-05）。</li>
+<li><strong>与 43 推挽对比：</strong> page1 L21 数字与 43 page2 一致 ✅，p1-2 用同 18 Ω 的理想乙类公平对比 ✅；未说明 43 用 8 Ω（必改-07），缺发热对比练习（建议-04）。</li>
+<li><strong>原理图硬规则：</strong> p4_1 面包板 ↔ p4_2 原理图 ↔「对照看」✅；page2 整机/三角波闭环、page3 迟滞、page4 选做 D 接线没有原理图 ❌（必改-01）。</li>
+<li><strong>图文配合：</strong> 16 张图标签、数字与正文一致；p4_2 有一处文字重叠（必改-09）；颜色名两处（建议-08）。</li>
+<li><strong>样例 → 渐隐：</strong> page2 例 1→2→3 ✅；page3 练习 ✅；page4 思考题 3 道 ✅。</li>
+<li><strong>未上线节点：</strong> page4 L3 指向 45 的链接属于导航预告，不算必改。</li>
+</ul>
+<h2 id="四结论">四、结论</h2>
+<p><strong>修改后可发布，目前不能发布。</strong> 数字链非常扎实（SPICE 全部吻合，手册引用逐条核对正确），接线图与原理图一致，安全须知整体到位。要改的集中在三类：</p>
+<ul>
+<li>硬规则和 D 类核心概念：page2 补原理图（必改-01）、死区/直通（必改-02）、EMI 与接地（必改-03）、26 节驱动—刹车误区（必改-04）；</li>
+<li>安全与数字口径：限流说过头（必改-05）、负载功率算错（必改-06）、效率含 10 Ω（必改-07）、选做 D 的 AMP 上限（必改-08）、信号源幅度确认（必改-10）；</li>
+<li>器材：退耦电容数量、100 µF、Cin 类型和图上退耦电容（必改-09）。</li>
+</ul>
+<p>必改-01、02、03 要加图，改完建议复审一轮。</p>
+<p>计数：必改 10 条；建议 11 条。</p>
+<p><strong>结论：修改后可发布；当前版本不能发布（必改 10 条改完后建议复审一轮）。</strong></p>
+<h2 id="复核第-2-轮">复核（第 2 轮）</h2>
+<p>复核范围：page1–4、<code>44-class-d-amp/img/</code>（21 张）、<code>code/figs/44_figs.py</code>、<code>spice/44/</code>（本节没有 <code>code/44_sim.py</code>）。tools、code、44-class-d-amp、spice/44、spice/models 拷到 /tmp/rv44b 副本里运行，解释器用 <code>/workspace/circuits-venv/bin/python</code>。仓库只追加了本文件，没有运行任何 git 命令。</p>
+<h3 id="三项评分">三项评分</h3>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>第 1 轮</th>
+<th>第 2 轮</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>好</td>
+<td>第 1 轮缺的几块都补上了：直通/死区（page2 L97–114，含时序图）、开关噪声与星形接地（page3 §四 L106–119）、「照搬 26 驱动—刹车」误区（page2 L75、page3 L143）。补充的内容先讲现象，再给数字，最后配图，顺序合适。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>一般</td>
+<td>整机原理图、三角波闭环图、选做 D 局部原理图都补齐了。面包板逐孔核对，和原理图、SPICE 网表一致。但还有两处让它停在「一般」：①page2 没有作者指南要求的「逐行注释的最小可运行 Python 仿真」，读者没法自己动手复现 PWM→LC 平均的过程（新必改-01）；②page3 L145 迟滞接法只有文字描述，没有配图（新必改-02）。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td>一般</td>
+<td>新增的 26 节误区是一道很好的迁移题。但「4 Ω 喇叭变体」（建议-05）和「与 43 节发热对比」（建议-04）都没采纳，练习仍是 3 道。</td>
+</tr>
+</tbody>
+</table>
+<p>三项都没有「差」。</p>
+<h3 id="第-1-轮必改逐条核对">第 1 轮必改逐条核对</h3>
+<ul>
+<li><strong>必改-01（原理图）：部分改好。</strong>
+<ul>
+<li>page2 L21–25 新增图 44-p2-1，是整机五块分区原理图。page2 L36–40 新增图 44-p2-2，是三角波闭环。page4 L119–125 新增图 44-p4-5（选做 D 局部原理图），配有「对照看」。</li>
+<li>我逐个元件核对了 p2-1、p4-2 和 <code>spice/44/front.inc</code>、<code>comp_ad.inc</code>：Rint 4.7 k、Cint 2.2 n、Rs1 10 k、Rs2 22 k、Ct 100 n、Rt 100 k→V_MID、Rin1 4.7 k、Cin 1 µ、Rin2 10 k→V_MID、上拉 1 k 到 5 V。比较器 A 是 + 接 s、− 接 t，输出 IN1；B 反过来。三者完全一致。</li>
+<li>网表里运放的编号和图上不同：网表 XU1A 是 V_MID 跟随器、XU1B 是积分器、XU2A 是施密特；图上 U1 负责三角波、U2B 做 V_MID。拓扑是一样的，只是编号不统一，列为新建议-04。</li>
+<li><strong>还没改的</strong>：page3 L145 现在是误区「比较器抖，就给它加迟滞」，里面写了具体接法「从 IN1 接 1 MΩ 到 s」，但没有局部原理图。按硬规则仍算必改，重新列为新必改-02。</li>
+</ul>
+</li>
+<li><strong>必改-02（死区/直通）：改好。</strong>
+<ul>
+<li>page2 L97–106 新增最小补充框：12 ÷ 0.565 ≈ 21 A，t_DEAD 220 ns，交代了 00/11 两种状态，并说明它和 43 节「交越死区」不是一回事。</li>
+<li>图 44-p2-5（L108–114）：IN1 在 0.5 µs 变低时上管立刻关、下管 0.72 µs 才开；IN1 在 2.0 µs 变高时下管先关、上管 2.22 µs 才开；死区内 OUT1 画成虚线，并注明「由电感电流方向决定」。这些都正确。</li>
+<li>我用 curl 取了 TI DRV8871 数据手册，pdftotext 核对：t_DEAD 220 ns ✅；图题里「传播延迟约 0.7 µs」对应手册 t_PD typ 0.7 µs ✅；7.3.4 节「死区内输出电压取决于电流方向」与图一致 ✅。</li>
+</ul>
+</li>
+<li><strong>必改-03（EMI/星形接地）：改好。</strong>
+<ul>
+<li>page3 §四 L106–119 配图 44-p3-5，讲了星形接地、OUT→L→Cf 尽量短、负载线绞合、开关线远离 t/s 四条。L127 排错表有星形接地检查。page4 L63 步骤 3、L97 的 10× 档 + 接地弹簧也到位。</li>
+<li>p4-1 上，DRV8871 的 GND 用粗黑线单独回电源负极，面包板 GND 从第 33 列另用一根线回同一点。</li>
+<li>我用 curl 取 SLOA145 核对 L119 的引用：原文「in some cases an LC or ferrite bead filter is required for EMC」，page3 的转述准确 ✅。</li>
+</ul>
+</li>
+<li><strong>必改-04（26 节驱动—刹车误区）：改好。</strong> 见 page2 L75 和 page3 L143：照搬 26 节会使负载直流约 −5.5 V、喇叭吃到 0.75 W。SPICE 结果 −5.503 V / 0.75 W ✅。</li>
+<li><strong>必改-05（限流说过头 + 20 mA 判据）：改好。</strong>
+<ul>
+<li>「0.2 A 能兜住任何接错」已删掉。page3 L44、L54 和 page4 L16 改为「限流能卡住短路这类大电流故障，但卡不住 IN2 接错」，page3 L144 新增对应误区。page3 L61 的刹车措辞已修正。</li>
+<li>page4 L21、L65、L79 加了「静音超过 20 mA 立刻断电」。我核对了判据合不合理：
+<ul>
+<li>正常静音 6.146 mA，SPICE 结果，DRV8871 按典型值 3 mA 计。</li>
+<li>IN2 接 GND 时 34.5 mA，接 5 V 时 155 mA，SPICE 重跑偏差分别为 +0.01%、+0.08%。</li>
+<li>手册 I_VM 典型 3 mA、最大 10 mA（pdftotext 已核）。按最大值算，正常读数也只有约 13 mA；模块指示灯的电流 [待核实]。</li>
+<li>结论：20 mA 夹在正常最坏情况和最轻故障（34.5 mA）之间，有余量，判据合理。page4 L21 写明了「音量为 0」，这一点必须保留：信号源 1 V 时正常电流就有 23.8 mA。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>必改-06（10 Ω 功率）：改好。</strong>
+<ul>
+<li>page3 L42 和 page4 L229 改成 10 Ω 上 0.261 W、喇叭 0.209 W、负载电流约 0.162 A。</li>
+<li>我独立复算：音频有效值 √(0.4511 ÷ 18) = 0.1583 A，载波残余 0.614 ÷ 18 = 0.0341 A，合成 0.1620 A。由此 10 Ω 上 0.262 W、喇叭上 0.210 W，和页面差 0.4%，是舍入误差，可以接受。</li>
+<li>page2 L169 改成「纹波大部分经 Cf 回流」✅。</li>
+</ul>
+</li>
+<li><strong>必改-07（效率口径含 10 Ω）：改好。</strong> page2 L177 的表新增「其中喇叭 / W」一列，L186 加了说明；page1 L47 注明 43 节用的是 8 Ω，本节已按 18 Ω 重算 ✅。L186 的措辞略满，见新建议-02。</li>
+<li><strong>必改-08（AMP 上限）：改好。</strong>
+<ul>
+<li>page4 L131–132 有 <code>static_assert(AMP &lt;= 45, …)</code>，L167 给了推导。</li>
+<li>复算：AMP = 45 时 45 ÷ 127.5 × 12 × 0.9244 = 3.915 V，纹波 12 ÷ (8 × 220 µ × 31 372.5) = 0.2173 A，电感峰值 0.435 A。AMP = 120 时为 10.44 V、0.797 A，超过 I_sat 0.64 A。数字和 <code>44_figs.py</code> 输出一致 ✅。</li>
+</ul>
+</li>
+<li><strong>必改-09（器材/退耦）：改好。</strong>
+<ul>
+<li>page4 BOM L34–45：100 nF × 5、100 µF/25 V、Cin 1 µF 薄膜、8 Ω/5 W 假负载都齐了。</li>
+<li>p4-1 上，第 3、14、27 列各有一只 100 nF 跨在 +12 V 轨和 GND 轨之间；VM 旁画了 100 µF + 100 nF。</li>
+<li>p4-2 原文字重叠的地方已经不重叠了 ✅。</li>
+</ul>
+</li>
+<li><strong>必改-10（信号源幅度确认）：改好。</strong> page4 L64 步骤 4：信号源先不接电路，用万用表交流档调到读数 ≤ 1.0 V（1.5 ÷ √2 = 1.06 V）。L23 安全须知回指了这一步 ✅。</li>
+</ul>
+<h3 id="面包板逐孔核对图-44-p4-1裁成局部放大-23-倍">面包板逐孔核对（图 44-p4-1，裁成局部放大 2–3 倍）</h3>
+<ul>
+<li><strong>IC 朝向</strong>：U1、U2 TL072 和 U3 LM393 的缺口都朝左，1 脚在左下，引脚标注与 DIP 顶视一致 ✅。</li>
+<li><strong>一孔一脚</strong>：U1 在第 2–5 列，U2 在第 13–16 列，U3 在第 26–29 列。逐列数下来，每个孔最多插一只脚。占用最多的半列是第 14 列上半（b/c/d 三根线 + 7 脚）和第 21 列上半（Cin、Rn2、两根蓝线），都是 4 个，不超过 5 孔 ✅。</li>
+<li><strong>连接逐条对照原理图</strong>：
+<ul>
+<li>三角波部分：Rs2 跨 a3–a5（sq→2IN+）；Ri 跨 col7 上下半（sq→1IN−）；Ci 跨 h2–h3；Rs1 跨 col8（tri→2IN+）；2IN− 和 1IN+ 用绿线接 V_MID。</li>
+<li>中点参考：R1 从 +12 V 接到 a16，R2 跨 b16–b17（GND），Cd 跨 c16(+)–c17，U2B 接成跟随器，U2A 接成跟随器闲置（1IN+ 接 V_MID）。</li>
+<li>载波与输入：Ct 跨 j18–j19，Rt 跨 d19–d20（V_MID）；信号源 → Rn1（c23–c22）→ Cin（b22–b21）→ s（col21），Rn2 跨 c20–c21。</li>
+<li>比较器：U3 2IN+ 接 t、2IN− 接 s、2OUT→g34（IN2）；1IN− 接 t、1IN+ 接 s、1OUT→i32（IN1）；Rp 从 j32、j34 接 +5 V 轨。</li>
+<li>结论：与 p4-2 原理图、SPICE 网表全部吻合 ✅。</li>
+</ul>
+</li>
+<li><strong>电源轨</strong>：轨上每 5 孔一组，组间空档在第 6、12、18、24、30 列。所有插到轨上的线和元件脚都避开了空档：
+<ul>
+<li>上轨：2、3、13、14、16、17、22、26、27、31、33、35 列；</li>
+<li>下轨：1、3、5、16、29、32、34、35 列。</li>
+<li>结果 ✅。上下两条 GND 轨在第 35 列连通 ✅；+12 V 只在上轨，+5 V 只在下轨 ✅。</li>
+</ul>
+</li>
+<li><strong>极性</strong>：Cd 的「+」画在 c16（分压点）一侧 ✅。VM 旁的 100 µF 在 p4-1 上没画「+」号，只靠文字说明「+ 接 VM」，见新建议-03。</li>
+<li><strong>上拉电压</strong>：Rp 的另一端插在 +5 V 轨（下轨第二排），不在 +12 V 轨上 ✅。它的本体压在 GND 轨孔上方，是画法造成的视觉重叠，引脚落点正确。</li>
+</ul>
+<h3 id="新必改">新必改</h3>
+<p><strong>新必改-01｜page2（建议放在 L114 死区讲完之后、L116 LC 之前，或放在 §四效率之前）：补一段逐行注释的最小可运行 Python 仿真。</strong></p>
+<ul>
+<li>问题：作者指南 L28 和 specs/task-spec.md L21 都要求 page2 有「一段逐行注释的最小可运行 Python 仿真代码，输出 png」。本节 page2 一个代码块都没有（<code>run_blocks</code> 只在 page4 找到 1 块）；40–43、45 节的 page2 都有。</li>
+<li>改法：写一段约 30 行的 numpy 脚本。
+<ol>
+<li>生成 38.56 kHz、峰值 2.73 V、以 6 V 为中心的三角波 t，以及 s = 6 V + 0.25 V·sin(2π·400 Hz)；</li>
+<li>比较得到 IN1 = (s &gt; t)、IN2 = 非 IN1，再算 v_d = 12·(IN1 − IN2)；</li>
+<li>用一阶或二阶离散 LC（或 1 个载波周期的滑动平均）求平均；</li>
+<li>打印基波峰值和总增益，对照 SPICE 的 2.687；</li>
+<li>保存一张三层波形 png。</li>
+</ol>
+</li>
+<li>写完后用 <code>tools/run_blocks.py</code> 确认能跑通。</li>
+<li>理由：这是硬规则；而且「比较 → 脉宽 → 平均」是本节的核心，读者应该能自己改参数看结果。</li>
+</ul>
+<p><strong>新必改-02｜page3 L145（第 1 轮必改-01 的遗留）：误区「比较器抖，就给它加迟滞」写了具体接法，却没有局部原理图。</strong></p>
+<ul>
+<li>二选一：
+<ul>
+<li>①在 L145 下方加一张局部原理图：U3A，+ 接 s、− 接 t；IN1 经 1 MΩ 回 s；s 经 Rin2 10 kΩ 接 V_MID，标出「直流被拉低 → 负载直流约 −0.145 V」；配一句「对照看」。</li>
+<li>②删掉「从 IN1 接 1 MΩ 到 s」这一具体接法，只保留结论和 SPICE 数字。</li>
+</ul>
+</li>
+<li>页面里的 −0.145 V 我已核过：SPICE 重跑 −0.1449 V。</li>
+<li>理由：作者指南的硬规则是每段接线描述都要有对应原理图。读者照文字去搭，正是这一节要劝阻的做法。</li>
+</ul>
+<p><strong>新必改-03｜page4 L14–26 安全须知（以及 L11、L229 的实验 C）：缺听力保护。</strong></p>
+<ul>
+<li>问题：全节只有「音量从 0 开始加」（L23、L113）。实验 C 要用 1.5 V 信号连续放 5 分钟的 400 Hz 单音，喇叭上约 0.21 W，耳朵靠近时声音很刺耳。</li>
+<li>改法：
+<ul>
+<li>在安全须知里加一条：「<strong>保护听力</strong>：耳朵不要贴近喇叭，放音时和喇叭保持一臂以上距离；感到刺耳立刻调小；长时间测试（实验 C）用 8 Ω / 5 W 假负载代替喇叭，或给喇叭盖上布。」</li>
+<li>同时把 L11、L229 的实验 C 改成「用假负载（仍串 10 Ω）」。功率数字不变（假负载同为 8 Ω），这样也顺带采纳了建议-09。</li>
+</ul>
+</li>
+<li>理由：任务要求的安全项里有听力保护，而本节是全教程第一个长时间放出可闻大音量的实验。</li>
+</ul>
+<h3 id="新建议">新建议</h3>
+<ul>
+<li><strong>新建议-01｜page4 L21 / L79：</strong> 补半句「数据手册 I_VM 最大 10 mA，加上指示灯，正常读数在 6～15 mA 之间都算正常」，免得读者读到 12 mA 就慌。手册的 10 mA 已用 pdftotext 核对；指示灯的电流 [待核实]，写的时候不要给具体数字。</li>
+<li><strong>新建议-02｜page2 L186：</strong>「真正的 D 类功放不串这只电阻，喇叭拿到的就是表里的效率」改成「……喇叭拿到的效率<strong>大致</strong>就是表里的数」。去掉 10 Ω 后 Q 值和电流都会变，不完全相等。</li>
+<li><strong>新建议-03｜图 44-p4-1：</strong> 给 VM 旁的 100 µF 画上「+」号，并把两只电容接模块 GND 的那条腿画出来，现在只有文字说明。</li>
+<li><strong>新建议-04｜<code>spice/44/front.inc</code>：</strong> 运放实例名（XU1A = V_MID、XU1B = 积分、XU2A = 施密特）和图上的编号（U1 = 三角波、U2B = V_MID）不一致。建议在注释里写明对应关系，或者直接改名，方便读者拿网表对照原理图。</li>
+<li><strong>新建议-05｜page3 L42 / page4 L229：</strong> 0.261 W 可以写成 0.262 W（复算值，见上），也可以不改。</li>
+</ul>
+<h3 id="第-1-轮建议处理情况">第 1 轮建议处理情况</h3>
+<table>
+<thead>
+<tr>
+<th>建议</th>
+<th>状态</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>01 1 Hz 慢三角波 + LED</td>
+<td>未采纳</td>
+<td>四页里搜不到「1 Hz」「LED 演示」</td>
+</tr>
+<tr>
+<td>02 Q 回指 20/25 节</td>
+<td>未采纳</td>
+<td>Q 值最小补充框里没有回指</td>
+</tr>
+<tr>
+<td>03 SLOA119B → SLAA701B</td>
+<td>已采纳</td>
+<td>page2 L234、page3 L167</td>
+</tr>
+<tr>
+<td>04 与 43 节发热对比 + 迁移题</td>
+<td>未采纳</td>
+<td></td>
+</tr>
+<tr>
+<td>05 4 Ω 喇叭变体题</td>
+<td>未采纳</td>
+<td>练习仍为 3 道</td>
+</tr>
+<tr>
+<td>06 电流表档位</td>
+<td>部分</td>
+<td>写了「直流 mA 档」，但没写 200/400 mA 档、µA 档不能用、电流表放在退耦电容上游</td>
+</tr>
+<tr>
+<td>07 TL072 共模 [待核实]</td>
+<td>未采纳</td>
+<td></td>
+</tr>
+<tr>
+<td>08 颜色名</td>
+<td>未采纳</td>
+<td>page1 L33 仍写「绿色虚线」；p3-3 图注仍写「深橙色」</td>
+</tr>
+<tr>
+<td>09 测效率用假负载</td>
+<td>未采纳</td>
+<td>可和新必改-03 一起改</td>
+</tr>
+<tr>
+<td>10 排错表补睡眠模式</td>
+<td>未采纳</td>
+<td>手册 7.3.2：两输入都为低约 1 ms 后进入睡眠，pdftotext 已核</td>
+</tr>
+<tr>
+<td>11 BTL 误区先在 page1 抛出</td>
+<td>未采纳</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<p>建议不阻塞发布。</p>
+<h3 id="检查结果副本-tmprv44b">检查结果（副本 /tmp/rv44b）</h3>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count_cjk（--min 500；page4 --min 1500）</td>
+<td>1691 / 3344 / 3593 / 3915，全部达标</td>
+</tr>
+<tr>
+<td>run_blocks（页面）</td>
+<td>PASS 1 / FAIL 0（只有 page4 L175 一块；page2 没有代码块，见新必改-01）</td>
+</tr>
+<tr>
+<td>run_blocks --scripts code/figs/44_figs.py</td>
+<td>PASS。重新生成的 21 张 PNG 和仓库里的逐字节一致（md5 相同）</td>
+</tr>
+<tr>
+<td>check_figs</td>
+<td>3 / 8 / 5 / 5，OK</td>
+</tr>
+<tr>
+<td>fix_inline_math_spacing --check</td>
+<td>0 处</td>
+</tr>
+<tr>
+<td>check_github_math --repo placeholder/placeholder</td>
+<td>4/4 页通过：公式数 src/github 分别为 0/0、41/41、7/7、5/5</td>
+</tr>
+<tr>
+<td>SPICE spice/44/run.py</td>
+<td>rc=0，共 86 项（另有 17 项只有 SPICE 值、页面没有对应数）。有页面值的各项偏差最大 0.31%，没有 ❌</td>
+</tr>
+<tr>
+<td>手册核对（curl + pdftotext）</td>
+<td>DRV8871：t_DEAD 220 ns、t_PD 0.7 µs、I_VM 3 / 10 mA、t_sleep 1 ms ✅；SLOA145「LC or ferrite bead filter is required for EMC」✅</td>
+</tr>
+</tbody>
+</table>
+<h3 id="结论">结论</h3>
+<p>第 1 轮 10 条必改：9 条改好，必改-01 部分改好（遗留部分并入新必改-02）。新增必改 3 条：page2 补 Python 仿真、page3 迟滞接法补局部原理图或删去、page4 补听力保护并让实验 C 用假负载。三条改动都很小，作者自查通过即可，不必再加一轮完整复审。</p>
+<p>计数：新必改 3 条；新建议 5 条。</p>
+<p>约束遵守：只追加了本文件；页面、代码、图都没改；没有运行任何 git 命令，rg/find 没碰 .git；脚本只拷 tools、code、44-class-d-amp、spice/44、spice/models 到 /tmp/rv44b 后运行，解释器用 /workspace/circuits-venv/bin/python。</p>
+<p><strong>结论：不可发布（新必改-01～03 改完即可发布）。</strong></p>
+<h2 id="复核第-3-轮定点">复核（第 3 轮，定点）</h2>
+<p>复核范围：作者 notes/part2-status.log 21:24 那一行列出的改动，以及第 2 轮的 3 条新必改和 5 条新建议。脚本只拷 tools、code、44-class-d-amp、spice/44、spice/models 到 /tmp/rv44c，在副本里用 /workspace/circuits-venv/bin/python 运行，仓库没有改动。行号以当前文件为准（page1 79 行、page2 303 行、page3 181 行、page4 283 行；img/ 共 22 张）。</p>
+<h3 id="三项评分-1">三项评分</h3>
+<table>
+<thead>
+<tr>
+<th>维度</th>
+<th>第 2 轮</th>
+<th>第 3 轮</th>
+<th>理由</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>① 深入浅出</td>
+<td>好</td>
+<td>好</td>
+<td>page2 §六 新增的 numpy 段在副本里能跑通。它把「比较 → PWM → LC 平均」从头算了一遍，算出的 2.759 和第三节的手算 2.762、SPICE 的 2.687 能对上。页面也说清了差 2.7% 的原因。三个「自己改参数」的结论我逐个改参数重跑，都成立。</td>
+</tr>
+<tr>
+<td>② 浅显易懂、好学</td>
+<td>一般</td>
+<td>好</td>
+<td>第 2 轮卡在两处：page2 没有可运行的仿真，迟滞反例没有图。现在都补上了。图 44-p3-6 和原理图、hyst.cir、正文三方一致。page4 的安全流程完整：先接假负载，最后断电换喇叭，听力提示具体。剩下的都是措辞层面的小问题，列在下面的建议里。</td>
+</tr>
+<tr>
+<td>③ 举一反三</td>
+<td>一般</td>
+<td>好</td>
+<td>练习从 3 题增加到 5 题：练习 4 和 43 节比发热，练习 5 是 4 Ω 喇叭变式。答案我独立算过，都对。page1 新增 BTL「先想一想」，答案在 page3 常见误区 L140，前后能呼应。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="第-2-轮新必改逐条核对">第 2 轮新必改逐条核对</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>判定</th>
+<th>核对结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>新必改-01 page2 缺可运行 Python 仿真</td>
+<td><strong>改好</strong></td>
+<td>① page2 L179–220 一段 python，run_blocks 结果为 PASS。输出 <code>IN1 平均占空比 0.499；负载 400 Hz 峰值 2.759 V，总增益 2.759（SPICE 2.687）</code>，和页面 L225 逐字一致。图存到系统临时目录（/tmp/44_pwm_lc.png），不写进仓库。② 开头保留了 sys.path 两行（L180–181），和其他节一致。③ 逐行注释：计算部分 L182–209 每行都有注释；只有 L180 <code>import sys, pathlib</code>、L217、L219 三行纯画图或保存的语句没有行尾注释，不影响理解，列为建议-01。④ 差异解释：(2.759 − 2.687) ÷ 2.687 = 2.68%，在 10% 以内。页面 L91 和 L231 都给了原因：代码里比较器和 H 桥瞬间翻转，SPICE 里有比较器翻转、上拉充电、死区这段过渡时间。方向也对，过渡时间只会让增益变小。⑤ 10% 警告：AUTHOR_GUIDE L38 的「偏差超过 10% 打印提示、开头写 sys.path 两行」是针对 page4 实测对比代码的要求。page4 L193 有 <code>abs(v - w) / w &lt;= 0.10</code> 判定，满足这一条；page4 那段代码开头没有 sys.path 两行，见建议-02。page2 这段属于仿真演示，没有和实测值比较，因此不打印 10% 警告不算违规，但可以顺手加一行，见建议-01。⑥ 参数实验：我在副本里改参数重跑。VTRI = 1.5 时增益 5.030（页面 5.030）；VSRC = 5.0 时峰值 12.405 V，增益 2.481（页面 2.481）；CF = 0.1e-6 时去掉 400 Hz 后的残余有效值从 0.595 V 变成 1.709 V（页面「约 0.59 → 约 1.71」）。三项全部吻合。</td>
+</tr>
+<tr>
+<td>新必改-02 page3 迟滞接法无图</td>
+<td><strong>改好</strong></td>
+<td>① Read 放大看图 44-p3-6（img/44_p3_6_hyst.png）。t 接 U3A 反相端，s 接同相端。信号源经 Rin1 4.7 kΩ、Cin 1 µF 到 s，s 经 Rin2 10 kΩ 到 V_MID。输出经 1 kΩ 上拉到 +5 V，成为 IN1 送往 DRV8871。Rhy 1 MΩ 用朱红虚线从 IN1 接回 s 点。这些都和 page4 对照原理图的 U3A 部分一致，也和 hyst.cir L10 <code>Rhy in1 s 1Meg</code>、comp_ad.inc（s &gt; t 时 IN1 为高）一致。② 图上标注、正文 L146、「对照看」L153 三处数字一致：IN1 2.47 V、s 5.96 V、约 3.5 µA、低 36 mV、−0.145 V。我独立核算：(5.96 − 2.47) V ÷ 1 MΩ = 3.49 µA；Cin 隔直，s 的直流只经 Rin2 到 V_MID，所以压降 3.49 µA × 10 kΩ ≈ 35 mV，和 SPICE 的 6 − 5.9635 = 36.5 mV 吻合。③ 副本里 <code>ngspice -b hyst.cir</code> 跑出 vdavg = −0.1449 V（30–40 ms）、in1avg = 2.4732 V、savg = 5.9635 V，和页面一致。<a href="http://run.py">run.py</a> 第 74 行这一项为 −0.145 / −0.1449，偏差 +0.05%。④ 图注 L151 和 alt 文字齐全，check_figs 显示 page3 由 5 张图变为 6 张，结果 OK。</td>
+</tr>
+<tr>
+<td>新必改-03 page4 听力保护、实验 C 用假负载</td>
+<td><strong>改好</strong></td>
+<td>① 「保护耳朵」条（L23）写得具体：喇叭朝下或朝墙放，离耳朵至少 50 cm，不贴耳听；音量从 0 开始，只用 0.5 V 档听几秒；5 分钟的实验 C 一律接假负载。② 步骤一致：第 3 步先接 8 Ω / 5 W 假负载；第 6 步仍接假负载做 B、C；第 7 步「<strong>断电</strong>，把假负载换成喇叭（仍串 10 Ω）」，上电后先确认负载直流 &lt; 50 mV，再从 0 加到 0.5 V。L22 的安全条、L27「改线、换元件之前先断电」也和这里呼应。BOM L38–40 有 10 Ω / 5 W、8 Ω 喇叭、8 Ω / 5 W 假负载三项。实验 C 的记录表 L224 增加了「8 Ω 假负载 / °C」一列。③ 面包板图 44-p4-1 裁出右侧放大 2.2 倍：负载框写「10 Ω / 5 W 电阻 串 8 Ω 喇叭（先用假负载）两端都不接地！」，图底元件表写「实验 A、B、C 先用 8 Ω / 5 W 假负载代替」，和步骤一致。还能看到：电流表标「直流 200 mA 档」；100 µF 旁有红色「+」（采纳第 2 轮建议-03）；模块 GND 用粗黑线单独回电源负极，标「星形接地」。图 44-p4-5 也改成两根地线在 12 V 电源负极汇合。④ 我独立算了功率额定。信号源 1.5 V 时负载有效值电流约 0.162 A，10 Ω 上 0.162² × 10 = 0.262 W，8 Ω 假负载上 0.210 W，分别只占额定的 5.2% 和 4.2%。最坏故障是 IN2 误接 5 V，直流时 10 Ω 上 0.94 W、8 Ω 上 0.75 W。如果漏接 LC，10 Ω 上约 4.13 W、8 Ω 上约 3.31 W，仍在 5 W 以内，但已接近额定；这时页面的 60 °C 断电线会先起作用。所以 5 W 额定够用。喇叭标 ≥ 0.5 W：试听时信号源 0.5 V，喇叭上 400 Hz 峰值 1.34 V，功率约 (1.34/18)² ÷ 2 × 8 ≈ 0.022 W，余量很大。</td>
+</tr>
+</tbody>
+</table>
+<p><strong>3 条新必改全部改好。</strong></p>
+<h3 id="本轮新增内容核对">本轮新增内容核对</h3>
+<ul>
+<li><strong>练习 4（与 43 节比发热），我独立算的结果：</strong>
+<ul>
+<li>题面引用的 43 节数据和 43 节原文一致：43 page2 L151 写 0.56 W，L161 写每管 0.44 W，L162 写热阻 100 °C/W。</li>
+<li>43 节：0.88 ÷ 0.56 = 1.57，温升 0.44 × 100 = 44 °C，25 °C 室温下约 69 °C。</li>
+<li>本节：0.262 + 0.210 = 0.47 W，0.057 ÷ 0.47 = 0.12，温升 0.057 × 41.1 = 2.3 °C。</li>
+<li>DRV8871 手册 RθJA = 41.1 °C/W，已 curl 取到真实 PDF，pdftotext 第 226 行核对一致。</li>
+<li>答案正确。</li>
+</ul>
+</li>
+<li><strong>练习 5（4 Ω 变式），我独立算的结果：</strong>
+<ul>
+<li>(a) Q = 14 × √(0.68 µF / 440 µH) = 14 × 0.03931 = 0.550 ✓。</li>
+<li>(b) Q = 4 × 0.03931 = 0.157 ✓。用二阶低通公式数值求 −3 dB 点，结果是 1.48 kHz（页面写「约 1.5 kHz」✓）。作为对照，Q = 0.337 时为 3.49 kHz，和练习 2 答案的 3.43 kHz 在粗估精度内一致。</li>
+<li>(c) 计算过程：H 桥输出的 400 Hz 峰值为 1.5 × 0.6803 × 4.393 = 4.48 V。串联电阻 RS = 1.471 Ω，ωL = 1.106 Ω，|Z| = √(5.471² + 1.106²) = 5.58 Ω。由此 4 Ω 上峰值约 3.21 V，电流峰值约 0.80 A，功率约 1.29 W，和答案吻合。</li>
+<li>答案漏掉了载波纹波：38.56 kHz、50% 占空比时纹波峰峰值约 24 × 0.25 ÷ (440 µH × 38.56 kHz) ≈ 0.35 A，峰值还要再加约 0.18 A，电感电流峰值接近 1 A。结论「超过 0.64 A」不变，只是更严重，见建议-03。</li>
+</ul>
+</li>
+<li><strong>剧透检查：</strong>
+<ul>
+<li>两题答案都在 <code>&lt;details&gt;</code> 折叠里。</li>
+<li>练习 4 题面给出了算温升所需的全部数据，题面最后一句「说明为什么 43 节必须装散热片、本节不用」先说出了结论，但没有给出任何数字，算是引导，不算剧透。</li>
+<li>练习 5 题面没有泄露答案。</li>
+<li>page1 L66 的「先想一想」只提问，答案放在 page3 L140，也没有剧透。</li>
+</ul>
+</li>
+<li><strong>睡眠模式排错行（page3 L133）：</strong> 我重新 curl 了 <a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf%EF%BC%881,582,709">https://www.ti.com/lit/ds/symlink/drv8871.pdf（1,582,709</a> 字节，%PDF 头），用 pdftotext 转成文本核对：
+<ul>
+<li>第 264 行：tsleep「Inputs low to sleep」典型 1 ms、最大 1.5 ms。</li>
+<li>第 467 行真值表：00 = 「Coast; H-bridge disabled to High-Z (sleep entered after 1 ms)」。</li>
+<li>第 499 行 7.3.2：「When IN1 and IN2 are both low for time tSLEEP (typically 1 ms) … outputs remain High-Z」。</li>
+<li>页面写「两个输入都为低超过约 1 ms 就进入休眠，两个输出都断开」，和手册相符。现象、原因、查法、改法也都对得上：没有上拉时 LM393 开集输出加上模块的下拉，IN1、IN2 都是低电平。</li>
+<li>「先给 Arduino 上电，再接通 12 V」不是必须的，因为任一输入变高后芯片会自动唤醒（手册第 501 行）。但这个顺序能避免一上电就进入睡眠，保留无妨。</li>
+</ul>
+</li>
+<li><strong>其余建议的落实情况：</strong>
+<ul>
+<li>第 2 轮建议-01：page4 L81 已写「I_VM 典型 3 mA、最大 10 mA，读 6～15 mA 都算正常」，电流表档位从 µA 改成了 200 mA / 400 mA 档。</li>
+<li>建议-02：page2 L253 已加「大致」。</li>
+<li>建议-03：100 µF 已标「+」。</li>
+<li>建议-04：front.inc 第 3–5 行已加上 XU1A → U2B、XU1B → U1A、XU2A → U1B 的对照。</li>
+<li>建议-05：page4 L231 仍写 0.261 W（0.162² × 10 = 0.2624），未改，并入建议-04。</li>
+</ul>
+</li>
+</ul>
+<h3 id="本轮新建议都不影响发布">本轮新建议（都不影响发布）</h3>
+<ol>
+<li><strong>建议-01</strong>：page2 §六 代码块里 L180、L217、L219 三行补上行尾注释。另外可以在 L209 后加一行，打印与 SPICE 的相对偏差：<code>dev = (pk - 2.687) / 2.687</code>，超过 10% 时打印提示。这样读者改了参数之后也能马上看到偏差。</li>
+<li><strong>建议-02</strong>：AUTHOR_GUIDE L38 要求 page4 实测对比代码「开头照旧写 sys.path 两行」，page4 L177 这段代码没有写。这段代码不导入仓库模块，加不加不影响运行，43 节也没写；第 1、2 轮我也漏看了。为了和其他节（40/41/42/45 都写了）统一，建议补上这两行。</li>
+<li><strong>建议-03</strong>：练习 5(c) 的答案补一句：再加上约 0.18 A 的载波纹波，峰值接近 1 A。</li>
+<li><strong>建议-04</strong>：几处「喇叭」的说法要和「实验 A–C 用假负载」统一：page4 L7（「负载是 10 Ω / 5 W 电阻串 8 Ω 喇叭」，可以改成「…串 8 Ω 喇叭，实验时先用 8 Ω / 5 W 假负载」）、L178 注释（「10 Ω 电阻 + 喇叭直流电阻」改为「+ 假负载实测电阻」）、L199 注释，以及 L231 的 0.261 → 0.262。</li>
+</ol>
+<h3 id="检查结果副本-tmprv44c">检查结果（副本 /tmp/rv44c）</h3>
+<table>
+<thead>
+<tr>
+<th>检查</th>
+<th>结果</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>count_cjk --min 500</td>
+<td>4/4 达标：1748 / 3827 / 4166 / 4313</td>
+</tr>
+<tr>
+<td>count_cjk --min 1500（page4）</td>
+<td>1/1 达标：4313</td>
+</tr>
+<tr>
+<td>run_blocks（四页）</td>
+<td>PASS 2 / FAIL 0：page2 block1 的输出和页面一致；page4 block1 正常</td>
+</tr>
+<tr>
+<td>run_blocks --scripts code/figs/44_figs.py</td>
+<td>PASS 1 / FAIL 0，断言全过；重新生成的 22 张 PNG 和仓库 md5 全部一致</td>
+</tr>
+<tr>
+<td>check_figs</td>
+<td>3 / 8 / 6 / 5 张，全部 OK</td>
+</tr>
+<tr>
+<td>check_github_math --repo placeholder/placeholder</td>
+<td>4/4 通过，公式数 src/github 分别为 0/0、42/42、7/7、6/6</td>
+</tr>
+<tr>
+<td>fix_inline_math_spacing --check</td>
+<td>四页均为 0 处，rc=0</td>
+</tr>
+<tr>
+<td>SPICE spice/44/run.py</td>
+<td>共 86 项，rc=0，最大偏差 0.31%；hyst.cir 单独运行得 hy_vdavg = −0.144921 V</td>
+</tr>
+<tr>
+<td>DRV8871 手册</td>
+<td>curl 取得真实 PDF，用 pdftotext 核对了 tsleep、真值表、7.3.2、RθJA 41.1，均一致，没有需要标 [待核实] 的项</td>
+</tr>
+</tbody>
+</table>
+<p>计数：本轮新必改 0 条；新建议 4 条。</p>
+<p>约束遵守：只追加了本文件；页面、代码、图都没改；没有运行任何 git 命令，rg/find/grep 也没碰 .git；脚本只拷 tools、code、44-class-d-amp、spice/44、spice/models 到 /tmp/rv44c 后运行，解释器用 /workspace/circuits-venv/bin/python。</p>
+<p><strong>结论：可发布。</strong>（第 2 轮 3 条新必改全部改好，本轮没有新必改；4 条建议可以在后续修订时顺手处理。）</p>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

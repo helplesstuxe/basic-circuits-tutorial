@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38 同步检波 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/38-synchronous-demod/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="38-同步检波--直觉篇">38 同步检波 · 直觉篇</h1>
+<p><a href="../37-zero-crossing-tof/page4.html">上一页：37 过零检测与时差法 · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../30-instrumentation-amp/page1.html">30 仪表放大器与电桥</a>、<a href="../09-precision-rectifier/page1.html">09 精密整流</a>、<a href="../34-switched-cap-filter/page1.html">34 开关电容滤波与跟踪滤波</a></p>
+<blockquote>
+<p><strong>开头三问</strong>（先猜，读完本节再回来对答案）</p>
+<ol>
+<li>一个只有 2.45 mV 的信号，旁边站着比它大 10 倍的 50 Hz 干扰和几十毫伏的直流，用普通的滤波器能把它挑出来吗？</li>
+<li>电磁流量计为什么不用一块永久磁铁，非要让线圈的电流来回换方向？</li>
+<li>把一个方波&quot;乘 +1、乘 −1&quot;轮流做，再求平均，直流会变成什么？</li>
+</ol>
+</blockquote>
+<h2 id="痛点信号是直流干扰也是直流">痛点：信号是直流，干扰也是直流</h2>
+<p><a href="../30-instrumentation-amp/page1.html">30 仪表放大器与电桥 · 直觉篇</a> 已经说过：电磁流量计两个电极之间的有用电压，每 1 m/s 流速只有 150～200 µV；电极对地却带着几百毫伏到 ±2 V 的<strong>极化电压</strong>，外加 50 Hz 干扰（ADI 的文章 <a href="https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html">https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html</a> ）。30 节用仪表放大器把&quot;两根线上一样的部分&quot;扔掉了，这一节要解决剩下的难题：<strong>两根线之间不一样的部分里，也混着很大的直流</strong>。</p>
+<p>先看原理，见图 38-p1-1。导电的液体流过磁场，就像一根切割磁感线的导线，在上下两个电极之间感应出电压 E，大小正比于磁场 B、管径和流速 v。</p>
+<p><a class="img-link" href="img/38_p1_1_flowmeter.png"><img alt="一段管道里液体从左往右流，磁场垂直纸面，上下两个电极引出电压" src="img/38_p1_1_flowmeter.png" loading="lazy" /></a></p>
+<p><em>图 38-p1-1　电磁流量计：流动的导电液体在磁场里感应出电极电压</em></p>
+<p>图 38-p1-1 里如果磁场一直朝一个方向，E 就是一个<strong>直流</strong>。麻烦在于：金属电极泡在液体里，表面会慢慢积起一层电荷，电极之间出现几十到几百毫伏、还在缓慢爬动的直流（每只电极对地的极化可以大到 ±2 V，但两只电极的极化大部分相同，被仪放当共模扔掉，相减后剩下的差值小得多），这就是<strong>电极极化</strong>。它也是直流，和 E 混在一起，用什么滤波器都分不开——低通会把两者一起留下，高通会把两者一起扔掉。</p>
+<h2 id="一换个思路让信号动起来干扰不动">一、换个思路：让信号&quot;动起来&quot;，干扰不动</h2>
+<p>既然分不开，就让信号换个样子。办法是让线圈电流<strong>来回换方向</strong>：磁场一会儿朝里、一会儿朝外，E 就跟着一会儿为正、一会儿为负，变成一个方波。而极化电压是电极自己的事，不管磁场朝哪边，它都慢慢地朝同一个方向爬。</p>
+<p>图 38-p1-2 是一个示意（单位任意）：</p>
+<p><a class="img-link" href="img/38_p1_2_reversal.png"><img alt="三层波形示意：磁场不换向时信号和漂移叠在一起；磁场换向时信号翻号、漂移不翻号；最下面是线圈电流被拖圆的波形和灰色采样窗" src="img/38_p1_2_reversal.png" loading="lazy" /></a></p>
+<p><em>图 38-p1-2　磁场换向的作用：(a) 不换向时分不开；(b) 换向后两半相减；(c) 线圈电流要先爬上来</em></p>
+<ul>
+<li>图 38-p1-2 (a)：磁场不换向，电极电压 = 信号 + 漂移，从一条曲线上根本看不出哪部分是流速。</li>
+<li>图 38-p1-2 (b)：磁场换向，信号跟着翻号，漂移不翻号。把每个周期&quot;正半周的读数减负半周的读数&quot;再除以 2，漂移就被扣掉了。</li>
+<li>图 38-p1-2 (c)：线圈是电感，电流不能突变，每次换向后要过一会儿磁场才稳定。所以只用每个半周期的<strong>后一半</strong>（灰色阴影）来读数。</li>
+</ul>
+<p>这个&quot;换向、相减&quot;的动作，就是本节的主角<strong>同步检波</strong>：手里有一个和信号同步的参考（谁在控制磁场方向，谁就知道此刻信号该是正还是负），每一刻按参考把读数乘 +1 或 −1，再求平均。</p>
+<h2 id="二为什么它连-50-hz-也能挡住">二、为什么它连 50 Hz 也能挡住</h2>
+<p>再看图 38-p1-3。上半图是本节实验里&quot;模拟电极&quot;P 点上的真实样子（ <code>code/38_sim.py</code> 第 1 节算出来的）：有用信号 ±2.45 mV，叠着 −1.98 mV 的直流和 ±24.49 mV 的 50 Hz 干扰（Arduino 的 tone() 发出的是方波，所以还带着 150 Hz、250 Hz……奇数倍谐波），干扰是信号的 10 倍，用肉眼在上半图里找信号几乎不可能。</p>
+<p><a class="img-link" href="img/38_p1_3_buried.png"><img alt="上图是信号叠加大幅 50 赫兹干扰后的波形，下图是乘正负一以后的累计平均曲线" src="img/38_p1_3_buried.png" loading="lazy" /></a></p>
+<p><em>图 38-p1-3　信号埋在 10 倍的干扰里；按励磁乘 ±1 再平均，平均值逐渐靠近真值</em></p>
+<p>图 38-p1-3 的下半图是&quot;跟着励磁乘 ±1、再累计平均&quot;的结果，平均几个周期以后就回到真值 2.449 mV。道理很朴素：</p>
+<ul>
+<li>直流在正半周被加上一次，在负半周被减掉一次，抵消了；</li>
+<li>本节的励磁频率选 6.25 Hz，半个周期 80 ms，里面正好装下 4 个完整的 50 Hz 周期。50 Hz 在一个半周期里的平均是 0，乘 +1 还是 −1 都是 0；</li>
+<li>只有和参考同步翻号的信号，乘了 ±1 以后每一半都变成正的，越平均越清楚。</li>
+</ul>
+<h2 id="三它和精密整流是亲戚">三、它和精密整流是亲戚</h2>
+<p><a href="../09-precision-rectifier/page1.html">09 精密整流 · 直觉篇</a> 的全波整流也是&quot;负的翻成正的再平均&quot;。区别只有一个：整流器看<strong>信号自己的正负</strong>来决定翻不翻，同步检波看<strong>参考的正负</strong>来决定翻不翻。所以同步检波常被叫作&quot;有参考的整流&quot;。这个区别非常关键：</p>
+<ul>
+<li>整流器碰到干扰也照翻不误，干扰被翻成正的，平均后变成一个假读数；</li>
+<li>同步检波只认参考，和参考不同步的干扰在平均里抵消，所以它能从比自己大 10 倍、100 倍的干扰里挑出信号。</li>
+</ul>
+<p>正弦信号经过精密整流再平均，得到幅度的 0.637 倍（2/π）；正弦信号乘一个同步的方波参考再平均，也得到 0.637 倍。这是同一件事的两种说法， <a href="page2.html">原理与实现篇</a> 会算给你看。</p>
+<h2 id="四电路上怎么做乘-1">四、电路上怎么做&quot;乘 ±1&quot;</h2>
+<p>&quot;乘 +1&quot;是一只跟随器，&quot;乘 −1&quot;是一只反相放大器（ <a href="../05-inverting-amp/page1.html">05 反相放大 · 直觉篇</a> ）。用一个模拟开关 CD4053（ <a href="../34-switched-cap-filter/page1.html">34 开关电容滤波与跟踪滤波</a> 用过）在两者之间来回切，切换的命令就是励磁的参考方波。后面再接一个 RC 低通求平均，万用表就能读出一个稳定的直流。本节实验用 Arduino 同时产生&quot;励磁&quot;和&quot;参考&quot;两根方波，还能故意把参考错开 45°、90°、180°，看读数怎么变。</p>
+<p>Arduino 的 5 V 方波推不动接在 9 V 上的 CD4053（VDD = 9 V 时，选择脚要高于约 6.3 V 才保证认作高电平，这个数按数据手册 5 V、10 V 两档的门限估算，见 <a href="page3.html">参数与调试篇</a> 第五节），中间要用比较器 LM393 做一次<strong>电平转换</strong>。这件事 <a href="../29-pullup-level-shift/page1.html">29 上拉/下拉电阻与电平转换</a> 讲过原理，这里会具体接一次。</p>
+<h2 id="预告39-节怎么把磁场做稳">预告：39 节怎么把磁场做稳</h2>
+<p>本节的实验用 Arduino 的方波通过一只 1 MΩ 电阻&quot;假装&quot;成电极信号，磁场换向是瞬间完成的。真的流量计里，线圈有电感和电阻，换向时电流按 L/R 的时间常数慢慢爬上来（图 38-p1-2 (c)），电池电压一变，磁场强度也跟着变。 <a href="../39-constant-current-excitation/page1.html">39 恒流励磁 · 直觉篇</a> 会用恒流源驱动线圈，让每个半周期的磁场都一样大。本节&quot;只采后半段&quot;的理由，看图 38-p1-2 (c) 里电流爬升的那一小段就够了。</p>
+<h2 id="新手常见误解">新手常见误解</h2>
+<ul>
+<li><strong>&quot;信号小就多放大几倍&quot;</strong>：极化电压是信号的几十到几百倍，先放大会先把放大器撑到电源边上（ <a href="page2.html">原理与实现篇</a> 算过：9 V 单电源、增益 21 倍时，仪放输出对 V_MID 只剩约 +3 V 的空间，差模直流超过 3.0 V ÷ 21 ≈ 143 mV 就会顶到头）。先想办法把直流去掉，再放大。</li>
+<li><strong>&quot;加一个低通就能滤掉 50 Hz&quot;</strong>：低通能削弱 50 Hz，但扔不掉直流漂移；同步检波两样一起处理。</li>
+<li><strong>&quot;参考随便接一个同频方波就行&quot;</strong>：参考和信号差 90° 时，模拟检波器的读数是 0，频率对但相位错照样读不到（ <a href="page2.html">原理与实现篇</a> 的相位定律）。</li>
+<li><strong>&quot;换向频率越高越好&quot;</strong>：励磁频率要让每个半周期装下整数个 50 Hz 周期，而且要给线圈留出电流爬升的时间，所以工业表常用 50 Hz 的几分之一。</li>
+<li><strong>&quot;翻转相减能消掉一切&quot;</strong>：它消掉的是在两个半周期里一样的东西。漂移本身在变的时候，相减后还会剩一点：图 38-p1-2 (b) 里真值是 1，漂移爬得最快的第一个周期只得到 0.62，后面几个周期在 0.79～0.98 之间（数字由 <code>code/figs/38_figs.py</code> 画这张图时算出）。</li>
+</ul>
+<h2 id="一句话总结">一句话总结</h2>
+<p>信号和干扰都是直流时，让信号跟着参考来回翻号，再按参考乘 ±1 求平均：同步的留下，不同步的抵消。</p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

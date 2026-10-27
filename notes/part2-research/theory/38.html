@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38 同步检波（电磁流量计） · 理论核对（theory）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/38.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="38-同步检波电磁流量计--理论核对theory">38 同步检波（电磁流量计） · 理论核对（theory）</h1>
+<blockquote>
+<p>依据：<a href="http://00-design-part2.md">00-design-part2.md</a> §6「38」、PART2_BRIEF.md §10、notes/38-research.md。
+数值复核：/workspace/calc/c38.py、<a href="http://c38b.py">c38b.py</a>（circuits-venv，numpy/scipy 数值平均与 RC 仿真）。</p>
+</blockquote>
+<h2 id="1-推导链">(1) 推导链</h2>
+<p><strong>1.1 信号从哪来（法拉第定律，高中选修已学 E = BLv）</strong>
+导电液体以 v 流过磁场 B，两电极间距（管内径）D_pipe 相当于&quot;切割磁感线的导体长度&quot;，E = k·B·D_pipe·v（k 为考虑流速分布和电极形状的常数；ADI 文章原式）。高中 E = BLv 正是 k = 1 的特例，可直接回指。</p>
+<ul>
+<li>灵敏度 150–200 µV/(m/s)（ADI）。⚠ ADI 原文&quot;0.5–15 m/s 对应 75 µV 到 4–6 mV&quot;：75 µV = 150 µV × 0.5（单向幅值），而 4.5–6 mV = 2 × (150–200) µV × 15（励磁换向后的峰-峰值）。两端口径不一致，见勘误 E1。</li>
+</ul>
+<p><strong>1.2 电极上实际有什么</strong>
+u(t) = E·r(t) + V_DC + V_50·sin(2π·50·t + φ₅₀)</p>
+<ul>
+<li>r(t) = ±1：励磁方波（正负交替），E 随之翻转；</li>
+<li>V_DC：极化电压（几百 mV 到 ±2 V，ADI），不随励磁翻转；</li>
+<li>50 Hz 感应。</li>
+</ul>
+<p><strong>1.3 乘 ±1 再平均（只用&quot;正负抵消&quot;）</strong>
+y(t) = u(t)·r(t)。因为 r·r = (±1)² = 1：</p>
+<ul>
+<li>E·r·r = E（始终同号）→ 平均 = E；</li>
+<li>V_DC·r：一半时间 +V_DC、一半时间 −V_DC → 平均 = 0（前提：占空比严格 50 %、±1 两路增益严格相等，见 1.7）；</li>
+<li>所以 \overline{y} = E。</li>
+</ul>
+<p><strong>1.4 参考有相位差 φ 时</strong>
+(a) 信号是方波（page4 的情形，最直观）：一周期内两方波同号的时间占 1 − φ/π，异号占 φ/π（φ 以弧度计，0 ≤ φ ≤ π）。
+\overline{y} = A·[(1 − φ/π) − φ/π] = A·(1 − 2φ/π)——<strong>三角形（折线）关系</strong>，不是余弦。Python：φ = 0/30°/60°/90° → 1.000/0.667/0.333/0.000（×A）。
+(b) 信号是正弦 A·sin(ωt + φ)：用和角公式 sin(ωt + φ) = sin ωt·cos φ + cos ωt·sin φ。</p>
+<ul>
+<li>cos ωt 项乘 sgn(sin ωt)：在正半周 [0, π] 内 cos 前一半正、后一半负，面积相消 → 平均 0；</li>
+<li>sin ωt 项乘 sgn(sin ωt) = |sin ωt|，其平均 = 2/π（09 节全波整流平均值 0.637 V_p，直接回指，不必再积分）。
+⇒ \overline{y} = (2/π)·A·cos φ。Python：0/30/60/90° → 0.6366/0.5514/0.3184/0.0000，与公式一致。
+（2/π 的来历需要积分——超纲；绕过方式：回指 09 节，或用 Python/表格把 |sin| 采样求平均给出 0.637。）</li>
+</ul>
+<p><strong>1.5 50 Hz 为什么能被消掉（只用&quot;整数个周期正负抵消&quot;）</strong>
+正弦在<strong>整数个完整周期</strong>内平均为 0。设 n = 50 Hz / f_exc：</p>
+<ul>
+<li>励磁的每个半周期长 T/2 = n/(2·50) s，含 n/2 个工频周期；</li>
+<li>n 为<strong>偶数</strong>（1/2、1/4、1/8、1/10、1/16）→ 每个半周期含整数个工频周期 → 无论 50 Hz 相位如何，50 Hz 的贡献在每个半周期内都是 0；</li>
+<li>n 为<strong>奇数</strong>（如 1/7、1/25）→ 半周期含半整数个工频周期，残留最坏 = (2/(nπ))·V_50（Python：n = 7 → 0.091、n = 25 → 0.0255，每 1 V 的 50 Hz），并且随相位漂移，就是&quot;零点不稳&quot;。</li>
+<li>若只在每个半周期<strong>后半段</strong>采样（避开线圈过渡），则<strong>采样窗</strong>本身必须是 20 ms 的整数倍：6.25 Hz 时后半段 40 ms = 2 个周期 ✓；25 Hz 时后半段 10 ms = 半个周期 ✗。
+（频域说法：50 Hz × 方波 → 50 ± (2k+1)·6.25 Hz，最低为 6.25 Hz，没有 0 Hz 分量。这是可选的&quot;超纲旁注&quot;。）</li>
+</ul>
+<p><strong>1.6 RC 低通后的纹波（高中 Q = CU、I = Q/t）</strong>
+±1 之后，未被消掉的分量（如 G·V_DC）变成 ±a 的方波。RC 输出几乎不动（≈ 平均值），所以电阻上的电流 ≈ a/R，半周期 T/2 内电容电压变化：
+ΔU = I·(T/2)/C = a·T/(2RC) = a·T/(2τ)</p>
+<ul>
+<li>6.25 Hz（T = 0.16 s）、τ = 1 s：a = 10 V → 0.80 V p-p；a = 3 V → 0.24 V；a = 0.3 V → 24 mV。</li>
+<li>精确值 2a·tanh(T/(4τ))：0.7996 V，与近似一致。</li>
+<li>两级 RC（各 τ = 1 s）：10 V → 16 mV，3 V → 4.8 mV。
+结论：G·V_DC 若不先去掉，残留纹波会远大于 10 mV 的有用输出。</li>
+</ul>
+<p><strong>1.7 不完美的 ±1 会把直流&quot;漏&quot;成误差（作者原稿缺此点）</strong></p>
+<ul>
+<li>两路增益 +1 与 −(1 − ε)：平均 = G·V_DC·ε/2。G·V_DC = 3 V、ε = 1 %（1 % 电阻）→ 15 mV，比 10 mV 的信号还大；ε = 0.1 % → 1.5 mV。</li>
+<li>占空比 D_r = 0.5 + δ：平均 = 2δ·G·V_DC。δ = 0.1 % → 6 mV。
+⇒ 实用做法（也是 ADI &quot;传统方案&quot;的结构）：INA（G ≤ 10）→ <strong>隔直/带通</strong>（去 V_DC）→ 再放大 → ±1 → 低通。隔直 RC 的时间常数要 ≫ 半周期：τ = 1 s 时 80 ms 内衰减（&quot;下垂&quot;）7.7 %，两半周期对称，平均值只按比例缩小，可标定。</li>
+</ul>
+<p><strong>1.8 CMRR 一行算例（ADI）</strong>
+100 dB = 10⁵ 倍：0.3 V/10⁵ = 3 µV（Python 复核 3.00 µV）。dB 超纲：只需&quot;20 dB = 10 倍&quot;，100 dB = 10⁵。</p>
+<h2 id="2-符号表">(2) 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>E</td>
+<td>电极间感应电动势（有用信号）</td>
+<td>V（µV、mV）</td>
+</tr>
+<tr>
+<td>k</td>
+<td>流量计常数（流速分布、电极形状）</td>
+<td>无量纲</td>
+</tr>
+<tr>
+<td>B</td>
+<td>磁感应强度</td>
+<td>T</td>
+</tr>
+<tr>
+<td>D_pipe</td>
+<td>管内径（不用 D，第一部分 D 是占空比）</td>
+<td>m</td>
+</tr>
+<tr>
+<td>v</td>
+<td>平均流速</td>
+<td>m/s</td>
+</tr>
+<tr>
+<td>r(t)</td>
+<td>参考信号 ±1</td>
+<td>无量纲</td>
+</tr>
+<tr>
+<td>V_DC</td>
+<td>电极极化直流</td>
+<td>V</td>
+</tr>
+<tr>
+<td>V_50</td>
+<td>50 Hz 干扰幅值</td>
+<td>V</td>
+</tr>
+<tr>
+<td>A</td>
+<td>信号幅值</td>
+<td>V</td>
+</tr>
+<tr>
+<td>φ</td>
+<td>信号与参考的相位差</td>
+<td>rad / °</td>
+</tr>
+<tr>
+<td>f_exc</td>
+<td>励磁频率</td>
+<td>Hz</td>
+</tr>
+<tr>
+<td>T</td>
+<td>励磁周期 1/f_exc</td>
+<td>s</td>
+</tr>
+<tr>
+<td>n</td>
+<td>工频/励磁频率之比</td>
+<td>无量纲</td>
+</tr>
+<tr>
+<td>G</td>
+<td>INA 放大倍数</td>
+<td>V/V</td>
+</tr>
+<tr>
+<td>ε</td>
+<td>±1 两路增益失配</td>
+<td>无量纲</td>
+</tr>
+<tr>
+<td>τ</td>
+<td>RC 时间常数</td>
+<td>s</td>
+</tr>
+<tr>
+<td>CMRR</td>
+<td>共模抑制比</td>
+<td>dB</td>
+</tr>
+<tr>
+<td>\overline{y}</td>
+<td>解调输出平均值</td>
+<td>V</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误对-notes38-researchmd">(3) 勘误（对 notes/38-research.md）</h2>
+<ul>
+<li><strong>E1（第 6 行）</strong>：ADI 原文 75 µV 与 4–6 mV 口径不同（单向幅值 vs 换向后峰-峰值；原文自己说 &quot;Since the excitation current alternates its direction, the sensor output signal amplitude doubles&quot;）。正文写成&quot;单向 75 µV–3 mV，换向后峰-峰值翻倍&quot;，或直接引原文并加注。</li>
+<li><strong>E2（第 21 行）</strong>：用了 ⟨⟩，违反记号约定，改为 \overline{…}。</li>
+<li><strong>E3（第 37 行图 38-p2-2 &quot;cos 曲线&quot;）</strong>：page4 与 SPICE 用的是<strong>方波</strong>信号，平均值随 φ 是<strong>三角形</strong> A(1 − 2φ/π)；cos φ 只对正弦成立。图中画两条（方波折线 + 正弦 (2/π)cos φ）并注明。</li>
+<li><strong>E4（第 22 行，50 Hz 条件）</strong>：补&quot;n 必须为偶数&quot;（半周期含整数个工频周期），并补&quot;若只取后半段采样，窗口长度也须是 20 ms 的整数倍&quot;。第 14 行 Armstrong 的 1/25 若属实，半周期含 12.5 个工频周期，不满足此条件（残留最坏 2.5 % × V_50），说明厂家必须用整数周期采样窗——作者要么核实原文语境，要么不引此例。</li>
+<li><strong>E5（第 41 行 SPICE）</strong>：1 V <strong>差分</strong>直流 × G10 = 10 V，在 §10.3 规定的单电源 12 V + 6 V 虚地下（TL072 输出离轨还要留余量）必饱和。修正二选一：(a) 1 V 作<strong>共模</strong>加入（同时加到两电极），差分直流 ≤ 0.3 V（×10 = 3 V）；(b) INA 后加隔直。另外：即使不饱和，3 V 直流 ±1 后经 τ = 1 s RC 仍有 0.24 V p-p 纹波（信号仅 10 mV），且 1 % 增益失配即漏 15 mV —— SPICE 的&quot;验证约 10 mV&quot;在原链路上不成立，必须加隔直或二阶低通再验证。</li>
+<li><strong>E6（第 44 行分压）</strong>：0/5 V 方波经 1 MΩ/1 kΩ 得 0 ↔ 4.995 mV，即 2.50 mV 直流 + ±2.50 mV 方波，<strong>不是 ±5 mV</strong>。这 2.5 mV 直流恰好可用来演示&quot;直流被消掉&quot;，正文按此写。若想要关于零对称，用隔直电容或从 2.5 V 中点分压。</li>
+<li><strong>E7（第 44、46 行 CD4053 驱动电平）</strong>：CD4053B 若用 12 V 供电，V_IH 最小值在 V_DD = 10 V 时已是 7 V（15 V 时 11 V），Arduino 5 V 高电平<strong>不能可靠切换</strong>。修正：用 LM393（开集电极，上拉到 12 V）或一只 NPN 做电平转换；或 CD4053 用 5 V 供电（V_IH = 3.5 V，但 r_ON 典型 470 Ω/最大 1050 Ω，信号须在 0–5 V 内）。另：125 Ω 是 V_DD = 15 V 的典型值，12 V 时介于 180 Ω（10 V）与 125 Ω 之间；让开关接运放高阻输入端即可使 r_ON 无关紧要。</li>
+<li><strong>E8（第 44 行 D9 6.25 Hz）</strong>：analogWrite 的 PWM 频率约 490 Hz，不能直接得到 6.25 Hz；须用 Timer1 CTC 或 millis() 翻转，须保证占空比 50 %（1.7：占空比误差 0.1 % 就漏 2δ·G·V_DC）。</li>
+<li><strong>E9（第 18–20 行推导链）</strong>：补 1.7 的两项非理想（增益失配、占空比误差）和&quot;实用链路先隔直&quot;的结论；常见错误清单加&quot;±1 两路电阻不匹配&quot;。</li>
+<li><strong>E10（符号）</strong>：E = k·B·D·v 中 D 与第一部分占空比 D 冲突，改 D_pipe 或 d。</li>
+<li>数值复核通过：(2/π) = 0.6366、6.25 = 50/8、3.125 = 50/16、80 ms = 4 个工频周期、100 dB × 0.3 V = 3 µV。</li>
+</ul>
+<h2 id="4-参考本会话打开并核对">(4) 参考（本会话打开并核对）</h2>
+<ul>
+<li>
+<p>ADI Analog Dialogue《Electromagnetic Flow Meters: Design Considerations and Solutions》<a href="https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html">https://www.analog.com/en/resources/analog-dialogue/articles/electromagnetic-flow-meters.html</a> （WebFetch 打开）——E = kBDv；150–200 µV/(mps)；&quot;amplitude doubles&quot;；75 µV 到 4–6 mV；极化电压 few hundred mV 到 ±2 V；INA 增益 &quot;no more than ×10&quot;；&quot;100 dB CMRR would attenuate the 0.3 V DC common mode to 3 μV&quot;；传统链路含 band-pass + S/H；&quot;integer fraction multiple of the power-line frequency&quot;；数字分两组、30 Hz FIR、相减；6.25 Hz 下 DN25、0.5–2 m/s ±0.2 %（表 4：6.25 Hz 0.12 %）。</p>
+</li>
+<li>
+<p>TI CD4053B <a href="https://www.ti.com/lit/ds/symlink/cd4053b.pdf">https://www.ti.com/lit/ds/symlink/cd4053b.pdf</a> ——r_ON 典型 470/180/125 Ω（V_DD = 5/10/15 V，25 °C），最大 1050/400/240 Ω；V_IH 最小 3.5/7/11 V（V_DD = 5/10/15 V）。</p>
+</li>
+<li>
+<p>Arduino reference analogWrite <a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogWrite.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogWrite.adoc</a> ——UNO/Nano 3、5、6、9、10、11 脚，490 Hz（5、6 脚 980 Hz）。</p>
+</li>
+</ul>
+<h3 id="待核实">[待核实]</h3>
+<ul>
+<li>Embien 博客（第 13 行）、Armstrong 手册（第 14 行）：本会话未重新打开，1/25 等数值本文仅作条件性讨论，不作为出处。</li>
+<li>横河、E+H、AD630（研究笔记已标）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 D 类功放 · 工程实战调研</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/44.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="44-d-类功放--工程实战调研">44 D 类功放 · 工程实战调研</h1>
+<blockquote>
+<p>作者：工程实战派。读过的材料：notes/00-design-part2.md §44、notes/PART2_BRIEF.md §10、notes/44-research.md。本节还没有 page4 草稿，审查对象是 00-design 和 44-research 里的 page4 计划。</p>
+</blockquote>
+<h2 id="1-真实器件与参考设计">1. 真实器件与参考设计</h2>
+<h3 id="11-ti-drv8871h-桥电机驱动本节借来当-btl-功率级">1.1 TI DRV8871（H 桥电机驱动，本节借来当 BTL 功率级）</h3>
+<p>来源已打开：<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a></p>
+<ul>
+<li><strong>VM 电源</strong>：6.5–45 V。VM = 12 V 时工作电流典型 3 mA、最大 10 mA；欠压恢复点 6.3–6.5 V。</li>
+<li><strong>逻辑输入 IN1/IN2</strong>：推荐 0–5.5 V，<strong>绝对最大 7 V</strong>。VIL ≤ 0.5 V，VIH ≥ 1.5 V，内部下拉 100 kΩ。</li>
+<li><strong>PWM 频率</strong>：fPWM 0–200 kHz。脚注原文：「at least 800 ns of pulse width to ensure detection」，200 kHz 时可用占空比为 16%–84%。</li>
+<li><strong>真值表</strong>：
+<table>
+<thead>
+<tr>
+<th>IN1</th>
+<th>IN2</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0</td>
+<td>0</td>
+<td>高阻 Coast（1 ms 后进入睡眠）</td>
+</tr>
+<tr>
+<td>0</td>
+<td>1</td>
+<td>反转</td>
+</tr>
+<tr>
+<td>1</td>
+<td>0</td>
+<td>正转</td>
+</tr>
+<tr>
+<td>1</td>
+<td>1</td>
+<td>刹车（两只低边管同时导通）</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><strong>导通与开关</strong>：
+<ul>
+<li>RDS(on) 高边 + 低边典型 565 mΩ。</li>
+<li>tDEAD 220 ns，由芯片内部自动插入。</li>
+<li>tPD 典型 0.7 µs、最大 1 µs。</li>
+<li>tON 40–50 µs（上电或从睡眠唤醒）。</li>
+</ul>
+</li>
+<li><strong>保护</strong>：
+<ul>
+<li>ITRIP = 64 kV / RILIM，RILIM 最小 15 kΩ。触发后斩波：tOFF 25 µs，tBLANK 2 µs。</li>
+<li>OCP 3.7–6.4 A；TSD 150 °C 起（迟滞 40 °C）。</li>
+<li>RθJA 41.1 °C/W。</li>
+</ul>
+</li>
+<li><strong>布局</strong>：VM 引脚旁接 0.1 µF，并加足 bulk 电容。手册典型应用图中为 47 µF，耐压要高于 VM。</li>
+<li><strong>Adafruit DRV8871 模块</strong>（已打开 <a href="https://learn.adafruit.com/adafruit-drv8871-brushed-dc-motor-driver-breakout/overview">https://learn.adafruit.com/adafruit-drv8871-brushed-dc-motor-driver-breakout/overview</a> 和 /pinouts）：
+<ul>
+<li>默认焊了 30 kΩ 的 Rlim，约 2 A 限流。</li>
+<li>逻辑电平最高 5.5 V，不需要单独的逻辑电源。</li>
+<li>页面警告：用外部电源时，不要把 VM 接到 Arduino。</li>
+</ul>
+</li>
+</ul>
+<h3 id="12-ti-slaa701blc-filter-design2026-年-6-月修订版">1.2 TI SLAA701B《LC Filter Design》（2026 年 6 月修订版）</h3>
+<p>来源已打开：<a href="https://www.ti.com/lit/an/slaa701b/slaa701b.pdf">https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</a></p>
+<ul>
+<li><strong>AD 调制</strong>：两路 BTL 输出互为反相。原文：「At idle, the amplifier switches … with a 50% duty cycle across the load. This causes significant current flow and power dissipation into the load. An LC filter is necessary」。</li>
+<li><strong>BD 调制</strong>：两路输出不是反相关系，含有较大的共模成分。</li>
+<li><strong>TI 推荐二阶巴特沃斯</strong>，过冲大的欠阻尼滤波器不推荐（原文提到它会触发过流保护）。</li>
+<li><strong>Type-1 BTL 的单端等效</strong>：L = LBTL，C = 2·CBTL，RL = RBTL/2。
+<ul>
+<li>原例：4 Ω 负载、目标 40 kHz，取 LBTL = 10 µH、CBTL = 0.68 µF，得 Q = 0.737、<strong>f0 = 43 156 Hz</strong>。</li>
+</ul>
+</li>
+</ul>
+<h3 id="13-ti-sloa145filter-free-class-d-audio-amplifiers2010-年-2-月">1.3 TI SLOA145《Filter-Free Class-D Audio Amplifiers》（2010 年 2 月）</h3>
+<p>来源已打开：<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a></p>
+<ul>
+<li>Filter-Free 调制下，OUT+ 和 OUT− 几乎同相（与 BD 调制同一类）。</li>
+<li>喇叭本身有电感，但主要呈电阻性。</li>
+<li>为了 EMC，有时要用 LC 或磁珠滤波；文中给出了 FCC 辐射限值表和磁珠阻抗曲线。</li>
+</ul>
+<h3 id="14-ti-sloa290a2020-年-8-月">1.4 TI SLOA290A（2020 年 8 月）</h3>
+<p>来源已打开：<a href="https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf">https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf</a></p>
+<ul>
+<li>原文：「Class-D amplifiers are usually up to about 90% efficient and the approximate 10% loss of energy is converted to heat」。</li>
+<li>芯片设有过温关断阈值。</li>
+</ul>
+<h3 id="15-比较器-lm393-与运放-tl07xh缓存第-31-节已打开">1.5 比较器 LM393 与运放 TL07xH（缓存，第 31 节已打开）</h3>
+<ul>
+<li><strong>LM393</strong>：
+<ul>
+<li>开集电极输出，响应时间典型 1.3 µs（LM393B 为 1 µs）。</li>
+<li>输入共模上限 VCC − 1.5 V（全温度范围为 VCC − 2 V）。</li>
+</ul>
+</li>
+<li><strong>TL07xH</strong>：SR 20 V/µs，GBW 5.25 MHz。</li>
+</ul>
+<h3 id="16-布线要点">1.6 布线要点</h3>
+<ul>
+<li><strong>高 di/dt 回路要尽量小</strong>：VM bulk 电容 → DRV8871 → 电感 → 喇叭。bulk 电容紧贴模块的 VM/GND 端子。</li>
+<li><strong>模拟部分与功率地星形汇合</strong>：TL072、LM393 的地与 DRV8871 的 GND 在电源负端汇合，不要让喇叭电流流过三角波发生器的地线。</li>
+<li><strong>电感要求</strong>：额定电流（饱和电流）≥ 1 A；两只电感分开摆放，避免磁耦合。</li>
+<li><strong>电容</strong>：CBTL 用薄膜电容（如聚丙烯）。陶瓷电容的电压系数问题属于通用经验，本次未找到具体手册来源「[待核实]」。</li>
+</ul>
+<h2 id="2-page4-可行性逐项审查">2. page4 可行性逐项审查</h2>
+<h3 id="21-drv8871-逻辑电平严重问题">2.1 DRV8871 逻辑电平：<strong>严重问题</strong></h3>
+<p>LM393 是开集电极输出。如果在 12 V 单电源系统里把它的上拉接到 12 V，就超过了 IN 引脚 5.5 V 的推荐值和 7 V 的绝对最大值，会损坏芯片。</p>
+<p><strong>改正</strong>：</p>
+<ul>
+<li>LM393 输出上拉 <strong>1 kΩ 到 5 V</strong>。5 V 可取自 Arduino 的 5 V 脚，或者 12 V 经 78L05 稳压得到。</li>
+<li>用 Arduino 直接驱动 IN1/IN2 时，5 V 逻辑可以直接接。</li>
+</ul>
+<h3 id="22-串-lc-或直接接直接接是安全问题">2.2 “串 LC 或直接接”：<strong>直接接是安全问题</strong></h3>
+<p>在 AD 调制下（IN1 = PWM，IN2 = 反相 PWM），无信号时负载两端是 ±12 V、50% 占空的方波。按 18 Ω 纯电阻算（§3 已运行），负载<strong>怠速耗散 8.0 W，其中 10 Ω 电阻上 4.4 W</strong>。真实喇叭的音圈电感会减小这个数，但具体数值依赖喇叭参数「[待核实]」。</p>
+<p><strong>改正</strong>（二选一）：</p>
+<ol>
+<li><strong>AD 调制 + 必须加 LC</strong>，并把载波提高到约 50 kHz（见 2.3）。</li>
+<li><strong>BD 调制（免滤波思路，SLOA145）</strong>：用 LM393 的两个比较器，A 比较“信号 vs 三角波”，B 比较“反相信号 vs 三角波”。反相信号需要再加一个运放反相器（第二片 TL072 或 LM358 的一半）。
+<ul>
+<li>无信号时两路同相，差分为 0，理想比较器下怠速负载功率为 0 mW。</li>
+<li>有信号时（m = 0.5、无 LC）负载总功率 2546 mW，其中基波只有 999 mW，其余是载波能量。</li>
+<li><strong>所以 BD 方案也建议加 LC，或至少保留 10 Ω（≥ 5 W）并控制音量。</strong></li>
+</ul>
+</li>
+</ol>
+<h3 id="23-载波-2030-khz-加-lc-30-khz滤波器几乎不起作用">2.3 载波 20–30 kHz 加 LC 30 kHz：<strong>滤波器几乎不起作用</strong></h3>
+<p>LC 的截止频率要远低于载波。§3 的结果（AD 调制，18 Ω 负载，LC 每腿 101 µH、CBTL 0.31 µF，f0 = 20 kHz）：</p>
+<table>
+<thead>
+<tr>
+<th>载波</th>
+<th>负载纹波功率</th>
+<th>电感电流</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>25 kHz</td>
+<td>1909 mW</td>
+<td>峰峰值 1.35 A</td>
+</tr>
+<tr>
+<td>50 kHz</td>
+<td>166 mW</td>
+<td>峰峰值 0.66 A</td>
+</tr>
+<tr>
+<td>100 kHz</td>
+<td>10.6 mW</td>
+<td>—</td>
+</tr>
+</tbody>
+</table>
+<p>同样条件下，若用作者的 60 µH / 0.47 µF：25 kHz 载波时纹波功率高达 5.2 W，电感电流峰峰值 2.5 A。</p>
+<p><strong>建议</strong>：</p>
+<ul>
+<li>三角波约 <strong>50 kHz</strong>（例如 R1 = 10k、R2 = 22k、R = 4.7k、C = 2.2 nF，得 53.2 kHz，幅度 ±2.27 V，积分斜率 0.48 V/µs，远低于 SR）。</li>
+<li>LC 截止 15–20 kHz。</li>
+<li>载波 50 kHz 已远离音频，不存在“能听见啸叫”的问题；20–30 kHz 虽然多数人听不到，但对滤波不利。</li>
+</ul>
+<h3 id="24-lc-数值作者把单端公式用在了-btl-上">2.4 LC 数值：作者把单端公式用在了 BTL 上</h3>
+<ul>
+<li><strong>60 µH / 0.47 µF 是 8 Ω 单端二阶巴特沃斯的数值</strong>（L = √2·R/ω0，C = 1/(√2·R·ω0)），这一步计算本身没错。</li>
+<li><strong>问题在于 DRV8871 是 BTL 输出</strong>。按 SLAA701B Type-1（每条腿一只 LBTL，CBTL 跨接在负载两端）：
+<ul>
+<li>每腿 60 µH、CBTL 0.47 µF、负载 8 Ω：f0 = 21.2 kHz，Q = 0.50（过阻尼）。</li>
+<li>负载换成 8 + 10 = 18 Ω：Q = 1.13，出现峰值。</li>
+</ul>
+</li>
+<li><strong>正确的 BTL 巴特沃斯取值</strong>：
+<ul>
+<li>8 Ω、30 kHz：每腿 30 µH，CBTL 0.47 µF。</li>
+<li>18 Ω、20 kHz：每腿 101 µH，CBTL 0.31 µF（可用 100 µH + 0.33 µF）。</li>
+</ul>
+</li>
+<li><strong>00-design 写的“10 µH/0.68 µF 按单节 LC 算约 61 kHz”应改为</strong>：SLAA701B 原文为 4 Ω BTL、单端等效 C = 1.36 µF，f0 = 43.2 kHz，Q = 0.737。</li>
+<li>60 µH 不是 E 系列常用值，应写 47 µH 或 68 µH，或者直接用 100 µH。</li>
+</ul>
+<h3 id="25-drv8871-的其他坑">2.5 DRV8871 的其他坑</h3>
+<ul>
+<li><strong>最小脉宽 800 ns</strong>：53 kHz 载波时可用占空比约 4.3%–95.7%，因此音频幅度要小于三角波幅度的约 90%。超出的部分会丢脉冲，造成削顶失真。</li>
+<li><strong>不要用 Coast/Brake 方式调制</strong>：手册推荐的“drive/brake”是给电机调速用的，那是单向驱动，会给喇叭加上直流。音频应使用 AD（IN1 与 IN2 互补）或 BD。</li>
+<li><strong>睡眠</strong>：IN1 和 IN2 同时为低超过 1 ms 会进入睡眠，唤醒需要 50 µs。
+<ul>
+<li>BD 调制在小信号时两路经常同时为低，但每个低电平远短于 1 ms（载波周期才 19 µs），因此不会误入睡眠。这一点按手册 tsleep 的定义推断，没有实测「[待核实]」。</li>
+</ul>
+</li>
+<li><strong>限流</strong>：Adafruit 模块的 30 kΩ（约 2 A）可以保留。想更保守，可以并联电阻把 RILIM 调到 64 kΩ 左右（约 1 A）。注意 RILIM 不得小于 15 kΩ。</li>
+<li><strong>VM</strong>：用 12 V（不能低于 6.5 V）。在 VM 端子旁加 47–100 µF 电解电容 + 0.1 µF。</li>
+</ul>
+<h3 id="26-功率热与效率3-已运行vm--12-v负载-18-ω">2.6 功率、热与效率（§3 已运行，VM = 12 V，负载 18 Ω）</h3>
+<ul>
+<li>m = 0.5（差分峰值 6 V）时，基波功率 999 mW（理论值 1000 mW），其中喇叭得到 444 mW。</li>
+<li>AD + LC 方案的效率粗估（计入负载纹波、I²·0.565 Ω 和 36 mW 静态功耗）：
+<table>
+<thead>
+<tr>
+<th>m</th>
+<th>效率 η</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>0.1</td>
+<td>15%</td>
+</tr>
+<tr>
+<td>0.3</td>
+<td>62%</td>
+</tr>
+<tr>
+<td>0.5</td>
+<td>83%</td>
+</tr>
+<tr>
+<td>0.9</td>
+<td>94%</td>
+</tr>
+<tr>
+<td>这个估算不含开关损耗与电感铜损，<strong>实测值会更低</strong>。</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</li>
+<li><strong>与第 43 节对比</strong>：43 节 Vp = 4 V 时 η 为 52%。教学结论应写成“<strong>大信号时 D 类明显更高；小信号时 D 类的优势不明显，甚至更差</strong>”。不要只写“90%”。</li>
+<li><strong>10 Ω 电阻</strong>：m 接近 1 时，差分峰值 12 V、电流 0.67 A，电阻上约 2.2 W，所以要用 ≥ 5 W 的。电感和 DRV8871 会发热，<strong>只用温度计测，不要用手摸</strong>。</li>
+</ul>
+<h3 id="27-测量安全btl">2.7 测量安全（BTL）</h3>
+<ul>
+<li><strong>OUT1 和 OUT2 都不是地</strong>。示波器地夹接到任一输出端都会把这一路对地短路（OCP 会动作，但也可能损坏探头或设备）。</li>
+<li>只能用两只探头分别测，再做 A−B 运算；或者使用差分探头。</li>
+<li><strong>Arduino 不能接 OUT1/OUT2</strong>：它们是 0–12 V 的方波，超过 5 V。</li>
+<li><strong>不用 Arduino 的核心验证</strong>：
+<ul>
+<li>万用表 DC 档测电源电流；</li>
+<li>AC 档测 LC 之后喇叭两端的电压。万用表对 50 kHz 残余纹波的响应与表有关「[待核实]」。</li>
+<li>用 1 kHz 以下的音调验证。</li>
+</ul>
+</li>
+</ul>
+<h3 id="28-arduino-版数字-d-类对照实验可选">2.8 Arduino 版“数字 D 类”（对照实验，可选）</h3>
+<ul>
+<li>Timer2 预分频 1、相位修正 PWM：16 MHz / 510 = <strong>31 372.5 Hz</strong>，一个计数 125 ns；800 ns 约等于 6.4 个计数，所以 OCR 取 7–248。快速 PWM 模式为 62.5 kHz。</li>
+<li><strong>接法</strong>：D11（OC2A）→ IN1，D3（OC2B）→ IN2。
+<ul>
+<li>设成反相比较输出可以做 AD。</li>
+<li>两个比较值分别设为 128 + s、128 − s 可以做 BD，<strong>此时怠速差分为 0，推荐用这种</strong>。</li>
+<li>载波 31 kHz 时 LC 滤波效果差（见 2.3 中 25 kHz 的数据），所以更适合 BD 方式，并保留 10 Ω。</li>
+</ul>
+</li>
+<li><strong>冲突</strong>：Timer2 改动后 tone() 不可用（第 42 节已记「[待核实]」）。不能改 Timer0，否则 millis/delay 会失准。</li>
+<li><strong>ADC</strong>：analogRead 约 100 µs，因此实时采样音频再输出最多只有约 9 kHz 采样率。建议用查表正弦（DDS）在 Timer2 溢出中断里更新比较值。</li>
+</ul>
+<h2 id="3-python-计算已运行">3. Python 计算（已运行）</h2>
+<p>运行命令：<code>/workspace/dsp-venv/bin/python /tmp/eng44/classd.py</code></p>
+<pre><code class="language-python">import numpy as np
+VM=12.0
+print(&quot;== 1) SLAA701B 复核：Type-1 BTL 单端等效 L=LBTL, C=2CBTL, RL=RBTL/2&quot;)
+def se(L,Cb,Rb):
+    C=2*Cb; R=Rb/2
+    return 1/(2*np.pi*np.sqrt(L*C)), R*np.sqrt(C/L)
+f0,Q=se(10e-6,0.68e-6,4); print(f&quot;原例 10µH/0.68µF/4Ω: f0={f0/1e3:.1f}kHz Q={Q:.3f}  (误按单节LC: {1/(2*np.pi*np.sqrt(10e-6*0.68e-6))/1e3:.1f}kHz)&quot;)
+for L,Cb,Rb,lab in [(60e-6,0.47e-6,8,&quot;作者 60µH/0.47µF 当BTL每腿用, 8Ω&quot;),(60e-6,0.47e-6,18,&quot;同上, 负载 8+10Ω&quot;),
+                    (30e-6,0.47e-6,8,&quot;BTL 正确设计 8Ω,30kHz&quot;)]:
+    f0,Q=se(L,Cb,Rb); print(f&quot;{lab}: f0={f0/1e3:.1f}kHz Q={Q:.2f}&quot;)
+for Rb,f0 in [(8,30e3),(18,20e3),(18,15e3)]:
+    w=2*np.pi*f0; R=Rb/2; L=np.sqrt(2)*R/w; C=1/(w*R*np.sqrt(2))
+    print(f&quot;巴特沃斯 BTL设计 RBTL={Rb}Ω f0={f0/1e3:.0f}kHz: 每腿 LBTL={L*1e6:.0f}µH, 跨接 CBTL={C/2*1e6:.2f}µF&quot;)
+print()
+def sim(fc,mod,L,Cb,R,m=0.0,fa=1000.0,T=4e-3,dt=10e-9):
+    n=int(T/dt); t=np.arange(n)*dt
+    tri=2*np.abs(2*((t*fc)%1)-1)-1          # -1..1
+    s=m*np.sin(2*np.pi*fa*t)
+    if mod==&quot;AD&quot;:
+        a=(s&gt;tri); vd=np.where(a,VM,-VM)
+    else:   # BD: A=s&gt;tri, B=-s&gt;tri
+        vd=VM*((s&gt;tri).astype(float)-((-s)&gt;tri).astype(float))
+    if L==0:
+        i=vd/R; vo=vd
+    else:
+        # 差分: 2L di/dt = vd - vo ; Cb dvo/dt = i - vo/R  (半隐式欧拉)
+        i=np.zeros(n); vo=np.zeros(n); ii=0.0; v=0.0
+        for k in range(n):
+            ii+= (vd[k]-v)/(2*L)*dt
+            v += (ii - v/R)/Cb*dt
+            i[k]=ii; vo[k]=v
+    sl=slice(n//2,n)       # 后半段稳态
+    Pl=np.mean(vo[sl]**2)/R
+    # 音频基波功率
+    tt=t[sl]; vf=2*np.abs(np.mean(vo[sl]*np.exp(-2j*np.pi*fa*tt)))
+    Pa=vf**2/(2*R)
+    Irms=np.sqrt(np.mean(i[sl]**2)); Ipp=np.ptp(i[sl]) if m==0 else np.nan
+    return Pl,Pa,Irms,Ipp
+R=18.0
+print(&quot;== 2) 怠速(无信号)负载耗散，负载 18Ω 纯电阻，VM=12V&quot;)
+print(f&quot;AD 无滤波: 理论 VM²/R = {VM**2/R:.1f} W ；其中 10Ω 上 {VM**2/R*10/18:.1f} W&quot;)
+for fc in [25e3,50e3,100e3]:
+    for L,Cb in [(101e-6,0.31e-6),(60e-6,0.47e-6)]:
+        Pl,Pa,Ir,Ipp=sim(fc,&quot;AD&quot;,L,Cb,R,T=1e-3)
+        print(f&quot;AD + LC(每腿{L*1e6:.0f}µH, CBTL {Cb*1e6:.2f}µF) fc={fc/1e3:.0f}kHz: 负载纹波功率={Pl*1e3:7.1f}mW 电感电流 rms={Ir*1e3:6.0f}mA pp={Ipp*1e3:6.0f}mA, DRV8871 导通损耗≈{Ir**2*0.565*1e3:5.0f}mW&quot;)
+Pl,Pa,Ir,Ipp=sim(50e3,&quot;BD&quot;,0,0,R,T=1e-3); print(f&quot;BD 无滤波 怠速: 负载功率={Pl*1e3:.1f}mW (理想比较器)&quot;)
+print()
+print(&quot;== 3) 带 1kHz 信号 m=0.5（差分峰值 6V）&quot;)
+for mod,L,Cb in [(&quot;AD&quot;,0,0),(&quot;AD&quot;,101e-6,0.31e-6),(&quot;BD&quot;,0,0),(&quot;BD&quot;,101e-6,0.31e-6)]:
+    Pl,Pa,Ir,_=sim(50e3,mod,L,Cb,R,m=0.5)
+    print(f&quot;{mod} {'无滤波' if L==0 else 'LC 101µH/0.31µF'} fc=50kHz: 负载总功率={Pl*1e3:7.0f}mW 其中1kHz基波={Pa*1e3:6.0f}mW (理论 {36/(2*R)*1e3:.0f}mW) 喇叭(8/18)基波={Pa*8/18*1e3:5.0f}mW, I_rms={Ir*1e3:4.0f}mA&quot;)
+print()
+print(&quot;== 4) 效率粗估(LC 版, AD, fc=50kHz): P_in ≈ P负载 + I²·0.565Ω + VM·IVM(3mA)&quot;)
+for m in [0.1,0.3,0.5,0.9]:
+    Pl,Pa,Ir,_=sim(50e3,&quot;AD&quot;,101e-6,0.31e-6,R,m=m)
+    Pin=Pl+Ir**2*0.565+12*3e-3
+    print(f&quot;m={m}: 基波 {Pa*1e3:6.0f}mW, 输入≈{Pin*1e3:6.0f}mW, η≈{Pa/Pin*100:4.1f}%&quot;)
+print()
+print(&quot;== 5) TL072 三角波 + LM393：f=R2/(4 R1 R C)，幅度 ±Vsq·R1/R2&quot;)
+R1,R2,Rr,C,Vsq=10e3,22e3,4.7e3,2.2e-9,5.0
+f=R2/(4*R1*Rr*C); print(f&quot;R1=10k R2=22k R=4.7k C=2.2nF: f={f/1e3:.1f}kHz 幅度=±{Vsq*R1/R2:.2f}V 积分斜率={Vsq/(Rr*C)/1e6:.2f}V/µs (TL07xH SR 20V/µs)&quot;)
+print(f&quot;周期 {1/f*1e6:.1f}µs; LM393 响应 1.3µs 占 {1.3e-6*f*100:.1f}%; DRV8871 最小脉宽 800ns → 可用占空 {0.8e-6*f*100:.1f}%~{100-0.8e-6*f*100:.1f}%&quot;)
+print()
+print(&quot;== 6) Arduino Timer2 31kHz&quot;)
+fpc=16e6/510; ffast=16e6/256
+print(f&quot;相位修正 PWM 预分频1: {fpc:.1f}Hz, 一个计数={2/16e6*1e9:.0f}ns, 800ns≈{0.8e-6/(2/16e6):.1f}计数 → OCR 约 7..248&quot;)
+print(f&quot;快速 PWM 预分频1: {ffast:.0f}Hz&quot;)
+</code></pre>
+<p>输出（已运行）：</p>
+<pre><code>== 1) SLAA701B 复核：Type-1 BTL 单端等效 L=LBTL, C=2CBTL, RL=RBTL/2
+原例 10µH/0.68µF/4Ω: f0=43.2kHz Q=0.738  (误按单节LC: 61.0kHz)
+作者 60µH/0.47µF 当BTL每腿用, 8Ω: f0=21.2kHz Q=0.50
+同上, 负载 8+10Ω: f0=21.2kHz Q=1.13
+BTL 正确设计 8Ω,30kHz: f0=30.0kHz Q=0.71
+巴特沃斯 BTL设计 RBTL=8Ω f0=30kHz: 每腿 LBTL=30µH, 跨接 CBTL=0.47µF
+巴特沃斯 BTL设计 RBTL=18Ω f0=20kHz: 每腿 LBTL=101µH, 跨接 CBTL=0.31µF
+巴特沃斯 BTL设计 RBTL=18Ω f0=15kHz: 每腿 LBTL=135µH, 跨接 CBTL=0.42µF
+
+== 2) 怠速(无信号)负载耗散，负载 18Ω 纯电阻，VM=12V
+AD 无滤波: 理论 VM²/R = 8.0 W ；其中 10Ω 上 4.4 W
+AD + LC(每腿101µH, CBTL 0.31µF) fc=25kHz: 负载纹波功率= 1909.3mW 电感电流 rms=   435mA pp=  1351mA, DRV8871 导通损耗≈  107mW
+AD + LC(每腿60µH, CBTL 0.47µF) fc=25kHz: 负载纹波功率= 5195.5mW 电感电流 rms=   896mA pp=  2531mA, DRV8871 导通损耗≈  453mW
+AD + LC(每腿101µH, CBTL 0.31µF) fc=50kHz: 负载纹波功率=  165.6mW 电感电流 rms=   194mA pp=   659mA, DRV8871 导通损耗≈   21mW
+AD + LC(每腿60µH, CBTL 0.47µF) fc=50kHz: 负载纹波功率=  257.6mW 电感电流 rms=   341mA pp=  1149mA, DRV8871 导通损耗≈   66mW
+AD + LC(每腿101µH, CBTL 0.31µF) fc=100kHz: 负载纹波功率=   10.6mW 电感电流 rms=    89mA pp=   308mA, DRV8871 导通损耗≈    4mW
+AD + LC(每腿60µH, CBTL 0.47µF) fc=100kHz: 负载纹波功率=   13.9mW 电感电流 rms=   151mA pp=   521mA, DRV8871 导通损耗≈   13mW
+BD 无滤波 怠速: 负载功率=0.0mW (理想比较器)
+
+== 3) 带 1kHz 信号 m=0.5（差分峰值 6V）
+AD 无滤波 fc=50kHz: 负载总功率=   8000mW 其中1kHz基波=   999mW (理论 1000mW) 喇叭(8/18)基波=  444mW, I_rms= 667mA
+AD LC 101µH/0.31µF fc=50kHz: 负载总功率=   1123mW 其中1kHz基波=   999mW (理论 1000mW) 喇叭(8/18)基波=  444mW, I_rms= 291mA
+BD 无滤波 fc=50kHz: 负载总功率=   2546mW 其中1kHz基波=   999mW (理论 1000mW) 喇叭(8/18)基波=  444mW, I_rms= 376mA
+BD LC 101µH/0.31µF fc=50kHz: 负载总功率=   1001mW 其中1kHz基波=   999mW (理论 1000mW) 喇叭(8/18)基波=  444mW, I_rms= 239mA
+
+== 4) 效率粗估(LC 版, AD, fc=50kHz): P_in ≈ P负载 + I²·0.565Ω + VM·IVM(3mA)
+m=0.1: 基波     40mW, 输入≈   262mW, η≈15.2%
+m=0.3: 基波    360mW, 输入≈   576mW, η≈62.5%
+m=0.5: 基波    999mW, 输入≈  1207mW, η≈82.8%
+m=0.9: 基波   3240mW, 输入≈  3455mW, η≈93.8%
+
+== 5) TL072 三角波 + LM393：f=R2/(4 R1 R C)，幅度 ±Vsq·R1/R2
+R1=10k R2=22k R=4.7k C=2.2nF: f=53.2kHz 幅度=±2.27V 积分斜率=0.48V/µs (TL07xH SR 20V/µs)
+周期 18.8µs; LM393 响应 1.3µs 占 6.9%; DRV8871 最小脉宽 800ns → 可用占空 4.3%~95.7%
+
+== 6) Arduino Timer2 31kHz
+相位修正 PWM 预分频1: 31372.5Hz, 一个计数=125ns, 800ns≈6.4计数 → OCR 约 7..248
+快速 PWM 预分频1: 62500Hz
+</code></pre>
+<p>模型说明：</p>
+<ul>
+<li>负载按纯电阻 18 Ω 处理，比较器、开关都按理想器件。</li>
+<li>积分用半隐式欧拉法，步长 10 ns；取后半段作为稳态。</li>
+<li>真实喇叭的电感会改变无滤波时的结果「[待核实]」。</li>
+</ul>
+<h2 id="4-需要作者改正的要点">4. 需要作者改正的要点</h2>
+<ol>
+<li><strong>LM393 上拉必须接 5 V</strong>（DRV8871 的 IN 推荐 ≤ 5.5 V，绝对最大 7 V）。接 12 V 会烧坏芯片。</li>
+<li><strong>删掉“或直接接”</strong>：AD 调制不加 LC 时，怠速就要耗散约 8 W（18 Ω 纯电阻），其中 10 Ω 上 4.4 W。必须加 LC；或者改用 BD 调制（两路比较器，再加一个反相器）。</li>
+<li><strong>载波提高到约 50 kHz</strong>（10k/22k/4.7k/2.2 nF，得 53 kHz），LC 截止设在 15–20 kHz。25 kHz 载波配 LC 时，负载纹波仍有 1.9 W。</li>
+<li><strong>LC 数值按 BTL 计算</strong>：每腿 LBTL、CBTL 跨接负载。18 Ω 时用每腿 100 µH + 0.33 µF；8 Ω、30 kHz 时用每腿 30 µH + 0.47 µF。“60 µH/0.47 µF”是单端数值。另外“10 µH/0.68 µF 约 61 kHz”要改成“43.2 kHz（4 Ω BTL，SLAA701B）”。</li>
+<li><strong>用 AD 或 BD 调制，不用手册里的 drive/brake 电机调速模式</strong>（那会给喇叭加直流）。</li>
+<li><strong>音频幅度要小于三角波幅度的约 90%</strong>（受最小脉宽 800 ns 限制）。</li>
+<li><strong>效率结论分大信号、小信号说</strong>：m = 0.1 时约 15%，m = 0.9 时约 94%（理想估算）。不要只写“90%”。</li>
+<li><strong>BTL 测量</strong>：不准接示波器地夹，不准接 Arduino。验证用万用表测电源电流和喇叭端 AC 电压。</li>
+<li><strong>电感额定电流 ≥ 1 A；VM 旁加 47–100 µF + 0.1 µF</strong>。Adafruit 模块默认 30 kΩ 限流约 2 A，可以保留。</li>
+<li><strong>Arduino 31 kHz 对照实验</strong>用 D11/D3（Timer2），推荐 BD 方式。tone() 会冲突，不要动 Timer0。</li>
+</ol>
+<h2 id="5-参考链接">5. 参考链接</h2>
+<ul>
+<li>TI DRV8871 数据手册：<a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a> （curl 已打开）</li>
+<li>Adafruit DRV8871 Breakout：<a href="https://learn.adafruit.com/adafruit-drv8871-brushed-dc-motor-driver-breakout/overview">https://learn.adafruit.com/adafruit-drv8871-brushed-dc-motor-driver-breakout/overview</a> 和 <a href="https://learn.adafruit.com/adafruit-drv8871-brushed-dc-motor-driver-breakout/pinouts">https://learn.adafruit.com/adafruit-drv8871-brushed-dc-motor-driver-breakout/pinouts</a> （WebFetch 已打开）</li>
+<li>TI SLAA701B LC Filter Design：<a href="https://www.ti.com/lit/an/slaa701b/slaa701b.pdf">https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</a> （curl 已打开）</li>
+<li>TI SLOA145 Filter-Free Class-D：<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a> （curl 已打开）</li>
+<li>TI SLOA290A：<a href="https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf">https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf</a> （curl 已打开）</li>
+<li>TI LM393 数据手册：<a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> （第 37 节已打开，缓存 /tmp/eng/lm393.pdf）</li>
+<li>TI TL072 数据手册：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （第 31 节已打开）</li>
+<li>「[待核实]」ADI Analog Dialogue D 类文章（43/44-research 记为 curl 超时）</li>
+<li>「[待核实]」真实 8 Ω 喇叭的音圈电感数值，以及万用表 AC 档的频率响应</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

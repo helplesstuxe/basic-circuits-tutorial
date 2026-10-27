@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>38 同步检波 · 参数与调试篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/38-synchronous-demod/page3.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="38-同步检波--参数与调试篇">38 同步检波 · 参数与调试篇</h1>
+<p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">动手实验篇</a> · <a href="page4.html">下一页：动手实验篇</a> · 前置节点：<a href="../30-instrumentation-amp/page3.html">30 仪表放大器与电桥</a>、<a href="../34-switched-cap-filter/page3.html">34 开关电容滤波与跟踪滤波</a></p>
+<h2 id="这一页要解决的问题">这一页要解决的问题</h2>
+<p><a href="page2.html">原理与实现篇</a> 算出了理想情况：夹具信号 2.4492 mV，仪放后 51.43 mV，万用表读 50.89 mV。这一页回答实际搭电路时最常碰到的问题：平均要多久、哪些误差会混进读数、怎么判断是哪一级出了毛病，以及几种最容易犯的接线错误。本页所有数字来自 <code>code/38_sim.py</code> 第 6、7 节。</p>
+<h2 id="一rc-时间常数稳和快只能选一个">一、RC 时间常数：稳和快只能选一个</h2>
+<p>RC 低通（RF = 100 kΩ、CF = 10 µF）的时间常数 τ = RF × CF = 1 s。图 38-p3-1 模拟了&quot;第 8 s 把参考翻转 180°&quot;以后万用表读数的变化：</p>
+<p><a class="img-link" href="img/38_p3_1_settling.png"><img alt="两条曲线：万用表读数在第八秒参考翻转后，从正值慢慢变到负值；一条电容小，一条电容大" src="img/38_p3_1_settling.png" loading="lazy" /></a></p>
+<p><em>图 38-p3-1　参考翻转后，读数要等几个时间常数才稳定</em></p>
+<p>从图 38-p3-1 读出三件事：</p>
+<ul>
+<li>翻转前读数稳定在 50.88 mV（和第 7 节的 50.89 mV 只差显示位数）。</li>
+<li>τ = 1 s 时，从 +50.89 跳到 −50.89 mV，要约 5.2 s 才稳定到 ±1%；理论值是 τ·ln200 = 5.3 s（总变化是 2 倍读数，要剩下不到 1% 的读数，就是 1/200）。</li>
+<li>CF 换成 100 µF（τ = 10 s），纹波从 0.04 mV 降到 0.010 mV，但稳定要 50 s，20 s 时还只到 −27.38 mV。</li>
+</ul>
+<p>没有干扰时纹波本来就比万用表的末位还小，换大电容只换来 10 倍的等待时间，所以实验用 10 µF。工业流量计的&quot;阻尼时间&quot;旋钮调的就是这个。</p>
+<h2 id="二误差预算哪些东西会混进读数">二、误差预算：哪些东西会混进读数</h2>
+<p>图 38-p3-2 把几种误差放在同一把尺子上（有用读数 50.89 mV）：</p>
+<p><a class="img-link" href="img/38_p3_2_error_budget.png"><img alt="横向条形图，列出几种误差来源对读数的影响，单位毫伏" src="img/38_p3_2_error_budget.png" loading="lazy" /></a></p>
+<p><em>图 38-p3-2　误差预算：每种误差对万用表读数的影响</em></p>
+<p>图 38-p3-2 里各条的来历：</p>
+<ol>
+<li><strong>直流泄漏</strong>：±1 级的 −1 倍其实是 −R12/R11。两只电阻差 ε 时，−1 状态是 −(1 + ε)，+1 状态还是 +1，直流 V_DC 乘上去平均下来剩 <span class="math math-inline">\(-V_{DC} \cdot \varepsilon / 2\)</span> （V_DC 带符号，比 V_MID 高为正）。电位器从中间拧到 0 V 端时，P 点直流下降约 44.5 mV，仪放输出上多出约 −935 mV 直流；ε = 2% 就漏 −(−935 mV) × 0.02 ÷ 2 = +9.35 mV，算上万用表的 0.9901 倍是 +9.25 mV（模拟 +9.27 mV），和 <a href="page4.html">动手实验篇</a> 第 9 步一致。电位器拧到头的最坏情况：P 点直流是 −46.49 mV（0 V 端）或 +42.53 mV（9 V 端），两头不对称，乘 21 后仪放输出直流 −976 mV 或 +893 mV，泄漏 +9.76 mV 或 −8.93 mV。<strong>加了交流耦合 CH/RH 以后变成 0.00 mV</strong>：直流根本到不了 ±1 级。这就是 <a href="page2.html">原理与实现篇</a> 第五节第 3 级存在的理由。</li>
+<li><strong>占空比不准</strong>：参考高电平占 50% + δ 时，直流漏进来 2δ·V_DC。δ = 1% 就是 19.53 mV（同样只在没有交流耦合时发生）。Arduino 的 Timer1 两个半周期都是 5000 个计数，δ = 0；换成软件 delay() 翻转就不一定了。</li>
+<li><strong>运放失调</strong>：U3B 的失调最大 7 mV（LM358 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm358.pdf">https://www.ti.com/lit/ds/symlink/lm358.pdf</a> ），两种状态下都被放大 1 + R12/R11 = 2 倍，变成最多 14 mV 的固定偏移。它不随参考翻号，所以用&quot;翻转相减&quot;消掉：参考 0° 读一次 V0，180° 读一次 V180，(V0 − V180)/2 是信号，(V0 + V180)/2 是偏移。U3A 的失调在交流耦合之后，也会被 ±1 平均掉。</li>
+<li><strong>50 Hz 纹波</strong>：50 Hz 方波被 ±1 乘过以后，平均值是 0（偶数倍），所以平均读数不变（约 50.9 mV）。但乘积里有 6.25 Hz 和它的奇数倍分量，它们平均为 0、却不是每时每刻为 0；τ = 1 s 的 RC 对 6.25 Hz 只衰减约 39 倍，CF 上还剩约 9～10 mV 峰峰的快纹波。<strong>就算干扰恰好是 50.00 Hz 也一样</strong>（模拟 9.11 mV 峰峰）。万用表每次读数本身就平均了 0.1～0.2 s，看到的是末几位约 1～3 mV 的快速跳动（模拟 0.8～3.9 mV，3.9 mV 是 51.06 Hz、0.1 s 窗口的情况），不是十几秒一个来回的慢晃。Arduino 的 tone(50) 实际是 50.08 Hz（Tone.cpp 的整数分频），偏离 8 倍只多出约 0.4 mV 峰峰（±0.2 mV）的慢漂，和快跳比可以忽略；tone(51) 的 51.06 Hz 离 8 倍远一些，慢漂约 2 mV 峰峰。</li>
+<li><strong>参考错相</strong>：错 45° 时读数少掉 24.69 mV，比其他误差都大。参考的相位必须对。</li>
+</ol>
+<p>另外 CD4053 的导通电阻（VDD = 10 V 时典型 180 Ω、最大 400 Ω）只串在 U3B 同相端，同相端几乎没有电流，对读数的影响可以忽略。</p>
+<h2 id="三干扰频率不整齐时数字法的每次读数会跳">三、干扰频率不整齐时，数字法的每次读数会跳</h2>
+<p>数字法（Arduino 每个周期出一个读数）和模拟法的弱点不一样。 <code>code/38_sim.py</code> 第 6 节：</p>
+<table>
+<thead>
+<tr>
+<th>情况</th>
+<th>每周期读数平均</th>
+<th>最小～最大</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无干扰，噪声 0.5 LSB</td>
+<td>+2.452 mV</td>
+<td>+2.401～+2.494</td>
+</tr>
+<tr>
+<td>tone(50)，实际 50.08 Hz</td>
+<td>+2.457 mV</td>
+<td>+2.430～+2.500</td>
+</tr>
+<tr>
+<td>tone(51)，实际 51.06 Hz</td>
+<td>+2.402 mV</td>
+<td>+1.825～+3.063</td>
+</tr>
+<tr>
+<td>相位 180°</td>
+<td>−2.452 mV</td>
+<td>−2.494～−2.401</td>
+</tr>
+</tbody>
+</table>
+<p>50 Hz 偏一点点（50.08 Hz）时，P、N 两窗仍然几乎相隔整数个干扰周期（抵消主要靠这一点；每个 40 ms 窗本身也几乎装下整数个周期，只是锦上添花），读数最多偏开 0.04 mV；偏到 51 Hz，每个周期就跳 ±0.6 mV，多个周期平均以后（程序里的 avg8）才回到 2.40 mV 附近。工业表遇到电网频率漂移，会让励磁频率跟着电网走，这叫&quot;电源同步&quot;。</p>
+<h2 id="四量化信号只有-5-个最小刻度">四、量化：信号只有 5 个最小刻度</h2>
+<p>A0 上的信号只有 25.72 mV，Arduino 的 10 位模数转换器 1 LSB = 4.88 mV，信号只有 5.27 LSB。如果输入完全没有噪声，每次读到的数都一样，平均也消除不了&quot;取整&quot;的误差：模拟结果是 2.558 mV，比真值 2.449 mV 大 4.4%。有 0.5 LSB 左右的随机噪声时，取整误差被平均掉，结果 2.452 mV。少量噪声反而帮忙，这个技巧叫<strong>抖动</strong>（dither）。面包板上的电路自带这么多噪声，所以实验里不用另加。</p>
+<h2 id="五两种最容易犯的接线错误">五、两种最容易犯的接线错误</h2>
+<p>图 38-p3-3 是两种&quot;看起来能省事&quot;的错接：</p>
+<p><a class="img-link" href="img/38_p3_3_miswire.png"><img alt="左图是 Arduino 的 D10 用一根线直接接到 CD4053 的 11 脚；右图是 CD4053 的 6 脚悬空" src="img/38_p3_3_miswire.png" loading="lazy" /></a></p>
+<p><em>图 38-p3-3　两种错接：(a) 省掉电平转换；(b) INH 脚悬空</em></p>
+<ul>
+<li><strong>图 38-p3-3 (a) 省掉 LM393</strong>：CD4053 接 9 V 时，选择脚的高电平门限按手册 5 V 时 3.5 V、10 V 时 7 V 的比例估计约 6.3 V，Arduino 的 5 V 落在&quot;不保证&quot;的区域。有的芯片能认，有的认不了，温度一变又不一样；最糟的是它认作 0 的时候比你想的多，读数忽大忽小。</li>
+<li><strong>图 38-p3-3 (b) INH（6 脚）悬空</strong>：INH 是&quot;全部断开&quot;脚，悬空时它在 0 和 1 之间飘，手一靠近就可能把三个开关全部断开。U3B 的同相端随之悬空，输出乱跳。<strong>正确接法是 6 脚 INH、7 脚 VEE、8 脚 VSS 都接 0 V</strong>，没用到的 B、C 两组选择脚（10、9 脚）也接 0 V，不能悬空。CMOS 芯片的输入脚一律不许悬空。</li>
+</ul>
+<h2 id="故障排查表">故障排查表</h2>
+<table>
+<thead>
+<tr>
+<th>现象</th>
+<th>原因</th>
+<th>怎么查</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>J−K 一直在 0 附近，发 0、f 都不变</td>
+<td>选择脚 H 不翻转，或 CD4053 没电</td>
+<td>发 h 和 l，量 H 对 0 V 是否在约 9 V 和接近 0 V 之间变</td>
+<td>查 LM393 的 RU、D10 那根线、CD4053 的 16 脚</td>
+</tr>
+<tr>
+<td>读数时有时无、忽大忽小</td>
+<td>D10 直接接到了 11 脚，没有电平转换（图 38-p3-3 (a)）</td>
+<td>量 H：高电平只有 5 V</td>
+<td>按 <a href="page4.html">动手实验篇</a> 第 4 步第 10 小步接回 LM393</td>
+</tr>
+<tr>
+<td>手一靠近读数就乱跳</td>
+<td>CD4053 的 6 脚 INH 或 9、10 脚悬空（图 38-p3-3 (b)）</td>
+<td>断电，量 6、7、8 脚到 0 V 轨的电阻</td>
+<td>6、7、8、9、10 脚全部接 0 V</td>
+</tr>
+<tr>
+<td>读数只有正常的一半左右</td>
+<td>参考比信号错开约 45°</td>
+<td>看串口：是否误发了 4</td>
+<td>发 0 回到相位 0</td>
+</tr>
+<tr>
+<td>读数是负的</td>
+<td>参考反相（180°），或仪放两根输入接反</td>
+<td>发 f 看是否变正</td>
+<td>发 0；或对调 P 和 V_MID 两根线</td>
+</tr>
+<tr>
+<td>拧电位器读数跟着变</td>
+<td>交流耦合 CH 被短路，同时 R11、R12 不相等</td>
+<td>量 R11、R12；看 CH 两端（C、E）的直流是否不同</td>
+<td>拆掉短路线；R11、R12 选相差不到 0.1% 的一对</td>
+</tr>
+<tr>
+<td>读数快速跳动 1～3 mV</td>
+<td>D5 的 tone 开着，±1 后的 6.25 Hz 分量没被 RC 滤干净</td>
+<td>发 n 关掉干扰，看是否停</td>
+<td>正常现象；看平均，或加大 CF</td>
+</tr>
+<tr>
+<td>拔掉 RS1 后还有几毫伏</td>
+<td>U3B 失调 × 2</td>
+<td>发 0、f 各读一次，算 (V0 + V180)/2</td>
+<td>用翻转相减 (V0 − V180)/2</td>
+</tr>
+<tr>
+<td>翻转后要等很久才稳定</td>
+<td>CF 用了 100 µF 或更大</td>
+<td>看电容上的字</td>
+<td>实验用 10 µF，等 6 s</td>
+</tr>
+<tr>
+<td>串口读数是 0 或满刻度</td>
+<td>A0 没有经过 10k/10k 分压，或分压的接地端没接</td>
+<td>量 L 对 0 V，应约 2.25 V</td>
+<td>按动手实验篇第 4 步第 5 小步接好 RA1、RA2</td>
+</tr>
+<tr>
+<td>示波器上输出发毛，读数偏</td>
+<td>某片芯片没有去耦电容，运放自激</td>
+<td>看 C3、C4、C5 是否都在</td>
+<td>每片芯片电源脚就近一只 0.1 µF</td>
+</tr>
+</tbody>
+</table>
+<h2 id="常见误区">常见误区</h2>
+<ul>
+<li><strong>&quot;LM393 的上拉接 9 V，那它的输出也能接 Arduino&quot;</strong>：不行。本节的 9 V 上拉只因为它的输出只进 CD4053；凡是要进 Arduino 引脚的比较器输出，上拉一律接 Arduino 的 5 V。</li>
+<li><strong>&quot;74HCT 能把 3.3 V 转成 5 V，也能把 5 V 转成 9 V&quot;</strong>：74HCT 的电源只能是 5 V，输出最高 5 V，做不了这件事。要么 LM393 + 上拉，要么 CD40109B。</li>
+<li><strong>&quot;交流耦合会把信号也隔掉&quot;</strong>：转折频率 0.159 Hz，比 6.25 Hz 低得多，半周期里方波只下垂 7.7%；它隔掉的是直流和极慢的漂移。</li>
+<li><strong>&quot;数字法采得越多越准&quot;</strong>：采到换向后的前半段（线圈电流还没稳、开关刚切换）会把误差采进去。本节的程序只采后半段（预告：<a href="../39-constant-current-excitation/page1.html">39 恒流励磁</a> 讲线圈电流怎样换向，从那里能看出前半段为什么不能用）。</li>
+</ul>
+<h2 id="练习">练习</h2>
+<p><strong>练习 1</strong>：参考比信号超前 30°，按三角形定律估算万用表读数（相位 0 时 50.89 mV）。</p>
+<details><summary>答案</summary>
+<p>50.89 × (1 − 30/90) = 33.93 mV。实际会稍大一点：交流耦合让方波每半周期往下&quot;垂&quot;，后半段的值本来就小，错开的那一小段对读数的削减就少一些，所以实测会比三角形定律略高几个百分点。</p>
+</details>
+<p><strong>练习 2</strong>：励磁改成 10 Hz，50 Hz 是它的第几次谐波？干扰最多漏进多少？</p>
+<details><summary>答案</summary>
+<p>第 5 次，奇数，最多漏 2/(5π) = 12.73% 的干扰幅度。10 Hz 半周期 50 ms，装 2.5 个 50 Hz 周期，不是整数。</p>
+</details>
+<p><strong>练习 3</strong>：没有交流耦合，仪放输出上有 500 mV 直流，R12 比 R11 大 1%，直流漏进读数多少？</p>
+<details><summary>答案</summary>
+<p><span class="math math-inline">\(-V_{DC} \cdot \varepsilon / 2\)</span> = −500 mV × 0.01 ÷ 2 = −2.5 mV。</p>
+</details>
+<p><strong>练习 4（渐隐：从例题到变体）</strong>：先看完整例题，再做留空题，最后自己做变体。</p>
+<p><em>完整例题</em>：RF = 100 kΩ、CF = 10 µF，参考翻转 180° 后，万用表读数要多久才能稳定到最终值的 ±1% 以内？</p>
+<ol>
+<li>τ = RF × CF = 100 kΩ × 10 µF = 1.0 s。</li>
+<li>读数从 +V 变到 −V，总变化 2V；要剩下不到 1% 的 V，即剩下总变化的 1/200。</li>
+<li>指数衰减 <span class="math math-inline">\(e^{-t/\tau} = 1/200\)</span> ， t = τ·ln200 = 1.0 × 5.30 = 5.3 s。模拟得到 5.2 s。</li>
+</ol>
+<p><em>留空题</em>：CF 换成 47 µF，τ = ____ s，稳定时间 = ____ s。</p>
+<details><summary>答案</summary>
+<p>τ = 100 kΩ × 47 µF = 4.7 s；稳定时间 4.7 × 5.30 = 24.9 s。</p>
+</details>
+<p><em>变体</em>：数字法里 Arduino 每个励磁周期（160 ms）出一个读数 E_mV，程序再算 avg8：前 8 个读数取累计平均，之后每来一个新读数就做 avg8 += (新读数 − avg8)/8（α = 1/8 的指数平均）。(a) 如果只是外部信号突然变号、程序没有清零，avg8 里旧值的影响要多少个周期才降到 1% 以下？要多少秒？(b) 发 <code>f</code> 的时候程序会调用 startTimer1()，看看它对 avg8 做了什么，这时要多久出第一个全新的读数？(c) 稳定时 avg8 的噪声比单个 E_mV 小几倍？</p>
+<details><summary>答案</summary>
+<p>(a) 每来一个新读数，旧值的影响乘 7/8。8 个周期后还剩 (7/8)^8 ≈ 34%；降到 1% 以下要 ln0.01 / ln(7/8) ≈ 34.5，即第 35 个读数，35 × 0.16 s = 5.6 s，和模拟法的 5.3 s 差不多。</p>
+<p>(b) startTimer1() 把 avg8 和 nAvg 都清零，所以发 <code>f</code> 以后出的第一个读数就全是新数据；程序要等 D10 的上升沿、而且正负两半都采到样才出数，大约 0.16～0.24 s。这比模拟法快得多，靠的是&quot;知道什么时候翻转、主动清零&quot;。</p>
+<p>(c) α = 1/8 的指数平均，噪声缩小 <span class="math math-inline">\(\sqrt{(2 - \alpha)/\alpha} = \sqrt{15}\)</span> ≈ 3.9 倍，不是 √8 ≈ 2.8 倍（模拟 3.89 倍，见 <code>code/38_sim.py</code> 第 8 节）。</p>
+</details>
+<p><strong>练习 5（举一反三：换个电网）</strong>：你在 60 Hz 市电地区。6.25 Hz 励磁还能抵消 60 Hz 吗？如果频率只靠 Timer1 的 TOP 来调（分频仍是 256），励磁选多少 Hz 合适、TOP 填几？程序里还有哪些数要跟着变？为什么 <a href="page2.html">原理与实现篇</a> 例3 的 5 Hz 对 50 Hz 和 60 Hz 都管用？</p>
+<details><summary>答案</summary>
+<p>60/6.25 = 9.6，不是偶数倍，不能完全抵消。条件是&quot;工频是励磁频率的偶数倍&quot;，也就是励磁取 60 Hz 的偶数分之一：60/8 = 7.5 Hz、60/10 = 6 Hz、60/12 = 5 Hz 都行，离 6.25 Hz 最近的是 7.5 Hz 和 6 Hz。取 7.5 Hz：TOP = 16 MHz ÷ 256 ÷ 2 ÷ 7.5 − 1 ≈ 4166，实际 7.4994 Hz（不是严格的 7.5 Hz），半周期 66.67 ms ≈ 4 个 60 Hz 周期。</p>
+<p><strong>程序里跟 TOP 挂钩的数都要一起变</strong>：OCR1A = TOP；OCR1B = TOP − leadCounts；BLANK_US 是半周期的一半，66.67 ms 的一半约 33.3 ms（不改的话还是 40 ms，采样窗只剩 26.67 ms，只是少采几个点；P、N 两个窗仍然相隔一个半周期 = 4 个 60 Hz 周期，两窗里的干扰一样，相减照样抵消。改成半周期的一半，只是为了保持「只用后一半」的设计）；45°、90° 的计数变成 1041、2083（每个计数 0.0432°）。 <a href="page4.html">动手实验篇</a> 的程序已经把这些都写成由常量 <code>TOP</code> 算出来（OCR1B = TOP − leadCounts，BLANK_US = (TOP+1)×8 µs = 33 336 µs，45° = (TOP+1)/4，90° = (TOP+1)/2），所以那份程序真的只改 <code>TOP</code> 一行就行。如果你用的是把 4999 写死的老写法，OCR1B = 4999 比 TOP = 4166 还大，CTC 模式计到 TOP 就清零，OCR1B 永远比较不到，<strong>D10 根本不翻转</strong>，没有参考，检波没有输出。但 50/7.5 = 6.67，7.5 Hz 在 50 Hz 电网又不行。5 Hz 时 50 Hz 是 10 倍、60 Hz 是 12 倍，两个都是偶数，所以一套参数两种电网都能用（数字见 <code>code/38_sim.py</code> 第 8 节）。</p>
+</details>
+<h2 id="本页小结">本页小结</h2>
+<ul>
+<li>τ = RF·CF：τ 大纹波小、等得久；实验用 1 s，翻转后等约 5.3 s。</li>
+<li>直流泄漏 <span class="math math-inline">\(-V_{DC} \cdot \varepsilon / 2\)</span> 和占空比泄漏 2δ·V_DC 都靠交流耦合消除；运放失调靠翻转相减消除；参考相位必须对。</li>
+<li>数字法：信号只有 5 个 LSB，靠电路自带的噪声抖动平均；干扰频率偏离 50 Hz 时单次读数会跳。</li>
+<li>CD4053 选择脚要电平转换；INH、VEE、VSS 和不用的选择脚都接 0 V。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

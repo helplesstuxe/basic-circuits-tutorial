@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>44 D 类放大与 PWM · 理论审校（theory）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/theory/44.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="44-d-类放大与-pwm--理论审校theory">44 D 类放大与 PWM · 理论审校（theory）</h1>
+<blockquote>
+<p>计算脚本：/workspace/calc/c44.py（本会话已运行）。记号：占空比 <span class="math math-inline">\(D\)</span> 、周期 <span class="math math-inline">\(T\)</span> 沿用 Part 1；开关频率 <span class="math math-inline">\(f_{sw}\)</span> ；LC 谐振 <span class="math math-inline">\(f_0\)</span> ；品质因数写作“Q 值”，避免和流量 Q、电荷 Q 混淆（§4）；三角波峰值 <span class="math math-inline">\(V_{tri,p}\)</span> ；电源 <span class="math math-inline">\(V_S\)</span> = 12 V（§10.3）。</p>
+</blockquote>
+<h2 id="1-推导链">(1) 推导链</h2>
+<ol>
+<li>
+<p><strong>比较器生成 PWM（回指 10、24）</strong>。</p>
+<ul>
+<li>三角波以虚地 <span class="math math-inline">\(V_m\)</span> 为中心，峰值为 <span class="math math-inline">\(V_{tri,p}\)</span> ，上升段线性。</li>
+<li>当 <span class="math math-inline">\(v_{in}\gt v_{tri}\)</span> 时输出为高。三角波在一个周期内低于 <span class="math math-inline">\(v_{in}\)</span> 的时间比例为
+<span class="math math-display">\[D=\tfrac12+\frac{v_{in}-V_m}{2V_{tri,p}}\]</span></li>
+<li>这个关系是<strong>一次函数（仿射）</strong>，并不成正比： <span class="math math-inline">\(v_{in}=V_m\)</span> 时 <span class="math math-inline">\(D\)</span> = 50%。</li>
+</ul>
+</li>
+<li>
+<p><strong>平均值（回指 01、09）</strong>。</p>
+<ul>
+<li>单端半桥： <span class="math math-inline">\(\overline{v}=D\cdot V_S\)</span> 。其中含有直流 <span class="math math-inline">\(V_S/2\)</span> ，所以喇叭必须串隔直电容，或改用桥接。</li>
+<li>桥接（BTL）互补驱动时 OUT2 = 非 OUT1，此时 <span class="math math-inline">\(\overline{v_{diff}}=(2D-1)V_S=V_S\cdot (v_{in}-V_m)/V_{tri,p}\)</span> ，没有直流。</li>
+<li>增益 <span class="math math-inline">\(=V_S/V_{tri,p}\)</span> ： <span class="math math-inline">\(V_{tri,p}\)</span> = 2.5 V 时为 4.8 倍，5 V 时为 2.4 倍。</li>
+<li>由此可见，开环 D 类的增益随电源电压变化（电源纹波会直接进入输出），这是“变体：闭环/反馈”的动机。</li>
+</ul>
+</li>
+<li>
+<p><strong>效率高的原因（回指 43）</strong>。</p>
+<ul>
+<li>开关管的功率 <span class="math math-inline">\(P=V_{DS}I\)</span> ：全开时 <span class="math math-inline">\(V_{DS}=I R_{DS(on)}\)</span> 很小，全关时 <span class="math math-inline">\(I\approx0\)</span> 。</li>
+<li>损耗主要来自 <span class="math math-inline">\(I^2R_{DS(on)}\)</span> 、开关过渡和栅极驱动。</li>
+<li>同样输出 5 W 时：效率 78.5% 对应损耗 1.369 W，效率 90% 对应损耗 0.556 W（已复核）。</li>
+</ul>
+</li>
+<li>
+<p><strong>LC 低通（回指 25 电感、01 RC）</strong>。</p>
+<ul>
+<li>传递函数 <span class="math math-inline">\(H=1/(1-\omega^2LC+j\omega L/R)\)</span> ，其中 <span class="math math-inline">\(f_0=1/(2\pi\sqrt{LC})\)</span> ，Q 值 <span class="math math-inline">\(=R\sqrt{C/L}\)</span> （SLAA701B 式 1、3）。</li>
+<li>求模用到复数，属于超纲工具。最少只需记住：远高于 <span class="math math-inline">\(f_0\)</span> 时 <span class="math math-inline">\(|H|\approx(f_0/f)^2\)</span> ，即频率每升高 10 倍，衰减 40 dB。</li>
+<li>用 8 Ω、 <span class="math math-inline">\(f_0\)</span> = 30 kHz、Q 值 0.707 设计，得到 L = 60.0 µH、C = 0.469 µF，反算 <span class="math math-inline">\(f_0\)</span> = 29.97 kHz。</li>
+<li><strong>同一组 LC 接 18 Ω</strong>（8 Ω 喇叭 + 10 Ω）时，Q 值 = 1.59，20 kHz 处峰值 +3.2 dB，25 kHz 处 +4.4 dB：滤波器参数必须按实际负载计算。</li>
+</ul>
+</li>
+<li>
+<p><strong>载波必须落在 <span class="math math-inline">\(f_0\)</span> 之上足够远</strong>。</p>
+<ul>
+<li>AD（互补）调制在静音时 <span class="math math-inline">\(D\)</span> = 50%，负载两端是 ±12 V 方波。按奇次谐波 <span class="math math-inline">\(4V_S/(n\pi)\)</span> 逐项乘以 <span class="math math-inline">\(|H|\)</span> 求和，得到静音时负载上的功率：
+<table>
+<thead>
+<tr>
+<th>LC / 负载</th>
+<th><span class="math math-inline">\(f_{sw}\)</span> = 25 kHz</th>
+<th>50 kHz</th>
+<th>100 kHz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>60 µH/0.47 µF / 18 Ω</td>
+<td>17.7 W（!）</td>
+<td>1.5 W</td>
+<td>0.06 W</td>
+</tr>
+<tr>
+<td>60 µH/0.47 µF / 8 Ω</td>
+<td>9.9 W</td>
+<td>1.7 W</td>
+<td>0.12 W</td>
+</tr>
+<tr>
+<td>470 µH/0.68 µF / 18 Ω（ <span class="math math-inline">\(f_0\)</span> = 8.9 kHz，Q 值 0.68）</td>
+<td>0.10 W</td>
+<td>0.01 W</td>
+<td>≈0</td>
+</tr>
+<tr>
+<td>不接 LC，18 Ω</td>
+<td>8 W（喇叭分得 3.6 W）</td>
+<td>同左</td>
+<td>同左</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>以上按纯电阻负载计算。真实喇叭在几十 kHz 时感抗会增大，实际电流会小一些 「[待核实]」，但 10 Ω 串联电阻照样发热。</li>
+<li>这正是 SLAA701B §1.2.1 所说：AD 调制空闲时 “sees the full switching waveform … significant current flow and power dissipation into the load”。</li>
+</ul>
+</li>
+<li>
+<p><strong>BD / “免滤波”（SLOA145、SLAA701B §1.2.2）</strong>。</p>
+<ul>
+<li>OUT1 = <span class="math math-inline">\([v_{in}\gt v_{tri}]\)</span>，OUT2 = <span class="math math-inline">\([-v_{in}\gt v_{tri}]\)</span>。静音时两端同相，差分电压约为 0，负载电流很小。</li>
+<li>有信号时差分脉冲宽度正比于 <span class="math math-inline">\(|v_{in}|\)</span> ，而且差分的纹波频率是 <span class="math math-inline">\(2f_{sw}\)</span> 。</li>
+<li>实现需要一个反相器（一路运放）。DRV8871 在 IN1 = IN2 = 1 时为“刹车”（L/L），正好对应同相状态。</li>
+</ul>
+</li>
+<li>
+<p><strong>时序限制（DRV8871、LM393 数据手册）</strong>。</p>
+<table>
+<thead>
+<tr>
+<th><span class="math math-inline">\(f_{sw}\)</span></th>
+<th>25 kHz</th>
+<th>50 kHz</th>
+<th>100 kHz</th>
+<th>200 kHz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(T\)</span></td>
+<td>40 µs</td>
+<td>20 µs</td>
+<td>10 µs</td>
+<td>5 µs</td>
+</tr>
+<tr>
+<td>可用 <span class="math math-inline">\(D\)</span> （最小脉宽 800 ns）</td>
+<td>2–98%</td>
+<td>4–96%</td>
+<td>8–92%</td>
+<td>16–84%（与手册脚注一致）</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(t_{DEAD}\)</span> 220 ns 占 <span class="math math-inline">\(T\)</span></td>
+<td>0.55%</td>
+<td>1.1%</td>
+<td>2.2%</td>
+<td>4.4%</td>
+</tr>
+<tr>
+<td>LM393 响应 1.3 µs 占 <span class="math math-inline">\(T\)</span></td>
+<td>3.2%</td>
+<td>6.5%</td>
+<td>13%</td>
+<td>26%</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>LM393 的上升沿和下降沿延迟相同的部分可以相互抵消，不对称的部分会变成占空比误差（失真）。</li>
+<li>TL072 方波边沿约 10 V ÷ 20 V/µs = 0.5 µs。</li>
+<li>结论：这套元件适合 <span class="math math-inline">\(f_{sw}\)</span> ≈ 40–60 kHz，所以应<strong>降低 <span class="math math-inline">\(f_0\)</span></strong>，而不是继续提高 <span class="math math-inline">\(f_{sw}\)</span> 。</li>
+</ul>
+</li>
+<li>
+<p><strong>桥接功率（12 V、18 Ω）</strong>。</p>
+<ul>
+<li><span class="math math-inline">\(P_{max}=V_S^2/(2R)\)</span> = 4 W，峰值电流 0.667 A（小于 DRV8871 的 3.6 A）。</li>
+<li>其中喇叭 1.78 W，10 Ω 电阻 2.22 W，需要 ≥ 5 W 功率电阻。</li>
+<li>若直接接 8 Ω，满幅 9 W，小喇叭会损坏。</li>
+<li>桥接比单端多 4 倍功率的来源：摆幅 2 倍， <span class="math math-inline">\(P\propto V^2\)</span> （SLAA701B §1.1.1）。</li>
+</ul>
+</li>
+<li>
+<p><strong>万用表验证（§10.2）</strong>。</p>
+<ul>
+<li>直流电压档测 OUT1 对地，应得 <span class="math math-inline">\(D\cdot V_S\)</span> （例如 50% 时为 6 V），对比 SLAU508 的 5 V × 75% = 3.75 V。</li>
+<li>直流电流档测电源电流。</li>
+<li>静音时电源电流就是第 5 条的“空闲损耗”，可以直接比较 25 kHz 与 50 kHz，以及有、无 LC 的差别。</li>
+</ul>
+</li>
+</ol>
+<h2 id="2-符号表">(2) 符号表</h2>
+<table>
+<thead>
+<tr>
+<th>符号</th>
+<th>含义</th>
+<th>单位</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><span class="math math-inline">\(D\)</span>, <span class="math math-inline">\(T\)</span></td>
+<td>占空比、周期（Part 1）</td>
+<td>1, s</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(f_{sw}\)</span></td>
+<td>开关（载波）频率</td>
+<td>Hz</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_S\)</span></td>
+<td>电源（12 V）</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_m\)</span></td>
+<td>虚地/三角波中心</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(V_{tri,p}\)</span></td>
+<td>三角波峰值</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\overline{v}\)</span></td>
+<td>平均值（\overline，不用 ⟨⟩）</td>
+<td>V</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(L\)</span>, <span class="math math-inline">\(C\)</span>, <span class="math math-inline">\(R\)</span></td>
+<td>滤波电感、电容、负载</td>
+<td>H, F, Ω</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(f_0\)</span>, Q 值</td>
+<td>LC 谐振频率、品质因数</td>
+<td>Hz, 1</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(L_{BTL}\)</span>, <span class="math math-inline">\(C_{BTL}\)</span>, <span class="math math-inline">\(R_{BTL}\)</span></td>
+<td>SLAA701B 桥接记号</td>
+<td>—</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(t_{DEAD}\)</span>, <span class="math math-inline">\(t_{PD}\)</span></td>
+<td>死区、传播延迟</td>
+<td>ns, µs</td>
+</tr>
+<tr>
+<td><span class="math math-inline">\(\eta\)</span></td>
+<td>效率</td>
+<td>%</td>
+</tr>
+</tbody>
+</table>
+<h2 id="3-勘误notes44-researchmd-与-00-design-6-的-44-条">(3) 勘误（notes/44-research.md 与 00-design §6 的 44 条）</h2>
+<ul>
+<li><strong>E1【严重】第 47、51 行，以及 design 中“三角波约 20–30 kHz / 约 25 kHz”加 60 µH/0.47 µF</strong>：载波就落在 <span class="math math-inline">\(f_0\)</span> = 30 kHz 附近，几乎没有被衰减；接 18 Ω 时还被放大（25 kHz 处 +4.4 dB）。
+<ul>
+<li>后果：AD 互补驱动在静音时负载上约有 18 W（理想计算），10 Ω 电阻和喇叭过热，DRV8871 也可能进入过流保护。</li>
+<li>改为以下三者之一：
+<ul>
+<li>(a) <span class="math math-inline">\(f_{sw}\)</span> ≈ 50 kHz，配 470 µH/0.68 µF（按 18 Ω 设计， <span class="math math-inline">\(f_0\)</span> = 8.9 kHz，Q 值 0.68），静音时约 0.01 W；电感要能承受约 1 A 而不饱和 「[待核实]」，具体型号需另查。</li>
+<li>(b) 改用 BD 调制（推导 6）。</li>
+<li>(c) 若保留 30 kHz 滤波器， <span class="math math-inline">\(f_{sw}\)</span> 必须 ≥ 100 kHz，但 LM393 的速度不够（推导 7）。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><strong>E2【严重】design page4“（串 LC 或直接接）”</strong>：互补（AD）驱动下“直接接”时，静音也有 8 W 加在 18 Ω 上，必须删去。“免滤波”只适用于 BD 类调制芯片（SLOA145、PAM8403），并不意味着任何 PWM 都能直接接喇叭。</li>
+<li><strong>E3 第 18 行“占空比与输入电压成正比”</strong>：应改为 <span class="math math-inline">\(D=\tfrac12+(v_{in}-V_m)/(2V_{tri,p})\)</span> ，是一次函数，不过原点。</li>
+<li><strong>E4 第 19 行“平均值 = D × V_supply；滤掉载波就是放大的音频”</strong>：单端时含有 <span class="math math-inline">\(V_S/2\)</span> 直流；桥接互补时为 <span class="math math-inline">\((2D-1)V_S\)</span> 。增益 <span class="math math-inline">\(V_S/V_{tri,p}\)</span> 随电源变化。</li>
+<li><strong>E5 第 27 行 / design“10 µH/0.68 µF 按单节 LC 约 61 kHz”</strong>：61.0 kHz 计算无误，但不应作为该例的结论。
+<ul>
+<li>SLAA701B 中这个例子是 Type-1 差分滤波器（仅用于 AD 调制），设计目标 <span class="math math-inline">\(f_0\)</span> = 40 kHz、 <span class="math math-inline">\(R_{BTL}\)</span> = 4 Ω，并给出单端等效 C = 2 <span class="math math-inline">\(C_{BTL}\)</span> 、 <span class="math math-inline">\(R_L=R_{BTL}/2\)</span> 。</li>
+<li>按等效电路计算： <span class="math math-inline">\(f_0\)</span> = 43.2 kHz，Q 值 0.74。</li>
+<li>应写“目标 40 kHz（等效约 43 kHz）”，删去 61 kHz，或者明说 61 kHz 是“错误算法”的反例。</li>
+</ul>
+</li>
+<li><strong>E6 第 28 行“60 µH/0.47 µF”</strong>：8 Ω 时的数值正确（60.0 µH/0.469 µF/29.97 kHz）。但 page4 负载是 18 Ω，Q 值变为 1.59，需要重新设计（见 E1(a)）。</li>
+<li><strong>E7 第 14 行“DRV8871 当大号 H 桥”</strong>：要写明三点。
+<ul>
+<li>IN1/IN2 = 00 是 coast（高阻，1 ms 后进入睡眠），不能当作“关”，用 PWM 时要用 PWM/刹车或互补方式。</li>
+<li><span class="math math-inline">\(f_{PWM}\)</span> ≤ 200 kHz，200 kHz 时可用 <span class="math math-inline">\(D\)</span> 只有 16–84%。</li>
+<li>内部死区 220 ns，不需要外加死区；第 35 行“忽略死区导致直通”对分立 MOSFET 成立，对 DRV8871 应注明“芯片内部已处理”。</li>
+<li>另外，LM393 是开集电极输出，必须上拉到 5 V（DRV8871 <span class="math math-inline">\(V_{IH}\)</span> = 1.5 V，内部下拉 100 kΩ）。</li>
+</ul>
+</li>
+<li><strong>E8 第 53 行“Arduino 约 31 kHz 模式”</strong>：16 MHz/510 = 31.37 kHz（相位修正 PWM、预分频 1），需要改写定时器寄存器；aw.adoc 只给出默认 490/980 Hz，31 kHz 设置的来源「[待核实]」。另外 RC 低通 <span class="math math-inline">\(f_c\)</span> 要介于 20 kHz 和 31 kHz 之间几乎不可能，所以该对照只能演示“语音带”。</li>
+<li><strong>E9 第 29 行“1.4 W / 0.56 W”</strong>：复核为 1.369 W / 0.556 W，正确。可以补一句 SLOA290A §6 的说法：“greater than 90%” 只在特定负载、特定功率下成立，小功率时效率最低，而且存在空闲损耗。</li>
+<li><strong>E10 符号</strong>：文中“Q = 0.707”改为“Q 值 = 0.707”（§4）。</li>
+</ul>
+<h2 id="4-参考本会话已打开并核对">(4) 参考（本会话已打开并核对）</h2>
+<ul>
+<li>TI SLAA701B《LC Filter Design》<a href="https://www.ti.com/lit/an/slaa701b/slaa701b.pdf">https://www.ti.com/lit/an/slaa701b/slaa701b.pdf</a> ——
+<ul>
+<li>§1.1.1：BTL 有 2× 摆幅、4× 功率；</li>
+<li>§1.2.1：AD 调制空闲时负载承受全部开关波形；</li>
+<li>§1.2.2：BD 调制；</li>
+<li>表 1-2：单端等效 C = 2× <span class="math math-inline">\(C_{BTL}\)</span> 、 <span class="math math-inline">\(R_L=R_{BTL}/2\)</span> ；</li>
+<li>式 1、3： <span class="math math-inline">\(f_0\)</span> 与 Q 值；</li>
+<li>Type-1 例子： <span class="math math-inline">\(f_0\)</span> = 40 kHz、4 Ω，得 10 µH / 0.68 µF。</li>
+</ul>
+</li>
+<li>TI SLOA145《Filter-Free Class-D Audio Amplifiers》<a href="https://www.ti.com/lit/an/sloa145/sloa145.pdf">https://www.ti.com/lit/an/sloa145/sloa145.pdf</a> ——§1：传统 D 类不加 LC 时负载电流和功耗大、效率下降；§2：免滤波调制时两路输出几乎同相；§3：磁珠滤波用于 EMC。</li>
+<li>TI SLOA290A <a href="https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf">https://www.ti.com/lit/wp/sloa290a/sloa290a.pdf</a> ——“usually up to about 90% efficient”；§6 空闲损耗，以及效率随功率变化。</li>
+<li>TI SLAU508 <a href="https://www.ti.com/lit/pdf/slau508">https://www.ti.com/lit/pdf/slau508</a> ——5 V × 75% = 3.75 V。</li>
+<li>TI DRV8871 数据手册 <a href="https://www.ti.com/lit/ds/symlink/drv8871.pdf">https://www.ti.com/lit/ds/symlink/drv8871.pdf</a> ——
+<ul>
+<li>VM 6.5–45 V； <span class="math math-inline">\(f_{PWM}\)</span> 0–200 kHz，脚注“at least 800 ns … 16% to 84%”；</li>
+<li><span class="math math-inline">\(t_{DEAD}\)</span> 220 ns， <span class="math math-inline">\(t_{PD}\)</span> 0.7 µs； <span class="math math-inline">\(I_{OCP}\)</span> 最小 3.7 A；</li>
+<li><span class="math math-inline">\(V_{IH}\)</span> 1.5 V， <span class="math math-inline">\(R_{PD}\)</span> 100 kΩ；</li>
+<li>表 1：00 = Coast，11 = Brake。</li>
+</ul>
+</li>
+<li>TI LM393 数据手册 <a href="https://www.ti.com/lit/ds/symlink/lm393.pdf">https://www.ti.com/lit/ds/symlink/lm393.pdf</a> ——响应时间典型 1.3 µs（LM393），LM393B 为 1 µs。</li>
+<li>TI TL072 数据手册（SR 20 V/µs）。</li>
+<li>Arduino analogWrite 文档（aw.adoc）——UNO 默认 490 Hz（5、6 脚 980 Hz）。</li>
+</ul>
+<h3 id="待核实">「[待核实]」</h3>
+<ul>
+<li>ADI Analog Dialogue D 类文章（未打开）。</li>
+<li>喇叭在 25–100 kHz 的阻抗（感抗使电流比纯电阻计算值小）。</li>
+<li>470 µH / ≥ 1 A 电感的具体型号与饱和电流。</li>
+<li>Arduino 31 kHz（Timer 寄存器）设置的出处。</li>
+<li>电容/电感实际 ESR 对 Q 值的影响（未计算）。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

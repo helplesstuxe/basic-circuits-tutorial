@@ -49,7 +49,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/39-constant-current-excitation/page1.md">GitHub 源文件</a></div></nav>
 <main>
 <h1 id="39-恒流源与线圈励磁驱动--直觉篇">39 恒流源与线圈励磁驱动 · 直觉篇</h1>
-<p>上一页：38 节同步检波（电磁流量计）（即将上线） · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../02-opamp-basics/page1.html">02 运放入门 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a>、<a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a>、<a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a>、<a href="../26-h-bridge/page1.html">26 H 桥电机驱动 · 直觉篇</a></p>
+<p><a href="../38-synchronous-demod/page4.html">上一页：38 同步检波（电磁流量计） · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../02-opamp-basics/page1.html">02 运放入门 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a>、<a href="../06-mosfet-switch/page1.html">06 MOS 管开关 · 直觉篇</a>、<a href="../21-linear-regulator/page1.html">21 线性稳压 · 直觉篇</a>、<a href="../26-h-bridge/page1.html">26 H 桥电机驱动 · 直觉篇</a></p>
 <h2 id="开头三问先回忆再往下读">开头三问（先回忆，再往下读）</h2>
 <ol>
 <li><a href="../26-h-bridge/page1.html">26 H 桥电机驱动</a> 里，四个开关怎么闭合能让电机反转？哪一种闭合方式会把电源短路？</li>
@@ -64,7 +64,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </ol>
 </details>
 <h2 id="痛点线圈一热磁场就变弱">痛点：线圈一热，磁场就变弱</h2>
-<p>38 节同步检波（电磁流量计）（即将上线） 里讲过电磁流量计的原理：管子外面绕一对线圈，通电后在管道里产生磁场；导电的水流过磁场，管壁两侧的电极上就出现一个很小的电压，水流得越快，电压越大。这个电压同时和<strong>磁场强弱</strong>成正比，而磁场强弱又和<strong>线圈电流</strong>成正比。所以电流只要变了 1%，读数就跟着错 1%。</p>
+<p><a href="../38-synchronous-demod/page1.html">38 同步检波（电磁流量计）</a> 里讲过电磁流量计的原理：管子外面绕一对线圈，通电后在管道里产生磁场；导电的水流过磁场，管壁两侧的电极上就出现一个很小的电压，水流得越快，电压越大。这个电压同时和<strong>磁场强弱</strong>成正比，而磁场强弱又和<strong>线圈电流</strong>成正比。所以电流只要变了 1%，读数就跟着错 1%。</p>
 <blockquote>
 <p><strong>38 节一句话回顾（还没读 38 节也能往下看）</strong>：① 导电的液体在磁场里流动，管壁两侧的电极之间会出现电压，这个电压 ∝ 流速 × 磁场；② 金属电极泡在液体里，表面会慢慢积起一层电荷，电极之间出现一个缓慢爬动的直流电压，叫<strong>电极极化</strong>；它是电极自己的事，不管磁场朝哪边都在；③ 磁场如果一直朝一个方向，流量信号也是直流，和极化电压混在一起分不开，所以磁场要正负来回翻，再把「磁场为正时的读数」减去「磁场为负时的读数」，流量信号跟着翻、被加倍，漂移不跟着翻、被减掉。这一步叫<strong>同步检波</strong>。</p>
 </blockquote>
