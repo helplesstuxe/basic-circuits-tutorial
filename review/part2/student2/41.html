@@ -653,6 +653,98 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </tbody>
 </table>
 <p><strong>剩余必改：0。</strong></p>
+<h2 id="复核-2">复核 2</h2>
+<ul>
+<li>时间：2026-10-27 20:18–20:24 CST（box 时钟）＝ 08:18–08:24 EDT。</li>
+<li>依据：log 里「2026-10-27 19:53 41-current-loop-4-20ma fix done (author C)」这一行。</li>
+<li>做法：把上次复核用的副本 <code>/tmp/bct-run/41r/repocopy</code>（19:52 的页面）和现在的页面逐行 diff，看这次到底改了什么。</li>
+<li>先说清楚一件事：log 这一行列的大部分改动，<strong>上次复核时已经在页面里了</strong>。具体是 L48 的 g26–g29、图 p4-2 的注、<code>41_figs.py</code> 第 611–615 行的布线断言、L240 的断电和探头判温、page2 例题挪到「三」之后、p4-1 的 250 Ω 标签。本轮 diff 里真正新出现的只有两处：
+<ol>
+<li>page4 第 58 行 alt 改成 g26–g29（page4 修改时间 20:02）。</li>
+<li>page1–4 里指向 39、42 的链接改成纯文字「39 节……（即将上线）」「42 节……（即将上线）」（page1–3 修改时间 19:54）。这条 log 里没写。这和 README「目前已上线 30、33、34、35、40、41」的发布规则一致，40 节也是这样处理的。</li>
+</ol>
+</li>
+<li>方法：
+<ul>
+<li>仓库复制到 <code>/tmp/bct-run/41r2</code>（不含 notes/.git/_site）。</li>
+<li><code>code/41_sim.py</code> exit 0，输出和上次逐字相同。</li>
+<li><code>code/figs/41_figs.py</code> exit 0，布线断言全过，重出的 17 张 PNG 和仓库 md5 全部相同。</li>
+<li><code>spice/41/run.py</code> exit 0（35 s），89 项：✅85、⚠️4、❌0，和上次相同。</li>
+<li><code>run_blocks</code> 跑了 page2、page4 两块，PASS 2、FAIL 0，输出和页面一致。</li>
+<li>check_figs 4/4、count_cjk 2087/2335/3466/4120、行内公式空格 0、github math 4/4，全部 OK。</li>
+<li>看图：p4-1 里「250 Ω」标签在 i24–i29 那只电阻正下方，不压孔也不压线；p4-2 的注写「100 Ω i24–i26 + 150 Ω g26–g29」。</li>
+</ul>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>项</th>
+<th>结论</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>上次必改 1（42 链接）</td>
+<td>✅ 仍关闭</td>
+<td>现在 42 是纯文字「42 节流量计信号链总览（即将上线）」，已经没有链接了</td>
+</tr>
+<tr>
+<td>上次建议 1–10</td>
+<td>✅ 仍成立</td>
+<td>本轮 diff 没碰这些地方</td>
+</tr>
+<tr>
+<td>新建议 1（alt 写 j26–j29）</td>
+<td>✅ 已处理</td>
+<td>第 58 行 alt 末尾改成「150 Ω（g26–g29）串联」</td>
+</tr>
+<tr>
+<td>新建议 2（第 246 行「每 20 ms」）</td>
+<td>❌ 未处理</td>
+<td>第 246 行还是「程序打印阶跃后每 20 ms 的 <span class="math math-inline">\(I_E\)</span> 」，没加「实际略长，以打印的 ms 为准」，和第 89 行的说明对不上。不影响结论，仍算建议</td>
+</tr>
+<tr>
+<td>L240 改动</td>
+<td>✅ 一致</td>
+<td>写的是「不要用手摸电阻判断发热；想确认温度，用测温探头、NTC 或万用表测温挡」，前面有「立刻拔 12 V」「闻到焦味……立即断电」，和 39 节的处理方式一致</td>
+</tr>
+<tr>
+<td>g26–g29 各处是否一致</td>
+<td>✅ 一致</td>
+<td>正文 L48、图 p4-2 的注、alt L58、<code>41_figs.py</code> 的注释和断言（g26 不连 A0 和两条轨，g29 连 RL.2 / RX.1）都是 g26–g29，全页已经找不到 j26–j29 的接法。我逐孔核对过：第 26 列下半除了这两只电阻没有别的元件；第 29 列下半是 g29（150 Ω）和 h29（R_x），j29 空着，所以各表「j29 对 j24」的红黑表笔位置不用改。p4-1 只画了 250 Ω 一只电阻，没画替代接法，这样是对的</td>
+</tr>
+<tr>
+<td>page2 例题位置</td>
+<td>✅</td>
+<td>例 1–3 在第 93–108 行，在「三、β 误差」之后、「四」之前，内容和上次一样</td>
+</tr>
+</tbody>
+</table>
+<h3 id="新问题">新问题</h3>
+<table>
+<thead>
+<tr>
+<th>编号</th>
+<th>级别</th>
+<th>位置</th>
+<th>问题</th>
+<th>怎么改</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>R2-1</td>
+<td>建议</td>
+<td>page1 第 6、46 行；page2 第 5 行；page3 第 5 行；page4 第 5、398 行</td>
+<td>链接改成文字以后句子不顺，有两个问题。① 时态：「39 节恒流源（即将上线） 第四步讲过」「……（即将上线） 用运放 + MOS 管搭过恒流源」，一节还没上线，却说它「讲过」「搭过」。② 空格：「（即将上线）」后面多了一个半角空格，紧接着就是汉字，比如「（即将上线） 干的事」「（即将上线） 里」。好在前置回顾本身把要点讲全了，读者不去 39 也能看懂</td>
+<td>去掉多余空格；把「讲过」「搭过」改成「会讲」，或者改成中性说法「39 节（即将上线）的思路是……」</td>
+</tr>
+</tbody>
+</table>
+<p>这次改动没有带进新的必改。</p>
+<p><strong>剩余必改：0。</strong></p>
 
 </main>
 <div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

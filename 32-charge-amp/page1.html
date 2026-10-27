@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>32 电荷放大器 · 直觉篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+<script>
+window.MathJax={tex:{inlineMath:[['\\(','\\)']],displayMath:[['\\[','\\]']],processEscapes:false,
+packages:{'[+]':['ams']}},
+options:{ignoreHtmlClass:'tex2jax_ignore',processHtmlClass:'math'},
+chtml:{matchFontHeight:false},startup:{typeset:true}};
+</script>
+<script defer src="https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-chtml.js"></script>
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/32-charge-amp/page1.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="32-电荷放大器--直觉篇">32 电荷放大器 · 直觉篇</h1>
+<p><a href="../31-transimpedance-amp/page4.html">上一页：31 跨阻放大器（TIA） · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a> · 前置节点：<a href="../14-integrator/page1.html">14 积分器 · 直觉篇</a>、<a href="../31-transimpedance-amp/page1.html">31 跨阻放大器（TIA） · 直觉篇</a></p>
+<blockquote>
+<p><strong>开头三问</strong>（先猜，读完本节再回来对答案）</p>
+<ol>
+<li>压电片被敲一下，给出的是&quot;电压&quot;、&quot;电流&quot;还是&quot;电荷&quot;？传感器和放大器之间的电缆从 1 m 换成 10 m，读数会不会变？</li>
+<li>把 <a href="../31-transimpedance-amp/page1.html">31 跨阻放大器</a> 反馈里的电阻 R_F 换成电容 C_F，输出跟输入的什么量成正比？</li>
+<li>电荷放大器能不能拿来称一个放着不动的砝码（静力）？</li>
+</ol>
+</blockquote>
+<h2 id="痛点涡街流量计的传感器只给一小包电荷">痛点：涡街流量计的传感器只给&quot;一小包电荷&quot;</h2>
+<p>管道里插一根挡流柱，水或蒸汽流过时，柱子后面会左右交替地甩出旋涡，这叫<strong>卡门涡街</strong>。旋涡每甩一次，柱子就被横向推一下，推的频率和流速成正比。<strong>涡街流量计</strong>就是数这个频率来算流量（艾默生 Rosemount 8800 的技术说明讲了频率和流量之间的换算系数， <a href="https://www.emerson.com/documents/automation/technical-note-vortex-adaptive-digital-signal-processing-8800-series-rosemount-en-76500.pdf">https://www.emerson.com/documents/automation/technical-note-vortex-adaptive-digital-signal-processing-8800-series-rosemount-en-76500.pdf</a> ）。横河（Yokogawa）YEWFLO 的技术报告（ <a href="https://web-material3.yokogawa.com/rd-tr-r00027-004.pdf">https://web-material3.yokogawa.com/rd-tr-r00027-004.pdf</a> ）写明：检测这个横向力的是<strong>压电元件</strong>，后面接的是&quot;电荷转换器&quot;。</p>
+<p>压电元件（压电陶瓷片，本节实验用的是几毛钱一片的蜂鸣片）的本事是：受力时两面出现<strong>电荷</strong>，单位是皮库（pC）或纳库（nC）。力撤掉，电荷又回去。它不像电池那样能持续供电，也不像 31 节的光电二极管那样持续给电流。它只在力<strong>变化</strong>的那一刻，&quot;吐出&quot;一小包电荷。</p>
+<p>麻烦在于：流量计的传感器装在管道上，放大器装在几米外的表头里，中间隔着一根<strong>电缆</strong>。电缆两根芯线之间本身就是一只电容，越长越大。下面会看到，如果用&quot;量电压&quot;的老办法，电缆一换，读数就变。</p>
+<h2 id="一压电片--电荷源--一只电容">一、压电片 = 电荷源 + 一只电容</h2>
+<p>把压电片画成电路：一个&quot;电荷源&quot;Q，旁边并着它自己两片电极之间的电容 C_p（图 32-p1-1 左边）。电缆的电容 C_c 也并在同两根线上。</p>
+<p><a class="img-link" href="img/32_p1_1_voltage_vs_charge.png"><img alt="两幅电路并排：左边电荷源旁并着两只电容 C_p 和 C_c，接到运放跟随器的同相端；右边同一组电荷源和两只电容接到运放反相端 N，反馈支路是电容 C_F，同相端接参考电压；右图标了运放的 1、2、3 脚" src="img/32_p1_1_voltage_vs_charge.png" loading="lazy" /></a></p>
+<p><em>图 32-p1-1　电压模式（左）与电荷模式（右）：同一个传感器、同一根电缆</em></p>
+<p><strong>电压模式</strong>（左）：直接用一个 <a href="../12-voltage-follower/page1.html">12 电压跟随器</a> 去量压电片两端的电压。电荷 Q 只能待在两只电容上，电压就是 <a href="../01-components-basics/page1.html">01 元器件入门</a> 里电容的老公式 V = Q/C，只不过 C 是两只电容之和：</p>
+<div class="math math-display">\[V = \frac{Q}{C_p + C_c}\]</div>
+<p>设 Q = 100 pC、C_p = 1 nF。电缆电容 0.1 nF 时读到 90.91 mV；电缆加长到 1 nF，只剩 50.00 mV；10 nF 时只剩 9.09 mV（数字来自 <code>code/32_sim.py</code>）。同一下敲击，换根电缆读数差了 10 倍，这台流量计就没法标定了。图 32-p1-2 把这条&quot;缩水&quot;曲线画了出来。</p>
+<p><a class="img-link" href="img/32_p1_2_cable.png"><img alt="横轴是电缆电容（对数刻度，10 皮法到 10 纳法），纵轴是输出毫伏；一条曲线随电缆电容增大而下降，另一条水平线保持不变" src="img/32_p1_2_cable.png" loading="lazy" /></a></p>
+<p><em>图 32-p1-2　同一份 100 pC：两种接法的输出随电缆电容的变化</em></p>
+<h2 id="二电荷放大器让运放把电荷搬到-c_f-上">二、电荷放大器：让运放把电荷&quot;搬&quot;到 C_F 上</h2>
+<p>图 32-p1-1 右边是<strong>电荷放大器</strong>。它和 <a href="../31-transimpedance-amp/page1.html">31 跨阻放大器</a> 长得几乎一样，只是反馈元件从电阻 R_F 换成了电容 C_F。</p>
+<p>负反馈让运放的反相端（2 脚，记作 N 点）一直待在同相端（3 脚）的电压上不动。于是 C_p 和 C_c 两端的电压<strong>始终不变</strong>：电压不变，电容上的电荷就不变，它们一点电荷都&quot;截留&quot;不了。压电片吐出来的电荷 Q 无处可去，只能流过 N 点，全部存进 C_F。运放输出只好移动 Q/C_F 来装下这份电荷：</p>
+<div class="math math-display">\[V_{out} - V_{ref} = -\frac{Q}{C_F}\]</div>
+<p>V_ref 是同相端的参考电压，负号表示&quot;电荷往 N 点流进来，输出往下走&quot;。式子里<strong>没有 C_p，也没有 C_c</strong>：电缆多长都一样（图 32-p1-2 里那条水平线），这正是 TI 应用笔记 SLOA033A（ <a href="https://www.ti.com/lit/an/sloa033a/sloa033a.pdf">https://www.ti.com/lit/an/sloa033a/sloa033a.pdf</a> ）推荐电荷模式的理由。</p>
+<p>这其实就是 <a href="../14-integrator/page1.html">14 积分器 · 直觉篇</a> 里的那只积分器：电流流进来，电容上的电压就是电流的累积，而电流的累积正是电荷。积分器量的是&quot;一共流过多少&quot;，电荷放大器只是把这个&quot;多少&quot;直接读出来。</p>
+<h2 id="三单电源参考电压放在-45-v">三、单电源：参考电压放在 4.5 V</h2>
+<p>本节实验只用一节 9 V 电池。运放输出既要能往上走、也要能往下走（压电片受压和松开时电荷方向相反），所以同相端不能接 0 V。我们用两只 10 kΩ 电阻把 9 V 分成一半，再经运放跟随器缓冲，得到 <strong>V_MID = 4.5 V</strong>，接在同相端（图 32-p1-3）。</p>
+<p><a class="img-link" href="img/32_p1_3_vmid.png"><img alt="一根 0 到 9 伏的水平轴，标出 0 伏电池负极、中间的 V_MID 4.5 伏和 9 伏电池正极；一个三角形标记指向中间，旁边写着反相端的位置；上方一个双向箭头表示输出以中间为中心上下摆" src="img/32_p1_3_vmid.png" loading="lazy" /></a></p>
+<p><em>图 32-p1-3　9 V 电池单电源：0 V、V_MID 和 +9 V 三个电位</em></p>
+<p>这样输出平时停在 4.5 V，正电荷让它往下走、负电荷让它往上走，各有约 4 V 的余量。</p>
+<blockquote>
+<p><strong>📌 名字别混</strong>　<strong>V_MID</strong> 是本节的&quot;中点参考&quot;：分压 + 跟随器做出来的 4.5 V，和 <a href="../30-instrumentation-amp/page2.html">30 仪表放大器与电桥</a> 的 V_MID 是同一个意思。<strong>N 点</strong>是运放的反相端（2 脚），被负反馈拉到和同相端一样的 4.5 V。<a href="../05-inverting-amp/page1.html">05 反相放大</a> 的「虚地」说的是同相端接 0 V 时，反相端也被拉到 0 V。本节同相端在 V_MID，N 点在 4.5 V 而不是 0 V，道理相同但电位不同，所以本节只叫它&quot;N 点&quot;，不叫&quot;虚地&quot;。<strong>0 V</strong> 是电池负极，万用表黑表笔通常夹这里。三者在图 32-p1-3 上的位置一眼就能分开。另外，本节的 <strong>Q</strong> 是电荷（单位 C，常用 nC、pC），和 <a href="../20-active-filter/page2.html">20 有源滤波器</a> 里的品质因数 Q 不是一回事。</p>
+</blockquote>
+<h2 id="四电荷存进去以后为什么还要一只-r_f">四、电荷&quot;存&quot;进去以后：为什么还要一只 R_F</h2>
+<p>电容是理想的&quot;记事本&quot;：存进去的电荷不会自己跑掉。可惜运放的输入端并不是完全绝缘的，总有一点点<strong>输入偏置电流</strong>流进或流出 N 点。这点电流也会被 C_F 一直累积，输出就慢慢地朝一个电源轨漂过去，最后顶死不动。</p>
+<p>所以实际的电荷放大器总在 C_F 旁边并一只很大的电阻 R_F（本节用 10 MΩ），给这点漏电流一条出路。代价是：存进 C_F 的电荷也会经 R_F 慢慢放掉。放电的快慢由时间常数 τ = R_F·C_F 决定，所以：</p>
+<ul>
+<li>敲一下、松一下这种<strong>快速变化</strong>，电荷放大器能如实读出；</li>
+<li>一直压着不动的<strong>静力</strong>，读数会在几个 τ 之后回到零。</li>
+</ul>
+<p>这就是第三问的答案方向：电荷放大器只能测<strong>变化</strong>的力。具体能低到多少赫兹、R_F 太小或不加各会怎样，在 <a href="page2.html">原理与实现篇</a> 第三节和 <a href="page3.html">参数与调试篇</a> 第一节。</p>
+<h2 id="五它在工程里长什么样">五、它在工程里长什么样</h2>
+<ul>
+<li><strong>涡街流量计</strong>：两片压电元件差动接法抵消管道振动（横河技术报告），后面是电荷放大器。旋涡频率和流速成正比，而压电片受到的力和流速的平方成正比：流速变成 10 倍，频率变成 10 倍，电荷变成约 100 倍。信号幅度跨这么大，后面就需要 <a href="../35-pga-agc/page1.html">35 程控增益与 AGC</a>（预告）把它拉回同一个大小。</li>
+<li><strong>加速度计和冲击检测</strong>：TI 的 SBOA287（ <a href="https://www.ti.com/lit/an/sboa287/sboa287.pdf">https://www.ti.com/lit/an/sboa287/sboa287.pdf</a> ）用 3.3 V 单电源、1.65 V 参考，C_F = 68 pF、R_F = 240 MΩ，输入串一只 39.2 kΩ 电阻，做出 10 Hz～10 kHz 的电荷放大器。和本节的接法几乎一模一样，只是数值不同。</li>
+<li>电荷放大器后面通常跟着带通滤波（<a href="../33-bandpass-notch/page1.html">33 带通与 50 Hz 陷波</a>，预告）、开关电容跟踪滤波（<a href="../34-switched-cap-filter/page1.html">34 开关电容滤波与跟踪滤波</a>，预告）和施密特整形（<a href="../36-schmitt-pulse-shaping/page1.html">36 施密特整形与频率/脉冲计数</a>，预告），最后数脉冲得到流量。</li>
+</ul>
+<h2 id="新手常见误解">新手常见误解</h2>
+<ul>
+<li><strong>&quot;压电片输出的是电压，接个跟随器就行&quot;</strong>：能出读数，但读数里藏着电缆电容，换根线就变（第一节）。</li>
+<li><strong>&quot;电荷放大器和 TIA 一样，输出正比于电流&quot;</strong>：它的输出正比于电流的<strong>累积</strong>，也就是电荷（第二节）。</li>
+<li><strong>&quot;C_F 越小越灵敏，越小越好&quot;</strong>：灵敏度确实是 1/C_F，但 C_F 太小，一下用力的敲击就会把输出顶到电源轨，噪声也被放大（<a href="page2.html">原理与实现篇</a> 第四节）。</li>
+<li><strong>&quot;不加 R_F 才准，加了会漏电&quot;</strong>：不加 R_F，偏置电流迟早把输出推到轨上；加了 R_F，只是不能测静力（第四节）。</li>
+<li><strong>&quot;N 点就是虚地，拿万用表量一下它对 0 V 是多少&quot;</strong>：本节 N 点在 4.5 V；更要命的是万用表一接上去就从 N 点抽电流，读数立刻跑掉（<a href="page3.html">参数与调试篇</a> 第三节）。</li>
+</ul>
+<h2 id="一句话总结">一句话总结</h2>
+<p><strong>电荷放大器让运放把反相端钉在 V_MID 上，压电片的电荷无处可留、全部搬进 C_F，输出 = V_MID − Q/C_F，与电缆电容无关；R_F 给偏置电流一条出路，代价是只能测变化的力。</strong></p>
+<hr />
+<p><a href="../31-transimpedance-amp/page4.html">上一页：31 跨阻放大器（TIA） · 动手实验篇</a> · 本页：直觉篇 · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · <a href="page4.html">动手实验篇</a> · <a href="page2.html">下一页：原理与实现篇</a></p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

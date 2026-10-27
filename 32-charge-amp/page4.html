@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>32 电荷放大器 · 动手实验篇</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/32-charge-amp/page4.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="32-电荷放大器--动手实验篇">32 电荷放大器 · 动手实验篇</h1>
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../33-bandpass-notch/page1.html">下一页：33 带通与 50 Hz 陷波 · 直觉篇</a> · 前置节点：<a href="../14-integrator/page4.html">14 积分器 · 动手实验篇</a>、<a href="../31-transimpedance-amp/page4.html">31 跨阻放大器（TIA） · 动手实验篇</a></p>
+<h2 id="这次实验要验证什么">这次实验要验证什么</h2>
+<ol>
+<li>电荷放大器的输出只看&quot;送进来多少电荷&quot;和 C_F：用一只 1 nF 电容 C_S 当&quot;已知电荷源&quot;，拨一下开关送进 4.5 nC，输出应该移动 0.45 V（<a href="page2.html">原理与实现篇</a> 第二节）。</li>
+<li>电荷模式不怕&quot;电缆电容&quot;：在输入端并上 10 nF、100 nF 的&quot;假电缆&quot; C_C，读数几乎不变；同样的东西放进电压模式，读数掉到原来的约十分之一、百分之一。</li>
+<li>不装 R_F 时输出能&quot;保持&quot;很久（漂移由偏置电流决定）；装上 R_F 后电荷按 τ = R_F × C_F 慢慢放掉，这就是频率下限 f_L 的来历。</li>
+<li>换上真的压电片：手指按住、松开，看保持模式和带 R_F 时的两种读数。</li>
+</ol>
+<p><strong>两套编号别混</strong>：面包板上的&quot;第 14 列&quot;&quot;h3&quot;是孔的位置；芯片的&quot;1 脚&quot;&quot;8 脚&quot;是引脚编号。下表把每个测点在哪个孔、是哪只引脚都写清楚。</p>
+<table>
+<thead>
+<tr>
+<th>测点（图中黄色字母）</th>
+<th>孔位</th>
+<th>是什么</th>
+<th>原理与实现篇里的名字</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>A</td>
+<td>a15</td>
+<td>U1 的 7 脚（U1B 跟随器输出），电池电压的一半，约 4.5 V</td>
+<td>V_MID</td>
+</tr>
+<tr>
+<td>B</td>
+<td>j14</td>
+<td>U1 的 1 脚（U1A 输出）</td>
+<td>V_out</td>
+</tr>
+<tr>
+<td>C</td>
+<td>T1 第 28 列</td>
+<td>电池正极，约 9 V</td>
+<td>V+</td>
+</tr>
+</tbody>
+</table>
+<p>还有一个点<strong>不是测点</strong>：U1 的 2 脚（反相输入端）所在的第 15 列下半区，以及用蓝线延长出去的第 10 列下半区，合起来就是 <a href="page2.html">原理与实现篇</a> 里的 N 点。N 点电压跟着 V_MID 走，约 4.5 V，它<strong>不是虚地</strong>：虚地是&quot;等于 0 V 的地&quot;，这里 N 点只是靠负反馈被拉到和同相端（V_MID）一样高。N 点阻抗极高，表笔一碰就往里灌电流，所以本页从不量它（原因见思考题 1）。</p>
+<p>输出 B 也只和 A 比：电荷放大器的输出是&quot;V_MID 上下移动多少&quot;，所以表格里大多数读数写成 <strong>B − A</strong>（红表笔 B、黑表笔 A），这样电池电压从 9.5 V 降到 8.5 V 也不影响读数。</p>
+<h2 id="️-安全须知">⚠️ 安全须知</h2>
+<ul>
+<li>只用一节 <strong>9 V 电池</strong>（经电池扣）供电，不接任何市电适配器。本实验全部电压不超过 9 V 直流（≤ 12 V）。</li>
+<li><strong>插、拔、挪任何元件或导线之前，先把电池扣从电池上取下</strong>。通电时只做三件事：拨 S1、按复位按钮 SB、用手指按压电片。所有&quot;换电容&quot;&quot;插 R_F&quot;&quot;改接&quot;都写成&quot;断电后&quot;这一步。</li>
+<li>LMC6482 是 CMOS 输入，怕静电：拿芯片前先摸一下金属水管或机箱外壳，尽量拿芯片两头，别摸引脚。</li>
+<li>CM 10 µF 是电解电容，有正负极：长脚（+）插分压点 a20，短脚（−，外壳上有白色条纹那边）插 0 V 轨。插反可能鼓包。</li>
+<li>表笔只碰 A、B、C 三个测点和 0 V 轨，<strong>绝对不要碰 N 点</strong>（第 10 列、第 15 列下半区）。</li>
+<li>压电片只用手指按，不要用锤子、桌面猛磕。手指按压时电荷不大，钳位二极管一般不会导通；猛磕的情况交给 R_I 和二极管保护，但没必要去试。</li>
+<li>输出 B 只接万用表，不接任何其他设备。</li>
+</ul>
+<h2 id="器材清单">器材清单</h2>
+<table>
+<thead>
+<tr>
+<th>元件</th>
+<th>数量</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>LMC6482AIN（8 脚双运放，DIP）</td>
+<td>1</td>
+<td>U1：A 半边做电荷放大器，B 半边做 V_MID 跟随器。CMOS 输入，偏置电流极小</td>
+</tr>
+<tr>
+<td>9 V 电池 + 电池扣</td>
+<td>1</td>
+<td>红线 +、黑线 −</td>
+</tr>
+<tr>
+<td>面包板（830 孔）</td>
+<td>1</td>
+<td>上下各两条电源轨，本页叫 T1、T2、B1、B2</td>
+</tr>
+<tr>
+<td>电阻 10 kΩ</td>
+<td>3</td>
+<td>RM1、RM2（V_MID 分压），R_I（输入串联电阻）</td>
+</tr>
+<tr>
+<td>电阻 10 MΩ</td>
+<td>1</td>
+<td>R_F（第 9 步和第 13 步才插）</td>
+</tr>
+<tr>
+<td>电容 0.1 µF（瓷片，104）</td>
+<td>1</td>
+<td>C1：U1 电源去耦</td>
+</tr>
+<tr>
+<td>电解电容 10 µF / 16 V 以上</td>
+<td>1</td>
+<td>CM：V_MID 分压点滤波</td>
+</tr>
+<tr>
+<td>薄膜电容 1 nF</td>
+<td>1</td>
+<td>C_S（阶段一&quot;注入电荷&quot;用）。薄膜或 C0G 瓷片都可以</td>
+</tr>
+<tr>
+<td>薄膜电容 10 nF</td>
+<td>2</td>
+<td>一只做 C_F，一只做 C_C（假电缆）</td>
+</tr>
+<tr>
+<td>薄膜电容 100 nF</td>
+<td>3</td>
+<td>C_C（假电缆）、第 10 步的 C_S、阶段二的 C_F</td>
+</tr>
+<tr>
+<td>薄膜电容 1 µF（不能用电解）</td>
+<td>1</td>
+<td>第 10 步慢速演示的 C_F</td>
+</tr>
+<tr>
+<td>1N4148</td>
+<td>2</td>
+<td>D1、D2：阶段二的钳位二极管</td>
+</tr>
+<tr>
+<td>单刀双掷拨动开关（3 脚，先断后通 / 非短路型）</td>
+<td>1</td>
+<td>S1：在&quot;V_MID&quot;和&quot;0 V&quot;之间拨</td>
+</tr>
+<tr>
+<td>4 脚轻触按钮（6 mm）</td>
+<td>1</td>
+<td>SB：复位按钮，并在 C_F 两端</td>
+</tr>
+<tr>
+<td>压电片（20～27 mm 带引线的蜂鸣片，例如 <a href="https://www.murata.com/en-us/products/productdetail?partno=7BB-20-6L0">Murata 7BB-20-6L0</a>，标称 10 nF ±30 %）</td>
+<td>1</td>
+<td>阶段二的传感器</td>
+</tr>
+<tr>
+<td>导线</td>
+<td>16 根</td>
+<td>阶段一 14 根（红 3、黑 4、其他颜色 7），第 6 步再加 1 根红线、第 8 步 1 根短线；红 +9 V、黑 0 V，其余颜色只为看清楚</td>
+</tr>
+<tr>
+<td>数字万用表</td>
+<td>1</td>
+<td>直流电压 200 mV、2 V、20 V 挡；通断挡；有电容挡更好</td>
+</tr>
+<tr>
+<td>秒表（手机即可）、胶带</td>
+<td>—</td>
+<td>第 10 步计时；阶段二固定压电片引线</td>
+</tr>
+</tbody>
+</table>
+<h2 id="最小必要知识压电片拨动开关复位按钮1n4148">最小必要知识：压电片、拨动开关、复位按钮、1N4148</h2>
+<p><strong>压电片</strong>：一片圆形黄铜片上贴着一层白色（或银色）陶瓷。陶瓷被压弯时，两面会出现等量异号的电荷，所以它在电路里等于&quot;一个电荷源 Q 并联一只电容 C_p&quot;。C_p 一般是十几到几十 nF，有电容挡的话把两根引线夹上去量一下（本页的计算假设 10～30 nF，见 <a href="page2.html">原理与实现篇</a> 第四节）。红线通常焊在陶瓷面上，黑线焊在黄铜面上。它不是电池：按住不动时不再产生新电荷，所以要靠电荷放大器&quot;记住&quot;刚才那一下。</p>
+<p><strong>拨动开关 S1（单刀双掷）</strong>：三只脚排成一排。中间那只是<strong>公共端</strong>，拨柄拨到一边，公共端就和那一边的脚接通。要买<strong>先断后通（非短路型）<strong>的：拨动途中公共端先离开一边、再碰另一边；短路型会在拨动瞬间把①、②同时接通，第 5 步里就是把 V_MID 短到 0 V 一下。本页规定 S1 的三只脚插在 h3、h4、h5：h4 是公共端，h3 一侧叫</strong>①</strong>（第 3 列 = V_MID），h5 一侧叫<strong>②</strong>（第 5 列，经导线接到电源轨）。插板之前，先把万用表拨到通断挡（蜂鸣挡）：拨柄拨向一边时，中间脚和哪只边脚&quot;嘀&quot;一声，就记下来那一边是①还是②；拨到另一边再确认一次。</p>
+<p><strong>复位按钮 SB（4 脚轻触按钮）</strong>：四只脚两两在内部永久连着，按下时两组才接通。哪两只脚永久连着不好判断，所以本页<strong>只用对角的两只脚</strong>：对角的两只脚一定分别属于两组，不按时断开、按下时接通。SB 跨在面包板中间槽上，四脚插 e11、e13、f11、f13，用的是对角的 <strong>e11 和 f13</strong>（图中标&quot;用&quot;）。插板之前用通断挡试一下：表笔放在对角两脚上，不按不响、按下才响，就对了。SB 并在 C_F 两端：按下就把 C_F 短路，把 C_F 里的电荷放光，输出回到 V_MID，这叫&quot;复位&quot;。</p>
+<p><strong>1N4148</strong>：小玻璃管二极管，有黑色色环的一头是<strong>阴极</strong>（K），另一头是阳极（A）。电流只能从阳极流到阴极，正向导通要约 0.6 V 以上（<a href="https://www.vishay.com/docs/81857/1n4148.pdf">Vishay 1N4148 数据手册</a>）。阶段二用两只反向并联，接在 N 点和 V_MID 之间：平时 N 点和 V_MID 只差零点几 mV，两只都不导通；只有压电片被猛磕、N 点被推离 0.6 V 以上时才导通，把 N 点&quot;钳&quot;住，保护运放输入。</p>
+<p><strong>LMC6482</strong>：8 脚双运放，缺口朝左插时，下排从左到右是 1～4 脚，上排从右到左是 5～8 脚。1 脚是 A 半边输出，2 脚反相输入，3 脚同相输入，4 脚接 0 V（V−），5、6、7 脚是 B 半边的同相输入、反相输入、输出，8 脚接 +9 V（V+）。它的输入偏置电流典型只有 0.02 pA（20 fA）（<a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">TI LMC6482 数据手册</a>），所以不装 R_F 时也能&quot;保持&quot;很久，见 <a href="page3.html">参数与调试篇</a> 第一节。</p>
+<h2 id="搭建步骤">搭建步骤</h2>
+<p>电源轨的叫法：上方两条从上到下是 <strong>T1（+9 V，红线）</strong>、<strong>T2（0 V，蓝线）</strong>；下方两条从上到下是 <strong>B1（0 V）</strong>、<strong>B2（+9 V）</strong>。芯片 LMC6482 <strong>缺口朝左</strong>，跨在中间槽上：<strong>1～4 脚在 f14～f17</strong>，<strong>8～5 脚在 e14～e17</strong>（8 脚在 e14、5 脚在 e17）。</p>
+<h3 id="阶段一用电容-c_s-注入已知电荷">阶段一：用电容 C_S 注入已知电荷</h3>
+<p><strong>第 1 步：按图 32-p4-1 搭好，电池扣先不接电池，S1 拨到①。</strong></p>
+<p>按下面的顺序逐个插，每插一个就在清单上打个勾：</p>
+<ol>
+<li>电源轨跨接：红线 T1-1 → B2-1；黑线 T2-2 → B1-2。</li>
+<li>芯片：LMC6482 缺口朝左，1 脚插 f14。</li>
+<li>芯片电源：红线 a14 → T1-14（8 脚接 +9 V）；黑线 j17 → B1-17（4 脚接 0 V）。</li>
+<li>去耦电容 C1 0.1 µF：一脚 b14（8 脚那一列），一脚 T2-13。</li>
+<li>V_MID 分压：RM1 10 kΩ 插 b20–b24，红线 a24 → T1-23；RM2 10 kΩ 插 c20–c26，黑线 a26 → T2-26。分压点是第 20 列上半区。</li>
+<li>CM 10 µF：正极（长脚）a20，负极 T2-19。</li>
+<li>U1B 跟随器：绿线 d17 → d20（5 脚接分压点）；绿线 b15 → b16（7 脚接 6 脚）。这样 7 脚输出就是 V_MID，测点 A 在 a15。</li>
+<li>V_MID 延长：绿线 c16 → j3，把 V_MID 送到下半区第 3 列（S1 的①）。</li>
+<li>V_MID 接 U1A 同相端：绿线 d16 → g16（3 脚在 f16）。</li>
+<li>反馈电容 C_F 10 nF：i14–i15（1 脚输出列和 2 脚反相输入列之间）。<strong>h14–h15 先空着</strong>，那是 R_F 的位置，第 9 步才插。</li>
+<li>N 点延长：蓝线 j15 → j10，把 2 脚引到第 10 列下半区。</li>
+<li>复位按钮 SB：四脚插 e11、e13、f11、f13；蓝线 d11 → h10（e11 那只脚接第 10 列 = N）；橙线 g13 → g14（f13 那只脚接第 14 列 = 输出）。</li>
+<li>R_I 10 kΩ：g7–g10。</li>
+<li>C_S 1 nF：i4–i7。</li>
+<li>S1：三脚插 h3（①）、h4（公共端）、h5（②），拨到①。</li>
+<li>黑线 j5 → B1-5：②接 0 V。</li>
+<li>电池扣：红线插 B2-28，黑线插 B1-23。<strong>先不扣电池</strong>。</li>
+</ol>
+<p>图中虚线画的 R_F（h14–h15）和 C_C（j7 → B1-7）现在都不插。</p>
+<p><a class="img-link" href="img/32_p4_1_bb_stage1.png"><img alt="阶段一面包板接线：LMC6482 缺口朝左跨在中间槽上，分压电阻、跟随器、复位按钮、R_I、C_S、拨动开关 S1 和测点 A、B、C 的位置，虚线标出以后才插的 R_F 和 C_C" src="img/32_p4_1_bb_stage1.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-1　阶段一面包板（虚线元件此时不插）</em></p>
+<p><a class="img-link" href="img/32_p4_2_lab_stage1.png"><img alt="阶段一原理图：U1A 接成电荷放大器，C_F 和复位按钮并在 1 脚与 2 脚之间，C_S 经 R_I 接 2 脚，S1 在 V_MID 和 0 V 之间切换；U1B 跟随器给出 V_MID；标出每只引脚编号和孔位" src="img/32_p4_2_lab_stage1.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-2　阶段一原理图（和图 32-p4-1 一一对应）</em></p>
+<blockquote>
+<p><strong>对照看</strong>：图 32-p4-2 左边的 S1 就是面包板上 h3/h4/h5 那只拨动开关，①接 V_MID（第 3 列，由绿线 c16 → j3 送来），②接 0 V（黑线 j5 → B1-5）。C_S 一头在 S1 公共端（第 4 列），一头在第 7 列；R_I 从第 7 列到第 10 列；第 10 列经蓝线 j15 → j10 连到 2 脚，就是 N 点。原理图里 C_F 和 SB 都跨在 2 脚和 1 脚之间：面包板上 C_F 在 i14–i15，SB 的 e11 经蓝线到第 10 列（N）、f13 经橙线到第 14 列（1 脚输出）。3 脚（f16）经绿线 d16 → g16 接 V_MID。U1B 的 5 脚（e17）经 d17 → d20 接分压点，6、7 脚由 b15 → b16 连成跟随器。</p>
+</blockquote>
+<p><strong>第 2 步：通电前检查（电池不接）。</strong></p>
+<ol>
+<li>对照图 32-p4-1 逐孔核对一遍，特别是：芯片缺口朝左；CM 长脚在 a20；红线都到 +9 V 轨（T1、B2），黑线都到 0 V 轨（T2、B1）。</li>
+<li>万用表拨通断挡：S1 在①时，g4 和 g3 之间应&quot;嘀&quot;；拨到②时，g4 和 g5 之间应&quot;嘀&quot;。确认后拨回①。</li>
+<li>电阻挡量 T1 和 T2 之间，读数不能接近 0 Ω（接近 0 就是某处把 +9 V 和 0 V 短路了）。</li>
+</ol>
+<p><strong>第 3 步：扣上电池，量电源和 V_MID。</strong></p>
+<ol>
+<li>20 V 挡，红表笔 C（T1 第 28 列）、黑表笔 0 V 轨：约 9 V（新电池可能 9.5 V 左右）。</li>
+<li>红表笔 A（a15）、黑表笔 0 V 轨：应是 C 读数的一半，C = 9.00 V 时 A = 4.50 V。</li>
+</ol>
+<p><strong>第 4 步：复位，看零点和漂移。</strong></p>
+<ol>
+<li>S1 保持在①。按住 SB 约 1 秒再松开。</li>
+<li>200 mV 挡，红表笔 B（j14）、黑表笔 A（a15）：应约 0（零点几 mV；SPICE 0.29 mV）。</li>
+<li>表笔别动，看 10 秒：读数变化不超过 4.5 mV（每秒 0.45 mV）就算合格。LMC6482 按数据手册典型值算只有每秒 0.002 mV，TI 模型给出每秒约 0.13 mV，都远在判据之内。如果读数一直往一个方向跑得很快，多半是芯片不是 LMC6482，或手指、表笔碰到了 N 点附近（<a href="page3.html">参数与调试篇</a> 第一节）。</li>
+</ol>
+<p><strong>第 5 步：拨 S1 ①→②，送进 4.5 nC。</strong></p>
+<ol>
+<li>2 V 挡，表笔仍是 B − A。拨 S1 到②：C_S 的左端从 V_MID（4.5 V）跳到 0 V，ΔV = −4.5 V，送进 N 点的电荷是 1 nF × 4.5 V = 4.5 nC。</li>
+<li>读数应约 <strong>+0.450 V</strong>（−C_S × ΔV / C_F = −1 nF × (−4.5 V) / 10 nF），并且<strong>停住不动</strong>。这时 B 对 0 V 约 4.95 V。</li>
+<li>把 S1 拨回①：读数回到约 0（SPICE −0.28 mV）。电荷送进去又拿回来，输出就回到原处。</li>
+</ol>
+<p><strong>第 6 步：把②改接到 +9 V，看负号。</strong></p>
+<ol>
+<li><strong>取下电池扣</strong>。拔掉 j5 → B1-5 那根黑线，换一根红线插 j5 → B2-5（+9 V 轨）。一定换成红线：接 +9 V 的线用黑色，后面很容易当成 0 V 接错（器材清单的 16 根已经算进这根红线）。</li>
+<li>扣上电池，S1 在①时按一下 SB 复位。</li>
+<li>拨 S1 到②：ΔV = +4.5 V，读数应约 <strong>−0.450 V</strong>，B 对 0 V 约 4.05 V。拨回①。</li>
+<li><strong>取下电池扣</strong>，把这根线改回 j5 → B1-5（黑线）。</li>
+</ol>
+<p><strong>第 7 步：并上&quot;假电缆&quot; C_C，读数不变。</strong></p>
+<ol>
+<li><strong>取下电池扣</strong>。把 C_C 10 nF 插在 j7 → B1-7（一脚 j7，一脚 0 V 轨），就是图 32-p4-1 里那条虚线。</li>
+<li>扣上电池，S1 在①，按一下 SB 复位，再拨 S1 到②：B − A 仍约 <strong>+0.450 V</strong>（SPICE 0.4500 V）。拨回①。</li>
+<li><strong>取下电池扣</strong>，把 C_C 换成 100 nF，重复：仍约 +0.450 V（SPICE 0.4498 V）。</li>
+<li>为什么不变：N 点被负反馈钉在 V_MID，C_C 上端一直在 V_MID、两端电压不变，它不截留电荷，4.5 nC 全部跑到 C_F 上（<a href="page2.html">原理与实现篇</a> 例 2）。C_C 下端接 0 V 轨，就像真电缆的屏蔽层接地。</li>
+</ol>
+<p><strong>第 8 步：对照组——改成电压模式（断电改接）。</strong></p>
+<p><strong>取下电池扣</strong>，按图 32-p4-3 做四处改动（C_C 100 nF 留在 j7 → B1-7）：</p>
+<ol>
+<li>拔掉 C_F（i14–i15），在 i14–i15 插一根短橙线：1 脚和 2 脚直接连通，U1A 变成跟随器。</li>
+<li>拔掉橙线 g13 → g14。</li>
+<li>蓝线 j15 → j10 改成 j16 → j10：第 10 列不再接 2 脚，改接 3 脚（同相输入，f16），这时第 10 列叫&quot;输入点 x&quot;。</li>
+<li>绿线 d16 → g16 的下端改插 g13，走成 d16 → g13：V_MID 送到 SB 的 f13 那只脚。按下 SB，就把 x 接到 V_MID。</li>
+</ol>
+<p><a class="img-link" href="img/32_p4_3_bb_vmode.png"><img alt="电压模式面包板：C_F 换成短接线，第 10 列改接 3 脚，复位按钮改为把第 10 列接到 V_MID，C_C 仍在 j7 到 0 V 轨" src="img/32_p4_3_bb_vmode.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-3　电压模式面包板（第 8 步，断电改接后）</em></p>
+<p><a class="img-link" href="img/32_p4_4_lab_vmode.png"><img alt="电压模式原理图：U1A 接成跟随器，C_S 经 R_I 接 3 脚，C_C 从 R_I 左端接 0 V，复位按钮把 3 脚输入接到 V_MID" src="img/32_p4_4_lab_vmode.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-4　电压模式原理图（和图 32-p4-3 一一对应）</em></p>
+<blockquote>
+<p><strong>对照看</strong>：图 32-p4-4 里 U1A 的 1 脚直接连 2 脚，就是面包板 i14–i15 那根短橙线。C_S（i4–i7）、R_I（g7–g10）没动，只是 R_I 右端（第 10 列）现在经蓝线 j16 → j10 接 3 脚。原理图里 SB 一头接 x、一头接 V_MID：面包板上 e11 经蓝线 d11 → h10 到第 10 列（x），f13 所在的第 13 列下半区经绿线 d16 → g13 接 V_MID（第 16 列上半区是 6 脚、7 脚连出的 V_MID）。C_C 在 j7 → B1-7。</p>
+</blockquote>
+<p>然后扣上电池，每种 C_C 都按&quot;S1 在①、按一下 SB、松开、拨 S1 到②、读 B − A&quot;做一遍，读完拨回①；换 C_C 前都先取下电池扣：</p>
+<ol>
+<li>C_C = 100 nF：约 <strong>−0.0446 V</strong>（2 V 挡，SPICE −0.0441 V）。</li>
+<li>C_C = 10 nF：约 <strong>−0.409 V</strong>（SPICE −0.4082 V）。</li>
+<li>取下电池扣，拔掉 C_C（0 nF），再扣上电池：按公式应是 −4.4865 V，但输出最低只能到 0 V 轨附近，实际读约 −4.40 V（20 V 挡，SPICE −4.401 V，B 对 0 V 约 0.10 V）。真实 LMC6482 是轨到轨输出，轻载时可能比 SPICE 更贴近 0 V，读到 −4.40～−4.49 V 都正常。</li>
+</ol>
+<p>电压模式下 4.5 V 的跳变被 C_S 和 C_C 分压：C_C 越大，读数越小（还有负号——这里没有反相，S1 往下拨，x 就往下走）。和第 7 步对比：同样的电荷、同样的电缆，电荷模式读数不变。x 是高阻点，读数时手别靠近第 7～10 列。</p>
+<p><strong>第 9 步：恢复电荷模式，断电插上 R_F。</strong></p>
+<ol>
+<li><strong>取下电池扣</strong>，把第 8 步的四处改动全部改回（对照图 32-p4-1）：拔掉 i14–i15 短橙线、插回 C_F 10 nF；插回橙线 g13 → g14；蓝线改回 j15 → j10；绿线改回 d16 → g16。拔掉 C_C。</li>
+<li>把 R_F 10 MΩ 插在 h14–h15（和 C_F 并联）。</li>
+<li>扣上电池，S1 在①，按一下 SB，再拨到②：万用表<strong>几乎看不到变化</strong>，最多闪一下。SPICE 里输出确实跳到 0.4499 V，但 τ = 10 MΩ × 10 nF = 0.1 s，0.1 s 后只剩 0.1656 V，1 秒后按公式只剩 0.02 mV（SPICE 里停在约 0.39 mV，那是宏模型自己的零点偏移，不是没放完的电荷），万用表每秒才更新两三次，赶不上。</li>
+<li>这就是 R_F 的代价：它让输出不再&quot;保持&quot;，太慢的信号（这里是一次性的跳变）被放掉了。拨回①。</li>
+</ol>
+<p><strong>第 10 步：慢速演示，用秒表看指数衰减。</strong></p>
+<ol>
+<li><strong>取下电池扣</strong>。C_S 换成 100 nF（仍在 i4–i7），C_F 换成 1 µF 薄膜电容（仍在 i14–i15），R_F 10 MΩ 留着。τ = 10 MΩ × 1 µF = 10 s。</li>
+<li>扣上电池，S1 在①，按住 SB 2 秒再松开，等 30 秒让读数稳在 0 附近。</li>
+<li>2 V 挡读 B − A。拨 S1 到②，同时按下秒表：峰值是 0.45 V（100 nF × 4.5 V / 1 µF），之后按 τ = 10 s 往 0 回落。</li>
+<li>在 5 s、10 s、20 s、30 s 时读数，应约 <strong>0.2729 V、0.1655 V、0.0609 V、0.0224 V</strong>（SPICE 0.2734、0.1659、0.0613、0.0228 V）。读不准 5 s 那一下没关系，后面三点更好读。</li>
+<li>拨回①（读数会往负方向跳，再慢慢回到 0，这是同一件事反过来）。</li>
+</ol>
+<p>这一步和第 9 步是同一个电路，只是把 C_S、C_F 同时放大 100 倍：输出幅度不变，τ 从 0.1 s 变成 10 s，万用表就跟得上了。R_I × C_S = 10 kΩ × 100 nF = 1 ms，比读数慢得多的秒级变化完全不受影响。</p>
+<h3 id="阶段二接上压电片">阶段二：接上压电片</h3>
+<p><strong>第 11 步：断电改成阶段二（图 32-p4-5）。</strong></p>
+<ol>
+<li><strong>取下电池扣</strong>。拔掉 S1、C_S（i4–i7）、j5 的黑线；拔掉 R_F（h14–h15），阶段二先看保持模式。</li>
+<li>C_F 换成 100 nF（i14–i15）。</li>
+<li>D1 1N4148：阳极 f10，阴极（色环）f3。</li>
+<li>D2 1N4148：阳极 i3，阴极（色环）i10。两只方向相反，接在第 10 列（N 一侧）和第 3 列（V_MID）之间。</li>
+<li>压电片：先用电容挡量一下两根引线之间的 C_p，记下来。红线（陶瓷面）插 j7，黑线（黄铜面）插 g3（V_MID）。陶瓷面朝上平放在桌上，引线用胶带贴在桌面，免得一碰引线就产生电荷。</li>
+</ol>
+<p><a class="img-link" href="img/32_p4_5_bb_stage2.png"><img alt="阶段二面包板：压电片红线接 j7、黑线接 g3，两只 1N4148 反向并联在第 10 列和第 3 列之间，C_F 100 nF，R_F 位置用虚线标出" src="img/32_p4_5_bb_stage2.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-5　阶段二面包板（R_F 第 13 步才插）</em></p>
+<p><a class="img-link" href="img/32_p4_6_lab_stage2.png"><img alt="阶段二原理图：压电片等效为电荷源并联 C_p，冷端接 V_MID，热端经 R_I 到 2 脚，两只 1N4148 反并在 N 和 V_MID 之间，C_F 100 nF 与复位按钮并在 1、2 脚之间" src="img/32_p4_6_lab_stage2.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-6　阶段二原理图（和图 32-p4-5 一一对应）</em></p>
+<blockquote>
+<p><strong>对照看</strong>：图 32-p4-6 里压电片画成&quot;电荷源并联 Cp&quot;，热端经 R_I 到 N：面包板上红线在 j7，R_I 仍在 g7–g10，第 10 列经蓝线 j15 → j10 到 2 脚。压电片冷端接 V_MID：黑线在 g3，第 3 列由绿线 c16 → j3 接 V_MID。D1（f10 → f3）和 D2（i3 → i10）在原理图里画成两只头尾相反的二极管：下端从 N 的竖线引出（N = 第 10 列，在 R_I 右端，不在 R_I 中间），上端是 V_MID（第 3 列）。C_F 100 nF 和 SB 仍跨在 1 脚（第 14 列）和 2 脚（第 15 列）之间。</p>
+</blockquote>
+<p><strong>第 12 步：保持模式——按住压电片。</strong></p>
+<ol>
+<li>扣上电池，按一下 SB 复位，2 V 挡读 B − A：约 0。</li>
+<li>用一根手指稳稳按住压电片中心，<strong>按住不放</strong>：读数跳到某个值并停在那里。按 100 nC 举例是 −1.0 V（−100 nC / 100 nF，SPICE −0.9998 V，按住 3 秒后 −0.9978 V），你的读数取决于按得多重和压电片本身，<strong>以实测为准</strong>；正负号取决于压电片哪一面朝上。</li>
+<li>松开手指：电荷回去，读数回到约 0。</li>
+<li>再轻轻快敲一下：读数跳一下又回来（仿真里 0.1 ms 的快敲峰值 −1.008 V，N 点只偏离 V_MID 0.76 mV，两只 1N4148 都远没导通）。</li>
+</ol>
+<p><strong>第 13 步：断电插上 R_F，看电荷慢慢放掉。</strong></p>
+<ol>
+<li><strong>取下电池扣</strong>，把 R_F 10 MΩ 插回 h14–h15。τ = 10 MΩ × 100 nF = 1 s，f_L = 1/(2π × 1 s) ≈ 0.159 Hz。</li>
+<li>扣上电池，按一下 SB。按住压电片不放：读数跳到和第 12 步差不多的值，然后往 0 回落：1 秒后剩约 36.8 %，3 秒后剩约 5.0 %（按 −1 V 举例：−0.368 V、−0.0498 V；SPICE −0.3663 V、−0.04863 V）。</li>
+<li>松开手指：读数往反方向跳一下，再回到 0。</li>
+</ol>
+<p>这就是真实振动传感器里电荷放大器的样子：比 f_L 慢的&quot;按住不动&quot;被放掉，比 f_L 快的敲击、振动照常放大（<a href="page2.html">原理与实现篇</a> 第三节）。</p>
+<h3 id="r_i-10-kω-为什么一直留着">R_I 10 kΩ 为什么一直留着</h3>
+<p>全程都有 R_I 10 kΩ 串在输入里，它做三件事：</p>
+<ol>
+<li><strong>限流</strong>：压电片被猛磕时可能瞬间给出很高的电压，R_I 把冲进 N 点和钳位二极管的电流限住。</li>
+<li><strong>隔离、防振</strong>：没有 R_I 时，压电片直接挂在 N 点，运放输出经 C_F 100 nF 串 C_p 推着约 9～23 nF 的电容（按住 SB 时直接推整只 C_p）。<a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">TI LMC6482 数据手册</a> 说它接成单位增益时一般只能直接带约 100 pF，推大电容时输出&quot;慢半拍&quot;，负反馈纠正过头就来回摆。R_I 把这只电容和运放隔开，叫<strong>隔离电阻</strong>。它和 <a href="../18-differentiator/page1.html">18 微分电路</a> 的 R_1 只是位置相同（都串在输入电容前），振的原因不同：这里的反馈是 C_F，电路是积分器。SPICE 里拿掉 R_I，输出会以约 687 kHz 自激，峰峰值约 533 mV；装上 10 kΩ 就完全不振（<a href="page3.html">参数与调试篇</a> 第四节）。</li>
+<li><strong>决定频率上限</strong>：f_H = 1/(2π × R_I × (C_p + C_c))，本页没有电缆（C_c = 0），C_p 为 10、20、30 nF 时分别是 1591.5、795.8、530.5 Hz，对本页的秒级实验没有任何影响。</li>
+</ol>
+<h2 id="测量表">测量表</h2>
+<p>万用表都用直流电压挡。&quot;应该读到&quot;按 C = 9.00 V、A = 4.50 V、元件标称值计算（<code>code/32_sim.py</code>），括号里是 TI 模型的 SPICE 值。你的电池不是 9.00 V 时，用下一节的检查代码换算。</p>
+<table>
+<thead>
+<tr>
+<th>步骤</th>
+<th>测什么</th>
+<th>红表笔</th>
+<th>黑表笔</th>
+<th>挡位</th>
+<th>应该读到</th>
+<th>读不到时先查</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>3</td>
+<td>电池</td>
+<td>C</td>
+<td>0 V 轨</td>
+<td>20 V</td>
+<td>约 9 V</td>
+<td>电池扣红线 B2-28、黑线 B1-23；T1-1 → B2-1、T2-2 → B1-2</td>
+</tr>
+<tr>
+<td>3</td>
+<td>V_MID</td>
+<td>A</td>
+<td>0 V 轨</td>
+<td>20 V</td>
+<td>C 的一半，4.50 V</td>
+<td>RM1、RM2 插错列；CM 插反；d17 → d20、b15 → b16</td>
+</tr>
+<tr>
+<td>4</td>
+<td>复位后零点</td>
+<td>B</td>
+<td>A</td>
+<td>200 mV</td>
+<td>约 0（零点几 mV）</td>
+<td>松开 SB 了吗；d16 → g16；芯片方向</td>
+</tr>
+<tr>
+<td>4</td>
+<td>10 s 漂移</td>
+<td>B</td>
+<td>A</td>
+<td>200 mV</td>
+<td>不超过 4.5 mV</td>
+<td>芯片型号；手、表笔离 N 点远一点</td>
+</tr>
+<tr>
+<td>5</td>
+<td>S1 ①→②</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>+0.450 V（0.4501 V），停住不动</td>
+<td>不变：C_S 是否在 i4–i7，S1 是否在 h3/h4/h5；变了又回 0：R_F 误插在 h14–h15</td>
+</tr>
+<tr>
+<td>5</td>
+<td>同上</td>
+<td>B</td>
+<td>0 V 轨</td>
+<td>20 V</td>
+<td>4.95 V</td>
+<td>同上</td>
+</tr>
+<tr>
+<td>5</td>
+<td>S1 拨回①</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>约 0</td>
+<td>—</td>
+</tr>
+<tr>
+<td>6</td>
+<td>②改接 +9 V 后 ①→②</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>−0.450 V（−0.450 V），B 对 0 V 4.05 V</td>
+<td>j5 那根线是否插在 B2-5</td>
+</tr>
+<tr>
+<td>7</td>
+<td>C_C 10 nF / 100 nF</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>+0.450 V / +0.450 V（0.4500 / 0.4498 V）</td>
+<td>明显变小：C_C 插到了第 10 列（应在 j7）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>电压模式 C_C 100 nF</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>−0.0446 V（−0.0441 V）</td>
+<td>约 +0.45 V（正号）：四处改动一处都没做，还是电荷模式；一直漂或贴 0 V / 9 V 轨：C_F 拔了却没插短线（2 脚悬空，开环），或蓝线没挪到 j16（3 脚悬空；这时第 10 列连着 U1A 输出，<strong>先别按 SB</strong>，一按就和 V_MID 对顶）</td>
+</tr>
+<tr>
+<td>8</td>
+<td>同上，读数约 −0.04 V，和正确接法差不多</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>—</td>
+<td>只是 C_F 忘了拔、短线也没插：2 脚只经 C_F 接 1 脚，还是第 4～7 步那种只有 C_F 的反馈，不开环，读数基本正常（SPICE −0.0437 V，<code>spice/32/vmode_cf_left.cir</code>）；照第 8 步第 1 条补做即可</td>
+</tr>
+<tr>
+<td>8</td>
+<td>同上，读数约 0、芯片发烫</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>—</td>
+<td>漏拔 g13 → g14 却已插 d16 → g13：U1A 输出（1 脚）和 U1B 输出（V_MID）顶在一起。<strong>立刻取下电池扣</strong>，重查第 13、14 列</td>
+</tr>
+<tr>
+<td>8</td>
+<td>同上，读数约 0、芯片不烫</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>—</td>
+<td>绿线还在 d16 → g16：x 经 j16 直接接 V_MID，拨 S1 也动不了</td>
+</tr>
+<tr>
+<td>8</td>
+<td>电压模式 C_C 10 nF</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>−0.409 V（−0.4082 V）</td>
+<td>同第 8 步 C_C 100 nF 那几行</td>
+</tr>
+<tr>
+<td>8</td>
+<td>电压模式 C_C 0</td>
+<td>B</td>
+<td>A</td>
+<td>20 V</td>
+<td>约 −4.40 V（公式 −4.4865 V，输出贴近 0 V 轨；−4.40～−4.49 V 都正常）</td>
+<td>同第 8 步 C_C 100 nF 那几行</td>
+</tr>
+<tr>
+<td>9</td>
+<td>插 R_F 后 ①→②</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>几乎看不到（0.1 s 后 0.1656 V；1 s 后公式 0.02 mV，SPICE 零点残余 0.39 mV）</td>
+<td>一直停在 0.45 V：R_F 没插好</td>
+</tr>
+<tr>
+<td>10</td>
+<td>5 / 10 / 20 / 30 s</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>0.2729 / 0.1655 / 0.0609 / 0.0224 V</td>
+<td>峰值不是 0.45 V：C_S、C_F 是否都换了；衰减太快：R_F 值</td>
+</tr>
+<tr>
+<td>12</td>
+<td>按住压电片</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>以实测为准（100 nC 时 −1.0 V），按住不变</td>
+<td>没反应：压电片红线 j7、黑线 g3；引线断</td>
+</tr>
+<tr>
+<td>13</td>
+<td>插 R_F 后按住 1 s / 3 s</td>
+<td>B</td>
+<td>A</td>
+<td>2 V</td>
+<td>跳变值的 36.8 % / 5.0 %</td>
+<td>不回落：R_F 没插好</td>
+</tr>
+</tbody>
+</table>
+<h2 id="没有示波器怎么办">没有示波器怎么办</h2>
+<p>本页只靠万用表和秒表就能做完，示波器只是&quot;锦上添花&quot;：</p>
+<ul>
+<li><strong>&quot;电荷进来、按 τ 放掉&quot;用第 10 步看</strong>：电荷放大器真正的工作速度是 τ = R_F × C_F。第 9 步的 τ 只有 0.1 s，万用表赶不上；第 10 步把 C_S、C_F 同时放大 100 倍，τ 变成 10 s，用秒表在 5、10、20、30 s 读数，就能看到 0.2729、0.1655、0.0609、0.0224 V 这条指数曲线。用 10 s、20 s 两个读数还能反推 τ（下一节的检查代码会算）。</li>
+<li><strong>&quot;读数和电缆无关&quot;用第 7、8 步看</strong>：这两步都是&quot;拨一下开关、读一个停住的数&quot;，保持模式下读数不跑，万用表完全够用。</li>
+<li><strong>压电片用第 12 步的保持模式看</strong>：不装 R_F 时，按住压电片的那份电荷一直存在 C_F 里，读数停住不动，万用表可以慢慢读。快敲的峰值万用表跟不上，只能看到&quot;跳一下又回来&quot;。</li>
+<li><strong>约 687 kHz 的自激只有示波器看得到</strong>：拔掉 R_I 时的振荡一秒钟来回几十万次，万用表只能显示一个&quot;不太稳、有点奇怪&quot;的平均数（<a href="page3.html">参数与调试篇</a> 排错表），看不出是在振。波形请看 <a href="page3.html">参数与调试篇</a> 第四节的仿真波形图；本页始终保留 R_I，不用去做这个实验。</li>
+</ul>
+<h2 id="用-python-检查你的读数">用 Python 检查你的读数</h2>
+<p>把下面代码复制到本机的 Python 里，只改两条 <code># =====</code> 中间的数，以及 <code>mine</code> 那几行。它按你量到的电池电压和电容值重新算出每一步&quot;应该读到&quot;的数，和你的读数比较；偏差超过 10 % 会打出提示。</p>
+<pre><code class="language-python">import math
+
+# ===== 把这里改成你量到的数（电压在第 3 步量；电容有电容挡就实测，没有就用标称值）=====
+C = 9.00             # ← 测点 C 对 0 V 轨（电池电压），单位 V
+A = 4.50             # ← 测点 A 对 0 V 轨（V_MID），单位 V
+CS = 1e-9            # ← 阶段一 C_S，单位 F
+CF = 10e-9           # ← 阶段一 C_F，单位 F
+C_IN = 3e-12         # LMC6482 输入电容（不用改）
+CS_SLOW = 100e-9     # ← 第 10 步的 C_S，单位 F
+CF_SLOW = 1e-6       # ← 第 10 步的 C_F，单位 F
+RF = 10e6            # ← R_F 实测（20 MΩ 挡），单位 Ω
+CF2 = 100e-9         # ← 阶段二 C_F，单位 F
+HOLD2 = -0.62        # ← 第 12 步保持模式按住时的 B − A，单位 V（示例数，换成你的）
+# ===== 改到这里为止 =====
+
+q = lambda dv, cf=CF, cs=CS: -cs * dv / cf          # 电荷模式：S 移动 dv，输出移动 −C_S·dv/C_F
+vm = lambda dv, cc: dv * CS / (CS + cc + C_IN)      # 电压模式：电荷在 C_S、C_C、C_IN 之间分
+expect = {
+    &quot;第3步 A 对 0V /V&quot;: C / 2,
+    &quot;第5步 S→0V B−A /V&quot;: q(-A),
+    &quot;第5步 B 对 0V /V&quot;: A + q(-A),
+    &quot;第6步 S→+9V B−A /V&quot;: q(C - A),
+    &quot;第7步 CC 10nF B−A /V&quot;: q(-A),
+    &quot;第7步 CC 100nF B−A /V&quot;: q(-A),
+    &quot;第8步 电压模式 CC 10nF /V&quot;: vm(-A, 10e-9),
+    &quot;第8步 电压模式 CC 100nF /V&quot;: vm(-A, 100e-9),
+}
+v0, tau = q(-A, CF_SLOW, CS_SLOW), RF * CF_SLOW
+for t in (5, 10, 20, 30):                            # 第 10 步：从 v0 按 τ 指数回零
+    expect[f&quot;第10步 {t}s B−A /V&quot;] = v0 * math.exp(-t / tau)
+
+mine = dict(expect)                    # ← 换成你的读数，例如 mine[&quot;第5步 S→0V B−A /V&quot;] = 0.437
+mine[&quot;第5步 S→0V B−A /V&quot;] = 0.437      # 示例：偏差约 −2.9 %，不报警
+mine[&quot;第10步 20s B−A /V&quot;] = 0.052      # 示例：偏差约 −14.6 %，会报警
+
+for k, e in expect.items():
+    m = mine[k]
+    dev = (m - e) / e * 100
+    flag = &quot;  ⚠ 偏差超过 10 %，按测量表最后一栏检查&quot; if abs(dev) &gt; 10 else &quot;&quot;
+    print(f&quot;{k:20s} 计算 {e:+8.4f}  你的 {m:+8.4f}  偏差 {dev:+6.1f} %{flag}&quot;)
+
+# 由第 5 步反推 C_F（C_S 当准的）：电容标称 ±5～10 % 很常见
+print(f&quot;由第 5 步反推 C_F ≈ {CS * A / mine['第5步 S→0V B−A /V'] * 1e9:.2f} nF（标称 {CF*1e9:.0f} nF）&quot;)
+# 由第 10 步 10 s 和 20 s 两点反推时间常数（与起点读得准不准无关）
+t_fit = 10 / math.log(mine[&quot;第10步 10s B−A /V&quot;] / mine[&quot;第10步 20s B−A /V&quot;])
+print(f&quot;由 10 s、20 s 两点反推 τ ≈ {t_fit:.1f} s（R_F × C_F = {tau:.1f} s）&quot;)
+# 阶段二：保持模式读数换算成电荷，再预告插上 R_F 时的读数
+Q = -HOLD2 * CF2
+print(f&quot;阶段二：压电片吐出电荷约 {Q*1e9:.0f} nC；插 R_F 时 1 s 后剩 {HOLD2*math.exp(-1/(RF*CF2)):+.3f} V，&quot;
+      f&quot;3 s 后剩 {HOLD2*math.exp(-3/(RF*CF2)):+.4f} V&quot;)
+</code></pre>
+<p>示例里改了两个读数。第 5 步 0.437 V 偏差 −2.9 %，不报警；由它反推 C_F 约 10.30 nF，在电容常见的 ±5 % 以内，说明电路没问题，只是电容不是正好 10 nF。第 10 步 20 s 改成 0.052 V，偏差 −14.6 %，会报警；由 10 s、20 s 两点反推出 τ 约 8.6 s，比 10 s 短，这时先查读秒是否晚了、R_F 和 1 µF 电容的实际值。阶段二那一行把示例读数 −0.62 V 换算成约 62 nC 的电荷，并预告插上 R_F 后 1 s、3 s 的读数（−0.228 V、−0.0309 V），第 13 步可以拿来对照。</p>
+<h2 id="实验记录表">实验记录表</h2>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>计算值</th>
+<th>你的读数</th>
+<th>偏差</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>电池 C 对 0 V</td>
+<td>—</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>V_MID：A 对 0 V</td>
+<td>C 的一半（4.50 V）</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>复位后零点 B − A / 10 s 漂移</td>
+<td>约 0 / ≤ 4.5 mV</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 5 步 S1 ①→② B − A / B 对 0 V</td>
+<td>+0.450 V / 4.95 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 6 步 ②接 +9 V，B − A</td>
+<td>−0.450 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 7 步 C_C 10 nF / 100 nF</td>
+<td>+0.450 / +0.450 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 8 步 电压模式 C_C 100 nF / 10 nF / 0</td>
+<td>−0.0446 / −0.409 / −4.4865 V（公式；受 0 V 轨限制实际约 −4.40 V，SPICE −4.401 V）</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 9 步 插 R_F 后</td>
+<td>几乎看不到</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 10 步 5 / 10 / 20 / 30 s</td>
+<td>0.2729 / 0.1655 / 0.0609 / 0.0224 V</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>压电片 C_p（电容挡）</td>
+<td>—</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 12 步 按住 / 松开</td>
+<td>以实测为准 / 约 0</td>
+<td></td>
+<td></td>
+</tr>
+<tr>
+<td>第 13 步 按住 1 s / 3 s（占跳变值）</td>
+<td>36.8 % / 5.0 %</td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+<h2 id="思考题">思考题</h2>
+<p><a class="img-link" href="img/32_p4_7_think.png"><img alt="三个电路小图：题 1 阶段一插着 R_F 时把万用表接在第 10 列和 0 V 轨之间，题 2 S1 的①改接 0 V、②改接 +9 V，题 3 阶段二把 C_F 换成 1 nF" src="img/32_p4_7_think.png" loading="lazy" /></a></p>
+<p><em>图 32-p4-7　三道思考题的接法（左上：题 1；右上：题 2；下：题 3）</em></p>
+<p><strong>1.</strong>（图 32-p4-7 左上）第 9 步插着 R_F 时，小张想&quot;看看 N 点到底是不是 4.5 V&quot;，把万用表（输入电阻 10 MΩ）的红表笔插到第 10 列、黑表笔接 0 V 轨。这时测点 B 对 0 V 会变成多少？为什么本页不让碰 N 点？</p>
+<details><summary>答案</summary>
+<p>万用表的 10 MΩ 从 N 点接到 0 V，就是从 N 点往 0 V 拉电流：约 4.5 V ÷ 10 MΩ = 0.45 µA。运放要维持 N 点等于 V_MID，只能让这 0.45 µA 从输出经 R_F 流过来，输出要比 V_MID 高 0.45 µA × 10 MΩ = 4.5 V，也就是 9.0 V，已经到了电池电压。实际输出顶到 +9 V 轨附近（SPICE：B 对 0 V 约 8.901 V），运放&quot;认输&quot;，N 点也不再等于 V_MID。不插 R_F 时更糟：这 0.45 µA 一直往 C_F 里充，输出每秒移动 0.45 µA ÷ 10 nF = 45 V，一眨眼就顶轨。表本身显示的 N 点电压也就失去意义了。所以 N 点只能&quot;算&quot;，不能&quot;量&quot;。</p>
+</details>
+<p><strong>2.</strong>（图 32-p4-7 右上）小王把 S1 的①改接 0 V、②改接 +9 V（断电改的）。通电后 S1 在①，按一下 SB 复位，再拨到②。B − A 是多少？B 对 0 V 是多少？</p>
+<details><summary>答案</summary>
+<p>C_S 左端从 0 V 跳到 +9 V，ΔV = +9 V，送进 1 nF × 9 V = 9 nC。B − A = −1 nF × 9 V / 10 nF = −0.90 V，B 对 0 V 约 4.50 − 0.90 = 3.60 V。复位是在 S1 在①时做的，所以起点是 0，只有 ΔV 算数，和①、②各自是多少伏无关（<code>code/32_sim.py</code> 第 12 段：ΔV = +9.0 V → B−A = −0.90 V，B 对 0 V = 3.60 V）。</p>
+</details>
+<p><strong>3.</strong>（图 32-p4-7 下）有人嫌阶段二的读数太小，把 C_F 从 100 nF 换成 1 nF，R_F 仍是 10 MΩ。灵敏度变成多少倍？f_L 和 τ 变成多少？用第 12 步那样&quot;按住不放&quot;还能读到稳定值吗？</p>
+<details><summary>答案</summary>
+<p>灵敏度 1/C_F 变成 100 倍：同样 1 pC 的电荷，输出从 10 µV 变成 1 mV。但 τ = 10 MΩ × 1 nF = 10 ms，f_L = 1/(2π × 10 ms) ≈ 15.92 Hz，&quot;按住不放&quot;这种慢动作在几十毫秒内就被放掉了，万用表只会看到一闪。而且输出最多只能移动约 4.4 V，1 nF 时只装得下 4.4 nC；按 100 nC 举例的那一下早就顶轨了。C_F 要按&quot;最大电荷&quot;和&quot;最慢要看多慢&quot;两头来选（<a href="page2.html">原理与实现篇</a> 第三节）。</p>
+</details>
+<h2 id="自测清单">自测清单</h2>
+<ul>
+<li>[ ] 我能说出测点 A、B、C 各在哪个孔，知道 N 点在哪、为什么只能算不能量，也能解释它约 4.5 V 却不叫虚地。</li>
+<li>[ ] 第 5～8 步：读数和 −C_S × ΔV / C_F 对得上，我能说清正负号，也明白电荷模式不怕电缆电容、电压模式怕。</li>
+<li>[ ] 第 9、10、13 步：我知道 R_F 让输出按 τ = R_F × C_F 回零、f_L 从哪来，会用两个读数反推 τ。</li>
+<li>[ ] 我能说出 R_I 10 kΩ 的三个作用，尤其是它为什么能防止运放推大电容时自激。</li>
+<li>[ ] 我所有改线都是先取下电池扣再做的，通电时只拨开关、按按钮、按压电片；复位按钮只用对角两脚，1N4148 的色环是阴极。</li>
+</ul>
+<h2 id="参考资料">参考资料</h2>
+<ul>
+<li><a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">TI LMC6482 数据手册</a>（输入偏置电流、输出摆幅、管脚排列）</li>
+<li><a href="https://www.ti.com/lit/an/sloa033a/sloa033a.pdf">TI SLOA033A：Signal Conditioning Piezoelectric Sensors</a>（压电传感器的电荷模式与电压模式）</li>
+<li><a href="https://www.ti.com/lit/an/sboa287/sboa287.pdf">TI SBOA287 电荷放大器电路</a>（单电源电荷放大器参考设计，输入串联电阻）</li>
+<li><a href="https://www.vishay.com/docs/81857/1n4148.pdf">Vishay 1N4148 数据手册</a>（阴极色环、正向压降、漏电流）</li>
+<li><a href="https://www.murata.com/en-us/products/productdetail?partno=7BB-20-6L0">Murata 7BB-20-6L0 压电蜂鸣片产品页</a>（带引线型号，外形与规格）</li>
+</ul>
+<p><sub>给老师 / 进阶：本页&quot;应该读到&quot;的数来自 <code>code/32_sim.py</code>（理想模型计算）和 <code>spice/32/run.py</code>（TI LMC648x 宏模型，在仓库根目录运行，需要 spice/models 目录），逐项对照见 <a href="../review/spice/32.html">review/spice/32.md</a>。</sub></p>
+<hr />
+<p><a href="page3.html">上一页：参数与调试篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · <a href="page3.html">参数与调试篇</a> · 本页：动手实验篇 · <a href="../33-bandpass-notch/page1.html">下一页：33 带通与 50 Hz 陷波 · 直觉篇</a></p>
+
+</main>
+<div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

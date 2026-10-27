@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>32 电荷放大器 · 工程实战调研（工程实战派）</title>
+<style>
+:root{--fg:#1f2328;--muted:#59636e;--bg:#fff;--line:#d1d9e0;--soft:#f6f8fa;--link:#0969da}
+@media (prefers-color-scheme:dark){:root{--fg:#e6edf3;--muted:#9198a1;--bg:#0d1117;--line:#3d444d;--soft:#151b23;--link:#4493f8}}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.75 system-ui,-apple-system,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC","Source Han Sans SC",sans-serif;word-wrap:break-word}
+.topbar{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);font-size:14px}
+.topbar div{max-width:820px;margin:0 auto;padding:8px 16px;display:flex;gap:16px;justify-content:space-between}
+main{max-width:820px;margin:0 auto;padding:12px 16px 48px}
+a{color:var(--link);text-decoration:none}a:hover{text-decoration:underline}
+h1,h2,h3,h4{line-height:1.35;margin:1.6em 0 .6em}h1{font-size:1.6em;margin-top:.6em}h2{font-size:1.35em;border-bottom:1px solid var(--line);padding-bottom:.25em}h3{font-size:1.15em}
+img{max-width:100%;height:auto;display:block;margin:8px auto;background:#fff}
+p img{display:inline-block}
+table{display:block;max-width:100%;overflow-x:auto;border-collapse:collapse;margin:1em 0;font-size:.95em}
+th,td{border:1px solid var(--line);padding:6px 10px;vertical-align:top}th{background:var(--soft)}
+pre{background:var(--soft);padding:12px;border-radius:6px;overflow-x:auto;font-size:13.5px;line-height:1.5}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace;font-size:.9em}
+:not(pre)>code{background:var(--soft);padding:.1em .35em;border-radius:4px}
+blockquote{margin:1em 0;padding:.2em 1em;color:var(--muted);border-left:4px solid var(--line)}
+blockquote.alert{color:var(--fg)}blockquote.alert::before{display:block;font-weight:600;margin-top:.4em}
+blockquote.alert-note{border-color:#0969da}blockquote.alert-note::before{content:"ⓘ 说明";color:#0969da}
+blockquote.alert-tip{border-color:#1a7f37}blockquote.alert-tip::before{content:"💡 提示";color:#1a7f37}
+blockquote.alert-important{border-color:#8250df}blockquote.alert-important::before{content:"❗ 重要";color:#8250df}
+blockquote.alert-warning{border-color:#9a6700}blockquote.alert-warning::before{content:"⚠ 警告";color:#9a6700}
+blockquote.alert-caution{border-color:#d1242f}blockquote.alert-caution::before{content:"⛔ 注意";color:#d1242f}
+details{border:1px solid var(--line);border-radius:6px;padding:.3em .9em;margin:1em 0;background:var(--soft)}
+summary{cursor:pointer;font-weight:600}
+hr{border:0;border-top:1px solid var(--line);margin:2em 0}
+.math-display{overflow-x:auto;overflow-y:hidden;margin:.8em 0;padding:2px 0}
+mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;padding:2px 0}
+mjx-container{max-width:100%}
+.footer{max-width:820px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+</style>
+
+</head>
+<body class="tex2jax_ignore">
+<nav class="topbar"><div><a href="../../../index.html">📖 目录</a><a href="https://github.com/helplesstuxe/basic-circuits-tutorial/blob/main/notes/part2-research/engineering/32.md">GitHub 源文件</a></div></nav>
+<main>
+<h1 id="32-电荷放大器--工程实战调研工程实战派">32 电荷放大器 · 工程实战调研（工程实战派）</h1>
+<blockquote>
+<p>范围：第 32 节 page4 实验的工程可行性。仓库里<strong>还没有 32 节目录和 page4 草稿</strong>，核查对象是 <code>notes/32-research.md</code>「page4 实验」一段：</p>
+<ul>
+<li>TL072（或 LMC6482），±6 V 或 12 V + 虚地；C_f 1 nF，R_f 100 MΩ（买不到用 10 MΩ，f_L = 15.9 Hz）。</li>
+<li>先用 100 pF + 1 V 阶跃校准，再接压电蜂鸣片（串 10 kΩ + 两只 1N4148 钳位），手指敲击看输出。</li>
+<li>输入端并联 1 nF 模拟「长电缆」，证明输出幅度基本不变。</li>
+</ul>
+<p>依据 PART2_BRIEF §10：单 9–12 V 电源加缓冲虚地，<strong>不用 ±6 V</strong>；核心结论万用表可验证；压电输入串 10 kΩ + 2×1N4148 钳位；不写价格；LMC6482 无 SPICE 模型时按 brief 处理。</p>
+</blockquote>
+<h2 id="1-真实产品与参考设计怎么做">1. 真实产品与参考设计怎么做</h2>
+<h3 id="11-ti-sboa287charge-amplifier-circuitanalog-engineers-circuit2021-11已下载核对">1.1 TI SBOA287《Charge Amplifier Circuit》（Analog Engineer's Circuit，2021-11，已下载核对）</h3>
+<p>单电源电荷放大器的官方参考设计，几乎就是本节 page2 电路：</p>
+<ul>
+<li>3.3 V 单电源，**VREF = 1.65 V（半电源）**接同相端，输出围绕 VREF 摆动。</li>
+<li>运放 TLV6742；<strong>R_f = 240 MΩ，C_f = 68 pF</strong> → f_low = 1/(2πR_fC_f) ≈ 10 Hz（Design Steps 1–2）。</li>
+<li>输入串联 <strong>R_in = 39.2 kΩ</strong>，与传感器电容 390 pF 构成 10 kHz 上限（Design Steps 3）。</li>
+<li>传感器 Murata PKGS-00GXP1-R：0.35 pC/G，390 pF，谐振 31 kHz（Design Note 3）；V_out = Q/C_f = 5.14 mV/G（Design Steps 4）。</li>
+<li>后级用<strong>双 T 陷波器</strong>（C 都取 1 nF，R1 = R2 = 7.5 kΩ，R3 = 1.8 kΩ）压掉 31 kHz 传感器谐振（Design Steps 5），可回指 33 节。</li>
+<li>Design Note 3：<strong>传感器电容越大，运放电压噪声增益（1 + C_p/C_f）越大</strong>。</li>
+<li>Design Note 5：要求低偏置电流、高输入阻抗、轨到轨输出。</li>
+</ul>
+<h3 id="12-ti-sloa033asignal-conditioning-piezoelectric-sensors32-figure-3已下载核对">1.2 TI SLOA033A《Signal Conditioning Piezoelectric Sensors》§3.2 Figure 3（已下载核对）</h3>
+<ul>
+<li>电荷模式电路 V_cc = 3–5 V，同相端接 ½V_cc。</li>
+<li>f_L = 1/(2πR_fC_f)，f_H = 1/(2πR_i(C_p + C_c))。</li>
+<li>原文：「Resistor Ri provides ESD protection」，即输入串联电阻既限流又定上限频率，与 brief 的「串 10 kΩ」一致。</li>
+<li>原文：「The action of the amplifier maintains 0 V across its input terminals so that the stray capacitance associated with interface cabling does not present a problem」，这就是「长电缆」实验要证明的结论。</li>
+</ul>
+<h3 id="13-器件参数出自已打开的数据手册">1.3 器件参数（出自已打开的数据手册）</h3>
+<table>
+<thead>
+<tr>
+<th>器件</th>
+<th>参数</th>
+<th>数值</th>
+<th>出处</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TL07xC（TI SLOS080W）</td>
+<td>I_B（25 °C）</td>
+<td>65 typ / <strong>200 max pA</strong>；全温 7 nA</td>
+<td>表 5.8</td>
+</tr>
+<tr>
+<td></td>
+<td>V_CM</td>
+<td>±11 V min（−12 到 15 typ），±15 V 下</td>
+<td>表 5.8</td>
+</tr>
+<tr>
+<td></td>
+<td>V_OM</td>
+<td>±12 V min（R_L ≥ 10 kΩ，±15 V 下）</td>
+<td>表 5.8</td>
+</tr>
+<tr>
+<td>TL07xH</td>
+<td>I_B</td>
+<td>±1 typ / ±120 pA max</td>
+<td>表 5.7</td>
+</tr>
+<tr>
+<td>LMC6482（TI SNOS674J）</td>
+<td>V_S</td>
+<td>3–15.5 V</td>
+<td>5.3 Recommended Operating Conditions</td>
+</tr>
+<tr>
+<td></td>
+<td>I_B（V_S = 5 V）</td>
+<td>±0.02 pA typ；全温（−40 到 85 °C）±4 pA</td>
+<td>5.6 Electrical Characteristics</td>
+</tr>
+<tr>
+<td></td>
+<td>V_OS</td>
+<td>±0.11 typ / ±3 mV max（LMC648xI）</td>
+<td>同表</td>
+</tr>
+<tr>
+<td></td>
+<td>GBW</td>
+<td>1.5 MHz（V+ = 15 V）</td>
+<td>电气特性表</td>
+</tr>
+<tr>
+<td></td>
+<td>布局</td>
+<td>漏电 &lt;1000 pA 的电路需特殊布局；保护环；<strong>「bend the pin up in the air, and use only air as an insulator」（空中飞线，Figure 7-30）</strong></td>
+<td>§7.4.1 Layout Guidelines</td>
+</tr>
+<tr>
+<td>1N4148（Vishay 文档 81857 Rev 1.6）</td>
+<td>I_R</td>
+<td><strong>25 nA max @ V_R = 20 V</strong>（25 °C）；50 µA @ 20 V, T_j 150 °C</td>
+<td>Electrical Characteristics</td>
+</tr>
+<tr>
+<td></td>
+<td>C_D</td>
+<td>4 pF max</td>
+<td>同表</td>
+</tr>
+</tbody>
+</table>
+<h3 id="14-面包板--pcb-要点">1.4 面包板 / PCB 要点</h3>
+<ul>
+<li><strong>高阻节点（运放反相端、R_f、C_f、注入电容的一端）不要插面包板</strong>。按 LMC6482 手册 §7.4.1，把反相输入脚弯起来，R_f、C_f 直接焊在脚上做空中飞线。面包板相邻触点间的漏电和湿度敏感性没有找到可引用的数值，正文只做定性说明，不给数字。</li>
+<li>量产产品在 PCB 上用<strong>保护环</strong>接到与输入同电位（这里是 VG），并且上下两层都要有（LMC6482 §7.4.1）。</li>
+<li>虚地 VG 必须由运放跟随器缓冲（node 12），并在 VG 对地加 10 µF 电容。电荷放大器的输出摆动以 VG 为中心。</li>
+</ul>
+<h2 id="2-page4-方案逐点可行性核查">2. page4 方案逐点可行性核查</h2>
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>检查项</th>
+<th>结论</th>
+<th>说明 / 替代方案</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>供电 ±6 V</td>
+<td>✗</td>
+<td>与 §10 冲突。<strong>改为单 12 V + 缓冲虚地 VG = 6 V</strong>（另一半 TL072/LMC6482 做跟随器）。</td>
+</tr>
+<tr>
+<td>2</td>
+<td>TL072 在 12 V 单电源下的共模</td>
+<td>✓</td>
+<td>同相端在 VG = 6 V。TL07xC 共模 min ±11 V（±15 V 下，即距两轨各 4 V），12 V 单电源下对应 4–8 V，6 V 在范围内。</td>
+</tr>
+<tr>
+<td>3</td>
+<td>TL072 输出摆幅</td>
+<td>✓（够用）</td>
+<td>V_OM ±12 V min（±15 V 下，距轨 3 V），按同样余量估计 12 V 单电源下输出 3–9 V，即 VG ± 3 V。校准 −0.1 V 没问题；重敲压电片会削顶，这是正常现象，可以写进页面。</td>
+</tr>
+<tr>
+<td>4</td>
+<td>R_f = 100 MΩ 时的直流偏移</td>
+<td>✓</td>
+<td>I_B·R_f：TL07xC 最大 20 mV，TL07xH 最大 12 mV，LMC6482 最大 0.4 mV（全温）。都可以接受，但是 TL072 方案的输出零点会在 VG 上下偏几十 mV。</td>
+</tr>
+<tr>
+<td>5</td>
+<td><strong>钳位二极管接法</strong></td>
+<td>⚠ 必须写清</td>
+<td>如果两只 1N4148 从输入接到 V+ 和地（常见的「钳到电源轨」接法），平时它们反偏约 6 V。手册只给出 20 V 下 25 nA 的上限，乘 100 MΩ 最多 <strong>2.5 V</strong> 偏移，比 TL072 的 I_B 大几个数量级。<strong>替代</strong>：两只 1N4148 <strong>反向并联，接在运放反相端（10 kΩ 之后）与 VG 之间</strong>。平时两端电压≈0，几乎不漏电；敲击过冲时把输入限制在 VG ± 0.6 V 左右。每只结电容 ≤ 4 pF，对 1 nF 的 C_f 影响可以忽略。</td>
+</tr>
+<tr>
+<td>6</td>
+<td>100 MΩ 电阻难买</td>
+<td>⚠</td>
+<td>10 MΩ + 1 nF 时 f_L = 15.9 Hz，敲击的低频成分会明显变小。<strong>更好的替代</strong>：R_f = 10 MΩ、<strong>C_f = 10 nF</strong>，f_L 仍为 1.59 Hz；注入电容同步改为 1 nF（1 V 阶跃 → −0.1 V，读数与原方案相同）。噪声增益也从 1 + C_p/1 nF 降到 1 + C_p/10 nF（压电片 C_p 自己用万用表电容档量）。</td>
+</tr>
+<tr>
+<td>7</td>
+<td><strong>核心结论能否用万用表验证</strong></td>
+<td>✗ 必须改</td>
+<td>τ = R_fC_f = 0.1 s，−0.1 V 的阶跃 100 ms 后就只剩 36.8 mV，300 ms 后只剩 5 mV（§3 第 3 段）。万用表刷新太慢，看不到峰值。<strong>替代：加「保持模式」</strong>：R_f 用跳线做成可拔，C_f 两端并一只按钮做复位。① 按一下复位，输出回到 VG；② 拔掉 R_f；③ 把注入电容远端从地拨到 1 V，输出跳到 VG − 0.1 V <strong>并保持住</strong>，用万用表量 OUT − VG。漂移率 = I_B/C_f：LMC6482 + 10 nF 最坏 0.4 mV/s（全温上限，室温典型值只有 0.002 mV/s）；TL07xC + 10 nF 最坏 20 mV/s（10 s 漂 0.2 V，太大）。<strong>所以万用表部分要用 LMC6482</strong>。1 V 阶跃源可用一节 1.5 V 电池或 12 V 分压加跟随器，读数按实际阶跃电压折算。</td>
+</tr>
+<tr>
+<td>8</td>
+<td>「长电缆」实验</td>
+<td>✓（建议加对照）</td>
+<td>电荷模式下输入并联 1 nF，输出 −0.10000 → −0.10000 V，10 nF 时 −0.09999 V（LMC6482，A(10 Hz) = 1.5×10⁵）。<strong>建议加电压模式对照</strong>：同一个 100 pF 源直接接跟随器，并联 0、1、10 nF 时读数为 0.971、0.091、0.010 V（§3 第 5 段）。两种对照放在一起，结论在保持模式下用万用表就能读出来。</td>
+</tr>
+<tr>
+<td>9</td>
+<td>串联 10 kΩ 的副作用</td>
+<td>✓</td>
+<td>10 kΩ 和压电电容 C_p 构成上限极点 1/(2π·10k·C_p)（SLOA033A 的 f_H）。C_p 假设为 10–30 nF 时，极点约在 0.5–1.6 kHz，手指敲击的主要成分不受影响。C_p 请作者实测后写入页面，本文不引用蜂鸣片电容的数字。</td>
+</tr>
+<tr>
+<td>10</td>
+<td>压电片尖峰</td>
+<td>✓</td>
+<td>采用 10 kΩ + 反并钳位（第 5 条）之后，敲击产生的高压只落在 10 kΩ 上，流入钳位二极管的电流是 mA 级。</td>
+</tr>
+<tr>
+<td>11</td>
+<td>Arduino 观察（可选）</td>
+<td>⚠</td>
+<td>12 V 版的输出围绕 6 V，超过 Arduino 允许的 V_CC + 0.5 V，<strong>不能直接接 A0</strong>。<strong>Arduino 版</strong>：LMC6482 由 Arduino 的 5 V 供电（V_S 下限 3 V，满足），VG = 2.5 V。D7 输出 5 V 阶跃，经 100 pF 注入，输出为 −0.5 V，约 102 LSB。<code>analogRead</code> 每次约 100 µs，第一个采样相对峰值的误差约 0.1 %，可以完整录下 τ = 0.1 s 的指数衰减。TL072 不能在 5 V 下用（共模需要距两轨各约 4 V）。</td>
+</tr>
+<tr>
+<td>12</td>
+<td>带宽 / 压摆</td>
+<td>✓</td>
+<td>敲击信号是 kHz 以下，TL072 和 LMC6482 都绰绰有余。</td>
+</tr>
+</tbody>
+</table>
+<h3 id="需要作者改正的要点">需要作者改正的要点</h3>
+<ol>
+<li><strong>删除 ±6 V</strong>，改为单 12 V + 缓冲虚地 VG = 6 V（§10）。</li>
+<li><strong>加保持模式（复位按钮 + 可拔 R_f）</strong>，让核心结论 V_o = −Q/C_f 能用万用表读到；这一部分必须用 <strong>LMC6482</strong>，TL072 的 I_B 漂移太快。</li>
+<li><strong>钳位二极管反向并联在反相端和 VG 之间</strong>，不要钳到电源轨（反偏漏电的上限乘 100 MΩ 可达 2.5 V）。</li>
+<li>100 MΩ 买不到时用 <strong>10 MΩ + 10 nF</strong>（f_L 不变，仍为 1.59 Hz），注入电容同步改为 1 nF，不要只换成 10 MΩ（f_L 会变成 15.9 Hz）。</li>
+<li>高阻节点用空中飞线（LMC6482 手册 §7.4.1），不要插面包板。</li>
+<li>「长电缆」实验加电压模式对照（0.971 → 0.091 V），以形成对比。</li>
+<li>Arduino 版用 5 V 供电的 LMC6482 + VG 2.5 V；12 V 版的输出不能直接接 A0。</li>
+<li>压电片电容 C_p 要实测，不要写未经核实的 pC/N 或 nF 数字（与 32-research 的「待核实」一致）。</li>
+</ol>
+<h2 id="3-计算核对python已运行">3. 计算核对（Python，已运行）</h2>
+<p>脚本 <code>/tmp/eng/s32.py</code>，用 <code>/workspace/dsp-venv/bin/python</code> 运行。</p>
+<pre><code class="language-python">import numpy as np
+tw=2*np.pi
+print(&quot;== 1) 下限频率 f_L = 1/(2π Rf Cf) 与注入灵敏度 ==&quot;)
+for Rf,Cf in [(100e6,1e-9),(10e6,1e-9),(10e6,10e-9)]:
+    print(f&quot;Rf={Rf/1e6:5.0f}M Cf={Cf*1e9:4.0f}n: f_L={1/(tw*Rf*Cf):6.2f} Hz tau={Rf*Cf:5.2f} s  1V经100pF-&gt;Vo={-100e-12/Cf:7.3f} V  1V经1nF-&gt;Vo={-1e-9/Cf:6.3f} V  5V经100pF-&gt;{-5*100e-12/Cf:6.3f} V&quot;)
+
+print(&quot;\n== 2) 输出直流偏移 = Vos + IB*Rf (Rf=100M / 10M) ==&quot;)
+ops={&quot;TL07xC 25C max(表5.8)&quot;:(200e-12,None),&quot;TL07xH 25C max(表5.7)&quot;:(120e-12,None),&quot;LMC6482 85C max(表5.6)&quot;:(4e-12,None)}
+for k,(ib,_) in ops.items():
+    print(f&quot;{k:24s}: IB*100M={ib*100e6*1e3:7.3f} mV  IB*10M={ib*10e6*1e3:7.3f} mV&quot;)
+print(f&quot;1N4148 钳位接电源轨(反偏~6 V)时漏电上界取 25 nA@20V: x100M = {25e-9*100e6:.2f} V, x10M = {25e-9*10e6:.2f} V  (上界, 6 V 下实际更小但手册未给)&quot;)
+
+print(&quot;\n== 3) 阶跃注入: 1 V 经 100 pF, Cf=1n, Rf=100M; 用 Arduino 10 kHz 采样能否抓到峰值 ==&quot;)
+Cf=1e-9;Rf=100e6;Q=100e-12;tau=Rf*Cf
+t=np.arange(0,0.5,1e-4)   # analogRead ≈100 µs/次
+vo=-Q/Cf*np.exp(-t/tau)
+for tt in [0,0.01,0.1,0.3]:
+    print(f&quot;t={tt*1e3:5.0f} ms  Vo={-Q/Cf*np.exp(-tt/tau)*1e3:7.2f} mV&quot;)
+print(f&quot;首个采样(&lt;=100us)相对峰值误差 {(1-np.exp(-1e-4/tau))*100:.2f} %&quot;)
+
+print(&quot;\n== 4) 保持模式(去掉 Rf, 复位按钮跨在 Cf 上): 漂移率 = I/Cf ==&quot;)
+for name,ib in [(&quot;TL07xC 200 pA&quot;,200e-12),(&quot;TL07xH 120 pA&quot;,120e-12),(&quot;LMC6482 4 pA&quot;,4e-12),(&quot;LMC6482 typ 0.02 pA&quot;,0.02e-12)]:
+    for Cf in [1e-9,10e-9]:
+        print(f&quot;{name:20s} Cf={Cf*1e9:3.0f}n: {ib/Cf*1e3:9.4f} mV/s  10 s 漂 {ib/Cf*10*1e3:8.3f} mV&quot;)
+
+print(&quot;\n== 5) '长电缆'试验: 电压模式 vs 电荷模式, 源 100 pF, 1 V 阶跃 ==&quot;)
+Cs=100e-12; Cin=3e-12
+for Cc in [0,1e-9,10e-9]:
+    vm=Cs/(Cs+Cc+Cin)
+    for name,gbw in [(&quot;LMC6482&quot;,1.5e6)]:
+        f=10.0; A=gbw/f
+        cm=-Cs/(1e-9+(1e-9+Cs+Cc)/A)
+    print(f&quot;Ccable={Cc*1e9:5.1f} nF: 电压模式 {vm:6.3f} V   电荷模式(Cf=1n, A(10Hz)={A:.0f}) {cm:8.5f} V&quot;)
+
+print(&quot;\n== 6) 压电片 + 10 kΩ 串联: 极点与噪声增益 (Cp 为假设值, 请实测) ==&quot;)
+for Cp in [10e-9,30e-9]:
+    print(f&quot;Cp={Cp*1e9:3.0f} nF: 10k 串联极点 {1/(tw*10e3*Cp):7.1f} Hz  噪声增益 1+Cp/Cf={1+Cp/1e-9:5.1f} (Cf=1n), {1+Cp/10e-9:4.1f} (Cf=10n)&quot;)
+
+print(&quot;\n== 7) 摆幅: 12 V 单电源 VG=6 V ==&quot;)
+print(&quot;TL07xC: ±15V 下 VOM ±12 V min (RL&gt;=10k) -&gt; 距轨 3 V; 按同样余量估 12 V 单电源输出 3..9 V, 即 VG±3 V&quot;)
+print(&quot;Arduino 版: LMC6482 由 5 V 供电, VG=2.5 V; 5 V 阶跃经 100 pF -&gt; -0.5 V -&gt; &quot;, round(0.5/5*1023), &quot;LSB&quot;)
+</code></pre>
+<p>已运行，实际输出：</p>
+<pre><code>== 1) 下限频率 f_L = 1/(2π Rf Cf) 与注入灵敏度 ==
+Rf=  100M Cf=   1n: f_L=  1.59 Hz tau= 0.10 s  1V经100pF-&gt;Vo= -0.100 V  1V经1nF-&gt;Vo=-1.000 V  5V经100pF-&gt;-0.500 V
+Rf=   10M Cf=   1n: f_L= 15.92 Hz tau= 0.01 s  1V经100pF-&gt;Vo= -0.100 V  1V经1nF-&gt;Vo=-1.000 V  5V经100pF-&gt;-0.500 V
+Rf=   10M Cf=  10n: f_L=  1.59 Hz tau= 0.10 s  1V经100pF-&gt;Vo= -0.010 V  1V经1nF-&gt;Vo=-0.100 V  5V经100pF-&gt;-0.050 V
+
+== 2) 输出直流偏移 = Vos + IB*Rf (Rf=100M / 10M) ==
+TL07xC 25C max(表5.8)    : IB*100M= 20.000 mV  IB*10M=  2.000 mV
+TL07xH 25C max(表5.7)    : IB*100M= 12.000 mV  IB*10M=  1.200 mV
+LMC6482 85C max(表5.6)   : IB*100M=  0.400 mV  IB*10M=  0.040 mV
+1N4148 钳位接电源轨(反偏~6 V)时漏电上界取 25 nA@20V: x100M = 2.50 V, x10M = 0.25 V  (上界, 6 V 下实际更小但手册未给)
+
+== 3) 阶跃注入: 1 V 经 100 pF, Cf=1n, Rf=100M; 用 Arduino 10 kHz 采样能否抓到峰值 ==
+t=    0 ms  Vo=-100.00 mV
+t=   10 ms  Vo= -90.48 mV
+t=  100 ms  Vo= -36.79 mV
+t=  300 ms  Vo=  -4.98 mV
+首个采样(&lt;=100us)相对峰值误差 0.10 %
+
+== 4) 保持模式(去掉 Rf, 复位按钮跨在 Cf 上): 漂移率 = I/Cf ==
+TL07xC 200 pA        Cf=  1n:  200.0000 mV/s  10 s 漂 2000.000 mV
+TL07xC 200 pA        Cf= 10n:   20.0000 mV/s  10 s 漂  200.000 mV
+TL07xH 120 pA        Cf=  1n:  120.0000 mV/s  10 s 漂 1200.000 mV
+TL07xH 120 pA        Cf= 10n:   12.0000 mV/s  10 s 漂  120.000 mV
+LMC6482 4 pA         Cf=  1n:    4.0000 mV/s  10 s 漂   40.000 mV
+LMC6482 4 pA         Cf= 10n:    0.4000 mV/s  10 s 漂    4.000 mV
+LMC6482 typ 0.02 pA  Cf=  1n:    0.0200 mV/s  10 s 漂    0.200 mV
+LMC6482 typ 0.02 pA  Cf= 10n:    0.0020 mV/s  10 s 漂    0.020 mV
+
+== 5) '长电缆'试验: 电压模式 vs 电荷模式, 源 100 pF, 1 V 阶跃 ==
+Ccable=  0.0 nF: 电压模式  0.971 V   电荷模式(Cf=1n, A(10Hz)=150000) -0.10000 V
+Ccable=  1.0 nF: 电压模式  0.091 V   电荷模式(Cf=1n, A(10Hz)=150000) -0.10000 V
+Ccable= 10.0 nF: 电压模式  0.010 V   电荷模式(Cf=1n, A(10Hz)=150000) -0.09999 V
+
+== 6) 压电片 + 10 kΩ 串联: 极点与噪声增益 (Cp 为假设值, 请实测) ==
+Cp= 10 nF: 10k 串联极点  1591.5 Hz  噪声增益 1+Cp/Cf= 11.0 (Cf=1n),  2.0 (Cf=10n)
+Cp= 30 nF: 10k 串联极点   530.5 Hz  噪声增益 1+Cp/Cf= 31.0 (Cf=1n),  4.0 (Cf=10n)
+
+== 7) 摆幅: 12 V 单电源 VG=6 V ==
+TL07xC: ±15V 下 VOM ±12 V min (RL&gt;=10k) -&gt; 距轨 3 V; 按同样余量估 12 V 单电源输出 3..9 V, 即 VG±3 V
+Arduino 版: LMC6482 由 5 V 供电, VG=2.5 V; 5 V 阶跃经 100 pF -&gt; -0.5 V -&gt;  102 LSB
+</code></pre>
+<p>说明：</p>
+<ul>
+<li>第 2 段 1N4148 的数字是手册 20 V 下的上限，6 V 下真实漏电更小，但手册没有给出，所以只能作为「上界」。</li>
+<li>第 5 段电荷模式用了单极点开环模型 A(f) = GBW/f（GBW 取 LMC6482 的 1.5 MHz），只用来说明有限增益误差可以忽略。</li>
+<li>第 6 段 C_p 是假设值，不是蜂鸣片手册数据。</li>
+<li>第 7 段的 12 V 摆幅是由 ±15 V 规格的「距轨余量」外推的估计，不是手册直接给出的 12 V 数值。</li>
+</ul>
+<h2 id="4-参考链接均已实际打开">4. 参考链接（均已实际打开）</h2>
+<ul>
+<li>TI SBOA287 Charge Amplifier Circuit：<a href="https://www.ti.com/lit/an/sboa287/sboa287.pdf">https://www.ti.com/lit/an/sboa287/sboa287.pdf</a> （curl + pdftotext）</li>
+<li>TI SLOA033A Signal Conditioning Piezoelectric Sensors：<a href="https://www.ti.com/lit/an/sloa033a/sloa033a.pdf">https://www.ti.com/lit/an/sloa033a/sloa033a.pdf</a> （curl + pdftotext）</li>
+<li>TI LMC6482 SNOS674J：<a href="https://www.ti.com/lit/ds/symlink/lmc6482.pdf">https://www.ti.com/lit/ds/symlink/lmc6482.pdf</a> （curl）</li>
+<li>TI TL072 SLOS080W：<a href="https://www.ti.com/lit/ds/symlink/tl072.pdf">https://www.ti.com/lit/ds/symlink/tl072.pdf</a> （curl）</li>
+<li>Vishay 1N4148 文档 81857：<a href="https://www.vishay.com/docs/81857/1n4148.pdf">https://www.vishay.com/docs/81857/1n4148.pdf</a> （curl）</li>
+<li>Arduino analogRead（ATmega 板约 100 µs/次）：<a href="https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog%20IO/analogRead.adoc">https://raw.githubusercontent.com/arduino/reference-en/master/Language/Functions/Analog IO/analogRead.adoc</a></li>
+</ul>
+<h2 id="5-待核实">5. [待核实]</h2>
+<ul>
+<li>压电蜂鸣片的电容和电荷灵敏度：没有可靠的手册数值，正文不给数字（与 32-research 一致）。</li>
+<li>面包板触点之间的漏电阻：没有找到可引用的数据，只做定性提醒。</li>
+</ul>
+
+</main>
+<div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
+</body>
+</html>

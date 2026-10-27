@@ -567,6 +567,64 @@ status.log：本次按要求不读 notes/ 目录，所以没核对作者行，�
 <li>首审未处理的 2、3（部分）、4、7、8、12（部分），见上表。</li>
 </ol>
 <p><strong>剩余必改：0。</strong></p>
+<h2 id="复核-3">复核 3</h2>
+<p>时间：2026-10-27 09:53 EDT。副本 /tmp/bct-run/44r3/（09:42 EDT 复制）。</p>
+<h3 id="1-这次到底改了什么">1. 这次到底改了什么</h3>
+<ul>
+<li>和 /tmp/bct-run/44r2b/ 比，44 的 page1–4、<code>44_figs.py</code>、<code>spice/44/front.inc</code> <strong>逐字节相同</strong>，没有任何改动。</li>
+<li>log「09:35 EDT 44 teacher-fix done (r3)」里列的四项都是 09:32 EDT 那次修改：sys.path 两行、5(c) 纹波、负载叫法、0.261→0.262 W。我复核 2 中途已经重新复制了 44r2b，在那个版本上复核过，所以 r3 没有我没看过的新改动。</li>
+<li>我又把 44r2（09:27 复制）和 44r3 对了一遍，44 的差异只有 page3 L169，以及 page4 L7、L16、L38、L178–180、L201、L233，和 log 写的一致。</li>
+<li>复核 1 和复核 2 已关闭的内容没有被改回。</li>
+</ul>
+<h3 id="2-page4-实测对比代码里的-syspath-两行l178179">2. page4 实测对比代码里的 <code>sys.path</code> 两行（L178–179）</h3>
+<p>我在副本里按新生的实际做法（把代码块存成 .py 再用 circuits-venv 运行）跑了 6 次：</p>
+<ul>
+<li>三个工作目录：仓库根目录、<code>44-class-d-amp/</code>、仓库外的 <code>/tmp/bct-run/44r3/tmp/elsewhere</code>。</li>
+<li>两个版本：带这两行、删掉这两行。</li>
+</ul>
+<p>结果：</p>
+<ul>
+<li>6 次全部 exit 0，输出的 md5 完全相同，示例读数全部 OK，效率 62.6%。</li>
+<li>在仓库外运行时，<code>sys.path[0]</code> 指向一个不存在的 <code>.../elsewhere/code/figs</code>，Python 会悄悄忽略它，不报错。</li>
+<li><code>find -newer</code> 确认没有写任何文件，仓库里也没有。这一段本来就没有 import 仓库里的模块。</li>
+</ul>
+<p>结论：</p>
+<ul>
+<li>从功能上看，这两行不是必需的，但完全无害。</li>
+<li>39、40、41、42、44 page2 和 45 的 Python 块都有同样一行，看来是全书统一的写法。log 里 40 的作者也说过这和 AUTHOR_GUIDE 有关；AUTHOR_GUIDE 在 notes/ 里，按规则我没有读。</li>
+<li>L176 写了「在哪个目录运行都行」，注释里也写了「本段不导入仓库模块，换目录也能跑」。我原来担心新生会误以为必须在仓库根目录跑，这一点已经说清楚了。</li>
+<li>所以<strong>撤回复核 2 的建议 4</strong>。</li>
+</ul>
+<h3 id="3-重跑与检查">3. 重跑与检查</h3>
+<ul>
+<li><code>44_figs.py</code> exit 0（9 s）。22 张 PNG 和仓库<strong>逐字节相同</strong>，输出和 44r2 相同。</li>
+<li><code>spice/44/run.py</code> exit 0（143 s），共 86 项，和 44r2 的输出只差临时 CSV 的路径。Arduino 幅度 40 时负载 RMS 2.614 V，偏差 +0.01%。</li>
+<li>页面代码块：
+<ul>
+<li>page2_block1 exit 0，输出「IN1 平均占空比 0.499；负载 400 Hz 峰值 2.759 V，总增益 2.759」，和复核 2 相同。图写到 TMPDIR，仓库里没有新文件。</li>
+<li>page4_block2 结果见上面第 2 节。</li>
+<li>page4 的 Arduino 程序仓库里没有对应的 .ino 文件（以前就是这样）。</li>
+</ul>
+</li>
+<li>粗体扫描：p1 12/12、p2 33/33、p3 39/39、p4 48/48，没有残留 <code>*</code>。</li>
+<li>check_github_math：4/4 OK。check_figs：3/8/6/5 OK。</li>
+<li>写报告前又和仓库 cmp 了一次，page1–4 都没有变化。</li>
+</ul>
+<h3 id="4-复核-2-建议-16-的处理情况">4. 复核 2 建议 1–6 的处理情况</h3>
+<p>44 页面在复核 2 之后没有改动，所以 1、2、3、5、6 都<strong>仍未处理</strong>：</p>
+<ul>
+<li>建议 1：page3 L169 练习 5(a) 仍然只写转折频率 9.2 kHz，没有补 −3 dB 约 6.8 kHz。</li>
+<li>建议 2：5(c) 没有和 0.177 A × 2 对应起来，也没写 RS = 1.471 Ω。</li>
+<li>建议 3：page4 L11 仍是「喇叭换成 8 Ω / 5 W 假负载」。</li>
+<li>建议 5：page3 L42 仍是 0.261 W，page4 L233 是 0.262 W，两处还不一致（0.1616² × 10 = 0.261）。</li>
+<li>建议 6：numpy 图仍然没有纵轴标签。</li>
+<li>建议 4：已撤回（见第 2 节）。</li>
+</ul>
+<h3 id="复核-3-必改">复核 3 必改</h3>
+<p>无。</p>
+<h3 id="复核-3-建议">复核 3 建议</h3>
+<p>没有新增。复核 2 的建议 1、2、3、5、6 继续有效，其中第 5 条（0.261 和 0.262 不一致）最值得改。</p>
+<p><strong>剩余必改：0。</strong></p>
 
 </main>
 <div class="footer"><a href="../../../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>
