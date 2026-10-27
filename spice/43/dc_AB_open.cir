@@ -1,0 +1,27 @@
+* 43 直流转移扫描（没有示波器的做法）：电位器把输入 inp 慢慢在 6 V 附近调，万用表量 m 和 out
+* 测试负载：out 到 +12 V 和到 GND 各 2 kΩ（相当于 1 kΩ 接 6 V），不接中点参考 V_MID
+.include common.inc
+.include bias_AB.inc
+RF fb m 20k
+VS sig 0 0
+Vx vx 0 6
+Rw vx inp 100
+Rt1 out vcc 2k
+Rt2 out 0 2k
+.control
+dc Vx 5.0 7.0 0.0005
+let dout = v(out) - 6
+let dm = v(m) - 6
+wrdata dc_AB_open_vg.txt v(vx) v(m) v(out)
+meas dc mlo find v(m) when v(out)=5.99 
+meas dc mhi find v(m) when v(out)=6.01
+meas dc vxlo find v(vx) when v(out)=5.99
+meas dc vxhi find v(vx) when v(out)=6.01
+echo "RES dc_AB_mlo $&mlo"
+echo "RES dc_AB_mhi $&mhi"
+echo "RES dc_AB_vxlo $&vxlo"
+echo "RES dc_AB_vxhi $&vxhi"
+op
+echo "RES dc_AB_out_at6 $&v(out)"
+.endc
+.end

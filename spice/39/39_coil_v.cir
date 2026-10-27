@@ -1,0 +1,48 @@
+* 39 线圈换向励磁：H 桥 + 线圈 100 mH / 75 Ω，6.25 Hz 方波换向（半周期 80 ms）（page2 第四节、page3 图39-p3-1、page3 练习）
+* H 桥：四只压控开关，导通电阻按 DRV8871 手册典型值：上管 307 mΩ、下管 258 mΩ；每只并一只体二极管（通用二极管模型，假设）；
+* 换向时两组开关之间留 220 ns 死区（DRV8871 手册典型死区时间）。
+*   本文件「电压驱动」：桥底直接接地，线圈电流由 12 V / (75 Ω + 导通电阻) 决定；
+*   恒流驱动见 39_coil_i.cir。
+.model SWH SW(VT=2.5 RON=0.307 ROFF=1e8)
+.model SWL SW(VT=2.5 RON=0.258 ROFF=1e8)
+.model DB D(IS=1e-12 N=1.0 RS=0.05)
+VCC vcc 0 12
+* 控制信号：A = OUT1 高（上左 + 下右导通），B = OUT2 高（上右 + 下左导通），中间各留 220 ns 死区
+VA a 0 PULSE(0 5 0 50n 50n 79.99968m 160m)
+VB b 0 PULSE(0 5 80m 50n 50n 79.99968m 160m)
+S1 vcc o1 a 0 SWH
+S2 vcc o2 b 0 SWH
+S3 o1 bot b 0 SWL
+S4 o2 bot a 0 SWL
+D1 o1 vcc DB
+D2 o2 vcc DB
+D3 bot o1 DB
+D4 bot o2 DB
+* 线圈：电感 + 电阻，VM 测电流（OUT1 → OUT2 为正）
+VM o1 c1 0
+LC c1 c2 100m
+RC c2 o2 75
+* 桥底直接接地（电压驱动）
+VBOT bot 0 0
+.options method=gear
+.control
+tran 5u 330m 0 5u
+meas tran ipos find i(VM) at=239.9m
+meas tran ineg find i(VM) at=159.9m
+let i99 = 0.99*ipos
+let i0 = 0
+meas tran t99 when i(VM)=i99 rise=1 from=160m
+meas tran tz when i(VM)=i0 rise=1 from=160m
+meas tran vcmax max v(o1) from=159.9m to=161m
+* 单位：ms
+let t99u = (t99-160m)*1e3
+let tzu = (tz-160m)*1e3
+echo "RES ipos_0 $&ipos"
+echo "RES ineg_0 $&ineg"
+echo "RES t99_0 $&t99u"
+echo "RES tz_0 $&tzu"
+meas tran ipk max i(VM) from=160m to=180m
+echo "RES ipk_0 $&ipk"
+wrdata coil_0_vg.txt i(VM) v(o1) v(o2)
+.endc
+.end

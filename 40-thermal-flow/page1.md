@@ -1,6 +1,6 @@
 # 40 热式流量与 RTD 恒温差 · 直觉篇
 
-上一页：39 节恒流源与线圈励磁驱动（即将上线） · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[01 元件速成 · 直觉篇](../01-components-basics/page1.md)、[06 MOS 管开关 · 直觉篇](../06-mosfet-switch/page1.md)、[10 电压比较器 · 直觉篇](../10-voltage-comparator/page1.md)、[30 仪表放大器与电桥 · 直觉篇](../30-instrumentation-amp/page1.md)、39 节恒流源与线圈励磁驱动（即将上线）
+[上一页：39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md) · 本页：直觉篇 · [原理与实现篇](page2.md) · [参数与调试篇](page3.md) · [动手实验篇](page4.md) · [下一页：原理与实现篇](page2.md) · 前置节点：[01 元件速成 · 直觉篇](../01-components-basics/page1.md)、[06 MOS 管开关 · 直觉篇](../06-mosfet-switch/page1.md)、[10 电压比较器 · 直觉篇](../10-voltage-comparator/page1.md)、[30 仪表放大器与电桥 · 直觉篇](../30-instrumentation-amp/page1.md)、[39 恒流源与线圈励磁驱动 · 直觉篇](../39-constant-current-excitation/page1.md)
 
 ## 先回顾三问
 

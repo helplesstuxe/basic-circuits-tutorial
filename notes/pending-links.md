@@ -40,23 +40,14 @@
 | `30-instrumentation-amp/page1.md`（第 84 行，图 30-p1-5 说明段） | `再交给后面的滤波和 38 节同步检波（电磁流量计）（即将上线）。下一行，差压流量计…` | `[38 同步检波（电磁流量计） · 直觉篇](../38-synchronous-demod/page1.md)` | 38 | 第 1 批（30） |
 | `30-instrumentation-amp/page4.md`（第 3 行，页首导航） | `本页：动手实验篇 · 下一页：31 节跨阻放大器（TIA）（即将上线） · 前置节点：…` | `[下一页：31 跨阻放大器（TIA） · 直觉篇](../31-transimpedance-amp/page1.md)` | 31 | 第 1 批（30） |
 | `35-pga-agc/page4.md`（第 3 行） | `… · 本页：动手实验篇 · 下一页：36 节施密特整形与频率/脉冲计数（即将上线） · 前置节点：[0…` | `[下一页：36 施密特整形与频率/脉冲计数 · 直觉篇](../36-schmitt-pulse-shaping/page1.md)` | 36 | 第 2 批（35/40/41） |
-| `40-thermal-flow/page1.md`（第 3 行） | `上一页：39 节恒流源与线圈励磁驱动（即将上线） · 本页：直觉篇 …` | `[上一页：39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md)` | 39 | 第 2 批（35/40/41） |
-| `40-thermal-flow/page1.md`（第 3 行，前置节点末项） | `…ent-amp/page1.md)、39 节恒流源与线圈励磁驱动（即将上线）…` | `[39 恒流源与线圈励磁驱动 · 直觉篇](../39-constant-current-excitation/page1.md)` | 39 | 第 2 批（35/40/41） |
-| `40-thermal-flow/page2.md`（第 3 行） | `…amp/page2.md)、39 节恒流源与线圈励磁驱动（即将上线）…` | `[39 恒流源与线圈励磁驱动 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 39 | 第 2 批（35/40/41） |
-| `40-thermal-flow/page2.md`（第 159 行） | `…985 mA），作用上接近 39 节恒流源（即将上线） 的恒流激励；…` | `[39 恒流源](../39-constant-current-excitation/page2.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page1.md`（第 3 行） | `…e2.md) · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、[07 三极管开关…` | `[39 恒流源与线圈励磁驱动 · 直觉篇](../39-constant-current-excitation/page1.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page1.md`（第 6 行） | `> - 39 节恒流源（即将上线）：运放盯着采样电阻 …` | `[39 恒流源 · 直觉篇](../39-constant-current-excitation/page1.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page1.md`（第 46 行） | `…被控制住的电流**（这就是 39 节恒流源（即将上线） 干的事），那么：…` | `[39 恒流源](../39-constant-current-excitation/page1.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page2.md`（第 3 行） | `…e3.md) · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、[07 三极管开关…` | `[39 恒流源与线圈励磁驱动 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page2.md`（第 5 行） | `> **前置回顾**：39 节恒流源（即将上线） 里，运放把 MOS…` | `[39 恒流源 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page3.md`（第 3 行） | `…e4.md) · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、[07 三极管开关…` | `[39 恒流源与线圈励磁驱动 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page3.md`（第 5 行） | `> **前置回顾**：39 节恒流源（即将上线） 第四步讲过“顺从电…` | `[39 恒流源 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 39 | 第 2 批（35/40/41） |
 | `41-current-loop-4-20ma/page4.md`（第 3 行） | `… · 本页：动手实验篇 · 下一页：42 节流量计信号链总览（即将上线） · 前置节点：39…` | `[下一页：42 流量计信号链总览 · 直觉篇（预告）](../42-flowmeter-signal-chains/page1.md)` | 42 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page4.md`（第 3 行） | `…（即将上线） · 前置节点：39 节恒流源与线圈励磁驱动（即将上线）、[07 三极管开关…` | `[39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md)` | 39 | 第 2 批（35/40/41） |
-| `41-current-loop-4-20ma/page4.md`（第 5 行） | `> **前置回顾**：39 节恒流源（即将上线） 用运放 + MOS…` | `[39 恒流源 · 动手实验篇](../39-constant-current-excitation/page4.md)` | 39 | 第 2 批（35/40/41） |
 | `41-current-loop-4-20ma/page4.md`（第 398 行） | `「预告」42 节流量计信号链总览（即将上线） 会把前面几节（放大…` | `[42 流量计信号链总览](../42-flowmeter-signal-chains/page1.md)` | 42 | 第 2 批（35/40/41） |
 | `33-bandpass-notch/page1.md`（第 3 行，页首导航） | `上一页：32 节电荷放大器（即将上线） · 本页：直觉篇 …` | `[上一页：32 电荷放大器 · 动手实验篇](../32-charge-amp/page4.md)` | 32 | 第 3 批（33/34） |
 | `34-switched-cap-filter/page3.md`（第 111 行） | `…（频率怎么测见 36 节施密特整形与频率/脉冲计数（即将上线），用施密特整形后数脉冲）…` | `[36 施密特整形与频率/脉冲计数](../36-schmitt-pulse-shaping/page1.md)` | 36 | 第 3 批（33/34） |
+| `39-constant-current-excitation/page1.md`（第 3 行，页首导航） | `…上一页：38 节同步检波（电磁流量计）（即将上线）…` | `[上一页：38 同步检波（电磁流量计） · 动手实验篇](../38-synchronous-demod/page4.md)` | 38 | 第 4 批（39/43） |
+| `39-constant-current-excitation/page1.md`（第 21 行） | `…38 节同步检波（电磁流量计）（即将上线）…` | `[38 同步检波（电磁流量计）](../38-synchronous-demod/page1.md)` | 38 | 第 4 批（39/43） |
+| `43-push-pull-power-amp/page1.md`（第 3 行，页首导航） | `…上一页：42 节流量计信号链总览（即将上线）…` | `[上一页：42 流量计信号链总览 · 动手实验篇](../42-flowmeter-signal-chains/page4.md)` | 42 | 第 4 批（39/43） |
+| `43-push-pull-power-amp/page4.md`（第 3 行，页首导航） | `…下一页：44 节 D 类功放（即将上线）…` | `[下一页：44 D 类功放 · 直觉篇](../44-class-d-amp/page1.md)` | 44 | 第 4 批（39/43） |
 
 ## 已恢复
 
@@ -65,3 +56,16 @@
 | `35-pga-agc/page1.md`（第 3 行） | `[上一页：34 开关电容滤波与跟踪滤波 · 动手实验篇](../34-switched-cap-filter/page4.md)` | 第 3 批（33/34），本批提交 |
 | `35-pga-agc/page1.md`（第 47 行） | `[34 开关电容滤波与跟踪滤波 · 原理与实现篇](../34-switched-cap-filter/page2.md)` | 第 3 批（33/34），本批提交 |
 | `35-pga-agc/page2.md`（第 13 行） | `[34 开关电容滤波与跟踪滤波 · 原理与实现篇](../34-switched-cap-filter/page2.md)` | 第 3 批（33/34），本批提交 |
+| `40-thermal-flow/page1.md`（第 3 行） | `[上一页：39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md)` | 第 4 批（39/43），本批提交 |
+| `40-thermal-flow/page1.md`（第 3 行，前置节点末项） | `[39 恒流源与线圈励磁驱动 · 直觉篇](../39-constant-current-excitation/page1.md)` | 第 4 批（39/43），本批提交 |
+| `40-thermal-flow/page2.md`（第 3 行） | `[39 恒流源与线圈励磁驱动 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 第 4 批（39/43），本批提交 |
+| `40-thermal-flow/page2.md`（第 159 行） | `[39 恒流源](../39-constant-current-excitation/page2.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page1.md`（第 3 行） | `[39 恒流源与线圈励磁驱动 · 直觉篇](../39-constant-current-excitation/page1.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page1.md`（第 6 行） | `[39 恒流源 · 直觉篇](../39-constant-current-excitation/page1.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page1.md`（第 46 行） | `[39 恒流源](../39-constant-current-excitation/page1.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page2.md`（第 3 行） | `[39 恒流源与线圈励磁驱动 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page2.md`（第 5 行） | `[39 恒流源 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page3.md`（第 3 行） | `[39 恒流源与线圈励磁驱动 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page3.md`（第 5 行） | `[39 恒流源 · 原理与实现篇](../39-constant-current-excitation/page2.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page4.md`（第 3 行） | `[39 恒流源与线圈励磁驱动 · 动手实验篇](../39-constant-current-excitation/page4.md)` | 第 4 批（39/43），本批提交 |
+| `41-current-loop-4-20ma/page4.md`（第 5 行） | `[39 恒流源 · 动手实验篇](../39-constant-current-excitation/page4.md)` | 第 4 批（39/43），本批提交 |

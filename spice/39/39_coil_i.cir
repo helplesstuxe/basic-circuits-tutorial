@@ -1,0 +1,97 @@
+* 39 线圈换向励磁：H 桥 + 线圈 100 mH / 75 Ω，6.25 Hz 方波换向（半周期 80 ms）（page2 第四节、page3 图39-p3-1、page3 练习）
+* H 桥：四只压控开关，导通电阻按 DRV8871 手册典型值：上管 307 mΩ、下管 258 mΩ；每只并一只体二极管（通用二极管模型，假设）；
+* 换向时两组开关之间留 220 ns 死区（DRV8871 手册典型死区时间）。
+*   电压驱动见 39_coil_v.cir。
+*   本文件「恒流驱动」：桥底接与 39_ccs.cir 相同的恒流沉（IRLZ44N + RS 10 Ω，V_REF 1.0 V → 100 mA），运放用简化模型（见下）。
+.include ../models/IRLZ44N_infineon.lib
+.model SWH SW(VT=2.5 RON=0.307 ROFF=1e8)
+.model SWL SW(VT=2.5 RON=0.258 ROFF=1e8)
+.model DB D(IS=1e-12 N=1.0 RS=0.05)
+VCC vcc 0 12
+* 控制信号：A = OUT1 高（上左 + 下右导通），B = OUT2 高（上右 + 下左导通），中间各留 220 ns 死区
+VA a 0 PULSE(0 5 0 50n 50n 79.99968m 160m)
+VB b 0 PULSE(0 5 80m 50n 50n 79.99968m 160m)
+S1 vcc o1 a 0 SWH
+S2 vcc o2 b 0 SWH
+S3 o1 bot b 0 SWL
+S4 o2 bot a 0 SWL
+D1 o1 vcc DB
+D2 o2 vcc DB
+D3 bot o1 DB
+D4 bot o2 DB
+* 线圈：电感 + 电阻，VM 测电流（OUT1 → OUT2 为正）
+VM o1 c1 0
+LC c1 c2 100m
+RC c2 o2 75
+* 线圈两端的 RC 阻尼（缓冲）支路：1 kΩ + CSN。CSN=1 pF 相当于「没装」，CSN=100 nF 为「装上」。
+* 不装时：恒流沉是高阻抗，线圈电感和漏极电容组成几乎无阻尼的 LC 回路，换向后会持续振荡（page3 排错表）。
+.param CSN=100n
+RSN o1 sn 1k
+CSN sn o2 {CSN}
+* 桥底接恒流沉（与 39_ccs.cir 相同）
+VBOT bot d 0
+* 1 MΩ 泄放电阻：让桥底在开关全断时也有直流通路（仿真收敛用，只分走约 10 µA）
+RBL vcc bot 1meg
+VT rt 0 PWL(0 0 1m 12)
+R1 rt ref 10k
+R2 ref 0 910
+* 运放用简化单极点模型（39_ccs.cir 的 LM358B 模型在线圈换向时 ngspice 不收敛），内部节点 n2 加了限幅（见下）：
+* 直流增益 1e5、单极点 10 Hz → 增益带宽 1 MHz（LM358B 手册典型 GBW 1.2 MHz 量级），
+* 输出限幅 0~10.83 V（取 39_ccs.cir 中 LM358B 在 12 V 下实测的饱和电压），输出电阻 50 Ω
+BA1 n1 0 V=1e5*(V(ref)-V(fb))
+RA1 n1 n2 1k
+CA1 n2 0 15.9155u
+* 内部节点限幅（防积分饱和的模型修正）：真 LM358 内部电压被电源轨钳住，不会积到上万伏。
+* 用两只二极管把 n2 钳在约 −0.2 V～11.0 V（略宽于输出限幅 0～10.83 V，不影响正常调节）。
+DCL1 n2 clh DCLMP
+VCLH clh 0 10.4
+DCL2 cll n2 DCLMP
+VCLL cll 0 0.4
+.model DCLMP D(IS=1e-12 N=1 RS=1)
+BA2 n3 0 V=min(max(V(n2),0),10.83)
+RAO n3 oa 50
+RG oa g 100
+X1 d g s irlz44n
+RS s 0 10
+RF s fb 1k
+CF oa fb 10n
+.options method=gear reltol=1e-4 abstol=1e-10 chgtol=1e-16
+.control
+foreach cs 1p 100n
+alterparam CSN = $cs
+reset
+tran 5u 330m 0 5u
+meas tran ipos find i(VM) at=239.9m
+meas tran ineg find i(VM) at=159.9m
+let i99 = 0.99*ipos
+let i0 = 0
+meas tran t99 when i(VM)=i99 rise=1 from=160m
+meas tran tz when i(VM)=i0 rise=1 from=160m
+meas tran vcmax max v(o1) from=159.9m to=161m
+* 单位：ms
+let t99u = (t99-160m)*1e3
+let tzu = (tz-160m)*1e3
+echo "RES ipos_$cs $&ipos"
+echo "RES ineg_$cs $&ineg"
+echo "RES t99_$cs $&t99u"
+echo "RES tz_$cs $&tzu"
+meas tran vdss find v(d) at=239.9m
+meas tran vsss find v(s) at=239.9m
+let vds = vdss-vsss
+echo "RES vds_$cs $&vds"
+meas tran vdmax max v(d) from=159.9m to=165m
+echo "RES vdmax_$cs $&vdmax"
+meas tran ipk max i(VM) from=160m to=180m
+echo "RES ipk_$cs $&ipk"
+meas tran bmin min v(bot) from=200m to=239.9m
+meas tran bmax max v(bot) from=200m to=239.9m
+meas tran imin min i(VM) from=200m to=239.9m
+meas tran imax max i(VM) from=200m to=239.9m
+echo "RES botlo_$cs $&bmin"
+echo "RES bothi_$cs $&bmax"
+echo "RES ilo_$cs $&imin"
+echo "RES ihi_$cs $&imax"
+wrdata coil_i_{$cs}_vg.txt i(VM) v(o1) v(o2) v(bot) v(s) v(oa)
+end
+.endc
+.end

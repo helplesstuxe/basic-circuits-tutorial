@@ -1,0 +1,30 @@
+* 43 lowb_rb470：hFE 按最坏 25 时，旧做法 R_B 470 Ω 会不会「饿」
+* common_lowb.inc 由 run.py 生成（common.inc 的副本，只把 BD139/BD140 模型换成 hFE 最坏约 25 的版本）
+.include common_lowb.inc
+.include bias_RB470.inc
+RF fb out 20k
+VS sig 0 sin(0 0.67 1k)
+.options reltol=1e-4 itl4=100
+.control
+alter @VS[sin] = [ 0 0.67 1k ]
+tran 1u 30m 0 1u
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+echo "RES lowb_rb470_0_vmax $&vmax"
+echo "RES lowb_rb470_0_vmin $&vmin"
+echo "RES lowb_rb470_0_imo_max $&imo_max"
+echo "RES lowb_rb470_0_imo_min $&imo_min"
+alter @VS[sin] = [ 0 1.0 1k ]
+tran 1u 30m 0 1u
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+echo "RES lowb_rb470_1_vmax $&vmax"
+echo "RES lowb_rb470_1_vmin $&vmin"
+echo "RES lowb_rb470_1_imo_max $&imo_max"
+echo "RES lowb_rb470_1_imo_min $&imo_min"
+.endc
+.end

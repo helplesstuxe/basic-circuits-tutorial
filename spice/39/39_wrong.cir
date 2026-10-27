@@ -1,0 +1,25 @@
+* 39 错误接法：采样电阻 RS 挪到「高边」（+12 V 与负载之间），反馈仍取自 RS 下端（page3 图39-p3-4、预测题）
+* 其余元件与 39_ccs.cir 相同；MOSFET 源极直接接地。
+.include ../models/LMx58B_LM2904B.lib
+.include ../models/IRLZ44N_infineon.lib
+VCC vcc 0 12
+VT rt 0 PWL(0 0 1m 12)
+R1 rt ref 10k
+R2 ref 0 910
+XA ref fb vcc 0 oa LMX58B_LM2904B
+RG oa g 100
+X1 d g 0 irlz44n
+RS vcc x 10
+RL x d 47
+RF x fb 1k
+CF oa fb 10n
+.control
+tran 2u 5m 0 2u
+meas tran vx find v(x) at=4.5m
+meas tran voo find v(oa) at=4.5m
+let il = (12 - vx)/10
+echo "RES w_i $&il"
+echo "RES w_vx $&vx"
+echo "RES w_vo $&voo"
+.endc
+.end

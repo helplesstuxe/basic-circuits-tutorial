@@ -1,0 +1,35 @@
+* 43 直流转移扫描 C3：乙类放进反馈环（RF 接 out），电位器慢扫 inp，万用表量 m 和 out
+* 测试负载：out 到 +12 V 和到 GND 各 2 kΩ（相当于 1 kΩ 接 6 V），不接中点参考 V_MID
+.include common.inc
+.include bias_B.inc
+RF fb out 20k
+VS sig 0 0
+Vx vx 0 6
+Rw vx inp 100
+Rt1 out vcc 2k
+Rt2 out 0 2k
+.control
+dc Vx 5.0 7.0 0.0005
+let dout = v(out) - 6
+let dm = v(m) - 6
+wrdata dc_B_loop_vg.txt v(vx) v(m) v(out)
+meas dc m_m10 find v(m) at=5.99
+meas dc m_p10 find v(m) at=6.01
+meas dc o_m10 find v(out) at=5.99
+meas dc o_p10 find v(out) at=6.01
+meas dc o_p100 find v(out) at=6.1
+meas dc o_m100 find v(out) at=5.9
+meas dc m_p100 find v(m) at=6.1
+meas dc m_m100 find v(m) at=5.9
+echo "RES dcl_B_m_m10 $&m_m10"
+echo "RES dcl_B_m_p10 $&m_p10"
+echo "RES dcl_B_o_m10 $&o_m10"
+echo "RES dcl_B_o_p10 $&o_p10"
+echo "RES dcl_B_o_p100 $&o_p100"
+echo "RES dcl_B_o_m100 $&o_m100"
+echo "RES dcl_B_m_p100 $&m_p100"
+echo "RES dcl_B_m_m100 $&m_m100"
+op
+echo "RES dcl_B_out_at6 $&v(out)"
+.endc
+.end

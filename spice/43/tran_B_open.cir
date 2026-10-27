@@ -1,0 +1,31 @@
+* 43 B_open：乙类，反馈取自运放输出 m（环外），1 kHz 正弦
+.include common.inc
+.include bias_B.inc
+RF fb m 20k
+VS sig 0 sin(0 0.67 1k)
+.options reltol=1e-4 itl4=100
+.control
+set wr_singlescale
+alter @VS[sin] = [ 0 0.67 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES B_open_0_amp 0.67"
+echo "RES B_open_0_iavg $&iavg"
+echo "RES B_open_0_vrms $&vrms"
+echo "RES B_open_0_vmax $&vmax"
+echo "RES B_open_0_vmin $&vmin"
+echo "RES B_open_0_imo_max $&imo_max"
+echo "RES B_open_0_imo_min $&imo_min"
+echo "RES B_open_0_mmax $&mmax"
+echo "RES B_open_0_mmin $&mmin"
+linearize v(sig) v(m) v(out) v(ld) i(Vam)
+wrdata B_open_vg.txt v(sig) v(m) v(out) v(ld) i(Vam)
+.endc
+.end

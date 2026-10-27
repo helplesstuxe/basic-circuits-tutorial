@@ -1,0 +1,108 @@
+* 43 模型核对：BD139/BD140 通用模型在 10 mA / 150 mA / 0.5 A、V_CE = 2 V 时的 V_BE 和 hFE
+* 数据手册（ST BD135/136/139/140）：hFE 40～250 @150 mA、≥25 @0.5 A；V_BE(on) ≤ 1 V @0.5 A
+.include ../models/BD139_BD140_generic.lib
+VCN cn 0 2
+VBN bn 0 0.6
+Q1 cn bn 0 BD139
+VCP cp 0 -2
+VBP bp 0 -0.6
+Q2 cp bp 0 BD140
+.control
+let lo = 0.3
+let hi = 1.2
+repeat 40
+let mid = (lo+hi)/2
+alter VBN = mid
+op
+if -i(VCN) < 0.01
+let lo = mid
+else
+let hi = mid
+end
+end
+let vbe = mid
+let hfe = -i(VCN)/(-i(VBN))
+echo "RES chk_BD139_0p01_vbe $&vbe"
+echo "RES chk_BD139_0p01_hfe $&hfe"
+let lo = 0.3
+let hi = 1.2
+repeat 40
+let mid = (lo+hi)/2
+alter VBP = -mid
+op
+if i(VCP) < 0.01
+let lo = mid
+else
+let hi = mid
+end
+end
+let vbe = mid
+let hfe = i(VCP)/(i(VBP))
+echo "RES chk_BD140_0p01_vbe $&vbe"
+echo "RES chk_BD140_0p01_hfe $&hfe"
+let lo = 0.3
+let hi = 1.2
+repeat 40
+let mid = (lo+hi)/2
+alter VBN = mid
+op
+if -i(VCN) < 0.15
+let lo = mid
+else
+let hi = mid
+end
+end
+let vbe = mid
+let hfe = -i(VCN)/(-i(VBN))
+echo "RES chk_BD139_0p15_vbe $&vbe"
+echo "RES chk_BD139_0p15_hfe $&hfe"
+let lo = 0.3
+let hi = 1.2
+repeat 40
+let mid = (lo+hi)/2
+alter VBP = -mid
+op
+if i(VCP) < 0.15
+let lo = mid
+else
+let hi = mid
+end
+end
+let vbe = mid
+let hfe = i(VCP)/(i(VBP))
+echo "RES chk_BD140_0p15_vbe $&vbe"
+echo "RES chk_BD140_0p15_hfe $&hfe"
+let lo = 0.3
+let hi = 1.2
+repeat 40
+let mid = (lo+hi)/2
+alter VBN = mid
+op
+if -i(VCN) < 0.5
+let lo = mid
+else
+let hi = mid
+end
+end
+let vbe = mid
+let hfe = -i(VCN)/(-i(VBN))
+echo "RES chk_BD139_0p5_vbe $&vbe"
+echo "RES chk_BD139_0p5_hfe $&hfe"
+let lo = 0.3
+let hi = 1.2
+repeat 40
+let mid = (lo+hi)/2
+alter VBP = -mid
+op
+if i(VCP) < 0.5
+let lo = mid
+else
+let hi = mid
+end
+end
+let vbe = mid
+let hfe = i(VCP)/(i(VBP))
+echo "RES chk_BD140_0p5_vbe $&vbe"
+echo "RES chk_BD140_0p5_hfe $&hfe"
+.endc
+.end

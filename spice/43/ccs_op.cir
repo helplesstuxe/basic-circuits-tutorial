@@ -1,0 +1,21 @@
+* 43 恒流源工作点：D5+D6 两端、Q3 发射结、Rx3 两端（核对图 43-p2-6 的算式）
+.include common.inc
+.include bias_AB.inc
+RF fb out 20k
+VS sig 0 0
+.control
+op
+let vd56 = v(vcc) - v(bq3)
+let veb3 = v(e3) - v(bq3)
+let vrx3 = v(vcc) - v(e3)
+let vd78 = v(bq4)
+let vbe4 = v(bq4) - v(e4)
+let vrx4 = v(e4)
+echo "RES ccs_vd56 $&vd56"
+echo "RES ccs_veb3 $&veb3"
+echo "RES ccs_vrx3 $&vrx3"
+echo "RES ccs_vd78 $&vd78"
+echo "RES ccs_vbe4 $&vbe4"
+echo "RES ccs_vrx4 $&vrx4"
+.endc
+.end

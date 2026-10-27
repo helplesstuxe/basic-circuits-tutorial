@@ -1,0 +1,24 @@
+* 43 耦合电容的低频角：甲乙类环内，扫 1 Hz～100 kHz，看 8 Ω 上的电压
+.include common.inc
+.include bias_AB.inc
+RF fb out 20k
+VS sig 0 dc 0 ac 1
+.control
+ac dec 50 1 100k
+let g = mag(v(ld))
+meas ac gmid find g at=1k
+let g3 = gmid/sqrt(2)
+meas ac f3 when g=g3 cross=1
+echo "RES ac_1000u_gmid $&gmid"
+echo "RES ac_1000u_f3 $&f3"
+wrdata ac_1000u_vg.txt g
+alter Cout 470u
+ac dec 50 1 100k
+let g = mag(v(ld))
+meas ac gmid find g at=1k
+let g3 = gmid/sqrt(2)
+meas ac f3 when g=g3 cross=1
+echo "RES ac_470u_f3 $&f3"
+wrdata ac_470u_vg.txt g
+.endc
+.end

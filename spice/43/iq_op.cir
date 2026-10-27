@@ -1,0 +1,81 @@
+* 43 静态电流 Iq（Q1 集电极，甲乙类，环内，无信号）
+* Vdt：人为在偏置串里多加 ΔV，模拟功放管比二极管热（V_BE 约 −2 mV/°C，两只管子串联共 −4 mV/°C，80 mV ≈ 管子比二极管热 20 °C）
+.include common.inc
+Rx3 vcc e3 27
+Q3 b1 bq3 e3 BD140
+XD5 vcc d5 1N4148
+XD6 d5 bq3 1N4148
+Rk3 bq3 0 4.7k
+XD1 b1 m 1N4148
+XD2 m bx 1N4148
+Vdt bx b2 0
+Q4 b2 bq4 e4 BD139
+Rx4 e4 0 27
+XD7 bq4 d7 1N4148
+XD8 d7 0 1N4148
+Rk4 vcc bq4 4.7k
+RF fb out 20k
+VS sig 0 0
+.control
+alter RE1 3.3
+alter RE2 3.3
+alter Vdt 0
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE3p3_dv0_Iq $&iq"
+let ic3 = (12-v(e3))/27
+let ic4 = v(e4)/27
+let p3 = ic3*(v(e3)-v(b1))
+let imo = i(Vmo)
+echo "RES iq_ccs_top $&ic3"
+echo "RES iq_ccs_bot $&ic4"
+echo "RES iq_q3_pd $&p3"
+echo "RES iq_imo $&imo"
+echo "RES iq_RE3p3_dv0_vbias $&vb"
+alter Vdt 0.02
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE3p3_dv20_Iq $&iq"
+echo "RES iq_RE3p3_dv20_vbias $&vb"
+alter Vdt 0.08
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE3p3_dv80_Iq $&iq"
+echo "RES iq_RE3p3_dv80_vbias $&vb"
+alter Vdt 0.16
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE3p3_dv160_Iq $&iq"
+echo "RES iq_RE3p3_dv160_vbias $&vb"
+alter RE1 1
+alter RE2 1
+alter Vdt 0
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE1_dv0_Iq $&iq"
+echo "RES iq_RE1_dv0_vbias $&vb"
+alter Vdt 0.02
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE1_dv20_Iq $&iq"
+echo "RES iq_RE1_dv20_vbias $&vb"
+alter Vdt 0.08
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE1_dv80_Iq $&iq"
+echo "RES iq_RE1_dv80_vbias $&vb"
+alter Vdt 0.16
+op
+let iq = i(Vam)
+let vb = v(b1)-v(b2)
+echo "RES iq_RE1_dv160_Iq $&iq"
+echo "RES iq_RE1_dv160_vbias $&vb"
+.endc
+.end

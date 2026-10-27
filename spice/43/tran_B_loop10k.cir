@@ -1,0 +1,31 @@
+* 43 B_loop：乙类，反馈取自推挽输出 out（环内），10 kHz 正弦（看高频时运放跨过死区的尖刺）
+.include common.inc
+.include bias_B.inc
+RF fb out 20k
+VS sig 0 sin(0 0.67 10k)
+.options reltol=1e-4 itl4=100
+.control
+set wr_singlescale
+alter @VS[sin] = [ 0 0.67 10k ]
+tran 0.05u 3m 0 0.05u
+meas tran iavg avg i(Vam) from=2m to=3m
+meas tran vrms rms v(ld) from=2m to=3m
+meas tran vmax max v(ld) from=2m to=3m
+meas tran vmin min v(ld) from=2m to=3m
+meas tran imo_max max i(Vmo) from=2m to=3m
+meas tran imo_min min i(Vmo) from=2m to=3m
+meas tran mmax max v(m) from=2m to=3m
+meas tran mmin min v(m) from=2m to=3m
+echo "RES B_loop10k_0_amp 0.67"
+echo "RES B_loop10k_0_iavg $&iavg"
+echo "RES B_loop10k_0_vrms $&vrms"
+echo "RES B_loop10k_0_vmax $&vmax"
+echo "RES B_loop10k_0_vmin $&vmin"
+echo "RES B_loop10k_0_imo_max $&imo_max"
+echo "RES B_loop10k_0_imo_min $&imo_min"
+echo "RES B_loop10k_0_mmax $&mmax"
+echo "RES B_loop10k_0_mmin $&mmin"
+linearize v(sig) v(m) v(out) v(ld) i(Vam)
+wrdata B_loop10k_vg.txt v(sig) v(m) v(out) v(ld) i(Vam)
+.endc
+.end

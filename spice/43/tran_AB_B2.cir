@@ -1,0 +1,19 @@
+* 43 实验 B（400 Hz）：甲乙类环内，负载峰值约 2 V；读电流表平均值和 RE1 两端直流平均（万用表直流 mV 档读到的就是它）
+.include common.inc
+.include bias_AB.inc
+RF fb out 20k
+VS sig 0 sin(0 0.67 400)
+.options reltol=1e-4 itl4=100
+.control
+tran 2u 60m 0 2u
+let vre1 = v(e1) - v(out)
+meas tran iavg avg i(Vam) from=35m to=60m
+meas tran vre1avg avg vre1 from=35m to=60m
+meas tran vrms rms v(ld) from=35m to=60m
+meas tran icmax max i(Vam) from=35m to=60m
+echo "RES b2_iavg $&iavg"
+echo "RES b2_vre1avg $&vre1avg"
+echo "RES b2_vrms $&vrms"
+echo "RES b2_icmax $&icmax"
+.endc
+.end

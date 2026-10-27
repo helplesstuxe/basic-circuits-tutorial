@@ -1,0 +1,278 @@
+* 43 AB_loop：甲乙类，反馈取自推挽输出 out（环内），1 kHz 正弦
+.include common.inc
+.include bias_AB.inc
+RF fb out 20k
+VS sig 0 sin(0 0.67 1k)
+.options reltol=1e-4 itl4=100
+.control
+set wr_singlescale
+alter @VS[sin] = [ 0 0.1 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_0_amp 0.1"
+echo "RES AB_loop_0_iavg $&iavg"
+echo "RES AB_loop_0_vrms $&vrms"
+echo "RES AB_loop_0_vmax $&vmax"
+echo "RES AB_loop_0_vmin $&vmin"
+echo "RES AB_loop_0_imo_max $&imo_max"
+echo "RES AB_loop_0_imo_min $&imo_min"
+echo "RES AB_loop_0_mmax $&mmax"
+echo "RES AB_loop_0_mmin $&mmin"
+alter @VS[sin] = [ 0 0.17 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_1_amp 0.17"
+echo "RES AB_loop_1_iavg $&iavg"
+echo "RES AB_loop_1_vrms $&vrms"
+echo "RES AB_loop_1_vmax $&vmax"
+echo "RES AB_loop_1_vmin $&vmin"
+echo "RES AB_loop_1_imo_max $&imo_max"
+echo "RES AB_loop_1_imo_min $&imo_min"
+echo "RES AB_loop_1_mmax $&mmax"
+echo "RES AB_loop_1_mmin $&mmin"
+alter @VS[sin] = [ 0 0.25 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_2_amp 0.25"
+echo "RES AB_loop_2_iavg $&iavg"
+echo "RES AB_loop_2_vrms $&vrms"
+echo "RES AB_loop_2_vmax $&vmax"
+echo "RES AB_loop_2_vmin $&vmin"
+echo "RES AB_loop_2_imo_max $&imo_max"
+echo "RES AB_loop_2_imo_min $&imo_min"
+echo "RES AB_loop_2_mmax $&mmax"
+echo "RES AB_loop_2_mmin $&mmin"
+alter @VS[sin] = [ 0 0.33 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_3_amp 0.33"
+echo "RES AB_loop_3_iavg $&iavg"
+echo "RES AB_loop_3_vrms $&vrms"
+echo "RES AB_loop_3_vmax $&vmax"
+echo "RES AB_loop_3_vmin $&vmin"
+echo "RES AB_loop_3_imo_max $&imo_max"
+echo "RES AB_loop_3_imo_min $&imo_min"
+echo "RES AB_loop_3_mmax $&mmax"
+echo "RES AB_loop_3_mmin $&mmin"
+alter @VS[sin] = [ 0 0.42 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_4_amp 0.42"
+echo "RES AB_loop_4_iavg $&iavg"
+echo "RES AB_loop_4_vrms $&vrms"
+echo "RES AB_loop_4_vmax $&vmax"
+echo "RES AB_loop_4_vmin $&vmin"
+echo "RES AB_loop_4_imo_max $&imo_max"
+echo "RES AB_loop_4_imo_min $&imo_min"
+echo "RES AB_loop_4_mmax $&mmax"
+echo "RES AB_loop_4_mmin $&mmin"
+alter @VS[sin] = [ 0 0.5 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_5_amp 0.5"
+echo "RES AB_loop_5_iavg $&iavg"
+echo "RES AB_loop_5_vrms $&vrms"
+echo "RES AB_loop_5_vmax $&vmax"
+echo "RES AB_loop_5_vmin $&vmin"
+echo "RES AB_loop_5_imo_max $&imo_max"
+echo "RES AB_loop_5_imo_min $&imo_min"
+echo "RES AB_loop_5_mmax $&mmax"
+echo "RES AB_loop_5_mmin $&mmin"
+alter @VS[sin] = [ 0 0.58 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_6_amp 0.58"
+echo "RES AB_loop_6_iavg $&iavg"
+echo "RES AB_loop_6_vrms $&vrms"
+echo "RES AB_loop_6_vmax $&vmax"
+echo "RES AB_loop_6_vmin $&vmin"
+echo "RES AB_loop_6_imo_max $&imo_max"
+echo "RES AB_loop_6_imo_min $&imo_min"
+echo "RES AB_loop_6_mmax $&mmax"
+echo "RES AB_loop_6_mmin $&mmin"
+alter @VS[sin] = [ 0 0.67 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_7_amp 0.67"
+echo "RES AB_loop_7_iavg $&iavg"
+echo "RES AB_loop_7_vrms $&vrms"
+echo "RES AB_loop_7_vmax $&vmax"
+echo "RES AB_loop_7_vmin $&vmin"
+echo "RES AB_loop_7_imo_max $&imo_max"
+echo "RES AB_loop_7_imo_min $&imo_min"
+echo "RES AB_loop_7_mmax $&mmax"
+echo "RES AB_loop_7_mmin $&mmin"
+linearize v(sig) v(m) v(out) v(ld) i(Vam)
+wrdata AB_loop_vg.txt v(sig) v(m) v(out) v(ld) i(Vam)
+alter @VS[sin] = [ 0 0.75 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_8_amp 0.75"
+echo "RES AB_loop_8_iavg $&iavg"
+echo "RES AB_loop_8_vrms $&vrms"
+echo "RES AB_loop_8_vmax $&vmax"
+echo "RES AB_loop_8_vmin $&vmin"
+echo "RES AB_loop_8_imo_max $&imo_max"
+echo "RES AB_loop_8_imo_min $&imo_min"
+echo "RES AB_loop_8_mmax $&mmax"
+echo "RES AB_loop_8_mmin $&mmin"
+alter @VS[sin] = [ 0 0.83 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_9_amp 0.83"
+echo "RES AB_loop_9_iavg $&iavg"
+echo "RES AB_loop_9_vrms $&vrms"
+echo "RES AB_loop_9_vmax $&vmax"
+echo "RES AB_loop_9_vmin $&vmin"
+echo "RES AB_loop_9_imo_max $&imo_max"
+echo "RES AB_loop_9_imo_min $&imo_min"
+echo "RES AB_loop_9_mmax $&mmax"
+echo "RES AB_loop_9_mmin $&mmin"
+alter @VS[sin] = [ 0 0.92 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_10_amp 0.92"
+echo "RES AB_loop_10_iavg $&iavg"
+echo "RES AB_loop_10_vrms $&vrms"
+echo "RES AB_loop_10_vmax $&vmax"
+echo "RES AB_loop_10_vmin $&vmin"
+echo "RES AB_loop_10_imo_max $&imo_max"
+echo "RES AB_loop_10_imo_min $&imo_min"
+echo "RES AB_loop_10_mmax $&mmax"
+echo "RES AB_loop_10_mmin $&mmin"
+alter @VS[sin] = [ 0 1.0 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_11_amp 1.0"
+echo "RES AB_loop_11_iavg $&iavg"
+echo "RES AB_loop_11_vrms $&vrms"
+echo "RES AB_loop_11_vmax $&vmax"
+echo "RES AB_loop_11_vmin $&vmin"
+echo "RES AB_loop_11_imo_max $&imo_max"
+echo "RES AB_loop_11_imo_min $&imo_min"
+echo "RES AB_loop_11_mmax $&mmax"
+echo "RES AB_loop_11_mmin $&mmin"
+alter @VS[sin] = [ 0 1.1 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_12_amp 1.1"
+echo "RES AB_loop_12_iavg $&iavg"
+echo "RES AB_loop_12_vrms $&vrms"
+echo "RES AB_loop_12_vmax $&vmax"
+echo "RES AB_loop_12_vmin $&vmin"
+echo "RES AB_loop_12_imo_max $&imo_max"
+echo "RES AB_loop_12_imo_min $&imo_min"
+echo "RES AB_loop_12_mmax $&mmax"
+echo "RES AB_loop_12_mmin $&mmin"
+alter @VS[sin] = [ 0 1.2 1k ]
+tran 1u 30m 0 1u
+meas tran iavg avg i(Vam) from=20m to=30m
+meas tran vrms rms v(ld) from=20m to=30m
+meas tran vmax max v(ld) from=20m to=30m
+meas tran vmin min v(ld) from=20m to=30m
+meas tran imo_max max i(Vmo) from=20m to=30m
+meas tran imo_min min i(Vmo) from=20m to=30m
+meas tran mmax max v(m) from=20m to=30m
+meas tran mmin min v(m) from=20m to=30m
+echo "RES AB_loop_13_amp 1.2"
+echo "RES AB_loop_13_iavg $&iavg"
+echo "RES AB_loop_13_vrms $&vrms"
+echo "RES AB_loop_13_vmax $&vmax"
+echo "RES AB_loop_13_vmin $&vmin"
+echo "RES AB_loop_13_imo_max $&imo_max"
+echo "RES AB_loop_13_imo_min $&imo_min"
+echo "RES AB_loop_13_mmax $&mmax"
+echo "RES AB_loop_13_mmin $&mmin"
+.endc
+.end

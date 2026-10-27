@@ -1,0 +1,20 @@
+* 43 实验 D 试听：AB_loop，喇叭 8 Ω 串 10 Ω（负载位置共 18 Ω），400 Hz，输入 0.333 V 峰值（同一音量旋钮位置）
+.include common.inc
+.include bias_AB.inc
+RF fb out 20k
+VS sig 0 sin(0 0.333 400)
+.options reltol=1e-4 itl4=100
+.control
+set wr_singlescale
+alter RL 18
+tran 2u 60m 0 2u
+meas tran vmax max v(ld) from=35m to=60m
+meas tran vmin min v(ld) from=35m to=60m
+meas tran vrms rms v(ld) from=35m to=60m
+echo "RES ls_AB_loop_vmax $&vmax"
+echo "RES ls_AB_loop_vmin $&vmin"
+echo "RES ls_AB_loop_vrms $&vrms"
+linearize v(sig) v(m) v(out) v(ld)
+wrdata listen_AB_loop_vg.txt v(sig) v(m) v(out) v(ld)
+.endc
+.end

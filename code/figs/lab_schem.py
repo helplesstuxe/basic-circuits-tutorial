@@ -3538,8 +3538,20 @@ def _part2_node(nn, funcs):
     return run
 
 
+def _part2_script(nn):
+    """有些第二部分节点（39、43）的 NN_figs.py 不分函数、整个脚本自上而下画全部插图（含 page4 原理图）。
+    这里登记一个转调入口：直接运行整个脚本，保持「lab_schem.py NN」可重画。"""
+    def run():
+        import runpy
+        runpy.run_path(os.path.join(os.path.dirname(os.path.abspath(__file__)), f"{nn}_figs.py"), run_name="__main__")
+    run.__name__ = f"node_{nn}"
+    return run
+
+
 node_33 = _part2_node("33", ("p4_2", "p4_4"))
 node_34 = _part2_node("34", ("p4_2", "p4_4", "p4_5"))
+node_39 = _part2_script("39")
+node_43 = _part2_script("43")
 node_35 = _part2_node("35", ("p4_2_schem_lab", "p4_3_ac_inject"))
 node_40 = _part2_node("40", ("p4_2_schem_lab", "p4_4_schem_lab"))
 node_41 = _part2_node("41", ("p4_2_schem_lab",))
@@ -3580,8 +3592,10 @@ NODES = {
     "33": node_33,   # 转调 code/figs/33_figs.py
     "34": node_34,   # 转调 code/figs/34_figs.py
     "35": node_35,   # 转调 code/figs/35_figs.py
+    "39": node_39,   # 整个运行 code/figs/39_figs.py
     "40": node_40,   # 转调 code/figs/40_figs.py
     "41": node_41,   # 转调 code/figs/41_figs.py
+    "43": node_43,   # 整个运行 code/figs/43_figs.py
 }
 
 

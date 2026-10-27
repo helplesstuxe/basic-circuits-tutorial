@@ -1,0 +1,58 @@
+* 39 恒流源：LM358B + IRLZ44N + 10 Ω 采样电阻（page2 图39-p2-1、图39-p2-2；page3 参数表、练习；page4 测量表）
+* 电路照页面：+12 V 经 R1 10k / R2 910 分压得 V_REF 接运放同相端；运放输出经 RG 100 Ω 接栅极；
+* 源极接 RS 10 Ω 到地，源极电压经 RF 1k 回到反相端，CF 10 nF 跨在运放输出与反相端之间（补偿）；负载 RL 接在 +12 V 与漏极之间。
+* 器件：TI LM358B 官方模型（spice/models/LMx58B_LM2904B.lib）、Infineon IRLZ44N 官方模型。
+* 该运放模型直接求直流工作点不收敛，所以用瞬态：分压器上端 rt 在 1 ms 内从 0 升到电源电压，4 ms 时读数（同 spice/21 的做法）。
+.include ../models/LMx58B_LM2904B.lib
+.include ../models/IRLZ44N_infineon.lib
+.param VS=12
+.param RLV=47
+VCC vcc 0 {VS}
+VT rt 0 PWL(0 0 1m {VS})
+R1 rt ref 10k
+R2 ref 0 910
+XA ref fb vcc 0 oa LMX58B_LM2904B
+RG oa g 100
+X1 d g s irlz44n
+RS s 0 10
+RF s fb 1k
+CF oa fb 10n
+RL vcc d {RLV}
+.control
+foreach r 0.01 10 22 47 68 100 105 110 115 120 130 150
+  alterparam RLV = $r
+  reset
+  tran 2u 5m 0 2u
+  meas tran vr find v(ref) at=4.5m
+  meas tran vd find v(d) at=4.5m
+  meas tran vss find v(s) at=4.5m
+  meas tran vgg find v(g) at=4.5m
+  meas tran voo find v(oa) at=4.5m
+  let il = vss/10
+  let vds = vd - vss
+  echo "RES vref $&vr"
+  echo "RES i_$r $&il"
+  echo "RES vds_$r $&vds"
+  echo "RES vg_$r $&vgg"
+  echo "RES vo_$r $&voo"
+end
+* 电源 12 V → 11.5 V（V_REF 跟着电源走），负载 47 Ω
+alterparam RLV = 47
+alterparam VS = 11.5
+reset
+tran 2u 5m 0 2u
+meas tran vss find v(s) at=4.5m
+let il = vss/10
+let vrr = vss*0 + v(ref)[length(v(ref))-1]
+echo "RES i_vs115 $&il"
+echo "RES vref_vs115 $&vrr"
+* 同样 11.5 V，负载换成 110 Ω（page3 练习 2：超过负载上限 104.7 Ω）
+alterparam RLV = 110
+alterparam VS = 11.5
+reset
+tran 2u 5m 0 2u
+meas tran vss find v(s) at=4.5m
+let il = vss/10
+echo "RES i_vs115_110 $&il"
+.endc
+.end
