@@ -66,7 +66,13 @@ mjx-container[display="true"]{overflow-x:auto;overflow-y:hidden;max-width:100%;p
 mjx-container{max-width:100%}
 .topbar .bar{position:relative;align-items:center}
 .navpanel{margin:0;padding:0;border:0;background:none;border-radius:0}
-.navpanel>summary{list-style:none;display:inline-block;padding:4px 12px;border:1px solid var(--line);border-radius:6px;background:var(--soft);font-weight:600;user-select:none;-webkit-user-select:none}
+.topbar .right{display:flex;align-items:center;gap:10px}
+.topbar .right>a{display:inline-flex;align-items:center;min-height:40px;padding:0 4px}
+.topbar .totop{min-width:40px;justify-content:center;padding:0 12px!important;border:1px solid var(--line);border-radius:6px;background:var(--soft);color:var(--fg);font-weight:600;white-space:nowrap}
+.topbar .totop:hover{text-decoration:none;border-color:var(--link);color:var(--link)}
+h1,h2,h3,h4,[id]{scroll-margin-top:64px}
+#top{scroll-margin-top:0}
+.navpanel>summary{list-style:none;display:inline-flex;align-items:center;min-height:40px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:var(--soft);font-weight:600;user-select:none;-webkit-user-select:none}
 .navpanel>summary::-webkit-details-marker{display:none}
 .navpanel[open]>summary{background:var(--link);color:#fff;border-color:var(--link)}
 .navbox{position:absolute;left:8px;right:8px;top:calc(100% + 2px);max-width:440px;max-height:calc(100vh - 130px);max-height:calc(100dvh - 130px);overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;background:var(--bg);border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.18);padding:8px 10px 12px;z-index:20;font-size:15px;line-height:1.5}
@@ -101,8 +107,8 @@ PAGE = """<!DOCTYPE html>
 <style>{css}</style>
 {mathjax}
 </head>
-<body class="tex2jax_ignore">
-<nav class="topbar"><div class="bar"><details class="navpanel" id="navpanel"><summary aria-label="展开/收起目录">☰ 目录</summary><div class="navbox">{navmenu}</div></details><a href="{src}">GitHub 源文件</a></div></nav>
+<body class="tex2jax_ignore" id="top">
+<nav class="topbar"><div class="bar"><details class="navpanel" id="navpanel"><summary aria-label="展开/收起目录">☰ 目录</summary><div class="navbox">{navmenu}</div></details><div class="right"><a class="totop" id="totop" href="#top" aria-label="回到顶部">↑ 顶部</a><a href="{src}">GitHub 源文件</a></div></div></nav>
 <main>
 {body}
 </main>
@@ -113,9 +119,13 @@ PAGE = """<!DOCTYPE html>
 """
 
 NAVJS = r"""<script>
+(function(){var t=document.getElementById('totop');
+if(t)t.addEventListener('click',function(e){e.preventDefault();var d=document.getElementById('navpanel');if(d)d.removeAttribute('open');
+try{window.scrollTo({top:0,behavior:'smooth'});}catch(x){window.scrollTo(0,0);}
+if(history.replaceState)history.replaceState(null,'',location.pathname+location.search);});})();
 (function(){var d=document.getElementById('navpanel');if(!d)return;
 function shut(){d.removeAttribute('open');}
-document.addEventListener('click',function(e){if(d.open&&!d.contains(e.target)){e.preventDefault();e.stopPropagation();shut();}},true);
+document.addEventListener('click',function(e){if(d.open&&!d.contains(e.target)){var bar=e.target.closest&&e.target.closest('.topbar');shut();if(!bar){e.preventDefault();e.stopPropagation();}}},true);
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&d.open)shut();});
 d.addEventListener('toggle',function(){if(!d.open)return;var c=d.querySelector('[aria-current="page"]')||d.querySelector('details.cur');
 if(c){var b=d.querySelector('.navbox');b.scrollTop=Math.max(0,c.offsetTop-b.clientHeight/3);}});})();
