@@ -4,6 +4,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import schem
 from schem import elm
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 
 P = "21"
 VZ0 = 5.1 - 7.0 * 0.049                  # 1N4733A 击穿起点（见 17 page2）
@@ -443,7 +444,8 @@ def p2_4_ripple_path():
         d += elm.Resistor().endpoints((0.5, 3), (3.5, 3)).label("$R_Z$ 1 kΩ", "top")
         d += elm.Dot().at((3.5, 3))
         d += elm.Resistor().endpoints((3.5, 3), (3.5, 1.0)).label("$r_Z$ 7 Ω", "bottom").color(HL)
-        d += elm.Battery().endpoints((3.5, 1.0), (3.5, -1.5)).reverse().label("$V_{Z0}$\n4.757 V", "bottom")
+        d += (bt := elm.Battery().endpoints((3.5, 1.0), (3.5, -1.5)).label("$V_{Z0}$\n4.757 V", "bottom"))   # 从上往下画、不 reverse：长线（+）在上，接 r_Z
+        bat_pm(d, bt, plus_toward=(3.5, 1.0), side=1)
         d += elm.Line().endpoints((0, -1.5), (3.5, -1.5))
         d += elm.Label().at((5.4, 0.9)).label("稳压管模型\n（电池串小电阻）", loc="right", fontsize=9, color="#666666")
         d += elm.Line().endpoints((3.5, 3), (5.2, 3))

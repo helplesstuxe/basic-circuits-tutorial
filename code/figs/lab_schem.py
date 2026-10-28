@@ -17,6 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from schem import *            # noqa: F401,F403  elm、drawing、save_schem、Coil、ContactNO、PushNO、C …
 from schemdraw.elements import Element
 from schemdraw.segments import SegmentCircle, SegmentText
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 
 GRAY = "#555555"
 
@@ -418,9 +419,8 @@ def _lm358_amp(d, kind, r_in, r_f, wire_note, ttl):
     title(d, (6.5, 4.4), ttl)
     # 1.5 V 电池盒 + 电位器 10k（第 3～5 列）
     ytop = yM + 3.8
-    d += elm.Battery().endpoints((0, yM), (0, ytop)).reverse()
+    d += (_bt := elm.Battery().endpoints((0, yM), (0, ytop)).reverse()); bat_pm(d, _bt, plus_toward=(0, ytop), side=-1)
     lab(d, (-0.45, (yM + ytop) / 2 + 0.3), "1.5 V\n电池盒", ha="right", fs_=10)
-    lab(d, (0.3, (yM + ytop) / 2 + 0.75), "+", fs_=11)
     d += elm.Line().at((0, ytop)).to((2.0, ytop))
     colnote(d, (1.0, ytop), "第 3 列", "top")
     d += (pot := elm.Potentiometer().endpoints((2.0, ytop), (2.0, yM)))
@@ -535,10 +535,10 @@ def _supply(d, x, y, kind):
     if kind == "dual":
         title(d, (x + 1.6, yt + 1.6), "两节 9 V（双电源，灰框不插）")
         d += elm.Vdd().at((x, yt)).label("V+")
-        d += elm.Battery().endpoints((x, ym), (x, yt)).reverse()
+        d += (_bt := elm.Battery().endpoints((x, ym), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=1)
         lab(d, (x + 0.5, (ym + yt) / 2), "电池 A 9 V", fs_=10)
         d += elm.Dot().at((x, ym))
-        d += elm.Battery().endpoints((x, yb), (x, ym)).reverse()
+        d += (_bt := elm.Battery().endpoints((x, yb), (x, ym)).reverse()); bat_pm(d, _bt, plus_toward=(x, ym), side=1)
         lab(d, (x + 0.5, (ym + yb) / 2), "电池 B 9 V", fs_=10)
         d += elm.Vss().at((x, yb)).label("V−", "bottom")
         d += elm.Line().at((x, ym)).to((x - 1.4, ym))
@@ -547,7 +547,7 @@ def _supply(d, x, y, kind):
         lab(d, (x + 0.5, yb - 1.1), "V+ 对 M = +9 V，V− 对 M = −9 V", fs_=8.5, color=GRAY)
         return
     d += elm.Vdd().at((x, yt)).label("V+")
-    d += elm.Battery().endpoints((x, yb), (x, yt)).reverse()
+    d += (_bt := elm.Battery().endpoints((x, yb), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=-1)
     lab(d, (x - 0.5, ym), "9 V", ha="right", fs_=10)
     d += elm.Vss().at((x, yb)).label("V−（= 0 V）", "bottom")
     if kind == "single":
@@ -733,7 +733,7 @@ def node_16():
         yMa = 1.2                                          # 电位器 A 下端 M 的高度
         xb, xp = -0.8, 2.0                                 # 电池盒、电位器那两竖列
         yt = 4.6
-        d += elm.Battery().endpoints((xb, -3.9), (xb, yt)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, -3.9), (xb, yt)).reverse()); bat_pm(d, _bt, plus_toward=(xb, yt), side=-1)
         lab(d, (xb - 0.45, 0.6), "1.5 V\n电池盒", ha="right", fs_=10)
         d += elm.Ground().at((xb, -3.9)).label("M", "bottom")
         colnote(d, (xb - 0.15, -3.6), "− → B2 第 2 列", "left", ofst=0.0)
@@ -875,10 +875,10 @@ def _bat_pm9(d, x, y):
     ym = (yt + yb) / 2
     title(d, (x + 1.2, yt + 1.5), "电源：两节 9 V 串联")
     d += elm.Vdd().at((x, yt)).label("+9 V")
-    d += elm.Battery().endpoints((x, ym), (x, yt)).reverse()
+    d += (_bt := elm.Battery().endpoints((x, ym), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=1)
     lab(d, (x + 0.5, (ym + yt) / 2), "电池① 9 V", fs_=10)
     d += elm.Dot().at((x, ym))
-    d += elm.Battery().endpoints((x, yb), (x, ym)).reverse()
+    d += (_bt := elm.Battery().endpoints((x, yb), (x, ym)).reverse()); bat_pm(d, _bt, plus_toward=(x, ym), side=1)
     lab(d, (x + 0.5, (ym + yb) / 2), "电池② 9 V", fs_=10)
     d += elm.Vss().at((x, yb)).label("−9 V", "bottom")
     d += elm.Line().at((x, ym)).to((x - 1.4, ym))
@@ -1188,7 +1188,7 @@ def _ef07(mode):
         lab(d, (xr + 0.2, yP), "+9 V 轨（上方第一条）", fs_=10, color=POS)
         lab(d, (xr + 0.2, yN), "0 V 轨（上方第二条）", fs_=10)
         # 9 V 电池
-        d += elm.Battery().endpoints((xb, yN), (xb, yP)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, yN), (xb, yP)).reverse()); bat_pm(d, _bt, plus_toward=(xb, yP), side=-1)
         lab(d, (xb - 0.55, -0.5), "9 V 电池\n红线 → tp1\n黑线 → tn2", ha="right", fs_=10)
         for x in (xb, xp):
             d += elm.Dot().at((x, yP))
@@ -1284,7 +1284,7 @@ def node_21():
         title(d, (3.6, yP + 1.7), "分立线性稳压：1N4733A 基准 + LM358 误差放大 + TIP31 调整管（12 V 直流输入）")
         # ---- 12 V 电源 ----
         xs = -7.2
-        d += elm.Battery().endpoints((xs, yN), (xs, yP)).reverse()
+        d += (_bt := elm.Battery().endpoints((xs, yN), (xs, yP)).reverse()); bat_pm(d, _bt, plus_toward=(xs, yP), side=-1)
         lab(d, (xs - 0.55, -0.3), "12 V 直流电源\n（适配器或\n可调稳压电源）", ha="right", fs_=10)
         colnote(d, (xs + 0.2, yP - 0.4), "+ → 下方外侧轨 bn1", "right", ofst=0.0)
         colnote(d, (xs + 0.2, yN + 0.4), "− → 下方内侧轨 bp2", "right", ofst=0.0)
@@ -1426,7 +1426,7 @@ def node_25():
     with drawing(fontsize=11) as d:
         title(d, (3.0, yP + 1.7), "现成降压模块：12 V 直流进、5 V 出（负载在板外）")
         xs = -9.0
-        d += elm.Battery().endpoints((xs, yG), (xs, yP)).reverse()
+        d += (_bt := elm.Battery().endpoints((xs, yG), (xs, yP)).reverse()); bat_pm(d, _bt, plus_toward=(xs, yP), side=-1)
         lab(d, (xs - 0.55, 0.0), "12 V 直流电源\n（可调稳压电源\n或适配器）", ha="right", fs_=10)
         colnote(d, (xs + 0.2, yP - 0.4), "+ → tp1（上方最外侧轨）", "right", ofst=0.0)
         colnote(d, (xs + 0.2, yG + 0.4), "− → tn2（上方第二条轨）", "right", ofst=0.0)
@@ -1520,7 +1520,7 @@ def node_17():
     with drawing(fontsize=11) as d:
         title(d, (2.6, yP + 1.5), "稳压管并联稳压：R 180 Ω + 1N4733A（5.1 V）")
         xs = -4.2
-        d += elm.Battery().endpoints((xs, yG), (xs, yP)).reverse()
+        d += (_bt := elm.Battery().endpoints((xs, yG), (xs, yP)).reverse()); bat_pm(d, _bt, plus_toward=(xs, yP), side=-1)
         lab(d, (xs - 0.55, -0.2), "9 V 电池\n或 ≤12 V\n可调直流电源", ha="right", fs_=10)
         colnote(d, (xs + 0.2, yP - 0.4), "+ → tp1", "right", ofst=0.0)
         colnote(d, (xs + 0.2, yG + 0.4), "− → tn2", "right", ofst=0.0)
@@ -1594,7 +1594,7 @@ def node_22():
     xs, xE = -13.0, 17.2
     with drawing(fontsize=11) as d:
         title(d, (2.0, y12 + 1.4), "低压慢动作过载保护：7805 供 5 V，LM393 比较，IRLZ44N 开关")
-        d += elm.Battery().endpoints((xs, yG), (xs, y12)).reverse()
+        d += (_bt := elm.Battery().endpoints((xs, yG), (xs, y12)).reverse()); bat_pm(d, _bt, plus_toward=(xs, y12), side=-1)
         lab(d, (xs - 0.55, 1.0), "12 V 直流\n电源", ha="right", fs_=10)
         colnote(d, (xs + 0.2, y12 - 0.4), "+ → bn1", "right", ofst=0.0)
         colnote(d, (xs + 0.2, yG + 0.4), "− → bp2", "right", ofst=0.0)
@@ -1757,10 +1757,10 @@ def node_14():
         x, yt, yb = -17.5, 5.0, 0.4
         ym = (yt + yb) / 2
         d += elm.Vdd().at((x, yt)).label("+9 V")
-        d += elm.Battery().endpoints((x, ym), (x, yt)).reverse()
+        d += (_bt := elm.Battery().endpoints((x, ym), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=-1)
         lab(d, (x - 0.5, (ym + yt) / 2), "电池 A\n9 V", ha="right", fs_=10)
         d += elm.Dot().at((x, ym))
-        d += elm.Battery().endpoints((x, yb), (x, ym)).reverse()
+        d += (_bt := elm.Battery().endpoints((x, yb), (x, ym)).reverse()); bat_pm(d, _bt, plus_toward=(x, ym), side=-1)
         lab(d, (x - 0.5, (ym + yb) / 2), "电池 B\n9 V", ha="right", fs_=10)
         d += elm.Vss().at((x, yb)).label("−9 V", "bottom")
         d += elm.Line().at((x, ym)).to((x + 1.3, ym))
@@ -1893,10 +1893,10 @@ def _bat2(d, x, yt, yb, n_top, n_mid, n_bot, n_gnd, gname="GND", t1="电池 A", 
     """两节 9 V 串联（±9 V）。n_* 是灰色孔位小字（照抄面包板图），gname 是地线名。"""
     ym = (yt + yb) / 2
     d += elm.Vdd().at((x, yt)).label("+9 V")
-    d += elm.Battery().endpoints((x, ym), (x, yt)).reverse()
+    d += (_bt := elm.Battery().endpoints((x, ym), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=-1)
     lab(d, (x - 0.5, (ym + yt) / 2), t1 + "\n9 V", ha="right", fs_=10)
     d += elm.Dot().at((x, ym))
-    d += elm.Battery().endpoints((x, yb), (x, ym)).reverse()
+    d += (_bt := elm.Battery().endpoints((x, yb), (x, ym)).reverse()); bat_pm(d, _bt, plus_toward=(x, ym), side=-1)
     lab(d, (x - 0.5, (ym + yb) / 2), t2 + "\n9 V", ha="right", fs_=10)
     d += elm.Vss().at((x, yb)).label("−9 V", "bottom")
     d += elm.Line().at((x, ym)).to((x + 1.3, ym))
@@ -2060,7 +2060,7 @@ def node_10():
         # ---- 电源 ----
         x, yt, yb = -16.0, 3.6, -0.6
         d += elm.Vdd().at((x, yt)).label("+5 V")
-        d += elm.Battery().endpoints((x, yb), (x, yt)).reverse()
+        d += (_bt := elm.Battery().endpoints((x, yb), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=-1)
         lab(d, (x - 0.5, (yt + yb) / 2), "5 V\n直流电源", ha="right", fs_=10)
         d += elm.Ground().at((x, yb)).label("GND", "bottom")
         colnote(d, (x + 0.15, yt - 0.3), "+ → 上边 +5 V 轨（第 1 列）", "right", ofst=0.0)
@@ -2273,7 +2273,7 @@ def node_24():
         # ---- 电源 ----
         x, yt, yb = -12.5, 3.6, -0.6
         d += elm.Vdd().at((x, yt)).label("+5 V")
-        d += elm.Battery().endpoints((x, yb), (x, yt)).reverse()
+        d += (_bt := elm.Battery().endpoints((x, yb), (x, yt)).reverse()); bat_pm(d, _bt, plus_toward=(x, yt), side=-1)
         lab(d, (x - 0.5, (yt + yb) / 2), "5 V\n电源模块", ha="right", fs_=10)
         d += elm.Ground().at((x, yb)).label("GND", "bottom")
         colnote(d, (x + 0.15, yt - 0.3), "+5 V → 上边 +5 V 轨（第 1 列）", "right", ofst=0.0)
@@ -2372,7 +2372,7 @@ def node_04():
         title(d, (0.0, 6.6), "自锁低压版：12 V 继电器 KA 代替接触器 KM，SB1 停止（常闭）、SB2 启动（常开），三只 12 V 小灯泡")
         # ---- 电源与两条轨 ----
         xb, xr = -11.0, 11.4
-        d += elm.Battery().endpoints((xb, yB), (xb, yT)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, yB), (xb, yT)).reverse()); bat_pm(d, _bt, plus_toward=(xb, yT), side=-1)
         lab(d, (xb - 0.5, 0.0), "12 V\n直流电源", ha="right", fs_=10)
         d += elm.Line().at((xb, yT)).to((xr, yT))
         d += elm.Line().at((xb, yB)).to((xr, yB))
@@ -2475,7 +2475,7 @@ def node_11():
         title(d, (0.0, 7.4), "互锁低压版：KA1（正转）、KA2（反转）两只 12 V 继电器，每只线圈前串着对方的常闭触点")
         # ---- 电源、SB1、两条轨 ----
         xb, xr = -14.0, 12.6
-        d += elm.Battery().endpoints((xb, yB), (xb, yT)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, yB), (xb, yT)).reverse()); bat_pm(d, _bt, plus_toward=(xb, yT), side=-1)
         lab(d, (xb - 0.5, 0.0), "12 V\n直流电源", ha="right", fs_=10)
         d += elm.Line().at((xb, yT)).to((-12.6, yT)).color(POS).linewidth(1.8)
         d += PushNC().endpoints((-12.6, yT), (-11.2, yT))
@@ -2605,7 +2605,7 @@ def node_15():
     with drawing(fontsize=11) as d:
         title(d, (1.0, 8.8), "星三角低压版：KM、KM△、KMY 三只 12 V 继电器 + KT 通电延时模块，灯泡并在线圈上当指示")
         xb, xr = -17.0, 19.6
-        d += elm.Battery().endpoints((xb, yB), (xb, yT)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, yB), (xb, yT)).reverse()); bat_pm(d, _bt, plus_toward=(xb, yT), side=-1)
         lab(d, (xb - 0.5, 0.0), "12 V\n直流电源", ha="right", fs_=10)
         wire(d, (xb, yT), (-15.6, yT), RED)
         d += PushNC().endpoints((-15.6, yT), (-14.2, yT))
@@ -2737,7 +2737,7 @@ def node_27():
         title(d, (7.5, 4.6), "两地控制（低压版）：9 V 电池、两只三脚拨动开关、1 kΩ + 红 LED")
         yT, yB = 1.0, -3.4
         # 电池与 +9 V 线
-        d += elm.Battery().endpoints((0, yB), (0, yT)).reverse()
+        d += (_bt := elm.Battery().endpoints((0, yB), (0, yT)).reverse()); bat_pm(d, _bt, plus_toward=(0, yT), side=-1)
         lab(d, (-0.5, -1.2), "9 V\n电池", ha="right", fs_=10)
         d += elm.Line().at((0, yT)).to((3.0, yT)).color(RED).linewidth(1.8)
         lab(d, (1.5, yT + 0.35), "+9 V", ha="center", fs_=10, color=RED)
@@ -2801,7 +2801,7 @@ def node_27():
     with drawing(fontsize=11) as d:
         title(d, (10.0, 4.8), "三地控制（低压版）：S1、S3 两只三脚拨动开关，中间加中途开关 S2")
         yT, yB = 1.0, -3.6
-        d += elm.Battery().endpoints((0, yB), (0, yT)).reverse()
+        d += (_bt := elm.Battery().endpoints((0, yB), (0, yT)).reverse()); bat_pm(d, _bt, plus_toward=(0, yT), side=-1)
         lab(d, (-0.5, -1.3), "9 V\n电池", ha="right", fs_=10)
         d += elm.Line().at((0, yT)).to((2.6, yT)).color(RED).linewidth(1.8)
         lab(d, (1.3, yT + 0.35), "+9 V", ha="center", fs_=10, color=RED)
@@ -3048,11 +3048,9 @@ def node_07():
         d += elm.Line().at((xs, yb)).to((xb, yb)).color(ORG).linewidth(1.8)
         yb0, yb1 = ym - 1.0, ym + 0.8
         d += elm.Line().at((xb, yt)).to((xb, yb1)).color(ORG).linewidth(1.8)
-        d += elm.Battery().endpoints((xb, yb0), (xb, yb1)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, yb0), (xb, yb1)).reverse()); bat_pm(d, _bt, plus_toward=(xb, yb1), side=1)
         d += elm.Line().at((xb, yb0)).to((xb, yb)).color(ORG).linewidth(1.8)
         lab(d, (xb + 0.5, ym + 0.3), "12 V 直流\n电源（适配器）", fs_=10)
-        lab(d, (xb - 0.45, ym + 0.55), "+", ha="right", fs_=11, color=RED)
-        lab(d, (xb - 0.45, ym - 0.75), "−", ha="right", fs_=11)
         d += elm.Arrow().at((xb - 1.2, yt - 0.45)).to((xs + 1.2, yt - 0.45)).color(C["cur"]).linewidth(1.2)
         lab(d, ((xs + xb) / 2, yt - 0.85), "吸合时灯泡电流", ha="center", fs_=8.5, color=C["cur"])
         lab(d, ((xs + xb) / 2, yb - 0.5), "橙线 = 触点侧 12 V 回路（鳄鱼夹线，板外）", ha="center", fs_=8.5, color=ORG)
@@ -3099,11 +3097,9 @@ def node_23():
         lab(d, (xbat + 0.2, yB1 - 0.45), "「电池−」轨（输入侧地 = 9 V 电池负极，不接 GND）", fs_=9.5, color=PURPLE)
         yb0, yb1 = -2.9, -1.1
         d += elm.Line().at((xbat, yB1)).to((xbat, yb0)).color(PURPLE).linewidth(1.8)
-        d += elm.Battery().endpoints((xbat, yb0), (xbat, yb1)).reverse()
+        d += (_bt := elm.Battery().endpoints((xbat, yb0), (xbat, yb1)).reverse()); bat_pm(d, _bt, plus_toward=(xbat, yb1), side=-1)
         d += elm.Line().at((xbat, yb1)).to((xbat, yT)).color(RED).linewidth(1.8)
         lab(d, (xbat - 0.5, (yb0 + yb1) / 2 + 0.2), "9 V 电池\n（输入侧电源）", ha="right", fs_=10)
-        lab(d, (xbat - 0.45, yb1 - 0.05), "+", ha="right", fs_=11, color=RED)
-        lab(d, (xbat - 0.45, yb0 + 0.05), "−", ha="right", fs_=11)
         d += elm.Line().at((xbat, yT)).to((xs0, yT)).color(RED).linewidth(1.8)
         lab(d, ((xbat + xs0) / 2, yT + 0.35), "+9 V 轨\n红线 j5", ha="center", fs_=9, color=RED)
         d += elm.Button().endpoints((xs0, yT), (xs1, yT))
@@ -3324,10 +3320,8 @@ def node_26():
         d += elm.Line().at((19.0, A["GND"][1])).to((19.0, yB)).linewidth(1.8)
         d += elm.Dot().at((19.0, yB))
         xb = 22.0
-        d += elm.Battery().endpoints((xb, -2.5), (xb, 0.8)).reverse()
+        d += (_bt := elm.Battery().endpoints((xb, -2.5), (xb, 0.8)).reverse()); bat_pm(d, _bt, plus_toward=(xb, 0.8), side=1)
         lab(d, (xb + 0.6, -0.85), "6 V 电池盒\n（4 节 AA）", fs_=9.5)
-        lab(d, (xb - 0.45, 0.45), "+", ha="center", fs_=11, color=RED)
-        lab(d, (xb - 0.45, -2.15), "−", ha="center", fs_=11)
         d += elm.Line().at((xb, 0.8)).to((xb, 2.0)).color(RED).linewidth(1.8)
         d += elm.Line().at((xb, 2.0)).to(A["+12V"]).color(RED).linewidth(1.8)
         lab(d, (19.8, 2.25), "+12V 端子（接 6 V）", ha="center", fs_=8.5, color=RED)

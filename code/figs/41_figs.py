@@ -11,6 +11,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import figstyle as fs
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 from figstyle import C
 import schem
 from schem import elm
@@ -110,10 +111,9 @@ def _tx_box(d, x0, y0, x1, y1, text, fs_=9.5):
 
 def _bat(d, x, yb, yt, text):
     """竖放的电源：上端 +，下端 −（两端都画真实导线，不用接地符号）。"""
-    d += elm.Battery().at((x, yb)).to((x, yt)).reverse()
+    d += (bt := elm.Battery().at((x, yb)).to((x, yt)).reverse())
+    bat_pm(d, bt, plus_toward=(x, yt), side=-1)
     L.lab(d, (x - 0.45, (yb + yt) / 2), text, ha="right", fs_=10)
-    L.lab(d, (x + 0.35, yt - 0.25), "+", fs_=12)
-    L.lab(d, (x + 0.35, yb + 0.25), "−", fs_=12)
 
 
 def p1_3_wires():

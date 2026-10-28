@@ -6,6 +6,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from schem import *
 import figstyle as fs
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 
 P = "23"
 V_F, VCC, VCE_SAT = 1.2, 5.0, 0.2                 # 与 23_sim.py 相同
@@ -520,7 +521,8 @@ def _opto(d, x0=0.0, vin="12 V\n信号", rin="$R_{in}$ 2.2 kΩ", rl="$R_L$ 4.7 k
         d += elm.SourceV().endpoints((xs, gy), (xs, 0))
         d += elm.Label().at((xs - 0.7, gy / 2)).label(vin, halign="right")
     else:
-        d += elm.Battery().endpoints((xs, gy), (xs, gy + 1.3))
+        d += (bt := elm.Battery().endpoints((xs, gy), (xs, gy + 1.3)).reverse())   # 长线（+）朝上接按钮
+        bat_pm(d, bt, plus_toward=(xs, gy + 1.3), side=-1)
         d += elm.Button().endpoints((xs, gy + 1.3), (xs, 0))
         d += elm.Label().at((xs - 0.7, gy + 0.6)).label(vin, halign="right")
         d += elm.Label().at((xs - 0.7, gy + 1.95)).label("按钮", halign="right")

@@ -8,6 +8,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from schem import *            # noqa: F401,F403
 import figstyle as fs
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 import numpy as np
 import matplotlib.pyplot as plt
 from lab_schem import probe, colnote, lab, title, note, Hop, _dbox, _pin, _par_arrow, GRAY
@@ -845,7 +846,7 @@ with drawing(fontsize=11) as d:
     # 电源
     xv = A["VM"][0] + 2.6
     d += elm.Line().at(A["VM"]).to((xv, A["VM"][1]))
-    d += elm.Battery().endpoints((xv, A["VM"][1] - 2.4), (xv, A["VM"][1])).reverse()
+    d += (bt := elm.Battery().endpoints((xv, A["VM"][1] - 2.4), (xv, A["VM"][1])).reverse()); bat_pm(d, bt, plus_toward=(xv, A["VM"][1]), side=1)
     lab(d, (xv + 0.5, A["VM"][1] - 1.9), "12 V\n适配器", fs_=10)
     d += elm.Ground().at((xv, A["VM"][1] - 2.4))
     xcap = A["VM"][0] + 0.9                        # 100 µF 电解电容并在 VM 与地之间

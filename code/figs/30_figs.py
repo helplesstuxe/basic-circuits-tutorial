@@ -7,6 +7,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from schem import *            # noqa: F401,F403
 import figstyle as fs
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 import lab_schem as ls         # 只借用 probe / colnote / lab / title / note / _pin 这些画图小工具（不修改它）
 import numpy as np
 import matplotlib.pyplot as plt
@@ -114,7 +115,7 @@ def draw_bridge(d, x0, y0, h=6.0, w=4.0, rnames=("R1 10k", "R2 10k", "R3 10k", "
     yt, yb = y0 + h, y0
     ym = (yt + yb) / 2
     if bat:
-        d += elm.Battery().endpoints((x0, yb), (x0, yt)).reverse()
+        d += (bt := elm.Battery().endpoints((x0, yb), (x0, yt)).reverse()); bat_pm(d, bt, plus_toward=(x0, yt), side=-1)
         ls.lab(d, (x0 - 0.45, ym), vex, ha="right", fs_=11)
         d += elm.Line().at((x0, yt)).to((xr, yt))
         d += elm.Line().at((x0, yb)).to((xr, yb))
@@ -567,7 +568,7 @@ def p4_4():
         ls.title(d, (2.5, 11.0), "仪表放大器实验（U1、U2 都是 LM358；9 V 单电源）")
         # 电源与电桥（两条臂横着画，避免交叉）
         xb, xp = -16.0, -13.5
-        d += elm.Battery().endpoints((xb, -2.0), (xb, 7.0)).reverse()
+        d += (bt := elm.Battery().endpoints((xb, -2.0), (xb, 7.0)).reverse()); bat_pm(d, bt, plus_toward=(xb, 7.0), side=-1)
         ls.lab(d, (xb - 0.45, 2.5), "9 V\n电池", ha="right", fs_=10)
         d += elm.Line().at((xb, 7.0)).to((xp, 7.0))
         d += elm.Ground().at((xb, -2.0)).label("0 V", "bottom")
@@ -821,7 +822,7 @@ def p2_4():
 def p2_5():
     with drawing(fontsize=11) as d:
         xb = 0.0
-        d += elm.Battery().endpoints((xb, 0.0), (xb, 6.0)).reverse()
+        d += (bt := elm.Battery().endpoints((xb, 0.0), (xb, 6.0)).reverse()); bat_pm(d, bt, plus_toward=(xb, 6.0), side=-1)
         ls.lab(d, (xb - 0.45, 3.0), "9 V\n电池", ha="right", fs_=10)
         d += elm.Line().at((xb, 6.0)).to((3.0, 6.0)).color(fs.C["cur"])
         d += elm.Line().at((xb, 0.0)).to((3.0, 0.0))
@@ -901,7 +902,7 @@ def p4_2():
     with drawing(fontsize=11) as d:
         ls.title(d, (4.0, 7.6), "阶段一：中点参考 V_MID（U2 的 B 半边接成跟随器）")
         xb = 0.0
-        d += elm.Battery().endpoints((xb, 0.0), (xb, 6.0)).reverse()
+        d += (bt := elm.Battery().endpoints((xb, 0.0), (xb, 6.0)).reverse()); bat_pm(d, bt, plus_toward=(xb, 6.0), side=-1)
         ls.lab(d, (xb - 0.45, 3.0), "9 V\n电池", ha="right", fs_=10)
         d += elm.Line().at((xb, 6.0)).to((3.0, 6.0))
         d += elm.Line().at((xb, 0.0)).to((3.0, 0.0))

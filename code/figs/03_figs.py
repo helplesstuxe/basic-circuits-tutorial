@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import figstyle as fs
 import schem
 import schemdraw.elements as elm
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 
 P = "03"
 VT = 0.02585          # 热电压 kT/q，室温约 25.85 mV
@@ -620,7 +621,8 @@ def _vsrc(d, x, y0, y1, text):
     """竖放电池：负极在 y0（下）、正极在 y1（上），左侧标注。"""
     ym = (y0 + y1) / 2
     d += elm.Line().endpoints((x, y0), (x, ym - 0.9))
-    d += elm.Battery().endpoints((x, ym - 0.9), (x, ym + 0.9))
+    d += (bt := elm.Battery().endpoints((x, ym - 0.9), (x, ym + 0.9)).reverse())   # 长线（+）朝上
+    bat_pm(d, bt, plus_toward=(x, ym + 0.9), side=-1)
     d += elm.Line().endpoints((x, ym + 0.9), (x, y1))
     d += elm.Label().at((x - 0.9, ym)).label(text)
 

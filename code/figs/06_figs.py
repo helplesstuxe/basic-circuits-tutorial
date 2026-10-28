@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import figstyle as fs
 from schem import drawing, save_schem, elm
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 
 _spec = importlib.util.spec_from_file_location("sim21", os.path.join(HERE, "..", "06_sim.py"))
 sim = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(sim)
@@ -532,7 +533,8 @@ def fig_p2_5():
 
 def _gate_divider(d, x0, rgs, vgs, title, emph=False):
     col = EMPH if emph else "black"
-    d += elm.Battery().up().at((x0, 0)).length(2.4)
+    d += (bt := elm.Battery().up().reverse().at((x0, 0)).length(2.4))          # 长线（+）朝上接 R_G
+    bat_pm(d, bt, plus_toward=(x0, 2.4), side=-1)
     d += elm.Label().at((x0 - 1.1, 1.2)).label("驱动\n5 V")
     d += elm.Line().endpoints((x0, 2.4), (x0, 3.0))
     d += elm.Resistor().endpoints((x0, 3.0), (x0 + 3.0, 3.0)).label("$R_G$ 100 Ω", loc="top")

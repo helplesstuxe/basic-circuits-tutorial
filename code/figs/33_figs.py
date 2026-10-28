@@ -8,6 +8,7 @@ sys.path.insert(0, HERE)
 from schem import *            # noqa: F401,F403
 import lab_schem as ls
 import figstyle as fs
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -168,7 +169,7 @@ def _vg(d, x0=0.0, holes=False):
     """电池 + Cd 去耦 + RA/RB 分压（分压点 D）+ CM + 运放 B 跟随器 → 中点参考 V_MID。返回运放。holes=True 时写面包板孔位。"""
     yt, yb, ym = 4.0, -1.5, 1.25
     xa, xc, xo = x0 + 3.4, x0 + 5.4, x0 + 7.6
-    d += elm.Battery().endpoints((x0, yb), (x0, yt)).reverse()
+    d += (bt := elm.Battery().endpoints((x0, yb), (x0, yt)).reverse()); bat_pm(d, bt, plus_toward=(x0, yt), side=-1)
     ls.lab(d, (x0 - 0.5, (yt + yb) / 2), "9 V\n电池", ha="right", fs_=10)
     d += elm.Line().at((x0, yt)).to((xo + 1.0, yt))
     d += elm.Line().at((x0, yb)).to((xo + 1.0, yb))

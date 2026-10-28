@@ -3,6 +3,7 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import schem
 from schem import elm
+from batt_pm import pm as bat_pm        # 电池旁的 + / − 小字（长线 = +）
 
 P = "17"
 
@@ -401,7 +402,8 @@ def p2_4_model():
                 d += elm.Line().endpoints((xz, top / 2), (xz, 0)).color(HL)
                 _lab(d, (xz - 1.0, top * 0.25), "电池\n换成导线", HL)
             else:
-                d += elm.Battery().endpoints((xz, 0), (xz, top / 2)).scale(0.6)
+                d += (bt := elm.Battery().endpoints((xz, 0), (xz, top / 2)).reverse().scale(0.6))   # + 朝上（阴极一侧）
+                bat_pm(d, bt, plus_toward=(xz, top / 2), side=-1, off=0.35, fs=11)
                 _lab(d, (xz - 0.95, top * 0.25), "$V_{Z0}$\n4.757 V")
             d += elm.Dot().at((xz, 0))
             d += elm.Line().endpoints((xz, top), (xl, top))

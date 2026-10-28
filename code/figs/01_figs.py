@@ -9,13 +9,15 @@ from matplotlib.ticker import FuncFormatter
 PLAIN = FuncFormatter(lambda v, _: f"{v:g}")   # 对数坐标的刻度写成 1、10、100，而不是 10^0、10^1
 from schem import *          # elm、drawing、save_schem、Coil、ContactNO …，以及 figstyle 的全部内容
 import figstyle as fs
+from batt_pm import pm as bat_pm      # 电池旁的 + / − 小字（长线 = +）
 
 P = "01"
 
 # ---------------- 图 01-p1-1：分压电路 ----------------
 def p1_1_divider():
     with drawing() as d:
-        d += (src := elm.Battery().up())
+        d += (src := elm.Battery().up().reverse())       # 长线 = + 朝上（接 R1），短线 = − 朝下（接地线）
+        bat_pm(d, src, plus_toward=src.end, side=-1)
         d += elm.Label().at((src.center.x - 0.9, src.center.y)).label("$V_i$\n12 V")
         d += elm.Line().right(2.5)
         d += (r1 := elm.Resistor().down().label("$R_1$\n10 kΩ"))
@@ -34,7 +36,8 @@ def p1_1_divider():
 # ---------------- 图 01-p1-2：RC 充电电路 ----------------
 def p1_2_rc():
     with drawing() as d:
-        d += (src := elm.Battery().up().label("$V_i$\n5 V", "left"))
+        d += (src := elm.Battery().up().reverse().label("$V_i$\n5 V", "left"))
+        bat_pm(d, src, plus_toward=src.end, side=-1)
         d += elm.Switch().right().label("S")
         d += elm.Resistor().right().label("R  10 kΩ")
         d += (j := elm.Dot())
@@ -66,7 +69,8 @@ def p1_3_symbols():
 def p1_4_relay_loops():
     with drawing(fontsize=11) as d:
         # 左：控制回路（低压 5 V）
-        d += (b1 := elm.Battery().up().at((0, 0)).label("控制电源\n5 V", "left"))
+        d += (b1 := elm.Battery().up().reverse().at((0, 0)).label("控制电源\n5 V", "left"))
+        bat_pm(d, b1, plus_toward=b1.end, side=-1)
         d += elm.Line().right(1.0)
         d += PushNO().right().label("SB 按钮", ofst=0.6)
         d += elm.Line().right(0.5)
@@ -78,7 +82,8 @@ def p1_4_relay_loops():
         d += elm.Line().right(1.0)
         d += LampX().right().label("灯 EL", "bottom")
         d += elm.Line().right(1.0)
-        d += (b2 := elm.Battery().up().label("负载电源\n12 V", "right"))
+        d += (b2 := elm.Battery().up().reverse().label("负载电源\n12 V", "right"))
+        bat_pm(d, b2, plus_toward=b2.end, side=1)
         d += elm.Line().up().toy(coil.start.y)
         d += elm.Line().left().tox(x0)
         # 磁力联系：灰色虚线（不是导线）
@@ -286,7 +291,8 @@ def p2_7_thevenin():
     assert abs(I5 - 0.27) < 1e-9 and abs(r5 - 3.33) < 0.005
     with drawing(fontsize=11) as d:
         # 左：原来的分压器 + 负载
-        d += (src := elm.Battery().up().at((0, 0)))
+        d += (src := elm.Battery().up().reverse().at((0, 0)))
+        bat_pm(d, src, plus_toward=src.end, side=-1)
         d += elm.Label().at((src.center.x - 0.9, src.center.y)).label("12 V")
         d += elm.Line().right(2.0)
         d += elm.Resistor().down().label("$R_1$\n10 kΩ")
@@ -303,7 +309,8 @@ def p2_7_thevenin():
         d += elm.Label().at((6.0, 1.5)).label("从 A 点往里看\n两者一模一样  ⇔", fontsize=10)
         # 右：等效电路
         x0 = 9.0
-        d += (s2 := elm.Battery().up().at((x0, 0)))
+        d += (s2 := elm.Battery().up().reverse().at((x0, 0)))
+        bat_pm(d, s2, plus_toward=s2.end, side=-1)
         d += elm.Label().at((x0 - 0.9, s2.center.y)).label("$V_{th}$\n6 V")
         d += elm.Resistor().right().label("$R_{th}$  5 kΩ")
         d += (b := elm.Dot(open=True).label("A", "right"))
@@ -713,7 +720,8 @@ def p2_8_divider_load():
             nonlocal d
             xr, top, mid, bot = x0 + 2.4, 3.0, 0.0, -3.0          # 电阻那一竖列的 x；顶线、中点、底线（GND）的 y
             d += elm.Line().endpoints((x0, bot), (x0, -1.0))
-            d += elm.Battery().endpoints((x0, -1.0), (x0, 1.0))
+            d += (bt := elm.Battery().endpoints((x0, -1.0), (x0, 1.0)).reverse())   # + 朝上接 R1
+            bat_pm(d, bt, plus_toward=(x0, 1.0), side=-1)
             d += elm.Line().endpoints((x0, 1.0), (x0, top))
             d += elm.Label().at((x0 - 0.95, 0.0)).label("$V_i$\n12 V")
             d += elm.Line().endpoints((x0, top), (xr, top))
@@ -755,7 +763,8 @@ def _coil_circuit(d, x0, diode, title, sw_text, cur_text=None):
     top, bot = 2.5, -2.5
     xs, xc = x0 + 3.2, x0 + 5.0
     d += elm.Line().endpoints((x0, bot), (x0, -1.0))
-    d += elm.Battery().endpoints((x0, -1.0), (x0, 1.0))
+    d += (bt := elm.Battery().endpoints((x0, -1.0), (x0, 1.0)).reverse())       # + 朝上接 12 V 线
+    bat_pm(d, bt, plus_toward=(x0, 1.0), side=-1)
     d += elm.Line().endpoints((x0, 1.0), (x0, top))
     d += elm.Label().at((x0 - 0.9, 0.0)).label("12 V")
     d += elm.Line().endpoints((x0, top), (x0 + 0.8, top))
@@ -829,7 +838,8 @@ def p3_4_wrong_loop():
     with drawing(fontsize=11) as d:
         top, bot = 2.0, -2.0
         d += elm.Line().endpoints((0, bot), (0, -1.0))
-        d += elm.Battery().endpoints((0, -1.0), (0, 1.0))
+        d += (bt := elm.Battery().endpoints((0, -1.0), (0, 1.0)).reverse())
+        bat_pm(d, bt, plus_toward=(0, 1.0), side=-1)
         d += elm.Line().endpoints((0, 1.0), (0, top))
         d += elm.Label().at((-0.9, 0)).label("5 V")
         d += PushNO().endpoints((0, top), (2.5, top)).label("SB", ofst=0.6)
@@ -850,7 +860,8 @@ def p3_5_divider_load():
     with drawing(fontsize=11) as d:
         x0, xr, xl, top, bot = 0.0, 2.4, 4.3, 3.0, -3.0
         d += elm.Line().endpoints((x0, bot), (x0, -1.0))
-        d += elm.Battery().endpoints((x0, -1.0), (x0, 1.0))
+        d += (bt := elm.Battery().endpoints((x0, -1.0), (x0, 1.0)).reverse())
+        bat_pm(d, bt, plus_toward=(x0, 1.0), side=-1)
         d += elm.Line().endpoints((x0, 1.0), (x0, top))
         d += elm.Label().at((x0 - 0.95, 0.0)).label("$V_i$\n12 V")
         d += elm.Line().endpoints((x0, top), (xr, top))
