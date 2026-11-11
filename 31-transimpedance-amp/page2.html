@@ -104,6 +104,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <div class="math math-display">\[I_{max} = \frac{V_{OH} - V_B}{R_F}\]</div>
 <p>R_F = 1 MΩ 时 I_max = 4.00 µA，R_F = 47 kΩ 时 85.07 µA。BPW34 在 1 klx 下的短路电流 I_k 典型 70 µA（手册里反偏 5 V 时的反向光电流 I_ra 是 75 µA，两个名字别混），乘 47 kΩ 是 3.29 V，装得下；乘 1 MΩ 是 70 V，必然顶到 4.9 V。所以本节 <a href="page4.html">动手实验篇</a> 测室内光用 47 kΩ，1 MΩ 只用在注入几百纳安的校准上。选 R_F 的顺序是：<strong>先估最大电流，再定 R_F</strong>，不是越大越好。</p>
 <h2 id="四为什么可能一直振两条线的交点">四、为什么可能一直振：两条线的交点</h2>
+<p>先用一句话说结论：光电二极管的电容 C_D 让运放在高频时「慢半拍」，C_F 让反馈在高频时别那么急。这正是 <a href="../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 第一节末的进阶框里第②类治法；下面用两条线把它算清楚。</p>
 <p>运放的放大倍数随频率下降。单极点模型下，开环增益大约是 A(f) = GBW/f：GBW = 1 MHz 时，1 kHz 有 1000 倍，100 kHz 只有 10 倍。（LMC6482 手册的 1.5 MHz 是 15 V 下的值，3 V 表格写 1 MHz，本节 5 V 保守取 1 MHz。）</p>
 <p>另一方面，从运放输出看回去，反馈网络是 Z_F（R_F 并 C_F）和 Z_D（C_D）组成的分压。运放要维持虚短，需要的倍数叫<strong>噪声增益</strong>：</p>
 <div class="math math-display">\[NG = 1 + \frac{Z_F}{Z_D}\]</div>

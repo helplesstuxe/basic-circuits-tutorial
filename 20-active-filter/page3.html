@@ -74,7 +74,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h1 id="20-有源滤波--参数与调试篇">20 有源滤波 · 参数与调试篇</h1>
 <p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：20 有源滤波 · 动手实验篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> · 后续：<a href="../24-oscillator/page1.html">24 振荡器 · 直觉篇</a></p>
 <h2 id="这一页解决什么问题">这一页解决什么问题</h2>
-<p>公式会算了，焊出来却&quot;不对劲&quot;：要么有用的信号也被削弱，要么噪声挡不干净，要么波形边沿出现小鼓包。这一页先看两张图——方波经过两种低通会怎样、算截止频率漏掉 <span class="math math-inline">\(2\pi\)</span> 会怎样——再讨论元件误差和取值，最后给出故障排查表和四道练习。</p>
+<p>公式会算了，焊出来却&quot;不对劲&quot;：要么有用的信号也被削弱，要么噪声挡不干净，要么波形边沿出现小鼓包。这一页先看两张图——方波经过两种低通会怎样、算截止频率漏掉 <span class="math math-inline">\(2\pi\)</span> 会怎样——再讨论元件误差和取值，最后给出故障排查表和八道练习（练习 5–8 针对无源 RC 和阻抗）。</p>
 <h2 id="一方波看清一阶和二阶的性格">一、方波：看清&quot;一阶&quot;和&quot;二阶&quot;的性格</h2>
 <p>方波的边沿里含有很多高频成分，所以用低通处理方波，最能看出滤波器的&quot;性格&quot;。图 20-p3-1 把 0～1 V、500 Hz 的方波分别送进截止频率都约 1 kHz 的一阶低通和二阶 Sallen-Key 低通。</p>
 <p><a class="img-link" href="img/20_p3_1_square.png"><img alt="蓝色方波，红紫色点划线的一阶输出边沿是圆滑的指数曲线，橙色的二阶输出起步慢但更陡，顶部略微冲过 1 伏，标着 1.04 伏" src="img/20_p3_1_square.png" loading="lazy" /></a></p>
@@ -143,7 +143,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>输出上有一个与输入无关的高频振荡</td>
 <td>运放直接驱动长电缆或大电容负载，出现自激（没有输入也自己振荡）</td>
 <td>断开负载看振荡是否消失</td>
-<td>在运放输出串一个小电阻再接负载（TI 的 TIDU032C 用 6.2 Ω 驱动 0.1 μF）</td>
+<td>在运放输出串一个小电阻再接负载（TI 的 TIDU032C 用 6.2 Ω 驱动 0.1 μF；原理见 <a href="../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 第一节末的进阶框）</td>
 </tr>
 <tr>
 <td>50 Hz 干扰怎么也滤不掉</td>
@@ -162,6 +162,24 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>同相端对地的电阻漏接，偏置电流无通路</td>
 <td>断开输入，量同相端直流电压</td>
 <td>补上接地电阻（<a href="page2.html">原理与实现篇</a> 例 3 高通中的 R）</td>
+</tr>
+<tr>
+<td>无源 RC 一接后级，输出变小、截止频率变高</td>
+<td>后级输入电阻并在电容（低通）或接地电阻（高通）上，成了负载</td>
+<td>断开后级量输出，对比接上后的读数；算一下负载是不是 R 的 10 倍以上</td>
+<td>后级输入电阻换大，或中间加跟随器（<a href="page2.html">原理与实现篇</a> 第三节第 6 小节）</td>
+</tr>
+<tr>
+<td>两级 RC 直接串联，有用信号被削得比预计多</td>
+<td>第二级是第一级的负载，−3 dB 点提前到约 0.37 <span class="math math-inline">\(f_c\)</span></td>
+<td>量两级中间节点的幅度，看是否比单级时小</td>
+<td>中间加跟随器，或第二级阻抗放大 10 倍（R 乘 10、C 除 10）</td>
+</tr>
+<tr>
+<td>方波经过耦合电容后顶部倾斜</td>
+<td>高通的 τ 不够大，平台期间电容在充电</td>
+<td>估算倾斜量 ≈ 平台时间 ÷ τ</td>
+<td>加大耦合电容或后级输入电阻，使 τ 远大于平台时间</td>
 </tr>
 </tbody>
 </table>
@@ -194,6 +212,30 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p><a class="img-link" href="img/20_p3_4_highpass_gain2.png"><img alt="一阶有源高通加 2 倍同相放大：Vi 经 100 nF 电容 C 到同相端，同相端经 15.9 kΩ 电阻 R 接地；反相端经 R1 10 kΩ 接地，Rf 10 kΩ 跨在反相端和输出之间" src="img/20_p3_4_highpass_gain2.png" loading="lazy" /></a></p>
 <p><em>图 20-p3-4　练习 4 答案：一阶高通后接 2 倍同相放大</em></p>
 <p>图 20-p3-4 左半边就是原理与实现篇例 3 的高通，朱红色的 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_f\)</span> 把跟随器改成了同相放大：反相端经 <span class="math math-inline">\(R_1\)</span> 接地， <span class="math math-inline">\(R_f\)</span> 跨在反相端和输出之间。</p>
+</details>
+<p><strong>练习 5（无源高通：耦合电容）</strong> 一个音频放大器的输入电阻是 10 kΩ，前面串一只耦合电容隔直流。要求 20 Hz 的信号至少保留 99.5%，耦合电容至少多大？取标准值后，20 Hz 处实际保留多少？相位超前多少度？</p>
+<details><summary>答案</summary>
+<p>耦合电容和放大器输入电阻组成无源高通（电容串在路上，输入电阻相当于接地的 R）。要保留 99.5%，按 <a href="page2.html">原理与实现篇</a> 第三节第 7 小节的经验，截止频率取最低信号频率的 1/10，即 <span class="math math-inline">\(f_c \le 2\)</span> Hz。</p>
+<p><span class="math math-inline">\(C \ge 1/(2\pi \times 10000 \times 2) \approx 7.96\)</span> μF，取 10 μF。</p>
+<p>实际 <span class="math math-inline">\(f_c = 1/(2\pi \times 10000 \times 10 \times 10^{-6}) \approx 1.59\)</span> Hz，20 Hz 处 <span class="math math-inline">\(f/f_c \approx 12.6\)</span> ，倍数 <span class="math math-inline">\(12.6/\sqrt{1 + 12.6^2} \approx 0.997\)</span> ，保留约 99.7%；相位超前 <span class="math math-inline">\(90^\circ - \arctan 12.6 \approx 4.5^\circ\)</span> 。</p>
+</details>
+<p><strong>练习 6（无源低通带负载）</strong> 用 <span class="math math-inline">\(R\)</span> = 10 kΩ、 <span class="math math-inline">\(C\)</span> = 100 nF 做一个无源低通（截止频率约 159 Hz），后面直接接一个输入电阻 10 kΩ 的电路。(1) 低频还剩多少倍？截止频率变成多少？(2) 如果把后级输入电阻换成 100 kΩ 呢？</p>
+<details><summary>答案</summary>
+<p>(1) 低频倍数 <span class="math math-inline">\(R_L/(R + R_L) = 10/20 = 0.5\)</span> ； <span class="math math-inline">\(R \parallel R_L\)</span> = 5 kΩ，截止频率 <span class="math math-inline">\(1/(2\pi \times 5000 \times 100 \times 10^{-9}) \approx 318\)</span> Hz，翻了一倍。</p>
+<p>(2) 低频倍数 <span class="math math-inline">\(100/110 \approx 0.91\)</span> ； <span class="math math-inline">\(R \parallel R_L \approx 9.09\)</span> kΩ，截止频率约 175 Hz，只偏高约 10%。这就是「负载至少是 R 的 10 倍」的来历；要完全不受影响，就在中间加跟随器。</p>
+</details>
+<p><strong>练习 7（方波与 τ）</strong> ±1 V、1 kHz 的方波经过 <span class="math math-inline">\(C\)</span> = 1 μF、 <span class="math math-inline">\(R\)</span> = 10 kΩ 的无源高通。(1) τ 是多少？是半周期的几倍？(2) 稳定后输出平台从多少伏斜降到多少伏？(3) 如果电容误用成 10 nF，输出会变成什么样？</p>
+<details><summary>答案</summary>
+<p>(1) <span class="math math-inline">\(\tau\)</span> = 10 kΩ × 1 μF = 10 ms，半周期 0.5 ms，τ 是它的 20 倍。</p>
+<p>(2) <span class="math math-inline">\(a = e^{-0.5/10} \approx 0.951\)</span> ，峰值 <span class="math math-inline">\(2/(1 + a) \approx 1.025\)</span> V，平台末尾 <span class="math math-inline">\(1.025 \times 0.951 \approx 0.975\)</span> V，倾斜约 5%，方波基本原样通过，只是去掉了直流。</p>
+<p>(3) <span class="math math-inline">\(\tau\)</span> 变成 0.1 ms，只有半周期的 1/5， <span class="math math-inline">\(a = e^{-5} \approx 0.007\)</span> ：每次跳变后输出约 2 V 的尖峰在半周期内几乎衰减到 0，输出变成一串正负尖峰，相当于 <a href="page2.html">原理与实现篇</a> 第三节第 5 小节方波图第一行的样子。</p>
+</details>
+<p><strong>练习 8（串联、并联阻抗与高低频判断）</strong> <span class="math math-inline">\(R\)</span> = 1 kΩ、 <span class="math math-inline">\(C\)</span> = 1 μF。(1) 它们的「交叉频率」（容抗等于电阻）是多少？(2) 在 50 Hz 和 1 kHz 下，分别算串联阻抗和并联阻抗，并说出每种情况下整体更像电阻还是电容。(3) 这只 1 μF 用作耦合电容，后级输入电阻 1 kΩ，传 1 kHz 信号时能不能把它当导线？</p>
+<details><summary>答案</summary>
+<p>(1) <span class="math math-inline">\(f_c = 1/(2\pi \times 1000 \times 10^{-6}) \approx 159\)</span> Hz。</p>
+<p>(2) 50 Hz： <span class="math math-inline">\(X_C = 1/(2\pi \times 50 \times 10^{-6}) \approx 3183\)</span> Ω，比电阻大约 3 倍。串联 <span class="math math-inline">\(\sqrt{1000^2 + 3183^2} \approx 3337\)</span> Ω，接近容抗，更像电容（电流超前约 72.6°）；并联 <span class="math math-inline">\(1000 \times 3183/3337 \approx 954\)</span> Ω，接近电阻，更像电阻（超前约 17.4°）。</p>
+<p>1 kHz： <span class="math math-inline">\(X_C \approx 159\)</span> Ω，只有电阻的约 1/6。串联约 1013 Ω，更像电阻（超前约 9°）；并联约 157 Ω，更像电容（超前约 81°）。符合「串联看大的、并联看小的」。</p>
+<p>(3) 能，但不算很理想：1 kHz 是交叉频率的约 6.3 倍，容抗 159 Ω 约是 1 kΩ 的 1/6，没到「1/10 以下」的经验线。按高通公式，信号保留 <span class="math math-inline">\(6.3/\sqrt{1 + 6.3^2} \approx 0.988\)</span> ，损失约 1.2%，相位超前约 9°。要更接近导线，把电容加到 10 μF（交叉频率约 16 Hz）。</p>
 </details>
 <h2 id="本页小结">本页小结</h2>
 <p><strong>方波最能看出滤波器的性格：一阶圆滑无过冲，二阶巴特沃斯更陡但有约 4% 过冲；算截止频率千万别漏 <span class="math math-inline">\(2\pi\)</span> ；截止频率的误差主要来自电容，R、C 各偏几个百分点，截止频率就偏几个百分点；运放带宽不够时，它自己也会变成一个滤波器</strong>。</p>

@@ -92,9 +92,9 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li><strong>输入电容 Cin 10 µF + Rbias 100 kΩ</strong>：手机耳机口的信号是围绕 0 V 摆的，Cin 挡掉直流，Rbias 把运放同相端的静止电压拉到 <span class="math math-inline">\(V_{MID} = 6\ \text{V}\)</span> 。所以 Cin 的正极朝 5 脚（6 V 一侧），负极朝信号源（0 V 一侧）。图左下就是产生 <span class="math math-inline">\(V_{MID}\)</span> 的 TL072 A：R1、R2 两只 10 kΩ 把 12 V 分成 6 V，Cd 10 µF 滤掉电源纹波，3 脚接分压点，1 脚和 2 脚短接成跟随器，1 脚输出 <span class="math math-inline">\(V_{MID}\)</span> 。</li>
 <li><strong>TL072 B，增益 3</strong>：同相放大， <span class="math math-inline">\(1 + 20\ \text{k} / 10\ \text{k} = 3\)</span> 。注意反馈电阻 RF 接的是<strong>推挽输出 OUT</strong>，不是运放输出 m。这样两只三极管被「包」进了反馈环，第四节会讲它的大好处。RG 下端接 <span class="math math-inline">\(V_{MID}\)</span> ，所以直流时 OUT 也被拉到 6 V。</li>
 <li><strong>偏置串：上恒流源 + D1 + D2 + 下恒流源</strong>：上面的恒流源从 12 V 往 b1 点送约 24 mA，穿过两只二极管，再由下面的恒流源从 b2 点抽走。两只二极管在两个基极之间垫出约 1.56 V（SPICE 结果），正好让两只管子都「微微导通」。恒流源为什么必须要有，下面单独讲。</li>
-<li><strong>基极电阻 22 Ω</strong>：BD139 这类管子在面包板长线和电容负载下容易在 MHz 级自激（参考资料里的 StackExchange 讨论和 Feucht 的振荡讲义），基极串 22～47 Ω 能把它压下去，本节取 22 Ω，而且要<strong>焊在管子的基极脚上</strong>，离管脚越近越管用。音频频率下它几乎不影响。</li>
+<li><strong>基极电阻 22 Ω</strong>：BD139 这类管子在面包板长线和电容负载下容易在 MHz 级自激（参考资料里的 StackExchange 讨论和 Feucht 的振荡讲义），基极串 22～47 Ω 能把它压下去，本节取 22 Ω，而且要<strong>焊在管子的基极脚上</strong>，离管脚越近越管用。音频频率下它几乎不影响。各种振荡的来源和治法汇总在 <a href="../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 第一节末的进阶框里。</li>
 <li><strong>发射极电阻 RE 3.3 Ω</strong>：稳住静止电流，第三节细讲。</li>
-<li><strong>Zobel 网络 10 Ω + 100 nF</strong>：喇叭在高频时像电感，阻抗往上升；Zobel 让 OUT 在高频时也看到一个约 10 Ω 的电阻性负载，防止输出级振荡。</li>
+<li><strong>Zobel 网络 10 Ω + 100 nF</strong>：喇叭在高频时像电感，阻抗往上升；Zobel 让 OUT 在高频时也看到一个约 10 Ω 的电阻性负载，防止输出级振荡（属于 <a href="../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 第一节末的进阶框里第③类治法「加一点损耗」）。</li>
 <li><strong>输出电容 Co 1000 µF/25 V</strong>：挡住 OUT 的 6 V 直流，正极接 OUT，负极经负载到地。</li>
 </ol>
 <h3 id="偏置电流为什么要--22-ma为什么用恒流源">偏置电流为什么要 ≥ 22 mA，为什么用恒流源</h3>

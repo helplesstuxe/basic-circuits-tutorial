@@ -74,7 +74,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h1 id="08-同相放大--原理与实现篇">08 同相放大 · 原理与实现篇</h1>
 <p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../05-inverting-amp/page1.html">05 反相放大 · 直觉篇</a></p>
 <h2 id="这一页要解决的问题">这一页要解决的问题</h2>
-<p><a href="page1.html">08 同相放大 · 直觉篇</a> 用&quot;撬棍&quot;说明了同相放大的倍数是 1 + <span class="math math-inline">\(R_f/R_1\)</span> 。这一页要回答三个更具体的问题：这个公式怎么用虚短、虚断一步步推出来？&quot;输入端几乎不取电流&quot;到底能带来多大好处？倍数能不能做到 1 以下？最后用三道例题练习设计，其中第三道把&quot;分压&quot;和&quot;同相放大&quot;组合起来。</p>
+<p><a href="page1.html">08 同相放大 · 直觉篇</a> 用&quot;撬棍&quot;说明了同相放大的倍数是 1 + <span class="math math-inline">\(R_f/R_1\)</span> 。这一页要回答三个更具体的问题：这个公式怎么用虚短、虚断一步步推出来？&quot;输入端几乎不取电流&quot;到底能带来多大好处？倍数能不能做到 1 以下？负反馈拿走了运放的大部分倍数，换回来了什么（「反馈深度」）？最后用三道例题练习设计，其中第三道把&quot;分压&quot;和&quot;同相放大&quot;组合起来。</p>
 <h2 id="一用虚短和虚断推导">一、用虚短和虚断推导</h2>
 <p>先看 图 08-p2-1，图上标出了推导要用的两条口诀。</p>
 <p><a class="img-link" href="img/08_p2_1_analysis.png"><img alt="同相放大电路，反相端标着 V 减约等于 V i（虚短），输入线上标着电流约为 0（虚断）" src="img/08_p2_1_analysis.png" loading="lazy" /></a></p>
@@ -136,7 +136,43 @@ fs.save(fig, &quot;08&quot;, &quot;08_p2_2_source_compare.png&quot;)   # 保存�
 <p><a class="img-link" href="img/08_p2_3_gain_compare.png"><img alt="横轴是电阻比 Rf 比 R1，从 0 到 10；橙色同相倍数从 1 开始直线上升，红紫色点划线反相倍数从 0 开始上升，两条线始终相差 1" src="img/08_p2_3_gain_compare.png" loading="lazy" /></a></p>
 <p><em>图 08-p2-3　同相与反相的倍数随电阻比的变化</em></p>
 <p>图 08-p2-3 中，橙色是同相倍数，红紫色点划线是反相倍数的绝对值，两条线平行，始终相差 1。电阻比为 2 时同相是 3 倍、反相是 2 倍。电阻比为 0（ <span class="math math-inline">\(R_f\)</span> 短路，或者 <span class="math math-inline">\(R_1\)</span> 开路）时，同相倍数正好是 1，橙色线落在灰色点线上：输出完全跟着输入走。这就是下一节 <a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> 。反相放大可以做出 0.5 倍这样的衰减，同相放大做不到，想衰减就得在同相端前面先加一个分压器（同相端不取电流，分压器不会被&quot;拖累&quot;）。</p>
-<h2 id="四例题">四、例题</h2>
+<h2 id="四最小补充反馈深度负反馈拿倍数换来了什么">四、最小补充：反馈深度——负反馈拿倍数换来了什么</h2>
+<p>前面一直说「同相端几乎不取电流」「跟随器输出电阻极小」，但没有说为什么。这一节用一个量把它们串起来。</p>
+<p><strong>三个新名字</strong>。从输出送回反相端的那一部分，占输出的比例叫<strong>反馈系数</strong>，记作 <span class="math math-inline">\(\beta\)</span> （读作「贝塔」）。本页电路里反相端电压是输出的 <span class="math math-inline">\(R_1/(R_1+R_f)\)</span> ，所以</p>
+<div class="math math-display">\[\beta = \frac{R_1}{R_1 + R_f}\]</div>
+<p>代数： <span class="math math-inline">\(R_1\)</span> =10 kΩ、 <span class="math math-inline">\(R_f\)</span> =20 kΩ 时 <span class="math math-inline">\(\beta\)</span> = 1/3；跟随器把输出全部送回去， <span class="math math-inline">\(\beta\)</span> = 1。信号从运放输入走到输出放大 <span class="math math-inline">\(A\)</span> 倍（ <span class="math math-inline">\(A\)</span> 是开环增益，见 <a href="../02-opamp-basics/page2.html">02 运放入门 · 原理与实现篇</a> ），再经反馈网络乘 <span class="math math-inline">\(\beta\)</span> 回到输入，绕环一圈的倍数是 <span class="math math-inline">\(A\beta\)</span> ，叫<strong>环路增益</strong>。在它上面加 1，叫<strong>反馈深度</strong>：</p>
+<div class="math math-display">\[\text{反馈深度} = 1 + A\beta\]</div>
+<p>代数：LM358B 的典型 <span class="math math-inline">\(A\)</span> = 14 万（<a href="../02-opamp-basics/page3.html">02 运放入门 · 参数与调试篇</a> 用的值）， <span class="math math-inline">\(\beta\)</span> = 1/3 时反馈深度约 46668；跟随器约 14 万，是同一只运放能做到的最深，这就是 <a href="../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 说「跟随器反馈最深」的意思。下面四件事，每一件都被这个数乘或除。</p>
+<p><strong>1. 倍数的误差除以反馈深度</strong>。运放不是无穷大倍，两个输入端之间必须留一点点电压差，输出才有东西可放大，所以实际倍数比 <span class="math math-inline">\(1/\beta\)</span> 小一点，相对误差约为 <span class="math math-inline">\(1/(A\beta)\)</span> 。代数：1 ÷ (140000 × 1/3) ≈ 0.0021%。<a href="../02-opamp-basics/page3.html">02 运放入门 · 参数与调试篇</a> 第三节的反相放大误差 (1 + G) ÷ A 其实是同一个式子：反相放大的 <span class="math math-inline">\(\beta\)</span> 也是 <span class="math math-inline">\(R_1/(R_1+R_f)\)</span> = 1/(1 + G)。</p>
+<p><strong>2. 输入电阻乘以反馈深度</strong>。看信号从哪条路进来：信号接在同相端，反馈电压接在反相端，运放两个输入端之间的电压是「输入减反馈」，两者在同一个回路里<strong>串联</strong>相减。运放把这个差压到只剩输入的 1/(1 + <span class="math math-inline">\(A\beta\)</span> )，所以两输入端之间那只 10 MΩ 的差分输入电阻（LM358B 数据手册）上几乎没有电压，也就几乎没有电流。电流小了多少倍，信号源看到的电阻就大了多少倍：</p>
+<div class="math math-display">\[R_{in} \approx R_{id}\thinspace(1 + A\beta)\]</div>
+<p>这里 <span class="math math-inline">\(R_{id}\)</span> 是运放本身的差分输入电阻。代数：10 MΩ × 46668 ≈ 4.7 × 10¹¹ Ω。这个数真实芯片达不到：同相端对地还并着一只「共模输入电阻」，<a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">LM358B 数据手册</a> 写的是 4 GΩ（4 × 10⁹ Ω），它不被反馈放大；再加上电路板表面的漏电，实际是几 GΩ 的量级。所以本书只说「极大」，不给一个具体数。</p>
+<p>对比 <a href="../05-inverting-amp/page2.html">05 反相放大 · 原理与实现篇</a>：那里信号电流和反馈电流在反相端<strong>同一个节点上汇合</strong>（并联），运放把这个节点钉在 0 V（虚地），从反相端看进去几乎是 0 Ω，信号源看到的只剩 <span class="math math-inline">\(R_1\)</span> 。口诀：<strong>反馈和输入串联，输入电阻变大；并联，输入电阻变小</strong>。</p>
+<p><strong>3. 输出电阻除以反馈深度</strong>。运放内部本来有输出电阻 <span class="math math-inline">\(r_o\)</span> ，负载一拉，输出就掉一点。现在反馈网络<strong>取的是输出电压</strong>：输出掉了 ΔV，反相端跟着掉 <span class="math math-inline">\(\beta\)</span> ΔV，运放把它放大 <span class="math math-inline">\(A\)</span> 倍，把输出往回推，掉下去的大部分被补了回来：</p>
+<div class="math math-display">\[R_{out} \approx \frac{r_o}{1 + A\beta}\]</div>
+<p>代数：按 <a href="../12-voltage-follower/page3.html">12 电压跟随器 · 参数与调试篇</a> 用过的 <span class="math math-inline">\(r_o\)</span> = 300 Ω 粗算，3 倍同相放大约 6 mΩ，跟随器约 2 mΩ。这里只看量级：300 Ω 是手册在 1 MHz 下给的值，而运放的 <span class="math math-inline">\(A\)</span> 随频率升高而变小，反馈深度跟着变浅，输出电阻在高频时会重新变大。跟随器带大电容会振铃，根子就在这里。反过来，如果反馈网络<strong>取的是输出电流</strong>（让电流流过一只采样电阻，把电阻上的电压送回去），输出电阻就会变大，输出电流不随负载变，这就是后面 <a href="../39-constant-current-excitation/page1.html">39 恒流源与线圈励磁驱动</a> 和 <a href="../41-current-loop-4-20ma/page1.html">41 4–20 mA 电流环</a> 里恒流源的道理。口诀：<strong>取电压，输出电阻变小；取电流，输出电阻变大</strong>。</p>
+<p><strong>4. 失真除以反馈深度</strong>。放大器里面总有不够「直」的地方，比如输出级在零点附近有一段死区。把这些不直的地方看成在输出上额外叠了一个误差：反馈把它和别的误差一视同仁，送回输入，运放再反着推一把，最后留在输出上的只剩原来的 1/(1 + <span class="math math-inline">\(A\beta\)</span> )。<a href="../43-push-pull-power-amp/page2.html">43 推挽功放 · 原理与实现篇</a> 会看到一个很直观的例子：两只三极管在零点附近有零点几伏的死区，包进运放的反馈环后，运放每次过零都猛推一下「跳过」死区，负载上的波形几乎没有缺口。同样要注意：频率越高 <span class="math math-inline">\(A\)</span> 越小，反馈深度越浅，纠正就越弱，所以高频的失真总比低频大。</p>
+<p>代价只有一个：倍数从 <span class="math math-inline">\(A\)</span> （十几万）降到了约 <span class="math math-inline">\(1/\beta\)</span> （3 倍）。<strong>负反馈就是拿多余的倍数，换精度、换输入输出电阻、换线性</strong>。下面的代码把上面的数算一遍。</p>
+<pre><code class="language-python"># 反馈深度：同一只 LM358B 接成 3 倍同相放大和跟随器，比较误差、输入电阻、输出电阻
+A = 140e3                                   # 开环增益典型值 14 万（02 运放入门 · 参数与调试篇）
+R_id = 10e6                                 # 差分输入电阻 10 MΩ（LM358B 数据手册）
+R_ic = 4e9                                  # 共模输入电阻 4 GΩ（同一手册），不被反馈放大
+r_o = 300.0                                 # 开环输出电阻 300 Ω（手册 1 MHz 下的值，只作量级）
+for name, beta in ((&quot;3 倍同相&quot;, 1 / 3), (&quot;跟随器&quot;, 1.0)):   # β = R1/(R1+Rf)；跟随器 β = 1
+    depth = 1 + A * beta                    # 反馈深度 1 + Aβ
+    gain = A / depth                        # 实际倍数 A/(1+Aβ)，比 1/β 略小
+    err = (1 / beta - gain) / (1 / beta)    # 相对误差，约等于 1/(Aβ)
+    r_in = R_id * depth                     # 只看差分输入电阻时的输入电阻
+    r_in_real = 1 / (1 / r_in + 1 / R_ic)   # 再并上共模输入电阻
+    r_out = r_o / depth                     # 输出电阻
+    print(f&quot;{name}：反馈深度 {depth:.0f}，实际倍数 {gain:.5f}，误差 {err*100:.4f}%，&quot;
+          f&quot;输入电阻 {r_in:.2g} Ω（并上 4 GΩ 后 {r_in_real:.2g} Ω），输出电阻 {r_out*1e3:.1f} mΩ&quot;)
+</code></pre>
+<p>运行后打印：</p>
+<pre><code class="language-text">3 倍同相：反馈深度 46668，实际倍数 2.99994，误差 0.0021%，输入电阻 4.7e+11 Ω（并上 4 GΩ 后 4e+09 Ω），输出电阻 6.4 mΩ
+跟随器：反馈深度 140001，实际倍数 0.99999，误差 0.0007%，输入电阻 1.4e+12 Ω（并上 4 GΩ 后 4e+09 Ω），输出电阻 2.1 mΩ
+</code></pre>
+<h2 id="五例题">五、例题</h2>
 <h3 id="例-1完整示例把-005-v-的传感器信号放大到-05-v">例 1（完整示例）：把 0～0.5 V 的传感器信号放大到 0～5 V</h3>
 <p><strong>题目</strong>：某传感器输出 0～0.5 V，内阻 20 kΩ，要放大到 0～5 V，±15 V 供电。选电路、选电阻。</p>
 <p><strong>解</strong>：</p>
@@ -168,7 +204,7 @@ V_o = (1 + Rf / R1) * 0.3   # = ____ V
 </ol>
 <p>和反相加法器比，它的缺点是：每一路的权重都受其他路电阻的影响（三路输入时同相端是三路的平均值，倍数就要改成 3），各路之间也会通过这几个电阻互相&quot;串扰&quot;。所以多路混音一般用反相加法器；只有两三路、又不想要负号时才用同相加法器。</p>
 <h2 id="本页小结">本页小结</h2>
-<p><strong>推导：虚短让反相端等于输入，虚断让两个电阻成为分压器，联立得 <span class="math math-inline">\(A_v = 1 + R_f/R_1\)</span> 。同相放大的输入电阻极大，信号源内阻再大倍数也不变；倍数最小为 1，电阻比为 0 时就是电压跟随器</strong>。</p>
+<p><strong>推导：虚短让反相端等于输入，虚断让两个电阻成为分压器，联立得 <span class="math math-inline">\(A_v = 1 + R_f/R_1\)</span> 。同相放大的输入电阻极大，信号源内阻再大倍数也不变；倍数最小为 1，电阻比为 0 时就是电压跟随器</strong>。反馈深度 1 + <span class="math math-inline">\(A\beta\)</span> 决定负反馈的「收益」：倍数误差和失真除以它；反馈与输入串联时输入电阻乘以它，输出取电压时输出电阻除以它。</p>
 
 </main>
 <div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

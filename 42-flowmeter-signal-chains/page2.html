@@ -83,6 +83,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li><strong>峰峰值（pp）</strong>：波形最高点减最低点。</li>
 <li><strong>K 系数</strong>：频率型流量计「每流过 1 升（或 1 加仑）给多少个脉冲」，由流量实验室标定。</li>
 <li><strong>符号约定</strong>：本节用 <span class="math math-inline">\(Q_V\)</span> 表示体积流量（单位时间流过多少体积）。不要和 <a href="../33-bandpass-notch/page2.html">33 带通与 50 Hz 陷波</a> 里的 <span class="math math-inline">\(Q\)</span> 混淆，那个 <span class="math math-inline">\(Q\)</span> 是滤波器的品质因数。</li>
+<li><strong>ADC 前要挡快信号</strong>：单片机的 ADC 只在采样瞬间看输入，比采样频率一半还快的成分（PWM 纹波、电源干扰）会冒充成慢信号，叫混叠（见 <a href="../34-switched-cap-filter/page2.html">34 开关电容滤波与跟踪滤波 · 原理与实现篇</a> 第五节）。所以幅度型信号链在进 ADC 之前，最后一级通常是一个低通（抗混叠滤波）；频率型信号链进的是施密特和计数器，不走 ADC。</li>
 <li><strong>中点参考 <span class="math math-inline">\(V_{MID}\)</span></strong>：单电源电路里人为造出来的一个中间电压（本节用 5 V 经两个 10 kΩ 分压得到 2.5 V），交流信号围绕它上下摆动。它不是「地」，只是一个参考点。</li>
 </ul>
 <h2 id="一电磁链放大倍数要分两级">一、电磁链：放大倍数要分两级</h2>

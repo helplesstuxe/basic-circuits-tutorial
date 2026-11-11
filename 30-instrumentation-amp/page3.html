@@ -141,6 +141,38 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li><strong>REF 必须由低阻源驱动</strong>。REF 背后就是差分级的 R10，若用两只 10 kΩ 分压直接接 REF，分压器的 5 kΩ 内阻串进了 R10，等于让 R10 失配，CMRR 立刻变差。所以 图 30-p3-5 写了&quot;接 2.5 V 低阻基准（跟随器）&quot;，做法同 <a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> 。</li>
 <li><strong>引脚号以数据手册为准</strong>，不同封装不同，本教程不列引脚号。</li>
 </ul>
+<h2 id="六噪声信号能小到多少">六、噪声：信号能小到多少</h2>
+<p>前面几节讨论的「误差」都是固定的偏差：电阻失配、失调、开方放大。传感器信号小到几十微伏时，还会碰到一种<strong>随机</strong>的误差：<strong>噪声</strong>。注意它和 <a href="../31-transimpedance-amp/page2.html">31 跨阻放大器</a> 要讲的「噪声增益」不是一回事，后者是一个倍数，31 节会说明它为什么也叫这个名字。</p>
+<p><strong>最小必要知识</strong>。导体里的电子一直在做无规则热运动，某一瞬间往左跑的多一点，电阻两端就出现一点电压，下一瞬间又反过来。这个乱跳的电压叫<strong>热噪声</strong>，任何电阻都有，温度越高越大。它有两个特点：</p>
+<ol>
+<li><strong>各个频率上一样多</strong>。所以带宽越宽，放进来的噪声越多。噪声的「功率」和带宽成正比，电压和功率是平方关系，所以噪声电压和<strong>带宽的平方根</strong>成正比：带宽放大 100 倍，噪声电压只放大 10 倍。于是手册用「每根号赫兹多少纳伏」（nV/√Hz，叫<strong>噪声密度</strong>）来描述它，乘上 √带宽 就是这段带宽里的噪声<strong>有效值</strong>（和交流电的有效值一个意思；示波器上看到的峰峰值大约是有效值的 6 倍多）。</li>
+<li><strong>几个互不相关的噪声，按平方相加再开方</strong>。它们一会儿同向、一会儿反向，不能直接相加，合起来像直角三角形两条直角边求斜边：3 和 4 合成 5，不是 7。</li>
+</ol>
+<p>电阻的热噪声密度是</p>
+<div class="math math-display">\[e_n = \sqrt{4kTR}\]</div>
+<p>这里 <span class="math math-inline">\(k\)</span> = 1.38 × 10⁻²³ J/K 是玻尔兹曼常数， <span class="math math-inline">\(T\)</span> 是热力学温度（25 °C 约 298 K）， <span class="math math-inline">\(R\)</span> 是电阻。代数：本节电桥从两个中点看进去，每个中点是两只 10 kΩ 并联的 5 kΩ，两个中点之间就是 5 kΩ + 5 kΩ = 10 kΩ，热噪声 <span class="math math-inline">\(\sqrt{4 \times 1.38\times 10^{-23} \times 298 \times 10^4}\)</span> ≈ 12.8 nV/√Hz。</p>
+<p><strong>再加上运放</strong>。运放自己也有噪声，<a href="https://www.ti.com/lit/ds/symlink/lm358b.pdf">LM358B 数据手册</a> 写的是 1 kHz 处 40 nV/√Hz，比 10 kΩ 电阻大三倍多。两者平方相加再开方，约 42.0 nV/√Hz。带宽取 1 kHz 时，输入端的噪声有效值约 42.0 nV × √1000 ≈ 1.33 µV。</p>
+<p><strong>信噪比</strong>。信号有效值和噪声有效值之比叫<strong>信噪比</strong>，常用分贝表示（分贝 = 20 lg 倍数，见 <a href="../16-differential-amp/page2.html">16 差分放大 · 原理与实现篇</a> ）。本节满量程差压 22.388 mV，信噪比约 84.5 dB；第四节说的 10% 流量只有满量程差压的 1%，即 0.224 mV，信噪比降到约 44.5 dB，也就是信号仍是噪声的 160 多倍。带宽收窄到 10 Hz（流量本来就变得慢），噪声再降 10 倍，信噪比各加 20 dB。所以对本节的电桥来说，小流量时先要担心的是第四节的开方放大和零点漂移，噪声排在后面。电磁流量计的电极信号只有几十到几百微伏，这时噪声就排到前面了，这也是 <a href="../38-synchronous-demod/page1.html">38 同步检波</a> 要解决的问题。</p>
+<p>还有两点要心里有数：</p>
+<ul>
+<li><strong>低频噪声更大</strong>。频率很低时，运放的噪声密度会往上翘（叫 1/f 噪声，频率越低越大）。同一份手册写 LM358B 在 0.1～10 Hz 内的噪声是 3 µV 峰峰值，比按 40 nV/√Hz 推算的大好几倍。流量这类慢信号正好落在这一段，所以不能只拿 1 kHz 的噪声密度去算。</li>
+<li><strong>电阻越大，热噪声越大</strong>。电桥用 10 kΩ 还是 1 kΩ，热噪声差 √10 ≈ 3.2 倍；但电阻小了激励电流和发热就大，这是一个取舍。</li>
+</ul>
+<pre><code class="language-python">import math
+
+k, T = 1.380649e-23, 298.15                   # 玻尔兹曼常数（J/K）、25 °C 的热力学温度（K）
+R_src = 5e3 + 5e3                             # 电桥两个中点之间看进去的电阻：5 kΩ + 5 kΩ
+e_R = math.sqrt(4 * k * T * R_src)            # 电阻热噪声密度（V/√Hz）
+e_op = 40e-9                                  # LM358B 1 kHz 处的噪声密度（数据手册）
+e_tot = math.sqrt(e_R**2 + e_op**2)           # 互不相关：平方相加再开方
+print(f&quot;10 kΩ 热噪声 {e_R*1e9:.1f} nV/√Hz，加运放后 {e_tot*1e9:.1f} nV/√Hz&quot;)
+for B in (1000, 10):                          # 带宽 1 kHz 和 10 Hz
+    n = e_tot * math.sqrt(B)                  # 这段带宽里的噪声有效值
+    for name, sig in ((&quot;满量程&quot;, 22.388e-3), (&quot;10% 流量&quot;, 0.22388e-3)):   # 本节的差压
+        print(f&quot;带宽 {B:4d} Hz：噪声 {n*1e6:.2f} µV，{name} {sig*1e3:.3f} mV，&quot;
+              f&quot;信噪比 {20*math.log10(sig/n):.1f} dB（{sig/n:.0f} 倍）&quot;)
+</code></pre>
+<p>运行结果：10 kΩ 热噪声 12.8 nV/√Hz，加运放后 42.0 nV/√Hz；带宽 1 kHz 时噪声 1.33 µV，满量程信噪比 84.5 dB、10% 流量 44.5 dB（169 倍）；带宽 10 Hz 时噪声 0.13 µV，信噪比分别是 104.5 dB 和 64.5 dB。</p>
 <h2 id="故障排查表">故障排查表</h2>
 <table>
 <thead>
@@ -267,6 +299,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <li>第一级倍数受输出余量限制：9 V 单电源 LM358 以 4.5 V 为中心只剩 3 V，直流差为 <span class="math math-inline">\(V_{dc}\)</span> 时最多 <span class="math math-inline">\(6\ \mathrm{V}/V_{dc}\)</span> 倍；电磁流量计第一级一般不超过 10 倍。</li>
 <li>整机 CMRR = 差分级 CMRR + 20 lg G1；差分级电阻失配决定基础。</li>
 <li>差压流量计 <span class="math math-inline">\(Q_V = k\sqrt{\Delta P}\)</span> ，小流量时误差被放大，零点最重要。</li>
+<li>噪声按「平方相加再开方」合成，随 √带宽 增长；10 kΩ 电阻约 12.8 nV/√Hz，LM358B 约 40 nV/√Hz，1 kHz 带宽下本节电桥的信噪比约 84.5 dB，低频还要另算 1/f 噪声。</li>
 <li>REF 必须低阻驱动。动手验证这些，见 <a href="page4.html">30 仪表放大器与电桥 · 动手实验篇</a>。</li>
 </ul>
 
