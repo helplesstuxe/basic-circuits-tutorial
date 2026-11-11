@@ -588,3 +588,111 @@ fs.axlabels(ax, "频率", "Hz", "输出/输入 幅度", "dB")
 ax.set_xticks([10, 100, 1e3, 1e4, 1e5]); ax.set_xticklabels(["10", "100", "1 k", "10 k", "100 k"])
 ax.set_ylim(-60, 5); ax.legend(loc="lower left", fontsize=8)
 fs.save(fig, N, "20_p2_10_rc_loading.png")
+
+
+# ======================= page2 第二节：阻抗（容抗、RC 串联与并联、高低频等效） =======================
+# 图 20-p2-11 由 code/20_z_sim.py 生成。
+XC_FC = 1 / (2 * np.pi * FC * C)                        # fc 处容抗（= R）
+
+# ---------- 图 20-p2-12 RC 串联与并联：谁相同、谁按勾股定理合成 ----------
+with drawing(fontsize=11) as d:
+    d += elm.SourceSin().up().at((0, -3)).label("$V$\n1 V", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ").label("$V_R = IR$", "bottom", color=ACC)
+    d += elm.Capacitor().down().toy(-3).label("$C$ 10 nF").label("$V_C = I X_C$", "bottom", color=ACC)
+    d += elm.Line().left().tox(0)
+    d += elm.Arrow().right().at((0.6, 0.9)).length(1.8).color(ACC).label("$I$（同一个）", "top", color=ACC)
+    d += elm.Label().at((-0.8, 2.1)).label("（a）串联：电流相同，两段电压错开 90°", fontsize=12, halign="left")
+    x0 = 13
+    d += elm.SourceSin().up().at((x0, -3)).label("$V$\n1 V", "left")
+    d += elm.Line().right().length(2.5)
+    d += (p1 := elm.Dot())
+    d += elm.Resistor().down().toy(-3).label("$R$ 16 kΩ").label("$I_R = V/R$", "bottom", color=ACC)
+    d += elm.Line().right().at(p1.center).length(4.5)
+    d += elm.Capacitor().down().toy(-3).label("$C$ 10 nF").label("$I_C = V/X_C$", "bottom", color=ACC)
+    d += elm.Line().left().tox(x0)
+    d += elm.Arrow().right().at((x0 + 0.4, 0.7)).length(1.6).color(ACC).label("$I$", "top", color=ACC)
+    d += elm.Label().at((x0 - 0.8, 2.1)).label("（b）并联：电压相同，两路电流错开 90°", fontsize=12, halign="left")
+save_schem(d, N, "20_p2_12_series_parallel.png")
+
+# ---------- 图 20-p2-13 f = fc 时的电压三角形（串联）和电流三角形（并联） ----------
+I_s = 1 / np.sqrt(R ** 2 + XC_FC ** 2)                  # 串联电流幅度
+VR, VC = I_s * R, I_s * XC_FC
+IR, IC = 1 / R, 1 / XC_FC                               # 并联两路电流（电压 1 V）
+I_p = np.hypot(IR, IC)
+print(f"[数值] f = fc、电压 1 V：串联 |Z| = {1/I_s/1e3:.1f} kΩ，I = {I_s*1e6:.1f} μA，V_R = {VR:.3f} V，V_C = {VC:.3f} V")
+print(f"[数值] f = fc、电压 1 V：并联 I_R = {IR*1e6:.1f} μA，I_C = {IC*1e6:.1f} μA，I = {I_p*1e6:.1f} μA，|Z| = {1/I_p/1e3:.1f} kΩ")
+assert abs(VR - 0.707) < 0.001 and abs(1 / I_p - R / np.sqrt(2)) < 1
+fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
+for ax, (h, v, hl, vl, hy) in ((a1, (VR, VC, f"$V_R$ = {VR:.3f} V", f"$V_C$ = {VC:.3f} V", "总电压 1 V")),
+                               (a2, (IR * 1e6, IC * 1e6, f"$I_R$ = {IR*1e6:.1f} μA", f"$I_C$ = {IC*1e6:.1f} μA", f"总电流 {I_p*1e6:.1f} μA"))):
+    ax.plot([0, h], [0, 0], color=fs.C["vin"], lw=2.2)
+    ax.plot([h, h], [0, v], color=fs.C["fb"], lw=2.2, ls="--")
+    ax.plot([0, h], [0, v], color=fs.C["vout"], lw=2.4)
+    ax.plot([h - 0.06 * h, h - 0.06 * h, h], [0, 0.06 * h, 0.06 * h], color="k", lw=0.8)   # 直角记号
+    ax.text(h / 2, -0.07 * h, hl, ha="center", va="top", fontsize=10)
+    ax.text(h * 1.03, v / 2, vl, ha="left", va="center", fontsize=10)
+    ax.text(h * 0.42, v * 0.58, hy, ha="right", va="bottom", fontsize=10, rotation=40)
+    ax.text(0.16 * h, 0.035 * h, "45°", fontsize=9)
+    ax.set_xlim(-0.1 * h, 1.75 * h); ax.set_ylim(-0.25 * h, 1.15 * v); ax.set_aspect("equal"); ax.axis("off")
+a1.set_title("（a）串联：电压三角形", fontsize=11)
+a2.set_title("（b）并联：电流三角形", fontsize=11)
+fs.save(fig, N, "20_p2_13_triangles.png")
+
+# ---------- 图 20-p2-14 低频、高频时电容的「极限画法」 ----------
+def lim_panel(d, x0, kind, freq, title):
+    """kind: 'lp' 或 'hp'；freq: 'low'（电容≈断开）或 'high'（电容≈导线）。"""
+    open_c = freq == "low"
+    d += elm.Dot(open=True).at((x0, 0)).label("$V_i$", "left")
+    if kind == "lp":
+        d += elm.Resistor().right().label("$R$")
+        d += (n := elm.Dot())
+        if open_c:
+            d += elm.Line().down().length(0.9)
+            d += elm.Gap().down().length(1.2).label("C≈断开", "right", color=ACC)
+            d += elm.Line().down().length(0.9)
+        else:
+            d += elm.Line().down().length(3.0).color(ACC).label("C≈导线", "right", color=ACC)
+        d += elm.Ground()
+        out = "$V_o \\approx V_i$" if open_c else "$V_o \\approx 0$"
+    else:
+        if open_c:
+            d += elm.Gap().right().length(3.0).label("C≈断开", color=ACC)
+        else:
+            d += elm.Line().right().length(3.0).color(ACC).label("C≈导线", color=ACC)
+        d += (n := elm.Dot())
+        d += elm.Resistor().down().label("$R$", "bottom")
+        d += elm.Ground()
+        out = "$V_o \\approx 0$" if open_c else "$V_o \\approx V_i$"
+    d += elm.Line().right().at(n.center).length(1.4)
+    d += elm.Dot(open=True).label(out, "right")
+    d += elm.Label().at((x0 - 0.5, 1.6)).label(title, fontsize=11, halign="left")
+
+
+with drawing(fontsize=11) as d:
+    lim_panel(d, 0, "lp", "low", "（a）低通，频率很低")
+    lim_panel(d, 9, "lp", "high", "（b）低通，频率很高")
+    lim_panel(d, 18, "hp", "low", "（c）高通，频率很低")
+    lim_panel(d, 27, "hp", "high", "（d）高通，频率很高")
+save_schem(d, N, "20_p2_14_limits.png")
+
+# ---------- 图 20-p2-15 同一条低通频响曲线：线性坐标 vs 对数坐标 ----------
+fl = np.linspace(1, 20e3, 4000)
+fg = np.logspace(1, 5, 800)
+H = lambda fx: 1 / np.sqrt(1 + (fx / FC) ** 2)
+fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE["pair"])
+a1.plot(fl / 1e3, H(fl), **fs.LS["vout"])
+fs.ref_v(a1, FC / 1e3); fs.ref_h(a1, 1 / np.sqrt(2))
+fs.axlabels(a1, "频率", "kHz", "输出/输入 倍数")
+a1.set_title("（a）线性坐标：1 kHz 以下挤成一团", fontsize=10); a1.set_ylim(0, 1.08)
+a2.semilogx(fg, 20 * np.log10(H(fg)), **fs.LS["vout"])
+fs.ref_v(a2, FC); fs.ref_h(a2, -3)
+a2.axvspan(10, FC / 10, color=fs.C["fill"], zorder=0)
+a2.axvspan(FC / 10, FC * 10, color=fs.C["fill2"], zorder=0)
+a2.axvspan(FC * 10, 1e5, color="0.93", zorder=0)
+for xx, tt in ((np.sqrt(10 * FC / 10), "通带"), (FC, "过渡带"), (np.sqrt(FC * 10 * 1e5), "阻带")):
+    a2.text(xx, -36, tt, ha="center", fontsize=10)
+fs.axlabels(a2, "频率", "Hz", "输出/输入", "dB")
+a2.set_xticks([10, 100, 1e3, 1e4, 1e5]); a2.set_xticklabels(["10", "100", "1 k", "10 k", "100 k"])
+a2.set_title("（b）对数坐标 + 分贝：每十倍一样宽", fontsize=10); a2.set_ylim(-42, 4)
+fs.save(fig, N, "20_p2_15_lin_vs_log.png")
+print(f"[数值] 线性坐标 0～20 kHz 里，0～{FC/1e3:.2f} kHz 只占横轴的 {FC/20e3*100:.0f}%")
