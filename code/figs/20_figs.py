@@ -696,3 +696,69 @@ a2.set_xticks([10, 100, 1e3, 1e4, 1e5]); a2.set_xticklabels(["10", "100", "1 k",
 a2.set_title("（b）对数坐标 + 分贝：每十倍一样宽", fontsize=10); a2.set_ylim(-42, 4)
 fs.save(fig, N, "20_p2_15_lin_vs_log.png")
 print(f"[数值] 线性坐标 0～20 kHz 里，0～{FC/1e3:.2f} kHz 只占横轴的 {FC/20e3*100:.0f}%")
+
+
+# ======================= page2 第二节第 2 小节：「慢 90°」是什么意思 =======================
+# ---------- 图 20-p2-16 电阻：电流和电压同步；电容：电流比电压早四分之一周期 ----------
+T1 = 1e-3                                               # 1 kHz，周期 1 ms
+t = np.linspace(0, 2 * T1, 2001)
+v = np.sin(2 * np.pi * t / T1)                          # 电压（幅度 1）
+i_c = np.cos(2 * np.pi * t / T1)                        # 电容电流（按幅度归一）：正比于电压斜率
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(9.6, 3.2), sharey=True)
+a1.plot(t * 1e3, v, **fs.LS["vin"], label="电压 $V$")
+a1.plot(t * 1e3, 0.8 * v, **{**fs.LS["cur"], "ls": "--"}, label="电流 $I = V/R$")
+fs.ref_h(a1, 0); fs.ref_v(a1, 0.25, "峰值同时到", y=0.12)
+a1.set_title("（a）电阻：电流和电压同步（相差 0°）", fontsize=10)
+fs.axlabels(a1, "时间", "ms", "幅度（归一）"); a1.legend(loc="upper right", fontsize=8)
+a2.plot(t * 1e3, v, **fs.LS["vin"], label="电容电压 $V_C$")
+a2.plot(t * 1e3, i_c, **{**fs.LS["cur"], "ls": "--"}, label="电容电流 $I_C$")
+fs.ref_h(a2, 0)
+for tk, txt, dy in ((0.0, "①", 8), (0.25, "②", 8), (0.5, "③", -16), (0.75, "④", -16)):
+    vk = np.sin(2 * np.pi * tk); sk = np.cos(2 * np.pi * tk)          # 该时刻电压和斜率（归一）
+    a2.plot([tk - 0.07, tk + 0.07], [vk - 0.07 * sk * 2 * np.pi, vk + 0.07 * sk * 2 * np.pi], color="k", lw=1.6)  # 斜率短线
+    a2.annotate(txt, (tk, vk), xytext=(4, dy), textcoords="offset points", fontsize=10)
+fs.span(a2, 1.0, 1.25, 1.12, "早 1/4 周期 = 90°")
+a2.plot([1.0, 1.0], [0, 1.0], **fs.LS["ref"]); a2.plot([1.25, 1.25], [0, 1.0], **fs.LS["ref"])
+a2.set_title("（b）电容：电流波峰比电压波峰早 1/4 周期", fontsize=10)
+fs.axlabels(a2, "时间", "ms"); a2.set_ylim(-1.35, 1.45); a2.legend(loc="lower right", fontsize=8)
+fs.save(fig, N, "20_p2_16_ninety_degrees.png")
+print("[数值] 1 kHz：周期 1 ms，90° = 0.25 ms；50 Hz：周期 20 ms，90° = 5 ms")
+
+# ---------- 图 20-p2-17 转动箭头：正弦 = 箭头的高度；错开 90° 的两个箭头相加 = 勾股定理 ----------
+from matplotlib.patches import Circle as _Circle
+th0 = np.radians(30)                                    # 画图时刻：电压箭头转到 30°
+fig, (a1, a2, a3) = plt.subplots(1, 3, figsize=(10.5, 3.4), gridspec_kw=dict(width_ratios=[1, 1.5, 1]))
+a1.add_patch(_Circle((0, 0), 1, fill=False, color="0.7", lw=0.8))
+for ang, col, lab in ((th0, fs.C["vin"], "$V_C$"), (th0 + np.pi / 2, fs.C["cur"], "$I_C$")):
+    a1.annotate("", xy=(np.cos(ang), np.sin(ang)), xytext=(0, 0), arrowprops=dict(arrowstyle="-|>", color=col, lw=2))
+    a1.text(1.12 * np.cos(ang), 1.12 * np.sin(ang), lab, color=col, ha="center", va="center", fontsize=11)
+    a1.plot([np.cos(ang), 1.6], [np.sin(ang), np.sin(ang)], color=col, lw=0.8, ls=":")
+a1.annotate("", xy=(0.45 * np.cos(th0 + 1.2), 0.45 * np.sin(th0 + 1.2)), xytext=(0.45 * np.cos(th0 + 0.3), 0.45 * np.sin(th0 + 0.3)),
+            arrowprops=dict(arrowstyle="->", color="k", connectionstyle="arc3,rad=0.3"))
+a1.text(0.12, 0.42, "90°", fontsize=9)
+a1.annotate("", xy=(-0.55, -1.0), xytext=(0.55, -1.0), arrowprops=dict(arrowstyle="<-", color="0.4", connectionstyle="arc3,rad=-0.35"))
+a1.text(0, -1.42, "逆时针转，每秒 f 圈", ha="center", fontsize=9)
+a1.set_xlim(-1.4, 1.65); a1.set_ylim(-1.6, 1.4); a1.set_aspect("equal"); a1.axis("off")
+a1.set_title("（a）两个一起转的箭头", fontsize=10)
+ph = np.linspace(0, 2 * np.pi, 400)
+a2.plot(np.degrees(ph), np.sin(ph), **fs.LS["vin"], label="$V_C$ 箭头的高度")
+a2.plot(np.degrees(ph), np.cos(ph), **{**fs.LS["cur"], "ls": "--"}, label="$I_C$ 箭头的高度")
+a2.axvline(np.degrees(th0), **fs.LS["ref"])
+a2.plot([np.degrees(th0)] * 2, [np.sin(th0), np.cos(th0)], "o", color="k", ms=4)
+fs.ref_h(a2, 0)
+a2.set_xticks([0, 90, 180, 270, 360]); a2.set_xlabel("箭头转过的角度 / °")
+a2.set_title("（b）把高度随转角画出来，就是两条正弦", fontsize=10); a2.legend(loc="lower left", fontsize=8)
+a2.set_ylim(-1.3, 1.3)
+VRv, VCv = 0.6, 0.8                                     # 例：串联时 V_R = 0.6、V_C = 0.8（单位：输入幅度）
+a3.annotate("", xy=(VRv, 0), xytext=(0, 0), arrowprops=dict(arrowstyle="-|>", color=fs.C["vin"], lw=2))
+a3.annotate("", xy=(VRv, -VCv), xytext=(VRv, 0), arrowprops=dict(arrowstyle="-|>", color=fs.C["fb"], lw=2))
+a3.annotate("", xy=(VRv, -VCv), xytext=(0, 0), arrowprops=dict(arrowstyle="-|>", color=fs.C["vout"], lw=2.2))
+a3.text(VRv / 2, 0.06, "$V_R$ = 0.6", ha="center", va="bottom", fontsize=10)
+a3.text(VRv + 0.05, -VCv / 2, "$V_C$ = 0.8", ha="left", va="center", fontsize=10)
+a3.text(VRv / 2 - 0.12, -VCv / 2 + 0.05, "合起来 = 1.0", ha="right", va="center", fontsize=10, rotation=-53)
+a3.set_xlim(-0.6, 1.3); a3.set_ylim(-1.05, 0.35); a3.set_aspect("equal"); a3.axis("off")
+a3.set_title("（c）垂直的两个箭头首尾相接", fontsize=10)
+amp = np.max(VRv * np.sin(ph) + VCv * np.sin(ph - np.pi / 2))
+print(f"[数值] 0.6·sin(θ) + 0.8·sin(θ − 90°) 的最大值 = {amp:.3f}（= √(0.6² + 0.8²)）")
+assert abs(amp - 1.0) < 1e-3
+fs.save(fig, N, "20_p2_17_rotating_arrows.png")
