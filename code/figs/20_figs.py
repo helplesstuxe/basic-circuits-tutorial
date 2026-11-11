@@ -762,3 +762,75 @@ amp = np.max(VRv * np.sin(ph) + VCv * np.sin(ph - np.pi / 2))
 print(f"[数值] 0.6·sin(θ) + 0.8·sin(θ − 90°) 的最大值 = {amp:.3f}（= √(0.6² + 0.8²)）")
 assert abs(amp - 1.0) < 1e-3
 fs.save(fig, N, "20_p2_17_rotating_arrows.png")
+
+
+# ======================= page2 第四节：RL 低通与高通 =======================
+# 图 20-p2-19 由 code/20_rl_sim.py 生成。R = 100 Ω、L = 16 mH，τ = L/R = 0.16 ms，与前面的 RC 相同。
+RLR, RLL = 100.0, 16e-3
+TAU_L = RLL / RLR
+
+# ---------- 图 20-p2-18 RL 低通与 RL 高通 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).at((0, 0)).label("$V_i$", "left")
+    d += elm.Inductor2().right().label("$L$ 16 mH")
+    d += (n := elm.Dot())
+    d += elm.Resistor().down().label("$R$ 100 Ω", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.6)
+    d += elm.Dot(open=True).label("$V_o = V_R$", "right")
+    d += elm.Label().at((-0.6, 2.0)).label("（a）低通：L 串在路上，R 接地，输出取电阻", fontsize=12, halign="left")
+    d += elm.Dot(open=True).at((11, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 100 Ω")
+    d += (n := elm.Dot())
+    d += elm.Inductor2().down().label("$L$ 16 mH", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.6)
+    d += elm.Dot(open=True).label("$V_o = V_L$", "right")
+    d += elm.Label().at((10.4, 2.0)).label("（b）高通：R 串在路上，L 接地，输出取电感", fontsize=12, halign="left")
+save_schem(d, N, "20_p2_18_rl_lp_hp.png")
+print(f"[数值] RL：τ = L/R = {TAU_L*1e3:.2f} ms，fc = R/(2πL) = {RLR/(2*np.pi*RLL):.0f} Hz")
+
+# ---------- 图 20-p2-20 RL 的阶跃响应：1 V 脉冲（宽 1 ms ≈ 6τ） ----------
+t = np.linspace(-0.2e-3, 2e-3, 4401)
+vin = np.where((t >= 0) & (t < 1e-3), 1.0, 0.0)
+on = np.clip(t, 0, 1e-3)
+i_l = (1 - np.exp(-on / TAU_L)) / RLR                              # 电流：接通后按 1 − e^(−t/τ) 爬升
+i_end = i_l[np.searchsorted(t, 1e-3) - 1]
+i_l = np.where(t >= 1e-3, i_end * np.exp(-(t - 1e-3) / TAU_L), i_l)   # 输入回到 0 后按 e^(−t/τ) 衰减
+v_r = i_l * RLR                                                    # 低通输出 = 电阻电压 = I·R
+v_l = vin - v_r                                                    # 高通输出 = 电感电压 = 输入 − 电阻电压
+k1 = np.searchsorted(t, TAU_L)
+print(f"[数值] RL 脉冲：t = τ 时低通输出 {v_r[k1]:.3f} V（= 1 − e^-1），高通输出 {v_l[k1]:.3f} V（= e^-1）；"
+      f"输入跳回 0 的瞬间高通输出 {v_l[np.searchsorted(t, 1e-3)]:.3f} V")
+assert abs(v_r[k1] - 0.632) < 0.005 and v_l[np.searchsorted(t, 1e-3)] < -0.99
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, vin, **fs.LS["vin"], label="$V_i$ 输入脉冲")
+ax.plot(t * 1e3, v_r, **fs.LS["vout"], label="低通输出 $V_R$（= 电流 × R）")
+ax.plot(t * 1e3, v_l, **fs.LS["third"], label="高通输出 $V_L$")
+fs.ref_h(ax, 0); fs.ref_v(ax, TAU_L * 1e3, "t = τ = L/R", y=0.12)
+fs.mark(ax, TAU_L * 1e3, v_r[k1], fmt="{:.3f}", unit=" V", dx=6, dy=-4)
+fs.mark(ax, TAU_L * 1e3, v_l[k1], fmt="{:.3f}", unit=" V", dx=6, dy=2)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-1.25, 1.45)
+ax.legend(loc="upper right", fontsize=8, ncol=3)
+fs.save(fig, N, "20_p2_20_rl_step.png")
+
+# ---------- 图 20-p2-21 二分频音箱：电感给低音、电容给高音 ----------
+RSPK, FX = 8.0, 2000.0
+Lx, Cx = RSPK / (2 * np.pi * FX), 1 / (2 * np.pi * FX * RSPK)
+print(f"[数值] 分频点 2 kHz、喇叭按 8 Ω 纯电阻算：L = {Lx*1e3:.3f} mH，C = {Cx*1e6:.2f} μF")
+with drawing(fontsize=11) as d:
+    d += elm.SourceSin().up().at((0, -4)).label("功放\n输出", "left")
+    d += elm.Line().up().length(1.0)
+    d += elm.Line().right().length(1.5)
+    d += (p := elm.Dot())
+    d += elm.Inductor2().right().label(f"$L$ {Lx*1e3:.2f} mH")
+    d += elm.Line().right().length(0.5)
+    d += elm.Resistor().down().toy(-4).label("低音喇叭\n（按 8 Ω 算）", "bottom")
+    d += elm.Line().up().at(p.center).length(2.5)
+    d += elm.Capacitor().right().label(f"$C$ {Cx*1e6:.2f} μF")
+    d += elm.Line().right().length(3.0)
+    d += elm.Resistor().down().toy(-4).label("高音喇叭\n（按 8 Ω 算）", "bottom")
+    d += elm.Line().left().tox(0)
+    d += elm.Label().at((p.center.x + 0.3, p.center.y - 1.2)).label("低通：给低音", color=ACC, halign="left")
+    d += elm.Label().at((p.center.x + 1.2, p.center.y + 1.6)).label("高通：给高音", color=ACC, halign="left")
+save_schem(d, N, "20_p2_21_crossover.png")
