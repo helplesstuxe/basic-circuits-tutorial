@@ -441,3 +441,150 @@ with drawing(fontsize=11) as d:
     d += elm.Line().right().at(op.out).length(1.2)
     d += elm.Dot(open=True).label("$V_o$（通带内约 2 倍）", "right")
 save_schem(d, N, "20_p3_4_highpass_gain2.png")
+
+
+# ======================= page2 第二节：无源 RC 低通与高通（补充） =======================
+# 同一对 R = 16 kΩ、C = 10 nF：输出取电容 = 低通，输出取电阻 = 高通。图 20-p2-6 由 code/20_rc_sim.py 生成。
+TAU = R * C
+FC = 1 / (2 * np.pi * TAU)
+lp1 = ([1.0], [TAU, 1.0])                               # 低通：1/(sτ + 1)
+hp1 = ([TAU, 0.0], [TAU, 1.0])                          # 高通：sτ/(sτ + 1)
+
+# ---------- 图 20-p2-5 两种接法：RC 低通 vs CR 高通 ----------
+with drawing(fontsize=11) as d:
+    d += elm.Dot(open=True).at((0, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.6)
+    d += elm.Dot(open=True).label("$V_o = V_C$", "right")
+    d += elm.Label().at((-0.6, 2.0)).label("（a）低通：R 串在路上，C 接地，输出取电容", fontsize=12, halign="left")
+    d += elm.Dot(open=True).at((11, 0)).label("$V_i$", "left")
+    d += elm.Capacitor().right().label("$C$ 10 nF")
+    d += (n := elm.Dot())
+    d += elm.Resistor().down().label("$R$ 16 kΩ", "bottom")
+    d += elm.Ground()
+    d += elm.Line().right().at(n.center).length(1.6)
+    d += elm.Dot(open=True).label("$V_o = V_R$", "right")
+    d += elm.Label().at((10.4, 2.0)).label("（b）高通：C 串在路上，R 接地，输出取电阻", fontsize=12, halign="left")
+save_schem(d, N, "20_p2_5_rc_lp_hp.png")
+print(f"[数值] 无源 RC：τ = {TAU*1e3:.2f} ms，fc = {FC:.0f} Hz（低通、高通相同）")
+
+# ---------- 图 20-p2-7 正弦在 fc 处：低通落后 45°、高通超前 45°、两者相加等于输入 ----------
+t = np.linspace(0, 3 / FC, 3001)
+vi = fs.sine(t, FC)                                     # 从 0 开始算会有开头的过渡过程，所以算 6 个周期、只画后 3 个
+t6 = np.linspace(0, 6 / FC, 6001)
+_, vc6, _ = signal.lsim(lp1, fs.sine(t6, FC), t6)
+vc = vc6[3000:]; vr = vi - vc                           # 回路定律：V_R + V_C = V_i（任何时刻都成立）
+amp_c, amp_r = vc.max(), vr.max()
+k_i = np.argmax(vi[:1000]); k_c = np.argmax(vc[:1500])  # 第一个周期里输入和 V_C 的峰值位置
+lag_c = (t[k_c] - t[k_i]) * FC * 360
+print(f"[数值] f = fc 时：V_C 幅度 {amp_c:.3f}，V_R 幅度 {amp_r:.3f}；V_C 峰值比输入晚 {lag_c:.0f}°（= {(t[k_c]-t[k_i])*1e6:.0f} μs）")
+assert abs(amp_c - 0.707) < 0.005 and abs(amp_r - 0.707) < 0.005 and abs(lag_c - 45) < 2
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.plot(t * 1e3, vi, **fs.LS["vin"], label="$V_i$ 输入")
+ax.plot(t * 1e3, vc, **fs.LS["vout"], label="$V_C$ 低通输出（晚 45°）")
+ax.plot(t * 1e3, vr, **fs.LS["third"], label="$V_R$ 高通输出（早 45°）")
+ax.plot(t[::60] * 1e3, (vc + vr)[::60], ls="none", marker="o", ms=3, color=fs.C["good"], label="$V_C + V_R$")
+fs.ref_h(ax, 0)
+fs.ref_v(ax, t[k_i] * 1e3, "输入峰值", y=0.12)
+fs.ref_v(ax, t[k_c] * 1e3, "$V_C$ 峰值", y=0.25)
+fs.mark(ax, t[k_c] * 1e3, amp_c, fmt="{:.3f}", unit=" V", dx=4, dy=4)
+fs.axlabels(ax, "时间", "ms", "电压", "V"); ax.set_ylim(-1.3, 1.6)
+ax.legend(loc="upper right", fontsize=8, ncol=4)
+fs.save(fig, N, "20_p2_7_rc_phase.png")
+
+# ---------- 图 20-p2-8 方波经过同一对 RC：半周期分别是 31τ、3.1τ、0.31τ ----------
+fig, axs = plt.subplots(3, 2, figsize=(9, 6.2), sharey="row")
+for row, fsq in enumerate((100, 1e3, 10e3)):
+    T = 1 / fsq
+    n_pre = int(np.ceil(10 * TAU / T))                  # 先空跑 10τ 以上（整数个周期），让开头的过渡过程消失
+    npt = int(max(2000, 400 * T / TAU))                 # 每周期的点数：步长不超过 τ/400，跳变后的尖峰才算得准
+    tt = np.linspace(0, (n_pre + 4) * T, (n_pre + 4) * npt + 1)
+    sq_all = fs.square(tt, fsq)                         # ±1 V 方波
+    _, ylp, _ = signal.lsim(lp1, sq_all, tt)
+    _, yhp, _ = signal.lsim(hp1, sq_all, tt)
+    keep = tt >= n_pre * T - 1e-12                      # 只画最后 4 个周期（已是稳态）
+    t, sq, ylp, yhp = tt[keep] - n_pre * T, sq_all[keep], ylp[keep], yhp[keep]
+    ratio = (T / 2) / TAU
+    a = np.exp(-ratio)                                  # 半个周期里，指数过程剩下的比例 e^(-半周期/τ)
+    seg = t >= 0
+    print(f"[数值] {fsq:g} Hz 方波（半周期 = {ratio:.2f}τ）：低通输出 {ylp[seg].min():+.2f}～{ylp[seg].max():+.2f} V；"
+          f"高通输出 {yhp[seg].min():+.2f}～{yhp[seg].max():+.2f} V")
+    for col, (y, ls, nm) in enumerate(((ylp, "vout", "低通"), (yhp, "third", "高通"))):
+        ax = axs[row, col]
+        ax.plot(t * 1e3, sq, **{**fs.LS["vin"], "lw": 1.0})
+        ax.plot(t * 1e3, y, **fs.LS[ls])
+        fs.ref_h(ax, 0)
+        ax.set_title(f"{nm}：{fsq/1e3:g} kHz 方波，半周期 ≈ {ratio:.2g}τ", fontsize=10)
+        ax.set_ylim(-2.3, 2.3)
+        if row == 2:
+            fs.axlabels(ax, "时间", "ms", "电压" if col == 0 else None, "V")
+        elif col == 0:
+            ax.set_ylabel("电压 / V")
+    print(f"[数值]   半周期内指数过程剩 e^(−{ratio:.2f}) = {a:.3f}；稳态公式：高通峰值 2/(1+a) = {2/(1+a):.2f} V，"
+          f"低通峰值 (1−a)/(1+a) = {(1-a)/(1+a):.2f} V")
+    assert abs(yhp.max() - 2 / (1 + a)) < 0.03 and abs(ylp.max() - (1 - a) / (1 + a)) < 0.01  # 仿真与稳态公式一致
+fig.legend([plt.Line2D([], [], **fs.LS["vin"]), plt.Line2D([], [], **fs.LS["vout"]), plt.Line2D([], [], **fs.LS["third"])],
+           ["$V_i$ 方波 ±1 V", "低通输出 $V_C$", "高通输出 $V_R$"], loc="lower center", ncol=3, fontsize=9, frameon=False)
+fig.tight_layout(rect=(0, 0.04, 1, 1))
+fs.save(fig, N, "20_p2_8_rc_square.png", tight=False)
+
+# ---------- 图 20-p2-9 无源 RC 的「怕」：信号源内阻、负载、直接串两级 ----------
+with drawing(fontsize=11) as d:
+    d += elm.SourceSin().up().at((0, -2.5)).label("$V_s$", "left")
+    d += elm.Resistor().right().label("$R_s$ 1 kΩ\n（信号源内阻）").color(ACC)
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (n := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Line().left().tox(0)
+    d += elm.Line().right().at(n.center).length(2.0)
+    d += (m := elm.Dot())
+    d += elm.Resistor().down().label("$R_L$ 负载", "bottom").color(ACC)
+    d += elm.Line().left().tox(n.center.x)
+    d += elm.Ground().at((n.center.x, -2.5))
+    d += elm.Line().right().at(m.center).length(1.0)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    d += elm.Label().at((-0.6, 2.0)).label("（a）前面有内阻、后面有负载", fontsize=12, halign="left")
+    d += elm.Dot(open=True).at((15, 0)).label("$V_i$", "left")
+    d += elm.Resistor().right().label("$R$ 16 kΩ")
+    d += (a := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom")
+    d += elm.Ground()
+    d += elm.Resistor().right().at(a.center).label("$R$ 16 kΩ").color(ACC)
+    d += (b := elm.Dot())
+    d += elm.Capacitor().down().label("$C$ 10 nF", "bottom").color(ACC)
+    d += elm.Ground()
+    d += elm.Line().right().at(b.center).length(1.2)
+    d += elm.Dot(open=True).label("$V_o$", "right")
+    d += elm.Label().at((14.4, 2.0)).label("（b）两级一样的 RC 直接串联", fontsize=12, halign="left")
+save_schem(d, N, "20_p2_9_rc_loading_schem.png")
+
+f = np.logspace(1, 5, 1200); s = 2j * np.pi * f
+ideal = np.abs(1 / (1 + s * TAU))
+par = lambda a, b: a * b / (a + b)
+withRs = np.abs(1 / (1 + s * (R + 1e3) * C))
+RL = 16e3
+withRL = np.abs(RL / (R + RL) / (1 + s * par(R, RL) * C))
+casc = np.abs(1 / (1 + 3 * s * TAU + (s * TAU) ** 2))       # 两级直接串：1/(1 + 3sτ + s²τ²)
+buf = ideal ** 2                                             # 中间隔一个跟随器：两级各自独立，倍数相乘
+f3 = lambda h, ref=1.0: f[np.argmin(np.abs(h - ref / np.sqrt(2)))]
+print(f"[数值] 前面加 Rs = 1 kΩ：fc 由 {FC:.0f} Hz 降到 {1/(2*np.pi*(R+1e3)*C):.0f} Hz")
+print(f"[数值] 后面接 RL = 16 kΩ：低频只剩 {RL/(R+RL):.2f} 倍，fc 升到 {1/(2*np.pi*par(R, RL)*C):.0f} Hz")
+print(f"[数值] RL = 1 kΩ：低频只剩 {1e3/(R+1e3):.3f} 倍（约 1/17），fc 升到 {1/(2*np.pi*par(R, 1e3)*C)/1e3:.1f} kHz")
+print(f"[数值] 两级直接串：−3 dB 在 {f3(casc):.0f} Hz（{f3(casc)/FC:.2f} fc），fc 处只剩 {abs(1/(1+3j-1)):.3f} 倍；"
+      f"隔跟随器：−3 dB 在 {f3(buf):.0f} Hz（{f3(buf)/FC:.2f} fc），fc 处 0.500 倍")
+assert abs(f3(casc) / FC - 0.374) < 0.01 and abs(f3(buf) / FC - 0.644) < 0.01
+fig, ax = plt.subplots(figsize=fs.SIZE["single"])
+ax.semilogx(f, 20 * np.log10(ideal), **fs.LS["good"], label="单级、理想（空载、无内阻）")
+ax.semilogx(f, 20 * np.log10(withRL), **fs.LS["third"], label="后面接 16 kΩ 负载")
+ax.semilogx(f, 20 * np.log10(buf), **fs.LS["vout"], label="两级，中间隔跟随器")
+ax.semilogx(f, 20 * np.log10(casc), **fs.LS["bad"], label="两级直接串联")
+fs.ref_v(ax, FC, f"fc ≈ {FC:.0f} Hz", y=0.12)
+fs.mark(ax, FC, 20 * np.log10(1 / 3), fmt="{:.1f}", unit=" dB", dx=6, dy=-12, color=fs.C["bad"])
+fs.mark(ax, FC, 20 * np.log10(0.5), fmt="{:.1f}", unit=" dB", dx=6, dy=2)
+fs.axlabels(ax, "频率", "Hz", "输出/输入 幅度", "dB")
+ax.set_xticks([10, 100, 1e3, 1e4, 1e5]); ax.set_xticklabels(["10", "100", "1 k", "10 k", "100 k"])
+ax.set_ylim(-60, 5); ax.legend(loc="lower left", fontsize=8)
+fs.save(fig, N, "20_p2_10_rc_loading.png")
