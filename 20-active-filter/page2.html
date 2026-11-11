@@ -74,7 +74,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h1 id="20-有源滤波--原理与实现篇">20 有源滤波 · 原理与实现篇</h1>
 <p><a href="page1.html">上一页：直觉篇</a> · <a href="page1.html">直觉篇</a> · 本页：原理与实现篇 · <a href="page3.html">参数与调试篇</a> · <a href="page3.html">下一页：参数与调试篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a></p>
 <h2 id="这一页要解决的问题">这一页要解决的问题</h2>
-<p>直觉篇说&quot;电阻和电容决定分界&quot;。这一页回答五个问题：分界频率怎么算？电容和电阻串联、并联以后的阻抗随频率怎么变，高频和低频时电路可以怎样简化？去掉运放以后，无源 RC 低通和高通的幅度、相位、方波波形各是什么样，又怕什么？一级 RC 挡得够不够？不够时怎么用 Sallen-Key 电路做成二阶？最后三道例题，从照着算到自己改成高通。</p>
+<p>直觉篇说&quot;电阻和电容决定分界&quot;。这一页回答六个问题：分界频率怎么算？电容和电阻串联、并联以后的阻抗随频率怎么变，高频和低频时电路可以怎样简化？去掉运放以后，无源 RC 低通和高通的幅度、相位、方波波形各是什么样，又怕什么？把电容换成电感，RL 低通和高通又有什么不同？一级 RC 挡得够不够？不够时怎么用 Sallen-Key 电路做成二阶？最后三道例题，从照着算到自己改成高通。</p>
 <h2 id="一一阶低通截止频率公式">一、一阶低通：截止频率公式</h2>
 <p><strong>意思</strong>：电容的&quot;阻碍&quot;随频率升高而变小。当电容的阻碍和电阻 <span class="math math-inline">\(R\)</span> 一样大时，输出降到输入的约 0.707 倍，这个频率就是截止频率 <span class="math math-inline">\(f_c\)</span> 。</p>
 <p>电容的阻碍叫<strong>容抗</strong>，记作 <span class="math math-inline">\(X_C\)</span> ，单位欧姆：</p>
@@ -135,7 +135,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </tbody>
 </table>
 <p>规律很好记：<strong>频率乘 10，容抗除以 10；电容乘 10，容抗也除以 10</strong>。两个极端：直流（0 Hz）时容抗无穷大，电容相当于<strong>断开</strong>；频率很高时容抗趋近 0，电容相当于一根<strong>导线</strong>。电阻则不管频率多少都是 16 kΩ。容抗和电阻正好相等的频率，就是第一节的截止频率 <span class="math math-inline">\(f_c = 1/(2\pi RC) \approx 995\)</span> Hz。</p>
-<p>顺便对照一下电感：它的阻碍叫感抗 <span class="math math-inline">\(X_L = 2\pi f L\)</span> ，方向正好相反，频率越高越大（<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> 里「大飞轮」的比喻：变化越快越难推）。本节只讲电容。</p>
+<p>顺便对照一下电感：它的阻碍叫感抗 <span class="math math-inline">\(X_L = 2\pi f L\)</span> ，方向正好相反，频率越高越大（<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a> 里「大飞轮」的比喻：变化越快越难推）。本节只讲电容，电感和 RL 滤波器放在第四节。</p>
 <p>还要记住一件事：容抗只说了「幅度之比」，没说「步调」。电容的电流比它的电压<strong>早 90°</strong>（换个说法：电容电压比电流<strong>慢 90°</strong>）；电阻的电流和电压同步。这个「步调不同」决定了后面所有的组合规则，下一小节专门把它讲清楚。</p>
 <h3 id="2-慢-90到底是什么意思">2. 「慢 90°」到底是什么意思</h3>
 <p>第一节第 2 步、下一节的相位，以及很多资料里都会出现「电容电压比电流慢 90°」「输出滞后 45°」这样的话。它说的不是空间里的角度，而是<strong>两个同频率的正弦波，在时间上错开了多少</strong>。下面分四步讲：角度怎么表示时间；为什么电容恰好差 90°；用「转动箭头」把它看成真正的角度；为什么差 90° 就要用勾股定理。</p>
@@ -217,7 +217,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 </ul>
 <p>图 20-p2-17 (c) 就是串联 RC 的情况：电阻电压和电流同步，电容电压比电流慢 90°，两根箭头垂直。取 <span class="math math-inline">\(V_R\)</span> = 0.6、 <span class="math math-inline">\(V_C\)</span> = 0.8，合起来是 <span class="math math-inline">\(\sqrt{0.6^2 + 0.8^2} = 1.0\)</span> ，而不是 1.4。电容那根箭头画成朝下，因为它比电阻那根「慢 90°」，在逆时针转动里落后，就是顺时针方向差 90°。</p>
 <p>学过三角函数的读者可以用高中的<strong>辅助角公式</strong>直接验证： <span class="math math-inline">\(a\sin x + b\cos x = \sqrt{a^2 + b^2}\thinspace\sin(x + \varphi)\)</span> ，其中 <span class="math math-inline">\(\tan\varphi = b/a\)</span> 。 <span class="math math-inline">\(\cos x\)</span> 就是比 <span class="math math-inline">\(\sin x\)</span> 早 90° 的正弦，所以「相差 90° 的两个正弦相加，幅度是 <span class="math math-inline">\(\sqrt{a^2 + b^2}\)</span> 」，而 <span class="math math-inline">\(\tan\varphi = b/a\)</span> 正是合成后错开的角度。第一节、下面的串联与并联、下一节的相位公式，用的都是这一条。</p>
-<p>顺带一提，电感正好相反：它的电流比电压<strong>慢</strong> 90°（大飞轮被推着才慢慢转起来）。所以在转动箭头图里，电感和电容的箭头方向相反，这正是 LC 电路能互相「抵消」、发生谐振的原因，本节不展开。</p>
+<p>顺带一提，电感正好相反：它的电流比电压<strong>慢</strong> 90°（大飞轮被推着才慢慢转起来）。所以在转动箭头图里，电感和电容的箭头方向相反，这正是 LC 电路能互相「抵消」、发生谐振的原因，本节不展开。RL 低通和高通见第四节。</p>
 <h3 id="3-阻抗为什么-16-kω加16-kω-不等于-32-kω">3. 阻抗：为什么 16 kΩ「加」16 kΩ 不等于 32 kΩ</h3>
 <p><strong>定义</strong>：任何一个两端的元件或组合，加上正弦电压时，<strong>电压幅度 ÷ 电流幅度</strong>叫它的<strong>阻抗</strong>，记作 <span class="math math-inline">\(\lvert Z \rvert\)</span> ，单位还是欧姆。电阻的阻抗就是 <span class="math math-inline">\(R\)</span> ，电容的阻抗就是 <span class="math math-inline">\(X_C\)</span> 。</p>
 <p>在 <span class="math math-inline">\(f_c\)</span> 处，电阻和电容的阻抗都是 16 kΩ。把它们串起来，阻抗是不是 32 kΩ？<strong>不是</strong>。串联时两段电压的峰值不在同一时刻出现，合起来的总电压峰值比两者直接相加要小。这和第一节的直角三角形是同一个道理：两段电压错开 90°，总电压是斜边，不是两条直角边之和。同理，并联时两路电流也不能直接相加。</p>
@@ -693,7 +693,7 @@ fs.save(fig, &quot;20&quot;, &quot;20_p2_6_rc_bode.png&quot;)          # 保存�
 <p><strong>（3）两级直接串联</strong>。一级 RC 每十倍频程只降 20 dB，很自然想到串两级。可是图 20-p2-9 (b) 中第二级的 <span class="math math-inline">\(R\)</span> 、 <span class="math math-inline">\(C\)</span> 本身就是第一级的负载，会从第一级的电容上抽电流。结果不是「每级都在 <span class="math math-inline">\(f_c\)</span> 处 0.707 倍，两级相乘 0.5 倍」，而是更差。图 20-p2-10 用公式算出了几种情况的幅频曲线（两级直接串联的公式要用复数推，这里只用结果，code/figs/20_figs.py 里有它）。</p>
 <p><a class="img-link" href="img/20_p2_10_rc_loading.png"><img alt="四条幅频曲线：黑色虚线是单级理想 RC；红紫色点划线是接了 16 千欧负载，低频只有负 6 分贝，拐点右移；橙色是两级之间隔一个跟随器，在 995 赫处负 6 分贝；朱红色带叉的是两级直接串联，在 995 赫处负 9.5 分贝，拐得更早" src="img/20_p2_10_rc_loading.png" loading="lazy" /></a></p>
 <p><em>图 20-p2-10　负载和级联对无源 RC 低通的影响</em></p>
-<p>图 20-p2-10 中，橙色是两级中间隔一个跟随器的情况，两级互不影响，在 <span class="math math-inline">\(f_c\)</span> 处正好 0.5 倍（−6.0 dB），−3 dB 点在约 638 Hz；朱红色带 × 的是两级直接串联，在 <span class="math math-inline">\(f_c\)</span> 处只剩 1/3（−9.5 dB），−3 dB 点提前到约 373 Hz，有用信号被多削掉一块。补救办法有两个：中间加一个跟随器（这正是下一节 Sallen-Key 的出发点）；或者让第二级的阻抗比第一级大 10 倍（例如 <span class="math math-inline">\(R_2\)</span> = 160 kΩ、 <span class="math math-inline">\(C_2\)</span> = 1 nF， <span class="math math-inline">\(\tau\)</span> 不变），这时第二级几乎不抽电流，−3 dB 点约在 0.60 <span class="math math-inline">\(f_c\)</span> ，接近隔离时的 0.64 <span class="math math-inline">\(f_c\)</span> 。</p>
+<p>图 20-p2-10 中，橙色是两级中间隔一个跟随器的情况，两级互不影响，在 <span class="math math-inline">\(f_c\)</span> 处正好 0.5 倍（−6.0 dB），−3 dB 点在约 638 Hz；朱红色带 × 的是两级直接串联，在 <span class="math math-inline">\(f_c\)</span> 处只剩 1/3（−9.5 dB），−3 dB 点提前到约 373 Hz，有用信号被多削掉一块。补救办法有两个：中间加一个跟随器（这正是第五节 Sallen-Key 的出发点）；或者让第二级的阻抗比第一级大 10 倍（例如 <span class="math math-inline">\(R_2\)</span> = 160 kΩ、 <span class="math math-inline">\(C_2\)</span> = 1 nF， <span class="math math-inline">\(\tau\)</span> 不变），这时第二级几乎不抽电流，−3 dB 点约在 0.60 <span class="math math-inline">\(f_c\)</span> ，接近隔离时的 0.64 <span class="math math-inline">\(f_c\)</span> 。</p>
 <h3 id="7-怎么用低通和高通的用途速查">7. 怎么用：低通和高通的用途速查</h3>
 <table>
 <thead>
@@ -754,9 +754,287 @@ fs.save(fig, &quot;20&quot;, &quot;20_p2_6_rc_bode.png&quot;)          # 保存�
 <li><strong>先定类型</strong>：要留下的在低频就用低通，在高频就用高通；两头都要挡就把高通、低通串起来（<a href="../33-bandpass-notch/page3.html">33 带通与 50 Hz 陷波 · 参数与调试篇</a>）。</li>
 <li><strong>再定截止频率</strong>：截止频率处有用信号已经掉了 30%，所以要和有用信号拉开距离。拉开 10 倍时，有用信号只掉 0.5%，相位偏 5.7°。</li>
 <li><strong>先选电容、再算电阻</strong>：电容的标准值档位少，先在 1 nF～1 μF 里挑一个，再用 <span class="math math-inline">\(R = 1/(2\pi f_c C)\)</span> 算电阻，取最接近的标准值。电阻最好落在 1 kΩ～1 MΩ：太小会让信号源吃力（第 6 小节的内阻问题），太大则怕负载、容易拾取干扰。</li>
-<li><strong>最后检查两头</strong>：信号源内阻是否远小于 <span class="math math-inline">\(R\)</span> ，负载是否至少是 <span class="math math-inline">\(R\)</span> 的 10 倍（低通看 <span class="math math-inline">\(R\)</span> ，高通看接地的那只 <span class="math math-inline">\(R\)</span> ）。不满足就加跟随器，也就是下一节开始的有源滤波。</li>
+<li><strong>最后检查两头</strong>：信号源内阻是否远小于 <span class="math math-inline">\(R\)</span> ，负载是否至少是 <span class="math math-inline">\(R\)</span> 的 10 倍（低通看 <span class="math math-inline">\(R\)</span> ，高通看接地的那只 <span class="math math-inline">\(R\)</span> ）。不满足就加跟随器，也就是第五节开始的有源滤波。</li>
 </ol>
-<h2 id="四二阶-sallen-key-低通">四、二阶 Sallen-Key 低通</h2>
+<h2 id="四rl-低通与高通把电容换成电感">四、RL 低通与高通：把电容换成电感</h2>
+<p>会随频率改变「阻碍」的不只有电容。把电容换成电感，同样能做出低通和高通，规律几乎一模一样，只有几处正好「反过来」。电感滤波在信号电路里不常见，但在电流大、要求损耗小的地方离不开它：<a href="../25-switching-power-supply/page2.html">25 开关电源 · 原理与实现篇</a> 和 <a href="../44-class-d-amp/page2.html">44 D 类功放 · 原理与实现篇</a> 的输出滤波、音箱的分频器、电机线圈本身，都是电感在当滤波器。本节取 <span class="math math-inline">\(R\)</span> = 100 Ω、 <span class="math math-inline">\(L\)</span> = 16 mH，它的时间常数也是 0.16 ms，截止频率也是 995 Hz，和前面 16 kΩ、10 nF 的 RC 完全可以对照。电感的基础知识见 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a> 第五节。</p>
+<h3 id="1-感抗频率越高阻碍越大">1. 感抗：频率越高，阻碍越大</h3>
+<p><strong>意思</strong>：电感两端的电压正比于电流变化的快慢， <span class="math math-inline">\(V_L = L \cdot \Delta I/\Delta t\)</span> （01 第五节）。同样幅度的正弦电流，频率越高变化越快，电感两端的电压就越大，也就是电感的「阻碍」越大。这和电容正好相反。</p>
+<p><strong>写成公式</strong>：电感的阻碍叫<strong>感抗</strong>，</p>
+<div class="math math-display">\[X_L = \frac{\text{电感电压幅度}}{\text{电感电流幅度}} = 2\pi f L\]</div>
+<p>用第二节第 2 小节的转动箭头可以看出 <span class="math math-inline">\(2\pi f\)</span> 的来历：电流正弦的最大斜率是 <span class="math math-inline">\(2\pi f\)</span> 乘电流幅度，乘上 <span class="math math-inline">\(L\)</span> 就是电压幅度。</p>
+<p><strong>代数</strong>（ <span class="math math-inline">\(L\)</span> = 16 mH）：</p>
+<table>
+<thead>
+<tr>
+<th>频率</th>
+<th>10 Hz</th>
+<th>100 Hz</th>
+<th>1 kHz</th>
+<th>10 kHz</th>
+<th>100 kHz</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>感抗 <span class="math math-inline">\(X_L\)</span></td>
+<td>1.01 Ω</td>
+<td>10.1 Ω</td>
+<td>101 Ω</td>
+<td>1.01 kΩ</td>
+<td>10.1 kΩ</td>
+</tr>
+</tbody>
+</table>
+<p>规律：<strong>频率乘 10，感抗也乘 10</strong>。两个极端也和电容反过来：直流时感抗为 0，电感相当于一根<strong>导线</strong>；频率很高时感抗很大，电感相当于<strong>断开</strong>。</p>
+<p><strong>步调也反过来</strong>。把第二节第 2 小节「逐时刻看斜率」的办法用在电感上，只是电流和电压互换了角色：电流过零、变化最快的时刻，电感电压最大；电流到峰、暂时不变的时刻，电感电压为 0。所以<strong>电感电压比电流早 90°</strong>，也就是电感电流比电压<strong>慢 90°</strong>。用 01 的「大飞轮」来想：推力（电压）最大的时候，飞轮的转速（电流）还在往上涨，要再过四分之一周期才到最大。</p>
+<p>步调相差 90°，所以电阻和电感混在一起时，同样按勾股定理合成：串联 <span class="math math-inline">\(\sqrt{R^2 + X_L^2}\)</span> ，并联 <span class="math math-inline">\(R X_L/\sqrt{R^2 + X_L^2}\)</span> ，「串联看大的、并联看小的」照样成立，只是高频时变大的那个换成了电感。</p>
+<h3 id="2-两种接法电感串在路上是低通电感接地是高通">2. 两种接法：电感串在路上是低通，电感接地是高通</h3>
+<p>图 20-p2-18 是两种接法。</p>
+<p><a class="img-link" href="img/20_p2_18_rl_lp_hp.png"><img alt="两张无源电路并排：左边低通，输入经 16 毫亨电感到输出点，100 欧电阻从输出点接地，输出取电阻电压；右边高通，输入经 100 欧电阻到输出点，16 毫亨电感从输出点接地，输出取电感电压" src="img/20_p2_18_rl_lp_hp.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-18　RL 低通（a）与 RL 高通（b）</em></p>
+<p>图 20-p2-18 (a) 中电感串在路上：低频时它是导线，信号直接到达电阻；高频时它几乎断开，信号过不去，所以是<strong>低通</strong>，输出取的是电阻上的电压。(b) 中电感接地：低频时它把输出短路到地，高频时它几乎断开、不起作用，所以是<strong>高通</strong>，输出取的是电感上的电压。用第二节第 7 小节的极限画法列成表：</p>
+<table>
+<thead>
+<tr>
+<th>频率</th>
+<th>感抗 <span class="math math-inline">\(X_L\)</span></th>
+<th>低通输出（取电阻）</th>
+<th>高通输出（取电感）</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>直流（0 Hz）</td>
+<td>0，电感相当于导线</td>
+<td>等于输入</td>
+<td>0（被电感短路到地）</td>
+</tr>
+<tr>
+<td>远低于 <span class="math math-inline">\(f_c\)</span></td>
+<td>远小于 <span class="math math-inline">\(R\)</span></td>
+<td>约等于输入</td>
+<td>很小</td>
+</tr>
+<tr>
+<td>等于 <span class="math math-inline">\(f_c\)</span></td>
+<td>等于 <span class="math math-inline">\(R\)</span></td>
+<td>0.707 倍</td>
+<td>0.707 倍</td>
+</tr>
+<tr>
+<td>远高于 <span class="math math-inline">\(f_c\)</span></td>
+<td>远大于 <span class="math math-inline">\(R\)</span></td>
+<td>很小</td>
+<td>约等于输入</td>
+</tr>
+</tbody>
+</table>
+<p>和 RC 对比，好记的说法是：<strong>电容挡低频，电感挡高频；串在路上的那个元件挡什么，滤波器就去掉什么</strong>。RC 低通是电阻串在路上、电容接地，RL 低通却是电感串在路上、电阻接地，两者的输出都取<strong>接地的那个元件</strong>。</p>
+<h3 id="3-公式和-rc-一模一样只是截止频率和时间常数换了写法">3. 公式：和 RC 一模一样，只是截止频率和时间常数换了写法</h3>
+<p><strong>截止频率</strong>：感抗等于电阻时，两段电压一样大，各是输入的 0.707 倍。令 <span class="math math-inline">\(2\pi f L = R\)</span> ：</p>
+<div class="math math-display">\[f_c = \frac{R}{2\pi L}\]</div>
+<p><strong>代数</strong>： <span class="math math-inline">\(f_c = 100/(2\pi \times 0.016) \approx 995\)</span> Hz。</p>
+<p><strong>幅度</strong>：电阻和电感串联，流过同一个电流，两段电压错开 90°，仍然是直角三角形。因为 <span class="math math-inline">\(X_L/R = f/f_c\)</span> ：</p>
+<div class="math math-display">\[\text{低通：}\frac{V_R}{V_i} = \frac{R}{\sqrt{R^2 + X_L^2}} = \frac{1}{\sqrt{1 + (f/f_c)^2}}, \qquad \text{高通：}\frac{V_L}{V_i} = \frac{X_L}{\sqrt{R^2 + X_L^2}} = \frac{f/f_c}{\sqrt{1 + (f/f_c)^2}}\]</div>
+<p>和第三节 RC 的两个公式<strong>完全一样</strong>。相位也一样：低通输出比输入晚 <span class="math math-inline">\(\arctan(f/f_c)\)</span> ，高通输出早 <span class="math math-inline">\(90^\circ - \arctan(f/f_c)\)</span> ，在 <span class="math math-inline">\(f_c\)</span> 处各 45°。所以第三节的幅频、相频曲线（图 20-p2-6）、上升时间 <span class="math math-inline">\(0.35/f_c\)</span> 、方波波形（图 20-p2-8）全部可以直接搬过来用。</p>
+<p><strong>时间常数</strong>：RL 电路的时间常数是</p>
+<div class="math math-display">\[\tau = \frac{L}{R}\]</div>
+<p><strong>代数</strong>：16 mH ÷ 100 Ω = 0.16 ms，和 RC 的 16 kΩ × 10 nF 相同，所以 <span class="math math-inline">\(f_c = 1/(2\pi\tau)\)</span> 照样成立。为什么是 <span class="math math-inline">\(L\)</span> 除以 <span class="math math-inline">\(R\)</span> ，而不是乘？电感越大，电流越难改变，当然越慢；而电阻越大，电流最终只需要涨到较小的 <span class="math math-inline">\(V/R\)</span> ，同样的电感电压能更快完成，所以反而越快。这和 RC 里电阻越大越慢正好相反。</p>
+<p>下面的代码算出 RL 低通、高通的幅频曲线，检查它和时间常数相同的 RC 低通是否重合，并看一看真实电感的直流电阻（第 5 小节）会带来什么影响。代码与仓库里的 code/20_rl_sim.py 内容一致，存成文件后<strong>在仓库根目录运行</strong>。</p>
+<pre><code class="language-python">import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
+# 20 RL 低通与高通：R = 100 Ω、L = 16 mH，时间常数 L/R = 0.16 ms，和 16 kΩ + 10 nF 的 RC 一样。
+# 理想电感时 RL 和 RC 的频响完全相同；真实电感有直流电阻（这里假设 20 Ω），低频端会走样。
+import numpy as np                                 # 数组运算
+import matplotlib.pyplot as plt                    # 画图
+import figstyle as fs                              # 全书统一的颜色、轴标签、保存函数
+
+R, L = 100.0, 16e-3                                # 电阻 100 Ω，电感 16 mH
+Rd = 20.0                                          # 假设的电感直流电阻（线圈铜线的电阻）20 Ω
+fc = R / (2 * np.pi * L)                           # 感抗等于 R 的频率：fc = R/(2πL) ≈ 995 Hz
+f = np.logspace(1, 5, 800)                         # 10 Hz ～ 100 kHz
+XL = 2 * np.pi * f * L                             # 感抗 X_L = 2πfL：频率乘 10，感抗乘 10
+
+lp = R / np.sqrt(R ** 2 + XL ** 2)                 # 低通（电感串在路上，输出取 R）：V_R / V_i
+hp = XL / np.sqrt(R ** 2 + XL ** 2)                # 高通（电感接地，输出取电感两端）：V_L / V_i
+rc_lp = 1 / np.sqrt(1 + (2 * np.pi * f * 16e3 * 10e-9) ** 2)   # 对照：16 kΩ + 10 nF 的 RC 低通
+assert np.allclose(lp, rc_lp)                      # 时间常数相同，RL 低通和 RC 低通的曲线完全重合
+assert np.allclose(lp ** 2 + hp ** 2, 1)           # 同样满足勾股定理
+
+lp_d = R / np.sqrt((R + Rd) ** 2 + XL ** 2)        # 带直流电阻的低通：Rd 和 R 一起分压
+hp_d = np.sqrt(Rd ** 2 + XL ** 2) / np.sqrt((R + Rd) ** 2 + XL ** 2)  # 带直流电阻的高通：输出是 Rd 加感抗
+dB = lambda h: 20 * np.log10(h)
+
+print(f&quot;fc = R/(2πL) = {fc:.0f} Hz，τ = L/R = {L/R*1e3:.2f} ms（与 16 kΩ、10 nF 的 RC 相同）&quot;)
+for fx in (10, 100, fc, 1e4):                      # 几个代表频率
+    x = 2 * np.pi * fx * L
+    print(f&quot;{fx:7.0f} Hz：X_L = {x:8.1f} Ω；低通 {R/np.hypot(R, x):.3f}，高通 {x/np.hypot(R, x):.3f}；&quot;
+          f&quot;带 20 Ω 直流电阻：低通 {R/np.hypot(R+Rd, x):.3f}，高通 {np.hypot(Rd, x)/np.hypot(R+Rd, x):.3f}&quot;)
+print(f&quot;直流电阻的影响：低通直流只剩 {R/(R+Rd):.3f} 倍（{dB(R/(R+Rd)):.1f} dB），−3 dB 点移到约 {(R+Rd)/(2*np.pi*L):.0f} Hz；&quot;
+      f&quot;高通低频不再趋于 0，而是停在 {Rd/(R+Rd):.3f} 倍（{dB(Rd/(R+Rd)):.1f} dB）&quot;)
+
+fig, (a1, a2) = plt.subplots(1, 2, figsize=fs.SIZE[&quot;pair&quot;], sharey=True)
+a1.semilogx(f, dB(lp), **fs.LS[&quot;vout&quot;], label=&quot;RL 低通（理想电感）&quot;)
+a1.semilogx(f[::40], dB(rc_lp[::40]), ls=&quot;none&quot;, marker=&quot;o&quot;, ms=4, color=fs.C[&quot;good&quot;], label=&quot;RC 低通（τ 相同）&quot;)
+a1.semilogx(f, dB(lp_d), **fs.LS[&quot;bad&quot;], label=&quot;电感有 20 Ω 直流电阻&quot;)
+fs.mark(a1, 10, dB(R / np.hypot(R + Rd, 2 * np.pi * 10 * L)), fmt=&quot;{:.1f}&quot;, unit=&quot; dB&quot;, dx=4, dy=-14, color=fs.C[&quot;bad&quot;])
+a1.set_title(&quot;（a）低通：电感串在路上，输出取 R&quot;, fontsize=10)
+a2.semilogx(f, dB(hp), **fs.LS[&quot;third&quot;], label=&quot;RL 高通（理想电感）&quot;)
+a2.semilogx(f, dB(hp_d), **fs.LS[&quot;bad&quot;], label=&quot;电感有 20 Ω 直流电阻&quot;)
+fs.mark(a2, 10, dB(np.hypot(Rd, 2 * np.pi * 10 * L) / np.hypot(R + Rd, 2 * np.pi * 10 * L)), fmt=&quot;{:.1f}&quot;, unit=&quot; dB&quot;, dx=4, dy=4, color=fs.C[&quot;bad&quot;])
+a2.set_title(&quot;（b）高通：电感接地，输出取电感&quot;, fontsize=10)
+for ax in (a1, a2):
+    fs.ref_v(ax, fc, f&quot;fc ≈ {fc:.0f} Hz&quot;, y=0.15); fs.ref_h(ax, -3)
+    ax.set_xticks([10, 100, 1e3, 1e4, 1e5]); ax.set_xticklabels([&quot;10&quot;, &quot;100&quot;, &quot;1 k&quot;, &quot;10 k&quot;, &quot;100 k&quot;])
+    fs.axlabels(ax, &quot;频率&quot;, &quot;Hz&quot;, &quot;输出/输入&quot; if ax is a1 else None, &quot;dB&quot;)
+    ax.set_ylim(-45, 4); ax.legend(loc=&quot;lower left&quot; if ax is a1 else &quot;lower right&quot;, fontsize=8)
+fs.save(fig, &quot;20&quot;, &quot;20_p2_19_rl_response.png&quot;)    # 保存到 20-active-filter/img/
+</code></pre>
+<p>运行后打印的关键数值（倍数）：</p>
+<table>
+<thead>
+<tr>
+<th>频率</th>
+<th>感抗</th>
+<th>理想低通</th>
+<th>理想高通</th>
+<th>带 20 Ω 直流电阻的低通</th>
+<th>带 20 Ω 直流电阻的高通</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>10 Hz</td>
+<td>1.0 Ω</td>
+<td>1.000</td>
+<td>0.010</td>
+<td>0.833</td>
+<td>0.167</td>
+</tr>
+<tr>
+<td>100 Hz</td>
+<td>10.1 Ω</td>
+<td>0.995</td>
+<td>0.100</td>
+<td>0.830</td>
+<td>0.186</td>
+</tr>
+<tr>
+<td>995 Hz</td>
+<td>100 Ω</td>
+<td>0.707</td>
+<td>0.707</td>
+<td>0.640</td>
+<td>0.653</td>
+</tr>
+<tr>
+<td>10 kHz</td>
+<td>1005 Ω</td>
+<td>0.099</td>
+<td>0.995</td>
+<td>0.099</td>
+<td>0.993</td>
+</tr>
+</tbody>
+</table>
+<p>曲线见图 20-p2-19。</p>
+<p><a class="img-link" href="img/20_p2_19_rl_response.png"><img alt="左图低通：橙色理想 RL 低通和黑色圆点 RC 低通完全重合，1 千赫以下 0 分贝，之后每十倍降 20 分贝；朱红色带叉的是电感带 20 欧直流电阻的情况，低频只有负 1.6 分贝。右图高通：红紫色点划线理想 RL 高通在低频每十倍升 20 分贝；朱红色带叉的带直流电阻曲线在低频停在负 15.6 分贝，不再往下掉" src="img/20_p2_19_rl_response.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-19　RL 低通（a）与高通（b）的幅频曲线：理想电感与带直流电阻的电感</em></p>
+<p>图 20-p2-19 (a) 中橙色的 RL 低通和黑色圆点的 RC 低通完全重合：只要时间常数相同，两者在频响上就分不出来。朱红色曲线是第 5 小节要讲的真实电感。</p>
+<h3 id="4-时域电感电流不能突变">4. 时域：电感电流不能突变</h3>
+<p>电容的电压不能突变，电感的<strong>电流</strong>不能突变（飞轮不能瞬间改变转速）。图 20-p2-20 把一个 1 V、宽 1 ms（约 6τ）的脉冲送进 RL 电路。</p>
+<p><a class="img-link" href="img/20_p2_20_rl_step.png"><img alt="蓝色输入是 0 到 1 毫秒的 1 伏脉冲；橙色低通输出即电阻电压，从 0 开始按指数爬升，在 t 等于 τ 时为 0.633 伏，接近 1 伏后在脉冲结束时又按指数下降；红紫色点划线高通输出即电感电压，脉冲开始时跳到 1 伏再按指数衰减，在 t 等于 τ 时为 0.367 伏，脉冲结束时跳到负 1 伏再衰减回 0" src="img/20_p2_20_rl_step.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-20　1 V 脉冲经过 RL 电路：低通输出（电阻电压）与高通输出（电感电压）</em></p>
+<p>图 20-p2-20 里：</p>
+<ul>
+<li><strong>接通瞬间</strong>，电流还来不及变化，仍是 0，所以电阻上没有电压，1 V 全部落在电感上：高通输出跳到 1 V，低通输出从 0 开始。之后电流按 <span class="math math-inline">\(1 - e^{-t/\tau}\)</span> 慢慢爬升，低通输出（等于电流 × <span class="math math-inline">\(R\)</span> ）跟着爬升，在 <span class="math math-inline">\(t = \tau\)</span> 时到 0.633 V；电感电压按 <span class="math math-inline">\(e^{-t/\tau}\)</span> 衰减，在 <span class="math math-inline">\(t = \tau\)</span> 时剩 0.367 V。形状和 RC 的充电曲线一样。</li>
+<li><strong>输入跳回 0 的瞬间</strong>，电流同样不能突变，还要继续流。电感「拼命」维持它，两端电压一下子反过来，高通输出跳到 −1 V，然后随电流衰减回 0。</li>
+</ul>
+<p>这里电流有电阻这条路可走，反向电压只有 −1 V。如果电流<strong>没有路可走</strong>，比如直接把电感和电源之间的开关断开，相当于 <span class="math math-inline">\(R\)</span> 变成无穷大， <span class="math math-inline">\(\tau = L/R\)</span> 趋于 0：电流被迫在极短时间里降到 0，电感两端就会出现极高的电压。这正是 <a href="../01-components-basics/page2.html">01 元件速成 · 原理与实现篇</a> 第五节继电器线圈断电时那个 1200 V 尖峰的来历，也是 <a href="../07-bjt-relay-driver/page2.html">07 三极管开关与继电器驱动 · 原理与实现篇</a> 一定要加续流二极管的原因：二极管给电流留了一条路。</p>
+<h3 id="5-真实电感的毛病直流电阻体积饱和">5. 真实电感的毛病：直流电阻、体积、饱和</h3>
+<p>理想电感只有感抗，真实电感是一卷铜线绕成的，毛病比电容多：</p>
+<ol>
+<li><strong>直流电阻</strong>。铜线本身有电阻，相当于在理想电感上串了一个小电阻 <span class="math math-inline">\(R_d\)</span> 。几十毫亨的小电感，直流电阻几欧到几十欧都常见（具体看手册），本节假设 20 Ω。图 20-p2-19 的朱红色曲线就是它的影响：低通在直流时 <span class="math math-inline">\(R_d\)</span> 和 <span class="math math-inline">\(R\)</span> 分压，只剩 <span class="math math-inline">\(100/120 \approx 0.833\)</span> 倍（−1.6 dB），相对这个起点的 −3 dB 点移到 <span class="math math-inline">\((R + R_d)/(2\pi L) \approx 1194\)</span> Hz；高通更糟，低频时电感的感抗趋于 0，剩下的 <span class="math math-inline">\(R_d\)</span> 却挡在那里，输出停在 <span class="math math-inline">\(20/120 \approx 0.167\)</span> 倍（−15.6 dB），<strong>直流挡不干净</strong>。所以电感的直流电阻一定要远小于电路里的 <span class="math math-inline">\(R\)</span> 。</li>
+<li><strong>体积和取值</strong>。要在 16 kΩ 这样的信号电路里做 995 Hz 的 RL 低通，需要 <span class="math math-inline">\(L = R/(2\pi f_c) = 16000/(2\pi \times 995) \approx 2.56\)</span> H，那是一个带铁芯、拳头大的线圈；同样的截止频率用 RC 只要一只 10 nF 的小电容。所以<strong>高阻抗的信号电路用 RC，低阻抗（零点几欧到几百欧）、大电流的功率电路才用电感</strong>。</li>
+<li><strong>饱和</strong>。带磁芯的电感有额定电流，电流超过后磁芯「饱和」，电感量会骤降，滤波作用随之失效，还会发热（<a href="../44-class-d-amp/page3.html">44 D 类功放 · 参数与调试篇</a> 练习里就遇到了电感饱和的问题）。</li>
+<li><strong>其他</strong>：线圈会拾取外界磁场的干扰，也会把自己的磁场「辐射」给邻近电路；线圈匝与匝之间还有一点电容，频率高到一定程度后电感反而像电容（叫自谐振）。这些在一般制作里了解即可。</li>
+</ol>
+<h3 id="6-rc-和-rl-对照以及-rl-用在哪里">6. RC 和 RL 对照，以及 RL 用在哪里</h3>
+<table>
+<thead>
+<tr>
+<th>项目</th>
+<th>RC</th>
+<th>RL</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>会变的阻碍</td>
+<td>容抗 <span class="math math-inline">\(X_C = 1/(2\pi f C)\)</span> ，频率越高越小</td>
+<td>感抗 <span class="math math-inline">\(X_L = 2\pi f L\)</span> ，频率越高越大</td>
+</tr>
+<tr>
+<td>直流时</td>
+<td>电容相当于断开</td>
+<td>电感相当于导线</td>
+</tr>
+<tr>
+<td>频率很高时</td>
+<td>电容相当于导线</td>
+<td>电感相当于断开</td>
+</tr>
+<tr>
+<td>电流和电压的步调</td>
+<td>电容电流比电压早 90°</td>
+<td>电感电流比电压晚 90°</td>
+</tr>
+<tr>
+<td>不能突变的量</td>
+<td>电容电压</td>
+<td>电感电流</td>
+</tr>
+<tr>
+<td>截止频率</td>
+<td><span class="math math-inline">\(1/(2\pi RC)\)</span></td>
+<td><span class="math math-inline">\(R/(2\pi L)\)</span></td>
+</tr>
+<tr>
+<td>时间常数</td>
+<td><span class="math math-inline">\(RC\)</span></td>
+<td><span class="math math-inline">\(L/R\)</span></td>
+</tr>
+<tr>
+<td>低通接法</td>
+<td>R 串在路上，C 接地，输出取 C</td>
+<td>L 串在路上，R 接地，输出取 R</td>
+</tr>
+<tr>
+<td>高通接法</td>
+<td>C 串在路上，R 接地，输出取 R</td>
+<td>R 串在路上，L 接地，输出取 L</td>
+</tr>
+<tr>
+<td>适合的场合</td>
+<td>高阻抗、小电流的信号电路</td>
+<td>低阻抗、大电流的功率电路</td>
+</tr>
+</tbody>
+</table>
+<p><strong>例子：二分频音箱</strong>。一只喇叭很难同时放好低音和高音，所以音箱里常有一只低音喇叭、一只高音喇叭，用电感和电容把声音「分」给它们，见图 20-p2-21。</p>
+<p><a class="img-link" href="img/20_p2_21_crossover.png"><img alt="功放输出分两路：下面一路经 0.64 毫亨电感接低音喇叭，标「低通：给低音」；上面一路经 9.95 微法电容接高音喇叭，标「高通：给高音」；两只喇叭都按 8 欧电阻画，下端接回功放" src="img/20_p2_21_crossover.png" loading="lazy" /></a></p>
+<p><em>图 20-p2-21　最简单的二分频：电感给低音喇叭（RL 低通），电容给高音喇叭（RC 高通）</em></p>
+<p>图 20-p2-21 里，喇叭自己就是那个电阻 <span class="math math-inline">\(R\)</span> ：电感串在低音喇叭前面，组成 RL 低通，高音被挡住；电容串在高音喇叭前面，组成 RC 高通，低音被挡住，也顺便保护了不耐低频大振幅的高音喇叭。把喇叭近似成 8 Ω 纯电阻，分频点取 2 kHz：</p>
+<div class="math math-display">\[L = \frac{R}{2\pi f_c} = \frac{8}{2\pi \times 2000} \approx 0.637\ \text{mH}, \qquad C = \frac{1}{2\pi f_c R} = \frac{1}{2\pi \times 2000 \times 8} \approx 9.95\ \mu\text{F}\]</div>
+<p>在 2 kHz 处两只喇叭各得到 0.707 倍的电压，各是 −3 dB。功率和电压的平方成正比，两只喇叭的功率加起来是 <span class="math math-inline">\(0.707^2 + 0.707^2 = 1\)</span> 倍，听起来总响度不变，这正是第三节第 2 小节「平方和等于 1」的一个实际用处。要说明的是，真实喇叭的阻抗会随频率变化，不是固定的 8 Ω，所以正式的分频器设计还要做补偿，这里只演示原理。</p>
+<p><strong>其他用处</strong>：</p>
+<ul>
+<li><strong>电机线圈本身就是 RL 低通</strong>。<a href="../26-h-bridge/page2.html">26 H 桥电机驱动 · 原理与实现篇</a> 用 PWM 开关电压驱动电机：线圈的电感让电流跟不上快速的开关，只能跟着平均电压变化，电流就比电压平滑得多。</li>
+<li><strong>开关电源和 D 类功放的输出滤波</strong>：在电感后面再并一只电容接地，成为二阶 LC 低通，每十倍频程衰减 40 dB，而且电感和电容理想情况下都不耗电，大电流时效率高（<a href="../25-switching-power-supply/page2.html">25 开关电源 · 原理与实现篇</a>、<a href="../44-class-d-amp/page2.html">44 D 类功放 · 原理与实现篇</a>）。</li>
+<li><strong>电源线上的磁珠、扼流圈</strong>：串在电源线上的小电感，对直流几乎没有阻碍，却能挡住高频噪声，本质上就是 RL 低通。</li>
+</ul>
+<h2 id="五二阶-sallen-key-低通">五、二阶 Sallen-Key 低通</h2>
 <p>一阶的下降太&quot;温柔&quot;：10 kHz 的噪声只压到十分之一。把两级 RC 串起来能降得更快，但简单串联时第二级会拖累第一级。<strong>Sallen-Key</strong> 电路用一个跟随器解决这个问题，并且把两电阻中间那个节点的电容（ <span class="math math-inline">\(C_2\)</span> ）接到输出端，而不是接地，借输出&quot;推一把&quot;，让拐角更陡。</p>
 <p>看 图 20-p2-1：输入经 <span class="math math-inline">\(R_1\)</span> 、 <span class="math math-inline">\(R_2\)</span> 两个电阻到运放同相端， <span class="math math-inline">\(C_1\)</span> 从同相端接地， <span class="math math-inline">\(C_2\)</span> 从两电阻中间的节点接到输出。</p>
 <p><a class="img-link" href="img/20_p2_1_sallen_key.png"><img alt="两个电阻串联到运放同相端，同相端经 10 纳法电容接地，两电阻中间经 33 纳法电容接到输出，运放接成跟随器" src="img/20_p2_1_sallen_key.png" loading="lazy" /></a></p>
@@ -769,7 +1047,7 @@ fs.save(fig, &quot;20&quot;, &quot;20_p2_6_rc_bode.png&quot;)          # 保存�
 <p><strong>幅度公式</strong>：</p>
 <div class="math math-display">\[\frac{V_o}{V_i} = \frac{1}{\sqrt{\left(1 - (f/f_0)^2\right)^2 + \left(f/(Q f_0)\right)^2}}\]</div>
 <p>代数：在 10 kHz， <span class="math math-inline">\(f/f_0 \approx 10\)</span> ，第一项约 <span class="math math-inline">\((1-100)^2 \approx 9800\)</span> ，第二项约 <span class="math math-inline">\((10/0.71)^2 \approx 200\)</span> ，开方约 100，输出只剩约 0.01 倍，即 −40 dB。<strong>二阶每十倍频程 −40 dB</strong>，比一阶陡一倍。</p>
-<h2 id="五仿真两种低通的幅频曲线">五、仿真：两种低通的幅频曲线</h2>
+<h2 id="六仿真两种低通的幅频曲线">六、仿真：两种低通的幅频曲线</h2>
 <p>下面的代码按上面两个幅度公式，从 10 Hz 扫到 100 kHz，画出两种低通的输出/输入幅度（以 dB 表示），并检查 10 kHz 处二阶确实约 −40 dB。代码里的 a、b 两项就是 Sallen-Key 幅度公式分母里的两项，只是没有先除成 <span class="math math-inline">\(f/f_0\)</span> 的形式。代码与仓库里的 code/20_sim.py 内容一致，存成文件后<strong>在仓库根目录运行</strong>（开头两行会找到 code/figs 里的画图样式）。</p>
 <pre><code class="language-python">import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(&quot;code/figs&quot;).resolve()))  # 在仓库根目录运行
@@ -819,7 +1097,7 @@ fs.save(fig, &quot;20&quot;, &quot;20_p2_2_freq_response.png&quot;)    # 保存�
 <p><a class="img-link" href="img/20_p2_2_freq_response.png"><img alt="两条曲线在 1 千赫以下都接近 0 分贝，之后红紫色点划线缓慢下降，橙色曲线下降得快一倍，10 千赫处分别标着负 20 和负 40 分贝" src="img/20_p2_2_freq_response.png" loading="lazy" /></a></p>
 <p><em>图 20-p2-2　一阶与二阶低通的幅频曲线</em></p>
 <p>图 20-p2-2 横轴是频率（每一大格是 10 倍），纵轴是输出/输入幅度的分贝值。灰色点线一条是 −3 dB（0.707 倍），一条是 1 kHz，两条曲线都在两线交点附近穿过，说明截止频率都设计在 1 kHz。往右看，红紫色点划线（一阶）在 10 kHz 处是 −20 dB，橙色（二阶）是 −40 dB：同样 10 kHz 的噪声，二阶比一阶多压 10 倍。</p>
-<h2 id="六例题">六、例题</h2>
+<h2 id="七例题">七、例题</h2>
 <p><strong>例 1（完整示范）</strong> 用 10 nF 电容做截止频率约 1 kHz 的一阶低通，电阻取多少？10 kHz 的噪声能压到多少？</p>
 <p>第 1 步，意思：截止时 <span class="math math-inline">\(X_C = R\)</span> 。公式 <span class="math math-inline">\(f_c = 1/(2\pi R C)\)</span> 变形为 <span class="math math-inline">\(R = 1/(2\pi f_c C)\)</span> 。</p>
 <p>第 2 步，代数： <span class="math math-inline">\(R = 1/(2\pi \times 1000 \times 10 \times 10^{-9}) \approx 15.9\)</span> kΩ，取标准值 16 kΩ，实际 <span class="math math-inline">\(f_c \approx 995\)</span> Hz。</p>
@@ -840,7 +1118,7 @@ fs.save(fig, &quot;20&quot;, &quot;20_p2_2_freq_response.png&quot;)    # 保存�
 <div class="math math-display">\[\frac{V_o}{V_i} = \frac{f/f_c}{\sqrt{1 + (f/f_c)^2}}\]</div>
 <p>代数：在 10 Hz 处 <span class="math math-inline">\(0.1/\sqrt{1.01} \approx 0.1\)</span> ，低频被压到十分之一。接地的电阻还有一个作用：给同相端提供直流通路，否则运放的输入偏置电流没有地方流，输出会慢慢漂走。</p>
 <h2 id="本页小结">本页小结</h2>
-<p><strong>一阶低通的截止频率 <span class="math math-inline">\(f_c = 1/(2\pi RC)\)</span> ，来自&quot;容抗等于电阻&quot;，此时输出是输入的 0.707 倍（−3 dB），之后每十倍频程 −20 dB；容抗 <span class="math math-inline">\(X_C = 1/(2\pi fC)\)</span> 随频率升高而变小；电容电流比电压早 90°，意思是早四分之一周期（一个周期记作 360°），电流在电压涨得最快时最大；正因为错开 90°，电阻和电容混在一起时阻抗按勾股定理合成：串联 <span class="math math-inline">\(\sqrt{R^2 + X_C^2}\)</span> 、看大的，并联 <span class="math math-inline">\(RX_C/\sqrt{R^2 + X_C^2}\)</span> 、看小的，低频把电容当断开、高频当导线，无源 RC 的输出阻抗就是并联阻抗；同一对 R、C，输出取电容是低通、取电阻是高通，截止频率相同，低通输出落后、高通输出超前，在 <span class="math math-inline">\(f_c\)</span> 处各 45°；时间常数和截止频率是一回事（ <span class="math math-inline">\(f_c = 1/(2\pi\tau)\)</span> ，上升时间约 <span class="math math-inline">\(0.35/f_c\)</span> ）；无源 RC 怕信号源内阻、怕负载、不能直接串两级，负载至少要是 R 的 10 倍；二阶 Sallen-Key 的 <span class="math math-inline">\(f_0 = 1/(2\pi\sqrt{R_1R_2C_1C_2})\)</span> ， <span class="math math-inline">\(Q\)</span> = 0.707 为巴特沃斯，每十倍频程 −40 dB；运放在这里是跟随器（12），需要放大时换成同相放大（08）</strong>。</p>
+<p><strong>一阶低通的截止频率 <span class="math math-inline">\(f_c = 1/(2\pi RC)\)</span> ，来自&quot;容抗等于电阻&quot;，此时输出是输入的 0.707 倍（−3 dB），之后每十倍频程 −20 dB；容抗 <span class="math math-inline">\(X_C = 1/(2\pi fC)\)</span> 随频率升高而变小；电容电流比电压早 90°，意思是早四分之一周期（一个周期记作 360°），电流在电压涨得最快时最大；正因为错开 90°，电阻和电容混在一起时阻抗按勾股定理合成：串联 <span class="math math-inline">\(\sqrt{R^2 + X_C^2}\)</span> 、看大的，并联 <span class="math math-inline">\(RX_C/\sqrt{R^2 + X_C^2}\)</span> 、看小的，低频把电容当断开、高频当导线，无源 RC 的输出阻抗就是并联阻抗；同一对 R、C，输出取电容是低通、取电阻是高通，截止频率相同，低通输出落后、高通输出超前，在 <span class="math math-inline">\(f_c\)</span> 处各 45°；时间常数和截止频率是一回事（ <span class="math math-inline">\(f_c = 1/(2\pi\tau)\)</span> ，上升时间约 <span class="math math-inline">\(0.35/f_c\)</span> ）；无源 RC 怕信号源内阻、怕负载、不能直接串两级，负载至少要是 R 的 10 倍；RL 滤波器规律相同，但电感串在路上是低通、接地是高通，截止频率 <span class="math math-inline">\(R/(2\pi L)\)</span> 、时间常数 <span class="math math-inline">\(L/R\)</span> ，适合低阻抗、大电流的场合，要注意电感的直流电阻和饱和；二阶 Sallen-Key 的 <span class="math math-inline">\(f_0 = 1/(2\pi\sqrt{R_1R_2C_1C_2})\)</span> ， <span class="math math-inline">\(Q\)</span> = 0.707 为巴特沃斯，每十倍频程 −40 dB；运放在这里是跟随器（12），需要放大时换成同相放大（08）</strong>。</p>
 
 </main>
 <div class="footer"><a href="../index.html">返回目录</a> · 由 tools/build_site.py 从仓库 Markdown 生成</div>

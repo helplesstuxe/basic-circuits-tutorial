@@ -74,7 +74,7 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <h1 id="20-有源滤波--参数与调试篇">20 有源滤波 · 参数与调试篇</h1>
 <p><a href="page2.html">上一页：原理与实现篇</a> · <a href="page1.html">直觉篇</a> · <a href="page2.html">原理与实现篇</a> · 本页：参数与调试篇 · <a href="page4.html">下一页：20 有源滤波 · 动手实验篇</a> · 前置节点：<a href="../01-components-basics/page1.html">01 元件速成 · 直觉篇</a>、<a href="../08-noninverting-amp/page1.html">08 同相放大 · 直觉篇</a>、<a href="../12-voltage-follower/page1.html">12 电压跟随器 · 直觉篇</a> · 后续：<a href="../24-oscillator/page1.html">24 振荡器 · 直觉篇</a></p>
 <h2 id="这一页解决什么问题">这一页解决什么问题</h2>
-<p>公式会算了，焊出来却&quot;不对劲&quot;：要么有用的信号也被削弱，要么噪声挡不干净，要么波形边沿出现小鼓包。这一页先看两张图——方波经过两种低通会怎样、算截止频率漏掉 <span class="math math-inline">\(2\pi\)</span> 会怎样——再讨论元件误差和取值，最后给出故障排查表和八道练习（练习 5–8 针对无源 RC 和阻抗）。</p>
+<p>公式会算了，焊出来却&quot;不对劲&quot;：要么有用的信号也被削弱，要么噪声挡不干净，要么波形边沿出现小鼓包。这一页先看两张图——方波经过两种低通会怎样、算截止频率漏掉 <span class="math math-inline">\(2\pi\)</span> 会怎样——再讨论元件误差和取值，最后给出故障排查表和十道练习（练习 5–8 针对无源 RC 和阻抗，练习 9–10 针对 RL）。</p>
 <h2 id="一方波看清一阶和二阶的性格">一、方波：看清&quot;一阶&quot;和&quot;二阶&quot;的性格</h2>
 <p>方波的边沿里含有很多高频成分，所以用低通处理方波，最能看出滤波器的&quot;性格&quot;。图 20-p3-1 把 0～1 V、500 Hz 的方波分别送进截止频率都约 1 kHz 的一阶低通和二阶 Sallen-Key 低通。</p>
 <p><a class="img-link" href="img/20_p3_1_square.png"><img alt="蓝色方波，红紫色点划线的一阶输出边沿是圆滑的指数曲线，橙色的二阶输出起步慢但更陡，顶部略微冲过 1 伏，标着 1.04 伏" src="img/20_p3_1_square.png" loading="lazy" /></a></p>
@@ -181,6 +181,18 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <td>估算倾斜量 ≈ 平台时间 ÷ τ</td>
 <td>加大耦合电容或后级输入电阻，使 τ 远大于平台时间</td>
 </tr>
+<tr>
+<td>RL 高通挡不住直流、低频，输出停在一个固定比例</td>
+<td>电感的直流电阻 <span class="math math-inline">\(R_d\)</span> 和 R 分压，低频输出约为 <span class="math math-inline">\(R_d/(R + R_d)\)</span></td>
+<td>用万用表电阻挡量电感两端的直流电阻</td>
+<td>换直流电阻小的电感，或加大 R；信号电路里改用 RC</td>
+</tr>
+<tr>
+<td>电感滤波大电流时失效、电感发热</td>
+<td>电流超过电感的饱和电流，电感量骤降</td>
+<td>对照手册的饱和电流和实际峰值电流</td>
+<td>换饱和电流更大的电感</td>
+</tr>
 </tbody>
 </table>
 <p>排查表第三行「两个电容接反」的样子见图 20-p3-3。</p>
@@ -236,6 +248,18 @@ chtml:{matchFontHeight:false},startup:{typeset:true}};
 <p>(2) 50 Hz： <span class="math math-inline">\(X_C = 1/(2\pi \times 50 \times 10^{-6}) \approx 3183\)</span> Ω，比电阻大约 3 倍。串联 <span class="math math-inline">\(\sqrt{1000^2 + 3183^2} \approx 3337\)</span> Ω，接近容抗，更像电容（电流超前约 72.6°）；并联 <span class="math math-inline">\(1000 \times 3183/3337 \approx 954\)</span> Ω，接近电阻，更像电阻（超前约 17.4°）。</p>
 <p>1 kHz： <span class="math math-inline">\(X_C \approx 159\)</span> Ω，只有电阻的约 1/6。串联约 1013 Ω，更像电阻（超前约 9°）；并联约 157 Ω，更像电容（超前约 81°）。符合「串联看大的、并联看小的」。</p>
 <p>(3) 能，但不算很理想：1 kHz 是交叉频率的约 6.3 倍，容抗 159 Ω 约是 1 kΩ 的 1/6，没到「1/10 以下」的经验线。按高通公式，信号保留 <span class="math math-inline">\(6.3/\sqrt{1 + 6.3^2} \approx 0.988\)</span> ，损失约 1.2%，相位超前约 9°。要更接近导线，把电容加到 10 μF（交叉频率约 16 Hz）。</p>
+</details>
+<p><strong>练习 9（RL 设计：分频器）</strong> 一只 4 Ω 的低音喇叭和一只 4 Ω 的高音喇叭，分频点取 3 kHz，喇叭按纯电阻算。低音喇叭前串的电感、高音喇叭前串的电容各取多大？3 kHz 处每只喇叭得到功放输出电压的多少倍？</p>
+<details><summary>答案</summary>
+<p>电感（RL 低通）： <span class="math math-inline">\(L = R/(2\pi f_c) = 4/(2\pi \times 3000) \approx 0.212\)</span> mH。</p>
+<p>电容（RC 高通）： <span class="math math-inline">\(C = 1/(2\pi f_c R) = 1/(2\pi \times 3000 \times 4) \approx 13.3\)</span> μF。</p>
+<p>3 kHz 处感抗、容抗都等于 4 Ω，每只喇叭各得到 0.707 倍（−3 dB），功率各一半，加起来不变。</p>
+</details>
+<p><strong>练习 10（真实电感）</strong> 用 <span class="math math-inline">\(L\)</span> = 1 mH、 <span class="math math-inline">\(R\)</span> = 10 Ω 做 RL 低通。(1) 理想电感时截止频率和时间常数各是多少？(2) 电感的直流电阻是 0.5 Ω，直流时输出还剩多少倍？(3) 如果把同一只电感用在 <span class="math math-inline">\(R\)</span> = 1 Ω 的电路里，直流电阻的影响会怎样？</p>
+<details><summary>答案</summary>
+<p>(1) <span class="math math-inline">\(f_c = R/(2\pi L) = 10/(2\pi \times 0.001) \approx 1592\)</span> Hz； <span class="math math-inline">\(\tau = L/R\)</span> = 1 mH ÷ 10 Ω = 0.1 ms。</p>
+<p>(2) 直流时电感只剩 0.5 Ω 的直流电阻，和 10 Ω 分压： <span class="math math-inline">\(10/10.5 \approx 0.952\)</span> 倍，约 −0.4 dB，影响不大。</p>
+<p>(3) <span class="math math-inline">\(1/1.5 \approx 0.667\)</span> 倍，约 −3.5 dB，直流就掉了三分之一，而且还有三分之一的功率耗在电感的铜线上发热。电路里的 R 越小，越要选直流电阻小的电感。</p>
 </details>
 <h2 id="本页小结">本页小结</h2>
 <p><strong>方波最能看出滤波器的性格：一阶圆滑无过冲，二阶巴特沃斯更陡但有约 4% 过冲；算截止频率千万别漏 <span class="math math-inline">\(2\pi\)</span> ；截止频率的误差主要来自电容，R、C 各偏几个百分点，截止频率就偏几个百分点；运放带宽不够时，它自己也会变成一个滤波器</strong>。</p>
